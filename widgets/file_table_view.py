@@ -1570,9 +1570,9 @@ class FileTableView(QTableView):
 
         if self._is_dragging:
             self._update_drag_feedback()
-            # Schedule next update
+            # Schedule next update (100ms for better performance with large selections)
             self._drag_feedback_timer_id = schedule_ui_update(
-                self._start_drag_feedback_loop, delay=50
+                self._start_drag_feedback_loop, delay=100
             )
 
     def _update_drag_feedback(self):

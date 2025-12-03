@@ -44,8 +44,13 @@ class FileLoadManager:
         self.timer_manager = get_timer_manager()
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
+        # Streaming file loading support
+        self._pending_files = []
+        self._loading_in_progress = False
+        self._batch_size = 100  # Files to add per UI update cycle
         logger.debug(
-            "[FileLoadManager] Initialized with unified loading policy", extra={"dev_only": True}
+            "[FileLoadManager] Initialized with unified loading policy + streaming support",
+            extra={"dev_only": True},
         )
 
     def load_folder(
@@ -337,7 +342,7 @@ class FileLoadManager:
     def _update_ui_after_load(self, items: list[FileItem], clear: bool = True) -> None:
         """
         Update UI after loading files.
-        Handles model updates and UI refresh with duplicate detection in merge mode.
+        Uses streaming approach for large file sets to keep UI responsive.
         """
         if not hasattr(self.parent_window, "file_model"):
             logger.error("[FileLoadManager] Parent window has no file_model attribute")
@@ -366,48 +371,124 @@ class FileLoadManager:
                         extra={"dev_only": True},
                     )
 
-            if clear:
-                # Replace existing files
-                self.parent_window.file_model.set_files(items)
-                # Also update FileStore (centralized state)
-                self.parent_window.context.file_store.set_loaded_files(items)
-                logger.info(
-                    f"[FileLoadManager] Replaced files with {len(items)} new items",
-                    extra={"dev_only": True},
-                )
+            # Use streaming loading for large file sets (> 200 files)
+            if len(items) > 200:
+                self._load_files_streaming(items, clear=clear)
             else:
-                # Add to existing files with duplicate detection
-                existing_files = self.parent_window.file_model.files
-
-                # Create a set of existing file paths for fast lookup
-                existing_paths = {file_item.full_path for file_item in existing_files}
-
-                # Filter out duplicates from new items
-                new_items = []
-                duplicate_count = 0
-
-                for item in items:
-                    if item.full_path not in existing_paths:
-                        new_items.append(item)
-                        existing_paths.add(
-                            item.full_path
-                        )  # Add to set to avoid duplicates within the new items too
-                    else:
-                        duplicate_count += 1
-
-                # Combine existing files with new non-duplicate items
-                combined_files = existing_files + new_items
-                self.parent_window.file_model.set_files(combined_files)
-                # Also update FileStore (centralized state)
-                self.parent_window.context.file_store.set_loaded_files(combined_files)
-
-                # Log the results
-
-            # CRITICAL: Update all UI elements after file loading
-            self._refresh_ui_after_file_load()
+                # Small file sets: load immediately (legacy behavior)
+                self._load_files_immediate(items, clear=clear)
 
         except Exception as e:
             logger.error(f"[FileLoadManager] Error updating UI: {e}")
+
+    def _load_files_immediate(self, items: list[FileItem], clear: bool = True) -> None:
+        """
+        Load files immediately (legacy behavior for small file sets).
+        Used for < 200 files where UI blocking is negligible.
+        """
+        if clear:
+            # Replace existing files
+            self.parent_window.file_model.set_files(items)
+            # Also update FileStore (centralized state)
+            self.parent_window.context.file_store.set_loaded_files(items)
+            logger.info(
+                f"[FileLoadManager] Replaced files with {len(items)} new items",
+                extra={"dev_only": True},
+            )
+        else:
+            # Add to existing files with duplicate detection
+            existing_files = self.parent_window.file_model.files
+
+            # Create a set of existing file paths for fast lookup
+            existing_paths = {file_item.full_path for file_item in existing_files}
+
+            # Filter out duplicates from new items
+            new_items = []
+            duplicate_count = 0
+
+            for item in items:
+                if item.full_path not in existing_paths:
+                    new_items.append(item)
+                    existing_paths.add(
+                        item.full_path
+                    )  # Add to set to avoid duplicates within the new items too
+                else:
+                    duplicate_count += 1
+
+            # Combine existing files with new non-duplicate items
+            combined_files = existing_files + new_items
+            self.parent_window.file_model.set_files(combined_files)
+            # Also update FileStore (centralized state)
+            self.parent_window.context.file_store.set_loaded_files(combined_files)
+
+            # Log the results
+            if duplicate_count > 0:
+                logger.info(
+                    f"[FileLoadManager] Added {len(new_items)} new items, "
+                    f"skipped {duplicate_count} duplicates"
+                )
+
+    def _load_files_streaming(self, items: list[FileItem], clear: bool = True) -> None:
+        """
+        Load files in batches to keep UI responsive.
+        Used for large file sets (> 200 files) to prevent UI freeze.
+        """
+        logger.info(
+            f"[FileLoadManager] Starting streaming load for {len(items)} files "
+            f"(batch_size={self._batch_size})"
+        )
+
+        # Clear existing files if requested
+        if clear:
+            self.parent_window.file_model.set_files([])
+            self.parent_window.context.file_store.set_loaded_files([])
+            self._pending_files = items.copy()
+        else:
+            # Merge mode: filter duplicates first
+            existing_files = self.parent_window.file_model.files
+            existing_paths = {f.full_path for f in existing_files}
+            self._pending_files = [item for item in items if item.full_path not in existing_paths]
+
+        self._loading_in_progress = True
+        self._process_next_batch()
+
+    def _process_next_batch(self) -> None:
+        """
+        Process next batch of files in streaming loading.
+        Called recursively via QTimer to keep UI responsive.
+        """
+        if not self._loading_in_progress or not self._pending_files:
+            # Streaming complete
+            self._loading_in_progress = False
+            self._pending_files = []
+            logger.info("[FileLoadManager] Streaming load complete")
+            return
+
+        # Take next batch
+        batch = self._pending_files[: self._batch_size]
+        self._pending_files = self._pending_files[self._batch_size :]
+
+        # Add batch to model
+        existing_files = self.parent_window.file_model.files
+        combined_files = existing_files + batch
+        self.parent_window.file_model.set_files(combined_files)
+        self.parent_window.context.file_store.set_loaded_files(combined_files)
+
+        # Update status
+        loaded_count = len(combined_files)
+        total_count = loaded_count + len(self._pending_files)
+        logger.debug(
+            f"[FileLoadManager] Streaming progress: {loaded_count}/{total_count} files",
+            extra={"dev_only": True},
+        )
+
+        # Update files label to show progress
+        if hasattr(self.parent_window, "update_files_label"):
+            self.parent_window.update_files_label()
+
+        # Schedule next batch (5ms delay to allow UI updates)
+        from core.pyqt_imports import QTimer
+        QTimer.singleShot(5, self._process_next_batch)
 
     def _refresh_ui_after_file_load(self) -> None:
         """

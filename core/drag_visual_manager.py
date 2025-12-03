@@ -81,6 +81,10 @@ class DragVisualManager:
         self._icon_cache: dict[str, QIcon] = {}
         self._cursor_cache: dict[str, QCursor] = {}
 
+        # Performance optimization: cache widget lookup
+        self._last_widget_pos: tuple[int, int] | None = None
+        self._last_widget_under_cursor = None
+
         # Clear cache on initialization
         self._clear_cache()
 
@@ -138,7 +142,11 @@ class DragVisualManager:
             self._drop_zone_state = DropZoneState.NEUTRAL
             self._modifier_state = ModifierState.NORMAL
 
-            # Clear cache
+            # Clear widget cache
+            self._last_widget_pos = None
+            self._last_widget_under_cursor = None
+
+            # Clear cursor cache
             self._clear_cache()
 
     def update_drop_zone_state(self, state: DropZoneState) -> None:
@@ -175,10 +183,29 @@ class DragVisualManager:
         # Update modifier state first (for Ctrl/Shift changes during drag)
         self.update_modifier_state()
 
-        # Get widget under cursor
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        # Get cursor position
+        cursor_pos = QCursor.pos()
+        current_pos = (cursor_pos.x(), cursor_pos.y())
+
+        # Use cached widget if cursor hasn't moved much (within 5 pixels)
+        if self._last_widget_pos is not None:
+            dx = abs(current_pos[0] - self._last_widget_pos[0])
+            dy = abs(current_pos[1] - self._last_widget_pos[1])
+            if dx < 5 and dy < 5 and self._last_widget_under_cursor is not None:
+                widget_under_cursor = self._last_widget_under_cursor
+            else:
+                widget_under_cursor = QApplication.widgetAt(cursor_pos)
+                self._last_widget_pos = current_pos
+                self._last_widget_under_cursor = widget_under_cursor
+        else:
+            widget_under_cursor = QApplication.widgetAt(cursor_pos)
+            self._last_widget_pos = current_pos
+            self._last_widget_under_cursor = widget_under_cursor
+
         if not widget_under_cursor:
             # Cursor is outside application window - this should end the drag
+            self._last_widget_pos = None
+            self._last_widget_under_cursor = None
             return False  # Signal to end drag
 
         # Check if cursor is still over the source widget

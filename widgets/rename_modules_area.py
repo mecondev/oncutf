@@ -88,10 +88,10 @@ class RenameModulesArea(QWidget):
 
         self.add_module()  # Start with one by default
 
-        # Update timer for debouncing
+        # Update timer for debouncing (increased from 100ms to 300ms for smoother typing)
         self._update_timer = QTimer()
         self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(100)  # 100ms debounce
+        self._update_timer.setInterval(300)  # 300ms debounce - preview updates after typing pause
         self._update_timer.timeout.connect(lambda: self._emit_updated_signal())
 
         # Drag & Drop state

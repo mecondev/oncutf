@@ -1115,15 +1115,15 @@ class MetadataTreeView(QTreeView):
     def _get_date_type_from_field(self, key_path: str) -> str:
         """Determine date type (created/modified) from field name."""
         key_lower = key_path.lower()
-        
+
         # Check for creation date patterns
         if any(keyword in key_lower for keyword in ["create", "dateoriginal", "digitized"]):
             return "created"
-        
+
         # Check for modification date patterns
         if any(keyword in key_lower for keyword in ["modify", "modified", "change", "changed"]):
             return "modified"
-        
+
         # Default to modified for generic date/time fields
         return "modified"
 
@@ -1154,7 +1154,7 @@ class MetadataTreeView(QTreeView):
         key_lower = key_path.lower()
         if any(field in key_lower for field in editable_fields):
             return True
-        
+
         # Also check if it's a date/time field
         return self._is_date_time_field(key_path)
 
@@ -1507,47 +1507,47 @@ class MetadataTreeView(QTreeView):
         if not selected_files:
             logger.warning("[MetadataTree] No files selected for date editing")
             return
-        
+
         # Determine date type from field name
         date_type = self._get_date_type_from_field(key_path)
-        
+
         # Convert file items to paths
         file_paths = [f.full_path for f in selected_files]
-        
+
         # Open DateTimeEditDialog
         result_files, new_datetime = DateTimeEditDialog.get_datetime_edit_choice(
             parent=self,
             selected_files=file_paths,
             date_type=date_type
         )
-        
+
         if result_files and new_datetime:
             # Format datetime as string for metadata
             # new_datetime is a Python datetime object
             datetime_str = new_datetime.strftime("%Y:%m:%d %H:%M:%S")
-            
+
             logger.info(
                 f"[MetadataTree] Editing {date_type} date for {len(result_files)} files to {datetime_str}"
             )
-            
+
             # Use command system for undo/redo support
             command_manager = get_metadata_command_manager()
             if command_manager and EditMetadataFieldCommand:
                 # Get original values for undo
                 metadata_cache = self._get_metadata_cache()
-                
+
                 # Create command for each selected file
                 for file_path in result_files:
                     # Find the file item
                     file_item = next((f for f in selected_files if f.full_path == file_path), None)
                     if not file_item:
                         continue
-                    
+
                     # Get current value from metadata
                     current_value = ""
                     if metadata_cache and key_path in metadata_cache:
                         current_value = str(metadata_cache[key_path])
-                    
+
                     # Create and execute command
                     command = EditMetadataFieldCommand(
                         file_path=file_path,
@@ -1556,7 +1556,7 @@ class MetadataTreeView(QTreeView):
                         old_value=current_value,
                         metadata_tree_view=self,
                     )
-                    
+
                     if command_manager.execute_command(command, group_with_previous=True):
                         logger.debug(f"[MetadataTree] Executed date edit command for {file_item.filename}")
                     else:
@@ -1565,10 +1565,10 @@ class MetadataTreeView(QTreeView):
                         )
             else:
                 logger.warning("[MetadataTree] Command system not available for date editing")
-            
+
             # Emit signal for external listeners
             self.value_edited.emit(key_path, str(current_value), datetime_str)
-            
+
             # Restore selection AFTER tree has been updated
             if saved_path:
                 schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
