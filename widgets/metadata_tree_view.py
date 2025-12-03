@@ -1003,25 +1003,6 @@ class MetadataTreeView(QTreeView):
 
             menu.addAction(set_zero_action)
 
-        # Special action for date/time fields - Edit Date
-        is_date_field = self._is_date_time_field(key_path)
-        if is_date_field:
-            # Determine date type from field name
-            date_type = self._get_date_type_from_field(key_path)
-            
-            edit_date_action = QAction(f"Edit {date_type.title()} Date", menu)
-            edit_date_action.setIcon(self._get_menu_icon("calendar"))
-            edit_date_action.triggered.connect(lambda: self.edit_date_value(key_path, date_type))
-            
-            # Enable only for single selection
-            edit_date_action.setEnabled(not has_multiple_selection)
-            if has_multiple_selection:
-                edit_date_action.setToolTip("Single file selection required")
-            else:
-                edit_date_action.setToolTip(f"Edit {date_type} date for selected file")
-            
-            menu.addAction(edit_date_action)
-
         menu.addSeparator()
 
         # Add/Remove to File View toggle action
@@ -1171,7 +1152,11 @@ class MetadataTreeView(QTreeView):
 
         # Check if key_path contains any editable field name
         key_lower = key_path.lower()
-        return any(field in key_lower for field in editable_fields)
+        if any(field in key_lower for field in editable_fields):
+            return True
+        
+        # Also check if it's a date/time field
+        return self._is_date_time_field(key_path)
 
     def _normalize_metadata_field_name(self, key_path: str) -> str:
         """Normalize metadata field names to standard form."""
@@ -1352,6 +1337,11 @@ class MetadataTreeView(QTreeView):
             logger.warning("[MetadataTree] No files selected for editing")
             return
 
+        # Check if this is a date/time field - use DateTimeEditDialog
+        if self._is_date_time_field(key_path):
+            self._edit_date_time_field(key_path, current_value, saved_path)
+            return
+
         # Normalize key path for standard metadata fields
         normalized_key_path = self._normalize_metadata_field_name(key_path)
 
@@ -1510,13 +1500,16 @@ class MetadataTreeView(QTreeView):
 
         return None
 
-    def edit_date_value(self, key_path: str, date_type: str) -> None:
+    def _edit_date_time_field(self, key_path: str, current_value: Any, saved_path: list[str] | None = None) -> None:
         """Open DateTimeEditDialog to edit a date/time field."""
         # Get selected files
         selected_files = self._get_current_selection()
         if not selected_files:
             logger.warning("[MetadataTree] No files selected for date editing")
             return
+        
+        # Determine date type from field name
+        date_type = self._get_date_type_from_field(key_path)
         
         # Convert file items to paths
         file_paths = [f.full_path for f in selected_files]
@@ -1530,7 +1523,8 @@ class MetadataTreeView(QTreeView):
         
         if result_files and new_datetime:
             # Format datetime as string for metadata
-            datetime_str = new_datetime.toString("yyyy:MM:dd HH:mm:ss")
+            # new_datetime is a Python datetime object
+            datetime_str = new_datetime.strftime("%Y:%m:%d %H:%M:%S")
             
             logger.info(
                 f"[MetadataTree] Editing {date_type} date for {len(result_files)} files to {datetime_str}"
@@ -1571,8 +1565,18 @@ class MetadataTreeView(QTreeView):
                         )
             else:
                 logger.warning("[MetadataTree] Command system not available for date editing")
+            
+            # Emit signal for external listeners
+            self.value_edited.emit(key_path, str(current_value), datetime_str)
+            
+            # Restore selection AFTER tree has been updated
+            if saved_path:
+                schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
         else:
             logger.debug("[MetadataTree] Date edit cancelled")
+            # For cancelled edits, restore immediately
+            if saved_path:
+                self._restore_selection(saved_path)
 
     def set_rotation_to_zero(self, key_path: str) -> None:
         """Set rotation metadata to 0 degrees."""
