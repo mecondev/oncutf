@@ -5,14 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Refactoring
-- **Mixin Extraction from FileTableView** (Day 8 - 2025-12-04):
+- **Mixin Extraction from FileTableView - COMPLETE** (Day 8 - 2025-12-04):
   - Extracted SelectionMixin (486 lines, 12 methods) for Windows Explorer-style selection
   - Extracted DragDropMixin (365 lines, 9 methods) for drag-and-drop functionality
-  - Reduced FileTableView from 2716 to 2066 lines (-24% complexity)
-  - Improved code reusability and maintainability
+  - Extracted ColumnManagementMixin (552 lines, 15 methods) for column config & persistence
+  - Reduced FileTableView from 2716 to 1315 lines (-51.6% complexity, exceeded target by 685 lines)
+  - Improved code reusability and maintainability with multiple inheritance
   - All 460 tests passing (100% compatibility)
   - Created `widgets/mixins/` package for reusable widget behaviors
-  - Comprehensive documentation with usage examples
+  - Comprehensive documentation with usage examples and architecture diagrams
+  - God class eliminated - clean separation of concerns achieved
 
 ### Documentation
 - **Cache Strategy Documentation** (Day 7 - 2025-12-04):
