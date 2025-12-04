@@ -656,8 +656,9 @@ class UIManager:
         self.parent_window.rename_button.clicked.connect(self.parent_window.rename_files)
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
+        # Day 1-2: Debounce preview updates from module config changes (300ms)
         self.parent_window.rename_modules_area.updated.connect(
-            self.parent_window.request_preview_update
+            self.parent_window.request_preview_update_debounced
         )
         # Clear preview cache when rename modules change to force regeneration
         self.parent_window.rename_modules_area.updated.connect(
@@ -665,8 +666,9 @@ class UIManager:
         )
 
         # --- Connect the FinalTransformContainer signals ---
+        # Day 1-2: Debounce preview updates from final transform changes (300ms)
         self.parent_window.final_transform_container.updated.connect(
-            self.parent_window.request_preview_update
+            self.parent_window.request_preview_update_debounced
         )
         # Clear preview cache when final transform changes to force regeneration
         self.parent_window.final_transform_container.updated.connect(

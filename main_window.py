@@ -41,6 +41,10 @@ class MainWindow(QMainWindow):
         """Initializes the main window and sets up the layout."""
         super().__init__()
 
+        # Preview debounce timer (Day 1-2 Performance Optimization)
+        self._preview_debounce_timer: QTimer | None = None
+        self._preview_pending = False
+
         # Use InitializationOrchestrator for structured initialization (Phase 4)
         from core.initialization_orchestrator import InitializationOrchestrator
 
@@ -101,6 +105,39 @@ class MainWindow(QMainWindow):
     def request_preview_update(self) -> None:
         """Request preview update via Application Service."""
         self.app_service.request_preview_update()
+
+    def request_preview_update_debounced(self) -> None:
+        """Request preview update with 300ms debounce.
+
+        Day 1-2 Performance Optimization: Prevents redundant preview recalculations
+        during rapid user input (e.g., typing, slider adjustments).
+
+        Usage:
+        - Module parameter changes (typing, sliders, dropdowns)
+        - Final transform changes (greeklish, case, separator)
+
+        The timer resets on each call, so only the final state triggers preview.
+        """
+        self._preview_pending = True
+
+        # Cancel existing timer
+        if self._preview_debounce_timer and self._preview_debounce_timer.isActive():
+            self._preview_debounce_timer.stop()
+
+        # Create timer on first use
+        if not self._preview_debounce_timer:
+            self._preview_debounce_timer = QTimer(self)
+            self._preview_debounce_timer.setSingleShot(True)
+            self._preview_debounce_timer.timeout.connect(self._execute_pending_preview)
+
+        # Start 300ms countdown
+        self._preview_debounce_timer.start(300)
+
+    def _execute_pending_preview(self) -> None:
+        """Execute pending preview update after debounce delay."""
+        if self._preview_pending:
+            self._preview_pending = False
+            self.app_service.request_preview_update()
 
     def generate_preview_names(self) -> None:
         """Generate preview names via Application Service."""
