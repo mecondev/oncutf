@@ -10,7 +10,7 @@ Date: 2025-06-15
 
 import os
 
-from core.pyqt_imports import QModelIndex, Qt
+from core.pyqt_imports import QApplication, QModelIndex, Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 
@@ -108,8 +108,38 @@ class ApplicationService:
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
-        """Load metadata for items via MetadataManager."""
-        self.main_window.metadata_manager.load_metadata_for_items(items, use_extended, source)
+        """Load metadata for items via MetadataManager using streaming."""
+        if not items:
+            return
+
+        logger.info(f"[{source}] Loading metadata for {len(items)} items (streaming)")
+
+        manager = self.main_window.metadata_manager
+        model = self.main_window.file_model
+        status_manager = self.main_window.status_manager
+
+        count = 0
+        total = len(items)
+
+        if status_manager:
+            status_manager.show_message(f"Loading metadata... 0/{total}")
+
+        # Use streaming loader
+        for item, _ in manager.load_metadata_streaming(items, use_extended):
+            count += 1
+            # Update model for this specific item
+            if model:
+                model.update_file_metadata(item)
+
+            # Update status every 5 items or last item to reduce overhead
+            if status_manager and (count % 5 == 0 or count == total):
+                status_manager.show_message(f"Loading metadata... {count}/{total}")
+
+            # Keep UI responsive
+            QApplication.processEvents()
+
+        if status_manager:
+            status_manager.show_message(f"Metadata loaded for {total} files", timeout=3000)
 
     # =====================================
     # Selection Operations
