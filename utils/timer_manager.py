@@ -393,6 +393,13 @@ def schedule_scroll_adjust(callback: Callable, delay: int = 10, timer_id: str | 
     )
 
 
+def schedule_preview_update(callback: Callable, delay: int = 300, timer_id: str | None = None) -> str:
+    """Schedule a preview update operation with debounce."""
+    return get_timer_manager().schedule(
+        callback, delay, TimerPriority.NORMAL, TimerType.PREVIEW_UPDATE, timer_id
+    )
+
+
 def schedule_resize_adjust(callback: Callable, delay: int = 10, timer_id: str | None = None) -> str:
     """Schedule a resize adjustment operation."""
     return get_timer_manager().schedule(

@@ -88,11 +88,11 @@ class RenameModulesArea(QWidget):
 
         self.add_module()  # Start with one by default
 
-        # Update timer for debouncing (increased from 100ms to 300ms for smoother typing)
-        self._update_timer = QTimer()
-        self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(300)  # 300ms debounce - preview updates after typing pause
-        self._update_timer.timeout.connect(lambda: self._emit_updated_signal())
+        # Use centralized timer manager for debouncing
+        # This replaces the local QTimer with a managed timer that handles cleanup
+        from utils.timer_manager import schedule_preview_update
+        self._schedule_preview_update = schedule_preview_update
+        self._preview_timer_id = f"preview_debounce_{id(self)}"
 
         # Drag & Drop state
         self.dragged_module = None
@@ -115,8 +115,9 @@ class RenameModulesArea(QWidget):
 
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
-        self._update_timer.stop()
-        self._update_timer.start()
+        self._preview_timer_id = self._schedule_preview_update(
+            self._emit_updated_signal, timer_id=self._preview_timer_id
+        )
 
     def add_module(self):
         """
