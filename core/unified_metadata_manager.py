@@ -19,6 +19,7 @@ Features:
 import contextlib
 import os
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -690,6 +691,90 @@ class UnifiedMetadataManager(QObject):
     # =====================================
     # Main Loading Methods
     # =====================================
+
+    def load_metadata_streaming(
+        self, items: list[FileItem], use_extended: bool = False
+    ):
+        """
+        Yield metadata as soon as available using parallel loading.
+
+        Args:
+            items: List of FileItem objects to load metadata for
+            use_extended: Whether to use extended metadata loading
+
+        Yields:
+            Tuple[FileItem, dict]: (item, metadata)
+        """
+        if not items:
+            return
+
+        # Separate cached vs non-cached
+        items_to_load = []
+
+        for item in items:
+            # Check cache
+            cache_entry = (
+                self.parent_window.metadata_cache.get_entry(item.full_path)
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache")
+                else None
+            )
+
+            has_valid_cache = (
+                cache_entry
+                and hasattr(cache_entry, "is_extended")
+                and hasattr(cache_entry, "data")
+                and cache_entry.data
+            )
+
+            if has_valid_cache:
+                if cache_entry.is_extended and not use_extended:
+                    yield item, cache_entry.data
+                    continue
+                elif cache_entry.is_extended == use_extended:
+                    yield item, cache_entry.data
+                    continue
+
+            items_to_load.append(item)
+
+        if not items_to_load:
+            return
+
+        # Use parallel loading for the rest
+        # We use a local executor to allow yielding
+        max_workers = 4  # Default safe value
+        if self._parallel_loader:
+            max_workers = self._parallel_loader.max_workers
+        else:
+            import multiprocessing
+
+            max_workers = min(multiprocessing.cpu_count() * 2, 16)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_item = {
+                executor.submit(
+                    self._exiftool_wrapper.get_metadata, item.full_path, use_extended
+                ): item
+                for item in items_to_load
+            }
+
+            for future in as_completed(future_to_item):
+                item = future_to_item[future]
+                try:
+                    metadata = future.result()
+
+                    # Update cache
+                    if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                        self.parent_window.metadata_cache.set(
+                            item.full_path, metadata, is_extended=use_extended
+                        )
+
+                    # Update item metadata
+                    item.metadata = metadata
+
+                    yield item, metadata
+                except Exception as e:
+                    logger.error(f"Failed to load metadata for {item.filename}: {e}")
+                    yield item, {}
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"

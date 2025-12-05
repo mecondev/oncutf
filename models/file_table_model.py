@@ -931,3 +931,24 @@ class FileTableModel(QAbstractTableModel):
             "Custom tooltips are now handled through Qt.ToolTipRole in data() method",
             extra={"dev_only": True},
         )
+
+    def update_file_metadata(self, file_item: FileItem) -> None:
+        """
+        Update the row for the given file item.
+        Emits dataChanged for the corresponding row.
+        """
+        try:
+            # Find the row index for the file item
+            # Note: This is O(N), consider optimizing with a dict if performance becomes an issue
+            row = self.files.index(file_item)
+
+            top_left = self.index(row, 0)
+            bottom_right = self.index(row, self.columnCount() - 1)
+
+            # Emit dataChanged for all roles that might be affected by metadata update
+            self.dataChanged.emit(
+                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole, Qt.DisplayRole]
+            )
+        except ValueError:
+            # File item not found in the model
+            pass
