@@ -93,7 +93,7 @@ class DragDropMixin:
         # Performance optimization: For large selections, collect paths lazily
         rows = sorted(selected_rows)
         file_count = len(rows)
-        
+
         # For small selections (<100), collect all paths immediately
         # For large selections, collect only first few for display + defer rest
         if file_count < 100:
@@ -144,7 +144,7 @@ class DragDropMixin:
         # Determine drag type and info string based on selection
         # Use actual selection count, not just collected paths
         actual_count = file_count if hasattr(self, '_drag_pending_rows') else len(file_paths)
-        
+
         if actual_count == 1:
             drag_type = visual_manager.get_drag_type_from_path(file_paths[0])
             # For single file, show just the filename
@@ -165,7 +165,7 @@ class DragDropMixin:
         """Start repeated drag feedback updates using timer_manager with adaptive delay."""
         if self._is_dragging:
             self._update_drag_feedback()
-            
+
             # Adaptive delay based on selection size for better performance
             # Large selections: slower updates (less CPU), small selections: faster updates (smoother)
             selected_count = len(self._get_current_selection_safe()) if hasattr(self, '_get_current_selection_safe') else 1
@@ -175,7 +175,7 @@ class DragDropMixin:
                 delay = 150  # Large: 150ms
             else:
                 delay = 100  # Normal: 100ms
-            
+
             # Schedule next update with adaptive delay
             self._drag_feedback_timer_id = schedule_ui_update(
                 self._start_drag_feedback_loop, delay=delay
