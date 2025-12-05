@@ -1147,19 +1147,32 @@ class UnifiedMetadataManager(QObject):
         )
 
     def _on_file_hash_calculated(self, file_path: str) -> None:
-        """Handle individual file hash calculated."""
+        """Handle individual file hash calculated with progressive UI update."""
         # Remove from loading set
         self._currently_loading.discard(file_path)
 
-        # Update UI if needed - use efficient single file icon refresh
-        if self.parent_window:
-            # Update file table model icons for this specific file
-            if hasattr(self.parent_window, "file_model"):
-                if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
-                    self.parent_window.file_model.refresh_icon_for_file(file_path)
-                else:
-                    # Fallback to full refresh if method not available
-                    self.parent_window.file_model.refresh_icons()
+        # Progressive UI update - emit dataChanged for this specific file
+        if self.parent_window and hasattr(self.parent_window, "file_model"):
+            try:
+                from utils.path_utils import paths_equal
+                
+                # Find the file in the model and emit dataChanged
+                for i, file in enumerate(self.parent_window.file_model.files):
+                    if paths_equal(file.full_path, file_path):
+                        top_left = self.parent_window.file_model.index(i, 0)
+                        bottom_right = self.parent_window.file_model.index(
+                            i, self.parent_window.file_model.columnCount() - 1
+                        )
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Emitting progressive dataChanged for hash: '{file.filename}' at row {i}",
+                            extra={"dev_only": True}
+                        )
+                        self.parent_window.file_model.dataChanged.emit(
+                            top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                        )
+                        break
+            except Exception as e:
+                logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for hash {file_path}: {e}")
 
         logger.debug(
             f"[UnifiedMetadataManager] Hash calculated for {file_path}", extra={"dev_only": True}
