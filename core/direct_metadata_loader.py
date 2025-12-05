@@ -478,15 +478,27 @@ class DirectMetadataLoader(QObject):
 
         logger.debug(f"[DirectMetadataLoader] Metadata loaded for {file_path}")
 
-    def _on_file_hash_calculated(self, file_path: str) -> None:
+    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated."""
         # Remove from loading set
         hash_key = f"hash_{file_path}"
         self._currently_loading.discard(hash_key)
 
+        # Store hash if provided (safe in main thread)
+        if hash_value:
+            try:
+                from core.hash_manager import HashManager
+                hm = HashManager()
+                hm.store_hash(file_path, hash_value)
+            except Exception as e:
+                logger.warning(f"[DirectMetadataLoader] Failed to store hash for {file_path}: {e}")
+
         # Update file table icons
         if self.parent_window and hasattr(self.parent_window, "file_model"):
-            self.parent_window.file_model.refresh_icons()
+            if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
+                self.parent_window.file_model.refresh_icon_for_file(file_path)
+            else:
+                self.parent_window.file_model.refresh_icons()
 
         logger.debug(f"[DirectMetadataLoader] Hash calculated for {file_path}")
 

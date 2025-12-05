@@ -197,26 +197,28 @@ class HashOperationsManager:
             self.hash_worker.setup_checksum_calculation(file_paths)
 
         # Connect signals for progress updates
-        self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
-        self.hash_worker.size_progress.connect(self._on_size_progress_updated)
-        self.hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated)
+        # Use QueuedConnection to ensure UI updates happen in main thread
+        from core.pyqt_imports import Qt
+        self.hash_worker.progress_updated.connect(self._on_hash_progress_updated, Qt.QueuedConnection)
+        self.hash_worker.size_progress.connect(self._on_size_progress_updated, Qt.QueuedConnection)
+        self.hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated, Qt.QueuedConnection)
 
         # Connect signals for results
-        self.hash_worker.duplicates_found.connect(self._on_duplicates_found)
-        self.hash_worker.comparison_result.connect(self._on_comparison_result)
-        self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated)
+        self.hash_worker.duplicates_found.connect(self._on_duplicates_found, Qt.QueuedConnection)
+        self.hash_worker.comparison_result.connect(self._on_comparison_result, Qt.QueuedConnection)
+        self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated, Qt.QueuedConnection)
 
         # Connect signals for completion/error
         # Use the worker's `finished_processing` (bool) signal so the handler
         # receives the success flag. Do not connect QThread.finished here
         # because it emits no arguments and would cause a TypeError.
         if hasattr(self.hash_worker, "finished_processing"):
-            self.hash_worker.finished_processing.connect(self._on_hash_operation_finished)
+            self.hash_worker.finished_processing.connect(self._on_hash_operation_finished, Qt.QueuedConnection)
         else:
             # Fallback: connect QThread.finished with a wrapper that passes True
-            self.hash_worker.finished.connect(lambda: self._on_hash_operation_finished(True))
+            self.hash_worker.finished.connect(lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection)
 
-        self.hash_worker.error_occurred.connect(self._on_hash_operation_error)
+        self.hash_worker.error_occurred.connect(self._on_hash_operation_error, Qt.QueuedConnection)
 
         # Create progress dialog
         self._create_hash_progress_dialog(operation, len(file_paths))
@@ -311,48 +313,45 @@ class HashOperationsManager:
                   with contextlib.suppress(Exception):
                       self.hash_dialog.update_progress(current_bytes, total_bytes)
 
-    def _on_file_hash_calculated(self, file_path: str) -> None:
+    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """
         Handle notification that a file's hash was calculated.
         Updates the file table icon in real-time.
 
         Args:
             file_path: Path to the file
-            # Note: hash_value is not passed via signal; fetch from cache if needed
+            hash_value: Calculated hash value (optional, for backward compatibility)
         """
         try:
+            # Store hash in persistent cache if provided (safe in main thread)
+            if hash_value:
+                try:
+                    from core.hash_manager import HashManager
+                    hm = HashManager()
+                    hm.store_hash(file_path, hash_value)
+                except Exception as e:
+                    logger.warning(f"[HashManager] Failed to store hash for {file_path}: {e}")
+
             # Find FileItem in model
             if (
-                not hasattr(self.parent_window, "file_table_model")
-                or not self.parent_window.file_table_model
+                not hasattr(self.parent_window, "file_model")
+                or not self.parent_window.file_model
             ):
                 return
 
-            file_item = self.parent_window.file_table_model.find_file_by_path(file_path)
-            if file_item:
-                # Update hash icon immediately
-                self.parent_window.file_table_model.update_file_hash_icon(file_item)
+            # Update icon using the correct method in FileTableModel
+            if hasattr(self.parent_window, "file_model") and hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
+                self.parent_window.file_model.refresh_icon_for_file(file_path)
 
-                # Try to obtain cached hash for logging
-                try:
-                    from core.hash_manager import HashManager
+                # Log update
+                logger.debug(
+                    f"[HashWorker] Updated hash icon for {file_path}",
+                    extra={"dev_only": True},
+                )
+            else:
+                # Fallback for older model versions or missing attribute
+                logger.warning("[HashManager] FileTableModel (file_model) missing or refresh_icon_for_file method missing")
 
-                    hm = HashManager()
-                    cached = hm.get_cached_hash(file_path)
-                    if cached:
-                        logger.debug(
-                            f"[HashWorker] Updated hash icon for {file_path}: {cached[:16]}...",
-                            extra={"dev_only": True},
-                        )
-                    else:
-                        logger.debug(
-                            f"[HashWorker] Updated hash icon for {file_path}",
-                            extra={"dev_only": True},
-                        )
-                except Exception:
-                    logger.debug(
-                        f"[HashWorker] Updated hash icon for {file_path}", extra={"dev_only": True}
-                    )
         except Exception as e:
             logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
 

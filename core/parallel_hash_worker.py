@@ -58,8 +58,8 @@ class ParallelHashWorker(QThread):
     finished_processing = pyqtSignal(bool)  # success flag
     error_occurred = pyqtSignal(str)  # error message
 
-    # Real-time UI update signals (same as HashWorker)
-    file_hash_calculated = pyqtSignal(str)  # file_path
+    # Real-time UI update signals (enhanced with hash value)
+    file_hash_calculated = pyqtSignal(str, str)  # file_path, hash_value
 
     def __init__(self, parent=None, max_workers: int | None = None):
         """
@@ -263,13 +263,14 @@ class ParallelHashWorker(QThread):
     def _store_hash_optimized(
         self, file_path: str, hash_value: str, algorithm: str = "crc32"
     ) -> None:
-        """Store hash with immediate persistence for progressive UI updates (thread-safe)."""
-        # Store directly in cache first for immediate availability
-        # This ensures UI updates see the hash immediately
-        self._hash_manager.store_hash(file_path, hash_value, algorithm)
-        
-        # Also queue for batch operations if batching is enabled
-        # This maintains the batch optimization for database writes
+        """Store hash using batch operations if available (thread-safe)."""
+        # NOTE: We do NOT store directly to DB here because this runs in a worker thread
+        # and the HashManager/DB connection belongs to the main thread.
+        # Instead, we rely on the file_hash_calculated signal to pass the hash
+        # back to the main thread for storage.
+
+        # We still queue for batch operations because batch manager might handle
+        # thread safety or we might flush later from main thread.
         with QMutexLocker(self._mutex):
             if self._enable_batching and self._batch_manager:
                 logger.debug(
@@ -400,8 +401,9 @@ class ParallelHashWorker(QThread):
 
                     if hash_value:
                         hash_results[file_path] = hash_value
-                        # Emit real-time update signal
-                        self.file_hash_calculated.emit(file_path)
+                        # Emit real-time update signal with hash value
+                        # This allows the main thread to store it safely
+                        self.file_hash_calculated.emit(file_path, hash_value)
 
                     # Update progress
                     self._update_progress(file_path, file_size)

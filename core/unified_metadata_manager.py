@@ -71,6 +71,10 @@ class UnifiedMetadataManager(QObject):
         self._cache_helper: MetadataCacheHelper | None = None
         self._currently_loading: set[str] = set()
 
+        # Progress dialogs (kept as instance variables to prevent garbage collection)
+        self._metadata_progress_dialog = None
+        self._hash_progress_dialog = None
+
         # State tracking
         self.force_extended_metadata = False
         self._metadata_cancelled = False  # Cancellation flag for metadata loading
@@ -999,15 +1003,31 @@ class UnifiedMetadataManager(QObject):
             # Create progress dialog
             from utils.progress_dialog import ProgressDialog
 
-            _loading_dialog = ProgressDialog.create_hash_dialog(
+            self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
                 self.parent_window, cancel_callback=cancel_hash_loading
             )
+
+            # Connect signals from hash worker to dialog
+            if self._hash_worker:
+                self._hash_worker.progress_updated.connect(
+                    lambda current, total, _filename: self._hash_progress_dialog.update_progress(current, total)
+                )
+                self._hash_worker.size_progress.connect(
+                    lambda processed, total: self._hash_progress_dialog.update_size_progress(processed, total)
+                )
+
+            # Show dialog
+            self._hash_progress_dialog.show()
 
             # Start loading with progress tracking
             self._start_hash_loading_with_progress(files, source)
 
         except Exception as e:
             logger.error(f"[UnifiedMetadataManager] Error showing hash progress dialog: {e}")
+            # Clean up dialog
+            if self._hash_progress_dialog:
+                self._hash_progress_dialog.close()
+                self._hash_progress_dialog = None
             # Fallback to direct loading
             self._start_hash_loading(files, source)
 
@@ -1025,9 +1045,19 @@ class UnifiedMetadataManager(QObject):
 
     def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:
         """Start hash loading with progress tracking."""
-        # This will be implemented to use the existing hash worker
-        # For now, fallback to direct loading
+        # Create worker first so we can connect signals
         self._start_hash_loading(files, source)
+
+        # Connect dialog signals if dialog exists
+        if self._hash_progress_dialog and self._hash_worker:
+            self._hash_worker.progress_updated.connect(
+                lambda current, total, _filename: self._hash_progress_dialog.update_progress(current, total),
+                Qt.QueuedConnection
+            )
+            self._hash_worker.size_progress.connect(
+                lambda processed, total: self._hash_progress_dialog.update_size_progress(processed, total),
+                Qt.QueuedConnection
+            )
 
     def _start_metadata_loading(
         self, files: list[FileItem], use_extended: bool, _source: str
@@ -1160,33 +1190,45 @@ class UnifiedMetadataManager(QObject):
             f"[UnifiedMetadataManager] Metadata loaded for {file_path}", extra={"dev_only": True}
         )
 
-    def _on_file_hash_calculated(self, file_path: str) -> None:
+    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated with progressive UI update."""
         # Remove from loading set
         self._currently_loading.discard(file_path)
 
+        # Store hash if provided (safe in main thread)
+        if hash_value:
+            try:
+                from core.hash_manager import HashManager
+                hm = HashManager()
+                hm.store_hash(file_path, hash_value)
+            except Exception as e:
+                logger.warning(f"[UnifiedMetadataManager] Failed to store hash for {file_path}: {e}")
+
         # Progressive UI update - emit dataChanged for this specific file
         if self.parent_window and hasattr(self.parent_window, "file_model"):
-            try:
-                from utils.path_utils import paths_equal
+            if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
+                self.parent_window.file_model.refresh_icon_for_file(file_path)
+            else:
+                try:
+                    from utils.path_utils import paths_equal
 
-                # Find the file in the model and emit dataChanged
-                for i, file in enumerate(self.parent_window.file_model.files):
-                    if paths_equal(file.full_path, file_path):
-                        top_left = self.parent_window.file_model.index(i, 0)
-                        bottom_right = self.parent_window.file_model.index(
-                            i, self.parent_window.file_model.columnCount() - 1
-                        )
-                        logger.debug(
-                            f"[UnifiedMetadataManager] Emitting progressive dataChanged for hash: '{file.filename}' at row {i}",
-                            extra={"dev_only": True}
-                        )
-                        self.parent_window.file_model.dataChanged.emit(
-                            top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
-                        )
-                        break
-            except Exception as e:
-                logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for hash {file_path}: {e}")
+                    # Find the file in the model and emit dataChanged
+                    for i, file in enumerate(self.parent_window.file_model.files):
+                        if paths_equal(file.full_path, file_path):
+                            top_left = self.parent_window.file_model.index(i, 0)
+                            bottom_right = self.parent_window.file_model.index(
+                                i, self.parent_window.file_model.columnCount() - 1
+                            )
+                            logger.debug(
+                                f"[UnifiedMetadataManager] Emitting progressive dataChanged for hash: '{file.filename}' at row {i}",
+                                extra={"dev_only": True}
+                            )
+                            self.parent_window.file_model.dataChanged.emit(
+                                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                            )
+                            break
+                except Exception as e:
+                    logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for hash {file_path}: {e}")
 
         logger.debug(
             f"[UnifiedMetadataManager] Hash calculated for {file_path}", extra={"dev_only": True}
