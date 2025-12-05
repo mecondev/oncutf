@@ -532,14 +532,14 @@ class ThemeEngine:
 
             /* Chevron icons for combobox dropdown branches */
             QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QComboBox QTreeView::branch:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -551,14 +551,14 @@ class ThemeEngine:
 
             /* Hover states for chevrons in combobox */
             QComboBox QTreeView::branch:hover:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QComboBox QTreeView::branch:hover:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -755,14 +755,14 @@ class ThemeEngine:
 
             /* Closed/Open states: icons only on adjoined branch for all states */
             QTreeView::branch:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -781,14 +781,14 @@ class ThemeEngine:
 
             /* Selected states - chevrons visible */
             QTreeView::branch:selected:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:selected:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -796,14 +796,14 @@ class ThemeEngine:
 
             /* Hover states - chevrons visible */
             QTreeView::branch:hover:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:hover:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -811,14 +811,14 @@ class ThemeEngine:
 
             /* Selected + Hover states - chevrons visible */
             QTreeView::branch:selected:hover:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:selected:hover:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -883,14 +883,14 @@ class ThemeEngine:
             }}
 
             QTreeView#hier_combo_popup::branch:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(resources/icons/chevron-right.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
             QTreeView#hier_combo_popup::branch:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
@@ -957,7 +957,7 @@ class ThemeEngine:
             }}
 
             QHeaderView::down-arrow {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(resources/icons/chevron-down.png);
                 width: 12px;
                 height: 12px;
                 padding-right: 4px;
@@ -1568,13 +1568,13 @@ class ThemeEngine:
 
                     /* Ensure chevrons are visible in combobox dropdowns */
                     QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
-                        image: url(resources/icons/feather_icons/chevron-right.svg) !important;
+                        image: url(resources/icons/chevron-right.png) !important;
                         width: 12px !important;
                         height: 12px !important;
                         padding: 2px !important;
                     }}
                     QComboBox QTreeView::branch:has-children:open:adjoins-item {{
-                        image: url(resources/icons/feather_icons/chevron-down.svg) !important;
+                        image: url(resources/icons/chevron-down.png) !important;
                         width: 12px !important;
                         height: 12px !important;
                         padding: 2px !important;

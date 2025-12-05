@@ -101,7 +101,7 @@ QTreeView::branch {
 
 QTreeView::branch:has-children:closed {
     border-image: none;
-    image: url(resources/icons/chevron-right.svg);
+    image: url(resources/icons/chevron-right.png);
 }
 
 QTreeView::branch:has-children:open {
