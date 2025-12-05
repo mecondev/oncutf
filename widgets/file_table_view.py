@@ -15,14 +15,12 @@ Custom QTableView with Windows Explorer-like behavior:
 
 # from config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
 from core.application_context import get_app_context
+from core.drag_manager import DragManager
 from core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
     QCursor,
-    QDropEvent,
-    QEvent,
     QHeaderView,
-    QItemSelection,
     QItemSelectionModel,
     QKeySequence,
     QModelIndex,
@@ -34,14 +32,12 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from core.unified_column_service import get_column_service
-from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
 from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import (
     schedule_ui_update,
 )
 from widgets.mixins import DragDropMixin, SelectionMixin
-
 
 logger = get_cached_logger(__name__)
 
