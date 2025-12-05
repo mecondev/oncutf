@@ -263,7 +263,13 @@ class ParallelHashWorker(QThread):
     def _store_hash_optimized(
         self, file_path: str, hash_value: str, algorithm: str = "crc32"
     ) -> None:
-        """Store hash using batch operations if available (thread-safe)."""
+        """Store hash with immediate persistence for progressive UI updates (thread-safe)."""
+        # Store directly in cache first for immediate availability
+        # This ensures UI updates see the hash immediately
+        self._hash_manager.store_hash(file_path, hash_value, algorithm)
+        
+        # Also queue for batch operations if batching is enabled
+        # This maintains the batch optimization for database writes
         with QMutexLocker(self._mutex):
             if self._enable_batching and self._batch_manager:
                 logger.debug(
@@ -278,9 +284,6 @@ class ParallelHashWorker(QThread):
                 self._batch_operations.append(
                     {"path": file_path, "hash": hash_value, "algorithm": algorithm}
                 )
-            else:
-                # Direct storage (thread-safe via hash_manager)
-                self._hash_manager.store_hash(file_path, hash_value, algorithm)
 
     def _update_progress(self, file_path: str, file_size: int) -> None:
         """Update progress counters and emit signals (thread-safe)."""
