@@ -90,9 +90,22 @@ class DragDropMixin:
         if not selected_rows:
             return
 
+        # Performance optimization: For large selections, collect paths lazily
         rows = sorted(selected_rows)
-        file_items = [self.model().files[r] for r in rows if 0 <= r < len(self.model().files)]
-        file_paths = [f.full_path for f in file_items if f.full_path]
+        file_count = len(rows)
+        
+        # For small selections (<100), collect all paths immediately
+        # For large selections, collect only first few for display + defer rest
+        if file_count < 100:
+            file_items = [self.model().files[r] for r in rows if 0 <= r < len(self.model().files)]
+            file_paths = [f.full_path for f in file_items if f.full_path]
+        else:
+            # Large selection: collect only first 3 paths for preview
+            preview_rows = rows[:3]
+            preview_items = [self.model().files[r] for r in preview_rows if 0 <= r < len(self.model().files)]
+            file_paths = [f.full_path for f in preview_items if f.full_path]
+            # Store row indices for lazy collection later if needed
+            self._drag_pending_rows = rows
 
         if not file_paths:
             return
@@ -129,7 +142,10 @@ class DragDropMixin:
         visual_manager = DragVisualManager.get_instance()
 
         # Determine drag type and info string based on selection
-        if len(file_paths) == 1:
+        # Use actual selection count, not just collected paths
+        actual_count = file_count if hasattr(self, '_drag_pending_rows') else len(file_paths)
+        
+        if actual_count == 1:
             drag_type = visual_manager.get_drag_type_from_path(file_paths[0])
             # For single file, show just the filename
             import os
@@ -137,8 +153,8 @@ class DragDropMixin:
             source_info = os.path.basename(file_paths[0])
         else:
             drag_type = DragType.MULTIPLE
-            # For multiple files, show count
-            source_info = f"{len(file_paths)} files"
+            # For multiple files, show count (using actual selection count)
+            source_info = f"{actual_count} files"
 
         start_drag_visual(drag_type, source_info, "file_table")
 
@@ -146,12 +162,23 @@ class DragDropMixin:
         self._start_drag_feedback_loop()
 
     def _start_drag_feedback_loop(self):
-        """Start repeated drag feedback updates using timer_manager."""
+        """Start repeated drag feedback updates using timer_manager with adaptive delay."""
         if self._is_dragging:
             self._update_drag_feedback()
-            # Schedule next update (100ms for better performance with large selections)
+            
+            # Adaptive delay based on selection size for better performance
+            # Large selections: slower updates (less CPU), small selections: faster updates (smoother)
+            selected_count = len(self._get_current_selection_safe()) if hasattr(self, '_get_current_selection_safe') else 1
+            if selected_count > 500:
+                delay = 200  # Very large: 200ms
+            elif selected_count > 100:
+                delay = 150  # Large: 150ms
+            else:
+                delay = 100  # Normal: 100ms
+            
+            # Schedule next update with adaptive delay
             self._drag_feedback_timer_id = schedule_ui_update(
-                self._start_drag_feedback_loop, delay=100
+                self._start_drag_feedback_loop, delay=delay
             )
 
     def _update_drag_feedback(self):

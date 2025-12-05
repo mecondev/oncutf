@@ -187,11 +187,13 @@ class DragVisualManager:
         cursor_pos = QCursor.pos()
         current_pos = (cursor_pos.x(), cursor_pos.y())
 
-        # Use cached widget if cursor hasn't moved much (within 5 pixels)
+        # Use cached widget if cursor hasn't moved much
+        # Increased threshold: 10 pixels (was 5) for better performance with large selections
+        cache_threshold = 10
         if self._last_widget_pos is not None:
             dx = abs(current_pos[0] - self._last_widget_pos[0])
             dy = abs(current_pos[1] - self._last_widget_pos[1])
-            if dx < 5 and dy < 5 and self._last_widget_under_cursor is not None:
+            if dx < cache_threshold and dy < cache_threshold and self._last_widget_under_cursor is not None:
                 widget_under_cursor = self._last_widget_under_cursor
             else:
                 widget_under_cursor = QApplication.widgetAt(cursor_pos)
