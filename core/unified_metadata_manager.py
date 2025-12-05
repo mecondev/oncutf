@@ -1074,16 +1074,23 @@ class UnifiedMetadataManager(QObject):
         self._hash_worker.setup_checksum_calculation(file_paths)
 
         # Connect signals (ParallelHashWorker uses different signal names)
-        self._hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated)
+        # Use Qt.QueuedConnection to ensure UI updates happen in main thread
+        from core.pyqt_imports import Qt
+        self._hash_worker.file_hash_calculated.connect(
+            self._on_file_hash_calculated, Qt.QueuedConnection
+        )
         # finished_processing emits bool (success flag) but we don't use it
         self._hash_worker.finished_processing.connect(
-            lambda _success: self._on_hash_finished()
+            lambda _success: self._on_hash_finished(), Qt.QueuedConnection
         )
         # progress_updated emits (current, total, filename) but we only need (current, total)
         self._hash_worker.progress_updated.connect(
-            lambda current, total, _filename: self._on_hash_progress(current, total)
+            lambda current, total, _filename: self._on_hash_progress(current, total),
+            Qt.QueuedConnection
         )
-        self._hash_worker.size_progress.connect(self._on_hash_size_progress)
+        self._hash_worker.size_progress.connect(
+            self._on_hash_size_progress, Qt.QueuedConnection
+        )
 
         # Start worker thread
         self._hash_worker.start()
