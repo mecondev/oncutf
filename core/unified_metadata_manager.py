@@ -767,7 +767,7 @@ class UnifiedMetadataManager(QObject):
         # Use parallel loader for all cases (1 file or many) with progressive updates
         # Dialog shown only for multiple files (2+)
         use_dialog = len(needs_loading) > 1
-        
+
         logger.info(
             f"[{source}] Loading metadata for {len(needs_loading)} file(s) "
             f"(extended={use_extended}, dialog={use_dialog})"
@@ -1057,29 +1057,36 @@ class UnifiedMetadataManager(QObject):
         self._metadata_thread.start()
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
-        """Start hash loading using existing hash worker."""
+        """Start hash loading using parallel hash worker."""
         if not files:
             return
 
-        # Create hash worker
-        from core.pyqt_imports import QThread
-        from widgets.metadata_worker import HashWorker
+        # Create parallel hash worker (inherits QThread, no separate thread needed)
+        from core.parallel_hash_worker import ParallelHashWorker
 
-        self._hash_worker = HashWorker()
-        self._hash_thread = QThread()
-        self._hash_worker.moveToThread(self._hash_thread)
+        # Extract file paths from FileItem objects
+        file_paths = [f.full_path for f in files]
 
-        # Connect signals
-        self._hash_worker.hash_calculated.connect(self._on_file_hash_calculated)
-        self._hash_worker.finished.connect(self._on_hash_finished)
-        self._hash_worker.progress.connect(self._on_hash_progress)
+        # Create worker
+        self._hash_worker = ParallelHashWorker(parent=self.parent_window)
+
+        # Setup operation
+        self._hash_worker.setup_checksum_calculation(file_paths)
+
+        # Connect signals (ParallelHashWorker uses different signal names)
+        self._hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated)
+        # finished_processing emits bool (success flag) but we don't use it
+        self._hash_worker.finished_processing.connect(
+            lambda _success: self._on_hash_finished()
+        )
+        # progress_updated emits (current, total, filename) but we only need (current, total)
+        self._hash_worker.progress_updated.connect(
+            lambda current, total, _filename: self._on_hash_progress(current, total)
+        )
         self._hash_worker.size_progress.connect(self._on_hash_size_progress)
 
-        # Start loading
-        self._hash_thread.started.connect(
-            lambda: self._hash_worker.calculate_hashes_for_files(files)
-        )
-        self._hash_thread.start()
+        # Start worker thread
+        self._hash_worker.start()
 
     # =====================================
     # Progress Tracking Methods
@@ -1155,7 +1162,7 @@ class UnifiedMetadataManager(QObject):
         if self.parent_window and hasattr(self.parent_window, "file_model"):
             try:
                 from utils.path_utils import paths_equal
-                
+
                 # Find the file in the model and emit dataChanged
                 for i, file in enumerate(self.parent_window.file_model.files):
                     if paths_equal(file.full_path, file_path):
@@ -1240,20 +1247,18 @@ class UnifiedMetadataManager(QObject):
             self._metadata_thread = None
 
     def _cleanup_hash_worker_and_thread(self) -> None:
-        """Clean up hash worker and thread."""
+        """Clean up hash worker (ParallelHashWorker is a QThread itself)."""
         if hasattr(self, "_hash_worker") and self._hash_worker:
+            # Wait for thread to finish (ParallelHashWorker inherits QThread)
+            if self._hash_worker.isRunning():
+                if not self._hash_worker.wait(3000):  # Wait max 3 seconds
+                    logger.warning("[UnifiedMetadataManager] Hash worker did not stop, terminating...")
+                    self._hash_worker.terminate()
+                    if not self._hash_worker.wait(1000):  # Wait another 1 second
+                        logger.error("[UnifiedMetadataManager] Hash worker did not terminate")
+
             self._hash_worker.deleteLater()
             self._hash_worker = None
-
-        if hasattr(self, "_hash_thread") and self._hash_thread:
-            self._hash_thread.quit()
-            if not self._hash_thread.wait(3000):  # Wait max 3 seconds
-                logger.warning("[UnifiedMetadataManager] Hash thread did not stop, terminating...")
-                self._hash_thread.terminate()
-                if not self._hash_thread.wait(1000):  # Wait another 1 second
-                    logger.error("[UnifiedMetadataManager] Hash thread did not terminate")
-            self._hash_thread.deleteLater()
-            self._hash_thread = None
 
     # =====================================
     # Metadata Saving Methods
