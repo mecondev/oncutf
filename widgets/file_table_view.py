@@ -1241,6 +1241,7 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
 
         # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:
+            self._update_drag_feedback()
             return
 
         super().keyPressEvent(event)
@@ -1259,6 +1260,7 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
         """Handle key release events, including modifier changes during drag."""
         # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:
+            self._update_drag_feedback()
             return
 
         super().keyReleaseEvent(event)

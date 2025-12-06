@@ -67,7 +67,7 @@ _cleanup_done = False
 _app_quit_called = False
 
 
-def cleanup_on_exit():
+def cleanup_on_exit() -> None:
     """Cleanup function to run on application exit or signal."""
     global _cleanup_done
     if _cleanup_done:
@@ -92,7 +92,7 @@ def cleanup_on_exit():
         logger.warning(f"Error in emergency cleanup: {e}")
 
 
-def signal_handler(signum, _frame):
+def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
     logger.info(f"Received signal {signum}, performing cleanup...")
     cleanup_on_exit()

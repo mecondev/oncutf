@@ -118,15 +118,13 @@ class ApplicationService:
         model = self.main_window.file_model
         status_manager = self.main_window.status_manager
 
-        count = 0
         total = len(items)
 
         if status_manager:
             status_manager.show_message(f"Loading metadata... 0/{total}")
 
-        # Use streaming loader
-        for item, _ in manager.load_metadata_streaming(items, use_extended):
-            count += 1
+        # Use streaming loader with enumerate for progress tracking
+        for count, (item, _) in enumerate(manager.load_metadata_streaming(items, use_extended), start=1):
             # Update model for this specific item
             if model:
                 model.update_file_metadata(item)

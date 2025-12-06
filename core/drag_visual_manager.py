@@ -185,71 +185,7 @@ class DragVisualManager:
             self._clear_cache()
             self._update_cursor()
 
-    def update_drag_feedback_for_widget(self, source_widget, drag_source: str) -> bool:
-        """
-        Update drag feedback based on cursor position - common logic for all widgets.
 
-        Args:
-            source_widget: The widget that started the drag (FileTreeView or FileTableView)
-            drag_source: String identifier ("file_tree" or "file_table")
-
-        Returns:
-            bool: True to continue drag, False to end drag
-        """
-        # Update modifier state first (for Ctrl/Shift changes during drag)
-        self.update_modifier_state()
-
-        # Get cursor position
-        cursor_pos = QCursor.pos()
-        current_pos = (cursor_pos.x(), cursor_pos.y())
-
-        # Use cached widget if cursor hasn't moved much
-        # Increased threshold: 10 pixels (was 5) for better performance with large selections
-        cache_threshold = 10
-        if self._last_widget_pos is not None:
-            dx = abs(current_pos[0] - self._last_widget_pos[0])
-            dy = abs(current_pos[1] - self._last_widget_pos[1])
-            if dx < cache_threshold and dy < cache_threshold and self._last_widget_under_cursor is not None:
-                widget_under_cursor = self._last_widget_under_cursor
-            else:
-                widget_under_cursor = QApplication.widgetAt(cursor_pos)
-                self._last_widget_pos = current_pos
-                self._last_widget_under_cursor = widget_under_cursor
-        else:
-            widget_under_cursor = QApplication.widgetAt(cursor_pos)
-            self._last_widget_pos = current_pos
-            self._last_widget_under_cursor = widget_under_cursor
-
-        if not widget_under_cursor:
-            # Cursor is outside application window - this should end the drag
-            self._last_widget_pos = None
-            self._last_widget_under_cursor = None
-            return False  # Signal to end drag
-
-        # Check if cursor is still over the source widget
-        current_widget = widget_under_cursor
-        still_over_source = False
-
-        while current_widget:
-            if current_widget is source_widget:
-                still_over_source = True
-                break
-            current_widget = current_widget.parent()
-
-        # If still over source widget, show NEUTRAL (can't drop on self)
-        if still_over_source:
-            self.update_drop_zone_state(DropZoneState.NEUTRAL)
-            return True  # Continue drag
-
-        # Check if over valid drop target
-        is_valid = self.is_valid_drop_target(widget_under_cursor, drag_source)
-
-        if is_valid:
-            self.update_drop_zone_state(DropZoneState.VALID)
-        else:
-            self.update_drop_zone_state(DropZoneState.INVALID)
-
-        return True  # Continue drag
 
     # =====================================
     # Cursor Management
@@ -306,7 +242,7 @@ class DragVisualManager:
                             else ["plus"]
                         )
                     else:
-                        action_icons = ["download"]  # Replace + Shallow
+                        action_icons = []  # Replace + Shallow (no icon)
                 else:
                     # For folders and multiple items
                     action_icons = (
@@ -316,7 +252,7 @@ class DragVisualManager:
                         if self._modifier_state == ModifierState.CTRL
                         else ["plus", "layers"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else ["download"]
+                        else []
                     )
             else:  # NEUTRAL - show preview
                 if self._drag_type == DragType.FILE:
@@ -326,7 +262,7 @@ class DragVisualManager:
                         else (
                             ["plus"]
                             if self._modifier_state == ModifierState.SHIFT
-                            else ["download"]
+                            else []
                         )
                     )
                 else:
@@ -337,7 +273,7 @@ class DragVisualManager:
                         if self._modifier_state == ModifierState.CTRL
                         else ["plus", "layers"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else ["download"]
+                        else []
                     )
 
         return self._create_composite_cursor(base_icon, action_icons)
@@ -402,9 +338,9 @@ class DragVisualManager:
         # We need to restore the full logic for action icons here
         # to support different colors for invalid/valid/metadata states
         
-        offset_x = 24
+        offset_x = 28  # Shifted right by 4px (was 24)
         offset_y = 24
-        icon_size = ICON_SIZES["SMALL"]
+        icon_size = ICON_SIZES["MEDIUM"]
 
         for i, icon_name in enumerate(action_icons):
             icon = get_menu_icon(icon_name)
@@ -461,13 +397,10 @@ class DragVisualManager:
                     color_painter.end()
                     icon_pixmap = colored_pixmap
 
-                # Draw small background circle for contrast
-                painter.setPen(Qt.NoPen)
-                painter.setBrush(QColor(255, 255, 255, 200))
-                painter.drawEllipse(offset_x + (i * 12), offset_y, 16, 16)
-
-                # Draw icon
-                painter.drawPixmap(offset_x + (i * 12), offset_y, icon_pixmap)
+                # Draw icon without background circle
+                # Position icons with minimal spacing
+                x_pos = offset_x + (i * (icon_size - 4)) if len(action_icons) > 1 else offset_x
+                painter.drawPixmap(x_pos, offset_y, icon_pixmap)
 
         painter.end()
 
@@ -477,7 +410,10 @@ class DragVisualManager:
         self, source_widget: QWidget, drag_source: str
     ) -> bool:
         """Update drag feedback based on current cursor position."""
-        # Debounce check (50ms)
+        # Update modifier state immediately (no debounce) for responsiveness
+        self.update_modifier_state()
+
+        # Debounce check (50ms) for heavy widget lookup
         import time
         current_time = time.time()
         if current_time - self._last_feedback_time < 0.05:

@@ -430,6 +430,18 @@ class FileTreeView(QTreeView):
     # CUSTOM SINGLE-ITEM DRAG IMPLEMENTATION
     # =====================================
 
+    def keyPressEvent(self, event):
+        """Handle key press events, including modifier changes during drag."""
+        if self._is_dragging:
+            self._update_drag_feedback()
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        """Handle key release events, including modifier changes during drag."""
+        if self._is_dragging:
+            self._update_drag_feedback()
+        super().keyReleaseEvent(event)
+
     def mousePressEvent(self, event):
         """Handle mouse press for custom drag detection"""
         if event.button() == Qt.LeftButton:
@@ -477,6 +489,10 @@ class FileTreeView(QTreeView):
             if self._drag_start_pos:
                 self._drag_start_pos = None
             super().mouseMoveEvent(event)
+            return
+
+        # Check drag distance threshold to prevent accidental drags (e.g. when clicking chevrons)
+        if (event.pos() - self._drag_start_pos).manhattanLength() < QApplication.startDragDistance():
             return
 
         # Start our custom drag
