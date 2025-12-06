@@ -20,7 +20,17 @@ import os
 from enum import Enum
 
 from config import ICON_SIZES
-from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
+from core.pyqt_imports import (
+    QApplication,
+    QColor,
+    QCursor,
+    QIcon,
+    QPainter,
+    QPixmap,
+    QRect,
+    Qt,
+    QWidget,
+)
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
 
@@ -379,7 +389,7 @@ class DragVisualManager:
             painter.setFont(font)
             
             # Draw background for text
-            text_rect = Qt.QRect(40, 10, text_width, text_height)
+            text_rect = QRect(40, 10, text_width, text_height)
             path = QPainter.QPainterPath() # type: ignore
             path.addRoundedRect(text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4) # type: ignore
             
