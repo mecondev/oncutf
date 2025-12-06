@@ -106,7 +106,7 @@ QTreeView::branch:has-children:closed {
 
 QTreeView::branch:has-children:open {
     border-image: none;
-    image: url(resources/icons/chevron-down.svg);
+    image: url(resources/icons/chevron-down.png);
 }
 
 /* ===== QPushButton ===== */

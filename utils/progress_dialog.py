@@ -190,6 +190,10 @@ class ProgressDialog(QDialog):
         # Allow ESC for non-save operations (metadata loading, hash calc, etc.)
         return False
 
+    def was_canceled(self) -> bool:
+        """Check if the dialog was canceled."""
+        return self._is_cancelling
+
     def _handle_cancellation(self) -> None:
         """Handle user cancellation with proper cleanup."""
         if self._is_cancelling:

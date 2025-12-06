@@ -112,17 +112,22 @@ class ThemeIconLoader:
         """
         theme = theme or self.theme
 
-        # Try feather icons folder first (more modern, consistent style)
-        feather_path = os.path.join(self.base_dir, "feather_icons", f"{name}.svg")
-        if os.path.exists(feather_path):
-            return feather_path
+        # Try feather icons folder first (PNG only - no SVG support)
+        feather_png_path = os.path.join(self.base_dir, "feather_icons", f"{name}.png")
+        if os.path.exists(feather_png_path):
+            return feather_png_path
 
-        # Fall back to other folders if needed
-        fallback_path = os.path.join(self.base_dir, f"{name}.svg")
-        if os.path.exists(fallback_path):
-            return fallback_path
+        # Try feather icons folder (SVG)
+        feather_svg_path = os.path.join(self.base_dir, "feather_icons", f"{name}.svg")
+        if os.path.exists(feather_svg_path):
+            return feather_svg_path
 
-        logger.warning(f"Icon '{name}' not found in any icon directories")
+        # Fall back to root icons folder (PNG only)
+        fallback_png_path = os.path.join(self.base_dir, f"{name}.png")
+        if os.path.exists(fallback_png_path):
+            return fallback_png_path
+
+        # Silently return empty string if not found (no warning spam)
         return ""
 
     def load_icon(self, name: str, theme: str | None = None) -> QIcon:
@@ -220,7 +225,7 @@ def get_menu_icon_path(icon_name: str) -> str:
     Get the absolute path to a menu icon file.
 
     Args:
-        icon_name: Name of the icon (without .svg extension)
+        icon_name: Name of the icon (without extension)
 
     Returns:
         str: Absolute path to the icon file
@@ -228,22 +233,23 @@ def get_menu_icon_path(icon_name: str) -> str:
     try:
         from utils.path_utils import get_resource_path
 
-        # Construct the relative path to the icon
-        relative_path = f"resources/icons/feather_icons/{icon_name}.svg"
+        # Try PNG first
+        relative_path_png = f"resources/icons/feather_icons/{icon_name}.png"
+        icon_path_png = get_resource_path(relative_path_png)
 
-        # Get absolute path using the robust path resolver
-        icon_path = get_resource_path(relative_path)
+        if icon_path_png.exists():
+            return str(icon_path_png)
 
-        # Return as string for QIcon compatibility
-        icon_path_str = str(icon_path)
+        # Try SVG
+        relative_path_svg = f"resources/icons/feather_icons/{icon_name}.svg"
+        icon_path_svg = get_resource_path(relative_path_svg)
 
-        # Log success/failure for debugging
-        if icon_path.exists():
-            logger.debug(f"Icon found: {icon_name} -> {icon_path_str}", extra={"dev_only": True})
-        else:
-            logger.warning(f"Icon not found: {icon_name} at {icon_path_str}")
+        if icon_path_svg.exists():
+            return str(icon_path_svg)
 
-        return icon_path_str
+        # Log warning if neither found
+        logger.warning(f"Icon not found: {icon_name}")
+        return ""
 
     except Exception as e:
         logger.error(f"Error getting icon path for '{icon_name}': {e}")

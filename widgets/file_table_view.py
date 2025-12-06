@@ -1236,8 +1236,11 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
             event.accept()
             return
 
-        # Don't handle ESC at all - let it pass through to dialogs and other components
-        # Cursor cleanup is handled automatically by other mechanisms
+        # Handle ESC to cancel drag
+        if event.key() == Qt.Key_Escape and self._is_dragging:
+            self._end_custom_drag()
+            event.accept()
+            return
 
         # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:

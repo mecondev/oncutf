@@ -198,47 +198,54 @@ class DragDropMixin:
         if not self._is_dragging:
             return
 
-        # Stop and cleanup drag feedback timer
-        if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
-            cancel_timer(self._drag_feedback_timer_id)
-            self._drag_feedback_timer_id = None
+        try:
+            # Stop and cleanup drag feedback timer
+            if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
+                cancel_timer(self._drag_feedback_timer_id)
+                self._drag_feedback_timer_id = None
 
-        # Force immediate cursor cleanup
-        self._force_cursor_cleanup()
+            # Force immediate cursor cleanup
+            self._force_cursor_cleanup()
 
-        # Get widget under cursor for drop detection
-        cursor_pos = QCursor.pos()
-        widget_under_cursor = QApplication.widgetAt(cursor_pos)
+            # Deactivate drag cancel filter
+            from widgets.file_tree_view import _drag_cancel_filter
+            if _drag_cancel_filter.is_active():
+                _drag_cancel_filter.deactivate()
 
-        dropped_successfully = False
+            # Get widget under cursor for drop detection
+            cursor_pos = QCursor.pos()
+            widget_under_cursor = QApplication.widgetAt(cursor_pos)
 
-        if widget_under_cursor:
-            # Walk up parent hierarchy to find drop targets
-            parent = widget_under_cursor
-            while parent and not dropped_successfully:
-                if parent.__class__.__name__ == "MetadataTreeView":
-                    dropped_successfully = self._handle_drop_on_metadata_tree()
-                    break
-                parent = parent.parent()
+            dropped_successfully = False
 
-        # Clean up drag state
-        self._is_dragging = False
-        self._drag_data = None
+            if widget_under_cursor:
+                # Walk up parent hierarchy to find drop targets
+                parent = widget_under_cursor
+                while parent and not dropped_successfully:
+                    if parent.__class__.__name__ == "MetadataTreeView":
+                        dropped_successfully = self._handle_drop_on_metadata_tree()
+                        break
+                    parent = parent.parent()
 
-        # Record drag end time for selection protection
-        import time
+        finally:
+            # Clean up drag state
+            self._is_dragging = False
+            self._drag_data = None
 
-        self._drag_end_time = time.time() * 1000  # Store in milliseconds
+            # Record drag end time for selection protection
+            import time
 
-        # Cleanup visual feedback
-        end_drag_visual()
+            self._drag_end_time = time.time() * 1000  # Store in milliseconds
 
-        # Notify DragManager
-        drag_manager = DragManager.get_instance()
-        drag_manager.end_drag("file_table")
+            # Cleanup visual feedback
+            end_drag_visual()
 
-        # Always restore hover after drag ends
-        self._restore_hover_after_drag()
+            # Notify DragManager
+            drag_manager = DragManager.get_instance()
+            drag_manager.end_drag("file_table")
+
+            # Always restore hover after drag ends
+            self._restore_hover_after_drag()
 
     def _restore_hover_after_drag(self):
         """Restore hover state after drag ends by sending a fake mouse move event."""

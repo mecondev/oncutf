@@ -185,7 +185,16 @@ class DragVisualManager:
             self._clear_cache()
             self._update_cursor()
 
+    def update_source_info(self, source_info: str) -> None:
+        """Update source info text and refresh cursor.
 
+        Args:
+            source_info: New text to display (e.g., "5 folders / 127 items")
+        """
+        if self._source_info != source_info:
+            self._source_info = source_info
+            self._clear_cache()
+            self._update_cursor()
 
     # =====================================
     # Cursor Management
@@ -324,12 +333,12 @@ class DragVisualManager:
         # Draw text label (Virtual Drag Proxy)
         if self._source_info:
             painter.setFont(font)
-            
+
             # Draw background for text
             text_rect = QRect(40, 10, text_width, text_height)
             path = QPainterPath()
             path.addRoundedRect(text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4)
-            
+
             painter.fillPath(path, QColor(40, 40, 40, 200))
             painter.setPen(QColor(255, 255, 255))
             painter.drawText(text_rect, Qt.AlignCenter, self._source_info)
@@ -337,7 +346,7 @@ class DragVisualManager:
         # Draw action icons (overlay)
         # We need to restore the full logic for action icons here
         # to support different colors for invalid/valid/metadata states
-        
+
         offset_x = 28  # Shifted right by 4px (was 24)
         offset_y = 24
         icon_size = ICON_SIZES["MEDIUM"]
@@ -347,7 +356,7 @@ class DragVisualManager:
             if not icon.isNull():
                 # Create pixmap for the icon
                 icon_pixmap = icon.pixmap(icon_size, icon_size)
-                
+
                 # Apply color overlays for visual feedback
                 if icon_name == "x":
                     # Red for invalid zones
@@ -418,7 +427,7 @@ class DragVisualManager:
         current_time = time.time()
         if current_time - self._last_feedback_time < 0.05:
             return True
-            
+
         self._last_feedback_time = current_time
 
         cursor_pos = QCursor.pos()
@@ -624,3 +633,8 @@ def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
     return DragVisualManager.get_instance().update_drag_feedback_for_widget(
         source_widget, drag_source
     )
+
+
+def update_source_info(source_info: str) -> None:
+    """Update source info text during drag."""
+    DragVisualManager.get_instance().update_source_info(source_info)

@@ -491,9 +491,34 @@ class MetadataTreeView(QTreeView):
             if files:
                 event.acceptProposedAction()
                 self._perform_drag_cleanup(_drag_cancel_filter)
-                # NOTE: No longer emit signal - FileTableView handles metadata loading directly
+                
+                # Check for modifiers (Ctrl = Extended Metadata)
+                modifiers = event.keyboardModifiers()
+                use_extended = bool(modifiers & Qt.ControlModifier)
+                
+                # Trigger metadata load via parent window -> application service
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, "load_metadata_for_items"):
+                    # We need to convert file paths to FileItems or let the service handle paths
+                    # The service expects FileItems. We need to find them in the model.
+                    if hasattr(parent_window, "file_model"):
+                        file_items = []
+                        for file_path in files:
+                            # Find item in model by path
+                            for item in parent_window.file_model.files:
+                                if item.path == file_path:
+                                    file_items.append(item)
+                                    break
+                        
+                        if file_items:
+                            parent_window.load_metadata_for_items(
+                                file_items, 
+                                use_extended=use_extended, 
+                                source="drag_drop"
+                            )
+                
                 logger.debug(
-                    f"[MetadataTreeView] Drop accepted but not processed (handled by FileTableView): {len(files)} files",
+                    f"[MetadataTreeView] Drop processed: {len(files)} files (extended={use_extended})",
                     extra={"dev_only": True},
                 )
             else:

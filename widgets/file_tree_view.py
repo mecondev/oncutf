@@ -273,9 +273,17 @@ class FileTreeView(QTreeView):
         try:
             from utils.icons_loader import get_menu_icon
 
-            # Try to load custom icons
-            _closed_icon = get_menu_icon("chevron-right")
-            _open_icon = get_menu_icon("chevron-down")
+            # Try to load custom icons (skip if not found)
+            try:
+                _closed_icon = get_menu_icon("chevron-right")
+                _open_icon = get_menu_icon("chevron-down")
+            except Exception:
+                # Icons not found, skip custom setup
+                logger.debug(
+                    "[FileTreeView] Custom branch icons not found, using Qt defaults",
+                    extra={"dev_only": True}
+                )
+                return
 
             # Set the icons on the style
             style = self.style()
@@ -289,7 +297,10 @@ class FileTreeView(QTreeView):
             )
 
         except Exception as e:
-            logger.warning(f"[FileTreeView] Failed to setup custom branch icons: {e}")
+            logger.debug(
+                f"[FileTreeView] Branch icons setup skipped: {e}",
+                extra={"dev_only": True}
+            )
             # Fallback to default Qt icons
 
     def _setup_icon_delegate(self) -> None:
@@ -549,6 +560,17 @@ class FileTreeView(QTreeView):
         if not clicked_path or not self._is_valid_drag_target(clicked_path):
             return
 
+        # Block drag on mount points and root drives to prevent UI freeze
+        import os
+        from utils.folder_counter import is_mount_point_or_root
+
+        if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
+            logger.warning(
+                f"[FileTreeView] Blocked drag on mount point/root: {clicked_path}",
+                extra={"dev_only": True},
+            )
+            return
+
         # Store the single item being dragged
         self._drag_path = clicked_path
 
@@ -575,10 +597,26 @@ class FileTreeView(QTreeView):
         drag_manager = DragManager.get_instance()
         drag_manager.start_drag("file_tree")
 
+        # Determine initial display info
+        is_folder = os.path.isdir(clicked_path)
+
+        if is_folder:
+            # For folders, start with folder name and update with count
+            initial_info = os.path.basename(clicked_path)
+        else:
+            # For files, show "1 item"
+            initial_info = "1 item"
+
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
         drag_type = visual_manager.get_drag_type_from_path(clicked_path)
-        start_drag_visual(drag_type, clicked_path, "file_tree")
+        start_drag_visual(drag_type, initial_info, "file_tree")
+
+        # For folders, schedule async count update (hybrid approach)
+        if is_folder:
+            from utils.timer_manager import schedule_ui_update
+
+            schedule_ui_update(lambda: self._update_folder_count(clicked_path), delay=10)
 
         # Set initial drag widget for zone validation
         logger.debug(
@@ -805,6 +843,43 @@ class FileTreeView(QTreeView):
             )
             QApplication.postEvent(self, fake_move_event)
 
+    def _update_folder_count(self, folder_path: str) -> None:
+        """Update drag cursor with folder contents count (hybrid approach with timeout).
+
+        This runs asynchronously after drag starts to provide accurate count without
+        blocking the drag start. Uses timeout to prevent lag on large folders.
+        """
+        if not self._is_dragging or self._drag_path != folder_path:
+            # Drag ended or path changed, skip update
+            return
+
+        from core.drag_visual_manager import update_source_info
+        from utils.folder_counter import count_folder_contents
+
+        # Check if we're in recursive mode (Ctrl pressed)
+        modifiers = QApplication.keyboardModifiers()
+        is_recursive = bool(modifiers & Qt.ControlModifier)
+
+        # Count with appropriate mode
+        count = count_folder_contents(
+            folder_path, recursive=is_recursive, timeout_ms=100.0  # 100ms max to keep drag responsive
+        )
+
+        # Format and update display
+        display_text = count.format_display()
+
+        # Don't add mode indicators - keep it clean and simple
+        # The format is already clear from the content
+
+        # Update cursor text
+        update_source_info(display_text)
+        
+        logger.debug(
+            f"[FileTreeView] Updated drag count: {display_text} "
+            f"(recursive={is_recursive}, timeout={count.timed_out}, {count.elapsed_ms:.1f}ms)",
+            extra={"dev_only": True}
+        )
+
     def _handle_drop_on_table(self):
         """Handle drop on file table with new 4-modifier logic"""
         if not self._drag_path:
@@ -826,6 +901,15 @@ class FileTreeView(QTreeView):
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""
         if os.path.isdir(path):
+            # Block dragging of mount points and root drives to prevent UI freeze
+            from utils.folder_counter import is_mount_point_or_root
+
+            if is_mount_point_or_root(path):
+                logger.warning(
+                    f"[FileTreeView] Blocked drag of mount point/root: {path}",
+                    extra={"dev_only": True},
+                )
+                return False
             return True
 
         # For files, check extension
