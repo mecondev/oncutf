@@ -63,6 +63,7 @@ from PyQt5.QtGui import (
     QKeySequence,
     QMouseEvent,
     QPainter,
+    QPainterPath,
     QPalette,
     QPen,
     QPixmap,

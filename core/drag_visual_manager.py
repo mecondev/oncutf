@@ -26,6 +26,7 @@ from core.pyqt_imports import (
     QCursor,
     QIcon,
     QPainter,
+    QPainterPath,
     QPixmap,
     QRect,
     Qt,
@@ -390,8 +391,8 @@ class DragVisualManager:
             
             # Draw background for text
             text_rect = QRect(40, 10, text_width, text_height)
-            path = QPainter.QPainterPath() # type: ignore
-            path.addRoundedRect(text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4) # type: ignore
+            path = QPainterPath()
+            path.addRoundedRect(text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4)
             
             painter.fillPath(path, QColor(40, 40, 40, 200))
             painter.setPen(QColor(255, 255, 255))
