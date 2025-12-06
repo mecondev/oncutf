@@ -399,25 +399,74 @@ class DragVisualManager:
             painter.drawText(text_rect, Qt.AlignCenter, self._source_info)
 
         # Draw action icons (overlay)
-        # ... existing action icon drawing code ...
+        # We need to restore the full logic for action icons here
+        # to support different colors for invalid/valid/metadata states
         
-        # We need to copy the rest of the function or rewrite it.
-        # Since I'm using replace_string_in_file, I should be careful.
-        
-        # Let's continue with action icons
         offset_x = 24
         offset_y = 24
+        icon_size = ICON_SIZES["SMALL"]
 
         for i, icon_name in enumerate(action_icons):
             icon = get_menu_icon(icon_name)
             if not icon.isNull():
+                # Create pixmap for the icon
+                icon_pixmap = icon.pixmap(icon_size, icon_size)
+                
+                # Apply color overlays for visual feedback
+                if icon_name == "x":
+                    # Red for invalid zones
+                    colored_pixmap = QPixmap(icon_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
+
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter.drawPixmap(0, 0, icon_pixmap)
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))
+                    color_painter.end()
+                    icon_pixmap = colored_pixmap
+
+                elif (
+                    icon_name in ["download", "download-cloud"]
+                    and self._drag_source == "file_table"
+                ):
+                    # Green for metadata drops
+                    colored_pixmap = QPixmap(icon_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
+
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter.drawPixmap(0, 0, icon_pixmap)
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))
+                    color_painter.end()
+                    icon_pixmap = colored_pixmap
+
+                elif icon_name == "info":
+                    # Color based on modifier state
+                    colored_pixmap = QPixmap(icon_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
+
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter.drawPixmap(0, 0, icon_pixmap)
+
+                    if self._modifier_state == ModifierState.SHIFT:
+                        color = QColor(255, 140, 0)  # Orange for extended metadata
+                    else:
+                        color = QColor(46, 204, 113)  # Green for fast metadata
+
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    color_painter.fillRect(colored_pixmap.rect(), color)
+                    color_painter.end()
+                    icon_pixmap = colored_pixmap
+
                 # Draw small background circle for contrast
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(QColor(255, 255, 255, 200))
                 painter.drawEllipse(offset_x + (i * 12), offset_y, 16, 16)
 
                 # Draw icon
-                icon_pixmap = icon.pixmap(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
                 painter.drawPixmap(offset_x + (i * 12), offset_y, icon_pixmap)
 
         painter.end()
