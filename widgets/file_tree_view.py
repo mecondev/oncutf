@@ -441,18 +441,6 @@ class FileTreeView(QTreeView):
     # CUSTOM SINGLE-ITEM DRAG IMPLEMENTATION
     # =====================================
 
-    def keyPressEvent(self, event):
-        """Handle key press events, including modifier changes during drag."""
-        if self._is_dragging:
-            self._update_drag_feedback()
-        super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        """Handle key release events, including modifier changes during drag."""
-        if self._is_dragging:
-            self._update_drag_feedback()
-        super().keyReleaseEvent(event)
-
     def mousePressEvent(self, event):
         """Handle mouse press for custom drag detection"""
         if event.button() == Qt.LeftButton:
@@ -562,6 +550,7 @@ class FileTreeView(QTreeView):
 
         # Block drag on mount points and root drives to prevent UI freeze
         import os
+
         from utils.folder_counter import is_mount_point_or_root
 
         if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
@@ -599,13 +588,8 @@ class FileTreeView(QTreeView):
 
         # Determine initial display info
         is_folder = os.path.isdir(clicked_path)
-
-        if is_folder:
-            # For folders, start with folder name and update with count
-            initial_info = os.path.basename(clicked_path)
-        else:
-            # For files, show "1 item"
-            initial_info = "1 item"
+        # Use folder name for folders, "1 item" for files
+        initial_info = os.path.basename(clicked_path) if is_folder else "1 item"
 
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
@@ -873,7 +857,7 @@ class FileTreeView(QTreeView):
 
         # Update cursor text
         update_source_info(display_text)
-        
+
         logger.debug(
             f"[FileTreeView] Updated drag count: {display_text} "
             f"(recursive={is_recursive}, timeout={count.timed_out}, {count.elapsed_ms:.1f}ms)",

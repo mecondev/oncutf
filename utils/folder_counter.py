@@ -235,14 +235,11 @@ def is_mount_point_or_root(path: str) -> bool:
 
     # Linux/macOS: Check common mount directories AND their direct children
     mount_prefixes = ("/mnt", "/media", "/Volumes")
-    
+
     # Check if path itself is a mount directory
     if path in mount_prefixes:
         return True
-    
+
     # Check if path is a direct child of a mount directory (e.g., /mnt/disk1)
     parent = os.path.dirname(path)
-    if parent in mount_prefixes:
-        return True
-
-    return False
+    return parent in mount_prefixes

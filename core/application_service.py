@@ -120,11 +120,11 @@ class ApplicationService:
         metadata_tree = self.main_window.metadata_tree_view
 
         total = len(items)
-        
+
         # Single file loading - Use WaitCursor
         if total == 1:
             from utils.cursor_helper import wait_cursor
-            
+
             with wait_cursor():
                 if status_manager:
                     status_manager.set_status(f"Loading metadata... 0/{total}")
@@ -134,21 +134,21 @@ class ApplicationService:
                     # Update model for this specific item
                     if model:
                         model.update_file_metadata(item)
-                    
+
                     # Update Metadata Tree immediately for single file
                     if metadata_tree:
                         metadata_tree._render_metadata_view(metadata, context=f"single_load_{source}")
 
                 if status_manager:
                     status_manager.set_status(f"Metadata loaded for {total} files", auto_reset=True, reset_delay=3000)
-                    
+
         # Multiple files loading - Use ProgressDialog
         else:
             from utils.progress_dialog import ProgressDialog
-            
+
             # Determine operation type for colors
             op_type = "metadata_extended" if use_extended else "metadata_basic"
-            
+
             # Create progress dialog
             progress = ProgressDialog(
                 parent=self.main_window,
@@ -158,7 +158,7 @@ class ApplicationService:
             progress.set_status(f"Load metadata for {total} files")
             progress.set_filename("Processing...")
             progress.show()
-            
+
             # Update Metadata Tree to show multiple selection state (empty or message)
             if metadata_tree:
                 metadata_tree.show_empty_state("Multiple files selected")
@@ -168,10 +168,10 @@ class ApplicationService:
                 for count, (item, _) in enumerate(manager.load_metadata_streaming(items, use_extended), start=1):
                     # Check cancellation more frequently
                     QApplication.processEvents()
-                    
+
                     if progress.was_canceled():
                         break
-                        
+
                     # Update model for this specific item
                     if model:
                         model.update_file_metadata(item)
@@ -179,7 +179,7 @@ class ApplicationService:
                     # Update progress dialog
                     progress.set_progress(count, total)
                     progress.set_filename(f"Processing: {item.name}")
-                    
+
                     # Update status every 5 items or last item to reduce overhead
                     if status_manager and (count % 5 == 0 or count == total):
                         status_manager.set_status(f"Loading metadata... {count}/{total}")

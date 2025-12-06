@@ -727,10 +727,7 @@ class UnifiedMetadataManager(QObject):
             )
 
             if has_valid_cache:
-                if cache_entry.is_extended and not use_extended:
-                    yield item, cache_entry.data
-                    continue
-                elif cache_entry.is_extended == use_extended:
+                if cache_entry.is_extended and not use_extended or cache_entry.is_extended == use_extended:
                     yield item, cache_entry.data
                     continue
 
