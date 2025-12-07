@@ -388,7 +388,7 @@ class EventHandlerManager:
             logger.debug(f"[FileTable] Could not check undo/redo state: {e}", extra={"dev_only": True})
             action_undo.setEnabled(False)
             action_redo.setEnabled(False)
-        
+
         action_show_history.setEnabled(True)  # Always available
 
         menu.addSeparator()

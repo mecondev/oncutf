@@ -137,7 +137,6 @@ class MainWindow(QMainWindow):
         Show command history dialog (Ctrl+Y) - displays chronological undo/redo stack.
 
         Currently shows MetadataHistoryDialog (metadata operations only).
-        
         TODO: Implement unified command history dialog that shows:
         - All operations in chronological order (rename + metadata + batch)
         - Ability to jump to any point in history
@@ -145,7 +144,7 @@ class MainWindow(QMainWindow):
         """
         try:
             from widgets.metadata_history_dialog import MetadataHistoryDialog
-            
+
             dialog = MetadataHistoryDialog(self)
             dialog.exec_()
         except Exception as e:

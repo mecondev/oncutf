@@ -796,7 +796,7 @@ class UnifiedMetadataManager(QObject):
 
         # Check what items need loading vs what's already cached
         needs_loading = []
-        
+
         # Use batch cache retrieval for performance
         if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
             # Get all paths
@@ -899,7 +899,7 @@ class UnifiedMetadataManager(QObject):
             _loading_dialog.set_status(
                 "Loading metadata..." if not use_extended else "Loading extended metadata..."
             )
-            
+
             # Use smooth show to prevent shadow flicker and ensure proper painting
             from utils.dialog_utils import show_dialog_smooth
             show_dialog_smooth(_loading_dialog)
@@ -918,7 +918,7 @@ class UnifiedMetadataManager(QObject):
         from utils.file_size_calculator import calculate_files_total_size
 
         total_size = calculate_files_total_size(needs_loading)
-        
+
         # Update dialog with total size if available
         if _loading_dialog:
             _loading_dialog.start_progress_tracking(total_size)

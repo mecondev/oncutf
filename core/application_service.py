@@ -10,7 +10,7 @@ Date: 2025-06-15
 
 import os
 
-from core.pyqt_imports import QApplication, QModelIndex, Qt
+from core.pyqt_imports import QModelIndex, Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 

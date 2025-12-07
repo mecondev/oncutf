@@ -233,7 +233,7 @@ class MetadataHistoryDialog(QDialog):
         """Setup keyboard shortcuts."""
         # Dialog-specific Ctrl+Z/Ctrl+R shortcuts removed - global shortcuts apply
         # Buttons provide explicit "undo/redo selected operation" functionality
-        
+
         # Refresh shortcut (F5) - dialog-specific, doesn't conflict with global
         refresh_shortcut = QShortcut(QKeySequence("F5"), self)
         refresh_shortcut.activated.connect(self._load_history)

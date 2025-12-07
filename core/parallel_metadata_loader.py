@@ -107,7 +107,7 @@ class ParallelMetadataLoader:
         try:
             # Use ThreadPoolExecutor for parallel ExifTool execution
             executor = ThreadPoolExecutor(max_workers=self.max_workers)
-            
+
             try:
                 # Submit all tasks
                 future_to_item = {

@@ -163,13 +163,13 @@ class ProgressDialog(QDialog):
     def keyPressEvent(self, event) -> None:
         """Handle ESC key for cancellation with improved responsiveness and save protection."""
         key = event.key()
-        
+
         logger.debug(
             f"[ProgressDialog] keyPressEvent: key={key}, ESC={Qt.Key_Escape}, "
             f"is_cancelling={self._is_cancelling}, operation={self.operation_type}",
             extra={"dev_only": True}
         )
-        
+
         if key == Qt.Key_Escape:
             # If already cancelling, ignore
             if self._is_cancelling:

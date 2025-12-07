@@ -250,7 +250,7 @@ class ExifToolWrapper:
                 encoding="utf-8",
                 errors="replace",
             )
-            
+
             # Register process for potential cancellation
             # Check if we're running in a ParallelMetadataLoader context
             if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
@@ -269,11 +269,9 @@ class ExifToolWrapper:
             finally:
                 # Unregister process
                 if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
-                    with self._loader._process_lock:
-                        try:
-                            self._loader._active_processes.remove(process)
-                        except ValueError:
-                            pass  # Already removed or not in list
+                    import contextlib as _contextlib
+                    with self._loader._process_lock, _contextlib.suppress(ValueError):
+                        self._loader._active_processes.remove(process)
 
             if returncode != 0:
                 logger.warning(

@@ -134,7 +134,7 @@ class RenameHistoryManager:
             if not hasattr(self._db_manager, 'get_rename_history'):
                 logger.debug("[RenameHistoryManager] Database manager does not support rename history yet", extra={"dev_only": True})
                 return []
-                
+
             operations = self._db_manager.get_rename_history(limit)
 
             # Format for UI display
