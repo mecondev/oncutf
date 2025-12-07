@@ -188,54 +188,143 @@ def main() -> int:
         splash_path = get_images_dir() / "splash.png"
         logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
 
-        # Set application-wide wait cursor
-        app.setOverrideCursor(Qt.WaitCursor)  # type: ignore[attr-defined]
-
         try:
-            # Create custom splash screen
+            # Create and show splash screen immediately (responsive from start)
             splash = CustomSplashScreen(str(splash_path))
             splash.show()
             splash.raise_()
             splash.activateWindow()
-            app.processEvents()
-
-            logger.debug(
-                f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})",
-                extra={"dev_only": True},
-            )
-
-            # Initialize app
-            window = MainWindow()
-
-            # Apply programmatic theme to the entire application (legacy system)
-            theme_manager.apply_complete_theme(app, window)
-
-            # Apply ThemeManager QSS template on top (new token-based system)
-            # This allows widget-specific styling to override global styles
-            qss_content = theme_mgr.get_qss()
-            current_style = app.styleSheet()
-            combined_style = current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
-            app.setStyleSheet(combined_style)
-            logger.debug(
-                f"Applied ThemeManager QSS ({len(qss_content)} chars) on top of ThemeEngine",
-                extra={"dev_only": True}
-            )
-
-            # Show main window and close splash
-            def show_main():
-                logger.debug("Showing main window", extra={"dev_only": True})
-                splash.finish(window)
-                window.show()
-                window.raise_()
-                window.activateWindow()
+            # Process events multiple times to ensure splash is fully rendered
+            for _ in range(3):
                 app.processEvents()
-                app.restoreOverrideCursor()
 
-            # Use configurable delay for splash screen with timer manager
+            logger.info(
+                f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})"
+            )
+
+            # Initialize state for dual-flag synchronization
+            init_state = {
+                'worker_ready': False,
+                'min_time_elapsed': False,
+                'worker_results': None,
+                'worker_error': None,
+                'window': None
+            }
+
+            # Start background initialization worker
+            from core.initialization_worker import InitializationWorker
+            from core.pyqt_imports import QThread
+
+            worker = InitializationWorker()
+            worker_thread = QThread()
+            worker.moveToThread(worker_thread)
+
+            # Connect signals for thread-safe communication
+            def on_worker_progress(percentage: int, status: str):
+                """Update splash status (runs in main thread via signal)."""
+                logger.debug(f"[Init] {percentage}% - {status}", extra={"dev_only": True})
+                # Future: could update splash status text here
+
+            def on_worker_finished(results: dict):
+                """Handle worker completion (runs in main thread via signal)."""
+                logger.info(
+                    f"[Init] Background initialization completed in "
+                    f"{results.get('duration_ms', 0):.0f}ms"
+                )
+                init_state['worker_ready'] = True
+                init_state['worker_results'] = results
+                check_and_show_main()
+
+            def on_worker_error(error_msg: str):
+                """Handle worker failure (runs in main thread via signal)."""
+                logger.error(f"[Init] Background initialization failed: {error_msg}")
+                init_state['worker_ready'] = True
+                init_state['worker_error'] = error_msg
+                check_and_show_main()
+
+            def on_min_time_elapsed():
+                """Handle minimum splash time expiration (runs in main thread via timer)."""
+                logger.debug("[Init] Minimum splash time elapsed", extra={"dev_only": True})
+                init_state['min_time_elapsed'] = True
+                check_and_show_main()
+
+            def check_and_show_main():
+                """Show MainWindow when both worker and min time are ready."""
+                if not (init_state['worker_ready'] and init_state['min_time_elapsed']):
+                    return  # Wait for both conditions
+
+                logger.info("[Init] All initialization complete, showing main window")
+
+                try:
+                    # Create MainWindow (must be in main thread)
+                    window = MainWindow()
+                    init_state['window'] = window
+
+                    # Apply programmatic theme to the entire application (legacy system)
+                    theme_manager.apply_complete_theme(app, window)
+
+                    # Apply ThemeManager QSS template on top (new token-based system)
+                    qss_content = theme_mgr.get_qss()
+                    current_style = app.styleSheet()
+                    combined_style = (
+                        current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
+                    )
+                    app.setStyleSheet(combined_style)
+                    logger.debug(
+                        f"Applied ThemeManager QSS ({len(qss_content)} chars) on top of ThemeEngine",
+                        extra={"dev_only": True}
+                    )
+
+                    # Show main window and close splash
+                    splash.finish(window)
+                    window.show()
+                    window.raise_()
+                    window.activateWindow()
+                    app.processEvents()
+
+                    # Cleanup worker thread
+                    worker_thread.quit()
+                    worker_thread.wait(1000)  # Wait max 1 second
+
+                except Exception as e:
+                    logger.error(f"[Init] Error creating MainWindow: {e}")
+                    splash.close()
+                    raise
+
+            # Connect worker signals
+            worker.progress.connect(on_worker_progress)
+            worker.finished.connect(on_worker_finished)
+            worker.error.connect(on_worker_error)
+
+            # Connect worker to thread start
+            worker_thread.started.connect(worker.run)
+
+            # Start worker thread
+            worker_thread.start()
+            logger.debug("[Init] Background worker thread started", extra={"dev_only": True})
+
+            # Schedule minimum splash time callback
             from utils.timer_manager import TimerType, get_timer_manager
 
             get_timer_manager().schedule(
-                show_main, delay=SPLASH_SCREEN_DURATION, timer_type=TimerType.GENERIC
+                on_min_time_elapsed,
+                delay=SPLASH_SCREEN_DURATION,
+                timer_type=TimerType.GENERIC
+            )
+
+            # Add timeout safety fallback (10 seconds)
+            def timeout_fallback():
+                """Emergency fallback if initialization hangs."""
+                if not init_state['window']:
+                    logger.error("[Init] Initialization timeout - forcing MainWindow creation")
+                    init_state['worker_ready'] = True
+                    init_state['min_time_elapsed'] = True
+                    check_and_show_main()
+
+            get_timer_manager().schedule(
+                timeout_fallback,
+                delay=10000,  # 10 seconds
+                timer_type=TimerType.GENERIC
             )
 
         except Exception as e:

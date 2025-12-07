@@ -467,7 +467,8 @@ WINDOW_MIN_HEIGHT = 500
 # =====================================
 
 # Splash Screen Settings
-SPLASH_SCREEN_DURATION = 3000  # Duration in milliseconds
+# Duration in milliseconds (reduced from 3000 to improve UX)
+SPLASH_SCREEN_DURATION = 2000
 
 # =====================================
 # SPLITTER SIZES
