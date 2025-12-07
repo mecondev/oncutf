@@ -37,9 +37,17 @@ logger = get_cached_logger(__name__)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
-        """Initializes the main window and sets up the layout."""
+    def __init__(self, theme_callback=None) -> None:
+        """
+        Initializes the main window and sets up the layout.
+
+        Args:
+            theme_callback: Optional callback to apply theme before enabling updates
+        """
         super().__init__()
+
+        # Prevent repaints during initialization (seamless display)
+        self.setUpdatesEnabled(False)
 
         # Preview debounce timer (Day 1-2 Performance Optimization)
         self._preview_debounce_timer: QTimer | None = None
@@ -49,7 +57,7 @@ class MainWindow(QMainWindow):
         from core.initialization_orchestrator import InitializationOrchestrator
 
         orchestrator = InitializationOrchestrator(self)
-        orchestrator.orchestrate_initialization()
+        orchestrator.orchestrate_initialization(theme_callback)
 
     # --- Method definitions ---
 

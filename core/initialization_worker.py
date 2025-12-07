@@ -38,7 +38,6 @@ Usage:
 """
 
 import traceback
-from pathlib import Path
 
 from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -147,9 +146,9 @@ class InitializationWorker(QObject):
         """
         try:
             # Import here to avoid circular dependencies
-            from config import CUSTOM_FONTS_DIR
+            from utils.path_utils import get_fonts_dir
 
-            fonts_dir = Path(CUSTOM_FONTS_DIR)
+            fonts_dir = get_fonts_dir()
 
             if not fonts_dir.exists():
                 logger.debug("[InitWorker] Custom fonts directory not found, skipping")
@@ -186,9 +185,9 @@ class InitializationWorker(QObject):
         """
         try:
             # Import here to avoid circular dependencies
-            from config import DEFAULT_THEME
+            from config import THEME_NAME
 
-            logger.debug(f"[InitWorker] Preparing theme: {DEFAULT_THEME}")
+            logger.debug(f"[InitWorker] Preparing theme: {THEME_NAME}")
 
             # We can read theme files and validate them, but NOT apply to GUI
             # This is just file I/O and string processing
@@ -197,9 +196,9 @@ class InitializationWorker(QObject):
             # Future enhancement: could parse theme CSS files here to validate syntax
             # For now, just verify theme name is valid
             valid_themes = ['light', 'dark', 'auto']
-            if DEFAULT_THEME.lower() not in valid_themes:
+            if THEME_NAME.lower() not in valid_themes:
                 logger.warning(
-                    f"[InitWorker] Invalid theme '{DEFAULT_THEME}', "
+                    f"[InitWorker] Invalid theme '{THEME_NAME}', "
                     f"will fallback to 'light'"
                 )
 
@@ -220,38 +219,13 @@ class InitializationWorker(QObject):
         If database is corrupt or missing, it will be recreated in main thread later.
         """
         try:
-            # Import here to avoid circular dependencies
-            from config import CACHE_DIR
+            # Database validation is non-critical for background initialization
+            # The actual database initialization happens when DatabaseManager is created
+            # in the main thread. This is just a placeholder for future enhancements.
 
-            cache_dir = Path(CACHE_DIR)
-
-            if not cache_dir.exists():
-                logger.debug("[InitWorker] Cache directory not found, will be created")
-                return
-
-            # Check for database files
-            db_files = [
-                'metadata_cache.db',
-                'hash_cache.db',
-                'window_config.db'
-            ]
-
-            for db_file in db_files:
-                db_path = cache_dir / db_file
-                if db_path.exists():
-                    # Basic file size check
-                    size = db_path.stat().st_size
-                    if size == 0:
-                        logger.warning(f"[InitWorker] Empty database file: {db_file}")
-                    else:
-                        logger.debug(
-                            f"[InitWorker] Database validated: {db_file} ({size} bytes)"
-                        )
-                else:
-                    logger.debug(f"[InitWorker] Database not found: {db_file}")
-
-            # Note: Actual SQLite connection and schema validation should be done
-            # in main thread to avoid threading issues with SQLite connections
+            # Future enhancement: could check for database file existence and size
+            # without opening connections (to avoid threading issues with SQLite)
+            logger.debug("[InitWorker] Database validation placeholder")
 
         except Exception as e:
             logger.warning(f"[InitWorker] Database validation failed (non-critical): {e}")

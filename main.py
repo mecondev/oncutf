@@ -248,6 +248,23 @@ def main() -> int:
                 init_state['min_time_elapsed'] = True
                 check_and_show_main()
 
+            def _apply_theme_to_app(qapp, legacy_theme_manager, token_theme_manager, win):
+                """Apply theme to application and window (called before updates enabled)."""
+                # Apply programmatic theme (legacy system)
+                legacy_theme_manager.apply_complete_theme(qapp, win)
+
+                # Apply ThemeManager QSS template on top (new token-based system)
+                qss_content = token_theme_manager.get_qss()
+                current_style = qapp.styleSheet()
+                combined_style = (
+                    current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
+                )
+                qapp.setStyleSheet(combined_style)
+                logger.debug(
+                    f"[Theme] Applied theme ({len(qss_content)} chars QSS)",
+                    extra={"dev_only": True}
+                )
+
             def check_and_show_main():
                 """Show MainWindow when both worker and min time are ready."""
                 if not (init_state['worker_ready'] and init_state['min_time_elapsed']):
@@ -256,24 +273,11 @@ def main() -> int:
                 logger.info("[Init] All initialization complete, showing main window")
 
                 try:
-                    # Create MainWindow (must be in main thread)
-                    window = MainWindow()
+                    # Create MainWindow with theme callback (must be in main thread)
+                    window = MainWindow(
+                        theme_callback=lambda w: _apply_theme_to_app(app, theme_manager, theme_mgr, w)
+                    )
                     init_state['window'] = window
-
-                    # Apply programmatic theme to the entire application (legacy system)
-                    theme_manager.apply_complete_theme(app, window)
-
-                    # Apply ThemeManager QSS template on top (new token-based system)
-                    qss_content = theme_mgr.get_qss()
-                    current_style = app.styleSheet()
-                    combined_style = (
-                        current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
-                    )
-                    app.setStyleSheet(combined_style)
-                    logger.debug(
-                        f"Applied ThemeManager QSS ({len(qss_content)} chars) on top of ThemeEngine",
-                        extra={"dev_only": True}
-                    )
 
                     # Show main window and close splash
                     splash.finish(window)

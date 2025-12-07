@@ -48,20 +48,23 @@ class InitializationOrchestrator:
         self.window = main_window
         logger.debug("InitializationOrchestrator created", extra={"dev_only": True})
 
-    def orchestrate_initialization(self) -> None:
+    def orchestrate_initialization(self, theme_callback=None) -> None:
         """
         Orchestrate complete initialization in phases.
+
+        Args:
+            theme_callback: Optional callback to apply theme before enabling updates
 
         Phases:
         1. Core infrastructure (context, managers, database)
         2. Attributes and state
         3. UI setup
-        4. Configuration and finalization
+        4. Configuration and finalization (with theme application)
         """
         self._phase1_core_infrastructure()
         self._phase2_attributes_and_state()
         self._phase3_ui_setup()
-        self._phase4_configuration_and_finalization()
+        self._phase4_configuration_and_finalization(theme_callback)
         logger.info("MainWindow initialization orchestration complete")
 
     def _phase1_core_infrastructure(self) -> None:
@@ -225,15 +228,20 @@ class InitializationOrchestrator:
 
         logger.debug("Phase 3: UI setup complete", extra={"dev_only": True})
 
-    def _phase4_configuration_and_finalization(self) -> None:
+    def _phase4_configuration_and_finalization(self, theme_callback=None) -> None:
         """
         Phase 4: Apply configuration and finalize.
+
+        Args:
+            theme_callback: Optional callback to apply theme before enabling updates
 
         - Load window configuration
         - Initialize service layer
         - Setup coordinators
         - Register managers in context
         - Connect signals
+        - Apply theme (if callback provided)
+        - Enable updates
         """
         from core.application_service import initialize_application_service
         from core.shutdown_coordinator import get_shutdown_coordinator
@@ -266,6 +274,16 @@ class InitializationOrchestrator:
 
         # Setup all signal connections
         self.window.signal_coordinator.setup_all_signals()
+
+        # Apply theme BEFORE enabling updates (prevents light theme flash)
+        if theme_callback:
+            logger.debug("Applying theme before enabling updates", extra={"dev_only": True})
+            theme_callback(self.window)
+
+        # Enable updates and finalize layout before show()
+        self.window.setUpdatesEnabled(True)
+        from core.pyqt_imports import QApplication
+        QApplication.processEvents()
 
         logger.info("Phase 4: Configuration and finalization complete", extra={"dev_only": True})
 

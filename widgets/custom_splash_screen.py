@@ -53,12 +53,6 @@ class CustomSplashScreen(QSplashScreen):
 
         # Animation state for dots
         self.dots_count = 0
-        self.max_dots = 3
-
-        # Timer for dots animation
-        self.dots_timer = QTimer()
-        self.dots_timer.timeout.connect(self._animate_dots)
-        self.dots_timer.start(500)  # 500ms interval
 
         # Load and scale the pixmap
         original_pixmap = QPixmap(pixmap_path)
@@ -119,6 +113,11 @@ class CustomSplashScreen(QSplashScreen):
 
         # Center on screen
         self._center_on_screen()
+
+        # Timer for dots animation (must be after super().__init__())
+        self.dots_timer = QTimer(self)
+        self.dots_timer.timeout.connect(self._animate_dots)
+        self.dots_timer.start(500)  # 500ms interval
 
         # Set cursor to wait cursor
         self.setCursor(Qt.WaitCursor)
@@ -275,7 +274,7 @@ class CustomSplashScreen(QSplashScreen):
 
     def _animate_dots(self) -> None:
         """Animate the dots in the initialize text."""
-        self.dots_count = (self.dots_count + 1) % (self.max_dots + 1)
+        self.dots_count += 1
         self.repaint()  # Force repaint to show new dots
 
     def showMessage(

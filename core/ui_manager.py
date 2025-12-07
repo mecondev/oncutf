@@ -37,6 +37,9 @@ class UIManager:
 
     def setup_all_ui(self) -> None:
         """Setup all UI components in the correct order."""
+        # Disable updates during setup to prevent flickering
+        self.parent_window.setUpdatesEnabled(False)
+
         self.setup_main_window()
         self.setup_main_layout()
         self.setup_splitters()
@@ -49,6 +52,9 @@ class UIManager:
         self.setup_footer()
         self.setup_signals()
         self.setup_shortcuts()
+
+        # Re-enable updates after UI is fully constructed
+        self.parent_window.setUpdatesEnabled(True)
         logger.debug("All UI components setup completed", extra={"dev_only": True})
 
     def setup_main_window(self) -> None:
