@@ -395,6 +395,11 @@ class FileLoadManager:
                 f"[FileLoadManager] Replaced files with {len(items)} new items",
                 extra={"dev_only": True},
             )
+            # Refresh UI to ensure placeholders, header and labels are updated
+            try:
+                self._refresh_ui_after_file_load()
+            except Exception:
+                logger.debug("[FileLoadManager] _refresh_ui_after_file_load failed", extra={"dev_only": True})
         else:
             # Add to existing files with duplicate detection
             existing_files = self.parent_window.file_model.files
@@ -462,6 +467,11 @@ class FileLoadManager:
             self._loading_in_progress = False
             self._pending_files = []
             logger.info("[FileLoadManager] Streaming load complete")
+            # Final UI refresh after streaming completes
+            try:
+                self._refresh_ui_after_file_load()
+            except Exception:
+                logger.debug("[FileLoadManager] _refresh_ui_after_file_load (stream end) failed", extra={"dev_only": True})
             return
 
         # Take next batch
@@ -517,6 +527,20 @@ class FileLoadManager:
                     logger.debug(
                         "[FileLoadManager] Shown file table placeholder", extra={"dev_only": True}
                     )
+
+            # Ensure the header is enabled when there are files and disabled when empty
+            if hasattr(self.parent_window, "header") and self.parent_window.header is not None:
+                try:
+                    if total_files > 0:
+                        self.parent_window.header.setEnabled(True)
+                    else:
+                        self.parent_window.header.setEnabled(False)
+                    logger.debug(
+                        f"[FileLoadManager] Header enabled state set to {total_files > 0}",
+                        extra={"dev_only": True},
+                    )
+                except Exception:
+                    logger.debug("[FileLoadManager] Failed to set header enabled state", extra={"dev_only": True})
 
             # Hide placeholders in preview tables (if files are loaded)
             if hasattr(self.parent_window, "preview_tables_view"):

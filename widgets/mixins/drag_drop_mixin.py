@@ -198,6 +198,15 @@ class DragDropMixin:
         if not self._is_dragging:
             return
 
+        # Check if drag was cancelled (e.g., by ESC key press) BEFORE doing anything
+        drag_manager = DragManager.get_instance()
+        drag_was_cancelled = not drag_manager.is_drag_active()
+
+        if drag_was_cancelled:
+            logger.info(
+                "[DragDropMixin] Drag was cancelled (ESC pressed), cleaning up without drop"
+            )
+
         try:
             # Stop and cleanup drag feedback timer
             if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
@@ -212,20 +221,25 @@ class DragDropMixin:
             if _drag_cancel_filter.is_active():
                 _drag_cancel_filter.deactivate()
 
-            # Get widget under cursor for drop detection
-            cursor_pos = QCursor.pos()
-            widget_under_cursor = QApplication.widgetAt(cursor_pos)
+            # Only attempt drop detection if drag was NOT cancelled
+            if not drag_was_cancelled:
+                # Get widget under cursor for drop detection
+                cursor_pos = QCursor.pos()
+                widget_under_cursor = QApplication.widgetAt(cursor_pos)
 
-            dropped_successfully = False
+                dropped_successfully = False
 
-            if widget_under_cursor:
-                # Walk up parent hierarchy to find drop targets
-                parent = widget_under_cursor
-                while parent and not dropped_successfully:
-                    if parent.__class__.__name__ == "MetadataTreeView":
-                        dropped_successfully = self._handle_drop_on_metadata_tree()
-                        break
-                    parent = parent.parent()
+                if widget_under_cursor:
+                    # Walk up parent hierarchy to find drop targets
+                    parent = widget_under_cursor
+                    while parent and not dropped_successfully:
+                        if parent.__class__.__name__ == "MetadataTreeView":
+                            dropped_successfully = self._handle_drop_on_metadata_tree()
+                            break
+                        parent = parent.parent()
+            else:
+                # Drag was cancelled - clear drag data immediately
+                self._drag_data = None
 
         finally:
             # Clean up drag state
@@ -265,7 +279,16 @@ class DragDropMixin:
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """Handle drop on metadata tree with direct MetadataManager communication."""
+        """
+        Handle drop on metadata tree - single entry point for FileTable->MetadataTree drops.
+
+        Behavior:
+        - No modifier: Fast metadata loading
+        - Shift: Extended metadata loading
+        - Pre-checks cache to avoid redundant loading
+        - Single file: wait_cursor (immediate)
+        - Multiple files: ProgressDialog with ESC cancel support
+        """
         if not self._drag_data:
             logger.debug(
                 "[DragDropMixin] No drag data available for metadata tree drop",
@@ -280,15 +303,14 @@ class DragDropMixin:
             logger.warning("[DragDropMixin] No valid selection found for metadata tree drop")
             return False
 
+        # Get parent window for file items and metadata operations
+        parent_window = self._get_parent_with_metadata_tree()
+        if not parent_window:
+            logger.warning("[DragDropMixin] Could not find parent window")
+            return False
+
         # Convert to FileItem objects using unified selection method
         try:
-            parent_window = self._get_parent_with_metadata_tree()
-            if not parent_window:
-                logger.warning(
-                    "[DragDropMixin] Could not find parent window for unified selection"
-                )
-                return False
-
             file_items = parent_window.get_selected_files_ordered()
             if not file_items:
                 logger.warning("[DragDropMixin] No valid file items found for metadata tree drop")
@@ -297,36 +319,31 @@ class DragDropMixin:
             logger.error(f"[DragDropMixin] Error getting selected files: {e}")
             return False
 
-        # Get modifiers for metadata loading decision
+        # Get modifiers for metadata loading decision (Shift = extended)
         modifiers = QApplication.keyboardModifiers()
         use_extended = bool(modifiers & Qt.ShiftModifier)
 
-        # Find parent window and call MetadataManager directly
-        parent_window = self._get_parent_with_metadata_tree()
-        if not parent_window or not hasattr(parent_window, "metadata_manager"):
-            logger.warning("[DragDropMixin] Could not find parent window or metadata manager")
+        # Verify we have the required services
+        if not hasattr(parent_window, "app_service"):
+            logger.warning("[DragDropMixin] Could not find app_service on parent window")
             return False
 
-        # Call ApplicationService for consistent behavior (WaitCursor, logging, etc.)
+        # Delegate to ApplicationService which handles:
+        # - Cache pre-check (skip already-loaded files)
+        # - Single file: wait_cursor
+        # - Multiple files: ProgressDialog with ESC cancel
+        # - Progressive updates
         try:
-            if hasattr(parent_window, "app_service"):
-                parent_window.app_service.load_metadata_for_items(
-                    file_items, use_extended=use_extended, source="drag_drop_direct"
-                )
-            else:
-                # Fallback to direct metadata manager call if app_service not available
-                parent_window.metadata_manager.load_metadata_for_items(
-                    file_items, use_extended=use_extended, source="drag_drop_direct"
-                )
+            parent_window.app_service.load_metadata_for_items(
+                file_items, use_extended=use_extended, source="drag_drop"
+            )
 
             # Set flag to indicate successful metadata drop
             self._successful_metadata_drop = True
-            logger.debug(
-                "[DragDropMixin] Metadata loading initiated successfully", extra={"dev_only": True}
+            logger.info(
+                f"[DragDropMixin] Metadata load initiated: {len(file_items)} files "
+                f"(extended={use_extended})"
             )
-
-            # Do NOT force cursor cleanup here - let the operation manage the cursor
-            # self._force_cursor_cleanup()
 
             # Schedule final status update
             def final_status_update():
@@ -335,16 +352,12 @@ class DragDropMixin:
                     selection_store = self._get_selection_store()
                     if selection_store and not self._legacy_selection_mode:
                         selection_store.selection_changed.emit(list(current_selection))
-                        logger.debug(
-                            f"[DragDropMixin] Final status update: {len(current_selection)} files",
-                            extra={"dev_only": True},
-                        )
 
             schedule_ui_update(final_status_update, delay=100)
             return True
 
         except Exception as e:
-            logger.error(f"[DragDropMixin] Error calling MetadataManager: {e}")
+            logger.error(f"[DragDropMixin] Error initiating metadata load: {e}")
             return False
 
     def _get_parent_with_metadata_tree(self):

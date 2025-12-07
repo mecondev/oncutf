@@ -211,14 +211,27 @@ class DragManager(QObject):
             self._perform_cleanup()
 
     def force_cleanup(self) -> None:
-        """Public method to force immediate cleanup (used by Escape key)."""
+        """
+        Public method to force immediate cleanup (used by Escape key).
+
+        This is called when ESC is pressed during a drag operation.
+        It immediately terminates the drag and cleans up all visual feedback.
+        """
         if not self._drag_active:
             logger.debug(
                 "[DragManager] Force cleanup called but no drag active", extra={"dev_only": True}
             )
             return
 
-        logger.info("[DragManager] Manual forced cleanup requested", extra={"dev_only": True})
+        logger.info(
+            "[DragManager] Force cleanup requested (ESC pressed) - terminating drag immediately"
+        )
+
+        # First, end all visual feedback immediately
+        from core.drag_visual_manager import end_drag_visual
+        end_drag_visual()
+
+        # Then perform standard cleanup (cursors, state)
         self._perform_cleanup()
 
     # =====================================

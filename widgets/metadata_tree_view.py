@@ -482,9 +482,9 @@ class MetadataTreeView(QTreeView):
             if files:
                 event.acceptProposedAction()
 
-                # Check for modifiers (Ctrl = Extended Metadata)
+                # Check for modifiers (Shift = Extended Metadata)
                 modifiers = event.keyboardModifiers()
-                use_extended = bool(modifiers & Qt.ControlModifier)
+                use_extended = bool(modifiers & Qt.ShiftModifier)
 
                 # Trigger metadata load via parent window -> application service
                 parent_window = self._get_parent_with_file_table()
