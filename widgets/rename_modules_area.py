@@ -212,10 +212,9 @@ class RenameModulesArea(QWidget):
         Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
-        logger.debug("[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True})
+        logger.debug(f"[Preview] Modules: {self.module_widgets}", extra={"dev_only": True})
         logger.debug(
-            "[Preview] Effective check: %s",
-            [m.is_effective() for m in self.module_widgets],
+            f"[Preview] Effective check: {[m.is_effective() for m in self.module_widgets]}",
             extra={"dev_only": True},
         )
 

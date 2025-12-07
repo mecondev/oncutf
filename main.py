@@ -344,7 +344,7 @@ def main() -> int:
         exit_code = app.exec_()
 
         # Clean up before exit
-        logger.info("Application shutting down with exit code: %d", exit_code)
+        logger.info(f"Application shutting down with exit code: {exit_code}")
 
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
@@ -368,7 +368,7 @@ def main() -> int:
         return exit_code
 
     except Exception as e:
-        logger.critical("Fatal error in main: %s", str(e), exc_info=True)
+        logger.critical(f"Fatal error in main: {str(e)}", exc_info=True)
         return 1
 
 

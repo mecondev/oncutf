@@ -346,7 +346,7 @@ class CustomMessageDialog(QDialog):
         msg : str
             The new message to display in the dialog.
         """
-        logger.debug("Dialog message updated: %s", msg)
+        logger.debug(f"Dialog message updated: {msg}")
         self.label.setText(msg)
 
     @staticmethod
