@@ -244,20 +244,11 @@ class MetadataTreeView(QTreeView):
 
     def _setup_shortcuts(self) -> None:
         """Setup local keyboard shortcuts for metadata tree."""
-        from PyQt5.QtGui import QKeySequence
-        from PyQt5.QtWidgets import QShortcut
-
-        from config import UNDO_REDO_SETTINGS
-
-        # Undo shortcut (Ctrl+Z)
-        self.undo_shortcut = QShortcut(QKeySequence(UNDO_REDO_SETTINGS["UNDO_SHORTCUT"]), self)
-        self.undo_shortcut.activated.connect(self._undo_metadata_operation)
-
-        # Redo shortcut (Ctrl+R)
-        self.redo_shortcut = QShortcut(QKeySequence(UNDO_REDO_SETTINGS["REDO_SHORTCUT"]), self)
-        self.redo_shortcut.activated.connect(self._redo_metadata_operation)
-
-        logger.debug("[MetadataTree] Local shortcuts initialized (Ctrl+Z, Ctrl+R)", extra={"dev_only": True})
+        # Local Ctrl+Z/Ctrl+R shortcuts removed - now handled by global shortcuts
+        # Global shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
+        # and will call the unified undo/redo system when implemented.
+        # Context menu still provides Undo/Redo actions for mouse-based access.
+        logger.debug("[MetadataTree] Local shortcuts setup skipped (using global shortcuts)", extra={"dev_only": True})
 
     def wheelEvent(self, event) -> None:
         """Update hover state after scroll to track cursor position smoothly."""
@@ -490,7 +481,6 @@ class MetadataTreeView(QTreeView):
             files = [url.toLocalFile() for url in urls if url.isLocalFile()]
             if files:
                 event.acceptProposedAction()
-                self._perform_drag_cleanup(_drag_cancel_filter)
 
                 # Check for modifiers (Ctrl = Extended Metadata)
                 modifiers = event.keyboardModifiers()
@@ -511,6 +501,15 @@ class MetadataTreeView(QTreeView):
                                     break
 
                         if file_items:
+                            # Ensure files are checked (selected) after drag & drop
+                            for item in file_items:
+                                if not item.checked:
+                                    item.checked = True
+
+                            # Update file table model to reflect changes
+                            if hasattr(parent_window, "file_table_model"):
+                                parent_window.file_table_model.layoutChanged.emit()
+
                             parent_window.load_metadata_for_items(
                                 file_items,
                                 use_extended=use_extended,
@@ -521,6 +520,11 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTreeView] Drop processed: {len(files)} files (extended={use_extended})",
                     extra={"dev_only": True},
                 )
+
+                # Don't call _perform_drag_cleanup for successful drops
+                # The wait_cursor will be managed by application_service
+                # Just update viewport
+                self.viewport().update()
             else:
                 event.ignore()
                 self._perform_drag_cleanup(_drag_cancel_filter)
@@ -1052,49 +1056,46 @@ class MetadataTreeView(QTreeView):
         history_menu = QMenu("History", menu)
         history_menu.setIcon(self._get_menu_icon("clock"))
 
-        # Undo action
-        undo_action = QAction("Undo\tCtrl+Z", history_menu)
-        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        undo_action.triggered.connect(self._undo_metadata_operation)
-
-        # Redo action
-        redo_action = QAction("Redo\tCtrl+R", history_menu)
-        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
-        redo_action.triggered.connect(self._redo_metadata_operation)
-
-        # Check if undo/redo are available
+        # Check if undo/redo are available and get descriptions
         try:
             from core.metadata_command_manager import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
-            undo_action.setEnabled(command_manager.can_undo())
-            redo_action.setEnabled(command_manager.can_redo())
-
-            # Add descriptions to tooltips
-            undo_desc = command_manager.get_undo_description()
-            redo_desc = command_manager.get_redo_description()
-            if undo_desc:
-                undo_action.setToolTip(undo_desc)
-            if redo_desc:
-                redo_action.setToolTip(redo_desc)
-
+            can_undo = command_manager.can_undo()
+            can_redo = command_manager.can_redo()
+            undo_desc = command_manager.get_undo_description() if can_undo else None
+            redo_desc = command_manager.get_redo_description() if can_redo else None
         except Exception as e:
             logger.warning(f"[MetadataTreeView] Error checking command manager status: {e}")
-            undo_action.setEnabled(False)
-            redo_action.setEnabled(False)
+            can_undo = False
+            can_redo = False
+            undo_desc = None
+            redo_desc = None
+
+        # Undo action with operation description
+        undo_text = f"Undo: {undo_desc}\tCtrl+Z" if undo_desc else "Undo\tCtrl+Z"
+        undo_action = QAction(undo_text, history_menu)
+        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        undo_action.setEnabled(can_undo)
+        undo_action.triggered.connect(self._undo_metadata_operation)
+
+        # Redo action with operation description (updated to Ctrl+Shift+Z)
+        redo_text = f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
+        redo_action = QAction(redo_text, history_menu)
+        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
+        redo_action.setEnabled(can_redo)
+        redo_action.triggered.connect(self._redo_metadata_operation)
 
         history_menu.addAction(undo_action)
         history_menu.addAction(redo_action)
 
         history_menu.addSeparator()
 
-        # Show history dialog action
-        # REMOVED: This action is now only available in the file table context menu
-        # to prevent duplicate dialog calls when right-clicking on file table
-        # show_history_action = QAction("Show Command History...", history_menu)
-        # show_history_action.setIcon(self._get_menu_icon("list"))
-        # show_history_action.triggered.connect(self._show_history_dialog)
-        # history_menu.addAction(show_history_action)
+        # Show History action (Ctrl+Y) - opens metadata history dialog
+        show_history_action = QAction("Show History\tCtrl+Y", history_menu)
+        show_history_action.setIcon(self._get_menu_icon("list"))
+        show_history_action.triggered.connect(self._show_history_dialog)
+        history_menu.addAction(show_history_action)
 
         menu.addMenu(history_menu)
 

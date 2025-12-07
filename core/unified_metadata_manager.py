@@ -796,14 +796,22 @@ class UnifiedMetadataManager(QObject):
 
         # Check what items need loading vs what's already cached
         needs_loading = []
+        
+        # Use batch cache retrieval for performance
+        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+            # Get all paths
+            paths = [item.full_path for item in items]
+            # Batch query
+            cache_entries = self.parent_window.metadata_cache.get_entries_batch(paths)
+        else:
+            cache_entries = {}
 
         for item in items:
             # Check cache for existing metadata
-            cache_entry = (
-                self.parent_window.metadata_cache.get_entry(item.full_path)
-                if self.parent_window
-                else None
-            )
+            # Use normalized path for lookup as cache keys are normalized
+            from utils.path_normalizer import normalize_path
+            norm_path = normalize_path(item.full_path)
+            cache_entry = cache_entries.get(norm_path)
 
             # Check if we have valid metadata in cache
             has_valid_cache = (
@@ -816,13 +824,25 @@ class UnifiedMetadataManager(QObject):
             if has_valid_cache:
                 # If we already have extended metadata, don't downgrade to fast metadata
                 if cache_entry.is_extended and not use_extended:
-                    logger.debug(
-                        f"[UnifiedMetadataManager] Skipping {item.filename} - already has extended metadata, not downgrading to fast"
+                    logger.info(
+                        f"[UnifiedMetadataManager] SKIP {item.filename} - has extended, requested fast"
                     )
                     continue
                 # If we have the exact type requested, skip loading
                 elif cache_entry.is_extended == use_extended:
+                    logger.info(
+                        f"[UnifiedMetadataManager] SKIP {item.filename} - already has {'extended' if use_extended else 'fast'} metadata"
+                    )
                     continue
+                else:
+                    # Need to upgrade from fast to extended
+                    logger.info(
+                        f"[UnifiedMetadataManager] LOAD {item.filename} - upgrading fast to extended"
+                    )
+            else:
+                logger.info(
+                    f"[UnifiedMetadataManager] LOAD {item.filename} - no cache"
+                )
 
             needs_loading.append(item)
 
@@ -859,11 +879,6 @@ class UnifiedMetadataManager(QObject):
             f"(extended={use_extended}, dialog={use_dialog})"
         )
 
-        # Calculate total size for enhanced progress tracking
-        from utils.file_size_calculator import calculate_files_total_size
-
-        total_size = calculate_files_total_size(needs_loading)
-
         # Cancellation support
         self._metadata_cancelled = False
 
@@ -884,8 +899,29 @@ class UnifiedMetadataManager(QObject):
             _loading_dialog.set_status(
                 "Loading metadata..." if not use_extended else "Loading extended metadata..."
             )
+            
+            # Use smooth show to prevent shadow flicker and ensure proper painting
+            from utils.dialog_utils import show_dialog_smooth
+            show_dialog_smooth(_loading_dialog)
+
+            # Activate and give focus to dialog so it can receive ESC key
+            _loading_dialog.activateWindow()
+            _loading_dialog.setFocus()
+            _loading_dialog.raise_()
+
+            # Force multiple UI updates to ensure dialog is visible and can receive events
+            for _ in range(3):
+                QApplication.processEvents()
+
+        # Calculate total size for enhanced progress tracking
+        # This is now done AFTER showing the dialog to ensure responsiveness
+        from utils.file_size_calculator import calculate_files_total_size
+
+        total_size = calculate_files_total_size(needs_loading)
+        
+        # Update dialog with total size if available
+        if _loading_dialog:
             _loading_dialog.start_progress_tracking(total_size)
-            _loading_dialog.show()
 
         # Initialize incremental size tracking
         processed_size = 0
@@ -897,12 +933,12 @@ class UnifiedMetadataManager(QObject):
 
             # Update processed size
             try:
-                if hasattr(item, "file_size") and item.file_size is not None:
-                    current_file_size = item.file_size
+                if hasattr(item, "size") and item.size is not None:
+                    current_file_size = item.size
                 elif hasattr(item, "full_path") and os.path.exists(item.full_path):
                     current_file_size = os.path.getsize(item.full_path)
-                    if hasattr(item, "file_size"):
-                        item.file_size = current_file_size
+                    if hasattr(item, "size"):
+                        item.size = current_file_size
                 else:
                     current_file_size = 0
 
@@ -992,11 +1028,6 @@ class UnifiedMetadataManager(QObject):
         logger.info(
             f"[UnifiedMetadataManager] Starting parallel metadata loading for {len(needs_loading)} files"
         )
-
-        # Process events to show dialog before starting heavy work (if dialog present)
-        if _loading_dialog:
-            from PyQt5.QtWidgets import QApplication
-            QApplication.processEvents()
 
         # Use unified parallel loader for all cases
         self.parallel_loader.load_metadata_parallel(

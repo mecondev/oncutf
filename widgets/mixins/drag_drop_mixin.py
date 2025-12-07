@@ -307,11 +307,17 @@ class DragDropMixin:
             logger.warning("[DragDropMixin] Could not find parent window or metadata manager")
             return False
 
-        # Call MetadataManager directly - no complex signal chain
+        # Call ApplicationService for consistent behavior (WaitCursor, logging, etc.)
         try:
-            parent_window.metadata_manager.load_metadata_for_items(
-                file_items, use_extended=use_extended, source="drag_drop_direct"
-            )
+            if hasattr(parent_window, "app_service"):
+                parent_window.app_service.load_metadata_for_items(
+                    file_items, use_extended=use_extended, source="drag_drop_direct"
+                )
+            else:
+                # Fallback to direct metadata manager call if app_service not available
+                parent_window.metadata_manager.load_metadata_for_items(
+                    file_items, use_extended=use_extended, source="drag_drop_direct"
+                )
 
             # Set flag to indicate successful metadata drop
             self._successful_metadata_drop = True
@@ -319,8 +325,8 @@ class DragDropMixin:
                 "[DragDropMixin] Metadata loading initiated successfully", extra={"dev_only": True}
             )
 
-            # Force cursor cleanup after successful operation
-            self._force_cursor_cleanup()
+            # Do NOT force cursor cleanup here - let the operation manage the cursor
+            # self._force_cursor_cleanup()
 
             # Schedule final status update
             def final_status_update():

@@ -1155,12 +1155,14 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
         """
         Handle mouse release events.
         """
+        was_dragging = False
         if event.button() == Qt.LeftButton:
             # Reset drag start position
             self._drag_start_pos = None
 
             # If we were dragging, clean up
             if self._is_dragging:
+                was_dragging = True
                 self._end_custom_drag()
 
                 # Final status update after drag ends to ensure UI consistency
@@ -1174,8 +1176,10 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
                 # Schedule final status update after everything is settled
                 schedule_ui_update(final_status_update, delay=50)
 
-        # Call parent implementation
-        super().mouseReleaseEvent(event)
+        # Call parent implementation only if we weren't dragging
+        # This prevents the release event from clearing selection or triggering click actions
+        if not was_dragging:
+            super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
         """
@@ -1222,25 +1226,22 @@ class FileTableView(SelectionMixin, DragDropMixin, QTableView):
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
         # SIMPLIFIED: No longer needed - selection is cleared during column updates
 
-        # Handle column management shortcuts
+        # Handle column management shortcuts (from config)
 
-        # Ctrl+T: Auto-fit columns to content
-        if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
-            self._auto_fit_columns_to_content()
-            event.accept()
-            return
+        # Check for Ctrl+T (auto-fit) or Ctrl+Shift+T (reset)
+        if event.key() == Qt.Key_T:
+            if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+                # Ctrl+Shift+T: Reset column widths to default
+                self._reset_columns_to_default()
+                event.accept()
+                return
+            elif event.modifiers() == Qt.ControlModifier:
+                # Ctrl+T: Auto-fit columns to content
+                self._auto_fit_columns_to_content()
+                event.accept()
+                return
 
-        # Ctrl+Shift+T: Reset column widths to default
-        if event.key() == Qt.Key_T and event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-            self._reset_columns_to_default()
-            event.accept()
-            return
-
-        # Handle ESC to cancel drag
-        if event.key() == Qt.Key_Escape and self._is_dragging:
-            self._end_custom_drag()
-            event.accept()
-            return
+        # Note: Escape for drag cancel is now handled globally in ui_manager.py
 
         # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:

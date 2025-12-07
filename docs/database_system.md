@@ -170,8 +170,9 @@ operations = rename_history.get_recent_operations(limit=20)
 # Check if operation can be undone
 can_undo, reason = rename_history.can_undo_operation(operation_id)
 
-# View complete history: Press Ctrl+Shift+Z for command history dialog
-# View rename history: Press Ctrl+Alt+H for rename history dialog
+# View complete history: Press Ctrl+Y for command history dialog
+# Undo last operation: Press Ctrl+Z (global shortcut)
+# Redo last operation: Press Ctrl+Shift+Z (global shortcut)
 
 # Undo operation
 if can_undo:
@@ -294,7 +295,7 @@ The dialog provides:
 Database management features can be accessed through:
 - Tools menu (if available)
 - Context menus
-- Keyboard shortcuts (Ctrl+Z for undo)
+- Keyboard shortcuts (Ctrl+Z for undo, Ctrl+Shift+Z for redo, Ctrl+Y for history)
 - Status indicators
 
 ## Migration from Old System

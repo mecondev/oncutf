@@ -108,87 +108,15 @@ class ApplicationService:
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
-        """Load metadata for items via MetadataManager using streaming."""
+        """Load metadata for items via UnifiedMetadataManager with proper cache checking."""
         if not items:
             return
 
-        logger.info(f"[{source}] Loading metadata for {len(items)} items (streaming)")
+        logger.info(f"[{source}] Loading metadata for {len(items)} items")
 
+        # Delegate directly to UnifiedMetadataManager which has the cache checking logic
         manager = self.main_window.metadata_manager
-        model = self.main_window.file_model
-        status_manager = self.main_window.status_manager
-        metadata_tree = self.main_window.metadata_tree_view
-
-        total = len(items)
-
-        # Single file loading - Use WaitCursor
-        if total == 1:
-            from utils.cursor_helper import wait_cursor
-
-            with wait_cursor():
-                if status_manager:
-                    status_manager.set_status(f"Loading metadata... 0/{total}")
-
-                # Use streaming loader (will yield only one item)
-                for item, metadata in manager.load_metadata_streaming(items, use_extended):
-                    # Update model for this specific item
-                    if model:
-                        model.update_file_metadata(item)
-
-                    # Update Metadata Tree immediately for single file
-                    if metadata_tree:
-                        metadata_tree._render_metadata_view(metadata, context=f"single_load_{source}")
-
-                if status_manager:
-                    status_manager.set_status(f"Metadata loaded for {total} files", auto_reset=True, reset_delay=3000)
-
-        # Multiple files loading - Use ProgressDialog
-        else:
-            from utils.progress_dialog import ProgressDialog
-
-            # Determine operation type for colors
-            op_type = "metadata_extended" if use_extended else "metadata_basic"
-
-            # Create progress dialog
-            progress = ProgressDialog(
-                parent=self.main_window,
-                operation_type=op_type,
-                show_enhanced_info=True
-            )
-            progress.set_status(f"Load metadata for {total} files")
-            progress.set_filename("Processing...")
-            progress.show()
-
-            # Update Metadata Tree to show multiple selection state (empty or message)
-            if metadata_tree:
-                metadata_tree.show_empty_state("Multiple files selected")
-
-            try:
-                # Use streaming loader with enumerate for progress tracking
-                for count, (item, _) in enumerate(manager.load_metadata_streaming(items, use_extended), start=1):
-                    # Check cancellation more frequently
-                    QApplication.processEvents()
-
-                    if progress.was_canceled():
-                        break
-
-                    # Update model for this specific item
-                    if model:
-                        model.update_file_metadata(item)
-
-                    # Update progress dialog
-                    progress.set_progress(count, total)
-                    progress.set_filename(f"Processing: {item.name}")
-
-                    # Update status every 5 items or last item to reduce overhead
-                    if status_manager and (count % 5 == 0 or count == total):
-                        status_manager.set_status(f"Loading metadata... {count}/{total}")
-
-            finally:
-                progress.close()
-
-            if status_manager:
-                status_manager.set_status(f"Metadata loaded for {total} files", auto_reset=True, reset_delay=3000)
+        manager.load_metadata_for_items(items, use_extended=use_extended, source=source)
 
     # =====================================
     # Selection Operations

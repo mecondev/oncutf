@@ -110,6 +110,7 @@ class ProgressDialog(QDialog):
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore
         self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore
         self.setModal(True)
+        self.setFocusPolicy(Qt.StrongFocus)  # type: ignore
 
         # Layout
         layout = QVBoxLayout(self)
@@ -161,7 +162,21 @@ class ProgressDialog(QDialog):
 
     def keyPressEvent(self, event) -> None:
         """Handle ESC key for cancellation with improved responsiveness and save protection."""
-        if event.key() == Qt.Key_Escape and not self._is_cancelling:  # type: ignore
+        key = event.key()
+        
+        logger.debug(
+            f"[ProgressDialog] keyPressEvent: key={key}, ESC={Qt.Key_Escape}, "
+            f"is_cancelling={self._is_cancelling}, operation={self.operation_type}",
+            extra={"dev_only": True}
+        )
+        
+        if key == Qt.Key_Escape:
+            # If already cancelling, ignore
+            if self._is_cancelling:
+                logger.debug("[ProgressDialog] ESC ignored - already cancelling")
+                event.ignore()
+                return
+
             # Check if ESC should be blocked for this operation
             if self._should_block_esc():
                 logger.debug(
@@ -170,7 +185,10 @@ class ProgressDialog(QDialog):
                 event.ignore()
                 return
 
+            # Handle cancellation
+            logger.info(f"[ProgressDialog] ESC pressed - initiating cancellation for {self.operation_type}")
             self._handle_cancellation()
+            event.accept()
         else:
             super().keyPressEvent(event)
 

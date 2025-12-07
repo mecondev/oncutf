@@ -38,29 +38,14 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+Shift+H` | Calculate Hash (All) | Calculate CRC32 checksums for all files (file table) |
 | `Ctrl+L` | Show Results List | Display hash calculation results dialog |
 
-### History & Dialogs
+### History & Undo/Redo
 | Shortcut | Action | Description |
 |----------|--------|-------------|
-| `Ctrl+Shift+Z` | Command History | Show complete command history dialog |
+| `Ctrl+Z` | Undo | Undo last operation (metadata edits, renames, etc.) |
+| `Ctrl+Shift+Z` | Redo | Redo last undone operation |
+| `Ctrl+Y` | Show History | Display command history dialog with all operations |
 
-**Note:** All File Table shortcuts (prefixed above) only work when the file table widget has focus.
-
----
-
-## Widget-Specific Shortcuts
-
-These shortcuts only work when specific widgets have keyboard focus.
-
-### Metadata Tree Shortcuts
-
-Active only when the metadata tree widget has focus.
-
-| Shortcut | Action | Description |
-|----------|--------|-------------|
-| `Ctrl+Z` | Undo | Undo last metadata field edit |
-| `Ctrl+R` | Redo | Redo last undone metadata field edit |
-
-**Note:** These shortcuts are also shown in the metadata tree context menu.
+**Note:** Undo/Redo are global shortcuts that work across all operations. Currently supports metadata edits; rename undo is planned.
 
 ---
 
@@ -102,19 +87,20 @@ Planned shortcuts for upcoming features:
 
 Some shortcuts behave differently based on context:
 
-- **Ctrl+Z / Ctrl+R**: 
-  - In metadata tree → undo/redo metadata edits
-  - In rename module (future) → undo/redo rename configuration changes
-  - Global fallback → show history dialog
+- **Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y**: 
+  - Global shortcuts that work throughout the application
+  - Currently handle metadata edits through command manager
+  - Future: Will handle rename operations and batch operations in unified history
+  - Show History (Ctrl+Y) opens MetadataHistoryDialog (temporary until unified system)
 
 ### Conflict Resolution
 
 The shortcut system uses this priority order:
-1. **Local shortcuts** (widget-specific)
-2. **Global shortcuts** (application-wide)
+1. **Global shortcuts** (application-wide, attached to MainWindow)
+2. **Widget-specific shortcuts** (local to focused widget)
 3. **Qt default shortcuts** (built-in Qt behavior)
 
-When a widget has focus, its local shortcuts take precedence over global shortcuts with the same key combination.
+Global shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y, etc.) work regardless of which widget has focus.
 
 ### Accessibility
 
@@ -138,5 +124,5 @@ Future versions may include:
 
 ---
 
-**Last Updated**: November 2025
+**Last Updated**: December 2025
 **Version**: oncutf v2.0+

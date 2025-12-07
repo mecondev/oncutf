@@ -15,6 +15,7 @@ Features:
 - Error handling per file (failures don't stop the batch)
 """
 
+import threading
 import traceback
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -62,6 +63,8 @@ class ParallelMetadataLoader:
         self.max_workers = max_workers
         self._exiftool_wrapper = ExifToolWrapper()
         self._cancelled = False
+        self._active_processes = []  # Track active subprocess for cancellation
+        self._process_lock = threading.Lock()
 
         logger.info(f"[ParallelMetadataLoader] Initialized with {max_workers} workers")
 
@@ -103,7 +106,9 @@ class ParallelMetadataLoader:
 
         try:
             # Use ThreadPoolExecutor for parallel ExifTool execution
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            executor = ThreadPoolExecutor(max_workers=self.max_workers)
+            
+            try:
                 # Submit all tasks
                 future_to_item = {
                     executor.submit(
@@ -116,13 +121,39 @@ class ParallelMetadataLoader:
 
                 # Process results as they complete (progressive updates)
                 for future in as_completed(future_to_item):
-                    # Check for cancellation
+                    # Always process events for maximum ESC responsiveness
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
+
+                    # Check for cancellation immediately after processing events
                     if cancellation_check and cancellation_check():
-                        logger.info("[ParallelMetadataLoader] Loading cancelled by user")
+                        logger.info("[ParallelMetadataLoader] Cancellation detected - stopping immediately")
                         self._cancelled = True
+
+                        # Terminate all active ExifTool processes
+                        with self._process_lock:
+                            terminated_count = 0
+                            for proc in self._active_processes:
+                                try:
+                                    if proc and proc.poll() is None:  # Still running
+                                        proc.terminate()
+                                        terminated_count += 1
+                                except Exception as e:
+                                    logger.debug(f"[ParallelMetadataLoader] Error terminating process: {e}")
+                            if terminated_count > 0:
+                                logger.info(f"[ParallelMetadataLoader] Terminated {terminated_count} active processes")
+                            self._active_processes.clear()
+
                         # Cancel all pending futures
+                        cancelled_count = 0
                         for f in future_to_item:
-                            f.cancel()
+                            if f.cancel():
+                                cancelled_count += 1
+
+                        logger.info(f"[ParallelMetadataLoader] Cancelled {cancelled_count} pending tasks")
+
+                        # Shutdown executor without waiting
+                        executor.shutdown(wait=False, cancel_futures=True)
                         break
 
                     item = future_to_item[future]
@@ -153,13 +184,12 @@ class ParallelMetadataLoader:
                         if progress_callback:
                             progress_callback(completed, total_files, item, {})
 
-                    # Process events every file to keep UI responsive
-                    # This is crucial for progress dialog updates
-                    try:
-                        from PyQt5.QtWidgets import QApplication
-                        QApplication.processEvents()
-                    except Exception:
-                        pass  # Ignore if not in Qt application
+            finally:
+                # Ensure executor is always shut down
+                if not self._cancelled:
+                    executor.shutdown(wait=True)
+                else:
+                    executor.shutdown(wait=False, cancel_futures=True)
 
         except Exception as e:
             logger.error(f"[ParallelMetadataLoader] Parallel loading failed: {e}", exc_info=True)

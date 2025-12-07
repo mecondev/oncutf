@@ -97,7 +97,7 @@ class MetadataHistoryDialog(QDialog):
         # Info label
         theme = get_theme_manager()
         info_label = QLabel(
-            "Recent metadata and rename operations. Use Ctrl+Z/Ctrl+Shift+Z for quick undo/redo."
+            "Recent metadata and rename operations. Global shortcuts: Ctrl+Z (Undo), Ctrl+Shift+Z (Redo), Ctrl+Y (History)."
         )
         info_label.setStyleSheet(
             f"color: {theme.get_color('text_muted')}; font-size: 11px; margin-bottom: 10px;"
@@ -163,14 +163,14 @@ class MetadataHistoryDialog(QDialog):
         self.undo_button = QPushButton("Undo")
         self.undo_button.setEnabled(False)
         self.undo_button.clicked.connect(self._undo_selected)
-        setup_tooltip(self.undo_button, "Undo the selected operation (Ctrl+Z)", TooltipType.INFO)
+        setup_tooltip(self.undo_button, "Undo the selected operation from history", TooltipType.INFO)
         button_layout.addWidget(self.undo_button)
 
         self.redo_button = QPushButton("Redo")
         self.redo_button.setEnabled(False)
         self.redo_button.clicked.connect(self._redo_selected)
         setup_tooltip(
-            self.redo_button, "Redo the selected operation (Ctrl+Shift+Z)", TooltipType.INFO
+            self.redo_button, "Redo the selected operation from history", TooltipType.INFO
         )
         button_layout.addWidget(self.redo_button)
 
@@ -231,15 +231,10 @@ class MetadataHistoryDialog(QDialog):
 
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts."""
-        # Undo shortcut
-        undo_shortcut = QShortcut(QKeySequence(UNDO_REDO_SETTINGS["UNDO_SHORTCUT"]), self)
-        undo_shortcut.activated.connect(self._undo_selected)
-
-        # Redo shortcut
-        redo_shortcut = QShortcut(QKeySequence(UNDO_REDO_SETTINGS["REDO_SHORTCUT"]), self)
-        redo_shortcut.activated.connect(self._redo_selected)
-
-        # Refresh shortcut
+        # Dialog-specific Ctrl+Z/Ctrl+R shortcuts removed - global shortcuts apply
+        # Buttons provide explicit "undo/redo selected operation" functionality
+        
+        # Refresh shortcut (F5) - dialog-specific, doesn't conflict with global
         refresh_shortcut = QShortcut(QKeySequence("F5"), self)
         refresh_shortcut.activated.connect(self._load_history)
 

@@ -102,6 +102,56 @@ class MainWindow(QMainWindow):
         """Force drag cleanup via Application Service."""
         self.app_service.force_drag_cleanup()
 
+    def global_undo(self) -> None:
+        """
+        Global undo handler (Ctrl+Z) - will call unified undo system.
+
+        TODO: Implement unified undo/redo system that handles:
+        - Rename operations
+        - Metadata edits
+        - Batch operations
+        All in a single chronological stack.
+
+        For now, this is a stub that logs the action.
+        """
+        logger.info("[MainWindow] Global Ctrl+Z pressed - Unified undo system not yet implemented")
+        # TODO: Call unified undo manager when implemented
+
+    def global_redo(self) -> None:
+        """
+        Global redo handler (Ctrl+Shift+Z) - will call unified redo system.
+
+        TODO: Implement unified undo/redo system that handles:
+        - Rename operations
+        - Metadata edits
+        - Batch operations
+        All in a single chronological stack.
+
+        For now, this is a stub that logs the action.
+        """
+        logger.info("[MainWindow] Global Ctrl+Shift+Z pressed - Unified redo system not yet implemented")
+        # TODO: Call unified undo manager when implemented
+
+    def show_command_history(self) -> None:
+        """
+        Show command history dialog (Ctrl+Y) - displays chronological undo/redo stack.
+
+        Currently shows MetadataHistoryDialog (metadata operations only).
+        
+        TODO: Implement unified command history dialog that shows:
+        - All operations in chronological order (rename + metadata + batch)
+        - Ability to jump to any point in history
+        - Operation details (timestamp, type, affected files)
+        """
+        try:
+            from widgets.metadata_history_dialog import MetadataHistoryDialog
+            
+            dialog = MetadataHistoryDialog(self)
+            dialog.exec_()
+        except Exception as e:
+            logger.error(f"[MainWindow] Error showing command history dialog: {e}")
+            logger.info("[MainWindow] Unified command history not yet fully implemented")
+
     def request_preview_update(self) -> None:
         """Request preview update via Application Service."""
         self.app_service.request_preview_update()

@@ -721,10 +721,10 @@ TOOLTIP_POSITION_OFFSET = (
 UNDO_REDO_SETTINGS = {
     # Maximum number of undo steps to keep in memory
     "MAX_UNDO_STEPS": 300,
-    # Keyboard shortcuts
+    # Keyboard shortcuts (legacy - use GLOBAL_SHORTCUTS instead)
     "UNDO_SHORTCUT": "Ctrl+Z",
-    "REDO_SHORTCUT": "Ctrl+R",
-    "HISTORY_SHORTCUT": "Ctrl+Shift+Z",
+    "REDO_SHORTCUT": "Ctrl+Shift+Z",  # Changed from Ctrl+R to standard Ctrl+Shift+Z
+    "HISTORY_SHORTCUT": "Ctrl+Y",  # Changed from Ctrl+Shift+Z to Ctrl+Y
     "RESULTS_HASH_LIST_SHORTCUT": "Ctrl+L",
     # Command grouping timeout (milliseconds)
     # Commands within this time window may be grouped together
@@ -748,6 +748,32 @@ COMMAND_TYPES = {
     "METADATA_SAVE": "metadata_save",
     "RENAME_OPERATION": "rename_operation",
     "BATCH_OPERATION": "batch_operation",
+}
+
+# =====================================
+# FILE TABLE SHORTCUTS
+# =====================================
+
+# Keyboard shortcuts for file table operations (selection-based, widget-specific)
+FILE_TABLE_SHORTCUTS = {
+    "SELECT_ALL": "Ctrl+A",
+    "CLEAR_SELECTION": "Ctrl+Shift+A",
+    "INVERT_SELECTION": "Ctrl+I",
+    "LOAD_METADATA": "Ctrl+M",
+    "LOAD_EXTENDED_METADATA": "Ctrl+E",
+    "CALCULATE_HASH": "Ctrl+H",
+}
+
+# Global shortcuts (not specific to file table)
+GLOBAL_SHORTCUTS = {
+    "BROWSE_FOLDER": "Ctrl+O",  # Browse dialog affects whole app
+    "RELOAD_FOLDER": "F5",  # Reload affects whole app state
+    "SAVE_METADATA": "Ctrl+S",  # Standard Save convention
+    "CANCEL_DRAG": "Escape",  # Cancel drag in any widget (file_table, file_tree, metadata_tree)
+    "CLEAR_FILE_TABLE": "Shift+Escape",  # Clear all files
+    "UNDO": "Ctrl+Z",  # Global undo (all operations: rename, metadata, etc)
+    "REDO": "Ctrl+Shift+Z",  # Global redo (standard convention)
+    "SHOW_HISTORY": "Ctrl+Y",  # Show command history dialog
 }
 
 # =====================================
@@ -977,8 +1003,8 @@ GLOBAL_MIN_COLUMN_WIDTH = 50
 
 # Keyboard shortcuts for column operations
 COLUMN_SHORTCUTS = {
-    "RESET_TO_DEFAULT": "Ctrl+T",  # Reset column widths to default
-    "AUTO_FIT_CONTENT": "Ctrl+Shift+T",  # Auto-fit columns to content
+    "AUTO_FIT_CONTENT": "Ctrl+T",  # Auto-fit columns to content
+    "RESET_TO_DEFAULT": "Ctrl+Shift+T",  # Reset column widths to default
 }
 
 # Column resizing behavior

@@ -239,16 +239,52 @@ class ExifToolWrapper:
         cmd = ["exiftool", "-api", "largefilesupport=1", "-j", "-ee", file_path]
         logger.info(f"[ExtendedReader] Running command: {' '.join(cmd)}")
 
+        # Use Popen instead of run so we can track and terminate the process
+        process = None
         try:
-            result = subprocess.run(
+            process = subprocess.Popen(
                 cmd,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=EXIFTOOL_TIMEOUT_EXTENDED,
                 encoding="utf-8",
                 errors="replace",
             )
-            data = json.loads(result.stdout)
+            
+            # Register process for potential cancellation
+            # Check if we're running in a ParallelMetadataLoader context
+            if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
+                with self._loader._process_lock:
+                    self._loader._active_processes.append(process)
+
+            # Wait for completion with timeout
+            try:
+                stdout, stderr = process.communicate(timeout=EXIFTOOL_TIMEOUT_EXTENDED)
+                returncode = process.returncode
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = process.communicate()
+                logger.error(f"[ExtendedReader] Timeout executing exiftool for {file_path}")
+                return None
+            finally:
+                # Unregister process
+                if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
+                    with self._loader._process_lock:
+                        try:
+                            self._loader._active_processes.remove(process)
+                        except ValueError:
+                            pass  # Already removed or not in list
+
+            if returncode != 0:
+                logger.warning(
+                    f"[ExtendedReader] ExifTool returned error code {returncode} for {file_path}"
+                )
+                if stderr:
+                    logger.warning(f"[ExtendedReader] ExifTool stderr: {stderr}")
+                return None
+
+            # Parse JSON output
+            data = json.loads(stdout)
 
             if not data:
                 logger.warning("[ExtendedReader] No metadata returned.")

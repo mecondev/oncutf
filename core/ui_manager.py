@@ -695,47 +695,51 @@ class UIManager:
         """Initialize all keyboard shortcuts for file table actions."""
         self.parent_window.shortcuts = []
 
-        # File table shortcuts
+        # Import centralized shortcuts from config
+        from core.config_imports import (
+            FILE_TABLE_SHORTCUTS,
+            GLOBAL_SHORTCUTS,
+            UNDO_REDO_SETTINGS,
+        )
+
+        # File table shortcuts (selection-based, widget-specific)
         file_table_shortcuts = [
-            ("Ctrl+A", self.parent_window.select_all_rows),
-            ("Ctrl+Shift+A", self.parent_window.clear_all_selection),
-            ("Ctrl+I", self.parent_window.invert_selection),
-            ("Ctrl+O", self.parent_window.handle_browse),
-            ("F5", self.parent_window.force_reload),
-            ("Ctrl+M", self.parent_window.shortcut_load_metadata),
-            ("Ctrl+E", self.parent_window.shortcut_load_extended_metadata),
-            ("Ctrl+H", self.parent_window.shortcut_calculate_hash_selected),
-            ("Ctrl+S", self.parent_window.shortcut_save_all_metadata),
+            (FILE_TABLE_SHORTCUTS["SELECT_ALL"], self.parent_window.select_all_rows),
+            (FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"], self.parent_window.clear_all_selection),
+            (FILE_TABLE_SHORTCUTS["INVERT_SELECTION"], self.parent_window.invert_selection),
+            (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
+            (FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"], self.parent_window.shortcut_load_extended_metadata),
+            (FILE_TABLE_SHORTCUTS["CALCULATE_HASH"], self.parent_window.shortcut_calculate_hash_selected),
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 
-        # Global shortcuts (attached to main window)
+        # Global shortcuts (attached to main window, work regardless of focus)
         global_shortcuts = [
-            ("Escape", self.parent_window.force_drag_cleanup),  # Global escape key
-            ("Shift+Escape", self.parent_window.clear_file_table_shortcut),  # Clear file table
+            (GLOBAL_SHORTCUTS["BROWSE_FOLDER"], self.parent_window.handle_browse),  # Browse folder
+            (GLOBAL_SHORTCUTS["RELOAD_FOLDER"], self.parent_window.force_reload),  # Reload folder
+            (GLOBAL_SHORTCUTS["SAVE_METADATA"], self.parent_window.shortcut_save_all_metadata),  # Save metadata
+            (GLOBAL_SHORTCUTS["CANCEL_DRAG"], self.parent_window.force_drag_cleanup),  # Cancel drag (all widgets)
+            (GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"], self.parent_window.clear_file_table_shortcut),  # Clear file table
+            (GLOBAL_SHORTCUTS["UNDO"], self.parent_window.global_undo),  # Global undo (Ctrl+Z)
+            (GLOBAL_SHORTCUTS["REDO"], self.parent_window.global_redo),  # Global redo (Ctrl+Shift+Z)
+            (GLOBAL_SHORTCUTS["SHOW_HISTORY"], self.parent_window.show_command_history),  # Command history (Ctrl+Y)
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 
-        # History and dialog shortcuts
-        from core.config_imports import UNDO_REDO_SETTINGS
-
-        history_shortcuts = [
-            (
-                UNDO_REDO_SETTINGS.get("HISTORY_SHORTCUT", "Ctrl+Shift+Z"),
-                self.parent_window.shortcut_manager.show_history_dialog,
-            ),  # Show command history dialog
+        # Other dialog shortcuts
+        other_shortcuts = [
             (
                 UNDO_REDO_SETTINGS.get("RESULTS_HASH_LIST_SHORTCUT", "Ctrl+L"),
                 self.parent_window.shortcut_manager.show_results_hash_list,
             ),  # Show results hash list dialog
         ]
-        for key, handler in history_shortcuts:
+        for key, handler in other_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)

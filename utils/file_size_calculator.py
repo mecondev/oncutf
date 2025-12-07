@@ -34,8 +34,8 @@ def calculate_files_total_size(file_items: list) -> int:
     for item in file_items:
         try:
             # Handle FileItem objects with cached size first (fastest path)
-            if hasattr(item, "file_size") and item.file_size is not None:
-                total_size += item.file_size
+            if hasattr(item, "size") and item.size is not None:
+                total_size += item.size
                 files_cached += 1
                 continue
 

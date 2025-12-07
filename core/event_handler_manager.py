@@ -362,6 +362,37 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
+        # === UNDO/REDO/HISTORY ACTIONS (Global) ===
+        action_undo = create_action_with_shortcut(
+            get_menu_icon("rotate-ccw"), "Undo\tCtrl+Z", None
+        )
+        action_redo = create_action_with_shortcut(
+            get_menu_icon("rotate-cw"), "Redo\tCtrl+Shift+Z", None
+        )
+        action_show_history = create_action_with_shortcut(
+            get_menu_icon("list"), "Show Command History\tCtrl+Y", None
+        )
+
+        menu.addAction(action_undo)
+        menu.addAction(action_redo)
+        menu.addAction(action_show_history)
+
+        # Enable/disable undo/redo based on command manager state
+        # Note: Currently uses metadata command manager until unified system is implemented
+        try:
+            from core.metadata_command_manager import get_metadata_command_manager
+            command_manager = get_metadata_command_manager()
+            action_undo.setEnabled(command_manager.can_undo())
+            action_redo.setEnabled(command_manager.can_redo())
+        except Exception as e:
+            logger.debug(f"[FileTable] Could not check undo/redo state: {e}", extra={"dev_only": True})
+            action_undo.setEnabled(False)
+            action_redo.setEnabled(False)
+        
+        action_show_history.setEnabled(True)  # Always available
+
+        menu.addSeparator()
+
         # === EXPORT ACTIONS (Selection-only + All) ===
         # Note: These keep separate Selected/All variants for different export scopes
         action_export_sel = create_action_with_shortcut(
@@ -475,6 +506,18 @@ class EventHandlerManager:
         elif action == action_calculate_hashes:
             # Calculate checksums for selected files
             self.hash_ops.handle_calculate_hashes(selected_files)
+
+        elif action == action_undo:
+            # Call global undo handler
+            self.parent_window.global_undo()
+
+        elif action == action_redo:
+            # Call global redo handler
+            self.parent_window.global_redo()
+
+        elif action == action_show_history:
+            # Call global show history handler
+            self.parent_window.show_command_history()
 
         elif action == action_export_sel:
             # Handle metadata export for selected files

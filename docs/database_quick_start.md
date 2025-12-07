@@ -39,9 +39,10 @@ The database system is automatically activated when the application starts. No c
 ### New Features
 
 #### Command History & Undo/Redo
-- Press `Ctrl+Shift+Z` to view complete command history dialog
-- Press `Ctrl+Z` (in metadata tree) to undo the last metadata edit
-- Press `Ctrl+R` (in metadata tree) to redo the last undone metadata edit
+- Press `Ctrl+Y` to view command history dialog (shows all metadata operations)
+- Press `Ctrl+Z` (global) to undo the last operation
+- Press `Ctrl+Shift+Z` (global) to redo the last undone operation
+- Shortcuts work throughout the application, not just in metadata tree
 - Validation for safe undo operations
 
 #### Database Statistics
