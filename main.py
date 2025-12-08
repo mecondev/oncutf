@@ -369,6 +369,26 @@ def main() -> int:
             except Exception as win_cleanup_error:
                 logger.warning(f"Windows cleanup delay failed: {win_cleanup_error}")
 
+        # Extra defensive UI cleanup: close windows, run event loop cycles and force GC
+        try:
+            import gc
+            # Ensure top-level windows are closed so Qt can release native resources
+            with __import__("contextlib").suppress(Exception):
+                app.closeAllWindows()
+
+            # Run several small event-loop cycles and force garbage collection
+            for _ in range(8):
+                with __import__("contextlib").suppress(Exception):
+                    app.processEvents()
+                time.sleep(0.05)
+                with __import__("contextlib").suppress(Exception):
+                    gc.collect()
+
+            # Extra short wait to allow native handles to be released
+            time.sleep(0.2)
+        except Exception as extra_cleanup_error:
+            logger.warning(f"Extra UI cleanup failed: {extra_cleanup_error}")
+
         # Only call quit once to prevent runtime errors on Windows
         if not _app_quit_called:
             _app_quit_called = True
