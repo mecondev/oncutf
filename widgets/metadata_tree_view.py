@@ -341,11 +341,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         # Icon delegate functionality removed for simplicity
 
     # =====================================
-    # Path-Safe Dictionary Operations — MOVED TO MetadataScrollMixin
+    # Path-Safe Dictionary Operations
     # =====================================
-    # All path dictionary methods (_path_in_dict, _get_from_path_dict,
-    # _set_in_path_dict, _remove_from_path_dict) have been moved to
-    # MetadataScrollMixin for better code organization.
 
     def resizeEvent(self, event):
         """Handle resize events to adjust placeholder label size."""
@@ -492,7 +489,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             # Update header visibility after mode configuration
             self._update_header_visibility()
 
-    # _apply_scroll_position_immediately moved to MetadataScrollMixin
+    # _apply_scroll_position_immediately (implemented in mixin)
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
@@ -700,10 +697,10 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         self.style().polish(self)
 
     # =====================================
-    # Scroll Position Memory — MOVED TO MetadataScrollMixin
+    # Scroll Position Memory
     # =====================================
-    # All scroll position and file state methods have been moved to
-    # MetadataScrollMixin: set_current_file_path, _save_current_file_state,
+    # Helper methods for scroll position and file state (see mixin):
+    # set_current_file_path, _save_current_file_state,
     # _load_file_state, _save_current_scroll_position,
     # _restore_scroll_position_for_current_file, _smooth_scroll_to_position,
     # clear_scroll_memory, restore_scroll_after_expand
@@ -711,88 +708,6 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # =====================================
     # Context Menu & Actions
     # =====================================
-
-    # MOVED TO MetadataContextMenuMixin
-    # def show_context_menu(self, position: QPoint) -> None:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _cleanup_menu(self) -> None:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _get_menu_icon(self, icon_name: str):
-
-    # MOVED TO MetadataEditMixin
-    # def _is_date_time_field(self, key_path: str) -> bool:
-
-    # MOVED TO MetadataEditMixin
-    # def _get_date_type_from_field(self, key_path: str) -> str:
-
-    # MOVED TO MetadataEditMixin
-    # def _is_editable_metadata_field(self, key_path: str) -> bool:
-
-    # MOVED TO MetadataEditMixin
-    # def _normalize_metadata_field_name(self, key_path: str) -> str:
-
-    # MOVED TO MetadataEditMixin
-    # def get_key_path(self, index: QModelIndex) -> str:
-
-    # MOVED TO MetadataEditMixin
-    # def copy_value(self, value: Any) -> None:
-
-    # =====================================
-    # Metadata Editing Methods
-    # =====================================
-
-    # MOVED TO MetadataEditMixin
-    # def _get_item_path(self, index: QModelIndex) -> list[str]:
-
-    # MOVED TO MetadataEditMixin
-    # def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
-
-    # MOVED TO MetadataEditMixin
-    # def _find_path_by_key(self, key_path: str) -> list[str] | None:
-
-    # MOVED TO MetadataEditMixin
-    # def edit_value(self, key_path: str, current_value: Any) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _restore_selection(self, path: list[str]) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _fallback_edit_value(self, key_path: str, new_value: str, _old_value: str, files_to_modify: list) -> None:
-
-    # MOVED TO MetadataCacheMixin
-    # def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-
-    # MOVED TO MetadataCacheMixin
-    # def _get_original_metadata_value(self, key_path: str) -> Any | None:
-
-    # MOVED TO MetadataCacheMixin
-    # def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
-
-    # MOVED TO MetadataEditMixin
-    # def _edit_date_time_field(self, key_path: str, current_value: Any, saved_path: list[str] | None = None) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def set_rotation_to_zero(self, key_path: str) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _fallback_set_rotation_to_zero(self, key_path: str, new_value: str, _current_value: Any) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def reset_value(self, key_path: str) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _update_tree_item_value(self, _key_path: str, _new_value: str) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def mark_as_modified(self, key_path: str) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
 
     # =====================================
     # Helper Methods
@@ -841,14 +756,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         return selected_files
 
-    # MOVED TO MetadataCacheMixin
-    # def _get_metadata_cache(self):
-
-    # MOVED TO MetadataCacheMixin
-    # def _update_file_icon_status(self) -> None:
-
-    # MOVED TO MetadataCacheMixin
-    # def _reset_metadata_in_cache(self, key_path: str) -> None:
+    
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
@@ -2071,40 +1979,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # =====================================
     # Lazy Loading Methods
     # =====================================
-
-    # MOVED TO MetadataCacheMixin
-    # def _try_lazy_metadata_loading(self, file_item: Any, _context: str = "") -> dict[str, Any] | None:
-
-    # MOVED TO MetadataCacheMixin
-    # def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
-
     # =====================================
-    # History Menu Actions
+    # Lazy Loading Methods
     # =====================================
-
-    # MOVED TO MetadataEditMixin
-    # def _undo_metadata_operation(self) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _redo_metadata_operation(self) -> None:
-
-    # MOVED TO MetadataEditMixin
-    # def _show_history_dialog(self) -> None:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _is_column_visible_in_file_view(self, key_path: str) -> bool:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _add_column_to_file_view(self, key_path: str) -> None:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _remove_column_from_file_view(self, key_path: str) -> None:
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _get_file_table_view(self):
-
-    # MOVED TO MetadataContextMenuMixin
-    # def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """Show or hide the placeholder using the unified helper."""
