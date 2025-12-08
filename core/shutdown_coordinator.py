@@ -346,45 +346,95 @@ class ShutdownCoordinator(QObject):
             return False, f"Timer shutdown failed: {e}"
 
     def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
-        """Shutdown thread pool manager."""
+        """Shutdown thread pool manager with defensive cleanup."""
+        import contextlib
+        
         if not self._thread_pool_manager:
             return True, None
 
         try:
+            # Disconnect any signals to prevent crashes during cleanup
+            with contextlib.suppress(RuntimeError, TypeError, AttributeError):
+                if hasattr(self._thread_pool_manager, "disconnect"):
+                    self._thread_pool_manager.disconnect()
+            
+            # Shutdown thread pool
             if hasattr(self._thread_pool_manager, "shutdown"):
                 self._thread_pool_manager.shutdown()
+            
             return True, None
         except Exception as e:
+            logger.error(f"Thread pool shutdown failed: {e}", exc_info=True)
             return False, f"Thread pool shutdown failed: {e}"
 
     def _shutdown_database(self) -> tuple[bool, str | None]:
-        """Shutdown database manager."""
+        """Shutdown database manager with proper connection closure."""
+        import contextlib
+        
         if not self._database_manager:
             return True, None
 
         try:
+            # Close database connection
             if hasattr(self._database_manager, "close"):
                 self._database_manager.close()
+            
+            # Additional cleanup for SQLite on Windows
+            import platform
+            if platform.system() == "Windows":
+                # Force commit any pending transactions
+                with contextlib.suppress(Exception):
+                    if hasattr(self._database_manager, "commit"):
+                        self._database_manager.commit()
+                
+                # Give Windows time to release file handles
+                import time
+                time.sleep(0.1)  # 100ms grace period
+            
             return True, None
         except Exception as e:
+            logger.error(f"Database shutdown failed: {e}", exc_info=True)
             return False, f"Database shutdown failed: {e}"
 
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
-        """Shutdown ExifTool wrapper."""
+        """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
+        import contextlib
+        import platform
+        
         if not self._exiftool_wrapper:
+            # Still do force cleanup even if no wrapper registered
+            try:
+                from utils.exiftool_wrapper import ExifToolWrapper
+                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            except Exception:
+                pass
             return True, None
 
         try:
+            # Stop the wrapper first
             if hasattr(self._exiftool_wrapper, "stop"):
-                self._exiftool_wrapper.stop()
+                with contextlib.suppress(Exception):
+                    self._exiftool_wrapper.stop()
 
-            # Also call force cleanup as safety measure
+            # Force cleanup all ExifTool processes
+            # This is critical on Windows to prevent zombie processes
             from utils.exiftool_wrapper import ExifToolWrapper
-
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            
+            # On Windows, add extra wait time for process termination
+            if platform.system() == "Windows":
+                import time
+                time.sleep(0.2)  # 200ms grace period for Windows process cleanup
 
             return True, None
         except Exception as e:
+            logger.error(f"ExifTool shutdown failed: {e}", exc_info=True)
+            # Even on error, try force cleanup one more time
+            try:
+                from utils.exiftool_wrapper import ExifToolWrapper
+                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            except Exception:
+                pass
             return False, f"ExifTool shutdown failed: {e}"
 
     def _shutdown_finalize(self) -> tuple[bool, str | None]:

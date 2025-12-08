@@ -87,15 +87,18 @@ class TestDateTimeEditDialog:
         # All selected initially
         result = dialog.get_selected_files()
         assert len(result) == 3
-        # Convert to strings for comparison
-        result_paths = [str(p) for p in result]
-        assert set(result_paths) == set(sample_files)
+        # Convert to Path objects and normalize for cross-platform comparison
+        result_paths = [Path(p) for p in result]
+        sample_paths = [Path(p) for p in sample_files]
+        assert set(result_paths) == set(sample_paths)
 
         # Deselect one
-        dialog.checkboxes[sample_files[1]].setChecked(False)
+        # Use the normalized path from dialog.checkboxes keys
+        checkbox_keys = list(dialog.checkboxes.keys())
+        dialog.checkboxes[checkbox_keys[1]].setChecked(False)
         result = dialog.get_selected_files()
         assert len(result) == 2
-        assert sample_files[1] not in [str(p) for p in result]
+        assert Path(checkbox_keys[1]) not in [Path(p) for p in result]
 
     def test_get_new_datetime(self, qapp, sample_files):
         """Test getting the selected datetime."""
@@ -174,7 +177,9 @@ class TestDateTimeEditDialog:
         dialog = DateTimeEditDialog(parent=None, selected_files=single_file)
 
         assert len(dialog.checkboxes) == 1
-        assert list(dialog.checkboxes.keys())[0] == single_file[0]
+        # Normalize paths for cross-platform comparison
+        checkbox_key = list(dialog.checkboxes.keys())[0]
+        assert Path(checkbox_key) == Path(single_file[0])
 
     def test_datetime_format(self, qapp, sample_files):
         """Test datetime display format."""

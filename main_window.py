@@ -975,12 +975,21 @@ class MainWindow(QMainWindow):
             # Stop metadata operations
             if hasattr(self, "metadata_thread") and self.metadata_thread:
                 try:
+                    # Disconnect all signals first to prevent crashes
+                    try:
+                        self.metadata_thread.disconnect()
+                    except (RuntimeError, TypeError):
+                        pass
+                    
                     self.metadata_thread.quit()
-                    if not self.metadata_thread.wait(2000):  # Wait max 2 seconds
+                    if not self.metadata_thread.wait(1500):  # Wait max 1.5 seconds
                         logger.warning("[CloseEvent] Metadata thread did not stop, terminating...")
                         self.metadata_thread.terminate()
-                        self.metadata_thread.wait(500)  # Wait another 500ms for termination
+                        if not self.metadata_thread.wait(500):  # Wait 500ms for termination
+                            logger.error("[CloseEvent] Metadata thread failed to terminate")
                     logger.info("[CloseEvent] Metadata thread stopped")
+                    # Set to None to prevent double cleanup
+                    self.metadata_thread = None
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Metadata thread cleanup failed: {e}")
 
@@ -990,45 +999,60 @@ class MainWindow(QMainWindow):
     def _post_coordinator_cleanup(self):
         """Perform final cleanup after coordinator shutdown."""
         try:
-            # Clean up Qt resources
+            # Clean up Qt resources with defensive checks
             if hasattr(self, "file_table_view") and self.file_table_view:
-                self.file_table_view.clearSelection()
-                self.file_table_view.setModel(None)
+                try:
+                    self.file_table_view.clearSelection()
+                except (RuntimeError, AttributeError):
+                    pass
+                try:
+                    self.file_table_view.setModel(None)
+                except (RuntimeError, AttributeError):
+                    pass
 
             # Additional cleanup
-            from core.application_context import ApplicationContext
-
-            context = ApplicationContext.get_instance()
-            if context:
-                context.cleanup()  # type: ignore
-                logger.info("[CloseEvent] Application context cleaned up")
+            try:
+                from core.application_context import ApplicationContext
+                context = ApplicationContext.get_instance()
+                if context:
+                    context.cleanup()  # type: ignore
+                    logger.info("[CloseEvent] Application context cleaned up")
+            except Exception as ctx_error:
+                logger.warning(f"[CloseEvent] Context cleanup failed: {ctx_error}")
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error in post-coordinator cleanup: {e}")
 
     def _complete_shutdown(self, success: bool = True):
         """Complete the shutdown process."""
+        import contextlib
+        
         try:
             # Close shutdown dialog
             if hasattr(self, "shutdown_dialog") and self.shutdown_dialog:
-                self.shutdown_dialog.close()
+                with contextlib.suppress(RuntimeError, AttributeError):
+                    self.shutdown_dialog.close()
+                    self.shutdown_dialog.deleteLater()
+                self.shutdown_dialog = None
 
             # Restore cursor
-            QApplication.restoreOverrideCursor()
+            with contextlib.suppress(RuntimeError):
+                QApplication.restoreOverrideCursor()
+
+            # Process any pending deleteLater events
+            with contextlib.suppress(RuntimeError):
+                QApplication.processEvents()
 
             # Log completion
             status = "successfully" if success else "with errors"
             logger.info(f"[CloseEvent] Shutdown completed {status}")
 
             # Quit application (with guard against multiple calls)
-            try:
+            with contextlib.suppress(RuntimeError):
                 QApplication.quit()
-            except RuntimeError as e:
-                logger.debug(f"[CloseEvent] QApplication.quit() error (expected): {e}")
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error completing shutdown: {e}")
-            import contextlib
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 

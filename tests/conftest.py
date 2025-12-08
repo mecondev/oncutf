@@ -11,6 +11,7 @@ Includes CI-friendly setup for PyQt5 testing and common fixtures.
 import atexit
 import contextlib
 import os
+import platform
 import signal
 import sys
 from types import ModuleType
@@ -52,6 +53,23 @@ def neutralize_import_side_effects(monkeypatch):
         sys.modules["utils.logger_setup"] = original_logger
     else:
         sys.modules.pop("utils.logger_setup", None)
+
+
+@pytest.fixture(autouse=True)
+def preserve_os_name():
+    """Preserve os.name to prevent pathlib issues in VS Code test runner.
+    
+    Some tests modify os.name to test cross-platform behavior. This can cause
+    issues with the VS Code pytest extension which calls pathlib.Path.cwd()
+    after tests complete. If os.name is set to 'posix' on Windows, pathlib
+    will try to instantiate PosixPath which fails on Windows.
+    
+    This fixture ensures os.name is always restored to its original value.
+    """
+    original_os_name = os.name
+    yield
+    # Force restore os.name to original value
+    os.name = original_os_name
 
 
 def pytest_configure(config):
@@ -171,7 +189,19 @@ def qt_cleanup(qapp):
 
 
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
-    """Cleanup after all tests."""
+    """Cleanup after all tests.
+    
+    CRITICAL: This must restore os.name BEFORE returning control to pytest/VS Code,
+    otherwise pathlib.Path.cwd() in the VS Code extension will fail with
+    'cannot instantiate PosixPath on your system' error on Windows.
+    """
+    # MUST restore os.name first, before any other cleanup
+    # Some tests (like test_get_user_config_dir_unix) change os.name to 'posix'
+    # If not restored, VS Code pytest extension will crash when calling pathlib.Path.cwd()
+    import platform
+    actual_os_name = "nt" if platform.system() == "Windows" else "posix"
+    os.name = actual_os_name
+    
     try:
         from PyQt5.QtWidgets import QApplication
         app = QApplication.instance()

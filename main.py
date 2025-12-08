@@ -357,6 +357,18 @@ def main() -> int:
         except Exception as e:
             logger.warning(f"Error cleaning up ExifTool processes: {e}")
 
+        # Windows-specific: Process pending deleteLater events before quit
+        if platform.system() == "Windows":
+            try:
+                import contextlib
+                with contextlib.suppress(RuntimeError):
+                    app.processEvents()
+                    # Short delay for Windows to clean up handles
+                    import time as time_module
+                    time_module.sleep(0.1)
+            except Exception as win_cleanup_error:
+                logger.warning(f"Windows cleanup delay failed: {win_cleanup_error}")
+
         # Only call quit once to prevent runtime errors on Windows
         if not _app_quit_called:
             _app_quit_called = True
@@ -369,6 +381,12 @@ def main() -> int:
 
     except Exception as e:
         logger.critical(f"Fatal error in main: {str(e)}", exc_info=True)
+        # Emergency cleanup on crash
+        try:
+            from utils.exiftool_wrapper import ExifToolWrapper
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        except Exception:
+            pass
         return 1
 
 

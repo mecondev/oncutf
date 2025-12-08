@@ -145,6 +145,8 @@ class TestCreateProgressCallback:
             size_progress = pyqtSignal(int, int, str)
 
         worker = TestWorker()
+        # Add worker to qtbot for proper cleanup
+        qtbot.addWidget(worker) if hasattr(worker, 'show') else None
 
         # Track signal emissions
         progress_calls = []
@@ -167,14 +169,20 @@ class TestCreateProgressCallback:
         assert size_cb is not None
 
         progress_cb(5, 10, "Processing")
-        qtbot.wait(10)
+        qtbot.wait(50)  # Increased wait time for signal processing
         assert len(progress_calls) == 1
         assert progress_calls[0] == (5, 10, "Processing")
 
         size_cb(1024, 2048, "file.txt")
-        qtbot.wait(10)
+        qtbot.wait(50)  # Increased wait time for signal processing
         assert len(size_calls) == 1
         assert size_calls[0] == (1024, 2048, "file.txt")
+        
+        # Explicitly disconnect and cleanup
+        worker.progress.disconnect()
+        worker.size_progress.disconnect()
+        worker.deleteLater()
+        qtbot.wait(50)  # Wait for cleanup
 
     def test_create_with_none_signals(self):
         """Test create_progress_callback with None signals."""
