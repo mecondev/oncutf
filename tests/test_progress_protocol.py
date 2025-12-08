@@ -177,7 +177,7 @@ class TestCreateProgressCallback:
         qtbot.wait(50)  # Increased wait time for signal processing
         assert len(size_calls) == 1
         assert size_calls[0] == (1024, 2048, "file.txt")
-        
+
         # Explicitly disconnect and cleanup
         worker.progress.disconnect()
         worker.size_progress.disconnect()

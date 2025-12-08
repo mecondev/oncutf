@@ -200,10 +200,10 @@ class TestShutdownCoordinator:
         def stop_with_error():
             raise RuntimeError("Stop failed")
         mock_wrapper.stop.side_effect = stop_with_error
-        
+
         # Make force_cleanup also fail to trigger the exception path
         mock_exiftool_class.force_cleanup_all_exiftool_processes.side_effect = RuntimeError("Cleanup failed")
-        
+
         coordinator.register_exiftool_wrapper(mock_wrapper)
 
         success, error = coordinator._shutdown_exiftool()

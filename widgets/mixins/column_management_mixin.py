@@ -27,14 +27,14 @@ logger = get_cached_logger(__name__)
 class ColumnManagementMixin:
     """
     Provides column management functionality for table views.
-    
+
     This mixin handles all aspects of column management including:
     - Width configuration and persistence
     - Visibility management (show/hide columns)
     - Auto-fit and reset shortcuts
     - Intelligent width validation
     - Header state management
-    
+
     Expected to be mixed with QTableView or its subclasses.
     Requires:
     - self.horizontalHeader() - QHeaderView instance
@@ -43,11 +43,11 @@ class ColumnManagementMixin:
     - self.columnWidth(index) - method to get column width
     - self.resizeColumnToContents(index) - method to auto-resize
     """
-    
+
     # =====================================
     # Column Configuration & Setup
     # =====================================
-    
+
     def _ensure_all_columns_proper_width(self) -> None:
         """Ensure all visible columns have proper width to minimize text elision."""
         try:
@@ -175,7 +175,7 @@ class ColumnManagementMixin:
     def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on its content type and configuration."""
         from core.unified_column_service import get_column_service
-        
+
         service = get_column_service()
         column_config = service.get_column_config(column_key)
         default_width = column_config.width if column_config else 100
@@ -292,11 +292,11 @@ class ColumnManagementMixin:
         if not hasattr(self, "_column_alignments"):
             self._column_alignments = {}
         self._column_alignments[column_index] = qt_alignment
-    
+
     # =====================================
     # Width Management & Persistence
     # =====================================
-    
+
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
         logger.debug(
@@ -305,7 +305,7 @@ class ColumnManagementMixin:
         try:
             # First, get the default width from UnifiedColumnService
             from core.unified_column_service import get_column_service
-            
+
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
             default_width = column_cfg.width if column_cfg else 100
@@ -380,7 +380,7 @@ class ColumnManagementMixin:
             logger.warning(f"[ColumnWidth] Failed to load column width for {column_key}: {e}")
             # Emergency fallback to UnifiedColumnService defaults
             from core.unified_column_service import get_column_service
-            
+
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
             fallback_width = column_cfg.width if column_cfg else 100
@@ -564,7 +564,7 @@ class ColumnManagementMixin:
 
         # Enforce minimum width immediately to prevent visual flickering
         from core.unified_column_service import get_column_service
-        
+
         service = get_column_service()
         cfg = service.get_column_config(column_key)
         min_width = cfg.min_width if cfg else 30
@@ -599,7 +599,7 @@ class ColumnManagementMixin:
         self._update_header_visibility()
 
         logger.debug(f"[FileTable] Column '{column_key}' resized from {old_size}px to {new_size}px")
-    
+
     def _on_column_moved(
         self, logical_index: int, old_visual_index: int, new_visual_index: int
     ) -> None:
@@ -640,11 +640,11 @@ class ColumnManagementMixin:
             return visible_columns[column_index]
 
         return ""
-    
+
     # =====================================
     # Column Visibility Management
     # =====================================
-    
+
     def _load_column_visibility_config(self) -> dict:
         """Load column visibility configuration from config.json."""
         try:
@@ -1022,11 +1022,11 @@ class ColumnManagementMixin:
                 self._force_scrollbar_update()
 
         self._handle_column_update_lifecycle(perform_column_update)
-    
+
     # =====================================
     # Column Shortcuts & Utilities
     # =====================================
-    
+
     def _reset_columns_to_default(self) -> None:
         """Reset all column widths to their default values (Ctrl+Shift+T).
 

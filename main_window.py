@@ -14,6 +14,7 @@ Many of the linter warnings are false positives and can be safely ignored.
 
 # type: ignore (PyQt5 attributes not recognized by linter)
 
+from contextlib import suppress
 from datetime import datetime
 
 from PyQt5.QtCore import Qt
@@ -976,11 +977,9 @@ class MainWindow(QMainWindow):
             if hasattr(self, "metadata_thread") and self.metadata_thread:
                 try:
                     # Disconnect all signals first to prevent crashes
-                    try:
+                    with suppress(RuntimeError, TypeError):
                         self.metadata_thread.disconnect()
-                    except (RuntimeError, TypeError):
-                        pass
-                    
+
                     self.metadata_thread.quit()
                     if not self.metadata_thread.wait(1500):  # Wait max 1.5 seconds
                         logger.warning("[CloseEvent] Metadata thread did not stop, terminating...")
@@ -1001,14 +1000,10 @@ class MainWindow(QMainWindow):
         try:
             # Clean up Qt resources with defensive checks
             if hasattr(self, "file_table_view") and self.file_table_view:
-                try:
+                with suppress(RuntimeError, AttributeError):
                     self.file_table_view.clearSelection()
-                except (RuntimeError, AttributeError):
-                    pass
-                try:
+                with suppress(RuntimeError, AttributeError):
                     self.file_table_view.setModel(None)
-                except (RuntimeError, AttributeError):
-                    pass
 
             # Additional cleanup
             try:
@@ -1026,7 +1021,7 @@ class MainWindow(QMainWindow):
     def _complete_shutdown(self, success: bool = True):
         """Complete the shutdown process."""
         import contextlib
-        
+
         try:
             # Close shutdown dialog
             if hasattr(self, "shutdown_dialog") and self.shutdown_dialog:

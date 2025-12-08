@@ -8,7 +8,7 @@ def test_get_user_config_dir_unix(monkeypatch, tmp_path):
     # Test non-Windows branch by setting XDG_CONFIG_HOME
     # Import function first, then modify environment
     from main import get_user_config_dir
-    
+
     # On Windows, we can't truly test posix behavior without breaking pathlib
     # Instead, test that XDG_CONFIG_HOME is respected when os.name != 'nt'
     if os.name == "nt":
@@ -26,7 +26,7 @@ def test_get_user_config_dir_unix(monkeypatch, tmp_path):
 def test_get_user_config_dir_windows(monkeypatch, tmp_path):
     # Test Windows branch by setting APPDATA
     from main import get_user_config_dir
-    
+
     if os.name == "nt":
         # On Windows, test APPDATA behavior
         monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))

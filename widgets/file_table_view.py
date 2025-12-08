@@ -28,10 +28,8 @@ from core.pyqt_imports import (
     QPoint,
     Qt,
     QTableView,
-    QTimer,
     pyqtSignal,
 )
-from core.unified_column_service import get_column_service
 from utils.logger_factory import get_cached_logger
 from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import (
