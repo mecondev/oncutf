@@ -54,10 +54,9 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import find_parent_with_attribute, paths_equal
 from utils.placeholder_helper import create_placeholder_helper
-from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
-from widgets.datetime_edit_dialog import DateTimeEditDialog
-from widgets.metadata_edit_dialog import MetadataEditDialog
+from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
 from widgets.mixins.metadata_cache_mixin import MetadataCacheMixin
+from widgets.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from widgets.mixins.metadata_edit_mixin import MetadataEditMixin
 from widgets.mixins.metadata_scroll_mixin import MetadataScrollMixin
 
@@ -136,7 +135,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
         return False
 
 
-class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, QTreeView):
+class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView):
     """
     Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -713,209 +712,14 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # Context Menu & Actions
     # =====================================
 
-    def show_context_menu(self, position: QPoint) -> None:
-        """Display context menu with available options."""
-        if self._is_placeholder_mode or self.property("placeholder"):
-            return
+    # MOVED TO MetadataContextMenuMixin
+    # def show_context_menu(self, position: QPoint) -> None:
 
-        index = self.indexAt(position)
-        if not index.isValid():
-            return
+    # MOVED TO MetadataContextMenuMixin
+    # def _cleanup_menu(self) -> None:
 
-        # Close any existing menu
-        if self._current_menu:
-            self._current_menu.close()
-            self._current_menu = None
-
-        key_path = self.get_key_path(index)
-        value = index.sibling(index.row(), 1).data()
-        selected_files = self._get_current_selection()
-        has_multiple_selection = len(selected_files) > 1
-
-        # Check if this field can be edited (standard metadata fields)
-        is_editable_field = self._is_editable_metadata_field(key_path)
-
-        # Check if current file has modifications for this field
-        has_modifications = False
-        current_field_value = None
-        if self._current_file_path:
-            # Normalize key path for standard metadata fields
-            normalized_key_path = self._normalize_metadata_field_name(key_path)
-
-            # Check staging manager
-            from core.metadata_staging_manager import get_metadata_staging_manager
-            staging_manager = get_metadata_staging_manager()
-            if staging_manager:
-                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
-                has_modifications = normalized_key_path in staged_changes
-
-            # Get current field value
-            selected_files = self._get_current_selection()
-            if selected_files:
-                file_item = selected_files[0]
-                # Use cache helper for unified access
-                cache_helper = self._get_cache_helper()
-                if cache_helper:
-                    current_field_value = cache_helper.get_metadata_value(
-                        file_item, normalized_key_path
-                    )
-
-                # Fallback to file item metadata if not in cache
-                if (
-                    current_field_value is None
-                    and hasattr(file_item, "metadata")
-                    and file_item.metadata
-                ):
-                    current_field_value = self._get_value_from_metadata_dict(
-                        file_item.metadata, key_path
-                    )
-
-                # Default to empty string if no value found
-                if current_field_value is None:
-                    current_field_value = ""
-
-        # Create menu
-        menu = QMenu(self)
-        self._current_menu = menu
-        # Apply theme styling
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        menu.setStyleSheet(theme.get_context_menu_stylesheet())
-
-        # Edit action - enabled for editable metadata fields with single selection
-        edit_action = QAction("Edit Value", menu)
-        edit_action.setIcon(self._get_menu_icon("edit"))
-        edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(not has_multiple_selection and is_editable_field)
-        menu.addAction(edit_action)
-
-        # Reset action - enabled for editable fields with modifications
-        reset_action = QAction("Reset Value", menu)
-        reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        reset_action.setEnabled(
-            not has_multiple_selection and is_editable_field and has_modifications
-        )
-        menu.addAction(reset_action)
-
-        # Special action for rotation fields - Set to 0°
-        is_rotation_field = "rotation" in key_path.lower()
-        if is_rotation_field:
-            set_zero_action = QAction("Set Rotation to 0°", menu)
-            set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
-            set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
-
-            # Enable only if: single selection + rotation field + current value is not "0"
-            is_zero_rotation = (
-                str(current_field_value) == "0" if current_field_value is not None else False
-            )
-            set_zero_enabled = not has_multiple_selection and not is_zero_rotation
-            set_zero_action.setEnabled(set_zero_enabled)
-
-            # Update tooltip based on current state
-            if has_multiple_selection:
-                set_zero_action.setToolTip("Single file selection required")
-            elif is_zero_rotation:
-                set_zero_action.setToolTip("Rotation is already set to 0°")
-            else:
-                set_zero_action.setToolTip(f"Set rotation to 0° (current: {current_field_value}°)")
-
-            menu.addAction(set_zero_action)
-
-        menu.addSeparator()
-
-        # Add/Remove to File View toggle action
-        is_column_visible = self._is_column_visible_in_file_view(key_path)
-
-        if is_column_visible:
-            file_view_action = QAction("Remove from File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("minus-circle"))
-            file_view_action.setToolTip(f"Remove '{key_path}' column from file view")
-            file_view_action.triggered.connect(lambda: self._remove_column_from_file_view(key_path))
-        else:
-            file_view_action = QAction("Add to File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("plus-circle"))
-            file_view_action.setToolTip(f"Add '{key_path}' column to file view")
-            file_view_action.triggered.connect(lambda: self._add_column_to_file_view(key_path))
-
-        menu.addAction(file_view_action)
-
-        menu.addSeparator()
-
-        # History submenu
-        history_menu = QMenu("History", menu)
-        history_menu.setIcon(self._get_menu_icon("clock"))
-
-        # Check if undo/redo are available and get descriptions
-        try:
-            from core.metadata_command_manager import get_metadata_command_manager
-
-            command_manager = get_metadata_command_manager()
-            can_undo = command_manager.can_undo()
-            can_redo = command_manager.can_redo()
-            undo_desc = command_manager.get_undo_description() if can_undo else None
-            redo_desc = command_manager.get_redo_description() if can_redo else None
-        except Exception as e:
-            logger.warning(f"[MetadataTreeView] Error checking command manager status: {e}")
-            can_undo = False
-            can_redo = False
-            undo_desc = None
-            redo_desc = None
-
-        # Undo action with operation description
-        undo_text = f"Undo: {undo_desc}\tCtrl+Z" if undo_desc else "Undo\tCtrl+Z"
-        undo_action = QAction(undo_text, history_menu)
-        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        undo_action.setEnabled(can_undo)
-        undo_action.triggered.connect(self._undo_metadata_operation)
-
-        # Redo action with operation description (updated to Ctrl+Shift+Z)
-        redo_text = f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
-        redo_action = QAction(redo_text, history_menu)
-        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
-        redo_action.setEnabled(can_redo)
-        redo_action.triggered.connect(self._redo_metadata_operation)
-
-        history_menu.addAction(undo_action)
-        history_menu.addAction(redo_action)
-
-        history_menu.addSeparator()
-
-        # Show History action (Ctrl+Y) - opens metadata history dialog
-        show_history_action = QAction("Show History\tCtrl+Y", history_menu)
-        show_history_action.setIcon(self._get_menu_icon("list"))
-        show_history_action.triggered.connect(self._show_history_dialog)
-        history_menu.addAction(show_history_action)
-
-        menu.addMenu(history_menu)
-
-        menu.addSeparator()
-
-        # Copy action - always available if there's a value
-        copy_action = QAction("Copy", menu)
-        copy_action.setIcon(self._get_menu_icon("copy"))
-        copy_action.triggered.connect(lambda: self.copy_value(value))
-        copy_action.setEnabled(bool(value))
-        menu.addAction(copy_action)
-
-        # Use popup() instead of exec_() to avoid blocking
-        menu.popup(self.mapToGlobal(position))
-
-        # Connect cleanup to aboutToHide after showing
-        menu.aboutToHide.connect(self._cleanup_menu)
-
-    def _cleanup_menu(self) -> None:
-        """Clean up the current menu reference."""
-        self._current_menu = None
-
-    def _get_menu_icon(self, icon_name: str):
-        """Get menu icon using the same system as specified text module."""
-        try:
-            from utils.icons_loader import get_menu_icon
-
-            return get_menu_icon(icon_name)
-        except ImportError:
-            return None
+    # MOVED TO MetadataContextMenuMixin
+    # def _get_menu_icon(self, icon_name: str):
 
     # MOVED TO MetadataEditMixin
     # def _is_date_time_field(self, key_path: str) -> bool:
@@ -2287,208 +2091,20 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # MOVED TO MetadataEditMixin
     # def _show_history_dialog(self) -> None:
 
-    def _is_column_visible_in_file_view(self, key_path: str) -> bool:
-        """Check if a column is already visible in the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return False
+    # MOVED TO MetadataContextMenuMixin
+    # def _is_column_visible_in_file_view(self, key_path: str) -> bool:
 
-            # Check if column is in visible columns configuration
-            visible_columns = getattr(file_table_view, "_visible_columns", {})
+    # MOVED TO MetadataContextMenuMixin
+    # def _add_column_to_file_view(self, key_path: str) -> None:
 
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return False
+    # MOVED TO MetadataContextMenuMixin
+    # def _remove_column_from_file_view(self, key_path: str) -> None:
 
-            # Check if column is visible
-            from config import FILE_TABLE_COLUMN_CONFIG
+    # MOVED TO MetadataContextMenuMixin
+    # def _get_file_table_view(self):
 
-            if column_key in FILE_TABLE_COLUMN_CONFIG:
-                default_visible = FILE_TABLE_COLUMN_CONFIG[column_key]["default_visible"]
-                return visible_columns.get(column_key, default_visible)
-
-        except Exception as e:
-            logger.warning(f"Error checking column visibility: {e}")
-
-        return False
-
-    def _add_column_to_file_view(self, key_path: str) -> None:
-        """Add a metadata column to the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return
-
-            # Update visibility configuration
-            if hasattr(file_table_view, "_visible_columns"):
-                file_table_view._visible_columns[column_key] = True
-
-                # Save configuration
-                if hasattr(file_table_view, "_save_column_visibility_config"):
-                    file_table_view._save_column_visibility_config()
-
-                # Update table display (clears selection)
-                if hasattr(file_table_view, "_update_table_columns"):
-                    file_table_view._update_table_columns()
-
-                logger.info(f"Added column '{key_path}' -> '{column_key}' to file view")
-
-        except Exception as e:
-            logger.error(f"Error adding column to file view: {e}")
-
-    def _remove_column_from_file_view(self, key_path: str) -> None:
-        """Remove a metadata column from the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return
-
-            # Update visibility configuration
-            if hasattr(file_table_view, "_visible_columns"):
-                file_table_view._visible_columns[column_key] = False
-
-                # Save configuration
-                if hasattr(file_table_view, "_save_column_visibility_config"):
-                    file_table_view._save_column_visibility_config()
-
-                # Update table display (clears selection)
-                if hasattr(file_table_view, "_update_table_columns"):
-                    file_table_view._update_table_columns()
-
-                logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
-
-        except Exception as e:
-            logger.error(f"Error removing column from file view: {e}")
-
-    def _get_file_table_view(self):
-        """Get the file table view from the parent hierarchy."""
-        try:
-            # Look for file table view in parent hierarchy
-            parent = self.parent()
-            while parent:
-                if hasattr(parent, "file_table_view"):
-                    return parent.file_table_view
-
-                # Check if parent has file_table attribute
-                if hasattr(parent, "file_table"):
-                    return parent.file_table
-
-                # Check for main window with file table
-                if hasattr(parent, "findChild"):
-                    from widgets.file_table_view import FileTableView
-
-                    file_table = parent.findChild(FileTableView)
-                    if file_table:
-                        return file_table
-
-                parent = parent.parent()
-
-        except Exception as e:
-            logger.warning(f"Error finding file table view: {e}")
-
-        return None
-
-    def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
-        """Map a metadata key path to a file table column key."""
-        try:
-            # Create mapping from metadata keys to column keys
-            metadata_to_column_mapping = {
-                # Image metadata
-                "EXIF:ImageWidth": "image_size",
-                "EXIF:ImageHeight": "image_size",
-                "EXIF:Orientation": "rotation",
-                "EXIF:ISO": "iso",
-                "EXIF:FNumber": "aperture",
-                "EXIF:ExposureTime": "shutter_speed",
-                "EXIF:WhiteBalance": "white_balance",
-                "EXIF:Compression": "compression",
-                "EXIF:Make": "device_manufacturer",
-                "EXIF:Model": "device_model",
-                "EXIF:SerialNumber": "device_serial_no",
-                # Video metadata
-                "QuickTime:Duration": "duration",
-                "QuickTime:VideoFrameRate": "video_fps",
-                "QuickTime:AvgBitrate": "video_avg_bitrate",
-                "QuickTime:VideoCodec": "video_codec",
-                "QuickTime:MajorBrand": "video_format",
-                # Audio metadata
-                "QuickTime:AudioChannels": "audio_channels",
-                "QuickTime:AudioFormat": "audio_format",
-                # File metadata
-                "File:FileSize": "file_size",
-                "File:FileType": "type",
-                "File:FileModifyDate": "modified",
-                "File:MD5": "file_hash",
-                "File:SHA1": "file_hash",
-                "File:SHA256": "file_hash",
-            }
-
-            # Direct mapping
-            if metadata_key in metadata_to_column_mapping:
-                return metadata_to_column_mapping[metadata_key]
-
-            # Fuzzy matching for common patterns
-            key_lower = metadata_key.lower()
-
-            if "rotation" in key_lower or "orientation" in key_lower:
-                return "rotation"
-            elif "duration" in key_lower:
-                return "duration"
-            elif "iso" in key_lower:
-                return "iso"
-            elif "aperture" in key_lower or "fnumber" in key_lower:
-                return "aperture"
-            elif "shutter" in key_lower or "exposure" in key_lower:
-                return "shutter_speed"
-            elif "white" in key_lower and "balance" in key_lower:
-                return "white_balance"
-            elif "compression" in key_lower:
-                return "compression"
-            elif "make" in key_lower or "manufacturer" in key_lower:
-                return "device_manufacturer"
-            elif "model" in key_lower:
-                return "device_model"
-            elif "serial" in key_lower:
-                return "device_serial_no"
-            elif "framerate" in key_lower or "fps" in key_lower:
-                return "video_fps"
-            elif "bitrate" in key_lower:
-                return "video_avg_bitrate"
-            elif "codec" in key_lower:
-                return "video_codec"
-            elif "format" in key_lower:
-                if "audio" in key_lower:
-                    return "audio_format"
-                elif "video" in key_lower:
-                    return "video_format"
-            elif "channels" in key_lower and "audio" in key_lower:
-                return "audio_channels"
-            elif "size" in key_lower and (
-                "image" in key_lower or "width" in key_lower or "height" in key_lower
-            ):
-                return "image_size"
-            elif "hash" in key_lower or "md5" in key_lower or "sha" in key_lower:
-                return "file_hash"
-
-        except Exception as e:
-            logger.warning(f"Error mapping metadata key to column key: {e}")
-
-        return None
+    # MOVED TO MetadataContextMenuMixin
+    # def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """Show or hide the placeholder using the unified helper."""
