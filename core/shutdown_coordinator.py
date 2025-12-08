@@ -348,7 +348,7 @@ class ShutdownCoordinator(QObject):
     def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
         """Shutdown thread pool manager with defensive cleanup."""
         import contextlib
-        
+
         if not self._thread_pool_manager:
             return True, None
 
@@ -357,11 +357,11 @@ class ShutdownCoordinator(QObject):
             with contextlib.suppress(RuntimeError, TypeError, AttributeError):
                 if hasattr(self._thread_pool_manager, "disconnect"):
                     self._thread_pool_manager.disconnect()
-            
+
             # Shutdown thread pool
             if hasattr(self._thread_pool_manager, "shutdown"):
                 self._thread_pool_manager.shutdown()
-            
+
             return True, None
         except Exception as e:
             logger.error(f"Thread pool shutdown failed: {e}", exc_info=True)
@@ -370,7 +370,7 @@ class ShutdownCoordinator(QObject):
     def _shutdown_database(self) -> tuple[bool, str | None]:
         """Shutdown database manager with proper connection closure."""
         import contextlib
-        
+
         if not self._database_manager:
             return True, None
 
@@ -378,7 +378,7 @@ class ShutdownCoordinator(QObject):
             # Close database connection
             if hasattr(self._database_manager, "close"):
                 self._database_manager.close()
-            
+
             # Additional cleanup for SQLite on Windows
             import platform
             if platform.system() == "Windows":
@@ -386,11 +386,11 @@ class ShutdownCoordinator(QObject):
                 with contextlib.suppress(Exception):
                     if hasattr(self._database_manager, "commit"):
                         self._database_manager.commit()
-                
+
                 # Give Windows time to release file handles
                 import time
                 time.sleep(0.1)  # 100ms grace period
-            
+
             return True, None
         except Exception as e:
             logger.error(f"Database shutdown failed: {e}", exc_info=True)
@@ -400,7 +400,7 @@ class ShutdownCoordinator(QObject):
         """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
         import contextlib
         import platform
-        
+
         if not self._exiftool_wrapper:
             # Still do force cleanup even if no wrapper registered
             try:
@@ -420,7 +420,7 @@ class ShutdownCoordinator(QObject):
             # This is critical on Windows to prevent zombie processes
             from utils.exiftool_wrapper import ExifToolWrapper
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
-            
+
             # On Windows, add extra wait time for process termination
             if platform.system() == "Windows":
                 import time
