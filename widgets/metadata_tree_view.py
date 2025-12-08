@@ -57,6 +57,7 @@ from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
 from widgets.datetime_edit_dialog import DateTimeEditDialog
 from widgets.metadata_edit_dialog import MetadataEditDialog
+from widgets.mixins.metadata_cache_mixin import MetadataCacheMixin
 from widgets.mixins.metadata_scroll_mixin import MetadataScrollMixin
 
 # ApplicationContext integration
@@ -134,7 +135,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
         return False
 
 
-class MetadataTreeView(MetadataScrollMixin, QTreeView):
+class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, QTreeView):
     """
     Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -1258,61 +1259,14 @@ class MetadataTreeView(MetadataScrollMixin, QTreeView):
         # Force viewport update to refresh visual state
         self.viewport().update()
 
-    def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-        """
-        Get the original value of a metadata field from the cache.
-        This should be called before resetting to get the original value.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return None
+    # MOVED TO MetadataCacheMixin
+    # def _get_original_value_from_cache(self, key_path: str) -> Any | None:
 
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return None
+    # MOVED TO MetadataCacheMixin
+    # def _get_original_metadata_value(self, key_path: str) -> Any | None:
 
-        # Use cache helper for unified access
-        return cache_helper.get_metadata_value(file_item, key_path)
-
-    def _get_original_metadata_value(self, key_path: str) -> Any | None:
-        """
-        Get the ORIGINAL metadata value (not staged) for comparison.
-        Used by smart_mark_modified to check against actual original values.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return None
-
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return None
-
-        # Get original metadata entry (not staged version)
-        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-        if not metadata_entry or not hasattr(metadata_entry, 'data'):
-            return None
-
-        # Extract value from original metadata dict
-        return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
-
-    def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
-        """
-        Extract a value from metadata dictionary using key path.
-        """
-        parts = key_path.split("/")
-
-        if len(parts) == 1:
-            # Top-level key
-            return metadata.get(parts[0])
-        elif len(parts) == 2:
-            # Nested key (group/key)
-            group, key = parts
-            if group in metadata and isinstance(metadata[group], dict):
-                return metadata[group].get(key)
-
-        return None
+    # MOVED TO MetadataCacheMixin
+    # def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
 
     def _edit_date_time_field(self, key_path: str, current_value: Any, saved_path: list[str] | None = None) -> None:
         """Open DateTimeEditDialog to edit a date/time field."""
@@ -1659,106 +1613,14 @@ class MetadataTreeView(MetadataScrollMixin, QTreeView):
 
         return selected_files
 
-    def _get_metadata_cache(self):
-        """Get metadata cache via parent traversal."""
-        parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, "metadata_cache"):
-            return parent_window.metadata_cache
+    # MOVED TO MetadataCacheMixin
+    # def _get_metadata_cache(self):
 
-        return None
+    # MOVED TO MetadataCacheMixin
+    # def _update_file_icon_status(self) -> None:
 
-    def _update_file_icon_status(self) -> None:
-        """
-        Update the file icon in the file table to reflect modified status.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return
-
-        # Get parent window and file model
-        parent_window = self._get_parent_with_file_table()
-        if not parent_window:
-            return
-
-        file_model = parent_window.file_model
-        if not file_model:
-            return
-
-        # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        # For each selected file, update its icon
-        updated_rows = []
-        for file_item in selected_files:
-            # Check if this specific file has modified items
-            file_path = file_item.full_path
-
-            # Check if this file has modifications
-            has_modifications = False
-
-            if staging_manager:
-                has_modifications = staging_manager.has_staged_changes(file_path)
-
-            # Update icon based on whether we have modified items
-            if has_modifications:
-                # Set modified icon
-                file_item.metadata_status = "modified"
-            else:
-                # Set normal loaded icon
-                file_item.metadata_status = "loaded"
-
-            # Find the row for this file item and mark for update
-            for row, model_file in enumerate(file_model.files):
-                if paths_equal(model_file.full_path, file_path):
-                    updated_rows.append(row)
-                    break
-
-        # Emit dataChanged for all updated rows to refresh their icons
-        for row in updated_rows:
-            if 0 <= row < len(file_model.files):
-                # Emit dataChanged specifically for the icon column (column 0)
-                icon_index = file_model.index(row, 0)
-                file_model.dataChanged.emit(icon_index, icon_index, [Qt.DecorationRole])
-
-    def _reset_metadata_in_cache(self, key_path: str) -> None:
-        """
-        Reset the metadata value in the cache to its original state.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return
-
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return
-
-        # Get the original value from file item metadata
-        original_value = None
-        if hasattr(file_item, "metadata") and file_item.metadata:
-            original_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
-
-        # Update cache with original value or remove if no original
-        if original_value is not None:
-            cache_helper.set_metadata_value(file_item, key_path, original_value)
-        else:
-            # Remove from cache if no original value
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-            if cache_entry and hasattr(cache_entry, "data") and key_path in cache_entry.data:
-                del cache_entry.data[key_path]
-
-        # Update file icon status based on remaining modified items
-        if not self.modified_items:
-            file_item.metadata_status = "loaded"
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-            if cache_entry:
-                cache_entry.modified = False
-        else:
-            file_item.metadata_status = "modified"
-
-        # Trigger UI update
-        self._update_file_icon_status()
+    # MOVED TO MetadataCacheMixin
+    # def _reset_metadata_in_cache(self, key_path: str) -> None:
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
@@ -2982,43 +2844,11 @@ class MetadataTreeView(MetadataScrollMixin, QTreeView):
     # Lazy Loading Methods
     # =====================================
 
-    def _try_lazy_metadata_loading(
-        self, file_item: Any, _context: str = ""
-    ) -> dict[str, Any] | None:
-        """
-        Try to load metadata using simple fallback loading (lazy manager removed).
+    # MOVED TO MetadataCacheMixin
+    # def _try_lazy_metadata_loading(self, file_item: Any, _context: str = "") -> dict[str, Any] | None:
 
-        Args:
-            file_item: FileItem to load metadata for
-            context: Context string for logging
-
-        Returns:
-            dict: Metadata if available, None if not cached
-        """
-        # Since LazyMetadataManager was removed, use direct fallback loading
-        return self._fallback_metadata_loading(file_item)
-
-    def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
-        """Fallback metadata loading method."""
-        try:
-            if self._cache_helper:
-                metadata = self._cache_helper.get_metadata_for_file(file_item)
-                if metadata:
-                    logger.debug(
-                        f"[MetadataTree] Loaded metadata via cache helper for {file_item.filename}",
-                        extra={"dev_only": True},
-                    )
-                    return metadata
-
-            logger.debug(
-                f"[MetadataTree] No metadata found for {file_item.filename}",
-                extra={"dev_only": True},
-            )
-            return None
-
-        except Exception as e:
-            logger.error(f"[MetadataTree] Error in fallback metadata loading: {e}")
-            return None
+    # MOVED TO MetadataCacheMixin
+    # def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
 
     # =====================================
     # History Menu Actions
