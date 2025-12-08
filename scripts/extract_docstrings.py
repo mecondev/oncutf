@@ -8,11 +8,12 @@ Date: 2025-06-14
 This module provides functionality for the OnCutF batch file renaming application.
 """
 
-import os
 import ast
+import os
+
 
 def extract_docstrings_from_file(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, encoding='utf-8') as f:
         try:
             tree = ast.parse(f.read())
             docstring = ast.get_docstring(tree)
@@ -38,7 +39,7 @@ def save_results(results, output_file):
             f.write(f"{doc if doc else '[No docstring found]'}\n\n")
 
 if __name__ == "__main__":
-    project_dir = "."  # Ή βάλε εδώ το path του project
+    project_dir = "."  # Or put the project path here
     output_path = "reports/docstrings_report.txt"
     docstrings = scan_project(project_dir)
     save_results(docstrings, output_path)

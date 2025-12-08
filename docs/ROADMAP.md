@@ -1,19 +1,19 @@
-# Οδικός Χάρτης (Roadmap) — Κατάσταση Refactor
+# Roadmap — Refactor Status
 
-Ημερομηνία: 2025-12-08
+Date: 2025-12-08
 
-Σύντομη περιγραφή: Ενημέρωση της πορείας των refactor εργασιών. Τα ανθρώπινα σχόλια και οι περιγραφές είναι στα Ελληνικά.
-
----
-
-## Συνοπτικά
-- Στόχος: Μείωση πολυπλοκότητας του `FileTableView` και απομόνωση της διαχείρισης στηλών σε ξεχωριστό mixin.
-- Αποτέλεσμα: `FileTableView` μειώθηκε από ~2069 LOC -> 976 LOC. Δημιουργήθηκε `ColumnManagementMixin` (~1179 LOC).
-- Test status: 491 tests πέρασαν.
+Short description: Update on the progress of refactor tasks. Human comments and descriptions are in Greek.
 
 ---
 
-## Κατάσταση Βημάτων (Ticked)
+## Summary
+- Goal: Reduce the complexity of `FileTableView` and isolate column management in a separate mixin.
+- Result: `FileTableView` reduced from ~2069 LOC to 976 LOC. Created `ColumnManagementMixin` (~1179 LOC).
+- Test status: 491 tests passed.
+
+---
+
+## Step Status (Ticked)
 
 - [x] Phase 1: MetadataTreeView decomposition
 - [x] Analyze streaming metadata ROI
@@ -29,7 +29,7 @@
 - [x] Run test suite and verify (491 passed)
 - [x] Commit changes (single commit for easy rollback)
 
-## Σε Εξέλιξη / Επόμενα (Not checked)
+## In Progress / Next (Not checked)
 - [ ] Update user-facing docs explaining the new mixin API (short guide)
 - [ ] Add unit tests targeting `ColumnManagementMixin` behavior in isolation
 - [ ] Consider exposing configuration toggles (e.g., streaming metadata flag)
@@ -37,30 +37,30 @@
 
 ---
 
-## Τεχνικές Σημειώσεις
-- Η εξαγωγή έγινε σε 5 λογικές παρτίδες για να αποφευχθούν σφάλματα και να διευκολυνθεί η επαλήθευση.
-- Διατηρήθηκαν όλα τα public APIs (`add_column`, `remove_column`, `get_visible_columns_list`, `refresh_columns_after_model_change`).
-- Τα non-column Qt handlers (`resizeEvent`, `update_placeholder_visibility`, `_update_scrollbar_visibility`) παρέμειναν στο `FileTableView`.
+## Technical Notes
+- The export was done in 5 logical batches to avoid errors and facilitate verification.
+- All public APIs were retained (`add_column`, `remove_column`, `get_visible_columns_list`, `refresh_columns_after_model_change`).
+- The non-column Qt handlers (`resizeEvent`, `update_placeholder_visibility`, `_update_scrollbar_visibility`) remained in `FileTableView`.
 
-## Αρχεία που άλλαξαν
-- `NEW: widgets/mixins/column_management_mixin.py` — νέος mixin με 34 methods
-- `MOD: widgets/file_table_view.py` — αφαιρέθηκαν οι extracted methods, κληρονομεί πλέον `ColumnManagementMixin`
-- `MOD: widgets/mixins/__init__.py` — πρόσθεση export για `ColumnManagementMixin`
-- `NEW: docs/architecture/file_table_view_phase_2_plan.md` — (αυτόματη δημιουργία σε προηγούμενο βήμα)
-- `NEW: docs/architecture/streaming_metadata_plan.md` — (αυτόματη δημιουργία σε προηγούμενο βήμα)
-
----
-
-## Πρόταση Επόμενων Βημάτων (συντομότερα)
-1. Ενημέρωση τεχνικής τεκμηρίωσης για `ColumnManagementMixin` (API, usage examples).
-2. Γράψε μικρές μονάδες τεστ που καλούν τις δημόσιες μεθόδους του mixin.
-3. Εξερεύνηση Phase 3: Προτείνω να κοιτάξουμε `unified_rename_engine` ή `table_manager` για περαιτέρω modularization.
+## Changed Files
+- `NEW: widgets/mixins/column_management_mixin.py` — new mixin with 34 methods
+- `MOD: widgets/file_table_view.py` — extracted methods removed, now inherits `ColumnManagementMixin`
+- `MOD: widgets/mixins/__init__.py` — added export for `ColumnManagementMixin`
+- `NEW: docs/architecture/file_table_view_phase_2_plan.md` — (automatically generated in a previous step)
+- `NEW: docs/architecture/streaming_metadata_plan.md` — (automatically generated in a previous step)
 
 ---
 
-Αν θέλεις, μπορώ να:
-- Δημιουργήσω το τεχνικό documentation (README) για το `ColumnManagementMixin` τώρα.
-- Ξεκινήσω τη συγγραφή unit tests για σημαντικές συμπεριφορές του mixin.
-- Προτείνω συγκεκριμένα αρχεία για Phase 3 και να φτιάξω λεπτομερή σχέδιο.
+## Proposed Next Steps (shorter)
+1. Update technical documentation for `ColumnManagementMixin` (API, usage examples).
+2. Write small test units that call the public methods of the mixin.
+3. Exploration Phase 3: I suggest we look into `unified_rename_engine` or `table_manager` for further modularization.
 
-Ποιο από αυτά να προχωρήσω;
+---
+
+If you want, I can:
+- I will create the technical documentation (README) for `ColumnManagementMixin` now.
+- Start writing unit tests for important behaviors of the mixin.
+- I suggest specific files for Phase 3 and to create a detailed plan.
+
+Which one should I proceed with?

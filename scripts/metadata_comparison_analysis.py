@@ -9,7 +9,6 @@ Usage: python3 scripts/metadata_comparison_analysis.py
 """
 
 import json
-import os
 import sqlite3
 import subprocess
 import sys
@@ -320,7 +319,7 @@ class MetadataComparisonAnalyzer:
             print("METADATA COMPARISON ANALYSIS REPORT")
             print("="*80)
 
-            print(f"\n SUMMARY BY FILE TYPE:")
+            print("\n SUMMARY BY FILE TYPE:")
             print(f"{'Extension':<10} {'Files':<6} {'Avg Fast':<10} {'Avg Extended':<12} {'Avg Diff':<10}")
             print("-" * 60)
 
@@ -342,7 +341,7 @@ class MetadataComparisonAnalyzer:
                 ORDER BY json_extract(mc.analysis_summary, '$.value_differences_count') DESC
             """)
 
-            print(f"\n FILES WITH SIGNIFICANT DIFFERENCES:")
+            print("\n FILES WITH SIGNIFICANT DIFFERENCES:")
 
             for row in cursor.fetchall():
                 filename = Path(row['file_path']).name
@@ -353,7 +352,7 @@ class MetadataComparisonAnalyzer:
 
                 if analysis['value_differences_count'] > 0:
                     value_diffs = json.loads(row['value_differences'])
-                    print(f"   Key differences:")
+                    print("   Key differences:")
                     for key, diff in list(value_diffs.items())[:5]:  # Show first 5
                         print(f"     {key}: '{diff['fast']}' vs '{diff['extended']}'")
                     if len(value_diffs) > 5:

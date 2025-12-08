@@ -238,8 +238,8 @@ python -m pytest tests/test_progress_manager.py -v
 
 ## Future Enhancements
 
-1. **Copy Operations**: Full support για file copy operations
-2. **Move Operations**: Support για file move operations
-3. **Batch Operations**: Support για batch file operations
-4. **Custom Operations**: Support για custom operation types
+1. **Copy Operations**: Full support for file copy operations
+2. **Move Operations**: Support for file move operations
+3. **Batch Operations**: Support for batch file operations
+4. **Custom Operations**: Support for custom operation types
 5. **Progress Persistence**: Save/restore progress state

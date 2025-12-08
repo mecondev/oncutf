@@ -9,11 +9,12 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 """
 
 from PyQt5.QtWidgets import QApplication, QTextEdit
+
 from utils.icon_utilities import create_colored_html_icon
 
 app = QApplication([])
 
-# Δημιουργία rich text με inline indicators
+# Creating rich text with inline indicators
 html = (
     "<p>Status Summary:</p>"
     f"{create_colored_html_icon('#2ecc71')} Valid<br>"

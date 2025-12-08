@@ -4,7 +4,7 @@ Module: mocks.py
 Author: Michael Economou
 Date: 2025-05-31
 
-Mock objects for testing - Windows/Linux/Ελληνικά compatible
+Mock objects for testing - Windows/Linux/Greek compatible
 """
 
 import os

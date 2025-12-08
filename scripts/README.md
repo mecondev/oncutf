@@ -57,7 +57,9 @@ Extensions: .py, .txt, .md, .json
 
 File: scripts/test_html_icon.py
   Line 16 (comment):
-    OLD: # Δημιουργία rich text με inline indicators
+```
+    OLD: # Create rich text with inline indicators
+```
     NEW: # Creating rich text with inline indicators
 
 ================================================================================

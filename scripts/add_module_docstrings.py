@@ -14,19 +14,19 @@ import os
 PLACEHOLDER = '"""TODO: Add module-level docstring."""\n\n'
 
 def has_module_docstring(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, encoding='utf-8') as f:
         try:
             tree = ast.parse(f.read())
             return ast.get_docstring(tree) is not None
         except Exception:
-            return False  # Αν δεν διαβάζεται, το αφήνουμε απέξω
+            return False  # If it's not readable, we leave it out
 
 def add_placeholder_docstring(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, encoding='utf-8') as f:
         lines = f.readlines()
 
     insert_at = 0
-    # Παράκαμψη αρχικών κενών γραμμών ή σχολίων
+    # Skipping initial blank lines or comments
     for i, line in enumerate(lines):
         stripped = line.strip()
         if stripped == "" or stripped.startswith("#"):

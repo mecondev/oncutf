@@ -12,14 +12,13 @@ Author: Michael Economou
 Date: 2025-01-17
 """
 
-import os
-from pathlib import Path
 import argparse
+from pathlib import Path
 
 
 def get_docstring_snippet(file_path):
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
         in_doc = False
         doc_lines = []

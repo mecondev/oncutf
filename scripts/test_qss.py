@@ -8,9 +8,17 @@ Date: 2025-06-14
 This module provides functionality for the OnCutF batch file renaming application.
 """
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTableView, QStyledItemDelegate, QStyleOptionViewItem, QAbstractItemView
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QPainter
-from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtGui import QColor, QPainter, QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QMainWindow,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QTableView,
+)
+
 
 class HoverDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
