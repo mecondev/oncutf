@@ -74,7 +74,11 @@ htmlcov/
 # Shell and auxiliary scripts
 *.sh
 *.command
-scripts/
+
+
+# Allow tracking the `scripts/` directory
+!scripts/
+!scripts/**
 
 # AI-related or generated assets
 *.ai
