@@ -31,17 +31,14 @@ from typing import Any
 from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
 from core.pyqt_imports import (
     QAbstractItemView,
-    QAction,
     QApplication,
     QCursor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
     QHeaderView,
-    QMenu,
     QModelIndex,
     QPalette,
-    QPoint,
     QSortFilterProxyModel,
     QStandardItemModel,
     Qt,
@@ -756,7 +753,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         return selected_files
 
-    
+
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
