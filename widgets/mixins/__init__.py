@@ -9,6 +9,7 @@ Mixins for reusable widget behavior.
 
 from widgets.mixins.drag_drop_mixin import DragDropMixin
 from widgets.mixins.metadata_cache_mixin import MetadataCacheMixin
+from widgets.mixins.metadata_edit_mixin import MetadataEditMixin
 from widgets.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from widgets.mixins.selection_mixin import SelectionMixin
 
@@ -17,4 +18,5 @@ __all__ = [
     "DragDropMixin",
     "MetadataScrollMixin",
     "MetadataCacheMixin",
+    "MetadataEditMixin",
 ]
