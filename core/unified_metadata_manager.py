@@ -432,9 +432,9 @@ class UnifiedMetadataManager(QObject):
         Returns:
             tuple: (skip_metadata, use_extended)
 
-            - skip_metadata = True ➜ No metadata scan (no modifiers)
-            - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
-            - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
+            - skip_metadata = True  No metadata scan (no modifiers)
+            - skip_metadata = False & use_extended = False  Fast scan (Ctrl)
+            - skip_metadata = False & use_extended = True  Extended scan (Ctrl+Shift)
         """
         modifiers = modifier_state
         if modifiers is None:

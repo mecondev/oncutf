@@ -54,9 +54,11 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import find_parent_with_attribute, paths_equal
 from utils.placeholder_helper import create_placeholder_helper
-from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
-from widgets.datetime_edit_dialog import DateTimeEditDialog
-from widgets.metadata_edit_dialog import MetadataEditDialog
+from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
+from widgets.mixins.metadata_cache_mixin import MetadataCacheMixin
+from widgets.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
+from widgets.mixins.metadata_edit_mixin import MetadataEditMixin
+from widgets.mixins.metadata_scroll_mixin import MetadataScrollMixin
 
 # ApplicationContext integration
 try:
@@ -133,7 +135,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
         return False
 
 
-class MetadataTreeView(QTreeView):
+class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView):
     """
     Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -339,107 +341,11 @@ class MetadataTreeView(QTreeView):
         # Icon delegate functionality removed for simplicity
 
     # =====================================
-    # Path-Safe Dictionary Operations
+    # Path-Safe Dictionary Operations — MOVED TO MetadataScrollMixin
     # =====================================
-
-    def _path_in_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
-        """
-        Check if a path exists in dictionary using path-aware comparison.
-
-        Args:
-            path: Path to look for
-            path_dict: Dictionary with path keys
-
-        Returns:
-            bool: True if path exists in dictionary
-        """
-        if not path or not path_dict:
-            return False
-
-        # First try direct lookup (fastest)
-        if path in path_dict:
-            return True
-
-        # If not found, try normalized path comparison
-        return any(paths_equal(path, existing_path) for existing_path in path_dict)
-
-    def _get_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> Any:
-        """
-        Get value from dictionary using path-aware comparison.
-
-        Args:
-            path: Path key to look for
-            path_dict: Dictionary with path keys
-
-        Returns:
-            Any: Value if found, None otherwise
-        """
-        if not path or not path_dict:
-            return None
-
-        # First try direct lookup (fastest)
-        if path in path_dict:
-            return path_dict[path]
-
-        # If not found, try normalized path comparison
-        for existing_path, value in path_dict.items():
-            if paths_equal(path, existing_path):
-                return value
-
-        return None
-
-    def _set_in_path_dict(self, path: str, value: Any, path_dict: dict[str, Any]) -> None:
-        """
-        Set value in dictionary using path-aware key management.
-
-        Args:
-            path: Path key to set
-            value: Value to set
-            path_dict: Dictionary with path keys
-        """
-        if not path:
-            return
-
-        # Remove any existing equivalent paths first
-        keys_to_remove = []
-        for existing_path in path_dict:
-            if paths_equal(path, existing_path):
-                keys_to_remove.append(existing_path)
-
-        for key in keys_to_remove:
-            del path_dict[key]
-
-        # Set with the new path
-        path_dict[path] = value
-
-    def _remove_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
-        """
-        Remove path from dictionary using path-aware comparison.
-
-        Args:
-            path: Path key to remove
-            path_dict: Dictionary with path keys
-
-        Returns:
-            bool: True if something was removed
-        """
-        if not path or not path_dict:
-            return False
-
-        removed = False
-        keys_to_remove = []
-
-        # Find all equivalent paths
-        for existing_path in path_dict:
-            if paths_equal(path, existing_path):
-                keys_to_remove.append(existing_path)
-
-        # Remove them
-        for key in keys_to_remove:
-            del path_dict[key]
-            removed = True
-
-        return removed
+    # All path dictionary methods (_path_in_dict, _get_from_path_dict,
+    # _set_in_path_dict, _remove_from_path_dict) have been moved to
+    # MetadataScrollMixin for better code organization.
 
     def resizeEvent(self, event):
         """Handle resize events to adjust placeholder label size."""
@@ -586,18 +492,7 @@ class MetadataTreeView(QTreeView):
             # Update header visibility after mode configuration
             self._update_header_visibility()
 
-    def _apply_scroll_position_immediately(self, position: int) -> None:
-        """Apply scroll position immediately without waiting for expandAll()."""
-        if self._current_file_path and not self._is_placeholder_mode:
-            scrollbar = self.verticalScrollBar()
-            max_scroll = scrollbar.maximum()
-
-            # Clamp position to valid range
-            valid_position = min(position, max_scroll)
-            valid_position = max(valid_position, 0)
-
-            # Apply the position
-            scrollbar.setValue(valid_position)
+    # _apply_scroll_position_immediately moved to MetadataScrollMixin
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
@@ -805,1024 +700,99 @@ class MetadataTreeView(QTreeView):
         self.style().polish(self)
 
     # =====================================
-    # Scroll Position Memory
+    # Scroll Position Memory — MOVED TO MetadataScrollMixin
     # =====================================
-
-    def set_current_file_path(self, file_path: str) -> None:
-        """Set the current file path and manage scroll position restoration."""
-        # If it's the same file, don't do anything
-        if paths_equal(self._current_file_path, file_path):
-            return
-
-        # Save current file state before switching
-        self._save_current_file_state()
-
-        # Update current file (normalize for consistent cache lookups)
-        from utils.path_normalizer import normalize_path
-
-        previous_file_path = self._current_file_path
-        self._current_file_path = normalize_path(file_path) if file_path else None
-
-        # Load state for the new file
-        self._load_file_state(file_path, previous_file_path)
-
-    def _save_current_file_state(self) -> None:
-        """Save the current file's state (scroll position, expanded items)."""
-        if not self._current_file_path:
-            return
-
-        # Save scroll position
-        self._save_current_scroll_position()
-
-        # Save expanded state
-        model = self.model()
-        if model:
-            expanded_items = []
-            for i in range(model.rowCount()):
-                index = model.index(i, 0)
-                if self.isExpanded(index):
-                    expanded_items.append(index.data())
-            self._expanded_items_per_file[self._current_file_path] = expanded_items
-
-    def _load_file_state(self, file_path: str, _previous_file_path: str) -> None:
-        """Load the state for a specific file with improved performance."""
-        if not file_path:
-            return
-
-        # Load expanded state
-        expanded_items = self._expanded_items_per_file.get(file_path, [])
-        model = self.model()
-        if model and expanded_items:
-            for i in range(model.rowCount()):
-                index = model.index(i, 0)
-                if index.data() in expanded_items:
-                    self.expand(index)
-
-        # Restore scroll position immediately
-        self._restore_scroll_position_for_current_file()
-
-    def _save_current_scroll_position(self) -> None:
-        """Save the current scroll position for the current file."""
-        if self._current_file_path and not self._is_placeholder_mode:
-            scroll_value = self.verticalScrollBar().value()
-            self._scroll_positions[self._current_file_path] = scroll_value
-
-    def _restore_scroll_position_for_current_file(self) -> None:
-        """Restore the scroll position for the current file with improved UX."""
-        if not self._current_file_path or self._is_placeholder_mode:
-            return
-
-        scrollbar = self.verticalScrollBar()
-
-        # Check if this is the first time viewing this file
-        if self._current_file_path not in self._scroll_positions:
-            # First time viewing - go to top immediately (no animation for better UX)
-            scrollbar.setValue(0)
-            self._scroll_positions[self._current_file_path] = 0
-        else:
-            # Restore saved position
-            saved_position = self._scroll_positions[self._current_file_path]
-
-            # Validate scroll position against current content
-            max_scroll = scrollbar.maximum()
-            valid_position = max(0, min(saved_position, max_scroll))
-
-            # Apply immediately for better responsiveness
-            scrollbar.setValue(valid_position)
-
-        # Clean up the timer
-        if self._pending_restore_timer_id is not None:
-            self._pending_restore_timer_id = None
-
-    def _smooth_scroll_to_position(self, target_position: int) -> None:
-        """Immediate scroll to position for better performance."""
-        scrollbar = self.verticalScrollBar()
-        scrollbar.setValue(target_position)
-
-    def clear_scroll_memory(self) -> None:
-        """Clear all saved scroll positions (useful when changing folders)."""
-        self._scroll_positions.clear()
-        self._current_file_path = None
-
-        # Cancel any pending restore
-        if self._pending_restore_timer_id is not None:
-            self._pending_restore_timer_id = None
-
-    def restore_scroll_after_expand(self) -> None:
-        """Trigger scroll position restore after expandAll() has completed."""
-        if self._current_file_path and not self._is_placeholder_mode:
-            # Use a shorter delay since we now do immediate restoration in setModel
-            if self._pending_restore_timer_id is not None:
-                self._pending_restore_timer_id = None
-
-                self._pending_restore_timer_id = schedule_ui_update(
-                    self._restore_scroll_position_for_current_file, delay=25
-                )
+    # All scroll position and file state methods have been moved to
+    # MetadataScrollMixin: set_current_file_path, _save_current_file_state,
+    # _load_file_state, _save_current_scroll_position,
+    # _restore_scroll_position_for_current_file, _smooth_scroll_to_position,
+    # clear_scroll_memory, restore_scroll_after_expand
 
     # =====================================
     # Context Menu & Actions
     # =====================================
 
-    def show_context_menu(self, position: QPoint) -> None:
-        """Display context menu with available options."""
-        if self._is_placeholder_mode or self.property("placeholder"):
-            return
+    # MOVED TO MetadataContextMenuMixin
+    # def show_context_menu(self, position: QPoint) -> None:
 
-        index = self.indexAt(position)
-        if not index.isValid():
-            return
+    # MOVED TO MetadataContextMenuMixin
+    # def _cleanup_menu(self) -> None:
 
-        # Close any existing menu
-        if self._current_menu:
-            self._current_menu.close()
-            self._current_menu = None
+    # MOVED TO MetadataContextMenuMixin
+    # def _get_menu_icon(self, icon_name: str):
 
-        key_path = self.get_key_path(index)
-        value = index.sibling(index.row(), 1).data()
-        selected_files = self._get_current_selection()
-        has_multiple_selection = len(selected_files) > 1
+    # MOVED TO MetadataEditMixin
+    # def _is_date_time_field(self, key_path: str) -> bool:
 
-        # Check if this field can be edited (standard metadata fields)
-        is_editable_field = self._is_editable_metadata_field(key_path)
+    # MOVED TO MetadataEditMixin
+    # def _get_date_type_from_field(self, key_path: str) -> str:
 
-        # Check if current file has modifications for this field
-        has_modifications = False
-        current_field_value = None
-        if self._current_file_path:
-            # Normalize key path for standard metadata fields
-            normalized_key_path = self._normalize_metadata_field_name(key_path)
+    # MOVED TO MetadataEditMixin
+    # def _is_editable_metadata_field(self, key_path: str) -> bool:
 
-            # Check staging manager
-            from core.metadata_staging_manager import get_metadata_staging_manager
-            staging_manager = get_metadata_staging_manager()
-            if staging_manager:
-                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
-                has_modifications = normalized_key_path in staged_changes
+    # MOVED TO MetadataEditMixin
+    # def _normalize_metadata_field_name(self, key_path: str) -> str:
 
-            # Get current field value
-            selected_files = self._get_current_selection()
-            if selected_files:
-                file_item = selected_files[0]
-                # Use cache helper for unified access
-                cache_helper = self._get_cache_helper()
-                if cache_helper:
-                    current_field_value = cache_helper.get_metadata_value(
-                        file_item, normalized_key_path
-                    )
+    # MOVED TO MetadataEditMixin
+    # def get_key_path(self, index: QModelIndex) -> str:
 
-                # Fallback to file item metadata if not in cache
-                if (
-                    current_field_value is None
-                    and hasattr(file_item, "metadata")
-                    and file_item.metadata
-                ):
-                    current_field_value = self._get_value_from_metadata_dict(
-                        file_item.metadata, key_path
-                    )
-
-                # Default to empty string if no value found
-                if current_field_value is None:
-                    current_field_value = ""
-
-        # Create menu
-        menu = QMenu(self)
-        self._current_menu = menu
-        # Apply theme styling
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        menu.setStyleSheet(theme.get_context_menu_stylesheet())
-
-        # Edit action - enabled for editable metadata fields with single selection
-        edit_action = QAction("Edit Value", menu)
-        edit_action.setIcon(self._get_menu_icon("edit"))
-        edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(not has_multiple_selection and is_editable_field)
-        menu.addAction(edit_action)
-
-        # Reset action - enabled for editable fields with modifications
-        reset_action = QAction("Reset Value", menu)
-        reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        reset_action.setEnabled(
-            not has_multiple_selection and is_editable_field and has_modifications
-        )
-        menu.addAction(reset_action)
-
-        # Special action for rotation fields - Set to 0°
-        is_rotation_field = "rotation" in key_path.lower()
-        if is_rotation_field:
-            set_zero_action = QAction("Set Rotation to 0°", menu)
-            set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
-            set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
-
-            # Enable only if: single selection + rotation field + current value is not "0"
-            is_zero_rotation = (
-                str(current_field_value) == "0" if current_field_value is not None else False
-            )
-            set_zero_enabled = not has_multiple_selection and not is_zero_rotation
-            set_zero_action.setEnabled(set_zero_enabled)
-
-            # Update tooltip based on current state
-            if has_multiple_selection:
-                set_zero_action.setToolTip("Single file selection required")
-            elif is_zero_rotation:
-                set_zero_action.setToolTip("Rotation is already set to 0°")
-            else:
-                set_zero_action.setToolTip(f"Set rotation to 0° (current: {current_field_value}°)")
-
-            menu.addAction(set_zero_action)
-
-        menu.addSeparator()
-
-        # Add/Remove to File View toggle action
-        is_column_visible = self._is_column_visible_in_file_view(key_path)
-
-        if is_column_visible:
-            file_view_action = QAction("Remove from File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("minus-circle"))
-            file_view_action.setToolTip(f"Remove '{key_path}' column from file view")
-            file_view_action.triggered.connect(lambda: self._remove_column_from_file_view(key_path))
-        else:
-            file_view_action = QAction("Add to File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("plus-circle"))
-            file_view_action.setToolTip(f"Add '{key_path}' column to file view")
-            file_view_action.triggered.connect(lambda: self._add_column_to_file_view(key_path))
-
-        menu.addAction(file_view_action)
-
-        menu.addSeparator()
-
-        # History submenu
-        history_menu = QMenu("History", menu)
-        history_menu.setIcon(self._get_menu_icon("clock"))
-
-        # Check if undo/redo are available and get descriptions
-        try:
-            from core.metadata_command_manager import get_metadata_command_manager
-
-            command_manager = get_metadata_command_manager()
-            can_undo = command_manager.can_undo()
-            can_redo = command_manager.can_redo()
-            undo_desc = command_manager.get_undo_description() if can_undo else None
-            redo_desc = command_manager.get_redo_description() if can_redo else None
-        except Exception as e:
-            logger.warning(f"[MetadataTreeView] Error checking command manager status: {e}")
-            can_undo = False
-            can_redo = False
-            undo_desc = None
-            redo_desc = None
-
-        # Undo action with operation description
-        undo_text = f"Undo: {undo_desc}\tCtrl+Z" if undo_desc else "Undo\tCtrl+Z"
-        undo_action = QAction(undo_text, history_menu)
-        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        undo_action.setEnabled(can_undo)
-        undo_action.triggered.connect(self._undo_metadata_operation)
-
-        # Redo action with operation description (updated to Ctrl+Shift+Z)
-        redo_text = f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
-        redo_action = QAction(redo_text, history_menu)
-        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
-        redo_action.setEnabled(can_redo)
-        redo_action.triggered.connect(self._redo_metadata_operation)
-
-        history_menu.addAction(undo_action)
-        history_menu.addAction(redo_action)
-
-        history_menu.addSeparator()
-
-        # Show History action (Ctrl+Y) - opens metadata history dialog
-        show_history_action = QAction("Show History\tCtrl+Y", history_menu)
-        show_history_action.setIcon(self._get_menu_icon("list"))
-        show_history_action.triggered.connect(self._show_history_dialog)
-        history_menu.addAction(show_history_action)
-
-        menu.addMenu(history_menu)
-
-        menu.addSeparator()
-
-        # Copy action - always available if there's a value
-        copy_action = QAction("Copy", menu)
-        copy_action.setIcon(self._get_menu_icon("copy"))
-        copy_action.triggered.connect(lambda: self.copy_value(value))
-        copy_action.setEnabled(bool(value))
-        menu.addAction(copy_action)
-
-        # Use popup() instead of exec_() to avoid blocking
-        menu.popup(self.mapToGlobal(position))
-
-        # Connect cleanup to aboutToHide after showing
-        menu.aboutToHide.connect(self._cleanup_menu)
-
-    def _cleanup_menu(self) -> None:
-        """Clean up the current menu reference."""
-        self._current_menu = None
-
-    def _get_menu_icon(self, icon_name: str):
-        """Get menu icon using the same system as specified text module."""
-        try:
-            from utils.icons_loader import get_menu_icon
-
-            return get_menu_icon(icon_name)
-        except ImportError:
-            return None
-
-    def _is_date_time_field(self, key_path: str) -> bool:
-        """Check if a metadata field is a date/time field."""
-        key_lower = key_path.lower()
-        date_keywords = [
-            "date", "time", "datetime", "timestamp",
-            "created", "modified", "accessed",
-            "filemodifydate", "filecreatedate", "createdate", "modifydate",
-            "datetimeoriginal", "datetimedigitized"
-        ]
-        return any(keyword in key_lower for keyword in date_keywords)
-
-    def _get_date_type_from_field(self, key_path: str) -> str:
-        """Determine date type (created/modified) from field name."""
-        key_lower = key_path.lower()
-
-        # Check for creation date patterns
-        if any(keyword in key_lower for keyword in ["create", "dateoriginal", "digitized"]):
-            return "created"
-
-        # Check for modification date patterns
-        if any(keyword in key_lower for keyword in ["modify", "modified", "change", "changed"]):
-            return "modified"
-
-        # Default to modified for generic date/time fields
-        return "modified"
-
-    def _is_editable_metadata_field(self, key_path: str) -> bool:
-        """Check if a metadata field can be edited directly."""
-        # Standard metadata fields that can be edited
-        editable_fields = {
-            # Rotation field
-            "rotation",
-            # Basic metadata fields
-            "title",
-            "artist",
-            "author",
-            "creator",
-            "copyright",
-            "description",
-            "keywords",
-            # Common EXIF/XMP/IPTC fields
-            "headline",
-            "imagedescription",
-            "by-line",
-            "copyrightnotice",
-            "caption-abstract",
-            "rights",
-        }
-
-        # Check if key_path contains any editable field name
-        key_lower = key_path.lower()
-        if any(field in key_lower for field in editable_fields):
-            return True
-
-        # Also check if it's a date/time field
-        return self._is_date_time_field(key_path)
-
-    def _normalize_metadata_field_name(self, key_path: str) -> str:
-        """Normalize metadata field names to standard form."""
-        key_lower = key_path.lower()
-
-        # Rotation field
-        if "rotation" in key_lower:
-            return "Rotation"
-
-        # Title fields
-        if any(field in key_lower for field in ["title", "headline", "imagedescription"]):
-            return "Title"
-
-        # Artist/Creator fields
-        if any(field in key_lower for field in ["artist", "creator", "by-line"]):
-            return "Artist"
-
-        # Author fields (same as Artist for now)
-        if "author" in key_lower:
-            return "Author"
-
-        # Copyright fields
-        if any(field in key_lower for field in ["copyright", "rights", "copyrightnotice"]):
-            return "Copyright"
-
-        # Description fields
-        if any(field in key_lower for field in ["description", "caption-abstract"]):
-            return "Description"
-
-        # Keywords
-        if "keywords" in key_lower:
-            return "Keywords"
-
-        # Return as-is if no match (fallback)
-        return key_path
-
-    def get_key_path(self, index: QModelIndex) -> str:
-        """
-        Return the full key path for the given index.
-        For example: "EXIF/DateTimeOriginal" or "XMP/Creator"
-        """
-        if not index.isValid():
-            return ""
-
-        # If on Value column, get the corresponding Key
-        if index.column() == 1:
-            index = index.sibling(index.row(), 0)
-
-        # Get the text of the current item
-        item_text = index.data()
-
-        # Find the parent group
-        parent_index = index.parent()
-        if parent_index.isValid():
-            parent_text = parent_index.data()
-            return f"{parent_text}/{item_text}"
-
-        return item_text
-
-    def copy_value(self, value: Any) -> None:
-        """Copy the value to clipboard and emit the value_copied signal."""
-        if not value:
-            return
-
-        clipboard = QApplication.clipboard()
-        clipboard.setText(str(value))
-        self.value_copied.emit(str(value))
+    # MOVED TO MetadataEditMixin
+    # def copy_value(self, value: Any) -> None:
 
     # =====================================
     # Metadata Editing Methods
     # =====================================
 
-    def _get_item_path(self, index: QModelIndex) -> list[str]:
-        """Get the path from root to the given index as a list of display texts.
+    # MOVED TO MetadataEditMixin
+    # def _get_item_path(self, index: QModelIndex) -> list[str]:
 
-        Returns:
-            List of strings representing the path, e.g. ["File Info", "File Name"]
-        """
-        path = []
-        current = index
-        while current.isValid():
-            path.insert(0, current.data(Qt.ItemDataRole.DisplayRole))
-            current = current.parent()
-        return path
+    # MOVED TO MetadataEditMixin
+    # def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
 
-    def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
-        """Find an item in the tree by its path from root.
+    # MOVED TO MetadataEditMixin
+    # def _find_path_by_key(self, key_path: str) -> list[str] | None:
 
-        Args:
-            path: List of display texts from root to target item
+    # MOVED TO MetadataEditMixin
+    # def edit_value(self, key_path: str, current_value: Any) -> None:
 
-        Returns:
-            QModelIndex if found, None otherwise
-        """
-        if not path:
-            return None
+    # MOVED TO MetadataEditMixin
+    # def _restore_selection(self, path: list[str]) -> None:
 
-        model = self.model()
-        if not model:
-            return None
+    # MOVED TO MetadataEditMixin
+    # def _fallback_edit_value(self, key_path: str, new_value: str, _old_value: str, files_to_modify: list) -> None:
 
-        # Start from root
-        current_index = QModelIndex()
+    # MOVED TO MetadataCacheMixin
+    # def _get_original_value_from_cache(self, key_path: str) -> Any | None:
 
-        for text in path:
-            found = False
-            row_count = model.rowCount(current_index)
+    # MOVED TO MetadataCacheMixin
+    # def _get_original_metadata_value(self, key_path: str) -> Any | None:
 
-            for row in range(row_count):
-                child_index = model.index(row, 0, current_index)
-                if child_index.data(Qt.ItemDataRole.DisplayRole) == text:
-                    current_index = child_index
-                    found = True
-                    break
+    # MOVED TO MetadataCacheMixin
+    # def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
 
-            if not found:
-                logger.debug(f"[MetadataTree] Path item not found: {text}")
-                return None
+    # MOVED TO MetadataEditMixin
+    # def _edit_date_time_field(self, key_path: str, current_value: Any, saved_path: list[str] | None = None) -> None:
 
-        return current_index
+    # MOVED TO MetadataEditMixin
+    # def set_rotation_to_zero(self, key_path: str) -> None:
 
-    def _find_path_by_key(self, key_path: str) -> list[str] | None:
-        """Find the tree path (display names) for a given metadata key path.
+    # MOVED TO MetadataEditMixin
+    # def _fallback_set_rotation_to_zero(self, key_path: str, new_value: str, _current_value: Any) -> None:
 
-        Args:
-            key_path: Metadata key like "File:FileName" or "EXIF:Make"
+    # MOVED TO MetadataEditMixin
+    # def reset_value(self, key_path: str) -> None:
 
-        Returns:
-            List of display names from root to item, e.g. ["File Info", "File Name"]
-            None if not found
-        """
-        model = self.model()
-        if not model:
-            return None
+    # MOVED TO MetadataEditMixin
+    # def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
 
-        # Search recursively through the tree
-        def search_tree(parent_index: QModelIndex, target_key: str) -> list[str] | None:
-            row_count = model.rowCount(parent_index)
-            for row in range(row_count):
-                index = model.index(row, 0, parent_index)
+    # MOVED TO MetadataEditMixin
+    # def _update_tree_item_value(self, _key_path: str, _new_value: str) -> None:
 
-                # Check if this item's key matches
-                item_data = index.data(Qt.ItemDataRole.UserRole)
-                if item_data and isinstance(item_data, dict):
-                    item_key = item_data.get("key", "")
-                    if item_key == target_key:
-                        # Found it! Build the path
-                        return self._get_item_path(index)
+    # MOVED TO MetadataEditMixin
+    # def mark_as_modified(self, key_path: str) -> None:
 
-                # Search children recursively
-                child_path = search_tree(index, target_key)
-                if child_path:
-                    return child_path
-
-            return None
-
-        return search_tree(QModelIndex(), key_path)
-
-    def edit_value(self, key_path: str, current_value: Any) -> None:
-        """Open a dialog to edit the value of a metadata field."""
-        # Save current selection path before opening dialog
-        current_index = self.currentIndex()
-        saved_path = self._get_item_path(current_index) if current_index.isValid() else None
-
-        # Fallback: if no current selection, try to find the item by key_path
-        # This handles cases where the tree loses focus between edits
-        if not saved_path and key_path:
-            # Try to find the item by its key path
-            saved_path = self._find_path_by_key(key_path)
-            if saved_path:
-                logger.debug(f"[MetadataTree] Using fallback path from key_path: {key_path}")
-
-        # Get selected files and metadata cache
-        selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
-
-        if not selected_files:
-            logger.warning("[MetadataTree] No files selected for editing")
-            return
-
-        # Check if this is a date/time field - use DateTimeEditDialog
-        if self._is_date_time_field(key_path):
-            self._edit_date_time_field(key_path, current_value, saved_path)
-            return
-
-        # Normalize key path for standard metadata fields
-        normalized_key_path = self._normalize_metadata_field_name(key_path)
-
-        # Use the static method from MetadataEditDialog
-        accepted, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
-            parent=self,
-            selected_files=selected_files,
-            metadata_cache=metadata_cache,
-            field_name=normalized_key_path,
-            current_value=str(current_value),
-        )
-
-        if accepted and new_value != str(current_value):
-            # Use command system for undo/redo support
-            command_manager = get_metadata_command_manager()
-            if command_manager and EditMetadataFieldCommand:
-                # Create command for each file to modify
-                for file_item in files_to_modify:
-                    command = EditMetadataFieldCommand(
-                        file_path=file_item.full_path,
-                        field_path=normalized_key_path,
-                        new_value=new_value,
-                        old_value=str(current_value),
-                        metadata_tree_view=self,  # Pass self reference
-                    )
-
-                    # Execute command (this will update cache and UI)
-                    if command_manager.execute_command(command, group_with_previous=True):
-                        logger.debug(
-                            f"[MetadataTree] Executed edit command for {file_item.filename}"
-                        )
-                    else:
-                        logger.warning(
-                            f"[MetadataTree] Failed to execute edit command for {file_item.filename}"
-                        )
-            else:
-                # Fallback to old method if command system not available
-                logger.warning("[MetadataTree] Command system not available, using fallback method")
-                self._fallback_edit_value(
-                    normalized_key_path, new_value, str(current_value), files_to_modify
-                )
-
-            # Emit signal for external listeners
-            self.value_edited.emit(normalized_key_path, str(current_value), new_value)
-
-            # Restore selection AFTER tree has been updated
-            # Use custom timer with longer delay to ensure tree refresh completes
-            if saved_path:
-                schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
-        else:
-            # For cancelled edits, restore immediately
-            if saved_path:
-                self._restore_selection(saved_path)
-
-    def _restore_selection(self, path: list[str]) -> None:
-        """Restore selection to the given path."""
-        restored_index = self._find_item_by_path(path)
-        if restored_index and restored_index.isValid():
-            self.setCurrentIndex(restored_index)
-            self.scrollTo(restored_index)
-            logger.debug(f"[MetadataTree] Restored selection to: {' > '.join(path)}")
-        else:
-            logger.debug("[MetadataTree] Could not restore selection, path not found")
-
-    def _fallback_edit_value(
-        self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
-    ) -> None:
-        """Fallback method for editing metadata without command system."""
-        # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        logger.info(f"[TreeView] _fallback_edit_value called: staging_manager={staging_manager}")
-
-        if not staging_manager:
-            logger.error("Staging manager not available")
-            return
-
-        success_count = 0
-
-        for file_item in files_to_modify:
-            logger.info(f"[TreeView] About to stage change: {file_item.full_path}, {key_path}, {new_value}")
-            # Stage the change
-            staging_manager.stage_change(file_item.full_path, key_path, new_value)
-            success_count += 1
-
-            # Update the file item's metadata status
-            file_item.metadata_status = "modified"
-
-        if success_count == 0:
-            logger.warning("[MetadataTree] No files were successfully updated")
-            return
-
-        # Update the file icon status immediately
-        self._update_file_icon_status()
-
-        # Update the tree display to show the new value
-        self._update_tree_item_value(key_path, new_value)
-
-        # Force viewport update to refresh visual state
-        self.viewport().update()
-
-    def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-        """
-        Get the original value of a metadata field from the cache.
-        This should be called before resetting to get the original value.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return None
-
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return None
-
-        # Use cache helper for unified access
-        return cache_helper.get_metadata_value(file_item, key_path)
-
-    def _get_original_metadata_value(self, key_path: str) -> Any | None:
-        """
-        Get the ORIGINAL metadata value (not staged) for comparison.
-        Used by smart_mark_modified to check against actual original values.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return None
-
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return None
-
-        # Get original metadata entry (not staged version)
-        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-        if not metadata_entry or not hasattr(metadata_entry, 'data'):
-            return None
-
-        # Extract value from original metadata dict
-        return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
-
-    def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
-        """
-        Extract a value from metadata dictionary using key path.
-        """
-        parts = key_path.split("/")
-
-        if len(parts) == 1:
-            # Top-level key
-            return metadata.get(parts[0])
-        elif len(parts) == 2:
-            # Nested key (group/key)
-            group, key = parts
-            if group in metadata and isinstance(metadata[group], dict):
-                return metadata[group].get(key)
-
-        return None
-
-    def _edit_date_time_field(self, key_path: str, current_value: Any, saved_path: list[str] | None = None) -> None:
-        """Open DateTimeEditDialog to edit a date/time field."""
-        # Get selected files
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            logger.warning("[MetadataTree] No files selected for date editing")
-            return
-
-        # Determine date type from field name
-        date_type = self._get_date_type_from_field(key_path)
-
-        # Convert file items to paths
-        file_paths = [f.full_path for f in selected_files]
-
-        # Open DateTimeEditDialog
-        result_files, new_datetime = DateTimeEditDialog.get_datetime_edit_choice(
-            parent=self,
-            selected_files=file_paths,
-            date_type=date_type
-        )
-
-        if result_files and new_datetime:
-            # Format datetime as string for metadata
-            # new_datetime is a Python datetime object
-            datetime_str = new_datetime.strftime("%Y:%m:%d %H:%M:%S")
-
-            logger.info(
-                f"[MetadataTree] Editing {date_type} date for {len(result_files)} files to {datetime_str}"
-            )
-
-            # Use command system for undo/redo support
-            command_manager = get_metadata_command_manager()
-            if command_manager and EditMetadataFieldCommand:
-                # Get original values for undo
-                metadata_cache = self._get_metadata_cache()
-
-                # Create command for each selected file
-                for file_path in result_files:
-                    # Find the file item
-                    file_item = next((f for f in selected_files if f.full_path == file_path), None)
-                    if not file_item:
-                        continue
-
-                    # Get current value from metadata
-                    current_value = ""
-                    if metadata_cache and key_path in metadata_cache:
-                        current_value = str(metadata_cache[key_path])
-
-                    # Create and execute command
-                    command = EditMetadataFieldCommand(
-                        file_path=file_path,
-                        field_path=key_path,
-                        new_value=datetime_str,
-                        old_value=current_value,
-                        metadata_tree_view=self,
-                    )
-
-                    if command_manager.execute_command(command, group_with_previous=True):
-                        logger.debug(f"[MetadataTree] Executed date edit command for {file_item.filename}")
-                    else:
-                        logger.warning(
-                            f"[MetadataTree] Failed to execute date edit command for {file_item.filename}"
-                        )
-            else:
-                logger.warning("[MetadataTree] Command system not available for date editing")
-
-            # Emit signal for external listeners
-            self.value_edited.emit(key_path, str(current_value), datetime_str)
-
-            # Restore selection AFTER tree has been updated
-            if saved_path:
-                schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
-        else:
-            logger.debug("[MetadataTree] Date edit cancelled")
-            # For cancelled edits, restore immediately
-            if saved_path:
-                self._restore_selection(saved_path)
-
-    def set_rotation_to_zero(self, key_path: str) -> None:
-        """Set rotation metadata to 0 degrees."""
-        if not key_path:
-            return
-
-        # Get current file
-        selected_files = self._get_current_selection()
-        file_item = selected_files[0] if selected_files else None
-        if not file_item:
-            logger.warning("[MetadataTree] No file selected for rotation reset")
-            return
-
-        # Check if already 0
-        current_value = None
-        metadata = self._get_metadata_cache()
-        if metadata and key_path in metadata:
-            current_value = metadata[key_path]
-            if current_value in ["0", "0°", 0]:
-                logger.debug(
-                    f"[MetadataTree] Rotation already set to 0° for {file_item.filename}",
-                    extra={"dev_only": True},
-                )
-                return
-
-        # Use unified metadata manager if available
-        if self._direct_loader:
-            try:
-                # Set rotation to 0
-                self._direct_loader.set_metadata_value(file_item.full_path, key_path, "0")
-
-                # Update tree display
-                self._update_tree_item_value(key_path, "0")
-
-                # Mark as modified
-                self.mark_as_modified(key_path)
-
-                logger.debug(
-                    f"[MetadataTree] Set rotation to 0° for {file_item.filename} via UnifiedMetadataManager",
-                    extra={"dev_only": True},
-                )
-
-                # Emit signal
-                self.value_edited.emit(key_path, "0", str(current_value) if current_value else "")
-
-                return
-            except Exception as e:
-                logger.error(
-                    f"[MetadataTree] Failed to set rotation via UnifiedMetadataManager: {e}"
-                )
-
-        # Fallback to manual method
-        self._fallback_set_rotation_to_zero(key_path, "0", current_value if current_value else "")
-
-    def _fallback_set_rotation_to_zero(
-        self, key_path: str, new_value: str, _current_value: Any
-    ) -> None:
-        """Fallback method for setting rotation to zero without command system."""
-        # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return
-
-        # Update metadata in staging
-        selected_files = self._get_current_selection()
-        for file_item in selected_files:
-            staging_manager.stage_change(file_item.full_path, key_path, new_value)
-            file_item.metadata_status = "modified"
-
-        # Update the file icon status immediately
-        self._update_file_icon_status()
-
-        # Update the tree display to show the new value
-        self._update_tree_item_value(key_path, new_value)
-
-        # Force viewport update to refresh visual state
-        self.viewport().update()
-
-    def reset_value(self, key_path: str) -> None:
-        """Reset a metadata value to its original value."""
-        if not key_path:
-            return
-
-        # Get current file
-        selected_files = self._get_current_selection()
-        file_item = selected_files[0] if selected_files else None
-        if not file_item:
-            logger.warning("[MetadataTree] No file selected for reset")
-            return
-
-        # Get original value
-        original_value = self._get_original_value_from_cache(key_path)
-        if original_value is None:
-            logger.warning(f"[MetadataTree] No original value found for {key_path}")
-            return
-
-        # Use unified metadata manager if available
-        if self._direct_loader:
-            try:
-                # Reset to original value
-                self._direct_loader.set_metadata_value(
-                    file_item.full_path, key_path, str(original_value)
-                )
-
-                # Update tree display
-                self._update_tree_item_value(key_path, str(original_value))
-
-                # Remove from staging
-                from core.metadata_staging_manager import get_metadata_staging_manager
-                staging_manager = get_metadata_staging_manager()
-                if staging_manager and self._current_file_path:
-                    staging_manager.clear_staged_change(self._current_file_path, key_path)
-
-                logger.debug(
-                    f"[MetadataTree] Executed reset command for {file_item.filename}",
-                    extra={"dev_only": True},
-                )
-
-                # Emit signal
-                self.value_reset.emit(key_path)
-
-                return
-            except Exception as e:
-                logger.error(f"[MetadataTree] Failed to reset via UnifiedMetadataManager: {e}")
-
-        # Fallback to manual method
-        self._fallback_reset_value(key_path, original_value)
-
-    def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
-        """Fallback method for resetting metadata without command system."""
-        # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if staging_manager and self._current_file_path:
-            # Remove from staging
-            staging_manager.clear_staged_change(self._current_file_path, key_path)
-
-        # Update the file icon status
-        self._update_file_icon_status()
-
-        # Update the tree display to show the original value
-        if original_value is not None:
-            self._update_tree_item_value(key_path, str(original_value))
-
-        # Force viewport update to refresh visual state
-        self.viewport().update()
-
-    def _update_tree_item_value(self, _key_path: str, _new_value: str) -> None:
-        """
-        Update the display value of a tree item to reflect changes.
-        This forces a refresh of the metadata display with modification context.
-        """
-        # Debounce/defers the actual tree rebuild to the UI scheduler to avoid
-        # race conditions with other UI updates (e.g. file table dataChanged emits
-        # and proxy model source swaps). This makes updates sequential and safe.
-        def _do_update():
-            # Get current metadata and force refresh with modification context
-            selected_files = self._get_current_selection()
-            cache_helper = self._get_cache_helper()
-
-            if selected_files and cache_helper and len(selected_files) == 1:
-                file_item = selected_files[0]
-                metadata = cache_helper.get_metadata_for_file(file_item)
-                if isinstance(metadata, dict) and metadata:
-                    display_metadata = dict(metadata)
-                    display_metadata["FileName"] = file_item.filename
-                    # Use modification context to force reload
-                    self.display_metadata(display_metadata, context="modification")
-                    return
-
-            # Fallback to normal update if we can't get metadata
-            self.update_from_parent_selection()
-
-        # Schedule the update on the UI scheduler with minimal delay so that
-        # other pending UI operations complete first.
-        schedule_ui_update(_do_update, delay=0)
-
-    def mark_as_modified(self, key_path: str) -> None:
-        """
-        Mark an item as modified.
-        """
-        self.modified_items.add(key_path)
-
-        # Defer icon update to avoid race conditions with tree model rebuilds
-        # This ensures file table updates happen after metadata tree is fully updated
-        schedule_ui_update(self._update_file_icon_status, delay=0)
-
-        # Update the information label to reflect new modified count
-        if hasattr(self, "_current_display_data") and self._current_display_data:
-            self._update_information_label(self._current_display_data)
-
-        # Update the view
-        self.viewport().update()
-
-    def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
-        """Mark a field as modified only if it differs from the original value."""
-        # Get original value from ORIGINAL metadata cache, not staging
-        original_value = self._get_original_metadata_value(key_path)
-
-        # Convert values to strings for comparison
-        new_str = str(new_value) if new_value is not None else ""
-        original_str = str(original_value) if original_value is not None else ""
-
-        if new_str != original_str:
-            self.mark_as_modified(key_path)
-            logger.debug(
-                f"[MetadataTree] Marked as modified: {key_path} ('{original_str}' -> '{new_str}')",
-                extra={"dev_only": True},
-            )
-        else:
-            # Remove from modifications if values are the same
-            if key_path in self.modified_items:
-                self.modified_items.remove(key_path)
-                logger.debug(
-                    f"[MetadataTree] Removed modification mark: {key_path} (value restored to original)",
-                    extra={"dev_only": True},
-                )
+    # MOVED TO MetadataEditMixin
+    # def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
 
     # =====================================
     # Helper Methods
@@ -1871,106 +841,14 @@ class MetadataTreeView(QTreeView):
 
         return selected_files
 
-    def _get_metadata_cache(self):
-        """Get metadata cache via parent traversal."""
-        parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, "metadata_cache"):
-            return parent_window.metadata_cache
+    # MOVED TO MetadataCacheMixin
+    # def _get_metadata_cache(self):
 
-        return None
+    # MOVED TO MetadataCacheMixin
+    # def _update_file_icon_status(self) -> None:
 
-    def _update_file_icon_status(self) -> None:
-        """
-        Update the file icon in the file table to reflect modified status.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return
-
-        # Get parent window and file model
-        parent_window = self._get_parent_with_file_table()
-        if not parent_window:
-            return
-
-        file_model = parent_window.file_model
-        if not file_model:
-            return
-
-        # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        # For each selected file, update its icon
-        updated_rows = []
-        for file_item in selected_files:
-            # Check if this specific file has modified items
-            file_path = file_item.full_path
-
-            # Check if this file has modifications
-            has_modifications = False
-
-            if staging_manager:
-                has_modifications = staging_manager.has_staged_changes(file_path)
-
-            # Update icon based on whether we have modified items
-            if has_modifications:
-                # Set modified icon
-                file_item.metadata_status = "modified"
-            else:
-                # Set normal loaded icon
-                file_item.metadata_status = "loaded"
-
-            # Find the row for this file item and mark for update
-            for row, model_file in enumerate(file_model.files):
-                if paths_equal(model_file.full_path, file_path):
-                    updated_rows.append(row)
-                    break
-
-        # Emit dataChanged for all updated rows to refresh their icons
-        for row in updated_rows:
-            if 0 <= row < len(file_model.files):
-                # Emit dataChanged specifically for the icon column (column 0)
-                icon_index = file_model.index(row, 0)
-                file_model.dataChanged.emit(icon_index, icon_index, [Qt.DecorationRole])
-
-    def _reset_metadata_in_cache(self, key_path: str) -> None:
-        """
-        Reset the metadata value in the cache to its original state.
-        """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return
-
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
-            return
-
-        # Get the original value from file item metadata
-        original_value = None
-        if hasattr(file_item, "metadata") and file_item.metadata:
-            original_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
-
-        # Update cache with original value or remove if no original
-        if original_value is not None:
-            cache_helper.set_metadata_value(file_item, key_path, original_value)
-        else:
-            # Remove from cache if no original value
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-            if cache_entry and hasattr(cache_entry, "data") and key_path in cache_entry.data:
-                del cache_entry.data[key_path]
-
-        # Update file icon status based on remaining modified items
-        if not self.modified_items:
-            file_item.metadata_status = "loaded"
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-            if cache_entry:
-                cache_entry.modified = False
-        else:
-            file_item.metadata_status = "modified"
-
-        # Trigger UI update
-        self._update_file_icon_status()
+    # MOVED TO MetadataCacheMixin
+    # def _reset_metadata_in_cache(self, key_path: str) -> None:
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
@@ -3194,318 +2072,39 @@ class MetadataTreeView(QTreeView):
     # Lazy Loading Methods
     # =====================================
 
-    def _try_lazy_metadata_loading(
-        self, file_item: Any, _context: str = ""
-    ) -> dict[str, Any] | None:
-        """
-        Try to load metadata using simple fallback loading (lazy manager removed).
+    # MOVED TO MetadataCacheMixin
+    # def _try_lazy_metadata_loading(self, file_item: Any, _context: str = "") -> dict[str, Any] | None:
 
-        Args:
-            file_item: FileItem to load metadata for
-            context: Context string for logging
-
-        Returns:
-            dict: Metadata if available, None if not cached
-        """
-        # Since LazyMetadataManager was removed, use direct fallback loading
-        return self._fallback_metadata_loading(file_item)
-
-    def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
-        """Fallback metadata loading method."""
-        try:
-            if self._cache_helper:
-                metadata = self._cache_helper.get_metadata_for_file(file_item)
-                if metadata:
-                    logger.debug(
-                        f"[MetadataTree] Loaded metadata via cache helper for {file_item.filename}",
-                        extra={"dev_only": True},
-                    )
-                    return metadata
-
-            logger.debug(
-                f"[MetadataTree] No metadata found for {file_item.filename}",
-                extra={"dev_only": True},
-            )
-            return None
-
-        except Exception as e:
-            logger.error(f"[MetadataTree] Error in fallback metadata loading: {e}")
-            return None
+    # MOVED TO MetadataCacheMixin
+    # def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
 
     # =====================================
     # History Menu Actions
     # =====================================
 
-    def _undo_metadata_operation(self) -> None:
-        """Undo the last metadata operation from context menu."""
-        try:
-            from core.metadata_command_manager import get_metadata_command_manager
+    # MOVED TO MetadataEditMixin
+    # def _undo_metadata_operation(self) -> None:
 
-            command_manager = get_metadata_command_manager()
+    # MOVED TO MetadataEditMixin
+    # def _redo_metadata_operation(self) -> None:
 
-            if command_manager.undo():
-                logger.info("[MetadataTreeView] Undo operation successful")
+    # MOVED TO MetadataEditMixin
+    # def _show_history_dialog(self) -> None:
 
-                # Get parent window for status message
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "status_manager"):
-                    parent_window.status_manager.set_file_operation_status(
-                        "Operation undone", success=True, auto_reset=True
-                    )
-            else:
-                logger.info("[MetadataTreeView] No operations to undo")
+    # MOVED TO MetadataContextMenuMixin
+    # def _is_column_visible_in_file_view(self, key_path: str) -> bool:
 
-                # Show status message
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "status_manager"):
-                    parent_window.status_manager.set_file_operation_status(
-                        "No operations to undo", success=False, auto_reset=True
-                    )
+    # MOVED TO MetadataContextMenuMixin
+    # def _add_column_to_file_view(self, key_path: str) -> None:
 
-        except Exception as e:
-            logger.error(f"[MetadataTreeView] Error during undo operation: {e}")
+    # MOVED TO MetadataContextMenuMixin
+    # def _remove_column_from_file_view(self, key_path: str) -> None:
 
-    def _redo_metadata_operation(self) -> None:
-        """Redo the last undone metadata operation from context menu."""
-        try:
-            from core.metadata_command_manager import get_metadata_command_manager
+    # MOVED TO MetadataContextMenuMixin
+    # def _get_file_table_view(self):
 
-            command_manager = get_metadata_command_manager()
-
-            if command_manager.redo():
-                logger.info("[MetadataTreeView] Redo operation successful")
-
-                # Get parent window for status message
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "status_manager"):
-                    parent_window.status_manager.set_file_operation_status(
-                        "Operation redone", success=True, auto_reset=True
-                    )
-            else:
-                logger.info("[MetadataTreeView] No operations to redo")
-
-                # Show status message
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "status_manager"):
-                    parent_window.status_manager.set_file_operation_status(
-                        "No operations to redo", success=False, auto_reset=True
-                    )
-
-        except Exception as e:
-            logger.error(f"[MetadataTreeView] Error during redo operation: {e}")
-
-    def _show_history_dialog(self) -> None:
-        """Show metadata history dialog."""
-        try:
-            from widgets.metadata_history_dialog import MetadataHistoryDialog
-
-            dialog = MetadataHistoryDialog(self)
-            dialog.exec_()
-        except ImportError:
-            logger.warning("MetadataHistoryDialog not available")
-
-    def _is_column_visible_in_file_view(self, key_path: str) -> bool:
-        """Check if a column is already visible in the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return False
-
-            # Check if column is in visible columns configuration
-            visible_columns = getattr(file_table_view, "_visible_columns", {})
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return False
-
-            # Check if column is visible
-            from config import FILE_TABLE_COLUMN_CONFIG
-
-            if column_key in FILE_TABLE_COLUMN_CONFIG:
-                default_visible = FILE_TABLE_COLUMN_CONFIG[column_key]["default_visible"]
-                return visible_columns.get(column_key, default_visible)
-
-        except Exception as e:
-            logger.warning(f"Error checking column visibility: {e}")
-
-        return False
-
-    def _add_column_to_file_view(self, key_path: str) -> None:
-        """Add a metadata column to the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return
-
-            # Update visibility configuration
-            if hasattr(file_table_view, "_visible_columns"):
-                file_table_view._visible_columns[column_key] = True
-
-                # Save configuration
-                if hasattr(file_table_view, "_save_column_visibility_config"):
-                    file_table_view._save_column_visibility_config()
-
-                # Update table display (clears selection)
-                if hasattr(file_table_view, "_update_table_columns"):
-                    file_table_view._update_table_columns()
-
-                logger.info(f"Added column '{key_path}' -> '{column_key}' to file view")
-
-        except Exception as e:
-            logger.error(f"Error adding column to file view: {e}")
-
-    def _remove_column_from_file_view(self, key_path: str) -> None:
-        """Remove a metadata column from the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return
-
-            # Update visibility configuration
-            if hasattr(file_table_view, "_visible_columns"):
-                file_table_view._visible_columns[column_key] = False
-
-                # Save configuration
-                if hasattr(file_table_view, "_save_column_visibility_config"):
-                    file_table_view._save_column_visibility_config()
-
-                # Update table display (clears selection)
-                if hasattr(file_table_view, "_update_table_columns"):
-                    file_table_view._update_table_columns()
-
-                logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
-
-        except Exception as e:
-            logger.error(f"Error removing column from file view: {e}")
-
-    def _get_file_table_view(self):
-        """Get the file table view from the parent hierarchy."""
-        try:
-            # Look for file table view in parent hierarchy
-            parent = self.parent()
-            while parent:
-                if hasattr(parent, "file_table_view"):
-                    return parent.file_table_view
-
-                # Check if parent has file_table attribute
-                if hasattr(parent, "file_table"):
-                    return parent.file_table
-
-                # Check for main window with file table
-                if hasattr(parent, "findChild"):
-                    from widgets.file_table_view import FileTableView
-
-                    file_table = parent.findChild(FileTableView)
-                    if file_table:
-                        return file_table
-
-                parent = parent.parent()
-
-        except Exception as e:
-            logger.warning(f"Error finding file table view: {e}")
-
-        return None
-
-    def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
-        """Map a metadata key path to a file table column key."""
-        try:
-            # Create mapping from metadata keys to column keys
-            metadata_to_column_mapping = {
-                # Image metadata
-                "EXIF:ImageWidth": "image_size",
-                "EXIF:ImageHeight": "image_size",
-                "EXIF:Orientation": "rotation",
-                "EXIF:ISO": "iso",
-                "EXIF:FNumber": "aperture",
-                "EXIF:ExposureTime": "shutter_speed",
-                "EXIF:WhiteBalance": "white_balance",
-                "EXIF:Compression": "compression",
-                "EXIF:Make": "device_manufacturer",
-                "EXIF:Model": "device_model",
-                "EXIF:SerialNumber": "device_serial_no",
-                # Video metadata
-                "QuickTime:Duration": "duration",
-                "QuickTime:VideoFrameRate": "video_fps",
-                "QuickTime:AvgBitrate": "video_avg_bitrate",
-                "QuickTime:VideoCodec": "video_codec",
-                "QuickTime:MajorBrand": "video_format",
-                # Audio metadata
-                "QuickTime:AudioChannels": "audio_channels",
-                "QuickTime:AudioFormat": "audio_format",
-                # File metadata
-                "File:FileSize": "file_size",
-                "File:FileType": "type",
-                "File:FileModifyDate": "modified",
-                "File:MD5": "file_hash",
-                "File:SHA1": "file_hash",
-                "File:SHA256": "file_hash",
-            }
-
-            # Direct mapping
-            if metadata_key in metadata_to_column_mapping:
-                return metadata_to_column_mapping[metadata_key]
-
-            # Fuzzy matching for common patterns
-            key_lower = metadata_key.lower()
-
-            if "rotation" in key_lower or "orientation" in key_lower:
-                return "rotation"
-            elif "duration" in key_lower:
-                return "duration"
-            elif "iso" in key_lower:
-                return "iso"
-            elif "aperture" in key_lower or "fnumber" in key_lower:
-                return "aperture"
-            elif "shutter" in key_lower or "exposure" in key_lower:
-                return "shutter_speed"
-            elif "white" in key_lower and "balance" in key_lower:
-                return "white_balance"
-            elif "compression" in key_lower:
-                return "compression"
-            elif "make" in key_lower or "manufacturer" in key_lower:
-                return "device_manufacturer"
-            elif "model" in key_lower:
-                return "device_model"
-            elif "serial" in key_lower:
-                return "device_serial_no"
-            elif "framerate" in key_lower or "fps" in key_lower:
-                return "video_fps"
-            elif "bitrate" in key_lower:
-                return "video_avg_bitrate"
-            elif "codec" in key_lower:
-                return "video_codec"
-            elif "format" in key_lower:
-                if "audio" in key_lower:
-                    return "audio_format"
-                elif "video" in key_lower:
-                    return "video_format"
-            elif "channels" in key_lower and "audio" in key_lower:
-                return "audio_channels"
-            elif "size" in key_lower and (
-                "image" in key_lower or "width" in key_lower or "height" in key_lower
-            ):
-                return "image_size"
-            elif "hash" in key_lower or "md5" in key_lower or "sha" in key_lower:
-                return "file_hash"
-
-        except Exception as e:
-            logger.warning(f"Error mapping metadata key to column key: {e}")
-
-        return None
+    # MOVED TO MetadataContextMenuMixin
+    # def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """Show or hide the placeholder using the unified helper."""

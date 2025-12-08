@@ -47,9 +47,9 @@ def run_tests():
     rename_logger.propagate = False  # prevent logs going to root handlers
     add_file_handler(rename_logger, "logs/rename.log", level=20, filter_by_name="rename")
 
-    rename_logger.debug("🧪 Rename logger — debug")
-    rename_logger.info("🧪 Rename logger — info")
-    rename_logger.warning("🧪 Rename logger — warning")
+    rename_logger.debug(" Rename logger — debug")
+    rename_logger.info(" Rename logger — info")
+    rename_logger.warning(" Rename logger — warning")
 
 
 if __name__ == "__main__":
