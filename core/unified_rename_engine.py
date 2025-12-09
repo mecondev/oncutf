@@ -493,20 +493,21 @@ class UnifiedPreviewManager:
                     metadata_availability,
                 )
 
-                if extension and new_fullname.lower().endswith(extension.lower()):
-                    new_basename = new_fullname[: -(len(extension))]
-                else:
-                    new_basename = new_fullname
+                # Strip extension from generated fullname
+                new_basename = self._strip_extension_from_fullname(new_fullname, extension)
 
-                if has_name_transform:
-                    new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
+                # Apply post-transform if configured
+                new_basename = self._apply_post_transform_if_needed(
+                    new_basename, post_transform, has_name_transform
+                )
 
                 # Validate basename
                 if not self._is_valid_filename_text(new_basename):
                     name_pairs.append((file.filename, file.filename))
                     continue
 
-                new_name = f"{new_basename}{extension}" if extension else new_basename
+                # Build final filename
+                new_name = self._build_final_filename(new_basename, extension)
                 name_pairs.append((file.filename, new_name))
 
             except Exception as e:
@@ -548,6 +549,52 @@ class UnifiedPreviewManager:
 
         # Apply modules normally
         return apply_rename_modules(modules_data, index, file, metadata_cache)
+
+    def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
+        """Strip extension from fullname if present.
+
+        Args:
+            fullname: The full generated name (may include extension).
+            extension: The original file extension (with dot).
+
+        Returns:
+            Basename without extension.
+        """
+        if extension and fullname.lower().endswith(extension.lower()):
+            return fullname[: -(len(extension))]
+        return fullname
+
+    def _apply_post_transform_if_needed(
+        self, basename: str, post_transform: dict[str, Any], has_transform: bool
+    ) -> str:
+        """Apply post-transform to basename if transform is active.
+
+        Args:
+            basename: The base name to transform.
+            post_transform: Transform configuration dictionary.
+            has_transform: Flag indicating if transform should be applied.
+
+        Returns:
+            Transformed basename or original if no transform.
+        """
+        if not has_transform:
+            return basename
+
+        from modules.name_transform_module import NameTransformModule
+
+        return NameTransformModule.apply_from_data(post_transform, basename)
+
+    def _build_final_filename(self, basename: str, extension: str) -> str:
+        """Build final filename from basename and extension.
+
+        Args:
+            basename: The validated base name.
+            extension: The file extension (with dot, may be empty).
+
+        Returns:
+            Complete filename.
+        """
+        return f"{basename}{extension}" if extension else basename
 
     def _is_valid_filename_text(self, basename: str) -> bool:
         """Return True if `basename` is acceptable for use as a filename.
