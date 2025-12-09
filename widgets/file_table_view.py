@@ -467,6 +467,43 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         """
         self._update_scrollbar_visibility()
 
+    def set_header_enabled(self, enabled: bool) -> None:
+        """Public wrapper to enable/disable header widgets.
+
+        This sets the table's horizontal header enabled state and, when
+        available, propagates the change to a containing main window
+        header (stored as `header` on the main window). Call this from
+        external managers instead of manipulating other windows' header
+        widgets directly.
+        """
+        try:
+            header = self.horizontalHeader()
+            if header is not None:
+                header.setEnabled(enabled)
+        except Exception:
+            # Defensive: do not raise for UI inconsistencies
+            pass
+
+        # Propagate to parent window header if present (best-effort)
+        try:
+            parent = self.parent()
+            while parent is not None:
+                if hasattr(parent, "header"):
+                    try:
+                        parent.header.setEnabled(enabled)
+                    except Exception:
+                        pass
+                    break
+                parent = parent.parent()
+        except Exception:
+            pass
+
+        # Ensure header visibility/state is consistent after change
+        try:
+            self._update_header_visibility()
+        except Exception:
+            pass
+
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""
         # No longer needed - columns maintain their fixed widths
