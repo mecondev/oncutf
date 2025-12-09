@@ -102,7 +102,12 @@ class TableManager:
         self.parent_window.update_files_label()
 
         # Update scrollbar visibility after clearing table
-        self.parent_window.file_table_view._update_scrollbar_visibility()
+        # Use public API on FileTableView instead of calling internal method
+        if hasattr(self.parent_window.file_table_view, "ensure_scrollbar_visibility"):
+            self.parent_window.file_table_view.ensure_scrollbar_visibility()
+        else:
+            # Fallback to internal method for backwards compatibility
+            self.parent_window.file_table_view._update_scrollbar_visibility()
 
         # No longer need column adjustment - columns maintain fixed widths
 

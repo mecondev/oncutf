@@ -458,6 +458,15 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # This method is currently disabled to prevent issues with table content
         # The scrollbar position is now handled by ensure_horizontal_scrollbar_state
 
+    # Public wrappers (safe, stable APIs for TableManager)
+    def ensure_scrollbar_visibility(self) -> None:
+        """Public wrapper to ensure scrollbar visibility is correct.
+
+        Use this from other components (e.g. `TableManager`) instead of
+        calling the internal `_update_scrollbar_visibility` directly.
+        """
+        self._update_scrollbar_visibility()
+
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""
         # No longer needed - columns maintain their fixed widths
