@@ -8,6 +8,15 @@
 
 ---
 
+## 🚀 Quick Links
+
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & refactoring status
+- **[Refactoring Status](docs/architecture/refactor_status_2025-12-09.md)** — Recent improvements (90% complete)
+- **[Next Steps](docs/architecture/next_steps_2025-12-09.md)** — Implementation roadmap
+- **[Column Management Guide](docs/architecture/column_management_mixin_guide.md)** — UI customization
+
+---
+
 ## Key Features
 
 ### Modular Rename System
