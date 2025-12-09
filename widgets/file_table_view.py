@@ -14,6 +14,8 @@ Custom QTableView with Windows Explorer-like behavior:
 """
 
 # from config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
+from contextlib import suppress
+
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
 from core.pyqt_imports import (
@@ -476,33 +478,24 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         external managers instead of manipulating other windows' header
         widgets directly.
         """
-        try:
+        with suppress(Exception):
             header = self.horizontalHeader()
             if header is not None:
                 header.setEnabled(enabled)
-        except Exception:
-            # Defensive: do not raise for UI inconsistencies
-            pass
 
         # Propagate to parent window header if present (best-effort)
-        try:
+        with suppress(Exception):
             parent = self.parent()
             while parent is not None:
                 if hasattr(parent, "header"):
-                    try:
+                    with suppress(Exception):
                         parent.header.setEnabled(enabled)
-                    except Exception:
-                        pass
                     break
                 parent = parent.parent()
-        except Exception:
-            pass
 
         # Ensure header visibility/state is consistent after change
-        try:
+        with suppress(Exception):
             self._update_header_visibility()
-        except Exception:
-            pass
 
     def refresh_view_state(self) -> None:
         """Refresh complete view state (scrollbar + header visibility).
@@ -514,14 +507,10 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         For finer-grained control, use ensure_scrollbar_visibility()
         or set_header_enabled() individually.
         """
-        try:
+        with suppress(Exception):
             self._update_scrollbar_visibility()
-        except Exception:
-            pass
-        try:
+        with suppress(Exception):
             self._update_header_visibility()
-        except Exception:
-            pass
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""
