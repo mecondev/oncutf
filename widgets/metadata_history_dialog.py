@@ -2,7 +2,7 @@
 Module: metadata_history_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-15
+Date: 2025-05-01
 
 Dialog for viewing and managing metadata command history.
 Provides interface for viewing recent metadata operations and undoing/redoing them.

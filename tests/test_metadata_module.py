@@ -2,7 +2,7 @@
 Module: test_metadata_module.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-12
 
 Cross-platform metadata module tests - Windows/Linux/Greek compatible.
 """

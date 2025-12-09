@@ -2,7 +2,7 @@
 Module: interactive_header.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-22
 
 interactive_header.py
 This module defines InteractiveHeader, a subclass of QHeaderView that

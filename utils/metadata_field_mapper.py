@@ -2,7 +2,7 @@
 Module: metadata_field_mapper.py
 
 Author: Michael Economou
-Date: 2025-01-09
+Date: 2025-05-01
 
 Centralized metadata field mapping and value formatting for file table columns and rename modules.
 Maps column keys to metadata keys and formats values for compact display.

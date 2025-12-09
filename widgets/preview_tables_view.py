@@ -2,7 +2,7 @@
 Module: preview_tables_view.py
 
 Author: Michael Economou
-Date: 2025-06-15
+Date: 2025-06-11
 
 preview_tables_view.py
 Implements a view that manages the preview tables for old/new filenames

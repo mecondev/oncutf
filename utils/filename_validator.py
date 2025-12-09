@@ -2,7 +2,7 @@
 Module: filename_validator.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-06
 
 This module provides functions for validating and cleaning filenames according
 to Windows standards. It includes utilities for checking character validity,

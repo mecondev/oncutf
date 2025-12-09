@@ -2,7 +2,7 @@
 Module: custom_msgdialog.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-07
 
 custom_msgdialog.py
 This module defines the CustomMessageDialog class, a flexible and styled alternative

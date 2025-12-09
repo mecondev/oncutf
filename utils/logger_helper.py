@@ -2,7 +2,7 @@
 Module: logger_helper.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-12
 
 logger_helper.py
 Provides utility functions for working with loggers in a safe and consistent way.

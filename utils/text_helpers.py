@@ -2,7 +2,7 @@
 Module: text_helpers.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-19
 
 text_helpers.py
 Utility functions for text manipulation and formatting.

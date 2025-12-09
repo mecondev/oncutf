@@ -2,7 +2,7 @@
 Module: metadata_waiting_dialog.py
 
 Author: Michael Economou
-Date: 2025-06-01
+Date: 2025-05-24
 
 operation_dialog.py
 Frameless waiting dialog for background operations (metadata, hash, file loading).

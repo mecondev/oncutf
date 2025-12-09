@@ -2,7 +2,7 @@
 Test module for TextRemovalModule.
 
 Author: Michael Economou
-Date: 2025-01-24
+Date: 2025-05-01
 """
 
 from unittest.mock import Mock

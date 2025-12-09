@@ -2,7 +2,7 @@
 Module: rename_modules_area.py
 
 Author: Michael Economou
-Date: 2025-06-15
+Date: 2025-05-27
 
 rename_modules_area.py
 Container widget that holds multiple RenameModuleWidget instances inside

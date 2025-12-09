@@ -2,7 +2,7 @@
 Module: name_transform_widget.py
 
 Author: Michael Economou
-Date: 2025-06-15
+Date: 2025-05-27
 
 name_transform_widget.py
 UI widget for configuring NameTransformModule.

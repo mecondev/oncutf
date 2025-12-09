@@ -2,7 +2,7 @@
 Module: conftest.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-09
 
 Global pytest configuration and fixtures for the oncutf test suite.
 Includes CI-friendly setup for PyQt5 testing and common fixtures.

@@ -6,7 +6,7 @@ It's designed to replace the flat list approach for large datasets
 like metadata fields in the rename metadata module.
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 """
 
 from typing import Any

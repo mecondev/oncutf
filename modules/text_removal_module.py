@@ -2,7 +2,7 @@
 Module: text_removal_module.py
 
 Author: Michael Economou
-Date: 2025-01-07
+Date: 2025-05-01
 
 This module provides functionality to remove specific text patterns from filenames.
 It supports removing text from the start, end, or anywhere in the filename,

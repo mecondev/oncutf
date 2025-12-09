@@ -2,7 +2,7 @@
 Module: test_hierarchical_combo_box.py
 
 Author: Michael Economou
-Date: 2025-01-11
+Date: 2025-05-01
 
 Tests for HierarchicalComboBox widget
 Tests dropdown behavior, chevron icons, category selection, and theme consistency.

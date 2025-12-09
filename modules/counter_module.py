@@ -2,7 +2,7 @@
 Module: counter_module.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-06
 
 This module defines a rename module that inserts an incrementing counter
 into filenames. It is used within the oncutf application to generate

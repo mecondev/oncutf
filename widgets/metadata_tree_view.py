@@ -20,7 +20,7 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-21
 """
 
 import contextlib

@@ -6,7 +6,7 @@ This module provides custom delegates for enhanced UI components:
 - TreeViewItemDelegate: Hierarchical item painting with proper hover tracking
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-22
 """
 
 from typing import TYPE_CHECKING

@@ -2,7 +2,7 @@
 Module: test_counter_module.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-13
 
 This module provides functionality for the OnCutF batch file renaming application.
 """

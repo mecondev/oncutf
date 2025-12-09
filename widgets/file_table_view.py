@@ -2,7 +2,7 @@
 Module: file_table_view.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-21
 
 
 Custom QTableView with Windows Explorer-like behavior:

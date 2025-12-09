@@ -2,7 +2,7 @@
 Module: theme.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-06
 
 theme.py
 Theme management system using the new ThemeEngine.

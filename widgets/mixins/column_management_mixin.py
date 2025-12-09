@@ -2,7 +2,7 @@
 Module: column_management_mixin.py
 
 Author: Michael Economou
-Date: 2025-12-08
+Date: 2025-05-21
 
 Column management mixin for FileTableView.
 

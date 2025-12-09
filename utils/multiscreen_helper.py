@@ -2,7 +2,7 @@
 Module: multiscreen_helper.py
 
 Author: Michael Economou
-Date: 2025-01-21
+Date: 2025-05-01
 
 Utility functions for handling window positioning in multiscreen desktop environments.
 Ensures dialogs and progress bars appear on the correct monitor relative to their parent window.

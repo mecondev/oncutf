@@ -2,7 +2,7 @@
 Module: specified_text_module.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-06
 
 This module defines a rename module that inserts user-specified text
 into filenames. It allows users to prepend, append, or inject static

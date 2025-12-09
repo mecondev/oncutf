@@ -2,7 +2,7 @@
 Module: view_helpers.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-24
 
 view_helpers.py
 This module provides view-level helper functions for UI updates

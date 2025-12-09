@@ -2,7 +2,7 @@
 Module: test_metadata_tree_view.py
 
 Author: Michael Economou
-Date: 2025-01-11
+Date: 2025-05-01
 
 Tests for MetadataTreeView widget
 """

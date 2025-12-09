@@ -2,7 +2,7 @@
 Module: rename_module_widget.py
 
 Author: Michael Economou
-Date: 2025-06-15
+Date: 2025-05-06
 
 This module defines a custom widget for managing rename modules within
 the oncutf application. It allows users to add, configure, remove, and

@@ -2,7 +2,7 @@
 Module: logger_setup.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-06
 
 logger_setup.py
 This module provides the ConfigureLogger class for setting up logging in the application.

@@ -2,7 +2,7 @@
 Module: name_transform_module.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-27
 
 modules/name_transform_module.py
 Applies case and separator transformations to a given base name.

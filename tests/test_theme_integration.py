@@ -2,7 +2,7 @@
 Module: test_theme_integration.py
 
 Author: Michael Economou
-Date: 2025-01-11
+Date: 2025-05-01
 
 Tests for theme integration across UI components
 Tests color consistency, QSS application, and visual state management.

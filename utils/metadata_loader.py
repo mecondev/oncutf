@@ -2,7 +2,7 @@
 Module: metadata_loader.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-22
 
 Updated: 2025-05-23
 This module defines the MetadataLoader class, responsible for loading media metadata

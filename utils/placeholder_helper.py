@@ -2,7 +2,7 @@
 Module: placeholder_helper.py
 
 Author: Michael Economou
-Date: 2025-01-15
+Date: 2025-05-01
 
 Unified placeholder management system for all widgets.
 Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.

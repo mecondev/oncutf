@@ -2,7 +2,7 @@
 Module: renamer.py
 
 Author: Michael Economou
-Date: 2025-06-01
+Date: 2025-05-15
 
 Initializes the Renamer with required inputs for batch renaming.
 Parameters:

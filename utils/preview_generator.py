@@ -5,7 +5,7 @@ based on user-defined modules. It supports modular rename logic and allows
 integration with metadata.
 
 Author: Michael Economou
-Date: 2025-06-01
+Date: 2025-05-06
 """
 
 from typing import Any

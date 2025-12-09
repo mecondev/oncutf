@@ -2,7 +2,7 @@
 Module: metadata_worker.py
 
 Author: Michael Economou
-Date: 2025-05-31
+Date: 2025-05-09
 
 Updated: 2025-01-31
 This module defines a background worker that loads metadata from files using a MetadataLoader.

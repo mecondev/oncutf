@@ -2,7 +2,7 @@
 Module: validate_filename_text.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-05-12
 
 This module defines a utility function for validating user-supplied text
 intended for use in filenames. It ensures that the input conforms to
