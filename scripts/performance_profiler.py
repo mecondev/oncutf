@@ -18,15 +18,14 @@ Usage:
     python scripts/performance_profiler.py
 """
 
-import os
-import time
-import tempfile
-import tracemalloc
 import cProfile
 import pstats
+import tempfile
+import time
+import tracemalloc
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from datetime import datetime
 
 
 def create_test_files(count=1000):
@@ -128,11 +127,9 @@ def profile_table_rendering(file_count):
     start_time = time.time()
 
     # Simulate table cell rendering (simplified)
-    for i in range(file_count):
-        # Simulate column width calculation
-        path_width = max(50, min(len(f"file_{i}") * 8, 300))
-        size_width = 100
-        date_width = 150
+    for _ in range(file_count):
+        # Simulate column width calculation (widths not used in this test)
+        pass
 
     render_time = time.time() - start_time
 

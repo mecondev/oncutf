@@ -14,11 +14,11 @@ Tests cover:
 - Edge cases and error handling
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import Mock
 
-from core.pyqt_imports import QTableView, QAbstractTableModel, QHeaderView
+import pytest
+
+from core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
 from widgets.mixins.column_management_mixin import ColumnManagementMixin
 
 
@@ -29,15 +29,15 @@ class MockTableModel(QAbstractTableModel):
         super().__init__()
         self._data = []
         self._columns = ["path", "size", "type", "date"]
-        self._visible_columns = {col: True for col in self._columns}
+        self._visible_columns = dict.fromkeys(self._columns, True)
 
-    def rowCount(self, parent=None):
+    def rowCount(self, _parent=None):
         return len(self._data)
 
-    def columnCount(self, parent=None):
+    def columnCount(self, _parent=None):
         return len(self._columns)
 
-    def data(self, index, role):
+    def data(self, _index, _role):
         return None
 
     def get_visible_columns(self):
@@ -67,19 +67,15 @@ class TableViewWithMixin(QTableView, ColumnManagementMixin):
 
     def _update_header_visibility(self):
         """Mock: update header visibility."""
-        pass
 
     def _load_column_visibility_config(self):
         """Mock: load visibility config."""
-        pass
 
     def _apply_column_visibility(self):
         """Mock: apply visibility config."""
-        pass
 
     def _update_visibility_config(self):
         """Mock: update visibility config."""
-        pass
 
 
 # ==========================================
@@ -95,7 +91,7 @@ def table_view():
     view.setModel(model)
 
     # Initialize columns
-    for i, col in enumerate(model._columns):
+    for i, _col in enumerate(model._columns):
         view.setColumnWidth(i, 100)
 
     return view
@@ -486,7 +482,7 @@ class TestConfigurationSchema:
 
     def test_config_has_required_fields(self, mock_config):
         """Test config has all required fields."""
-        for col_name, col_config in mock_config["columns"].items():
+        for _col_name, col_config in mock_config["columns"].items():
             assert "width" in col_config
             assert "visible" in col_config
             assert isinstance(col_config["width"], int)
@@ -494,7 +490,7 @@ class TestConfigurationSchema:
 
     def test_config_width_is_positive(self, mock_config):
         """Test all configured widths are positive."""
-        for col_name, col_config in mock_config["columns"].items():
+        for _col_name, col_config in mock_config["columns"].items():
             assert col_config["width"] > 0
 
     def test_config_column_order_present(self, mock_config):
