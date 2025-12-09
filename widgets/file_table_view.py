@@ -339,9 +339,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             self.setItemDelegate(self.hover_delegate)
             self.hover_delegate.hovered_row = -1
         self.viewport().update()
-        self._update_scrollbar_visibility()
         self.update_placeholder_visibility()
-        self._update_header_visibility()
+        self.refresh_view_state()
 
     # =====================================
     # Column Management & Scrollbar Optimization
@@ -386,11 +385,12 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Schedule a delayed update to ensure everything is properly refreshed
         schedule_ui_update(lambda: self._delayed_refresh(), delay=100)
 
-        # Update header visibility after scrollbar update
-        self._update_header_visibility()
+        # Update both scrollbar and header visibility after update
+        self.refresh_view_state()
 
     def _delayed_refresh(self) -> None:
         """Delayed refresh to ensure proper scrollbar and content updates."""
+        # Update scrollbar visibility first
         self._update_scrollbar_visibility()
 
         # Use column manager's improved horizontal scrollbar handling
@@ -425,7 +425,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             if top_left.isValid() and bottom_right.isValid():
                 self.dataChanged(top_left, bottom_right)
 
-        # Update header visibility after delayed refresh
+        # Update header visibility after delayed refresh (call directly, not via refresh_view_state to avoid duplicate scrollbar update)
         self._update_header_visibility()
 
     def _update_scrollbar_visibility(self) -> None:
@@ -504,6 +504,25 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         except Exception:
             pass
 
+    def refresh_view_state(self) -> None:
+        """Refresh complete view state (scrollbar + header visibility).
+
+        Use this public API when you need to update both scrollbar and
+        header visibility in one call. This is commonly needed after
+        loading files, clearing the table, or changing visible columns.
+
+        For finer-grained control, use ensure_scrollbar_visibility()
+        or set_header_enabled() individually.
+        """
+        try:
+            self._update_scrollbar_visibility()
+        except Exception:
+            pass
+        try:
+            self._update_header_visibility()
+        except Exception:
+            pass
+
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""
         # No longer needed - columns maintain their fixed widths
@@ -524,15 +543,14 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.placeholder_helper.show()
             else:
                 self.placeholder_helper.hide()
-        # Update header visibility when placeholder state changes
-        self._update_header_visibility()
+        # Update both scrollbar and header visibility when placeholder state changes
+        self.refresh_view_state()
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on table content."""
         is_empty = self.is_empty() if hasattr(self, "is_empty") else False
+        # Set placeholder visibility (which will call refresh_view_state internally)
         self.set_placeholder_visible(is_empty)
-        # Update header visibility when placeholder visibility changes
-        self._update_header_visibility()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
