@@ -15,6 +15,7 @@ Usage:
 import json
 import subprocess
 import sys
+import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -54,7 +55,6 @@ class MetadataAnalyzer:
 
     def get_metadata_fast(self, file_path: Path) -> tuple[dict, float]:
         """Get metadata using fast mode (-json)."""
-
         start = time.perf_counter()
         try:
             result = subprocess.run(
@@ -75,7 +75,6 @@ class MetadataAnalyzer:
 
     def get_metadata_extended(self, file_path: Path) -> tuple[dict, float]:
         """Get metadata using extended mode (-json -ee)."""
-
         start = time.perf_counter()
         try:
             result = subprocess.run(
@@ -157,7 +156,7 @@ class MetadataAnalyzer:
         # Show interesting fields
         self._show_interesting_fields(file_type, make, fast_data, extended_data)
 
-    def _categorize_file(self, file_type: str, mime_type: str) -> str:
+    def _categorize_file(self, _file_type: str, mime_type: str) -> str:
         """Categorize file based on type."""
         mime_lower = mime_type.lower()
 
@@ -172,7 +171,7 @@ class MetadataAnalyzer:
         else:
             return 'Other'
 
-    def _show_interesting_fields(self, file_type: str, make: str,
+    def _show_interesting_fields(self, _file_type: str, make: str,
                                   fast_data: dict, extended_data: dict) -> None:
         """Show interesting fields for this file type."""
         # Rename-relevant fields
@@ -231,7 +230,7 @@ class MetadataAnalyzer:
 
         # Analyze files
         count = 0
-        for ext, files in files_by_type.items():
+        for _ext, files in files_by_type.items():
             for file_path in files:
                 if count >= max_files:
                     break
@@ -277,7 +276,7 @@ class MetadataAnalyzer:
                     print(f"      {field}")
 
             # Manufacturers found
-            makes = set(s['make'] for s in samples if s['make'] != 'Unknown')
+            makes = {s['make'] for s in samples if s['make'] != 'Unknown'}
             if makes:
                 print(f"\n   ️  Manufacturers found: {', '.join(sorted(makes))}")
 

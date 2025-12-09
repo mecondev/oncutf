@@ -24,7 +24,7 @@ def get_docstring_snippet(file_path):
         doc_lines = []
         for line in lines:
             line = line.strip()
-            if line.startswith('"""') or line.startswith("'''"):
+            if line.startswith(('"""', "'''")):
                 if in_doc:
                     doc_lines.append(line)
                     break

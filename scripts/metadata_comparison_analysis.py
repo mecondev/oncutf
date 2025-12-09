@@ -171,7 +171,7 @@ class MetadataComparisonAnalyzer:
         # Get file info
         try:
             file_size = file_path.stat().st_size
-        except:
+        except Exception:
             file_size = 0
 
         file_extension = file_path.suffix.lower()

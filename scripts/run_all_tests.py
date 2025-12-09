@@ -17,7 +17,6 @@ Usage:
 Author: Michael Economou
 Date: 2025-07-06
 """
-
 import argparse
 import json
 import subprocess
@@ -53,7 +52,7 @@ class ComprehensiveTestRunner:
 
         logger.info(f"[ComprehensiveTestRunner] Initialized with output dir: {self.output_dir}")
 
-    def run_unit_tests(self) -> Dict[str, Any]:
+    def run_unit_tests(self) -> dict[str, Any]:
         """Run existing unit tests."""
         logger.info("[ComprehensiveTestRunner] Running unit tests...")
 
@@ -94,7 +93,7 @@ class ComprehensiveTestRunner:
                 'duration': time.time() - self.start_time
             }
 
-    def run_performance_benchmarks(self, quick: bool = False) -> Dict[str, Any]:
+    def run_performance_benchmarks(self, quick: bool = False) -> dict[str, Any]:
         """Run performance benchmarks."""
         logger.info("[ComprehensiveTestRunner] Running performance benchmarks...")
 
@@ -127,7 +126,7 @@ class ComprehensiveTestRunner:
                 'duration': time.time() - self.start_time
             }
 
-    def run_memory_profiling(self) -> Dict[str, Any]:
+    def run_memory_profiling(self) -> dict[str, Any]:
         """Run memory profiling tests."""
         logger.info("[ComprehensiveTestRunner] Running memory profiling...")
 
@@ -159,7 +158,7 @@ class ComprehensiveTestRunner:
                 'duration': time.time() - self.start_time
             }
 
-    def run_integration_tests(self) -> Dict[str, Any]:
+    def run_integration_tests(self) -> dict[str, Any]:
         """Run integration tests using the optimization example."""
         logger.info("[ComprehensiveTestRunner] Running integration tests...")
 
@@ -205,7 +204,7 @@ class ComprehensiveTestRunner:
                 'duration': time.time() - self.start_time
             }
 
-    def run_system_validation(self) -> Dict[str, Any]:
+    def run_system_validation(self) -> dict[str, Any]:
         """Run system validation tests."""
         logger.info("[ComprehensiveTestRunner] Running system validation...")
 
@@ -299,7 +298,7 @@ class ComprehensiveTestRunner:
                 'duration': time.time() - validation_start
             }
 
-    def generate_comprehensive_report(self) -> Dict[str, Any]:
+    def generate_comprehensive_report(self) -> dict[str, Any]:
         """Generate comprehensive test report."""
         total_duration = time.time() - self.start_time
 
@@ -334,7 +333,7 @@ class ComprehensiveTestRunner:
 
         return report
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate recommendations based on test results."""
         recommendations = []
 
@@ -413,7 +412,7 @@ class ComprehensiveTestRunner:
         print("="*70)
 
     def run_all_tests(self, quick_benchmarks: bool = False,
-                     skip_unit_tests: bool = False) -> Dict[str, Any]:
+                     skip_unit_tests: bool = False) -> dict[str, Any]:
         """
         Run all tests and generate comprehensive report.
 
