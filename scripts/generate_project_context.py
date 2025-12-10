@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Generate a high-level project context file for AI assistants (e.g. VS Code Copilot).
+Generate a high-level project context Markdown file for AI assistants.
 
-It scans the repository, finds Python files, extracts:
-- line counts
-- module docstring (if any)
+This script scans the repository for Python source files and produces a
+concise Markdown report that contains, per-module:
+- approximate line counts
+- the first line of the module docstring (if present)
 - top-level classes
 - top-level functions
 
-and writes a Markdown file with a structured overview.
+The report is intended as a snapshot of the codebase that can be supplied
+as contextual input to AI assistants or used as a lightweight developer
+overview.
 
-You can paste parts of that Markdown into AI chat to give it
-a "project-wide view" similar to Cursor's project index.
+Author: Michael Economou
+Date: 2025-12-10
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ from __future__ import annotations
 import ast
 import datetime as dt
 import os
+import sys
 from pathlib import Path
 from textwrap import shorten
 
@@ -176,6 +180,17 @@ def find_python_files(root: Path, recursive: bool = True, extra_ignored: set[str
 
 
 def main() -> None:
+    """
+    Generate the project context Markdown file.
+
+    The function determines the project root (based on the script location
+    or current working directory), finds Python source files according to
+    the provided options, groups them by top-level directory, and writes
+    a Markdown report to the configured output path.
+
+    This function does not return a value; it writes the report file and
+    prints a short status to stdout.
+    """
     # Get script directory and project root
     script_dir = Path(__file__).parent.resolve()
     project_root = script_dir.parent  # Assume script is in scripts/ folder
@@ -306,17 +321,33 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Override output path and other options
-    OUTPUT_PATH = Path(args.output)
-
     # Run main logic with selected options
-    # We reimplement a small portion to pass flags through
     script_dir = Path(__file__).parent.resolve()
     project_root = script_dir.parent
     if not (project_root / "main.py").exists():
         project_root = Path.cwd()
 
     print(f"[generate_project_context] Scanning project at: {project_root}")
+
+    # Determine output path: accept either a full markdown path or a directory.
+    # If the user passes a directory (or a path without .md suffix), we will
+    # write `project_context.md` inside that directory. If a .md filename is
+    # provided, use it directly.
+    requested_output = Path(args.output)
+
+    if requested_output.suffix.lower() == ".md":
+        # User specified an explicit file path
+        if requested_output.is_absolute():
+            output_path = requested_output
+        else:
+            output_path = project_root / requested_output
+    else:
+        # Treat as directory; allow absolute or relative
+        if requested_output.is_absolute():
+            out_dir = requested_output
+        else:
+            out_dir = project_root / requested_output
+        output_path = out_dir / "project_context.md"
 
     # By default recurse; allow user to disable recursion with --no-recursive
     recursive_flag = not args.no_recursive
@@ -327,7 +358,6 @@ if __name__ == "__main__":
 
     groups = group_by_top_level_dir(project_root, py_files)
 
-    output_path = project_root / OUTPUT_PATH
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     total_lines = 0
