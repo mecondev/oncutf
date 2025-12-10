@@ -284,10 +284,10 @@ if __name__ == "__main__":
         help="Output Markdown path (default: reports/project_context.md)",
     )
     parser.add_argument(
-        "-r",
-        "--recursive",
+        "-n",
+        "--no-recursive",
         action="store_true",
-        help="Recurse into subdirectories (default: enabled)",
+        help="Do not recurse into subdirectories (default: recursion is enabled)",
     )
     parser.add_argument(
         "-e",
@@ -318,7 +318,9 @@ if __name__ == "__main__":
 
     print(f"[generate_project_context] Scanning project at: {project_root}")
 
-    py_files = find_python_files(project_root, recursive=args.recursive, extra_ignored=set(args.exclude))
+    # By default recurse; allow user to disable recursion with --no-recursive
+    recursive_flag = not args.no_recursive
+    py_files = find_python_files(project_root, recursive=recursive_flag, extra_ignored=set(args.exclude))
     if not py_files:
         print("No Python files found. Are you in the correct project root?")
         sys.exit(0)
