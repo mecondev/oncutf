@@ -22,7 +22,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from modules.base_module import BaseRenameModule
+from oncutf.modules.base_module import BaseRenameModule
 
 logger = logging.getLogger(__name__)
 

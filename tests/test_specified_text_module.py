@@ -8,7 +8,7 @@ Date: 2025-05-13
 
 import warnings
 
-from modules.specified_text_module import SpecifiedTextModule
+from oncutf.modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")

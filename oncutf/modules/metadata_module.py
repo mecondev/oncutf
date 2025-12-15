@@ -146,7 +146,7 @@ class MetadataModule:
 
             # Fallback to original name base
             try:
-                from modules.original_name_module import OriginalNameModule
+                from oncutf.modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
             except Exception:
@@ -398,7 +398,7 @@ class MetadataModule:
                     extra={"dev_only": True},
                 )
                 # Fallback: return original name
-                from modules.original_name_module import OriginalNameModule
+                from oncutf.modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
 
@@ -416,7 +416,7 @@ class MetadataModule:
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")
             if not value:
-                from modules.original_name_module import OriginalNameModule
+                from oncutf.modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
             return _finalize_result(value)
@@ -424,7 +424,7 @@ class MetadataModule:
         if field == "date":
             value = metadata.get("date")
             if not value:
-                from modules.original_name_module import OriginalNameModule
+                from oncutf.modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
             return _finalize_result(value)
@@ -447,7 +447,7 @@ class MetadataModule:
                                 raw_value = metadata[key]
                                 if raw_value is not None:
                                     return _finalize_result(raw_value)
-                        from modules.original_name_module import OriginalNameModule
+                        from oncutf.modules.original_name_module import OriginalNameModule
 
                         return OriginalNameModule.apply_from_data(
                             {},
@@ -465,7 +465,7 @@ class MetadataModule:
             return _finalize_result(value)
 
         # If we get here, the field was not found
-        from modules.original_name_module import OriginalNameModule
+        from oncutf.modules.original_name_module import OriginalNameModule
 
         return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
 

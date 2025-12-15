@@ -11,7 +11,7 @@ Uses BaseRenameModule to prevent duplicate emits.
 """
 
 from core.pyqt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget
-from modules.base_module import BaseRenameModule  # Debounced signal base
+from oncutf.modules.base_module import BaseRenameModule  # Debounced signal base
 
 
 class NameTransformWidget(BaseRenameModule):

@@ -19,11 +19,11 @@ to generate preview names and resolve rename plans for batch processing.
 import os
 import time
 
-from modules.counter_module import CounterModule
-from modules.metadata_module import MetadataModule
-from modules.original_name_module import OriginalNameModule
-from modules.specified_text_module import SpecifiedTextModule
-from modules.text_removal_module import TextRemovalModule
+from oncutf.modules.counter_module import CounterModule
+from oncutf.modules.metadata_module import MetadataModule
+from oncutf.modules.original_name_module import OriginalNameModule
+from oncutf.modules.specified_text_module import SpecifiedTextModule
+from oncutf.modules.text_removal_module import TextRemovalModule
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger

@@ -11,8 +11,8 @@ Date: 2025-05-06
 from typing import Any
 
 from oncutf.models.file_item import FileItem
-from modules.metadata_module import MetadataModule
-from modules.original_name_module import OriginalNameModule
+from oncutf.modules.metadata_module import MetadataModule
+from oncutf.modules.original_name_module import OriginalNameModule
 from utils.logger_factory import get_cached_logger
 from utils.validate_filename_text import is_valid_filename_text
 
@@ -100,7 +100,7 @@ def generate_preview_names(
             elif module_type == "remove_text_from_original_name":
                 # Use TextRemovalModule for text removal
                 try:
-                    from modules.text_removal_module import TextRemovalModule
+                    from oncutf.modules.text_removal_module import TextRemovalModule
 
                     result_filename = TextRemovalModule.apply_from_data(
                         module, file, index, metadata_cache

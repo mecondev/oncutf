@@ -9,7 +9,7 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 
 import warnings
 
-from modules.specified_text_module import SpecifiedTextModule
+from oncutf.modules.specified_text_module import SpecifiedTextModule
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 warnings.filterwarnings("ignore", category=DeprecationWarning)

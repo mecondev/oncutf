@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from modules.text_removal_module import TextRemovalModule
+from oncutf.modules.text_removal_module import TextRemovalModule
 
 
 class TestTextRemovalModule:

@@ -30,9 +30,9 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from modules.counter_module import CounterModule
+from oncutf.modules.counter_module import CounterModule
 
-# Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
+# Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_ui_update
@@ -73,8 +73,8 @@ class RenameModuleWidget(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
 
         # Lazy import to avoid circular import
-        from modules.specified_text_module import SpecifiedTextModule
-        from modules.text_removal_module import TextRemovalModule
+        from oncutf.modules.specified_text_module import SpecifiedTextModule
+        from oncutf.modules.text_removal_module import TextRemovalModule
 
         self.module_instances = {
             "Counter": CounterModule,

@@ -480,7 +480,7 @@ class UnifiedPreviewManager:
         hashes, and validates generated basenames before returning them.
         """
 
-        from modules.name_transform_module import NameTransformModule
+        from oncutf.modules.name_transform_module import NameTransformModule
 
         name_pairs = []
         has_name_transform = NameTransformModule.is_effective(post_transform)
@@ -586,7 +586,7 @@ class UnifiedPreviewManager:
         if not has_transform:
             return basename
 
-        from modules.name_transform_module import NameTransformModule
+        from oncutf.modules.name_transform_module import NameTransformModule
 
         return NameTransformModule.apply_from_data(post_transform, basename)
 

@@ -9,7 +9,7 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 
 import warnings
 
-from modules.counter_module import CounterModule
+from oncutf.modules.counter_module import CounterModule
 from tests.mocks import MockFileItem
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")

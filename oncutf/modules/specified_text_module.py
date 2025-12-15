@@ -21,7 +21,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from modules.base_module import BaseRenameModule
+from oncutf.modules.base_module import BaseRenameModule
 from utils.filename_validator import validate_filename_part
 from utils.icons_loader import get_menu_icon
 

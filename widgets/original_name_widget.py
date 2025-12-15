@@ -8,7 +8,7 @@ Rename module that reuses original filename.
 """
 
 from core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout
-from modules.base_module import BaseRenameModule
+from oncutf.modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

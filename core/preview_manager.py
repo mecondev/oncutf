@@ -14,7 +14,7 @@ import time
 from typing import Any
 
 from oncutf.models.file_item import FileItem
-from modules.name_transform_module import NameTransformModule
+from oncutf.modules.name_transform_module import NameTransformModule
 from utils.logger_factory import get_cached_logger
 from utils.preview_engine import apply_rename_modules
 
@@ -225,7 +225,7 @@ class PreviewManager:
         clear_module_cache()
 
         # Clear metadata cache
-        from modules.metadata_module import MetadataModule
+        from oncutf.modules.metadata_module import MetadataModule
 
         MetadataModule.clear_cache()
 

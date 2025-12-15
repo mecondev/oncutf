@@ -23,7 +23,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from modules.base_module import BaseRenameModule
+from oncutf.modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
 from widgets.rename_module_widget import RenameModuleWidget

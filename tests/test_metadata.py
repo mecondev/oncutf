@@ -10,7 +10,7 @@ Tests work cross-platform with Greek characters and Windows/Linux paths.
 
 import warnings
 
-from modules.metadata_module import MetadataModule
+from oncutf.modules.metadata_module import MetadataModule
 from tests.mocks import MockFileItem
 from utils.path_normalizer import normalize_path
 
