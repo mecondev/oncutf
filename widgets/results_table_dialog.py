@@ -48,7 +48,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
 )
 from core.theme_manager import get_theme_manager
-from models.results_table_model import ResultsTableModel
+from oncutf.models.results_table_model import ResultsTableModel
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

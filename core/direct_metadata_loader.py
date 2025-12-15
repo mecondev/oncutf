@@ -17,7 +17,7 @@ Features:
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.file_status_helpers import (
     get_hash_for_file,
     get_metadata_for_file,

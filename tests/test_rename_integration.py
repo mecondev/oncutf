@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from config import INVALID_FILENAME_MARKER
 from core.rename_manager import RenameManager
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 from utils.filename_validator import is_validation_error_marker

@@ -19,7 +19,7 @@ import os
 from collections.abc import Callable
 
 from core.pyqt_imports import QWidget
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule
 
 # Initialize Logger

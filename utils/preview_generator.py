@@ -10,7 +10,7 @@ Date: 2025-05-06
 
 from typing import Any
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from modules.metadata_module import MetadataModule
 from modules.original_name_module import OriginalNameModule
 from utils.logger_factory import get_cached_logger

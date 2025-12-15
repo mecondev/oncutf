@@ -20,7 +20,7 @@ from config import (
 )
 from core.drag_manager import force_cleanup_drag, is_dragging
 from core.pyqt_imports import Qt
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.companion_files_helper import CompanionFilesHelper
 from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger

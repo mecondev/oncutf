@@ -29,7 +29,7 @@ from core.pyqt_imports import (
     QVariant,
     pyqtSignal,
 )
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.file_status_helpers import get_hash_for_file, has_hash
 from utils.icons_loader import load_metadata_icons
 

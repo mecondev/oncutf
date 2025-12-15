@@ -12,7 +12,7 @@ Provides CRC32 hash calculations optimized for speed and efficiency.
 import zlib
 from pathlib import Path
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.path_normalizer import normalize_path
 

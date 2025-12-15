@@ -14,7 +14,7 @@ import os
 import time
 from datetime import datetime
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.file_status_helpers import get_hash_for_file
 
 # initialize logger

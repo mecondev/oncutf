@@ -9,7 +9,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from core.rename_manager import RenameManager
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 
 
 class TestSafeRenameWorkflow:

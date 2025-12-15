@@ -13,7 +13,7 @@ import os
 import time
 from typing import Any
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule
 from utils.logger_factory import get_cached_logger
 from utils.preview_engine import apply_rename_modules

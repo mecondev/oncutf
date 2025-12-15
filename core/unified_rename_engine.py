@@ -22,7 +22,7 @@ from core.batch_processor import BatchProcessorFactory
 from core.conflict_resolver import ConflictResolver
 from core.performance_monitor import get_performance_monitor, monitor_performance
 from core.pyqt_imports import QObject, pyqtSignal
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.companion_files_helper import CompanionFilesHelper
 from utils.logger_factory import get_cached_logger
 

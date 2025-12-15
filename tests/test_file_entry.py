@@ -6,7 +6,7 @@ Test suite for FileEntry dataclass.
 
 from datetime import datetime
 
-from models.file_entry import FileEntry
+from oncutf.models.file_entry import FileEntry
 
 
 class TestFileEntryCreation:

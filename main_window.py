@@ -27,7 +27,7 @@ from core.config_imports import *
 from core.pyqt_imports import *
 
 # Data models and business logic modules
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 
 # Utility functions and helpers
 from utils.logger_factory import get_cached_logger

@@ -129,7 +129,7 @@ class InitializationOrchestrator:
         """
         from core.selection_manager import SelectionManager
         from core.unified_metadata_manager import get_unified_metadata_manager
-        from models.file_table_model import FileTableModel
+        from oncutf.models.file_table_model import FileTableModel
 
         # Thread attributes
         self.window.metadata_thread = None

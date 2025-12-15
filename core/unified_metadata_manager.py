@@ -25,7 +25,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from core.pyqt_imports import QApplication, Qt
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.companion_files_helper import CompanionFilesHelper
 from utils.cursor_helper import wait_cursor
 from utils.file_status_helpers import (

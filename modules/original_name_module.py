@@ -10,7 +10,7 @@ Module for applying original name transformations.
 
 import os
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.transform_utils import apply_transform
 

@@ -11,7 +11,7 @@ Manages file operations like rename, validation, and conflict resolution.
 import os
 
 from core.pyqt_imports import QDesktopServices, QUrl
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import find_file_by_path
 from utils.renamer import Renamer

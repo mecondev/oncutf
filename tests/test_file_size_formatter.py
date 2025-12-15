@@ -204,7 +204,7 @@ class TestIntegrationWithFileItem(unittest.TestCase):
 
     def test_file_item_uses_new_formatter(self):
         """Test that FileItem uses the new formatter."""
-        from models.file_item import FileItem
+        from oncutf.models.file_item import FileItem
 
         # Create a test file item
         test_file = project_root / "config.py"

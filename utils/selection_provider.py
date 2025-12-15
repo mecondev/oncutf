@@ -21,7 +21,7 @@ Solution:
 
 from typing import Any
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

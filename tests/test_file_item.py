@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from models.file_item import FileItem
+from oncutf.models.file_item import FileItem
 
 
 def test_fileitem_from_path_and_size(tmp_path):
