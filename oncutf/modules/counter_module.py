@@ -10,7 +10,7 @@ sequential file names based on configurable start value, step, and padding.
 """
 
 from config import ICON_SIZES
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QHBoxLayout,
     QIntValidator,
     QLabel,

@@ -12,7 +12,7 @@ Used in the oncutf application as one of the modular renaming components.
 
 import os
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAction,
     QApplication,
     QMenu,

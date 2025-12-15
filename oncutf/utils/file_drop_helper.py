@@ -14,7 +14,7 @@ import os
 from typing import Literal
 
 from config import ALLOWED_EXTENSIONS
-from core.pyqt_imports import QMimeData
+from oncutf.core.pyqt_imports import QMimeData
 
 # Custom dialogs will be imported when connected
 # from oncutf.ui.widgets.custommsg_dialog import show_recursive_dialog, show_rejected_dialog
@@ -95,7 +95,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         CustomMessageDialog.information(parent, "Some files were skipped", message)
     else:
         # Show summary and scrollable list
-        from core.pyqt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
+        from oncutf.core.pyqt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
 
         dialog = QDialog(parent)
         dialog.setWindowTitle("Some files were skipped")

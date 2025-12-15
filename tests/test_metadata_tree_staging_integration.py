@@ -6,8 +6,8 @@ import pytest
 try:
     from PyQt5.QtWidgets import QApplication
 
-    from core.file_store import FileItem
-    from core.metadata_staging_manager import MetadataStagingManager
+    from oncutf.core.file_store import FileItem
+    from oncutf.core.metadata_staging_manager import MetadataStagingManager
     from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
     PYQT5_AVAILABLE = True
 except ImportError:
@@ -38,7 +38,7 @@ class TestMetadataTreeStagingIntegration:
 
     def test_staging_integration(self, tree_view, staging_manager):
         # Mock get_metadata_staging_manager to return our instance
-        with patch("core.metadata_staging_manager.get_metadata_staging_manager", return_value=staging_manager):
+        with patch("oncutf.core.metadata_staging_manager.get_metadata_staging_manager", return_value=staging_manager):
 
             # Setup file item
             file_item = MagicMock(spec=FileItem)

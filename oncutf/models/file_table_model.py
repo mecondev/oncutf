@@ -14,8 +14,8 @@ Classes:
 
 from datetime import datetime
 
-from core.application_context import get_app_context
-from core.pyqt_imports import (
+from oncutf.core.application_context import get_app_context
+from oncutf.core.pyqt_imports import (
     QAbstractTableModel,
     QColor,
     QIcon,
@@ -68,14 +68,14 @@ class FileTableModel(QAbstractTableModel):
 
     def _load_default_visible_columns(self) -> list:
         """Load default visible columns configuration using UnifiedColumnService."""
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         return service.get_visible_columns()
 
     def _create_column_mapping(self) -> dict:
         """Create mapping from column index to column key using UnifiedColumnService."""
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         mapping = service.get_column_mapping()
@@ -91,7 +91,7 @@ class FileTableModel(QAbstractTableModel):
         )
 
         # Invalidate UnifiedColumnService cache when columns change
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         service.invalidate_cache()
@@ -487,7 +487,7 @@ class FileTableModel(QAbstractTableModel):
 
         elif role == Qt.TextAlignmentRole:
             # Get alignment from UnifiedColumnService
-            from core.unified_column_service import get_column_service
+            from oncutf.core.unified_column_service import get_column_service
 
             service = get_column_service()
             config = service.get_column_config(column_key)
@@ -513,7 +513,7 @@ class FileTableModel(QAbstractTableModel):
                 # Check staging manager for modified status
                 is_modified = False
                 try:
-                    from core.metadata_staging_manager import get_metadata_staging_manager
+                    from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
                     staging_manager = get_metadata_staging_manager()
                     if staging_manager and staging_manager.has_staged_changes(file.full_path):
                         is_modified = True

@@ -15,7 +15,7 @@ Features:
 - Custom table widgets with resize signal handling
 """
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QHBoxLayout,
     QHeaderView,

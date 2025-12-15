@@ -12,7 +12,7 @@ Provides safe cursor operations with emergency cleanup capabilities.
 import contextlib
 import traceback
 
-from core.pyqt_imports import QApplication, Qt
+from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

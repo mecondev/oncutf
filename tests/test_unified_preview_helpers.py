@@ -10,7 +10,7 @@ Date: 2025-12-09
 
 import pytest
 
-from core.unified_rename_engine import BatchQueryManager, SmartCacheManager, UnifiedPreviewManager
+from oncutf.core.unified_rename_engine import BatchQueryManager, SmartCacheManager, UnifiedPreviewManager
 
 
 @pytest.fixture

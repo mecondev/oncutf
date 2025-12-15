@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QEvent, QModelIndex
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QBrush,
     QColor,
     QCursor,
@@ -496,7 +496,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
             # Root-level group headers only: use dimmed color from theme
             from PyQt5.QtGui import QColor, QPalette
 
-            from core.theme_manager import ThemeManager
+            from oncutf.core.theme_manager import ThemeManager
             theme = ThemeManager()
             group_color = theme.get_color("metadata_group_text")
             option.palette.setColor(QPalette.ColorRole.Text, QColor(group_color))

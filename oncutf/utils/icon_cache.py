@@ -17,7 +17,7 @@ Supports:
 import os
 
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
-from core.pyqt_imports import QIcon, QPixmap, Qt
+from oncutf.core.pyqt_imports import QIcon, QPixmap, Qt
 from oncutf.utils.icon_utilities import create_colored_icon
 
 # Initialize Logger

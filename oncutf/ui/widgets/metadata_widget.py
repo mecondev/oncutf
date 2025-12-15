@@ -12,8 +12,8 @@ from typing import Any
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from core.theme_manager import get_theme_manager
+from oncutf.core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
@@ -26,7 +26,7 @@ from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 
 # ApplicationContext integration
 try:
-    from core.application_context import get_app_context
+    from oncutf.core.application_context import get_app_context
 except ImportError:
     get_app_context = None
 
@@ -262,7 +262,7 @@ class MetadataWidget(QWidget):
             file_paths = [file_item.full_path for file_item in selected_files]
 
             # Get files that have hashes using batch query
-            from core.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
 
             hash_cache = get_persistent_hash_cache()
 
@@ -567,7 +567,7 @@ class MetadataWidget(QWidget):
 
     def _get_metadata_cache_via_context(self):
         try:
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "_metadata_cache"):
@@ -585,7 +585,7 @@ class MetadataWidget(QWidget):
         selected_files = self._get_selected_files()
 
         # Use the same persistent cache as batch_metadata_status
-        from core.persistent_metadata_cache import get_persistent_metadata_cache
+        from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
 
         metadata_cache = get_persistent_metadata_cache()
 
@@ -1121,7 +1121,7 @@ class MetadataWidget(QWidget):
     def _check_hash_calculation_requirements(self, selected_files):
         """Check if hash calculation dialog is needed."""
         file_paths = [file_item.full_path for file_item in selected_files]
-        from core.persistent_hash_cache import get_persistent_hash_cache
+        from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
 
         hash_cache = get_persistent_hash_cache()
         files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
@@ -1404,7 +1404,7 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from core.application_context import get_app_context
+                from oncutf.core.application_context import get_app_context
 
                 context = get_app_context()
                 if (
@@ -1450,7 +1450,7 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from core.application_context import get_app_context
+                from oncutf.core.application_context import get_app_context
 
                 context = get_app_context()
                 if (

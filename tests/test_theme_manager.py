@@ -15,7 +15,7 @@ class TestThemeManager:
 
     def test_theme_manager_singleton(self):
         """Test that get_theme_manager returns singleton instance."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager1 = get_theme_manager()
         manager2 = get_theme_manager()
@@ -24,14 +24,14 @@ class TestThemeManager:
 
     def test_default_theme_is_dark(self):
         """Test that default theme is 'dark'."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
         assert manager.get_current_theme() == "dark"
 
     def test_get_color_returns_valid_hex(self):
         """Test that get_color returns valid hex color."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
         color = manager.get_color("background")
@@ -42,7 +42,7 @@ class TestThemeManager:
 
     def test_get_color_raises_on_invalid_token(self):
         """Test that get_color raises KeyError for invalid token."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
 
@@ -51,7 +51,7 @@ class TestThemeManager:
 
     def test_colors_property_returns_dict(self):
         """Test that colors property returns dictionary of all tokens."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
         colors = manager.colors
@@ -63,7 +63,7 @@ class TestThemeManager:
 
     def test_set_theme_changes_current_theme(self):
         """Test that set_theme changes the current theme."""
-        from core.theme_manager import ThemeManager
+        from oncutf.core.theme_manager import ThemeManager
 
         # Create new instance for isolated test
         manager = ThemeManager()
@@ -75,7 +75,7 @@ class TestThemeManager:
 
     def test_set_theme_raises_on_invalid_theme(self):
         """Test that set_theme raises ValueError for invalid theme."""
-        from core.theme_manager import ThemeManager
+        from oncutf.core.theme_manager import ThemeManager
 
         manager = ThemeManager()
 
@@ -84,7 +84,7 @@ class TestThemeManager:
 
     def test_theme_changed_signal_emitted(self):
         """Test that theme_changed signal is emitted on theme change."""
-        from core.theme_manager import ThemeManager
+        from oncutf.core.theme_manager import ThemeManager
 
         manager = ThemeManager()
         signal_received = []
@@ -101,7 +101,7 @@ class TestThemeManager:
 
     def test_get_qss_returns_string(self):
         """Test that get_qss returns rendered QSS string."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
         qss = manager.get_qss()
@@ -115,7 +115,7 @@ class TestThemeManager:
 
     def test_qss_caching(self):
         """Test that QSS is cached between calls."""
-        from core.theme_manager import ThemeManager
+        from oncutf.core.theme_manager import ThemeManager
 
         manager = ThemeManager()
         qss1 = manager.get_qss()
@@ -126,7 +126,7 @@ class TestThemeManager:
 
     def test_reload_theme_clears_cache(self):
         """Test that reload_theme clears QSS cache."""
-        from core.theme_manager import ThemeManager
+        from oncutf.core.theme_manager import ThemeManager
 
         manager = ThemeManager()
         manager.get_qss()  # Populate cache
@@ -137,7 +137,7 @@ class TestThemeManager:
 
     def test_theme_tokens_loaded_from_config(self):
         """Test that theme tokens are loaded from config."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
 
@@ -147,7 +147,7 @@ class TestThemeManager:
 
     def test_dark_theme_has_required_tokens(self):
         """Test that dark theme has all required color tokens."""
-        from core.theme_manager import get_theme_manager
+        from oncutf.core.theme_manager import get_theme_manager
 
         manager = get_theme_manager()
         dark_colors = manager.colors

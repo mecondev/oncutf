@@ -18,7 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
+from oncutf.core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
 from oncutf.ui.mixins.column_management_mixin import ColumnManagementMixin
 
 

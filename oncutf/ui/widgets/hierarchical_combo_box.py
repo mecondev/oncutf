@@ -11,7 +11,7 @@ Date: 2025-05-01
 
 from typing import Any
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QComboBox,
     QEvent,
     QSize,

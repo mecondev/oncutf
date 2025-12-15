@@ -18,7 +18,7 @@ from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 
-from core.pyqt_imports import QObject, pyqtSignal
+from oncutf.core.pyqt_imports import QObject, pyqtSignal
 
 logger = logging.getLogger(__name__)
 

@@ -75,7 +75,7 @@ class MetadataContextMenuMixin:
             normalized_key_path = self._normalize_metadata_field_name(key_path)
 
             # Check staging manager
-            from core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
             staging_manager = get_metadata_staging_manager()
             if staging_manager:
                 staged_changes = staging_manager.get_staged_changes(self._current_file_path)
@@ -181,7 +181,7 @@ class MetadataContextMenuMixin:
 
         # Check if undo/redo are available and get descriptions
         try:
-            from core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata_command_manager import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             can_undo = command_manager.can_undo()

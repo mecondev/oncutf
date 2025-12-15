@@ -8,7 +8,7 @@ Unified placeholder management system for all widgets.
 Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.
 """
 
-from core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
+from oncutf.core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_utils import get_images_dir
 from oncutf.utils.theme import get_theme_color

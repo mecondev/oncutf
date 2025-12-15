@@ -18,7 +18,7 @@ Extracted from FileTableView to improve maintainability and reduce complexity.
 This follows the same pattern as SelectionMixin and DragDropMixin.
 """
 
-from core.pyqt_imports import QHeaderView, Qt
+from oncutf.core.pyqt_imports import QHeaderView, Qt
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -128,7 +128,7 @@ class ColumnManagementMixin:
                 visible_columns = self.model().get_visible_columns()
             else:
                 # Emergency fallback - load from service
-                from core.unified_column_service import get_column_service
+                from oncutf.core.unified_column_service import get_column_service
 
                 visible_columns = get_column_service().get_visible_columns()
                 logger.warning(
@@ -174,7 +174,7 @@ class ColumnManagementMixin:
 
     def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on its content type and configuration."""
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         column_config = service.get_column_config(column_key)
@@ -304,7 +304,7 @@ class ColumnManagementMixin:
         )
         try:
             # First, get the default width from UnifiedColumnService
-            from core.unified_column_service import get_column_service
+            from oncutf.core.unified_column_service import get_column_service
 
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
@@ -379,7 +379,7 @@ class ColumnManagementMixin:
         except Exception as e:
             logger.warning(f"[ColumnWidth] Failed to load column width for {column_key}: {e}")
             # Emergency fallback to UnifiedColumnService defaults
-            from core.unified_column_service import get_column_service
+            from oncutf.core.unified_column_service import get_column_service
 
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
@@ -457,7 +457,7 @@ class ColumnManagementMixin:
     def _schedule_column_save(self, column_key: str, width: int) -> None:
         """Schedule delayed save of column width changes."""
         from config import COLUMN_RESIZE_BEHAVIOR
-        from core.pyqt_imports import QTimer
+        from oncutf.core.pyqt_imports import QTimer
 
         if not COLUMN_RESIZE_BEHAVIOR.get("PRESERVE_USER_WIDTHS", True):
             return
@@ -563,7 +563,7 @@ class ColumnManagementMixin:
             return
 
         # Enforce minimum width immediately to prevent visual flickering
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         cfg = service.get_column_config(column_key)
@@ -658,7 +658,7 @@ class ColumnManagementMixin:
                 if saved_visibility:
                     logger.debug(f"[ColumnVisibility] Loaded from main config: {saved_visibility}")
                     # Ensure we have all columns from config, not just saved ones
-                    from core.unified_column_service import get_column_service
+                    from oncutf.core.unified_column_service import get_column_service
 
                     service = get_column_service()
 
@@ -680,7 +680,7 @@ class ColumnManagementMixin:
             if saved_visibility:
                 logger.debug(f"[ColumnVisibility] Loaded from fallback config: {saved_visibility}")
                 # Ensure we have all columns from config, not just saved ones
-                from core.unified_column_service import get_column_service
+                from oncutf.core.unified_column_service import get_column_service
 
                 service = get_column_service()
 
@@ -695,7 +695,7 @@ class ColumnManagementMixin:
             logger.warning(f"[ColumnVisibility] Error loading config: {e}")
 
         # Return default configuration
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
 
@@ -786,7 +786,7 @@ class ColumnManagementMixin:
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
 
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
@@ -812,7 +812,7 @@ class ColumnManagementMixin:
         logger.debug(f"[ColumnToggle] Current visibility state: {self._visible_columns}")
 
         # Verify we have all columns in visibility state
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         for key, cfg in get_column_service().get_all_columns().items():
             if key not in self._visible_columns:
@@ -839,7 +839,7 @@ class ColumnManagementMixin:
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
 
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         if column_key not in get_column_service().get_all_columns():
             logger.warning(f"Cannot add unknown column: {column_key}")
@@ -921,7 +921,7 @@ class ColumnManagementMixin:
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
 
-        from core.unified_column_service import get_column_service
+        from oncutf.core.unified_column_service import get_column_service
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
@@ -1033,7 +1033,7 @@ class ColumnManagementMixin:
         Restores all columns to config defaults with Interactive resize mode.
         """
         try:
-            from core.unified_column_service import get_column_service
+            from oncutf.core.unified_column_service import get_column_service
 
             visible_columns = []
             if hasattr(self.model(), "get_visible_columns"):
@@ -1089,7 +1089,7 @@ class ColumnManagementMixin:
 
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
-                from core.unified_column_service import get_column_service
+                from oncutf.core.unified_column_service import get_column_service
 
                 cfg = get_column_service().get_column_config(column_key)
 
@@ -1156,7 +1156,7 @@ class ColumnManagementMixin:
             suspicious_count = 0
             total_count = 0
 
-            from core.unified_column_service import get_column_service
+            from oncutf.core.unified_column_service import get_column_service
 
             for column_key, column_config in get_column_service().get_all_columns().items():
                 if getattr(column_config, "default_visible", False):

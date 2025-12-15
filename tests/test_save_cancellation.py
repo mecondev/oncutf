@@ -15,7 +15,7 @@ class TestSaveCancellation:
 
     def test_save_cancelled_flag_initialization(self):
         """Test that _save_cancelled flag is initialized to False."""
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         assert hasattr(manager, "_save_cancelled")
@@ -23,7 +23,7 @@ class TestSaveCancellation:
 
     def test_request_save_cancel_sets_flag(self):
         """Test that request_save_cancel sets the cancellation flag."""
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         assert manager._save_cancelled is False
@@ -36,7 +36,7 @@ class TestSaveCancellation:
         from unittest.mock import MagicMock
 
         from config import SAVE_OPERATION_SETTINGS
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         # Only test if cancellation is allowed
         if not SAVE_OPERATION_SETTINGS.get("ALLOW_CANCEL_NORMAL_SAVE", False):
@@ -58,7 +58,7 @@ class TestSaveCancellation:
 
     def test_no_cancel_callback_for_exit_saves(self):
         """Test that cancel callback is not provided for exit saves."""
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
 
@@ -72,7 +72,7 @@ class TestSaveCancellation:
         """Test that _show_save_results properly handles cancelled operations."""
         from unittest.mock import MagicMock, patch
 
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -96,7 +96,7 @@ class TestSaveCancellation:
         """Test that result messages distinguish between cancelled and failed operations."""
         from unittest.mock import MagicMock, patch
 
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -105,7 +105,7 @@ class TestSaveCancellation:
         # Mock both CustomMessageDialog and QMessageBox
         with (
             patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog") as mock_custom_dialog,
-            patch("core.pyqt_imports.QMessageBox") as mock_msgbox,
+            patch("oncutf.core.pyqt_imports.QMessageBox") as mock_msgbox,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
 
@@ -136,7 +136,7 @@ class TestSaveCancellation:
         """Test that cancellation flag is reset between save operations."""
         from unittest.mock import MagicMock
 
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -176,7 +176,7 @@ class TestSaveCancellation:
         """Test that cancellation during multi-file save stops processing remaining files."""
         from unittest.mock import MagicMock, patch
 
-        from core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -215,9 +215,9 @@ class TestSaveCancellation:
 
         # Mock progress dialog and other dependencies
         with (
-            patch("core.unified_metadata_manager.ProgressDialog") as mock_dialog_class,
+            patch("oncutf.core.unified_metadata_manager.ProgressDialog") as mock_dialog_class,
             patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"),
-            patch("core.pyqt_imports.QMessageBox"),
+            patch("oncutf.core.pyqt_imports.QMessageBox"),
         ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog

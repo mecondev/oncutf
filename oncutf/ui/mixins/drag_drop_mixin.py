@@ -14,15 +14,15 @@ Provides:
 - Integration with DragManager and DragVisualManager
 """
 
-from core.drag_manager import DragManager
-from core.drag_visual_manager import (
+from oncutf.core.drag_manager import DragManager
+from oncutf.core.drag_visual_manager import (
     DragType,
     DragVisualManager,
     end_drag_visual,
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QApplication,
     QCursor,
     QDropEvent,

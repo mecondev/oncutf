@@ -314,7 +314,7 @@ class MetadataExporter:
             # Use HashManager to get hash (supports persistent cache)
             if hasattr(file_item, "full_path"):
                 try:
-                    from core.hash_manager import HashManager
+                    from oncutf.core.hash_manager import HashManager
 
                     hash_manager = HashManager()
                     hash_value = hash_manager.calculate_hash(file_item.full_path)

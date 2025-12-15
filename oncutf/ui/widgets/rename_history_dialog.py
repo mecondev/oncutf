@@ -14,7 +14,7 @@ Features:
 - Operation status and file counts
 """
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
@@ -30,7 +30,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from core.rename_history_manager import get_rename_history_manager
+from oncutf.core.rename_history_manager import get_rename_history_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog

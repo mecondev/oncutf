@@ -43,7 +43,7 @@ from config import (
     QLABEL_SECONDARY_TEXT,
     QLABEL_TERTIARY_TEXT,
 )
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QHBoxLayout,
     QLabel,
     QProgressBar,

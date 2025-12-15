@@ -34,7 +34,7 @@ from config import (
     RESULTS_TABLE_MIN_HEIGHT,
     RESULTS_TABLE_MIN_WIDTH,
 )
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAction,
     QApplication,
     QDialog,
@@ -47,7 +47,7 @@ from core.pyqt_imports import (
     QTableView,
     QVBoxLayout,
 )
-from core.theme_manager import get_theme_manager
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.results_table_model import ResultsTableModel
 from oncutf.utils.logger_factory import get_cached_logger
 

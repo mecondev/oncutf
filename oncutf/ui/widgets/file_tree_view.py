@@ -14,15 +14,15 @@ import contextlib
 import os
 
 from config import ALLOWED_EXTENSIONS
-from core.drag_manager import DragManager
-from core.drag_visual_manager import (
+from oncutf.core.drag_manager import DragManager
+from oncutf.core.drag_visual_manager import (
     DragVisualManager,
     end_drag_visual,
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
-from core.modifier_handler import decode_modifiers_to_flags
-from core.pyqt_imports import (
+from oncutf.core.modifier_handler import decode_modifiers_to_flags
+from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
     QCursor,
@@ -837,7 +837,7 @@ class FileTreeView(QTreeView):
             # Drag ended or path changed, skip update
             return
 
-        from core.drag_visual_manager import update_source_info
+        from oncutf.core.drag_visual_manager import update_source_info
         from oncutf.utils.folder_counter import count_folder_contents
 
         # Check if we're in recursive mode (Ctrl pressed)

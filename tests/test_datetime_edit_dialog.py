@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from core.pyqt_imports import QDateTime
+from oncutf.core.pyqt_imports import QDateTime
 from oncutf.ui.widgets.datetime_edit_dialog import DateTimeEditDialog
 
 

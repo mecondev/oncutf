@@ -21,10 +21,10 @@ from PyQt5.QtCore import Qt
 
 # Import all config constants from centralized module
 # Core application modules
-from core.config_imports import *
+from oncutf.core.config_imports import *
 
 # Import all PyQt5 classes from centralized module
-from core.pyqt_imports import *
+from oncutf.core.pyqt_imports import *
 
 # Data models and business logic modules
 from oncutf.models.file_item import FileItem
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         self._preview_pending = False
 
         # Use InitializationOrchestrator for structured initialization (Phase 4)
-        from core.initialization_orchestrator import InitializationOrchestrator
+        from oncutf.core.initialization_orchestrator import InitializationOrchestrator
 
         orchestrator = InitializationOrchestrator(self)
         orchestrator.orchestrate_initialization(theme_callback)
@@ -1007,7 +1007,7 @@ class MainWindow(QMainWindow):
 
             # Additional cleanup
             try:
-                from core.application_context import ApplicationContext
+                from oncutf.core.application_context import ApplicationContext
                 context = ApplicationContext.get_instance()
                 if context:
                     context.cleanup()  # type: ignore
@@ -1280,7 +1280,7 @@ class MainWindow(QMainWindow):
 
             # Register thread pool manager (if exists)
             try:
-                from core.thread_pool_manager import get_thread_pool_manager
+                from oncutf.core.thread_pool_manager import get_thread_pool_manager
 
                 thread_pool_mgr = get_thread_pool_manager()
                 self.shutdown_coordinator.register_thread_pool_manager(thread_pool_mgr)

@@ -7,7 +7,7 @@ Date: 2025-05-01
 Performance Widget for displaying UnifiedRenameEngine performance metrics.
 """
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -121,7 +121,7 @@ class PerformanceWidget(QWidget):
         """Update the performance display."""
         try:
             # Get performance stats from main window
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if not context or not hasattr(context, "main_window"):
@@ -160,7 +160,7 @@ class PerformanceWidget(QWidget):
     def clear_metrics(self):
         """Clear performance metrics."""
         try:
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "main_window"):

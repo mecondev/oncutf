@@ -29,7 +29,7 @@ import traceback
 from typing import Any
 
 from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
     QCursor,
@@ -46,7 +46,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from core.theme_manager import get_theme_manager
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
@@ -59,14 +59,14 @@ from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 
 # ApplicationContext integration
 try:
-    from core.application_context import get_app_context
+    from oncutf.core.application_context import get_app_context
 except ImportError:
     get_app_context = None
 
 # Command system integration
 try:
-    from core.metadata_command_manager import get_metadata_command_manager
-    from core.metadata_commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
+    from oncutf.core.metadata_command_manager import get_metadata_command_manager
+    from oncutf.core.metadata_commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
 except ImportError:
     get_metadata_command_manager = None
     EditMetadataFieldCommand = None
@@ -74,7 +74,7 @@ except ImportError:
 
 # Unified metadata manager integration
 try:
-    from core.unified_metadata_manager import UnifiedMetadataManager
+    from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 except ImportError:
     UnifiedMetadataManager = None
 
@@ -772,7 +772,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 logger.error(
                     f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded"
                 )
-                from core.pyqt_imports import QMessageBox
+                from oncutf.core.pyqt_imports import QMessageBox
 
                 parent_window = self._get_parent_with_file_table()
                 if parent_window:
@@ -1333,7 +1333,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
             # Get modified keys from staging manager
             modified_keys = set()
-            from core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
             staging_manager = get_metadata_staging_manager()
             if staging_manager and self._current_file_path:
                 staged_changes = staging_manager.get_staged_changes(self._current_file_path)
@@ -1452,7 +1452,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 return
 
             # Get staging manager for modified count
-            from core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
             staging_manager = get_metadata_staging_manager()
 
             # Count total fields
@@ -1507,7 +1507,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         file_path = selected_files[0].full_path
 
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:
@@ -1549,7 +1549,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         empty_groups = []
 
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         # Check which groups have modified items
@@ -1683,7 +1683,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         self.clear_scroll_memory()
 
         # Clear all staged changes
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
         if staging_manager:
             staging_manager.clear_all()
@@ -1853,7 +1853,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
         """
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:
@@ -1875,7 +1875,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             Dictionary mapping file paths to their modified metadata
         """
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:
@@ -1887,7 +1887,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         """
         Clear all modified metadata items for the current file.
         """
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if staging_manager and self._current_file_path:
@@ -1907,7 +1907,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Args:
             file_path: Full path of the file to clear modifications for
         """
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if staging_manager:
@@ -1939,7 +1939,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             bool: True if any selected file has modifications
         """
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:
@@ -1965,7 +1965,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             bool: True if any file has modifications
         """
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:

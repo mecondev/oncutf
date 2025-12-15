@@ -13,7 +13,7 @@ Now supports ApplicationContext for optimized access patterns.
 """
 
 import config
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QCursor,
     QFrame,
     QScrollArea,
@@ -30,7 +30,7 @@ from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 
 # ApplicationContext integration
 try:
-    from core.application_context import get_app_context
+    from oncutf.core.application_context import get_app_context
 except ImportError:
     get_app_context = None
 
@@ -234,7 +234,7 @@ class RenameModulesArea(QWidget):
     def _setup_rename_engine(self):
         """Setup UnifiedRenameEngine."""
         try:
-            from core.unified_rename_engine import UnifiedRenameEngine
+            from oncutf.core.unified_rename_engine import UnifiedRenameEngine
 
             self.rename_engine = UnifiedRenameEngine()
             logger.debug("[RenameModulesArea] UnifiedRenameEngine initialized")

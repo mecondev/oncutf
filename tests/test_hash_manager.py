@@ -1,7 +1,7 @@
 import zlib
 from pathlib import Path
 
-from core.hash_manager import HashManager, calculate_crc32
+from oncutf.core.hash_manager import HashManager, calculate_crc32
 
 
 def write_file(path: Path, content: bytes):
@@ -53,7 +53,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from core.hash_manager import compare_folders
+from oncutf.core.hash_manager import compare_folders
 from tests.mocks import MockFileItem
 
 
@@ -371,7 +371,7 @@ class TestEventHandlerIntegration:
 
     def test_event_handler_initialization(self):
         """Test EventHandlerManager can be initialized with mock parent."""
-        from core.event_handler_manager import EventHandlerManager
+        from oncutf.core.event_handler_manager import EventHandlerManager
 
         mock_parent = Mock()
         mock_parent.set_status = Mock()
@@ -387,7 +387,7 @@ class TestEventHandlerIntegration:
 
     def test_hash_manager_integration(self):
         """Test that HashManager can be imported and used."""
-        from core.hash_manager import HashManager
+        from oncutf.core.hash_manager import HashManager
 
         # This is a basic integration test
         manager = HashManager()

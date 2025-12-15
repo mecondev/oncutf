@@ -17,7 +17,7 @@ Features:
 import logging
 
 from config import APP_VERSION
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,
     QFont,

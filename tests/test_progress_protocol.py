@@ -6,7 +6,7 @@ Tests for the standard progress reporting protocol.
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from core.progress_protocol import (
+from oncutf.core.progress_protocol import (
     ProgressCallback,
     ProgressInfo,
     SizeProgress,

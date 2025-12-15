@@ -12,7 +12,7 @@ with case-sensitive or case-insensitive matching.
 import logging
 import re
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QCheckBox,
     QComboBox,
     QHBoxLayout,

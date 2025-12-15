@@ -18,8 +18,8 @@ from config import (
     QLABEL_DARK_BORDER,
     QLABEL_INFO_TEXT,
 )
-from core.pyqt_imports import QKeyEvent
-from core.theme_manager import get_theme_manager
+from oncutf.core.pyqt_imports import QKeyEvent
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.tooltip_helper import show_error_tooltip
 
 logger = logging.getLogger(__name__)

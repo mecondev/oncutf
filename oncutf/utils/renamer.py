@@ -18,7 +18,7 @@ validator (object): Object to validate filename text.
 import os
 from collections.abc import Callable
 
-from core.pyqt_imports import QWidget
+from oncutf.core.pyqt_imports import QWidget
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
 

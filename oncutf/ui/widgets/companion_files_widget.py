@@ -29,7 +29,7 @@ from config import (
     SHOW_COMPANION_FILES_IN_TABLE,
     CompanionFileMode,
 )
-from core.theme_manager import get_theme_manager
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

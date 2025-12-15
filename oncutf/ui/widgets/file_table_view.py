@@ -16,9 +16,9 @@ Custom QTableView with Windows Explorer-like behavior:
 # from config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
 from contextlib import suppress
 
-from core.application_context import get_app_context
-from core.drag_manager import DragManager
-from core.pyqt_imports import (
+from oncutf.core.application_context import get_app_context
+from oncutf.core.drag_manager import DragManager
+from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
     QCursor,
@@ -355,7 +355,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Use column manager's improved horizontal scrollbar handling
         try:
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "column_manager"):
@@ -397,7 +397,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Use column manager's improved horizontal scrollbar handling
         try:
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "column_manager"):

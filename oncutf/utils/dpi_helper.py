@@ -12,7 +12,7 @@ Handles differences between Windows and Linux DPI scaling behavior.
 import platform
 from typing import Any
 
-from core.pyqt_imports import QApplication
+from oncutf.core.pyqt_imports import QApplication
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

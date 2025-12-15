@@ -13,7 +13,7 @@ Features:
 - Standard Qt model interface
 """
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QAbstractTableModel,
     Qt,
 )

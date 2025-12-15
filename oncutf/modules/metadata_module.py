@@ -195,7 +195,7 @@ class MetadataModule:
 
         # Use the same persistent cache as the UI if no cache provided
         if not metadata_cache:
-            from core.persistent_metadata_cache import get_persistent_metadata_cache
+            from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
             # Use normalized path for cache lookup.

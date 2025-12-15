@@ -7,7 +7,7 @@ Date: 2025-05-01
 Real-time Validation Widget for immediate validation feedback.
 """
 
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QFrame,
     QLabel,
     QProgressBar,
@@ -100,7 +100,7 @@ class RealTimeValidationWidget(QWidget):
         """Update the validation display."""
         try:
             # Get current state from main window
-            from core.application_context import get_app_context
+            from oncutf.core.application_context import get_app_context
 
             context = get_app_context()
             if not context or not hasattr(context, "main_window"):

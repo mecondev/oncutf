@@ -14,7 +14,7 @@ import os
 from typing import Any
 
 from config import ALLOWED_EXTENSIONS
-from core.pyqt_imports import QFileSystemModel, QIcon, QModelIndex, Qt
+from oncutf.core.pyqt_imports import QFileSystemModel, QIcon, QModelIndex, Qt
 from oncutf.utils.icons_loader import get_menu_icon
 from oncutf.utils.logger_factory import get_cached_logger
 

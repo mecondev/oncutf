@@ -14,7 +14,7 @@ Supports:
 - Compatibility with oncutf UI components
 """
 
-from core.pyqt_imports import QColor, QPainter, QPen, QPixmap, Qt
+from oncutf.core.pyqt_imports import QColor, QPainter, QPen, QPixmap, Qt
 
 # Initialize Logger
 from oncutf.utils.logger_factory import get_cached_logger

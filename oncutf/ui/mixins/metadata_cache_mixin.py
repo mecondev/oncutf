@@ -342,7 +342,7 @@ class MetadataCacheMixin:
             return
 
         # Get staging manager
-        from core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
         # For each selected file, update its icon

@@ -13,11 +13,11 @@ Features:
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
-from core.pyqt_imports import QAction, QHeaderView, QMenu, QPoint, Qt
+from oncutf.core.pyqt_imports import QAction, QHeaderView, QMenu, QPoint, Qt
 
 # ApplicationContext integration
 try:
-    from core.application_context import get_app_context
+    from oncutf.core.application_context import get_app_context
 except ImportError:
     get_app_context = None
 

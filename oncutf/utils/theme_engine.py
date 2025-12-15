@@ -14,7 +14,7 @@ import platform
 from PyQt5.QtGui import QColor, QPalette
 
 import config
-from core.pyqt_imports import QApplication, QMainWindow
+from oncutf.core.pyqt_imports import QApplication, QMainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -1527,7 +1527,7 @@ class ThemeEngine:
 
     def _apply_windows_combobox_fixes(self, app: QApplication):
         """Apply Windows-specific ComboBox dropdown fixes."""
-        from core.pyqt_imports import QComboBox
+        from oncutf.core.pyqt_imports import QComboBox
 
         for widget in app.allWidgets():
             if isinstance(widget, QComboBox):

@@ -9,7 +9,7 @@ Base module for all rename modules.
 
 import logging
 
-from core.pyqt_imports import QWidget, pyqtSignal
+from oncutf.core.pyqt_imports import QWidget, pyqtSignal
 
 logger = logging.getLogger(__name__)
 

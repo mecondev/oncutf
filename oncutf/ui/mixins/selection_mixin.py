@@ -14,8 +14,8 @@ Provides:
 - Modifier key handling (Ctrl, Shift)
 """
 
-from core.application_context import get_app_context
-from core.pyqt_imports import (
+from oncutf.core.application_context import get_app_context
+from oncutf.core.pyqt_imports import (
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,

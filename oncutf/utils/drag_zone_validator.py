@@ -9,8 +9,8 @@ This module provides shared logic for validating drop zones during drag operatio
 eliminating code duplication between FileTreeView and FileTableView.
 """
 
-from core.drag_visual_manager import DropZoneState, update_drop_zone_state
-from core.pyqt_imports import QApplication, QCursor
+from oncutf.core.drag_visual_manager import DropZoneState, update_drop_zone_state
+from oncutf.core.pyqt_imports import QApplication, QCursor
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

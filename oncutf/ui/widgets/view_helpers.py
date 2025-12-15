@@ -12,7 +12,7 @@ Currently includes:
 - update_info_icon: visually refreshes the icon cell in column 0 for a given file.
 """
 
-from core.pyqt_imports import QTableView
+from oncutf.core.pyqt_imports import QTableView
 from oncutf.utils.path_utils import paths_equal
 
 

@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from config import ICON_SIZES
-from core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
+from oncutf.core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

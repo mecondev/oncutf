@@ -39,6 +39,6 @@ def get_current_theme_colors() -> dict[str, str]:
 
 def get_qcolor(color_key: str, theme_name: str | None = None):
     """Get a QColor object from theme colors."""
-    from core.pyqt_imports import QColor
+    from oncutf.core.pyqt_imports import QColor
 
     return QColor(get_theme_color(color_key, theme_name))

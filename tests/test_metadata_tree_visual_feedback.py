@@ -7,7 +7,7 @@ Verifies that modified metadata fields are displayed with yellow color and bold 
 import pytest
 
 from config import METADATA_ICON_COLORS
-from core.pyqt_imports import QApplication
+from oncutf.core.pyqt_imports import QApplication
 from oncutf.utils.build_metadata_tree_model import build_metadata_tree_model
 
 

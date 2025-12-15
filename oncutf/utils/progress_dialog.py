@@ -28,7 +28,7 @@ from config import (
     SAVE_BG_COLOR,
     SAVE_COLOR,
 )
-from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
+from oncutf.core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
 from oncutf.utils.cursor_helper import force_restore_cursor
 from oncutf.utils.dialog_utils import setup_dialog_size_and_center
 from oncutf.utils.logger_factory import get_cached_logger

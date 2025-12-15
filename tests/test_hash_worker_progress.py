@@ -22,7 +22,7 @@ import time
 import pytest
 from PyQt5.QtCore import QCoreApplication
 
-from core.hash_worker import HashWorker
+from oncutf.core.hash_worker import HashWorker
 
 
 class TestHashWorkerProgress:

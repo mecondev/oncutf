@@ -18,7 +18,7 @@ Features:
 """
 
 from config import ICON_SIZES
-from core.pyqt_imports import (
+from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,
     QComboBox,
@@ -41,7 +41,7 @@ from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
 # ApplicationContext integration
 try:
-    from core.application_context import get_app_context
+    from oncutf.core.application_context import get_app_context
 except ImportError:
     get_app_context = None
 
@@ -337,7 +337,7 @@ class RenameModuleWidget(QWidget):
     # Drag & Drop functionality
     def drag_handle_enter(self, _event):
         """Handle mouse enter on drag handle - change cursor."""
-        from core.pyqt_imports import QCursor
+        from oncutf.core.pyqt_imports import QCursor
 
         QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))  # type: ignore
 
@@ -350,7 +350,7 @@ class RenameModuleWidget(QWidget):
         """Handle mouse press on drag handle - prepare for dragging."""
         if event.button() == Qt.LeftButton:  # type: ignore
             self.drag_start_position = event.pos()
-            from core.pyqt_imports import QCursor
+            from oncutf.core.pyqt_imports import QCursor
 
             QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))  # type: ignore
             event.accept()

@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import tempfile
 from pathlib import Path
 
-from core.backup_manager import BackupManager
+from oncutf.core.backup_manager import BackupManager
 
 
 class TestBackupSimple:

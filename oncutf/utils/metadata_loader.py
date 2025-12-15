@@ -19,7 +19,7 @@ Features:
 import subprocess
 import threading
 
-from core.pyqt_imports import Qt
+from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 from oncutf.utils.logger_factory import get_cached_logger

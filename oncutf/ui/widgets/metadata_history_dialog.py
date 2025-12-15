@@ -35,9 +35,9 @@ from PyQt5.QtWidgets import (
 )
 
 from config import UNDO_REDO_SETTINGS
-from core.metadata_command_manager import get_metadata_command_manager
-from core.rename_history_manager import get_rename_history_manager
-from core.theme_manager import get_theme_manager
+from oncutf.core.metadata_command_manager import get_metadata_command_manager
+from oncutf.core.rename_history_manager import get_rename_history_manager
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 
