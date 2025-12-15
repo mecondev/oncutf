@@ -27,10 +27,10 @@ project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config import SPLASH_SCREEN_DURATION
+from oncutf.config import SPLASH_SCREEN_DURATION
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.core.theme_manager import get_theme_manager
-from main_window import MainWindow
+from oncutf.ui.main_window import MainWindow
 from oncutf.utils.fonts import _get_inter_fonts
 from oncutf.utils.logger_setup import ConfigureLogger
 from oncutf.utils.theme_engine import ThemeEngine

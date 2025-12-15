@@ -45,7 +45,7 @@ class InterFonts:
         """Load all Inter fonts from filesystem or QResource based on configuration"""
         import os
 
-        from config import USE_EMBEDDED_FONTS
+        from oncutf.config import USE_EMBEDDED_FONTS
         from oncutf.utils.path_utils import get_fonts_dir
 
         if USE_EMBEDDED_FONTS:

@@ -34,7 +34,7 @@ def test_specified_text_invalid_characters():
     data = {"type": "specified_text", "text": "Bad/Name"}
     file_item = MockFileItem(filename="example.txt")
     result = SpecifiedTextModule.apply_from_data(data, file_item)
-    from config import INVALID_FILENAME_MARKER
+    from oncutf.config import INVALID_FILENAME_MARKER
 
     assert result == INVALID_FILENAME_MARKER
 

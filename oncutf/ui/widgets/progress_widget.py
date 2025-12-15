@@ -37,7 +37,7 @@ Usage Examples:
 
 import time
 
-from config import (
+from oncutf.config import (
     QLABEL_BORDER_GRAY,
     QLABEL_PRIMARY_TEXT,
     QLABEL_SECONDARY_TEXT,

@@ -288,7 +288,7 @@ class MetadataContextMenuMixin:
                 return False
 
             # Check if column is visible
-            from config import FILE_TABLE_COLUMN_CONFIG
+            from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
             if column_key in FILE_TABLE_COLUMN_CONFIG:
                 default_visible = FILE_TABLE_COLUMN_CONFIG[column_key]["default_visible"]

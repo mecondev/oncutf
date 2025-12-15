@@ -13,7 +13,7 @@ triggers custom dialogs (recursive, rejected files), and returns results for the
 import os
 from typing import Literal
 
-from config import ALLOWED_EXTENSIONS
+from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.pyqt_imports import QMimeData
 
 # Custom dialogs will be imported when connected

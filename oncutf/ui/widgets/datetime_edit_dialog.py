@@ -10,7 +10,7 @@ Supports single or multiple file selection with calendar picker.
 
 from pathlib import Path
 
-from config import QLABEL_MUTED_TEXT
+from oncutf.config import QLABEL_MUTED_TEXT
 from oncutf.core.pyqt_imports import (
     QCheckBox,
     QDateTime,

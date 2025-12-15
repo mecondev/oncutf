@@ -19,7 +19,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from config import (
+from oncutf.config import (
     BACKUP_FILENAME_FORMAT,
     BACKUP_TIMESTAMP_FORMAT,
     DEFAULT_BACKUP_COUNT,

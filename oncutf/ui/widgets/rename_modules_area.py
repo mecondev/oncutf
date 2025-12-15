@@ -12,7 +12,7 @@ Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
 
-import config
+import oncutf.config
 from oncutf.core.pyqt_imports import (
     QCursor,
     QFrame,
@@ -84,7 +84,7 @@ class RenameModulesArea(QWidget):
         main_layout.addWidget(self.scroll_area)
 
         # Current theme (set before add_module)
-        self.current_theme = config.THEME_NAME
+        self.current_theme = oncutf.config.THEME_NAME
 
         self.add_module()  # Start with one by default
 

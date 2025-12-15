@@ -154,7 +154,7 @@ class InteractiveHeader(QHeaderView):
             if not file_table_view:
                 return
 
-            from config import FILE_TABLE_COLUMN_CONFIG
+            from oncutf.config import FILE_TABLE_COLUMN_CONFIG
             from oncutf.utils.icons_loader import get_menu_icon
 
             # Add submenu title

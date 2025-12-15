@@ -25,6 +25,6 @@ def test_specified_text_simple():
 def test_specified_text_invalid():
     data = {"type": "specified_text", "text": "file/name"}
     result = SpecifiedTextModule.apply_from_data(data, _file_item=None)
-    from config import INVALID_FILENAME_MARKER
+    from oncutf.config import INVALID_FILENAME_MARKER
 
     assert result == INVALID_FILENAME_MARKER

@@ -617,7 +617,7 @@ class FileTableModel(QAbstractTableModel):
             col_key = self._column_mapping.get(section)
             if col_key:
                 # Get the proper title from configuration
-                from config import FILE_TABLE_COLUMN_CONFIG
+                from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
                 title = FILE_TABLE_COLUMN_CONFIG.get(col_key, {}).get("title", col_key)
                 logger.debug(

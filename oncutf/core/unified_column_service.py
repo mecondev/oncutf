@@ -222,7 +222,7 @@ class UnifiedColumnService:
 
     def _load_configuration(self) -> None:
         """Load column configuration from config.py."""
-        from config import FILE_TABLE_COLUMN_CONFIG
+        from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
         config_dict = {}
 
@@ -269,7 +269,7 @@ class UnifiedColumnService:
 
         # Sort by display order (could be customized later)
         # For now, maintain the order from FILE_TABLE_COLUMN_CONFIG
-        from config import FILE_TABLE_COLUMN_CONFIG
+        from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
         config_order = list(FILE_TABLE_COLUMN_CONFIG.keys())
         visible_columns.sort(key=lambda x: config_order.index(x) if x in config_order else 999)

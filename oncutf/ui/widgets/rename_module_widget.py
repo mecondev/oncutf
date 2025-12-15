@@ -17,7 +17,7 @@ Features:
 - Responsive layout with visual separation between module logic and final formatting
 """
 
-from config import ICON_SIZES
+from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,

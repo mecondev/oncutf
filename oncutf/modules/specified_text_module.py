@@ -317,7 +317,7 @@ class SpecifiedTextModule(BaseRenameModule):
         is_valid, validated_text = validate_filename_part(text)
         if not is_valid:
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
-            from config import INVALID_FILENAME_MARKER
+            from oncutf.config import INVALID_FILENAME_MARKER
 
             return INVALID_FILENAME_MARKER
 

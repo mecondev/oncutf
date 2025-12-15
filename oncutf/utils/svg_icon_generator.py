@@ -14,7 +14,7 @@ from oncutf.utils.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
 
-from config import METADATA_ICON_COLORS
+from oncutf.config import METADATA_ICON_COLORS
 from oncutf.core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_utils import get_icons_dir

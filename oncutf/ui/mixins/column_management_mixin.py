@@ -456,7 +456,7 @@ class ColumnManagementMixin:
 
     def _schedule_column_save(self, column_key: str, width: int) -> None:
         """Schedule delayed save of column width changes."""
-        from config import COLUMN_RESIZE_BEHAVIOR
+        from oncutf.config import COLUMN_RESIZE_BEHAVIOR
         from oncutf.core.pyqt_imports import QTimer
 
         if not COLUMN_RESIZE_BEHAVIOR.get("PRESERVE_USER_WIDTHS", True):
@@ -1072,7 +1072,7 @@ class ColumnManagementMixin:
         - Other columns: resize to fit content with min/max constraints
         """
         try:
-            from config import GLOBAL_MIN_COLUMN_WIDTH
+            from oncutf.config import GLOBAL_MIN_COLUMN_WIDTH
 
             if not self.model() or self.model().rowCount() == 0:
                 return

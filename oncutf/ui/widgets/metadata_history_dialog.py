@@ -34,7 +34,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from config import UNDO_REDO_SETTINGS
+from oncutf.config import UNDO_REDO_SETTINGS
 from oncutf.core.metadata_command_manager import get_metadata_command_manager
 from oncutf.core.rename_history_manager import get_rename_history_manager
 from oncutf.core.theme_manager import get_theme_manager

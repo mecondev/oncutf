@@ -62,7 +62,7 @@ class ThemeManager(QObject):
     def _load_theme_tokens(self) -> None:
         """Load theme tokens from config."""
         try:
-            from config import THEME_TOKENS
+            from oncutf.config import THEME_TOKENS
 
             self._theme_tokens = THEME_TOKENS
             logger.debug(

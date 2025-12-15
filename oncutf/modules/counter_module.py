@@ -9,7 +9,7 @@ into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
 
-from config import ICON_SIZES
+from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QHBoxLayout,
     QIntValidator,

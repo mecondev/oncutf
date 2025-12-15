@@ -40,7 +40,7 @@ class TestSaveCancelBehavior:
 
     def test_normal_save_esc_blocked_by_default(self, _qt_app, qtbot):  # noqa: ARG002
         """Test that normal save blocks ESC by default (config = False)."""
-        with patch("config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": False}):
+        with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": False}):
             dialog = ProgressDialog(
                 parent=None,
                 operation_type="metadata_save",
@@ -63,7 +63,7 @@ class TestSaveCancelBehavior:
 
     def test_normal_save_esc_allowed_when_config_enabled(self, _qt_app, qtbot):  # noqa: ARG002
         """Test that normal save allows ESC when config is True."""
-        with patch("config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
+        with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
             cancel_callback = Mock()
             dialog = ProgressDialog(
                 parent=None,
@@ -86,7 +86,7 @@ class TestSaveCancelBehavior:
     def test_exit_save_esc_always_blocked(self, _qt_app, qtbot):  # noqa: ARG002
         """Test that exit save always blocks ESC regardless of config."""
         # Test with config = True (should still block)
-        with patch("config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
+        with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
             dialog = ProgressDialog(
                 parent=None,
                 operation_type="metadata_save",
@@ -164,7 +164,7 @@ class TestSaveCancelBehavior:
         dialog.close()
 
         # Case 2: Normal save with ALLOW_CANCEL_NORMAL_SAVE = False blocks
-        with patch("config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": False}):
+        with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": False}):
             dialog = ProgressDialog(
                 parent=None,
                 operation_type="metadata_save",
@@ -174,7 +174,7 @@ class TestSaveCancelBehavior:
             dialog.close()
 
         # Case 3: Normal save with ALLOW_CANCEL_NORMAL_SAVE = True allows
-        with patch("config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
+        with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
             dialog = ProgressDialog(
                 parent=None,
                 operation_type="metadata_save",
@@ -218,7 +218,7 @@ class TestSaveCancelIntegration:
 
     def test_config_default_value(self):
         """Test that SAVE_OPERATION_SETTINGS has correct default."""
-        from config import SAVE_OPERATION_SETTINGS
+        from oncutf.config import SAVE_OPERATION_SETTINGS
 
         assert "ALLOW_CANCEL_NORMAL_SAVE" in SAVE_OPERATION_SETTINGS
         # Default is now True (cancellation enabled) - updated for user convenience

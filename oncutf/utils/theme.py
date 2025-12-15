@@ -9,7 +9,7 @@ Theme management system using the new ThemeEngine.
 Provides color access and theme utilities for the application.
 """
 
-from config import THEME_NAME
+from oncutf.config import THEME_NAME
 
 # Global theme engine instance
 _theme_engine = None

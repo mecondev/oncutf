@@ -13,7 +13,7 @@ Single item selection only - no multi-selection complexity.
 import contextlib
 import os
 
-from config import ALLOWED_EXTENSIONS
+from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.drag_manager import DragManager
 from oncutf.core.drag_visual_manager import (
     DragVisualManager,

@@ -16,7 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
+from oncutf.config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
 from oncutf.core.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.batch_processor import BatchProcessorFactory
 from oncutf.core.conflict_resolver import ConflictResolver

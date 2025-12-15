@@ -12,7 +12,7 @@ Note: This is the legacy dialog - new code should use utils.progress_dialog.Prog
 
 from collections.abc import Callable
 
-from config import (
+from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
     EXTENDED_METADATA_COLOR,
     FAST_METADATA_BG_COLOR,

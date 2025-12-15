@@ -23,7 +23,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
+from oncutf.config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
 from oncutf.core.database_manager import get_database_manager
 from oncutf.core.hash_manager import HashManager
 from oncutf.utils.file_size_calculator import calculate_files_total_size

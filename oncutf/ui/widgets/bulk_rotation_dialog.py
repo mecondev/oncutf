@@ -10,7 +10,7 @@ Dialog for bulk rotation operations.
 
 from pathlib import Path
 
-from config import QLABEL_MUTED_TEXT
+from oncutf.config import QLABEL_MUTED_TEXT
 from oncutf.core.pyqt_imports import (
     QCheckBox,
     QDialog,

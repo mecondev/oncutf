@@ -19,7 +19,7 @@ Date: 2025-05-31
 import os
 from enum import Enum
 
-from config import ICON_SIZES
+from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,

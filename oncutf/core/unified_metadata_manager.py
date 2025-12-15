@@ -23,7 +23,7 @@ from datetime import datetime
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
+from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.companion_files_helper import CompanionFilesHelper

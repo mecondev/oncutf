@@ -11,7 +11,7 @@ Handles browse, folder import, table interactions, context menus, and user actio
 import os
 import time
 
-from config import STATUS_COLORS
+from oncutf.config import STATUS_COLORS
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
 from oncutf.core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from oncutf.core.theme_manager import get_theme_manager

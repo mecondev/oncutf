@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, TypeVar
 
-from config import APP_VERSION
+from oncutf.config import APP_VERSION
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -208,7 +208,7 @@ class JSONConfigManager:
         with self._lock:
             try:
                 # Debug: Reset config if requested
-                from config import DEBUG_RESET_CONFIG
+                from oncutf.config import DEBUG_RESET_CONFIG
 
                 if DEBUG_RESET_CONFIG:
                     if self.config_file.exists():
@@ -284,7 +284,7 @@ class JSONConfigManager:
     def _schedule_auto_save(self) -> None:
         """Schedule auto-save using timer_manager (debounced)."""
         try:
-            from config import CONFIG_AUTO_SAVE_DELAY, CONFIG_AUTO_SAVE_ENABLED
+            from oncutf.config import CONFIG_AUTO_SAVE_DELAY, CONFIG_AUTO_SAVE_ENABLED
             from oncutf.utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
             if not CONFIG_AUTO_SAVE_ENABLED:
@@ -401,7 +401,7 @@ class JSONConfigManager:
             return
 
         try:
-            from config import CONFIG_CACHE_FLUSH_ON_SAVE
+            from oncutf.config import CONFIG_CACHE_FLUSH_ON_SAVE
             if not CONFIG_CACHE_FLUSH_ON_SAVE:
                 return
         except ImportError:
@@ -463,7 +463,7 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
 
     # Enable cache if configured
     try:
-        from config import CONFIG_CACHE_ENABLED
+        from oncutf.config import CONFIG_CACHE_ENABLED
         manager.enable_cache(CONFIG_CACHE_ENABLED)
     except ImportError:
         manager.enable_cache(True)  # Default to enabled

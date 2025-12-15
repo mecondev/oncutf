@@ -185,7 +185,7 @@ class InitializationWorker(QObject):
         """
         try:
             # Import here to avoid circular dependencies
-            from config import THEME_NAME
+            from oncutf.config import THEME_NAME
 
             logger.debug(f"[InitWorker] Preparing theme: {THEME_NAME}")
 

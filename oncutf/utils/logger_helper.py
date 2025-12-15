@@ -21,7 +21,7 @@ import logging
 import re
 from functools import partial
 
-from config import SHOW_DEV_ONLY_IN_CONSOLE
+from oncutf.config import SHOW_DEV_ONLY_IN_CONSOLE
 
 
 def safe_text(text: str) -> str:

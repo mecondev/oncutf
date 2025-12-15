@@ -18,7 +18,7 @@ import glob
 import os
 from typing import Any
 
-from config import ALLOWED_EXTENSIONS
+from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.pyqt_imports import QElapsedTimer, QObject, pyqtSignal
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger

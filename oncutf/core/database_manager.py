@@ -66,7 +66,7 @@ class DatabaseManager:
             self.db_path = data_dir / "oncutf_data.db"
 
         # Debug: Reset database if requested
-        from config import DEBUG_RESET_DATABASE
+        from oncutf.config import DEBUG_RESET_DATABASE
 
         if DEBUG_RESET_DATABASE:
             if self.db_path.exists():

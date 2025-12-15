@@ -12,7 +12,7 @@ import os
 import time
 from dataclasses import dataclass
 
-from config import ALLOWED_EXTENSIONS
+from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

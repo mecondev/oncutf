@@ -531,7 +531,7 @@ class PreviewTablesView(QWidget):
 
     def _update_status_summary(self, stats: dict, icon_paths: dict) -> None:
         """Update status summary with statistics."""
-        from config import PREVIEW_INDICATOR_SIZE
+        from oncutf.config import PREVIEW_INDICATOR_SIZE
 
         # Get icon size from config
         icon_width, icon_height = PREVIEW_INDICATOR_SIZE

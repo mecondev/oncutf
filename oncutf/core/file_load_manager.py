@@ -13,7 +13,7 @@ Unified file loading manager with fully optimized policy:
 
 import os
 
-from config import (
+from oncutf.config import (
     ALLOWED_EXTENSIONS,
     COMPANION_FILES_ENABLED,
     SHOW_COMPANION_FILES_IN_TABLE,

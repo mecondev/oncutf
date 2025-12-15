@@ -17,7 +17,7 @@ Features:
 import locale
 import platform
 
-from config import USE_BINARY_UNITS, USE_LOCALE_DECIMAL_SEPARATOR
+from oncutf.config import USE_BINARY_UNITS, USE_LOCALE_DECIMAL_SEPARATOR
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

@@ -75,7 +75,7 @@ class ConfigureLogger:
         """
         # Load config with fallback to defaults
         try:
-            from config import (
+            from oncutf.config import (
                 LOG_CONSOLE_LEVEL,
                 LOG_DEBUG_FILE_BACKUP_COUNT,
                 LOG_DEBUG_FILE_ENABLED,

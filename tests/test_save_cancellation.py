@@ -35,7 +35,7 @@ class TestSaveCancellation:
         """Test that cancel callback is provided for normal saves when allowed."""
         from unittest.mock import MagicMock
 
-        from config import SAVE_OPERATION_SETTINGS
+        from oncutf.config import SAVE_OPERATION_SETTINGS
         from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
 
         # Only test if cancellation is allowed

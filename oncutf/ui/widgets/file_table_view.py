@@ -13,7 +13,7 @@ Custom QTableView with Windows Explorer-like behavior:
 - Automatic vertical scrollbar detection and filename column adjustment
 """
 
-# from config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
+# from oncutf.config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
 from contextlib import suppress
 
 from oncutf.core.application_context import get_app_context

@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 
-from config import COMMAND_TYPES
+from oncutf.config import COMMAND_TYPES
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

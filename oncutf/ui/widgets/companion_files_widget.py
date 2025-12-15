@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from config import (
+from oncutf.config import (
     AUTO_RENAME_COMPANION_FILES,
     COMPANION_FILES_ENABLED,
     DEFAULT_COMPANION_FILE_MODE,

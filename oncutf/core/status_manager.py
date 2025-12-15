@@ -23,7 +23,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from config import STATUS_COLORS
+from oncutf.config import STATUS_COLORS
 from oncutf.core.pyqt_imports import QTimer
 from oncutf.utils.logger_factory import get_cached_logger
 

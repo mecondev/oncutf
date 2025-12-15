@@ -96,7 +96,7 @@ class ExifToolWrapper:
             return None
 
         # Use UTF-8 charset for filename encoding (critical for Windows)
-        from config import EXIFTOOL_TIMEOUT_FAST
+        from oncutf.config import EXIFTOOL_TIMEOUT_FAST
 
         cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
@@ -178,7 +178,7 @@ class ExifToolWrapper:
                 cmd.append("-a")  # All tags for extended mode
             cmd.extend(file_paths)
 
-            from config import EXIFTOOL_TIMEOUT_BATCH_BASE, EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+            from oncutf.config import EXIFTOOL_TIMEOUT_BATCH_BASE, EXIFTOOL_TIMEOUT_BATCH_PER_FILE
 
             dynamic_timeout = max(
                 EXIFTOOL_TIMEOUT_BATCH_BASE,
@@ -226,7 +226,7 @@ class ExifToolWrapper:
         Parses and merges embedded entries, marks result as extended.
         """
         # Normalize path for Windows compatibility
-        from config import EXIFTOOL_TIMEOUT_EXTENDED
+        from oncutf.config import EXIFTOOL_TIMEOUT_EXTENDED
         from oncutf.utils.path_normalizer import normalize_path
 
         file_path = normalize_path(file_path)
@@ -396,7 +396,7 @@ class ExifToolWrapper:
             )
 
             # Execute the command
-            from config import EXIFTOOL_TIMEOUT_WRITE
+            from oncutf.config import EXIFTOOL_TIMEOUT_WRITE
 
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=EXIFTOOL_TIMEOUT_WRITE, encoding="utf-8", errors="replace"

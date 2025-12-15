@@ -15,7 +15,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT
+from oncutf.config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT
 from oncutf.utils.build_metadata_tree_model import classify_key
 from oncutf.utils.logger_factory import get_cached_logger
 

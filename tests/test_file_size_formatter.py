@@ -207,7 +207,7 @@ class TestIntegrationWithFileItem(unittest.TestCase):
         from oncutf.models.file_item import FileItem
 
         # Create a test file item
-        test_file = project_root / "config.py"
+        test_file = project_root / "oncutf.config.py"
         if test_file.exists():
             file_item = FileItem.from_path(str(test_file))
 

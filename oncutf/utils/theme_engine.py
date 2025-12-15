@@ -13,7 +13,7 @@ import platform
 
 from PyQt5.QtGui import QColor, QPalette
 
-import config
+import oncutf.config
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
 
 logger = logging.getLogger(__name__)

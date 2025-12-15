@@ -14,7 +14,7 @@ Contains:
 
 import logging
 
-from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER, INVALID_TRAILING_CHARS
+from oncutf.config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER, INVALID_TRAILING_CHARS
 
 logger = logging.getLogger(__name__)
 

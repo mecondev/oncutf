@@ -18,7 +18,7 @@ from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from main_window import MainWindow
+    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 

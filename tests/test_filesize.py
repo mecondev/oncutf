@@ -33,7 +33,7 @@ class TestFileSizeComparison(unittest.TestCase):
 
     def setUp(self):
         """Set up test files."""
-        self.test_files = ["config.py", "main.py", "requirements.txt"]
+        self.test_files = ["oncutf.config.py", "main.py", "requirements.txt"]
 
     def get_system_file_sizes(self, filepath):
         """Get file sizes using various system commands."""
@@ -115,7 +115,7 @@ class TestFileSizeComparison(unittest.TestCase):
 def run_manual_test():
     """Run the test as a standalone script for manual verification."""
 
-    test_files = ["config.py", "main.py", "requirements.txt"]
+    test_files = ["oncutf.config.py", "main.py", "requirements.txt"]
 
     for test_file in test_files:
         file_path = project_root / test_file

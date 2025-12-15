@@ -9,7 +9,7 @@ Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
 
-from config import ICON_SIZES
+from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QComboBox,
     QHBoxLayout,

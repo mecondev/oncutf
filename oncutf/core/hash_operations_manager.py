@@ -15,7 +15,7 @@ Features:
 - Progress dialog coordination for long-running operations
 """
 
-from config import STATUS_COLORS
+from oncutf.config import STATUS_COLORS
 from oncutf.utils.file_status_helpers import has_hash
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -158,7 +158,7 @@ class HashOperationsManager:
             file_paths: List of file paths to process
             external_folder: Folder path for comparison operation
         """
-        from config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
+        from oncutf.config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
         from oncutf.core.pyqt_imports import QMessageBox
 
         # Check if an operation is already running

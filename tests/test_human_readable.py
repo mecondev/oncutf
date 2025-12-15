@@ -83,7 +83,7 @@ def test_actual_files():
     """Test with actual files comparing our format vs system."""
 
     # Test with some larger files if available
-    test_paths = ["config.py", "main.py", "main_window.py", "requirements.txt"]  # Larger file
+    test_paths = ["oncutf.config.py", "main.py", "oncutf.ui.main_window.py", "requirements.txt"]  # Larger file
 
     for filepath in test_paths:
         if os.path.exists(filepath):

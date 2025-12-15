@@ -13,7 +13,7 @@ Contains:
 
 import logging
 
-from config import (
+from oncutf.config import (
     QLABEL_DARK_BG,
     QLABEL_DARK_BORDER,
     QLABEL_INFO_TEXT,

@@ -19,7 +19,7 @@ Classes:
 from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 
-from config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
+from oncutf.config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
 from oncutf.utils.logger_helper import get_logger
 
 logger = get_logger(__name__)

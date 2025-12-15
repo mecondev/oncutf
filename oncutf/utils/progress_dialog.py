@@ -16,7 +16,7 @@ Features:
 
 from collections.abc import Callable
 
-from config import (
+from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
     EXTENDED_METADATA_COLOR,
     FAST_METADATA_BG_COLOR,
@@ -200,7 +200,7 @@ class ProgressDialog(QDialog):
 
         # For save operations, check config flag
         if self.operation_type == "metadata_save":
-            from config import SAVE_OPERATION_SETTINGS
+            from oncutf.config import SAVE_OPERATION_SETTINGS
 
             allow_cancel = SAVE_OPERATION_SETTINGS.get("ALLOW_CANCEL_NORMAL_SAVE", False)
             return not allow_cancel  # Block if NOT allowed

@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
-from config import INVALID_FILENAME_MARKER
+from oncutf.config import INVALID_FILENAME_MARKER
 from oncutf.core.rename_manager import RenameManager
 from oncutf.models.file_item import FileItem
 from oncutf.modules.specified_text_module import SpecifiedTextModule

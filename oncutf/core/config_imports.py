@@ -9,7 +9,7 @@ Centralized config imports to reduce clutter in main files.
 Re-exports commonly used configuration constants.
 """
 
-from config import (
+from oncutf.config import (
     ALLOWED_EXTENSIONS,
     APP_AUTHOR,
     APP_NAME,

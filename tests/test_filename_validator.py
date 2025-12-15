@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
-from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
+from oncutf.config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 from oncutf.utils.filename_validator import (
     clean_and_validate,
     clean_filename_text,

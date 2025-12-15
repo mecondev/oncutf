@@ -253,7 +253,7 @@ class MetadataOperationsManager:
 
             # Update status
             if hasattr(self.parent_window, "set_status"):
-                from config import STATUS_COLORS
+                from oncutf.config import STATUS_COLORS
 
                 status_msg = f"Updated {field_name} for {len(files_to_modify)} file(s)"
                 self.parent_window.set_status(

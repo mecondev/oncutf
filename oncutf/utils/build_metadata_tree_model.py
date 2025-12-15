@@ -12,7 +12,7 @@ Enhanced with better metadata grouping and extended metadata indicators.
 
 import re
 
-from config import METADATA_ICON_COLORS
+from oncutf.config import METADATA_ICON_COLORS
 from oncutf.core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt
 
 # Initialize Logger

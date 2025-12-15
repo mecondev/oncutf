@@ -18,7 +18,7 @@ Features:
 
 from pathlib import Path
 
-from config import (
+from oncutf.config import (
     HASH_LIST_CONTENT_MARGINS,
     HASH_LIST_FONT_SIZE,
     HASH_LIST_LABEL_BACKGROUND,

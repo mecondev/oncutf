@@ -14,13 +14,13 @@ This manager centralizes drag cleanup operations including:
 
 from typing import TYPE_CHECKING
 
-from config import STATUS_COLORS
+from oncutf.config import STATUS_COLORS
 from oncutf.core.drag_manager import DragManager
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from main_window import MainWindow
+    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 

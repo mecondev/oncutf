@@ -28,7 +28,7 @@ import os
 import traceback
 from typing import Any
 
-from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
+from oncutf.config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
@@ -1444,7 +1444,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
         try:
-            from config import METADATA_ICON_COLORS
+            from oncutf.config import METADATA_ICON_COLORS
 
             # Get parent window and information label
             parent_window = self._get_parent_with_file_table()
