@@ -40,7 +40,7 @@ Usage:
 import traceback
 
 from core.pyqt_imports import QObject, pyqtSignal
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -146,7 +146,7 @@ class InitializationWorker(QObject):
         """
         try:
             # Import here to avoid circular dependencies
-            from utils.path_utils import get_fonts_dir
+            from oncutf.utils.path_utils import get_fonts_dir
 
             fonts_dir = get_fonts_dir()
 

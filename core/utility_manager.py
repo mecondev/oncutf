@@ -16,8 +16,8 @@ This manager centralizes utility functions including:
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import QApplication, QEvent, Qt
-from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -264,7 +264,7 @@ class UtilityManager:
 
     def generate_preview_names(self) -> None:
         """Generate preview names for selected files with performance optimizations."""
-        from utils.cursor_helper import wait_cursor
+        from oncutf.utils.cursor_helper import wait_cursor
 
         with wait_cursor():
             selected_files = self.main_window.get_selected_files()
@@ -335,7 +335,7 @@ class UtilityManager:
             return
 
         # Check for validation errors
-        from utils.filename_validator import is_validation_error_marker
+        from oncutf.utils.filename_validator import is_validation_error_marker
 
         valid_pairs = [p for p in name_pairs if p[0] != p[1]]
         has_validation_errors = any(

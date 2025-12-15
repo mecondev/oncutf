@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

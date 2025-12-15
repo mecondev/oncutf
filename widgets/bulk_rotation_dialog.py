@@ -25,7 +25,7 @@ from core.pyqt_imports import (
     QWidget,
 )
 from core.theme_manager import get_theme_manager
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -97,7 +97,7 @@ class BulkRotationDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
-        from utils.fonts import get_inter_css_weight, get_inter_family
+        from oncutf.utils.fonts import get_inter_css_weight, get_inter_family
 
         font_family = get_inter_family("base")
         font_weight = get_inter_css_weight("base")

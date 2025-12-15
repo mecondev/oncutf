@@ -15,8 +15,8 @@ Features:
 - Metadata field standard resolution (XMP, EXIF, IPTC)
 """
 
-from utils.file_status_helpers import has_metadata
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.file_status_helpers import has_metadata
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -164,7 +164,7 @@ class MetadataOperationsManager:
         format_type = format_map.get(format_combo.currentIndex(), "json")
 
         # Get output directory
-        from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
 
         output_dir = get_existing_directory_on_parent_screen(
             dialog, f"Select Export Directory - {scope.title()} Files", "", QFileDialog.ShowDirsOnly
@@ -177,7 +177,7 @@ class MetadataOperationsManager:
 
         # Perform export
         try:
-            from utils.metadata_exporter import MetadataExporter
+            from oncutf.utils.metadata_exporter import MetadataExporter
 
             exporter = MetadataExporter(self.parent_window)
 
@@ -266,7 +266,7 @@ class MetadataOperationsManager:
 
         except ImportError as e:
             logger.error(f"[MetadataEdit] Failed to import MetadataEditDialog: {e}")
-            from utils.dialog_utils import show_error_message
+            from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -275,7 +275,7 @@ class MetadataOperationsManager:
             )
         except Exception as e:
             logger.exception(f"[MetadataEdit] Unexpected error during {field_name} editing: {e}")
-            from utils.dialog_utils import show_error_message
+            from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,

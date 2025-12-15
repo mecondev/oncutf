@@ -13,10 +13,10 @@ Phase 4 of Application Context Migration: Complete Migration & Cleanup
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import Qt, QTimer
-from utils.icon_cache import load_preview_status_icons, prepare_status_icons
-from utils.icon_utilities import create_colored_icon
-from utils.icons_loader import icons_loader, load_metadata_icons
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.icon_cache import load_preview_status_icons, prepare_status_icons
+from oncutf.utils.icon_utilities import create_colored_icon
+from oncutf.utils.icons_loader import icons_loader, load_metadata_icons
+from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -191,7 +191,7 @@ class InitializationOrchestrator:
         from core.ui_manager import UIManager
         from core.utility_manager import UtilityManager
         from core.window_config_manager import WindowConfigManager
-        from utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.json_config_manager import get_app_config_manager
 
         # Initialize all managers
         self.window.dialog_manager = DialogManager()
@@ -246,7 +246,7 @@ class InitializationOrchestrator:
         from core.application_service import initialize_application_service
         from core.shutdown_coordinator import get_shutdown_coordinator
         from core.signal_coordinator import SignalCoordinator
-        from utils.timer_manager import schedule_resize_adjust
+        from oncutf.utils.timer_manager import schedule_resize_adjust
 
         # Load and apply window configuration
         self.window.window_config_manager.load_window_config()

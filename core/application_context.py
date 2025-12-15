@@ -12,7 +12,7 @@ Date: 2025-05-31
 from typing import TYPE_CHECKING, Any
 
 from core.pyqt_imports import QObject, pyqtSignal
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from core.file_store import FileStore

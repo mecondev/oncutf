@@ -14,7 +14,7 @@ This manager centralizes initialization and setup operations including:
 
 from typing import TYPE_CHECKING
 
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow

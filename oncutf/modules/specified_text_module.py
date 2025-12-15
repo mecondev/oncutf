@@ -22,11 +22,11 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.modules.base_module import BaseRenameModule
-from utils.filename_validator import validate_filename_part
-from utils.icons_loader import get_menu_icon
+from oncutf.utils.filename_validator import validate_filename_part
+from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 from widgets.validated_line_edit import ValidatedLineEdit
 
 logger = get_cached_logger(__name__)
@@ -94,7 +94,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Apply theme-aware consistent styling with Inter fonts
         try:
-            from utils.theme_engine import ThemeEngine
+            from oncutf.utils.theme_engine import ThemeEngine
 
             theme = ThemeEngine()
             menu_style = f"""

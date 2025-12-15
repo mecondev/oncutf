@@ -12,7 +12,7 @@ Centralizes dialog creation, validation logic, and user confirmations.
 import os
 
 from core.pyqt_imports import QApplication, QFileDialog, QWidget
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -145,7 +145,7 @@ class DialogManager:
         if not window:
             return
 
-        from utils.multiscreen_helper import center_dialog_on_screen
+        from oncutf.utils.multiscreen_helper import center_dialog_on_screen
 
         center_dialog_on_screen(window)
 

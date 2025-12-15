@@ -80,7 +80,7 @@ class TextRemovalModule(BaseRenameModule):
         self.position_combo.setCurrentText("End of name")
 
         # Apply theme styling
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         from widgets.ui_delegates import ComboBoxItemDelegate
         theme = ThemeEngine()
         self.position_combo.setFixedHeight(theme.get_constant("combo_height"))

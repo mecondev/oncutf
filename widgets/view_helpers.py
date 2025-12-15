@@ -13,7 +13,7 @@ Currently includes:
 """
 
 from core.pyqt_imports import QTableView
-from utils.path_utils import paths_equal
+from oncutf.utils.path_utils import paths_equal
 
 
 def update_info_icon(file_table_view: QTableView, model, file_path: str) -> None:

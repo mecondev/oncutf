@@ -15,13 +15,13 @@ from config import STATUS_COLORS
 from core.modifier_handler import decode_modifiers_to_flags
 from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from core.theme_manager import get_theme_manager
-from utils.cursor_helper import wait_cursor
-from utils.file_status_helpers import (
+from oncutf.utils.cursor_helper import wait_cursor
+from oncutf.utils.file_status_helpers import (
     has_hash,
     has_metadata,
 )
-from utils.logger_factory import get_cached_logger
-from utils.path_utils import paths_equal
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.path_utils import paths_equal
 
 logger = get_cached_logger(__name__)
 
@@ -61,7 +61,7 @@ class EventHandlerManager:
         - Shift: Merge + shallow (skip metadata)
         - Ctrl+Shift: Merge + recursive (skip metadata)
         """
-        from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
 
         folder_path = get_existing_directory_on_parent_screen(
             self.parent_window,
@@ -122,7 +122,7 @@ class EventHandlerManager:
         if not self.parent_window.file_model.files:
             return
 
-        from utils.icons_loader import get_menu_icon
+        from oncutf.utils.icons_loader import get_menu_icon
 
         # Helper function to create actions with shortcuts
         def create_action_with_shortcut(icon, text, shortcut=None):
@@ -554,7 +554,7 @@ class EventHandlerManager:
             # Check if we should show a dialog instead of loading
             if use_extended and not metadata_analysis["enable_extended_selected"]:
                 # Extended metadata requested but all files already have it
-                from utils.dialog_utils import show_info_message
+                from oncutf.utils.dialog_utils import show_info_message
 
                 message = f"All {len(target_files)} file(s) already have extended metadata."
                 if metadata_analysis.get("extended_tooltip"):
@@ -568,7 +568,7 @@ class EventHandlerManager:
                 return
             elif not use_extended and not metadata_analysis["enable_fast_selected"]:
                 # Fast metadata requested but files have extended metadata or already have fast
-                from utils.dialog_utils import show_info_message
+                from oncutf.utils.dialog_utils import show_info_message
 
                 message = f"Cannot load fast metadata for {len(target_files)} file(s)."
                 if metadata_analysis.get("fast_tooltip"):
@@ -776,7 +776,7 @@ class EventHandlerManager:
 
         except ImportError as e:
             logger.error(f"[BulkRotation] Failed to import BulkRotationDialog: {e}")
-            from utils.dialog_utils import show_error_message
+            from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -785,7 +785,7 @@ class EventHandlerManager:
             )
         except Exception as e:
             logger.exception(f"[BulkRotation] Unexpected error: {e}")
-            from utils.dialog_utils import show_error_message
+            from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window, "Error", f"An error occurred during bulk rotation: {str(e)}"
@@ -845,7 +845,7 @@ class EventHandlerManager:
 
         # Ensure proper positioning
         if self.parent_window:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
             ensure_dialog_on_parent_screen(dlg, self.parent_window)
 
         dlg.exec_()
@@ -903,7 +903,7 @@ class EventHandlerManager:
 
         # Ensure proper positioning
         if self.parent_window:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
             ensure_dialog_on_parent_screen(dlg, self.parent_window)
 
         dlg.exec_()
@@ -1077,7 +1077,7 @@ class EventHandlerManager:
 
         except Exception as e:
             logger.exception(f"[BulkRotation] Error applying rotation: {e}")
-            from utils.dialog_utils import show_error_message
+            from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window, "Error", f"Failed to apply rotation changes: {str(e)}"
@@ -1145,7 +1145,7 @@ class EventHandlerManager:
 
     def _file_has_metadata_type(self, file_item, extended: bool) -> bool:
         """Check if a file has the specified type of metadata (basic or extended)."""
-        from utils.metadata_cache_helper import get_metadata_cache_helper
+        from oncutf.utils.metadata_cache_helper import get_metadata_cache_helper
 
         cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
         return cache_helper.has_metadata(file_item, extended=extended)

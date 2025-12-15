@@ -25,7 +25,7 @@ from typing import Any
 
 from config import STATUS_COLORS
 from core.pyqt_imports import QTimer
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

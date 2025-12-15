@@ -24,8 +24,8 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.modules.base_module import BaseRenameModule
-from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_scroll_adjust
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.timer_manager import schedule_scroll_adjust
 from widgets.rename_module_widget import RenameModuleWidget
 
 # ApplicationContext integration
@@ -90,7 +90,7 @@ class RenameModulesArea(QWidget):
 
         # Use centralized timer manager for debouncing
         # This replaces the local QTimer with a managed timer that handles cleanup
-        from utils.timer_manager import schedule_preview_update
+        from oncutf.utils.timer_manager import schedule_preview_update
         self._schedule_preview_update = schedule_preview_update
         self._preview_timer_id = f"preview_debounce_{id(self)}"
 
@@ -334,7 +334,7 @@ class RenameModulesArea(QWidget):
         indicator.setFixedHeight(4)  # Slightly thinner
 
         # Get hover color from theme and convert to rgba for alpha channel
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         hover_color = theme.colors.get("button_background_hover", "#3e5c76")
 
@@ -473,7 +473,7 @@ class RenameModulesArea(QWidget):
         placeholder.setFixedHeight(module.height())
 
         # Get pressed color from theme for placeholder (lighter appearance)
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         pressed_color = theme.colors.get("button_background_pressed", "#748cab")
 

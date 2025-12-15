@@ -25,7 +25,7 @@ from core.pyqt_imports import (
     QWidget,
 )
 from core.theme_manager import get_theme_manager
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

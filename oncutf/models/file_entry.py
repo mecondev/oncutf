@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -161,7 +161,7 @@ class FileEntry:
         Returns:
             Formatted size string (e.g., "1.2 GB", "540 MB")
         """
-        from utils.file_size_formatter import format_file_size_system_compatible
+        from oncutf.utils.file_size_formatter import format_file_size_system_compatible
 
         return format_file_size_system_compatible(self.size)
 

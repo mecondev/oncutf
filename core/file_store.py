@@ -21,7 +21,7 @@ from typing import Any
 from config import ALLOWED_EXTENSIONS
 from core.pyqt_imports import QElapsedTimer, QObject, pyqtSignal
 from oncutf.models.file_item import FileItem
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

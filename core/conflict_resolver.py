@@ -14,7 +14,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

@@ -12,7 +12,7 @@ import warnings
 
 from oncutf.modules.metadata_module import MetadataModule
 from tests.mocks import MockFileItem
-from utils.path_normalizer import normalize_path
+from oncutf.utils.path_normalizer import normalize_path
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 warnings.filterwarnings("ignore", category=DeprecationWarning)

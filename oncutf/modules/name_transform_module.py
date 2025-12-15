@@ -8,8 +8,8 @@ modules/name_transform_module.py
 Applies case and separator transformations to a given base name.
 """
 
-from utils.logger_factory import get_cached_logger
-from utils.transform_utils import apply_transform
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.transform_utils import apply_transform
 
 logger = get_cached_logger(__name__)
 

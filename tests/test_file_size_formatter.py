@@ -1,5 +1,5 @@
 
-from utils.file_size_formatter import (
+from oncutf.utils.file_size_formatter import (
     FileSizeFormatter,
     format_file_size,
     format_file_size_system_compatible,

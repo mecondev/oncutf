@@ -11,8 +11,8 @@ Module for applying original name transformations.
 import os
 
 from oncutf.models.file_item import FileItem
-from utils.logger_factory import get_cached_logger
-from utils.transform_utils import apply_transform
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.transform_utils import apply_transform
 
 logger = get_cached_logger(__name__)
 

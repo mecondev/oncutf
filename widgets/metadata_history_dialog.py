@@ -38,8 +38,8 @@ from config import UNDO_REDO_SETTINGS
 from core.metadata_command_manager import get_metadata_command_manager
 from core.rename_history_manager import get_rename_history_manager
 from core.theme_manager import get_theme_manager
-from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
 
@@ -148,7 +148,7 @@ class MetadataHistoryDialog(QDialog):
         self.operations_table.verticalHeader().setVisible(False)
 
         # Set row height from theme engine
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.operations_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 

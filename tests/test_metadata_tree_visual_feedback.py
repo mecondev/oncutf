@@ -8,7 +8,7 @@ import pytest
 
 from config import METADATA_ICON_COLORS
 from core.pyqt_imports import QApplication
-from utils.build_metadata_tree_model import build_metadata_tree_model
+from oncutf.utils.build_metadata_tree_model import build_metadata_tree_model
 
 
 @pytest.fixture

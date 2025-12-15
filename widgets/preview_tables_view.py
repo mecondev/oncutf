@@ -28,11 +28,11 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from utils.filename_validator import get_validation_error_message, is_validation_error_marker
-from utils.logger_factory import get_cached_logger
-from utils.placeholder_helper import create_placeholder_helper
-from utils.theme import get_theme_color
-from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
+from oncutf.utils.filename_validator import get_validation_error_message, is_validation_error_marker
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.placeholder_helper import create_placeholder_helper
+from oncutf.utils.theme import get_theme_color
+from oncutf.utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
 
 logger = get_cached_logger(__name__)
 
@@ -67,7 +67,7 @@ class PreviewTableWidget(QTableWidget):
                 # Check if this is a validation error case
                 if is_validation_error_marker(item.text()):
                     # Show enhanced error tooltip
-                    from utils.tooltip_helper import show_error_tooltip
+                    from oncutf.utils.tooltip_helper import show_error_tooltip
 
                     error_msg = "Invalid filename - contains validation errors"
                     show_error_tooltip(self, error_msg)
@@ -169,7 +169,7 @@ class PreviewTablesView(QWidget):
             table.horizontalHeader().setVisible(False)  # type: ignore
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set row height from theme engine
-            from utils.theme_engine import ThemeEngine
+            from oncutf.utils.theme_engine import ThemeEngine
             theme = ThemeEngine()
             table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore
             # Set minimum height for proper placeholder centering
@@ -197,7 +197,7 @@ class PreviewTablesView(QWidget):
         bg_color = get_theme_color("button_background_disabled")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         # Use same row height from theme engine
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.icon_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
@@ -468,7 +468,7 @@ class PreviewTablesView(QWidget):
             else:
                 # Check if filename is valid
                 try:
-                    from utils.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.validate_filename_text import is_valid_filename_text
 
                     basename, _ = os.path.splitext(new_name)
                     if is_valid_filename_text(basename):
@@ -517,7 +517,7 @@ class PreviewTablesView(QWidget):
 
         import os
 
-        from utils.filename_validator import validate_filename_part
+        from oncutf.utils.filename_validator import validate_filename_part
 
         basename = os.path.splitext(new_name)[0]
         is_valid, _ = validate_filename_part(basename)
@@ -537,7 +537,7 @@ class PreviewTablesView(QWidget):
         icon_width, icon_height = PREVIEW_INDICATOR_SIZE
 
         # Get muted text color from theme
-        from utils.theme import get_theme_color
+        from oncutf.utils.theme import get_theme_color
         muted_color = get_theme_color('text_muted')
 
         status_msg = (

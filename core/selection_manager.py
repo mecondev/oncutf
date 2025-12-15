@@ -11,10 +11,10 @@ Handles file table selection operations, preview updates, and metadata synchroni
 
 import time
 
-from utils.cursor_helper import wait_cursor
-from utils.logger_factory import get_cached_logger
-from utils.metadata_cache_helper import MetadataCacheHelper
-from utils.timer_manager import schedule_metadata_load
+from oncutf.utils.cursor_helper import wait_cursor
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+from oncutf.utils.timer_manager import schedule_metadata_load
 
 logger = get_cached_logger(__name__)
 

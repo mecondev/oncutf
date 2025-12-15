@@ -23,8 +23,8 @@ from core.conflict_resolver import ConflictResolver
 from core.performance_monitor import get_performance_monitor, monitor_performance
 from core.pyqt_imports import QObject, pyqtSignal
 from oncutf.models.file_item import FileItem
-from utils.companion_files_helper import CompanionFilesHelper
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.companion_files_helper import CompanionFilesHelper
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -538,7 +538,7 @@ class UnifiedPreviewManager:
         returned when preconditions are not met.
         """
 
-        from utils.preview_engine import apply_rename_modules
+        from oncutf.utils.preview_engine import apply_rename_modules
 
         # Check if this file has required data for modules
         for module_data in modules_data:
@@ -608,7 +608,7 @@ class UnifiedPreviewManager:
         Falls back to permissive behaviour if the validator import fails.
         """
         try:
-            from utils.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.validate_filename_text import is_valid_filename_text
 
             return is_valid_filename_text(basename)
         except ImportError:
@@ -687,7 +687,7 @@ class UnifiedValidationManager:
         The implementation delegates to :mod:`utils.filename_validator`.
         """
         try:
-            from utils.filename_validator import validate_filename_part
+            from oncutf.utils.filename_validator import validate_filename_part
 
             basename = os.path.splitext(filename)[0]
             is_valid, error = validate_filename_part(basename)
@@ -911,7 +911,7 @@ class UnifiedExecutionManager:
         moves.
         """
         try:
-            from utils.rename_logic import is_case_only_change, safe_case_rename
+            from oncutf.utils.rename_logic import is_case_only_change, safe_case_rename
 
             old_name = os.path.basename(item.old_path)
             new_name = os.path.basename(item.new_path)

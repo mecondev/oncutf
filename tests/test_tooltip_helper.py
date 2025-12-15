@@ -17,7 +17,7 @@ import pytest
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QLabel
 
-from utils.tooltip_helper import (
+from oncutf.utils.tooltip_helper import (
     CustomTooltip,
     TooltipHelper,
     TooltipType,

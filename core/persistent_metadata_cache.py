@@ -12,7 +12,7 @@ and separation of concerns.
 
 import time
 
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
@@ -29,7 +29,7 @@ except Exception as e:
     raise
 
 try:
-    from utils.path_normalizer import normalize_path
+    from oncutf.utils.path_normalizer import normalize_path
 
     logger.debug(
         "[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path",

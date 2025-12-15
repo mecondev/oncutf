@@ -31,8 +31,8 @@ from core.pyqt_imports import (
     QWidget,
 )
 from core.rename_history_manager import get_rename_history_manager
-from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 from widgets.custom_message_dialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
@@ -65,7 +65,7 @@ class RenameHistoryDialog(QDialog):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
-        from utils.multiscreen_helper import position_dialog_relative_to_parent
+        from oncutf.utils.multiscreen_helper import position_dialog_relative_to_parent
 
         position_dialog_relative_to_parent(self)
 
@@ -364,7 +364,7 @@ def show_rename_history_dialog(parent: QWidget | None = None) -> None:
 
     # Ensure proper positioning on multiscreen setups before showing
     if parent:
-        from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+        from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
         ensure_dialog_on_parent_screen(dialog, parent)
 

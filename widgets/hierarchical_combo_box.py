@@ -23,7 +23,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 from widgets.ui_delegates import TreeViewItemDelegate
 
 logger = get_cached_logger(__name__)

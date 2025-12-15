@@ -19,8 +19,8 @@ from core.pyqt_imports import (
     QVBoxLayout,
 )
 from core.theme_manager import get_theme_manager
-from utils.logger_factory import get_cached_logger
-from utils.metadata_field_validators import MetadataFieldValidator
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.metadata_field_validators import MetadataFieldValidator
 from widgets.metadata_validated_input import create_metadata_input_widget
 
 logger = get_cached_logger(__name__)
@@ -85,14 +85,14 @@ class MetadataEditDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label with DPI awareness."""
-        from utils.fonts import get_inter_css_weight, get_inter_family
+        from oncutf.utils.fonts import get_inter_css_weight, get_inter_family
 
         font_family = get_inter_family("base")
         font_weight = get_inter_css_weight("base")
 
         # Get DPI-aware font size
         try:
-            from utils.theme_font_generator import get_ui_font_sizes
+            from oncutf.utils.theme_font_generator import get_ui_font_sizes
 
             font_size = get_ui_font_sizes()["small"]
         except ImportError:
@@ -131,7 +131,7 @@ class MetadataEditDialog(QDialog):
         # Hints label (right under the input field)
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        from utils.theme import get_theme_color
+        from oncutf.utils.theme import get_theme_color
 
         muted_color = get_theme_color("text")
         self._apply_info_label_style(muted_color, opacity="0.7")

@@ -34,8 +34,8 @@ from oncutf.modules.counter_module import CounterModule
 
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
-from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_ui_update
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.timer_manager import schedule_ui_update
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 
@@ -100,7 +100,7 @@ class RenameModuleWidget(QWidget):
         self.main_layout.setSpacing(0)
 
         # Get colors from theme engine
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
 
         theme = ThemeEngine()
         app_background = theme.get_color("app_background")
@@ -125,7 +125,7 @@ class RenameModuleWidget(QWidget):
         plate_layout.setSpacing(0)
 
         # --- Drag Handle Area ---
-        from utils.icons_loader import get_menu_icon
+        from oncutf.utils.icons_loader import get_menu_icon
 
         self.drag_handle = QLabel()
         self.drag_handle.setFixedWidth(30)
@@ -180,7 +180,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
         # Use theme constant for combo height
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.type_combo.setFixedHeight(theme.get_constant("combo_height"))
         self.type_combo.currentTextChanged.connect(self.update_module_content)
@@ -433,7 +433,7 @@ class RenameModuleWidget(QWidget):
         # Restore original position (remove horizontal offset)
         if self.parent():
             # Get the correct position from the layout
-            from utils.timer_manager import schedule_ui_update
+            from oncutf.utils.timer_manager import schedule_ui_update
 
             schedule_ui_update(self.restore_original_position, 10)
 

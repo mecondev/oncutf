@@ -12,8 +12,8 @@ Separates window management logic from MainWindow for better code organization.
 import os
 
 from core.pyqt_imports import QApplication, QMainWindow
-from utils.json_config_manager import get_app_config_manager
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.json_config_manager import get_app_config_manager
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -296,7 +296,7 @@ class WindowConfigManager:
         try:
             if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view:
                 # Schedule a delayed refresh to allow window state to settle
-                from utils.timer_manager import TimerType, get_timer_manager
+                from oncutf.utils.timer_manager import TimerType, get_timer_manager
 
                 def refresh():
                     # Reset manual column preference for auto-sizing - use original FileTableView logic

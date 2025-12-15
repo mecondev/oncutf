@@ -36,10 +36,10 @@ def neutralize_import_side_effects(monkeypatch):
     This fixture is autouse, so it applies to all tests automatically.
     """
     # Fake utils.logger_setup to prevent ConfigureLogger from creating log dirs
-    fake_logger = ModuleType("utils.logger_setup")
+    fake_logger = ModuleType("oncutf.utils.logger_setup")
     fake_logger.ConfigureLogger = lambda *_args, **_kwargs: None
-    original_logger = sys.modules.get("utils.logger_setup")
-    sys.modules["utils.logger_setup"] = fake_logger
+    original_logger = sys.modules.get("oncutf.utils.logger_setup")
+    sys.modules["oncutf.utils.logger_setup"] = fake_logger
 
     # Replace signal.signal and atexit.register with noop callables
     # to prevent modification of global state during tests
@@ -50,9 +50,9 @@ def neutralize_import_side_effects(monkeypatch):
 
     # Cleanup: restore original modules
     if original_logger is not None:
-        sys.modules["utils.logger_setup"] = original_logger
+        sys.modules["oncutf.utils.logger_setup"] = original_logger
     else:
-        sys.modules.pop("utils.logger_setup", None)
+        sys.modules.pop("oncutf.utils.logger_setup", None)
 
 
 @pytest.fixture(autouse=True)

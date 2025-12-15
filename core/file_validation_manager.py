@@ -26,8 +26,8 @@ from typing import Any
 from config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
 from core.database_manager import get_database_manager
 from core.hash_manager import HashManager
-from utils.file_size_calculator import calculate_files_total_size
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.file_size_calculator import calculate_files_total_size
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

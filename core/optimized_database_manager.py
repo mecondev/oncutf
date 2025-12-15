@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from core.pyqt_imports import QObject, pyqtSignal
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -277,7 +277,7 @@ class OptimizedDatabaseManager(QObject):
 
     def _get_user_data_directory(self) -> Path:
         """Get user data directory for storing database."""
-        from utils.path_utils import get_user_data_dir
+        from oncutf.utils.path_utils import get_user_data_dir
 
         return get_user_data_dir()
 

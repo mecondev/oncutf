@@ -148,7 +148,7 @@ class TestShutdownCoordinator:
         if hasattr(mock_db_mgr, "commit"):
             mock_db_mgr.commit.assert_called()
 
-    @patch("utils.exiftool_wrapper.ExifToolWrapper")
+    @patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper")
     def test_shutdown_exiftool_success(self, mock_exiftool_class, coordinator):
         """Test successful ExifTool shutdown."""
         mock_wrapper = Mock()
@@ -161,7 +161,7 @@ class TestShutdownCoordinator:
         mock_wrapper.stop.assert_called_once()
         mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
 
-    @patch("utils.exiftool_wrapper.ExifToolWrapper")
+    @patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper")
     def test_shutdown_exiftool_no_wrapper(self, mock_exiftool_class, coordinator):
         """Test ExifTool shutdown with no wrapper registered."""
         success, error = coordinator._shutdown_exiftool()
@@ -171,7 +171,7 @@ class TestShutdownCoordinator:
         # Should still call force cleanup
         mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
 
-    @patch("utils.exiftool_wrapper.ExifToolWrapper")
+    @patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper")
     @patch("platform.system")
     def test_shutdown_exiftool_windows_delay(
         self, mock_platform, mock_exiftool_class, coordinator
@@ -192,7 +192,7 @@ class TestShutdownCoordinator:
         # Verify force cleanup was called
         mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
 
-    @patch("utils.exiftool_wrapper.ExifToolWrapper")
+    @patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper")
     def test_shutdown_exiftool_exception_recovery(self, mock_exiftool_class, coordinator):
         """Test ExifTool shutdown attempts cleanup even on error."""
         mock_wrapper = Mock()
@@ -235,7 +235,7 @@ class TestShutdownCoordinator:
         coordinator.register_exiftool_wrapper(mock_exiftool)
 
         # Mock ExifToolWrapper.force_cleanup_all_exiftool_processes
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             success = coordinator.execute_shutdown()
 
         assert success is True
@@ -261,7 +261,7 @@ class TestShutdownCoordinator:
         mock_thread_mgr = Mock()
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             success = coordinator.execute_shutdown(emergency=True)
 
         assert success is True
@@ -274,7 +274,7 @@ class TestShutdownCoordinator:
         def progress_callback(message, progress):
             progress_calls.append((message, progress))
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown(progress_callback=progress_callback)
 
         # Should have received progress updates
@@ -289,7 +289,7 @@ class TestShutdownCoordinator:
         coordinator.register_timer_manager(mock_timer_mgr)
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             success = coordinator.execute_shutdown()
 
         # Overall success should be False due to timer failure
@@ -301,7 +301,7 @@ class TestShutdownCoordinator:
 
     def test_get_results(self, coordinator):
         """Test getting shutdown results."""
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown()
 
         results = coordinator.get_results()
@@ -310,7 +310,7 @@ class TestShutdownCoordinator:
 
     def test_get_summary(self, coordinator):
         """Test getting shutdown summary."""
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown()
 
         summary = coordinator.get_summary()
@@ -337,7 +337,7 @@ class TestShutdownCoordinator:
         mock_thread_mgr.shutdown.side_effect = slow_shutdown
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown()
 
         # Find thread pool result
@@ -363,7 +363,7 @@ class TestShutdownCoordinator:
 
         with (
             qtbot.waitSignal(coordinator.shutdown_completed, timeout=5000),
-            patch("utils.exiftool_wrapper.ExifToolWrapper"),
+            patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"),
         ):
             coordinator.execute_shutdown()
 
@@ -384,7 +384,7 @@ class TestShutdownCoordinator:
 
         start_time = time.time()
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown()
 
         duration = time.time() - start_time
@@ -405,7 +405,7 @@ class TestShutdownCoordinator:
 
         start_time = time.time()
 
-        with patch("utils.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper"):
             coordinator.execute_shutdown()
 
         duration = time.time() - start_time

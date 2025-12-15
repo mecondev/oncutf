@@ -13,7 +13,7 @@ Extracted from MetadataTreeView as part of decomposition effort.
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QAction, QMenu
 
-from utils.logger_helper import get_logger
+from oncutf.utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
 
@@ -111,7 +111,7 @@ class MetadataContextMenuMixin:
             self._current_menu = menu
 
         # Apply theme styling
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
 
@@ -253,7 +253,7 @@ class MetadataContextMenuMixin:
             QIcon or None if icon loading fails
         """
         try:
-            from utils.icons_loader import get_menu_icon
+            from oncutf.utils.icons_loader import get_menu_icon
 
             return get_menu_icon(icon_name)
         except ImportError:

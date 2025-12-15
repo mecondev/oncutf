@@ -26,18 +26,18 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
-from utils.companion_files_helper import CompanionFilesHelper
-from utils.cursor_helper import wait_cursor
-from utils.file_status_helpers import (
+from oncutf.utils.companion_files_helper import CompanionFilesHelper
+from oncutf.utils.cursor_helper import wait_cursor
+from oncutf.utils.file_status_helpers import (
     get_hash_for_file,
     get_metadata_for_file,
     has_hash,
     has_metadata,
 )
-from utils.logger_factory import get_cached_logger
-from utils.metadata_cache_helper import MetadataCacheHelper
-from utils.path_utils import paths_equal
-from utils.progress_dialog import ProgressDialog
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -84,7 +84,7 @@ class UnifiedMetadataManager(QObject):
         self._structured_manager = None
 
         # Initialize ExifTool wrapper for single file operations
-        from utils.exiftool_wrapper import ExifToolWrapper
+        from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
         self._exiftool_wrapper = ExifToolWrapper()
 
@@ -510,7 +510,7 @@ class UnifiedMetadataManager(QObject):
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
-            from utils.dialog_utils import show_info_message
+            from oncutf.utils.dialog_utils import show_info_message
 
             message = (
                 f"All {len(selected_files)} selected file(s) already have fast metadata or better."
@@ -556,7 +556,7 @@ class UnifiedMetadataManager(QObject):
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
-            from utils.dialog_utils import show_info_message
+            from oncutf.utils.dialog_utils import show_info_message
 
             message = f"All {len(selected_files)} selected file(s) already have extended metadata."
             if metadata_analysis.get("extended_tooltip"):
@@ -574,7 +574,7 @@ class UnifiedMetadataManager(QObject):
         fast_count = stats.get("fast_metadata", 0)
 
         if fast_count > 0:
-            from utils.dialog_utils import show_question_message
+            from oncutf.utils.dialog_utils import show_question_message
 
             message = f"Found {fast_count} file(s) with fast metadata.\n\nDo you want to upgrade them to extended metadata?"
             if metadata_analysis.get("extended_tooltip"):
@@ -624,7 +624,7 @@ class UnifiedMetadataManager(QObject):
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
-            from utils.dialog_utils import show_info_message
+            from oncutf.utils.dialog_utils import show_info_message
 
             message = f"All {len(all_files)} file(s) already have fast metadata or better."
             if metadata_analysis.get("fast_tooltip"):
@@ -671,7 +671,7 @@ class UnifiedMetadataManager(QObject):
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
-            from utils.dialog_utils import show_info_message
+            from oncutf.utils.dialog_utils import show_info_message
 
             message = f"All {len(all_files)} file(s) already have extended metadata."
             if metadata_analysis.get("extended_tooltip"):
@@ -810,7 +810,7 @@ class UnifiedMetadataManager(QObject):
         else:
             cache_entries = {}
 
-        from utils.path_normalizer import normalize_path
+        from oncutf.utils.path_normalizer import normalize_path
 
         for item in items:
             norm_path = normalize_path(item.full_path)
@@ -884,7 +884,7 @@ class UnifiedMetadataManager(QObject):
             use_extended: Whether to use extended metadata
             metadata_tree_view: Reference to metadata tree view for display
         """
-        from utils.cursor_helper import wait_cursor
+        from oncutf.utils.cursor_helper import wait_cursor
 
         with wait_cursor():
             try:
@@ -953,9 +953,9 @@ class UnifiedMetadataManager(QObject):
             logger.info("[UnifiedMetadataManager] Metadata loading cancelled by user")
 
         # Create progress dialog
-        from utils.dialog_utils import show_dialog_smooth
-        from utils.file_size_calculator import calculate_files_total_size
-        from utils.progress_dialog import ProgressDialog
+        from oncutf.utils.dialog_utils import show_dialog_smooth
+        from oncutf.utils.file_size_calculator import calculate_files_total_size
+        from oncutf.utils.progress_dialog import ProgressDialog
 
         _loading_dialog = ProgressDialog.create_metadata_dialog(
             self.parent_window,
@@ -1128,7 +1128,7 @@ class UnifiedMetadataManager(QObject):
                 self._cancel_current_loading()
 
             # Create progress dialog
-            from utils.progress_dialog import ProgressDialog
+            from oncutf.utils.progress_dialog import ProgressDialog
 
             _loading_dialog = ProgressDialog.create_metadata_dialog(
                 self.parent_window,
@@ -1152,7 +1152,7 @@ class UnifiedMetadataManager(QObject):
                 self._cancel_current_loading()
 
             # Create progress dialog
-            from utils.progress_dialog import ProgressDialog
+            from oncutf.utils.progress_dialog import ProgressDialog
 
             self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
                 self.parent_window, cancel_callback=cancel_hash_loading
@@ -1361,7 +1361,7 @@ class UnifiedMetadataManager(QObject):
                 self.parent_window.file_model.refresh_icon_for_file(file_path)
             else:
                 try:
-                    from utils.path_utils import paths_equal
+                    from oncutf.utils.path_utils import paths_equal
 
                     # Find the file in the model and emit dataChanged
                     for i, file in enumerate(self.parent_window.file_model.files):
@@ -1597,7 +1597,7 @@ class UnifiedMetadataManager(QObject):
         file_model = getattr(self.parent_window, "file_model", None)
 
         if file_model and hasattr(file_model, "files"):
-            from utils.path_normalizer import normalize_path
+            from oncutf.utils.path_normalizer import normalize_path
 
             # Create a map of normalized path -> file item for fast lookup
             path_map = {normalize_path(f.full_path): f for f in file_model.files}
@@ -1774,7 +1774,7 @@ class UnifiedMetadataManager(QObject):
             return all_modified_metadata[file_path]
 
         # Try normalized path lookup if direct fails (critical for cross-platform)
-        from utils.path_normalizer import normalize_path
+        from oncutf.utils.path_normalizer import normalize_path
         normalized = normalize_path(file_path)
 
         for key, value in all_modified_metadata.items():

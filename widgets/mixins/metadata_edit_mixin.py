@@ -17,8 +17,8 @@ from typing import Any
 from PyQt5.QtCore import QModelIndex, Qt
 from PyQt5.QtWidgets import QApplication
 
-from utils.logger_helper import get_logger
-from utils.timer_manager import schedule_ui_update
+from oncutf.utils.logger_helper import get_logger
+from oncutf.utils.timer_manager import schedule_ui_update
 
 logger = get_logger(__name__)
 

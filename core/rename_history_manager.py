@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 
 from core.database_manager import get_database_manager
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -285,7 +285,7 @@ class RenameHistoryManager:
 
                     # Perform the rename (revert)
                     # Use safe case rename for case-only changes
-                    from utils.rename_logic import is_case_only_change, safe_case_rename
+                    from oncutf.utils.rename_logic import is_case_only_change, safe_case_rename
 
                     current_name = os.path.basename(current_path)
                     target_name = os.path.basename(target_path)

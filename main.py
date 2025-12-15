@@ -31,9 +31,9 @@ from config import SPLASH_SCREEN_DURATION
 from core.pyqt_imports import QApplication, Qt
 from core.theme_manager import get_theme_manager
 from main_window import MainWindow
-from utils.fonts import _get_inter_fonts
-from utils.logger_setup import ConfigureLogger
-from utils.theme_engine import ThemeEngine
+from oncutf.utils.fonts import _get_inter_fonts
+from oncutf.utils.logger_setup import ConfigureLogger
+from oncutf.utils.theme_engine import ThemeEngine
 from widgets.custom_splash_screen import CustomSplashScreen
 
 
@@ -76,7 +76,7 @@ def cleanup_on_exit() -> None:
 
     try:
         # Save configuration immediately before exit
-        from utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.json_config_manager import get_app_config_manager
 
         get_app_config_manager().save_immediate()
         logger.info("Configuration saved immediately before exit")
@@ -84,7 +84,7 @@ def cleanup_on_exit() -> None:
         logger.warning(f"Error saving configuration during cleanup: {e}")
 
     try:
-        from utils.exiftool_wrapper import ExifToolWrapper
+        from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("Emergency ExifTool cleanup completed")
@@ -149,14 +149,14 @@ def main() -> int:
             logger.warning(f"Could not get locale: {e}")
 
         # Initialize DPI helper early
-        from utils.dpi_helper import get_dpi_helper, log_dpi_info
+        from oncutf.utils.dpi_helper import get_dpi_helper, log_dpi_info
 
         get_dpi_helper()  # Initialize but don't store
         log_dpi_info()
 
         # Log font sizes for debugging
         try:
-            from utils.theme_font_generator import get_ui_font_sizes
+            from oncutf.utils.theme_font_generator import get_ui_font_sizes
 
             font_sizes = get_ui_font_sizes()
             logger.debug(f"Applied font sizes: {font_sizes}", extra={"dev_only": True})
@@ -183,7 +183,7 @@ def main() -> int:
         theme_manager = ThemeEngine()
 
         # Create custom splash screen
-        from utils.path_utils import get_images_dir
+        from oncutf.utils.path_utils import get_images_dir
 
         splash_path = get_images_dir() / "splash.png"
         logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
@@ -308,7 +308,7 @@ def main() -> int:
             logger.debug("[Init] Background worker thread started", extra={"dev_only": True})
 
             # Schedule minimum splash time callback
-            from utils.timer_manager import TimerType, get_timer_manager
+            from oncutf.utils.timer_manager import TimerType, get_timer_manager
 
             get_timer_manager().schedule(
                 on_min_time_elapsed,
@@ -349,7 +349,7 @@ def main() -> int:
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
         try:
-            from utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
@@ -403,7 +403,7 @@ def main() -> int:
         logger.critical(f"Fatal error in main: {str(e)}", exc_info=True)
         # Emergency cleanup on crash
         try:
-            from utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
         except Exception:
             pass

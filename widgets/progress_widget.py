@@ -54,7 +54,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -96,7 +96,7 @@ class ProgressWidget(QWidget):
 
         # Get default colors from theme if not provided
         if bar_color is None or bar_bg_color is None:
-            from utils.theme_engine import ThemeEngine
+            from oncutf.utils.theme_engine import ThemeEngine
             theme = ThemeEngine()
             bar_color = bar_color or theme.colors.get("accent_color", "#748cab")
             bar_bg_color = bar_bg_color or theme.colors.get("disabled_background", "#181818")
@@ -363,7 +363,7 @@ class ProgressWidget(QWidget):
 
     def set_filename(self, filename: str):
         """Set filename with intelligent truncation for long paths."""
-        from utils.text_helpers import truncate_filename_middle
+        from oncutf.utils.text_helpers import truncate_filename_middle
 
         truncated_filename = truncate_filename_middle(filename)
         self.filename_label.setText(truncated_filename)
@@ -430,7 +430,7 @@ class ProgressWidget(QWidget):
 
         if self.show_size_info and hasattr(self, "size_label"):
             if total_size > 0:
-                from utils.file_size_formatter import format_file_size_system_compatible
+                from oncutf.utils.file_size_formatter import format_file_size_system_compatible
 
                 total_str = format_file_size_system_compatible(total_size)
                 self.size_label.setText(f"0 B/{total_str}")
@@ -500,7 +500,7 @@ class ProgressWidget(QWidget):
 
     def _update_size_display(self):
         """Update size information display with improved formatting."""
-        from utils.text_helpers import format_file_size_stable
+        from oncutf.utils.text_helpers import format_file_size_stable
 
         processed_str = format_file_size_stable(self.processed_size)
         if self.total_size > 0:

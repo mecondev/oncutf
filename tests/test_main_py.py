@@ -47,7 +47,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
     monkeypatch.setattr(main, "_cleanup_done", False)
 
     # Create a fake utils.exiftool_wrapper module with a callable ExifToolWrapper
-    fake_mod = ModuleType("utils.exiftool_wrapper")
+    fake_mod = ModuleType("oncutf.utils.exiftool_wrapper")
 
     calls = {"count": 0}
 
@@ -61,7 +61,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
     fake_mod.ExifToolWrapper = FakeExif
 
     # Inject into sys.modules so import inside function finds it
-    sys.modules["utils.exiftool_wrapper"] = fake_mod
+    sys.modules["oncutf.utils.exiftool_wrapper"] = fake_mod
 
     try:
         # First call should invoke the fake cleanup

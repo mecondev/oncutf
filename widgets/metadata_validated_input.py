@@ -15,7 +15,7 @@ Contains:
 import logging
 
 from core.pyqt_imports import QComboBox, QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
-from utils.metadata_field_validators import MetadataFieldValidator
+from oncutf.utils.metadata_field_validators import MetadataFieldValidator
 from widgets.base_validated_input import BaseValidatedInput
 
 logger = logging.getLogger(__name__)
@@ -302,7 +302,7 @@ class MetadataRotationComboBox(QComboBox):
         self.currentTextChanged.connect(self._on_selection_changed)
 
         # Set fixed height to match other input widgets
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
 

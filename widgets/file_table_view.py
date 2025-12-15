@@ -32,9 +32,9 @@ from core.pyqt_imports import (
     QTableView,
     pyqtSignal,
 )
-from utils.logger_factory import get_cached_logger
-from utils.placeholder_helper import create_placeholder_helper
-from utils.timer_manager import (
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.placeholder_helper import create_placeholder_helper
+from oncutf.utils.timer_manager import (
     schedule_ui_update,
 )
 from widgets.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
@@ -101,7 +101,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Additional settings to prevent text wrapping
         self.setTextElideMode(Qt.ElideRight)  # Elide text with ... instead of wrapping
         # Row height from theme engine
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
@@ -166,7 +166,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Ensure header visibility is set correctly from the start
         # This will be called again after model is set, but ensures initial state
-        from utils.timer_manager import schedule_ui_update
+        from oncutf.utils.timer_manager import schedule_ui_update
 
         schedule_ui_update(self._update_header_visibility, delay=100)
 
@@ -225,7 +225,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             self.horizontalHeader().setWordWrap(False)
 
         # Set fixed row height to prevent expansion (from theme engine)
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         row_height = theme.get_constant("table_row_height")
         self.verticalHeader().setDefaultSectionSize(row_height)
@@ -303,12 +303,12 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             if model.columnCount() > 0:
                 # Check and fix column widths if needed (only when model is set)
                 # Delay this check to ensure model is fully initialized
-                from utils.timer_manager import schedule_ui_update
+                from oncutf.utils.timer_manager import schedule_ui_update
 
                 schedule_ui_update(self._check_and_fix_column_widths, delay=50)
                 self._configure_columns()
             else:
-                from utils.timer_manager import schedule_ui_update
+                from oncutf.utils.timer_manager import schedule_ui_update
 
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
@@ -774,7 +774,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 
@@ -807,7 +807,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 
@@ -826,7 +826,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 

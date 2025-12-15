@@ -15,10 +15,10 @@ import time
 from datetime import datetime
 
 from oncutf.models.file_item import FileItem
-from utils.file_status_helpers import get_hash_for_file
+from oncutf.utils.file_status_helpers import get_hash_for_file
 
 # initialize logger
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -101,7 +101,7 @@ class MetadataModule:
 
                 # Quick validity check
                 try:
-                    from utils.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.validate_filename_text import is_valid_filename_text
 
                     if is_valid_filename_text(candidate):
                         _metadata_cache[cache_key] = candidate
@@ -113,8 +113,8 @@ class MetadataModule:
 
                 # Try more aggressive cleaning using filename_validator
                 try:
-                    from utils.filename_validator import clean_filename_text
-                    from utils.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.filename_validator import clean_filename_text
+                    from oncutf.utils.validate_filename_text import is_valid_filename_text
 
                     cleaned = clean_filename_text(candidate)
                     if is_valid_filename_text(cleaned):
@@ -129,7 +129,7 @@ class MetadataModule:
 
                 alt = re.sub(r"[^A-Za-z0-9_.+-]+", "_", candidate).strip("_")
                 try:
-                    from utils.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.validate_filename_text import is_valid_filename_text
 
                     if is_valid_filename_text(alt):
                         _metadata_cache[cache_key] = alt
@@ -180,7 +180,7 @@ class MetadataModule:
             return "invalid"
 
         # Normalize path for Windows compatibility at the very start
-        from utils.path_normalizer import normalize_path
+        from oncutf.utils.path_normalizer import normalize_path
 
         path = file_item.full_path
         if not path:
@@ -433,7 +433,7 @@ class MetadataModule:
         if field:
             # Try using the centralized field mapper for better key mapping
             try:
-                from utils.metadata_field_mapper import MetadataFieldMapper
+                from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
 
                 # Check if this field has a mapping in our centralized mapper
                 if MetadataFieldMapper.has_field_mapping(field):

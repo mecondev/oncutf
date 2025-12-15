@@ -65,7 +65,7 @@ class InteractiveHeader(QHeaderView):
             return self.parent_window
 
         # Last resort: traverse parents to find main window
-        from utils.path_utils import find_parent_with_attribute
+        from oncutf.utils.path_utils import find_parent_with_attribute
 
         return find_parent_with_attribute(self, "handle_header_toggle")
 
@@ -107,14 +107,14 @@ class InteractiveHeader(QHeaderView):
 
         menu = QMenu(self)
         # Apply theme styling
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
 
         # Add sorting options for columns > 0
         if logical_index > 0:
             try:
-                from utils.icons_loader import get_menu_icon
+                from oncutf.utils.icons_loader import get_menu_icon
 
                 sort_asc = QAction("Sort Ascending", self)
                 sort_asc.setIcon(get_menu_icon("chevron-up"))
@@ -155,7 +155,7 @@ class InteractiveHeader(QHeaderView):
                 return
 
             from config import FILE_TABLE_COLUMN_CONFIG
-            from utils.icons_loader import get_menu_icon
+            from oncutf.utils.icons_loader import get_menu_icon
 
             # Add submenu title
             columns_menu = QMenu("Show Columns", menu)
@@ -197,7 +197,7 @@ class InteractiveHeader(QHeaderView):
 
         except Exception as e:
             # Fallback: just add a simple label if configuration fails
-            from utils.logger_factory import get_cached_logger
+            from oncutf.utils.logger_factory import get_cached_logger
 
             logger = get_cached_logger(__name__)
             logger.warning(f"Failed to add column visibility menu: {e}")

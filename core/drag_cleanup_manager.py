@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 from config import STATUS_COLORS
 from core.drag_manager import DragManager
 from core.pyqt_imports import QApplication, Qt
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow

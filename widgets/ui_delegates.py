@@ -30,11 +30,11 @@ from core.pyqt_imports import (
     QTreeView,
     QWidget,
 )
-from utils.logger_factory import get_cached_logger
-from utils.theme import get_qcolor, get_theme_color
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.theme import get_qcolor, get_theme_color
 
 if TYPE_CHECKING:
-    from utils.theme_engine import ThemeEngine
+    from oncutf.utils.theme_engine import ThemeEngine
 
 logger = get_cached_logger(__name__)
 
@@ -118,7 +118,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def leaveEvent(self, event) -> None:  # noqa: ARG002
         """Handle mouse leave events to hide tooltips."""
         # Hide any active tooltips when mouse leaves the delegate
-        from utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):
@@ -143,7 +143,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def focusOutEvent(self, event) -> None:  # noqa: ARG002
         """Handle focus loss events to hide tooltips."""
         # Hide any active tooltips when focus is lost
-        from utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):

@@ -1,6 +1,6 @@
 import unicodedata
 
-from utils import transform_utils
+from oncutf.utils import transform_utils
 
 
 def test_strip_accents():
@@ -20,7 +20,7 @@ def test_safe_upper_basic():
 
     import pytest
 
-    from utils.transform_utils import (
+    from oncutf.utils.transform_utils import (
         apply_transform,
         safe_upper,
         strip_accents,

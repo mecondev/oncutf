@@ -23,12 +23,12 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.modules.base_module import BaseRenameModule
-from utils.icons_loader import get_menu_icon
+from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
-from utils.logger_factory import get_cached_logger
-from utils.theme_engine import ThemeEngine
-from utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.theme_engine import ThemeEngine
+from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
 

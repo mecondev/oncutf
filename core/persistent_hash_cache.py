@@ -12,8 +12,8 @@ Provides improved performance and separation of concerns.
 import os
 
 from core.database_manager import get_database_manager
-from utils.logger_factory import get_cached_logger
-from utils.path_normalizer import normalize_path
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
 

@@ -14,7 +14,7 @@ import warnings
 
 import pytest
 
-from utils.rename_logic import build_rename_plan, execute_rename_plan
+from oncutf.utils.rename_logic import build_rename_plan, execute_rename_plan
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 warnings.filterwarnings("ignore", category=DeprecationWarning)

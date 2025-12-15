@@ -20,7 +20,7 @@ try:
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication, QTreeView
 
-    from utils.theme_engine import ThemeEngine
+    from oncutf.utils.theme_engine import ThemeEngine
     from widgets.metadata_tree_view import MetadataTreeView
 
     PYQT5_AVAILABLE = True

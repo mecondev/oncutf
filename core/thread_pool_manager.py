@@ -29,7 +29,7 @@ from typing import Any
 import psutil
 
 from core.pyqt_imports import QMutex, QMutexLocker, QObject, QThread, QTimer, pyqtSignal
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

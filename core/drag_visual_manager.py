@@ -32,8 +32,8 @@ from core.pyqt_imports import (
     Qt,
     QWidget,
 )
-from utils.icons_loader import get_menu_icon
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.icons_loader import get_menu_icon
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

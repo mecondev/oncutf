@@ -31,7 +31,7 @@ from core.pyqt_imports import (
 )
 
 # Initialize Logger
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -126,7 +126,7 @@ class CustomMessageDialog(QDialog):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
-        from utils.multiscreen_helper import position_dialog_relative_to_parent
+        from oncutf.utils.multiscreen_helper import position_dialog_relative_to_parent
 
         position_dialog_relative_to_parent(self)
 
@@ -193,7 +193,7 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -225,7 +225,7 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -259,7 +259,7 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -322,7 +322,7 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -413,7 +413,7 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, parent)
 

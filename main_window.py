@@ -30,7 +30,7 @@ from core.pyqt_imports import *
 from oncutf.models.file_item import FileItem
 
 # Utility functions and helpers
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 # UI widgets and custom components
 
@@ -723,7 +723,7 @@ class MainWindow(QMainWindow):
             new_width = self.width()
 
             # Use SplitterManager to update splitter sizes
-            from utils.timer_manager import schedule_resize_adjust
+            from oncutf.utils.timer_manager import schedule_resize_adjust
 
             def update_splitters():
                 self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
@@ -772,7 +772,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "file_table_view") or not self.file_table_view.model():
             return
 
-        from utils.timer_manager import schedule_resize_adjust
+        from oncutf.utils.timer_manager import schedule_resize_adjust
 
         def refresh():
             # Reset manual column preference for auto-sizing
@@ -840,7 +840,7 @@ class MainWindow(QMainWindow):
 
         # Save configuration immediately before shutdown
         try:
-            from utils.json_config_manager import get_app_config_manager
+            from oncutf.utils.json_config_manager import get_app_config_manager
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
         except Exception as e:
@@ -884,7 +884,7 @@ class MainWindow(QMainWindow):
             self.shutdown_dialog.show()
 
             # Position dialog on the same screen as the main window
-            from utils.multiscreen_helper import center_dialog_on_parent_screen
+            from oncutf.utils.multiscreen_helper import center_dialog_on_parent_screen
 
             center_dialog_on_parent_screen(self.shutdown_dialog, self)
 
@@ -1131,7 +1131,7 @@ class MainWindow(QMainWindow):
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
-        from utils.progress_dialog import ProgressDialog
+        from oncutf.utils.progress_dialog import ProgressDialog
         from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
         # Find and close any active progress dialogs
@@ -1273,7 +1273,7 @@ class MainWindow(QMainWindow):
         """Register all concurrent components with shutdown coordinator."""
         try:
             # Register timer manager
-            from utils.timer_manager import get_timer_manager
+            from oncutf.utils.timer_manager import get_timer_manager
 
             timer_mgr = get_timer_manager()
             self.shutdown_coordinator.register_timer_manager(timer_mgr)
@@ -1293,7 +1293,7 @@ class MainWindow(QMainWindow):
 
             # Register ExifTool wrapper (get active instance if any)
             try:
-                from utils.exiftool_wrapper import ExifToolWrapper
+                from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
                 if ExifToolWrapper._instances:  # type: ignore

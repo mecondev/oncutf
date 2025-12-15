@@ -24,9 +24,9 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from utils.icons_loader import get_menu_icon
-from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.icons_loader import get_menu_icon
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
 
@@ -124,7 +124,7 @@ class FinalTransformContainer(QWidget):
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(116)  # Reduced by 10px
         # Use theme constant for combo height
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.case_combo.setFixedHeight(theme.get_constant("combo_height"))
         # Ensure combo box drops down instead of popping up
@@ -233,7 +233,7 @@ class FinalTransformContainer(QWidget):
             self.remove_button.setIcon(get_menu_icon("minus"))
         else:
             # Clear tooltip when button is disabled
-            from utils.tooltip_helper import TooltipHelper
+            from oncutf.utils.tooltip_helper import TooltipHelper
 
             TooltipHelper.clear_tooltips_for_widget(self.remove_button)
             # Remove the tooltip completely by setting empty tooltip

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from utils import path_utils
+from oncutf.utils import path_utils
 
 
 def test_normalize_and_paths_equal():

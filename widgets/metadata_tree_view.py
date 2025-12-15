@@ -47,11 +47,11 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from core.theme_manager import get_theme_manager
-from utils.logger_factory import get_cached_logger
-from utils.metadata_cache_helper import MetadataCacheHelper
-from utils.path_utils import find_parent_with_attribute, paths_equal
-from utils.placeholder_helper import create_placeholder_helper
-from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
+from oncutf.utils.placeholder_helper import create_placeholder_helper
+from oncutf.utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
 from widgets.mixins.metadata_cache_mixin import MetadataCacheMixin
 from widgets.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from widgets.mixins.metadata_edit_mixin import MetadataEditMixin
@@ -1291,7 +1291,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         try:
             # Import here to avoid circular imports
-            from utils.build_metadata_tree_model import build_metadata_tree_model
+            from oncutf.utils.build_metadata_tree_model import build_metadata_tree_model
 
             display_data = dict(metadata)
             filename = metadata.get("FileName")
@@ -1719,7 +1719,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
             # CRITICAL: Clear any stale modifications for this file when displaying fresh metadata
             # This prevents showing [MODIFIED] for fields that were never actually saved
-            from utils.path_normalizer import normalize_path
+            from oncutf.utils.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
 

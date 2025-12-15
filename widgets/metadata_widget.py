@@ -14,13 +14,13 @@ from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from core.theme_manager import get_theme_manager
-from utils.file_status_helpers import (
+from oncutf.utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
 )
-from utils.logger_factory import get_cached_logger
-from utils.theme_engine import ThemeEngine
-from utils.timer_manager import schedule_ui_update
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.theme_engine import ThemeEngine
+from oncutf.utils.timer_manager import schedule_ui_update
 from widgets.hierarchical_combo_box import HierarchicalComboBox
 from widgets.ui_delegates import ComboBoxItemDelegate
 
@@ -73,7 +73,7 @@ class MetadataWidget(QWidget):
         self.category_combo = QComboBox()
         self.category_combo.setFixedWidth(150)
         # Use theme constant for combo height
-        from utils.theme_engine import ThemeEngine
+        from oncutf.utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.category_combo.setFixedHeight(theme.get_constant("combo_height"))
 
@@ -200,7 +200,7 @@ class MetadataWidget(QWidget):
 
         # Use timer to ensure currentData is updated before emitting
         try:
-            from utils.timer_manager import schedule_ui_update
+            from oncutf.utils.timer_manager import schedule_ui_update
 
             schedule_ui_update(self.emit_if_changed, 10)
         except Exception:
@@ -595,7 +595,7 @@ class MetadataWidget(QWidget):
         keys = set()
         for file_item in selected_files:
             # Use the same path normalization as batch_metadata_status
-            from utils.path_normalizer import normalize_path
+            from oncutf.utils.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
             # Support multiple cache types: persistent cache (get_entry) or dict-like

@@ -21,10 +21,10 @@ from config import (
 from core.drag_manager import force_cleanup_drag, is_dragging
 from core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
-from utils.companion_files_helper import CompanionFilesHelper
-from utils.cursor_helper import force_restore_cursor, wait_cursor
-from utils.logger_factory import get_cached_logger
-from utils.timer_manager import get_timer_manager
+from oncutf.utils.companion_files_helper import CompanionFilesHelper
+from oncutf.utils.cursor_helper import force_restore_cursor, wait_cursor
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.timer_manager import get_timer_manager
 
 logger = get_cached_logger(__name__)
 
@@ -97,7 +97,7 @@ class FileLoadManager:
         end_drag_visual()
 
         # Clear drag zone validator for all possible sources
-        from utils.drag_zone_validator import DragZoneValidator
+        from oncutf.utils.drag_zone_validator import DragZoneValidator
 
         DragZoneValidator.clear_initial_drag_widget("file_tree")
         DragZoneValidator.clear_initial_drag_widget("file_table")

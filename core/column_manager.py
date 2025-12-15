@@ -30,7 +30,7 @@ from typing import Any
 
 from core.config_imports import FILE_TABLE_COLUMN_CONFIG, METADATA_TREE_COLUMN_WIDTHS
 from core.pyqt_imports import QFontMetrics, QHeaderView, QTableView, QTreeView, QWidget
-from utils.logger_helper import get_cached_logger
+from oncutf.utils.logger_helper import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -386,7 +386,7 @@ class ColumnManager:
                         )
 
             # Fallback to old config system
-            from utils.json_config_manager import load_config
+            from oncutf.utils.json_config_manager import load_config
 
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})

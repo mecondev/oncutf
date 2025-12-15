@@ -1,5 +1,5 @@
 
-from utils import text_helpers
+from oncutf.utils import text_helpers
 
 
 def test_elide_text_short():
@@ -54,7 +54,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
-from utils.text_helpers import elide_text, format_file_size_stable, truncate_filename_middle
+from oncutf.utils.text_helpers import elide_text, format_file_size_stable, truncate_filename_middle
 
 
 class TestElideText:

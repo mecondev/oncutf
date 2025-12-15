@@ -12,9 +12,9 @@ import os
 
 from core.pyqt_imports import QDesktopServices, QUrl
 from oncutf.models.file_item import FileItem
-from utils.logger_factory import get_cached_logger
-from utils.path_utils import find_file_by_path
-from utils.renamer import Renamer
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.path_utils import find_file_by_path
+from oncutf.utils.renamer import Renamer
 from widgets.custom_message_dialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
@@ -67,7 +67,7 @@ class FileOperationsManager:
             )
 
         # Import validator here to avoid circular imports
-        from utils.filename_validator import validate_filename_part
+        from oncutf.utils.filename_validator import validate_filename_part
 
         # Create a safe conflict callback that doesn't block
         def safe_conflict_callback(_parent, filename):
@@ -146,7 +146,7 @@ class FileOperationsManager:
                 self.parent_window.pending_completion_dialog = show_completion_dialog
             else:
                 # Fallback: schedule with timer manager for delayed execution
-                from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+                from oncutf.utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
                 get_timer_manager().schedule(
                     show_completion_dialog,

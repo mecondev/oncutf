@@ -10,8 +10,8 @@ from typing import Any
 
 from PyQt5.QtCore import Qt
 
-from utils.logger_helper import get_logger
-from utils.path_utils import paths_equal
+from oncutf.utils.logger_helper import get_logger
+from oncutf.utils.path_utils import paths_equal
 
 logger = get_logger(__name__)
 

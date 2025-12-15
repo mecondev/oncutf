@@ -19,7 +19,7 @@ This follows the same pattern as SelectionMixin and DragDropMixin.
 """
 
 from core.pyqt_imports import QHeaderView, Qt
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -101,7 +101,7 @@ class ColumnManagementMixin:
 
         try:
             # Small delay to ensure model synchronization using global timer manager
-            from utils.timer_manager import schedule_ui_update
+            from oncutf.utils.timer_manager import schedule_ui_update
 
             schedule_ui_update(
                 self._configure_columns_delayed, delay=10, timer_id=f"column_config_{id(self)}"
@@ -349,7 +349,7 @@ class ColumnManagementMixin:
                     )
 
             # Fallback to old method
-            from utils.json_config_manager import load_config
+            from oncutf.utils.json_config_manager import load_config
 
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
@@ -407,7 +407,7 @@ class ColumnManagementMixin:
                     # Continue to old format
 
             # Also clear from old format
-            from utils.json_config_manager import load_config, save_config
+            from oncutf.utils.json_config_manager import load_config, save_config
 
             config = load_config()
             config["file_table_column_widths"] = {}
@@ -444,7 +444,7 @@ class ColumnManagementMixin:
                     # Continue to fallback method
             else:
                 # Fallback to old method if main window not available
-                from utils.json_config_manager import load_config, save_config
+                from oncutf.utils.json_config_manager import load_config, save_config
 
                 config = load_config()
                 if "file_table_column_widths" not in config:
@@ -515,7 +515,7 @@ class ColumnManagementMixin:
                     logger.warning(f"Failed to save to main config: {e}, trying fallback")
 
             # Fallback to old method
-            from utils.json_config_manager import load_config, save_config
+            from oncutf.utils.json_config_manager import load_config, save_config
 
             config = load_config()
             if "file_table_column_widths" not in config:
@@ -672,7 +672,7 @@ class ColumnManagementMixin:
                     return complete_visibility
 
             # Fallback to old method
-            from utils.json_config_manager import load_config
+            from oncutf.utils.json_config_manager import load_config
 
             config = load_config()
             saved_visibility = config.get("file_table_columns", {})
@@ -722,7 +722,7 @@ class ColumnManagementMixin:
                     config_manager.mark_dirty()
             else:
                 # Fallback to old method
-                from utils.json_config_manager import load_config, save_config
+                from oncutf.utils.json_config_manager import load_config, save_config
 
                 config = load_config()
                 if hasattr(self, "_visible_columns"):
@@ -860,7 +860,7 @@ class ColumnManagementMixin:
             self._update_table_columns()
 
             # Force configure columns after model update to ensure new column gets proper width
-            from utils.timer_manager import schedule_ui_update
+            from oncutf.utils.timer_manager import schedule_ui_update
 
             schedule_ui_update(
                 self._configure_columns_delayed,
@@ -1147,7 +1147,7 @@ class ColumnManagementMixin:
                     saved_widths = window_config.get("file_table_column_widths", {})
                 except Exception:
                     # Try fallback method
-                    from utils.json_config_manager import load_config
+                    from oncutf.utils.json_config_manager import load_config
 
                     config = load_config()
                     saved_widths = config.get("file_table_column_widths", {})
@@ -1171,7 +1171,7 @@ class ColumnManagementMixin:
             if total_count > 0 and suspicious_count >= (total_count * 0.5):
                 self._reset_column_widths_to_defaults()
                 if self.model() and self.model().columnCount() > 0:
-                    from utils.timer_manager import schedule_ui_update
+                    from oncutf.utils.timer_manager import schedule_ui_update
 
                     schedule_ui_update(self._configure_columns, delay=10)
 

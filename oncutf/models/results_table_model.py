@@ -17,7 +17,7 @@ from core.pyqt_imports import (
     QAbstractTableModel,
     Qt,
 )
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

@@ -16,8 +16,8 @@ Features:
 """
 
 from config import STATUS_COLORS
-from utils.file_status_helpers import has_hash
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.file_status_helpers import has_hash
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -238,7 +238,7 @@ class HashOperationsManager:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
         """
-        from utils.progress_dialog import ProgressDialog
+        from oncutf.utils.progress_dialog import ProgressDialog
 
         # Create dialog using the unified ProgressDialog for hash operations
         self.hash_dialog = ProgressDialog.create_hash_dialog(
@@ -368,7 +368,7 @@ class HashOperationsManager:
     def _on_checksums_calculated(self, hash_results: dict) -> None:
         """Handle checksums calculated result."""
         # Force restore cursor before showing results dialog
-        from utils.cursor_helper import force_restore_cursor
+        from oncutf.utils.cursor_helper import force_restore_cursor
 
         force_restore_cursor()
 
@@ -384,7 +384,7 @@ class HashOperationsManager:
         """Handle hash operation completion."""
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Keep dialog visible for a moment to show completion
-            from utils.timer_manager import schedule_dialog_close
+            from oncutf.utils.timer_manager import schedule_dialog_close
 
             schedule_dialog_close(self.hash_dialog.close, 500)
 
@@ -642,7 +642,7 @@ class HashOperationsManager:
             from core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
-            from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+            from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
 
             external_folder = get_existing_directory_on_parent_screen(
                 self.parent_window,
@@ -708,7 +708,7 @@ class HashOperationsManager:
             file_item: FileItem object to calculate hash for
         """
         from core.hash_manager import HashManager
-        from utils.cursor_helper import wait_cursor
+        from oncutf.utils.cursor_helper import wait_cursor
 
         try:
             hash_results = {}

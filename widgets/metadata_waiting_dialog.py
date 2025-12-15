@@ -19,8 +19,8 @@ from config import (
     FAST_METADATA_COLOR,
 )
 from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
-from utils.dialog_utils import setup_dialog_size_and_center
-from utils.logger_factory import get_cached_logger
+from oncutf.utils.dialog_utils import setup_dialog_size_and_center
+from oncutf.utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget
 
 logger = get_cached_logger(__name__)

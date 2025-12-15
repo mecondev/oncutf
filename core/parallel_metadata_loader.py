@@ -21,9 +21,9 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from oncutf.models.file_item import FileItem
-from utils.exiftool_wrapper import ExifToolWrapper
-from utils.logger_factory import get_cached_logger
-from utils.path_utils import paths_equal
+from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.path_utils import paths_equal
 
 logger = get_cached_logger(__name__)
 

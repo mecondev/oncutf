@@ -14,7 +14,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
-from utils.progress_dialog import ProgressDialog
+from oncutf.utils.progress_dialog import ProgressDialog
 
 
 @pytest.fixture

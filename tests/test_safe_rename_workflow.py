@@ -44,7 +44,7 @@ class TestSafeRenameWorkflow:
         """Test that the safe post-rename workflow executes all steps properly."""
         checked_paths = {"/test/folder/file1.txt", "/test/folder/file2.txt"}
 
-        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
+        with patch("oncutf.utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -216,7 +216,7 @@ class TestSafeRenameWorkflow:
             2  # 2 files renamed
         )
 
-        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
+        with patch("oncutf.utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -239,7 +239,7 @@ class TestSafeRenameWorkflow:
             0  # No files renamed
         )
 
-        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
+        with patch("oncutf.utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 

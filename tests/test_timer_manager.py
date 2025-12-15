@@ -20,7 +20,7 @@ import pytest
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
-from utils.timer_manager import cleanup_all_timers, get_timer_manager, schedule_ui_update
+from oncutf.utils.timer_manager import cleanup_all_timers, get_timer_manager, schedule_ui_update
 
 # Ensure QApplication exists for timer tests
 if not QApplication.instance():
