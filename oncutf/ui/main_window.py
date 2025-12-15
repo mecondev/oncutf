@@ -1131,8 +1131,8 @@ class MainWindow(QMainWindow):
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
-        from oncutf.utils.progress_dialog import ProgressDialog
         from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
+        from oncutf.utils.progress_dialog import ProgressDialog
 
         # Find and close any active progress dialogs
         dialogs_closed = 0

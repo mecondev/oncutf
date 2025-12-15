@@ -31,13 +31,13 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.modules.counter_module import CounterModule
+from oncutf.ui.widgets.metadata_widget import MetadataWidget
+from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_ui_update
-from oncutf.ui.widgets.metadata_widget import MetadataWidget
-from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
 # ApplicationContext integration
 try:

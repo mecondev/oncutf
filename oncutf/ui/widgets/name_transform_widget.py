@@ -10,7 +10,15 @@ Provides options for Greek to Greeklish conversion, case and separator transform
 Uses BaseRenameModule to prevent duplicate emits.
 """
 
-from oncutf.core.pyqt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget
+from oncutf.core.pyqt_imports import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from oncutf.modules.base_module import BaseRenameModule  # Debounced signal base
 
 

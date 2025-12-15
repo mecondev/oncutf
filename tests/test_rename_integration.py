@@ -19,8 +19,8 @@ from oncutf.config import INVALID_FILENAME_MARKER
 from oncutf.core.rename_manager import RenameManager
 from oncutf.models.file_item import FileItem
 from oncutf.modules.specified_text_module import SpecifiedTextModule
-from tests.mocks import MockFileItem
 from oncutf.utils.filename_validator import is_validation_error_marker
+from tests.mocks import MockFileItem
 
 
 class TestRenameIntegration:

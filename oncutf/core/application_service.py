@@ -336,7 +336,7 @@ class ApplicationService:
                         logger.warning(
                             f"[ApplicationService] Batch {batch_idx + 1}: No name_pairs found"
                         )
-                
+
                 # Verify all files were processed
                 if len(all_name_pairs) != len(selected_files):
                     logger.warning(
@@ -375,7 +375,7 @@ class ApplicationService:
                     auto_reset=True,
                 )
                 return
-            
+
             # Check if all files are unchanged
             if validation_result.has_unchanged:
                 self.main_window.status_manager.set_validation_status(
@@ -399,7 +399,7 @@ class ApplicationService:
             # Count successful operations (includes main files + companion files)
             successful_count = execution_result.success_count
             error_count = execution_result.error_count
-            
+
             # Count how many files actually changed vs were already correct
             actually_renamed = sum(
                 1 for item in execution_result.items
@@ -419,13 +419,13 @@ class ApplicationService:
             if successful_count > 0:
                 # Update FileItem objects with new paths before reload
                 self._update_file_items_after_rename(selected_files, new_names, execution_result)
-                
+
                 # Build status message with companion info and unchanged info
                 if companion_files_count > 0:
                     status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
                 else:
                     status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''}"
-                
+
                 # Add unchanged count if any
                 if unchanged_count > 0:
                     status_msg += f" ({unchanged_count} already had correct names)"
@@ -464,19 +464,19 @@ class ApplicationService:
             perf_stats = engine.get_performance_stats()
 
             logger.info("[ApplicationService] Phase 4 Statistics:")
-            
+
             # Safely log cache stats
             if cache_stats and isinstance(cache_stats, dict) and 'overall_hit_rate' in cache_stats:
                 logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
-            
+
             # Safely log batch stats
             if batch_stats and isinstance(batch_stats, dict):
                 logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
-            
+
             # Safely log conflict stats
             if conflict_stats and isinstance(conflict_stats, dict) and 'success_rate' in conflict_stats:
                 logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
-            
+
             # Safely log performance stats - it's a PerformanceStats object, not dict
             if perf_stats and hasattr(perf_stats, 'total_operations'):
                 logger.info(f"  Performance: {perf_stats.total_operations} operations")
@@ -486,42 +486,42 @@ class ApplicationService:
         except Exception as e:
             logger.warning(f"[ApplicationService] Error logging Phase 4 stats: {e}")
 
-    def _update_file_items_after_rename(self, files: list[FileItem], new_names: list[str], execution_result) -> None:
+    def _update_file_items_after_rename(self, files: list[FileItem], new_names: list[str], execution_result) -> None:  # noqa: ARG002
         """Update FileItem objects with new paths after successful rename.
-        
+
         This prevents the issue where files are renamed but FileItem objects still
         reference the old paths, causing subsequent rename operations to fail.
         """
         import os
-        
+
         try:
             # Build a map of old_path -> new_path from successful executions
             rename_map = {}
             for item in execution_result.items:
                 if item.success:
                     rename_map[item.old_path] = item.new_path
-            
+
             # Update FileItem objects
             updated_count = 0
             for file_item in files:
                 if file_item.full_path in rename_map:
                     new_path = rename_map[file_item.full_path]
                     new_filename = os.path.basename(new_path)
-                    
+
                     logger.debug(
                         f"[ApplicationService] Updating FileItem: {file_item.filename} -> {new_filename}"
                     )
-                    
+
                     # Update the FileItem
                     file_item.full_path = new_path
                     file_item.filename = new_filename
                     updated_count += 1
-            
+
             if updated_count > 0:
                 logger.info(
                     f"[ApplicationService] Updated {updated_count} FileItem objects with new paths"
                 )
-        
+
         except Exception as e:
             logger.error(f"[ApplicationService] Error updating FileItem objects: {e}")
 

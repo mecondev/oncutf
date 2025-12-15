@@ -14,6 +14,8 @@ from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from oncutf.core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
+from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 from oncutf.utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
@@ -21,8 +23,6 @@ from oncutf.utils.file_status_helpers import (
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.timer_manager import schedule_ui_update
-from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
-from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 
 # ApplicationContext integration
 try:

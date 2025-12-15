@@ -15,8 +15,8 @@ Contains:
 import logging
 
 from oncutf.core.pyqt_imports import QComboBox, QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
-from oncutf.utils.metadata_field_validators import MetadataFieldValidator
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
+from oncutf.utils.metadata_field_validators import MetadataFieldValidator
 
 logger = logging.getLogger(__name__)
 

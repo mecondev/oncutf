@@ -746,7 +746,7 @@ class UnifiedExecutionManager:
             if item.success:
                 results.append(item)
                 continue
-            
+
             if skip_all:
                 item.skip_reason = "skip_all"
                 results.append(item)
@@ -806,16 +806,16 @@ class UnifiedExecutionManager:
             old_path = file.full_path
             old_name = file.filename
             new_path = os.path.join(os.path.dirname(old_path), new_name)
-            
+
             # Create execution item
             item = ExecutionItem(old_path=old_path, new_path=new_path, success=False)
-            
+
             # Mark unchanged files as already successful (no-op)
             if old_name == new_name:
                 item.success = True
                 item.skip_reason = "unchanged"
                 unchanged_count += 1
-            
+
             items.append(item)
 
         if unchanged_count > 0:
@@ -1141,18 +1141,18 @@ class UnifiedRenameEngine(QObject):
 
     def batch_process_files(self, files: list[FileItem], processor_func: Callable) -> list[Any]:
         """Process files in batches using the provided function.
-        
+
         The processor_func should accept a list of FileItem objects and return
         a result object for that batch.
         """
         batch_size = 50  # Process in batches of 50 files
         results = []
-        
+
         for i in range(0, len(files), batch_size):
             batch = files[i:i + batch_size]
             batch_result = processor_func(batch)
             results.append(batch_result)
-        
+
         return results
 
     def resolve_conflicts_batch(

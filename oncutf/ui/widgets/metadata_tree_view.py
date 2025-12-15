@@ -47,15 +47,15 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
+from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
+from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
+from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
 from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
-from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
-from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
-from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
-from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 
 # ApplicationContext integration
 try:

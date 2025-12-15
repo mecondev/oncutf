@@ -20,8 +20,8 @@ try:
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication, QTreeView
 
-    from oncutf.utils.theme_engine import ThemeEngine
     from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.utils.theme_engine import ThemeEngine
 
     PYQT5_AVAILABLE = True
 except ImportError:

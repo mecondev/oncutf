@@ -24,9 +24,9 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_scroll_adjust
-from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 
 # ApplicationContext integration
 try:

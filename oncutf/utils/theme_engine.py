@@ -23,7 +23,7 @@ class ThemeEngine:
     """Simplified theme engine that applies all styling globally."""
 
     def __init__(self, theme_name: str = "dark"):
-        self.theme_name = theme_name or config.THEME_NAME
+        self.theme_name = theme_name or oncutf.config.THEME_NAME
         self.is_windows = platform.system() == "Windows"
 
         # Color definitions

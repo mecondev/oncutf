@@ -19,9 +19,9 @@ from oncutf.core.pyqt_imports import (
     QVBoxLayout,
 )
 from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_field_validators import MetadataFieldValidator
-from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
 
 logger = get_cached_logger(__name__)
 

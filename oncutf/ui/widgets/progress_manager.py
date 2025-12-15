@@ -35,8 +35,8 @@ Usage Examples:
 """
 
 from oncutf.core.pyqt_imports import QWidget
-from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.ui.widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
+from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

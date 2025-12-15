@@ -32,12 +32,12 @@ from oncutf.core.pyqt_imports import (
     QTableView,
     pyqtSignal,
 )
+from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.timer_manager import (
     schedule_ui_update,
 )
-from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
 
 logger = get_cached_logger(__name__)
 

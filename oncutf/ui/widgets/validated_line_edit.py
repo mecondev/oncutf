@@ -15,12 +15,12 @@ import logging
 
 from oncutf.config import INVALID_FILENAME_CHARS
 from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QWidget, pyqtSignal
+from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 from oncutf.utils.filename_validator import (
     get_validation_error_message,
     is_validation_error_marker,
     validate_filename_part,
 )
-from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 
 logger = logging.getLogger(__name__)
 

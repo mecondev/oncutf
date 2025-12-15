@@ -12,10 +12,10 @@ import os
 
 from oncutf.core.pyqt_imports import QDesktopServices, QUrl
 from oncutf.models.file_item import FileItem
+from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_utils import find_file_by_path
 from oncutf.utils.renamer import Renamer
-from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
 
