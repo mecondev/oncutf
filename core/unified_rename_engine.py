@@ -80,14 +80,20 @@ class ValidationResult:
         items: List of :class:`ValidationItem` for each previewed file.
         duplicates: Set of filenames that were detected as duplicates.
         has_errors: True if any item failed validation.
+        has_unchanged: True if all items are unchanged (no actual renames).
+        unchanged_count: Number of unchanged files.
     """
 
     items: list[ValidationItem]
     duplicates: set[str]
     has_errors: bool = False
+    has_unchanged: bool = False
+    unchanged_count: int = 0
 
     def __post_init__(self):
         self.has_errors = any(not item.is_valid for item in self.items)
+        self.unchanged_count = sum(1 for item in self.items if item.is_unchanged)
+        self.has_unchanged = self.unchanged_count == len(self.items) if self.items else False
 
 
 @dataclass
@@ -736,6 +742,11 @@ class UnifiedExecutionManager:
         skip_all = False
 
         for item in execution_items:
+            # Skip items already marked as successful (e.g., unchanged files)
+            if item.success:
+                results.append(item)
+                continue
+            
             if skip_all:
                 item.skip_reason = "skip_all"
                 results.append(item)
@@ -784,16 +795,34 @@ class UnifiedExecutionManager:
         """Construct ExecutionItem objects pairing source and target paths.
 
         The function zips the provided lists and produces an ExecutionItem for
-        each pair. Non-matching lengths are tolerated by Python's zip.
+        each pair. Files with no actual name change are included but marked
+        as already successful to avoid unnecessary filesystem operations while
+        maintaining proper accounting.
         """
         items = []
+        unchanged_count = 0
 
         for file, new_name in zip(files, new_names, strict=False):
             old_path = file.full_path
+            old_name = file.filename
             new_path = os.path.join(os.path.dirname(old_path), new_name)
-
+            
+            # Create execution item
             item = ExecutionItem(old_path=old_path, new_path=new_path, success=False)
+            
+            # Mark unchanged files as already successful (no-op)
+            if old_name == new_name:
+                item.success = True
+                item.skip_reason = "unchanged"
+                unchanged_count += 1
+            
             items.append(item)
+
+        if unchanged_count > 0:
+            logger.info(
+                f"[UnifiedRenameEngine] {unchanged_count} files already have correct names "
+                f"(will process {len(items) - unchanged_count} files with changes)"
+            )
 
         # Add companion file renames if enabled
         if COMPANION_FILES_ENABLED and AUTO_RENAME_COMPANION_FILES:
@@ -886,6 +915,11 @@ class UnifiedExecutionManager:
 
             old_name = os.path.basename(item.old_path)
             new_name = os.path.basename(item.new_path)
+
+            # Skip if no change (same name, same path)
+            if old_name == new_name and item.old_path == item.new_path:
+                logger.debug(f"[UnifiedExecutionManager] Skipping unchanged file: {old_name}")
+                return True  # Not an error, just no-op
 
             # Use safe case rename for case-only changes
             if is_case_only_change(old_name, new_name):
@@ -1106,8 +1140,20 @@ class UnifiedRenameEngine(QObject):
         self.conflict_resolver.clear_history()
 
     def batch_process_files(self, files: list[FileItem], processor_func: Callable) -> list[Any]:
-        """Process files in batches using the provided function."""
-        return [processor_func(file) for file in files]
+        """Process files in batches using the provided function.
+        
+        The processor_func should accept a list of FileItem objects and return
+        a result object for that batch.
+        """
+        batch_size = 50  # Process in batches of 50 files
+        results = []
+        
+        for i in range(0, len(files), batch_size):
+            batch = files[i:i + batch_size]
+            batch_result = processor_func(batch)
+            results.append(batch_result)
+        
+        return results
 
     def resolve_conflicts_batch(
         self, operations: list[tuple[str, str]], strategy: str = "timestamp"

@@ -20,7 +20,7 @@ Contains:
 # =====================================
 
 # Database reset - if True, deletes database on startup
-DEBUG_RESET_DATABASE = True
+DEBUG_RESET_DATABASE = False
 
 # Config reset - if True, deletes config.json on startup
 DEBUG_RESET_CONFIG = False

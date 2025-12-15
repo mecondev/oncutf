@@ -314,15 +314,35 @@ class ApplicationService:
                     )
 
                 # Use batch processor for preview generation
+                logger.info(
+                    f"[ApplicationService] Starting batch processing for {len(selected_files)} files"
+                )
                 batch_results = self.main_window.unified_rename_engine.batch_process_files(
                     selected_files, process_batch
+                )
+                logger.info(
+                    f"[ApplicationService] Batch processing completed: {len(batch_results)} batches"
                 )
 
                 # Combine batch results
                 all_name_pairs = []
-                for result in batch_results:
+                for batch_idx, result in enumerate(batch_results):
                     if result and hasattr(result, "name_pairs"):
+                        logger.info(
+                            f"[ApplicationService] Batch {batch_idx + 1}: {len(result.name_pairs)} name_pairs"
+                        )
                         all_name_pairs.extend(result.name_pairs)
+                    else:
+                        logger.warning(
+                            f"[ApplicationService] Batch {batch_idx + 1}: No name_pairs found"
+                        )
+                
+                # Verify all files were processed
+                if len(all_name_pairs) != len(selected_files):
+                    logger.warning(
+                        f"[ApplicationService] Batch processing mismatch: "
+                        f"got {len(all_name_pairs)} name_pairs for {len(selected_files)} files"
+                    )
 
                 preview_result = type(
                     "PreviewResult",
@@ -355,6 +375,15 @@ class ApplicationService:
                     auto_reset=True,
                 )
                 return
+            
+            # Check if all files are unchanged
+            if validation_result.has_unchanged:
+                self.main_window.status_manager.set_validation_status(
+                    f"No changes to apply - all {len(selected_files)} files would keep their current names",
+                    validation_type="warning",
+                    auto_reset=True,
+                )
+                return
 
             # Execute rename using UnifiedRenameEngine (includes companion file handling)
             new_names = [new_name for _, new_name in name_pairs]
@@ -370,6 +399,16 @@ class ApplicationService:
             # Count successful operations (includes main files + companion files)
             successful_count = execution_result.success_count
             error_count = execution_result.error_count
+            
+            # Count how many files actually changed vs were already correct
+            actually_renamed = sum(
+                1 for item in execution_result.items
+                if item.success and item.skip_reason != "unchanged"
+            )
+            unchanged_count = sum(
+                1 for item in execution_result.items
+                if item.skip_reason == "unchanged"
+            )
 
             # Calculate main files vs companion files
             main_files_count = len(selected_files)
@@ -378,11 +417,18 @@ class ApplicationService:
 
             # Handle results
             if successful_count > 0:
-                # Build status message with companion info
+                # Update FileItem objects with new paths before reload
+                self._update_file_items_after_rename(selected_files, new_names, execution_result)
+                
+                # Build status message with companion info and unchanged info
                 if companion_files_count > 0:
-                    status_msg = f"Successfully renamed {main_files_count} file{'s' if main_files_count != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
+                    status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
                 else:
-                    status_msg = f"Successfully renamed {successful_count} file{'s' if successful_count != 1 else ''}"
+                    status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''}"
+                
+                # Add unchanged count if any
+                if unchanged_count > 0:
+                    status_msg += f" ({unchanged_count} already had correct names)"
 
                 self.main_window.status_manager.set_validation_status(
                     status_msg,
@@ -418,13 +464,66 @@ class ApplicationService:
             perf_stats = engine.get_performance_stats()
 
             logger.info("[ApplicationService] Phase 4 Statistics:")
-            logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
-            logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
-            logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
-            logger.info(f"  Performance: {perf_stats['total_operations']} operations")
+            
+            # Safely log cache stats
+            if cache_stats and isinstance(cache_stats, dict) and 'overall_hit_rate' in cache_stats:
+                logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
+            
+            # Safely log batch stats
+            if batch_stats and isinstance(batch_stats, dict):
+                logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
+            
+            # Safely log conflict stats
+            if conflict_stats and isinstance(conflict_stats, dict) and 'success_rate' in conflict_stats:
+                logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
+            
+            # Safely log performance stats - it's a PerformanceStats object, not dict
+            if perf_stats and hasattr(perf_stats, 'total_operations'):
+                logger.info(f"  Performance: {perf_stats.total_operations} operations")
+                if hasattr(perf_stats, 'average_duration'):
+                    logger.info(f"  Average: {perf_stats.average_duration:.3f}s per operation")
 
         except Exception as e:
             logger.warning(f"[ApplicationService] Error logging Phase 4 stats: {e}")
+
+    def _update_file_items_after_rename(self, files: list[FileItem], new_names: list[str], execution_result) -> None:
+        """Update FileItem objects with new paths after successful rename.
+        
+        This prevents the issue where files are renamed but FileItem objects still
+        reference the old paths, causing subsequent rename operations to fail.
+        """
+        import os
+        
+        try:
+            # Build a map of old_path -> new_path from successful executions
+            rename_map = {}
+            for item in execution_result.items:
+                if item.success:
+                    rename_map[item.old_path] = item.new_path
+            
+            # Update FileItem objects
+            updated_count = 0
+            for file_item in files:
+                if file_item.full_path in rename_map:
+                    new_path = rename_map[file_item.full_path]
+                    new_filename = os.path.basename(new_path)
+                    
+                    logger.debug(
+                        f"[ApplicationService] Updating FileItem: {file_item.filename} -> {new_filename}"
+                    )
+                    
+                    # Update the FileItem
+                    file_item.full_path = new_path
+                    file_item.filename = new_filename
+                    updated_count += 1
+            
+            if updated_count > 0:
+                logger.info(
+                    f"[ApplicationService] Updated {updated_count} FileItem objects with new paths"
+                )
+        
+        except Exception as e:
+            logger.error(f"[ApplicationService] Error updating FileItem objects: {e}")
 
     def update_module_dividers(self):
         """Update module dividers."""
