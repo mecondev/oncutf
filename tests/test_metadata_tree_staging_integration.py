@@ -8,7 +8,7 @@ try:
 
     from core.file_store import FileItem
     from core.metadata_staging_manager import MetadataStagingManager
-    from widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
     PYQT5_AVAILABLE = True
 except ImportError:
     PYQT5_AVAILABLE = False

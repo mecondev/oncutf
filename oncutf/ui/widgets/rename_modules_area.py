@@ -26,7 +26,7 @@ from core.pyqt_imports import (
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_scroll_adjust
-from widgets.rename_module_widget import RenameModuleWidget
+from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 
 # ApplicationContext integration
 try:

@@ -755,7 +755,7 @@ class EventHandlerManager:
                 return
 
         try:
-            from widgets.bulk_rotation_dialog import BulkRotationDialog
+            from oncutf.ui.widgets.bulk_rotation_dialog import BulkRotationDialog
 
             # Show dialog and get user choices
             final_files = BulkRotationDialog.get_bulk_rotation_choice(
@@ -824,7 +824,7 @@ class EventHandlerManager:
             'skip': Skip files without metadata
             'cancel': Cancel operation
         """
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         with_metadata_count + without_metadata_count
 
@@ -872,7 +872,7 @@ class EventHandlerManager:
         Returns:
             str: One of 'load', 'skip', or 'cancel'
         """
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         # Build message
         message_parts = []

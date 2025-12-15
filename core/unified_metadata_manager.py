@@ -1219,7 +1219,7 @@ class UnifiedMetadataManager(QObject):
 
         # Create metadata worker
         from core.pyqt_imports import QThread
-        from widgets.metadata_worker import MetadataWorker
+        from oncutf.ui.widgets.metadata_worker import MetadataWorker
 
         self._metadata_worker = MetadataWorker()
         self._metadata_thread = QThread()
@@ -1971,7 +1971,7 @@ class UnifiedMetadataManager(QObject):
 
             # Show info dialog about cancellation
             if self.parent_window:
-                from widgets.custom_message_dialog import CustomMessageDialog
+                from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
                 msg_parts = ["Save operation cancelled by user."]
 

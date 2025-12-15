@@ -38,7 +38,7 @@ from core.pyqt_imports import (
 from oncutf.utils.drag_zone_validator import DragZoneValidator
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_scroll_adjust
-from widgets.ui_delegates import TreeViewItemDelegate
+from oncutf.ui.widgets.ui_delegates import TreeViewItemDelegate
 
 logger = get_cached_logger(__name__)
 

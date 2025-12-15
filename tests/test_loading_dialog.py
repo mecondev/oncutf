@@ -46,7 +46,7 @@ import pytest
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
-from widgets.custom_message_dialog import CustomMessageDialog
+from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 
 class FakeWorker(QObject):

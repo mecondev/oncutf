@@ -37,7 +37,7 @@ from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.timer_manager import (
     schedule_ui_update,
 )
-from widgets.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
+from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
 
 logger = get_cached_logger(__name__)
 
@@ -150,7 +150,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self.context_focused_row: int | None = None
 
         # Enable hover visuals
-        from widgets.ui_delegates import FileTableHoverDelegate
+        from oncutf.ui.widgets.ui_delegates import FileTableHoverDelegate
 
         self.hover_delegate = FileTableHoverDelegate(self)
         self.setItemDelegate(self.hover_delegate)

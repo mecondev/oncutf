@@ -214,8 +214,8 @@ class UIManager:
     def setup_left_panel(self) -> None:
         """Setup left panel (folder tree)."""
         # Lazy import: Only load when setting up left panel
-        from widgets.custom_file_system_model import CustomFileSystemModel
-        from widgets.file_tree_view import FileTreeView
+        from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
+        from oncutf.ui.widgets.file_tree_view import FileTreeView
 
         self.parent_window.left_frame = QFrame()
         left_layout = QVBoxLayout(self.parent_window.left_frame)
@@ -286,8 +286,8 @@ class UIManager:
     def setup_center_panel(self) -> None:
         """Setup center panel (file table view)."""
         # Lazy import: Only load when setting up center panel
-        from widgets.file_table_view import FileTableView
-        from widgets.interactive_header import InteractiveHeader
+        from oncutf.ui.widgets.file_table_view import FileTableView
+        from oncutf.ui.widgets.interactive_header import InteractiveHeader
 
         self.parent_window.center_frame = QFrame()
         center_layout = QVBoxLayout(self.parent_window.center_frame)
@@ -341,7 +341,7 @@ class UIManager:
     def setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""
         # Lazy import: Only load when setting up right panel
-        from widgets.metadata_tree_view import MetadataTreeView
+        from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
 
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
@@ -412,7 +412,7 @@ class UIManager:
         )
 
         # QSortFilterProxyModel for the metadata tree
-        from widgets.metadata_tree_view import MetadataProxyModel
+        from oncutf.ui.widgets.metadata_tree_view import MetadataProxyModel
 
         self.parent_window.metadata_proxy_model = MetadataProxyModel()
         self.parent_window.metadata_proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
@@ -431,7 +431,7 @@ class UIManager:
 
         if METADATA_TREE_USE_CUSTOM_DELEGATE:
             # Install custom delegate to respect ForegroundRole for modified items
-            from widgets.ui_delegates import MetadataTreeItemDelegate
+            from oncutf.ui.widgets.ui_delegates import MetadataTreeItemDelegate
 
             metadata_delegate = MetadataTreeItemDelegate(self.parent_window.metadata_tree_view)
             self.parent_window.metadata_tree_view.setItemDelegate(metadata_delegate)
@@ -479,9 +479,9 @@ class UIManager:
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
         # Lazy import: Only load when setting up bottom layout
-        from widgets.final_transform_container import FinalTransformContainer
-        from widgets.preview_tables_view import PreviewTablesView
-        from widgets.rename_modules_area import RenameModulesArea
+        from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
+        from oncutf.ui.widgets.preview_tables_view import PreviewTablesView
+        from oncutf.ui.widgets.rename_modules_area import RenameModulesArea
 
         # --- Bottom Frame: Rename Modules + Preview ---
         self.parent_window.bottom_frame = QFrame()

@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from widgets.progress_manager import (
+from oncutf.ui.widgets.progress_manager import (
     ProgressManager,
     create_hash_progress_manager,
     create_metadata_progress_manager,

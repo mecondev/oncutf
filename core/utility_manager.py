@@ -93,7 +93,7 @@ class UtilityManager:
                 )
             return
 
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         if not CustomMessageDialog.question(
             self.main_window,

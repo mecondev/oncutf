@@ -259,7 +259,7 @@ class TestMetadataFieldValidator:
 try:
     from PyQt5.QtWidgets import QApplication
 
-    from widgets.metadata_validated_input import (
+    from oncutf.ui.widgets.metadata_validated_input import (
         MetadataValidatedLineEdit,
         MetadataValidatedTextEdit,
         create_metadata_input_widget,
@@ -407,7 +407,7 @@ class TestMetadataValidatedWidgets:
         # Should preserve multiline text
         assert description_widget.text() == multiline_text
 
-    @patch("widgets.base_validated_input.show_error_tooltip")
+    @patch("oncutf.ui.widgets.base_validated_input.show_error_tooltip")
     def test_character_blocking_tooltip(self, mock_tooltip, title_widget):
         """Test that blocked characters show error tooltip."""
         # Create a mock key event

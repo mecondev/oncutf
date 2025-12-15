@@ -27,7 +27,7 @@ from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
-from widgets.validated_line_edit import ValidatedLineEdit
+from oncutf.ui.widgets.validated_line_edit import ValidatedLineEdit
 
 logger = get_cached_logger(__name__)
 

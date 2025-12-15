@@ -33,7 +33,7 @@ from core.pyqt_imports import (
 from core.rename_history_manager import get_rename_history_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
-from widgets.custom_message_dialog import CustomMessageDialog
+from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
 

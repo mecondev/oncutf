@@ -111,7 +111,7 @@ class DragDropMixin:
             return
 
         # Activate drag cancel filter to preserve selection (especially for no-modifier drags)
-        from widgets.file_tree_view import _drag_cancel_filter
+        from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
 
         _drag_cancel_filter.activate()
         _drag_cancel_filter.preserve_selection(selected_rows)
@@ -217,7 +217,7 @@ class DragDropMixin:
             self._force_cursor_cleanup()
 
             # Deactivate drag cancel filter
-            from widgets.file_tree_view import _drag_cancel_filter
+            from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
             if _drag_cancel_filter.is_active():
                 _drag_cancel_filter.deactivate()
 

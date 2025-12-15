@@ -21,7 +21,7 @@ from core.pyqt_imports import (
 from core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_field_validators import MetadataFieldValidator
-from widgets.metadata_validated_input import create_metadata_input_widget
+from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
 
 logger = get_cached_logger(__name__)
 

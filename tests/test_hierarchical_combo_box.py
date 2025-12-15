@@ -24,7 +24,7 @@ try:
     from PyQt5.QtWidgets import QApplication, QTreeView
 
     from oncutf.utils.theme_engine import ThemeEngine
-    from widgets.hierarchical_combo_box import HierarchicalComboBox
+    from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
 
     PYQT5_AVAILABLE = True
 except ImportError:
@@ -221,7 +221,7 @@ class TestHierarchicalComboBox:
         # Or check if root decoration is enabled (shows default chevrons)
         assert has_branch_styling or tree.rootIsDecorated()
 
-    @patch("widgets.hierarchical_combo_box.HierarchicalComboBox.item_selected")
+    @patch("oncutf.ui.widgets.hierarchical_combo_box.HierarchicalComboBox.item_selected")
     def test_selection_signal_emission(self, mock_signal, combo_box, sample_metadata_groups):
         """Test that selection changes emit appropriate signals."""
         combo_box.populate_from_metadata_groups(sample_metadata_groups)

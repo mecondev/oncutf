@@ -36,8 +36,8 @@ from oncutf.modules.counter_module import CounterModule
 # Initialize Logger
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_ui_update
-from widgets.metadata_widget import MetadataWidget
-from widgets.original_name_widget import OriginalNameWidget
+from oncutf.ui.widgets.metadata_widget import MetadataWidget
+from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
 # ApplicationContext integration
 try:

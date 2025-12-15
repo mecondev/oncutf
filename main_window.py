@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         - Operation details (timestamp, type, affected files)
         """
         try:
-            from widgets.metadata_history_dialog import MetadataHistoryDialog
+            from oncutf.ui.widgets.metadata_history_dialog import MetadataHistoryDialog
 
             dialog = MetadataHistoryDialog(self)
             dialog.exec_()
@@ -826,7 +826,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
                     # Show error but continue closing anyway
-                    from widgets.custom_message_dialog import CustomMessageDialog
+                    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
                     CustomMessageDialog.information(
                         self,
@@ -859,7 +859,7 @@ class MainWindow(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Create custom shutdown dialog
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+            from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
             class ShutdownDialog(MetadataWaitingDialog):
                 """Custom dialog for shutdown that ignores ESC key."""
@@ -1132,7 +1132,7 @@ class MainWindow(QMainWindow):
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
         from oncutf.utils.progress_dialog import ProgressDialog
-        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+        from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
         # Find and close any active progress dialogs
         dialogs_closed = 0
@@ -1164,7 +1164,7 @@ class MainWindow(QMainWindow):
             "[MainWindow] refresh_metadata_widgets CALLED (hash_worker signal or selection)"
         )
         try:
-            from widgets.metadata_widget import MetadataWidget
+            from oncutf.ui.widgets.metadata_widget import MetadataWidget
 
             for module_widget in self.rename_modules_area.module_widgets:
                 if hasattr(module_widget, "current_module_widget"):
@@ -1192,7 +1192,7 @@ class MainWindow(QMainWindow):
     def update_active_metadata_widget_options(self):
         """Find the active MetadataWidget and call trigger_update_options and emit_if_changed (for selection change)."""
         try:
-            from widgets.metadata_widget import MetadataWidget
+            from oncutf.ui.widgets.metadata_widget import MetadataWidget
 
             for module_widget in self.rename_modules_area.module_widgets:
                 if hasattr(module_widget, "current_module_widget"):

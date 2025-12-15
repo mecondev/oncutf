@@ -21,7 +21,7 @@ try:
     from PyQt5.QtWidgets import QApplication, QTreeView
 
     from oncutf.utils.theme_engine import ThemeEngine
-    from widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
 
     PYQT5_AVAILABLE = True
 except ImportError:

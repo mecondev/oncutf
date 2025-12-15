@@ -223,7 +223,7 @@ class DirectMetadataLoader(QObject):
     ) -> None:
         """Start metadata loading with progress tracking."""
         from oncutf.utils.metadata_loader import MetadataLoader
-        from widgets.metadata_worker import MetadataWorker
+        from oncutf.ui.widgets.metadata_worker import MetadataWorker
 
         # Create worker and thread
         self._metadata_thread = QThread()
@@ -408,7 +408,7 @@ class DirectMetadataLoader(QObject):
     ) -> None:
         """Start metadata loading in background thread."""
         from oncutf.utils.metadata_loader import MetadataLoader
-        from widgets.metadata_worker import MetadataWorker
+        from oncutf.ui.widgets.metadata_worker import MetadataWorker
 
         # Create worker and thread
         self._metadata_thread = QThread()

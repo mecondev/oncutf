@@ -448,7 +448,7 @@ class MetadataHistoryDialog(QDialog):
 
     def _clear_history(self):
         """Clear all command history."""
-        from widgets.custom_message_dialog import CustomMsgDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMsgDialog
 
         result = CustomMsgDialog.show_question(
             self,

@@ -79,7 +79,7 @@ class TestSaveCancellation:
         manager.parent_window.status_bar = MagicMock()
 
         # Mock CustomMessageDialog from widgets
-        with patch("widgets.custom_message_dialog.CustomMessageDialog") as mock_dialog_class:
+        with patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog") as mock_dialog_class:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
             manager._show_save_results(
@@ -104,7 +104,7 @@ class TestSaveCancellation:
 
         # Mock both CustomMessageDialog and QMessageBox
         with (
-            patch("widgets.custom_message_dialog.CustomMessageDialog") as mock_custom_dialog,
+            patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog") as mock_custom_dialog,
             patch("core.pyqt_imports.QMessageBox") as mock_msgbox,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
@@ -216,7 +216,7 @@ class TestSaveCancellation:
         # Mock progress dialog and other dependencies
         with (
             patch("core.unified_metadata_manager.ProgressDialog") as mock_dialog_class,
-            patch("widgets.custom_message_dialog.CustomMessageDialog"),
+            patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"),
             patch("core.pyqt_imports.QMessageBox"),
         ):
             mock_dialog = MagicMock()

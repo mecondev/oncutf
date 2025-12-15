@@ -389,7 +389,7 @@ class MetadataContextMenuMixin:
 
                 # Check for main window with file table
                 if hasattr(parent, "findChild"):
-                    from widgets.file_table_view import FileTableView
+                    from oncutf.ui.widgets.file_table_view import FileTableView
 
                     file_table = parent.findChild(FileTableView)
                     if file_table:

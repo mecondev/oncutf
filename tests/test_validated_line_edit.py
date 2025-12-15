@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import pytest
 
 from config import INVALID_FILENAME_CHARS
-from widgets.validated_line_edit import ValidatedLineEdit
+from oncutf.ui.widgets.validated_line_edit import ValidatedLineEdit
 
 
 class TestValidatedLineEdit:

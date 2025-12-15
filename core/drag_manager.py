@@ -255,7 +255,7 @@ class DragManager(QObject):
                     )
 
                     # Check if FileLoadingDialog is active
-                    from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+                    from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
                     active_dialogs = [
                         w

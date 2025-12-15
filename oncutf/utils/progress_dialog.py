@@ -32,7 +32,7 @@ from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
 from oncutf.utils.cursor_helper import force_restore_cursor
 from oncutf.utils.dialog_utils import setup_dialog_size_and_center
 from oncutf.utils.logger_factory import get_cached_logger
-from widgets.progress_widget import ProgressWidget
+from oncutf.ui.widgets.progress_widget import ProgressWidget
 
 logger = get_cached_logger(__name__)
 

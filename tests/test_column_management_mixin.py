@@ -19,7 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
-from widgets.mixins.column_management_mixin import ColumnManagementMixin
+from oncutf.ui.mixins.column_management_mixin import ColumnManagementMixin
 
 
 class MockTableModel(QAbstractTableModel):

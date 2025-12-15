@@ -175,7 +175,7 @@ class ShortcutManager:
 
         try:
             # Show the metadata history dialog
-            from widgets.metadata_history_dialog import show_metadata_history_dialog
+            from oncutf.ui.widgets.metadata_history_dialog import show_metadata_history_dialog
 
             show_metadata_history_dialog(self.main_window)
 
@@ -198,7 +198,7 @@ class ShortcutManager:
 
         try:
             # Show the rename history dialog
-            from widgets.rename_history_dialog import show_rename_history_dialog
+            from oncutf.ui.widgets.rename_history_dialog import show_rename_history_dialog
 
             show_rename_history_dialog(self.main_window)
 
@@ -295,7 +295,7 @@ class ShortcutManager:
                 dialog_title = f"Hash Results - {files_with_hash_count} of {total_selected} selected file(s)"
 
             # Get or create the results table dialog with hash data
-            from widgets.results_table_dialog import ResultsTableDialog
+            from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog
 
             if not hasattr(self.main_window, "results_dialog") or self.main_window.results_dialog is None:
                 self.main_window.results_dialog = ResultsTableDialog(

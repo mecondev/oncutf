@@ -21,8 +21,8 @@ from oncutf.utils.file_status_helpers import (
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.timer_manager import schedule_ui_update
-from widgets.hierarchical_combo_box import HierarchicalComboBox
-from widgets.ui_delegates import ComboBoxItemDelegate
+from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
+from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 
 # ApplicationContext integration
 try:
@@ -1165,7 +1165,7 @@ class MetadataWidget(QWidget):
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
         try:
-            from widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
             # Create dialog message based on calculation type
             file_count = len(files_needing_calculation)

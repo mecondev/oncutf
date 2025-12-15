@@ -20,7 +20,7 @@ from oncutf.utils.filename_validator import (
     is_validation_error_marker,
     validate_filename_part,
 )
-from widgets.base_validated_input import BaseValidatedInput
+from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 
 logger = logging.getLogger(__name__)
 

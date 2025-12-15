@@ -34,7 +34,7 @@ from main_window import MainWindow
 from oncutf.utils.fonts import _get_inter_fonts
 from oncutf.utils.logger_setup import ConfigureLogger
 from oncutf.utils.theme_engine import ThemeEngine
-from widgets.custom_splash_screen import CustomSplashScreen
+from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 
 
 # Calculate the user config directory for logs

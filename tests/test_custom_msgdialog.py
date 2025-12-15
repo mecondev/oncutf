@@ -60,7 +60,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget
 
-from widgets.custom_message_dialog import CustomMessageDialog
+from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="Fails on CI due to GUI")

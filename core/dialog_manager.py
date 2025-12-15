@@ -45,7 +45,7 @@ class DialogManager:
 
     def confirm_large_folder(self, folder_path: str, file_count: int) -> bool:
         """Show confirmation dialog for large folders"""
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.question(
             None,
@@ -97,7 +97,7 @@ class DialogManager:
         if not large_files:
             return True
 
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         # Handle both FileItem objects and string paths
         file_names = []
@@ -119,7 +119,7 @@ class DialogManager:
 
     def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:  # noqa: ARG002
         """Show confirmation dialog for file rename conflicts"""
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.question(
             None,
@@ -136,7 +136,7 @@ class DialogManager:
         Returns:
             str: One of 'save_and_close', 'close_without_saving', 'cancel'
         """
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.unsaved_changes(parent)
 
