@@ -1,9 +1,0 @@
-OnCutF Performance Baseline (2025-12-09)
-============================================================
-timestamp: 2025-12-09T09:24:45.732284
-file_count: 1000
-file_load_time: 0.06361556053161621
-metadata_load_time: 0.12
-table_render_time: 0.004353761672973633
-preview_generation_time: 0.007962703704833984
-total_time: 0.19593202590942382

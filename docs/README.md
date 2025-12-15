@@ -1,41 +1,77 @@
 # oncutf Documentation
 
-This directory contains comprehensive documentation for the oncutf application. The documentation is organized into several categories covering different aspects of the application's functionality and architecture.
+This directory contains comprehensive documentation for the oncutf application, a PyQt5 desktop app for advanced batch file renaming with EXIF/metadata support.
+
+## 📢 Status Update
+
+**Phase 0 Complete** (2025-12-15): All application code successfully migrated to `oncutf/` package structure. See [ROADMAP.md](ROADMAP.md) for details.
 
 ## 🚀 Quick Start
 
-- **[Application Workflow](application_workflow.md)** - Complete application flow from startup to rename execution
-- **[Database Quick Start](database_quick_start.md)** - Get started with the persistent database system
-- **[Progress Manager System](progress_manager_system.md)** - Understanding the unified progress tracking API
+- **[ROADMAP](ROADMAP.md)** - Development roadmap and phase tracking
+- **[ARCHITECTURE](ARCHITECTURE.md)** - System architecture overview
 - **[Keyboard Shortcuts](keyboard_shortcuts.md)** - Complete keyboard shortcuts reference
+- **[Database Quick Start](database_quick_start.md)** - Get started with the persistent database system
 
-## 🔧 Core Systems
+## 📋 Planning & Architecture
 
-### Application Architecture
-- **[Application Workflow](application_workflow.md)** - Comprehensive guide to application initialization, file loading, metadata processing, and rename operations
+### Development Planning
+- **[ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md)** - Detailed Phase 0-3 refactoring plan
+- **[EXECUTION_ROADMAP.md](EXECUTION_ROADMAP.md)** - Step-by-step execution tracking
+- **[ROADMAP.md](ROADMAP.md)** - Current development status and next steps
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - High-level architecture overview
 
-### Database & Storage
-- **[Database System](database_system.md)** - Complete technical documentation for SQLite-based persistence
-- **[Structured Metadata System](structured_metadata_system.md)** - Advanced metadata organization and processing with categorized storage
-- **[Database Quick Start](database_quick_start.md)** - Quick introduction to database features
+### Core Systems Documentation
+- **[Application Workflow](application_workflow.md)** - Complete application flow from startup to rename execution
+- **[Database System](database_system.md)** - SQLite-based persistence architecture
+- **[Structured Metadata System](structured_metadata_system.md)** - Metadata organization and processing
+- **[Progress Manager System](progress_manager_system.md)** - Unified progress tracking API
+- **[Safe Rename Workflow](safe_rename_workflow.md)** - Enhanced rename process with Qt safety
+- **[JSON Config System](json_config_system.md)** - Configuration management
 
-### Rename Operations
-- **[Safe Rename Workflow](safe_rename_workflow.md)** - Enhanced rename process with Qt lifecycle safety
-- **[Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)** - Cross-platform case-only file renaming
+## 🔧 System Architecture
 
-### Progress & UI
-- **[Progress Manager System](progress_manager_system.md)** - Unified API for progress tracking across operations
+The oncutf application follows a layered package structure:
 
-### Configuration
-- **[JSON Config System](json_config_system.md)** - JSON-based configuration management system
+```
+oncutf/
+├── __init__.py
+├── __main__.py              # Module entry point (python -m oncutf)
+├── config.py                # Central configuration
+├── models/                  # Data models
+│   ├── file_entry.py
+│   ├── file_item.py
+│   ├── file_table_model.py
+│   ├── metadata_entry.py
+│   └── results_table_model.py
+├── modules/                 # Rename modules
+│   ├── base_module.py
+│   ├── counter_module.py
+│   ├── metadata_module.py
+│   ├── name_transform_module.py
+│   ├── original_name_module.py
+│   ├── specified_text_module.py
+│   └── text_removal_module.py
+├── utils/                   # Utility functions (55 files)
+│   ├── exiftool_wrapper.py
+│   ├── path_utils.py
+│   ├── timer_manager.py
+│   └── ...
+├── core/                    # Core business logic (60 files)
+│   ├── application_context.py
+│   ├── unified_rename_engine.py
+│   ├── file_load_manager.py
+│   ├── database_manager.py
+│   └── ...
+└── ui/                      # User interface
+    ├── main_window.py
+    ├── widgets/             # UI components (40 files)
+    ├── mixins/              # UI mixins (7 files)
+    ├── delegates/           # Item delegates
+    └── dialogs/             # Dialog windows
+```
 
-## 📚 Reference
-
-- **[oncutf Module Docstrings](oncutf_module_docstrings.md)** - Complete module-level documentation reference
-
-## 🏗️ System Architecture
-
-The oncutf application is built with several interconnected systems:
+### Core Features
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -47,37 +83,18 @@ The oncutf application is built with several interconnected systems:
 │  ├── Structured Metadata (Categorized + Typed)         │
 │  ├── Safe Rename Workflow (Qt Safety)                  │
 │  ├── Progress Manager (Unified Progress API)           │
-│  ├── JSON Config System (Settings Management)          │
-│  └── Case-Sensitive Rename (Cross-platform)            │
+│  └── JSON Config System (Settings Management)          │
 ├─────────────────────────────────────────────────────────┤
 │  📋 Features                                            │
 │  ├── Persistent Metadata Storage (Raw + Structured)    │
 │  ├── Hash Caching & Duplicate Detection                │
 │  ├── Rename History & Undo/Redo                        │
-│  ├── Cross-platform Case Renaming                      │
+│  ├── Cross-platform Compatibility (Linux/Windows/macOS)│
 │  ├── Progress Tracking for All Operations              │
 │  ├── Debug Reset Features (Database + Config)          │
 │  └── Robust Error Handling & Recovery                  │
 └─────────────────────────────────────────────────────────┘
 ```
-
-## 🔗 Documentation Cross-References
-
-### Application Flow
-- **Complete Guide**: [Application Workflow](application_workflow.md)
-- **Debug Features**: [Application Workflow](application_workflow.md#debug-reset-features)
-- **Related**: [Database System](database_system.md), [Structured Metadata](structured_metadata_system.md)
-
-### Database System
-- **Core**: [Database System](database_system.md)
-- **V3 Schema**: [Structured Metadata System](structured_metadata_system.md)
-- **Quick Start**: [Database Quick Start](database_quick_start.md)
-- **Related**: [Safe Rename Workflow](safe_rename_workflow.md), [Progress Manager](progress_manager_system.md)
-
-### Metadata Processing
-- **Structured System**: [Structured Metadata System](structured_metadata_system.md)
-- **Application Flow**: [Application Workflow](application_workflow.md#metadata-loading-system)
-- **Related**: [Database System](database_system.md)
 
 ### Rename Operations
 - **Safety**: [Safe Rename Workflow](safe_rename_workflow.md)
