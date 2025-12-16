@@ -215,9 +215,11 @@ class InitializationOrchestrator:
         )
 
         # Phase 1B: Initialize MetadataController (orchestration layer)
+        # Get StructuredMetadataManager from UnifiedMetadataManager
+        structured_metadata_mgr = self.window.metadata_manager.structured
         self.window.metadata_controller = MetadataController(
             unified_metadata_manager=self.window.metadata_manager,
-            structured_metadata_manager=self.window.structured_metadata_manager,
+            structured_metadata_manager=structured_metadata_mgr,
             app_context=self.window.context,
         )
         logger.info(
@@ -226,6 +228,21 @@ class InitializationOrchestrator:
         )
 
         self.window.utility_manager = UtilityManager(self.window)
+        self.window.rename_manager = RenameManager(self.window)
+
+        # Phase 1C: Initialize RenameController (orchestration layer)
+        from oncutf.controllers.rename_controller import RenameController
+        self.window.rename_controller = RenameController(
+            unified_rename_engine=self.window.unified_rename_engine,
+            preview_manager=self.window.preview_manager,
+            rename_manager=self.window.rename_manager,
+            file_store=self.window.file_model,  # FileTableModel acts as FileStore
+            context=self.window.context,
+        )
+        logger.info(
+            "[Phase1C] RenameController initialized",
+            extra={"dev_only": True}
+        )
         self.window.rename_manager = RenameManager(self.window)
         self.window.drag_cleanup_manager = DragCleanupManager(self.window)
         self.window.shortcut_manager = ShortcutManager(self.window)

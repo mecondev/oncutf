@@ -56,7 +56,7 @@ class ApplicationService:
                 missing_managers.append(manager)
 
         if missing_managers:
-            logger.warning(f"[ApplicationService] Missing managers: {missing_managers}")
+            logger.warning("[ApplicationService] Missing managers: %s", missing_managers)
             return
 
         self._initialized = True
@@ -65,16 +65,15 @@ class ApplicationService:
     # =====================================
     # File Operations
     # =====================================
-    # Note: File loading operations (load_files_from_paths, load_files_from_dropped_items,
-    # handle_folder_drop, handle_file_drop) have been moved to FileLoadController (Phase 1A).
-    # Remaining file operations delegate to other managers.
 
     def load_files_from_folder(self, folder_path: str, force: bool = False):  # noqa: ARG002
         """Load files from folder via FileLoadManager."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)
         logger.info(
-            f"[ApplicationService] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)"
+            "[ApplicationService] load_files_from_folder: %s (recursive=%s, remembered from previous load)",
+            folder_path,
+            recursive,
         )
         self.main_window.file_load_manager.load_folder(
             folder_path, merge_mode=False, recursive=recursive
@@ -92,10 +91,6 @@ class ApplicationService:
 
     # =====================================
     # Metadata Operations
-    # NOTE: Metadata loading operations have been migrated to MetadataController (Phase 1B)
-    # The following methods remain for backward compatibility with shortcuts:
-    # - load_metadata_fast(), load_metadata_extended(), load_metadata_all_fast(),
-    #   load_metadata_all_extended()
     # =====================================
 
     def load_metadata_fast(self):
@@ -180,11 +175,6 @@ class ApplicationService:
 
     # =====================================
     # Table Operations
-    # NOTE: Some table operations related to metadata have been migrated
-    # to MetadataController (Phase 1B):
-    # - restore_fileitem_metadata_from_cache() → MetadataController
-    # =====================================
-    # Table Operations
     # =====================================
 
     def sort_by_column(
@@ -214,13 +204,12 @@ class ApplicationService:
     # =====================================
 
     def rename_files(self):
-        """Execute batch rename using UnifiedRenameEngine with Phase 4 optimizations."""
+        """Execute batch rename using RenameController (Phase 1C)."""
         try:
             # Get selected files and rename data
             selected_files = self.get_selected_files()
             rename_data = self.main_window.rename_modules_area.get_all_data()
             post_transform_data = self.main_window.final_transform_container.get_data()
-            rename_data["post_transform"] = post_transform_data
 
             if not selected_files:
                 self.main_window.status_manager.set_selection_status(
@@ -231,193 +220,50 @@ class ApplicationService:
                 )
                 return
 
-            # Use Phase 4 batch processing for large file sets
-            if len(selected_files) > 100:
-                logger.info(
-                    f"[ApplicationService] Using Phase 4 batch processing for {len(selected_files)} files"
-                )
-
-                # Process files in batches using Phase 4 batch processor
-                def process_batch(batch_files):
-                    return self.main_window.unified_rename_engine.generate_preview(
-                        files=batch_files,
-                        modules_data=rename_data.get("modules", []),
-                        post_transform=post_transform_data,
-                        metadata_cache=self.main_window.metadata_cache,
-                    )
-
-                # Use batch processor for preview generation
-                logger.info(
-                    f"[ApplicationService] Starting batch processing for {len(selected_files)} files"
-                )
-                batch_results = self.main_window.unified_rename_engine.batch_process_files(
-                    selected_files, process_batch
-                )
-                logger.info(
-                    f"[ApplicationService] Batch processing completed: {len(batch_results)} batches"
-                )
-
-                # Combine batch results
-                all_name_pairs = []
-                for batch_idx, result in enumerate(batch_results):
-                    if result and hasattr(result, "name_pairs"):
-                        logger.info(
-                            f"[ApplicationService] Batch {batch_idx + 1}: {len(result.name_pairs)} name_pairs"
-                        )
-                        all_name_pairs.extend(result.name_pairs)
-                    else:
-                        logger.warning(
-                            f"[ApplicationService] Batch {batch_idx + 1}: No name_pairs found"
-                        )
-
-                # Verify all files were processed
-                if len(all_name_pairs) != len(selected_files):
-                    logger.warning(
-                        f"[ApplicationService] Batch processing mismatch: "
-                        f"got {len(all_name_pairs)} name_pairs for {len(selected_files)} files"
-                    )
-
-                preview_result = type(
-                    "PreviewResult",
-                    (),
-                    {"name_pairs": all_name_pairs, "has_changes": len(all_name_pairs) > 0},
-                )()
-            else:
-                # Use standard preview generation for smaller file sets
-                preview_result = self.main_window.unified_rename_engine.generate_preview(
-                    files=selected_files,
-                    modules_data=rename_data.get("modules", []),
-                    post_transform=post_transform_data,
-                    metadata_cache=self.main_window.metadata_cache,
-                )
-
-            if not preview_result.has_changes:
-                self.main_window.status_manager.set_validation_status(
-                    "No changes detected", validation_type="warning", auto_reset=True
-                )
-                return
-
-            # Validate preview
-            name_pairs = preview_result.name_pairs
-            validation_result = self.main_window.unified_rename_engine.validate_preview(name_pairs)
-
-            if validation_result.has_errors:
-                self.main_window.status_manager.set_validation_status(
-                    f"Validation errors found: {validation_result.has_errors}",
-                    validation_type="error",
-                    auto_reset=True,
-                )
-                return
-
-            # Check if all files are unchanged
-            if validation_result.has_unchanged:
-                self.main_window.status_manager.set_validation_status(
-                    f"No changes to apply - all {len(selected_files)} files would keep their current names",
-                    validation_type="warning",
-                    auto_reset=True,
-                )
-                return
-
-            # Execute rename using UnifiedRenameEngine (includes companion file handling)
-            new_names = [new_name for _, new_name in name_pairs]
-
-            # Use unified rename engine which handles companion files automatically
-            execution_result = self.main_window.unified_rename_engine.execute_rename(
-                files=selected_files,
-                new_names=new_names,
-                conflict_callback=None,  # Use default conflict handling
-                validator=None,  # Already validated above
+            # Use RenameController for orchestration
+            result = self.main_window.rename_controller.execute_rename(
+                file_items=selected_files,
+                modules_data=rename_data.get("modules", []),
+                post_transform=post_transform_data,
+                metadata_cache=self.main_window.metadata_cache,
+                current_folder=self.main_window.current_folder_path,
             )
-
-            # Count successful operations (includes main files + companion files)
-            successful_count = execution_result.success_count
-            error_count = execution_result.error_count
-
-            # Count how many files actually changed vs were already correct
-            actually_renamed = sum(
-                1 for item in execution_result.items
-                if item.success and item.skip_reason != "unchanged"
-            )
-            unchanged_count = sum(
-                1 for item in execution_result.items
-                if item.skip_reason == "unchanged"
-            )
-
-            # Calculate main files vs companion files
-            main_files_count = len(selected_files)
-            total_successful = successful_count
-            companion_files_count = total_successful - main_files_count if total_successful > main_files_count else 0
 
             # Handle results
-            if successful_count > 0:
-                # Update FileItem objects with new paths before reload
-                self._update_file_items_after_rename(selected_files, new_names, execution_result)
-
-                # Build status message with companion info and unchanged info
-                if companion_files_count > 0:
-                    status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
-                else:
-                    status_msg = f"Successfully renamed {actually_renamed} file{'s' if actually_renamed != 1 else ''}"
-
-                # Add unchanged count if any
-                if unchanged_count > 0:
-                    status_msg += f" ({unchanged_count} already had correct names)"
-
+            if not result["success"]:
+                # Show error message
+                error_msg = result["errors"][0] if result["errors"] else "Unknown error"
                 self.main_window.status_manager.set_validation_status(
-                    status_msg,
-                    validation_type="success",
-                    auto_reset=True,
+                    error_msg, validation_type="error", auto_reset=True
                 )
+                return
 
-                # Log Phase 4 statistics
-                self._log_phase4_stats()
+            renamed_count = result["renamed_count"]
+            failed_count = result["failed_count"]
+            skipped_count = result["skipped_count"]
 
-                # Reload folder to reflect changes
+            # Build status message
+            status_msg = f"Successfully renamed {renamed_count} file{'s' if renamed_count != 1 else ''}"
+            if skipped_count > 0:
+                status_msg += f" ({skipped_count} skipped)"
+            if failed_count > 0:
+                status_msg += f", {failed_count} failed"
+
+            self.main_window.status_manager.set_validation_status(
+                status_msg,
+                validation_type="success" if failed_count == 0 else "warning",
+                auto_reset=True,
+            )
+
+            # Reload folder to reflect changes
+            if renamed_count > 0:
                 self.reload_current_folder()
-            else:
-                self.main_window.status_manager.set_validation_status(
-                    f"Rename failed: {error_count} errors", validation_type="error", auto_reset=True
-                )
 
         except Exception as e:
-            logger.error(f"[ApplicationService] Error in Phase 4 unified rename: {e}")
+            logger.exception("[ApplicationService] Error in RenameController rename: %s", e)
             self.main_window.status_manager.set_validation_status(
                 f"Rename error: {str(e)}", validation_type="error", auto_reset=True
             )
-
-    def _log_phase4_stats(self):
-        """Log Phase 4 performance statistics."""
-        try:
-            engine = self.main_window.unified_rename_engine
-
-            # Get all Phase 4 statistics
-            cache_stats = engine.get_advanced_cache_stats()
-            batch_stats = engine.get_batch_processor_stats()
-            conflict_stats = engine.get_conflict_resolver_stats()
-            perf_stats = engine.get_performance_stats()
-
-            logger.info("[ApplicationService] Phase 4 Statistics:")
-
-            # Safely log cache stats
-            if cache_stats and isinstance(cache_stats, dict) and 'overall_hit_rate' in cache_stats:
-                logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
-
-            # Safely log batch stats
-            if batch_stats and isinstance(batch_stats, dict):
-                logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
-
-            # Safely log conflict stats
-            if conflict_stats and isinstance(conflict_stats, dict) and 'success_rate' in conflict_stats:
-                logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
-
-            # Safely log performance stats - it's a PerformanceStats object, not dict
-            if perf_stats and hasattr(perf_stats, 'total_operations'):
-                logger.info(f"  Performance: {perf_stats.total_operations} operations")
-                if hasattr(perf_stats, 'average_duration'):
-                    logger.info(f"  Average: {perf_stats.average_duration:.3f}s per operation")
-
-        except Exception as e:
-            logger.warning(f"[ApplicationService] Error logging Phase 4 stats: {e}")
 
     def _update_file_items_after_rename(self, files: list[FileItem], new_names: list[str], execution_result) -> None:  # noqa: ARG002
         """Update FileItem objects with new paths after successful rename.
@@ -442,7 +288,9 @@ class ApplicationService:
                     new_filename = os.path.basename(new_path)
 
                     logger.debug(
-                        f"[ApplicationService] Updating FileItem: {file_item.filename} -> {new_filename}"
+                        "[ApplicationService] Updating FileItem: %s -> %s",
+                        file_item.filename,
+                        new_filename,
                     )
 
                     # Update the FileItem
@@ -452,11 +300,12 @@ class ApplicationService:
 
             if updated_count > 0:
                 logger.info(
-                    f"[ApplicationService] Updated {updated_count} FileItem objects with new paths"
+                    "[ApplicationService] Updated %d FileItem objects with new paths",
+                    updated_count,
                 )
 
         except Exception as e:
-            logger.error(f"[ApplicationService] Error updating FileItem objects: {e}")
+            logger.error("[ApplicationService] Error updating FileItem objects: %s", e)
 
     def update_module_dividers(self):
         """Update module dividers."""
@@ -685,7 +534,9 @@ class ApplicationService:
 
                 # Log successful identification
                 logger.info(
-                    f"[ApplicationService] Identified moved file: {file_path} (was: {file_record.get('file_path')})"
+                    "[ApplicationService] Identified moved file: %s (was: %s)",
+                    file_path,
+                    file_record.get("file_path"),
                 )
 
         return moved_files

@@ -20,5 +20,6 @@ This separation allows:
 
 from oncutf.controllers.file_load_controller import FileLoadController
 from oncutf.controllers.metadata_controller import MetadataController
+from oncutf.controllers.rename_controller import RenameController
 
-__all__ = ["FileLoadController", "MetadataController"]
+__all__ = ["FileLoadController", "MetadataController", "RenameController"]
