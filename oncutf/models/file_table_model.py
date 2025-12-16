@@ -291,17 +291,7 @@ class FileTableModel(QAbstractTableModel):
             )
             raise  # Re-raise to trigger fallback
 
-    def _handle_column_addition(self, new_visible_columns: list, _added_columns: set) -> None:
-        """Handle adding new columns efficiently."""
-        # This method is deprecated and no longer used
-        logger.warning("[FileTableModel] _handle_column_addition is deprecated")
-        self._handle_reset_model(new_visible_columns)
 
-    def _handle_column_removal(self, new_visible_columns: list, _removed_columns: set) -> None:
-        """Handle removing columns efficiently."""
-        # This method is deprecated and no longer used
-        logger.warning("[FileTableModel] _handle_column_removal is deprecated")
-        self._handle_reset_model(new_visible_columns)
 
     def get_visible_columns(self) -> list:
         return self._visible_columns.copy()

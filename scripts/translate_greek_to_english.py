@@ -23,19 +23,19 @@ import sys
 from pathlib import Path
 
 try:
-    from openai import OpenAI
+    from openai import OpenAI  # type: ignore
 except ImportError:
     print("ERROR: openai package not installed. Install with: pip install openai")
     sys.exit(1)
 
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv  # type: ignore
 except ImportError:
     print("ERROR: python-dotenv not installed. Install with: pip install python-dotenv")
     sys.exit(1)
 
 try:
-    from tqdm import tqdm
+    from tqdm import tqdm  # type: ignore
 except ImportError:
     print("ERROR: tqdm not installed. Install with: pip install tqdm")
     sys.exit(1)
@@ -565,7 +565,7 @@ def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, in
 # Main Entry Point
 # ============================================================================
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Translate Greek text to English in Python codebase",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -636,61 +636,6 @@ class EventHandlerManager:
             # NOTE: Metadata updates are handled by the selection system automatically
             # Removed redundant refresh_metadata_from_selection() call that was causing conflicts
 
-    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """
-        Handle horizontal splitter movement.
-        DEPRECATED: This functionality has been moved to SplitterManager.
-        This method is kept for backward compatibility and delegates to SplitterManager.
-        """
-        logger.debug(
-            "[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager",
-            extra={"dev_only": True},
-        )
-
-        if hasattr(self.parent_window, "splitter_manager"):
-            self.parent_window.splitter_manager.on_horizontal_splitter_moved(pos, index)
-        else:
-            # Fallback to legacy behavior if SplitterManager is not available
-            logger.debug(
-                f"[Splitter] Horizontal moved: pos={pos}, index={index}", extra={"dev_only": True}
-            )
-
-            # Update any UI elements that need to respond to horizontal space changes
-            if hasattr(self.parent_window, "folder_tree"):
-                self.parent_window.folder_tree.on_horizontal_splitter_moved(pos, index)
-
-            if hasattr(self.parent_window, "file_table_view"):
-                self.parent_window.file_table_view.on_horizontal_splitter_moved(pos, index)
-
-    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """
-        Handle vertical splitter movement.
-        DEPRECATED: This functionality has been moved to SplitterManager.
-        This method is kept for backward compatibility and delegates to SplitterManager.
-        """
-        logger.debug(
-            "[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager",
-            extra={"dev_only": True},
-        )
-
-        if hasattr(self.parent_window, "splitter_manager"):
-            self.parent_window.splitter_manager.on_vertical_splitter_moved(pos, index)
-        else:
-            # Fallback to legacy behavior if SplitterManager is not available
-            logger.debug(
-                f"[Splitter] Vertical moved: pos={pos}, index={index}", extra={"dev_only": True}
-            )
-
-            # Update any UI elements that need to respond to vertical space changes
-            if hasattr(self.parent_window, "folder_tree"):
-                self.parent_window.folder_tree.on_vertical_splitter_moved(pos, index)
-
-            if hasattr(self.parent_window, "file_table_view"):
-                self.parent_window.file_table_view.on_vertical_splitter_moved(pos, index)
-
-            if hasattr(self.parent_window, "preview_tables_view"):
-                self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
-
     def _handle_bulk_rotation(self, selected_files: list) -> None:
         """
         Handle bulk rotation setting to 0° for selected files.

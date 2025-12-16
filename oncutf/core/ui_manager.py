@@ -607,13 +607,12 @@ class UIManager:
             self.parent_window.handle_folder_import
         )
 
-        # Connect splitter resize to adjust tree view column width
+        # Connect splitter resize directly to SplitterManager
         self.parent_window.horizontal_splitter.splitterMoved.connect(
-            self.parent_window.on_horizontal_splitter_moved
+            self.parent_window.splitter_manager.on_horizontal_splitter_moved
         )
-        # Connect vertical splitter resize for debugging
         self.parent_window.vertical_splitter.splitterMoved.connect(
-            self.parent_window.on_vertical_splitter_moved
+            self.parent_window.splitter_manager.on_vertical_splitter_moved
         )
         # Connect callbacks for both tree view and file table view
         self.parent_window.horizontal_splitter.splitterMoved.connect(
