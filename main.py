@@ -57,10 +57,10 @@ logger = logging.getLogger()
 
 # Log application start with current date/time
 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-logger.info(f"Application started at {now}")
+logger.info("Application started at %s", now)
 
 logger_effective_level = logger.getEffectiveLevel()
-logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
+logger.debug("Effective logging level: %d", logger_effective_level, extra={"dev_only": True})
 
 # Flag to prevent double cleanup
 _cleanup_done = False
@@ -81,7 +81,7 @@ def cleanup_on_exit() -> None:
         get_app_config_manager().save_immediate()
         logger.info("Configuration saved immediately before exit")
     except Exception as e:
-        logger.warning(f"Error saving configuration during cleanup: {e}")
+        logger.warning("Error saving configuration during cleanup: %s", e)
 
     try:
         from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -89,12 +89,12 @@ def cleanup_on_exit() -> None:
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("Emergency ExifTool cleanup completed")
     except Exception as e:
-        logger.warning(f"Error in emergency cleanup: {e}")
+        logger.warning("Error in emergency cleanup: %s", e)
 
 
 def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
-    logger.info(f"Received signal {signum}, performing cleanup...")
+    logger.info("Received signal %d, performing cleanup...", signum)
     cleanup_on_exit()
     sys.exit(0)
 
@@ -118,20 +118,20 @@ def main() -> int:
         # CRITICAL: Set working directory to project root first
         # This ensures all relative paths work correctly regardless of where script is run from
         os.chdir(project_root)
-        logger.info(f"Working directory set to: {os.getcwd()}")
+        logger.info("Working directory set to: %s", os.getcwd())
 
         # Log platform information for debugging
-        logger.info(f"Platform: {platform.system()} {platform.release()}")
-        logger.info(f"Python version: {sys.version}")
-        logger.debug(f"Project root: {project_root}", extra={"dev_only": True})
+        logger.info("Platform: %s %s", platform.system(), platform.release())
+        logger.info("Python version: %s", sys.version)
+        logger.debug("Project root: %s", project_root, extra={"dev_only": True})
 
         # Log Windows-specific info
         if platform.system() == "Windows":
-            logger.info(f"Windows version: {platform.win32_ver()}")
+            logger.info("Windows version: %s", platform.win32_ver())
             import locale
 
-            logger.info(f"System locale: {locale.getdefaultlocale()}")
-            logger.info(f"File system encoding: {sys.getfilesystemencoding()}")
+            logger.info("System locale: %s", locale.getdefaultlocale())
+            logger.info("File system encoding: %s", sys.getfilesystemencoding())
 
         # Enable High DPI support before creating QApplication
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore[attr-defined]
@@ -144,9 +144,9 @@ def main() -> int:
         try:
             import locale
             current_locale = locale.getlocale()
-            logger.debug(f"Current locale: {current_locale}", extra={"dev_only": True})
+            logger.debug("Current locale: %s", current_locale, extra={"dev_only": True})
         except Exception as e:
-            logger.warning(f"Could not get locale: {e}")
+            logger.warning("Could not get locale: %s", e)
 
         # Initialize DPI helper early
         from oncutf.utils.dpi_helper import get_dpi_helper, log_dpi_info
@@ -159,7 +159,7 @@ def main() -> int:
             from oncutf.utils.theme_font_generator import get_ui_font_sizes
 
             font_sizes = get_ui_font_sizes()
-            logger.debug(f"Applied font sizes: {font_sizes}", extra={"dev_only": True})
+            logger.debug("Applied font sizes: %s", font_sizes, extra={"dev_only": True})
         except ImportError:
             logger.warning("Could not get font sizes - DPI helper not available")
 
@@ -175,7 +175,8 @@ def main() -> int:
         # Initialize theme manager (new token-based system)
         theme_mgr = get_theme_manager()
         logger.debug(
-            f"ThemeManager initialized with theme: {theme_mgr.get_current_theme()}",
+            "ThemeManager initialized with theme: %s",
+            theme_mgr.get_current_theme(),
             extra={"dev_only": True}
         )
 
@@ -186,7 +187,7 @@ def main() -> int:
         from oncutf.utils.path_utils import get_images_dir
 
         splash_path = get_images_dir() / "splash.png"
-        logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
+        logger.debug("Loading splash screen from: %s", splash_path, extra={"dev_only": True})
 
         try:
             # Create and show splash screen immediately (responsive from start)
@@ -199,7 +200,9 @@ def main() -> int:
                 app.processEvents()
 
             logger.info(
-                f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})"
+                "Splash screen displayed (size: %dx%d)",
+                splash.splash_width,
+                splash.splash_height
             )
 
             # Initialize state for dual-flag synchronization
@@ -222,14 +225,14 @@ def main() -> int:
             # Connect signals for thread-safe communication
             def on_worker_progress(percentage: int, status: str):
                 """Update splash status (runs in main thread via signal)."""
-                logger.debug(f"[Init] {percentage}% - {status}", extra={"dev_only": True})
+                logger.debug("[Init] %d%% - %s", percentage, status, extra={"dev_only": True})
                 # Future: could update splash status text here
 
             def on_worker_finished(results: dict):
                 """Handle worker completion (runs in main thread via signal)."""
                 logger.info(
-                    f"[Init] Background initialization completed in "
-                    f"{results.get('duration_ms', 0):.0f}ms"
+                    "[Init] Background initialization completed in %.0fms",
+                    results.get('duration_ms', 0)
                 )
                 init_state['worker_ready'] = True
                 init_state['worker_results'] = results
@@ -237,7 +240,7 @@ def main() -> int:
 
             def on_worker_error(error_msg: str):
                 """Handle worker failure (runs in main thread via signal)."""
-                logger.error(f"[Init] Background initialization failed: {error_msg}")
+                logger.error("[Init] Background initialization failed: %s", error_msg)
                 init_state['worker_ready'] = True
                 init_state['worker_error'] = error_msg
                 check_and_show_main()
@@ -261,7 +264,8 @@ def main() -> int:
                 )
                 qapp.setStyleSheet(combined_style)
                 logger.debug(
-                    f"[Theme] Applied theme ({len(qss_content)} chars QSS)",
+                    "[Theme] Applied theme (%d chars QSS)",
+                    len(qss_content),
                     extra={"dev_only": True}
                 )
 
@@ -291,7 +295,7 @@ def main() -> int:
                     worker_thread.wait(1000)  # Wait max 1 second
 
                 except Exception as e:
-                    logger.error(f"[Init] Error creating MainWindow: {e}")
+                    logger.error("[Init] Error creating MainWindow: %s", e)
                     splash.close()
                     raise
 
@@ -332,7 +336,7 @@ def main() -> int:
             )
 
         except Exception as e:
-            logger.error(f"Error creating splash screen: {e}")
+            logger.error("Error creating splash screen: %s", e)
             # Fallback: Initialize app without splash
             app.restoreOverrideCursor()
             window = MainWindow()
@@ -344,7 +348,7 @@ def main() -> int:
         exit_code = app.exec_()
 
         # Clean up before exit
-        logger.info(f"Application shutting down with exit code: {exit_code}")
+        logger.info("Application shutting down with exit code: %d", exit_code)
 
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
@@ -355,7 +359,7 @@ def main() -> int:
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
             logger.info("ExifTool processes cleaned up")
         except Exception as e:
-            logger.warning(f"Error cleaning up ExifTool processes: {e}")
+            logger.warning("Error cleaning up ExifTool processes: %s", e)
 
         # Windows-specific: Process pending deleteLater events before quit
         if platform.system() == "Windows":
@@ -367,7 +371,7 @@ def main() -> int:
                     import time as time_module
                     time_module.sleep(0.1)
             except Exception as win_cleanup_error:
-                logger.warning(f"Windows cleanup delay failed: {win_cleanup_error}")
+                logger.warning("Windows cleanup delay failed: %s", win_cleanup_error)
 
         # Extra defensive UI cleanup: close windows, run event loop cycles and force GC
         try:
@@ -387,7 +391,7 @@ def main() -> int:
             # Extra short wait to allow native handles to be released
             time.sleep(0.2)
         except Exception as extra_cleanup_error:
-            logger.warning(f"Extra UI cleanup failed: {extra_cleanup_error}")
+            logger.warning("Extra UI cleanup failed: %s", extra_cleanup_error)
 
         # Only call quit once to prevent runtime errors on Windows
         if not _app_quit_called:
@@ -395,12 +399,12 @@ def main() -> int:
             try:
                 app.quit()
             except RuntimeError as e:
-                logger.debug(f"QApplication.quit() error (expected): {e}")
+                logger.debug("QApplication.quit() error (expected): %s", e)
 
         return exit_code
 
     except Exception as e:
-        logger.critical(f"Fatal error in main: {str(e)}", exc_info=True)
+        logger.exception("Fatal error in main: %s", str(e))
         # Emergency cleanup on crash
         try:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
