@@ -175,14 +175,14 @@ class CounterModule(BaseRenameModule):
         # ComboBox for scope selection
         self.scope_combo = QComboBox()
         self.scope_combo.setFixedWidth(150)
-        
+
         # Add scope options
         for scope in CounterScope:
             self.scope_combo.addItem(scope.display_name, scope.value)
-        
+
         # Set default to PER_FOLDER (fixes multi-folder issue)
         self.scope_combo.setCurrentIndex(1)  # PER_FOLDER is index 1
-        
+
         # Setup tooltip
         setup_tooltip(
             self.scope_combo,
