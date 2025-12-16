@@ -383,10 +383,13 @@ class RenameController:
 
             # Step 3: Execute rename
             logger.info("[RenameController] Executing rename operation...")
+            
+            # Extract new names from name_pairs
+            new_names = [new_name for _, new_name in preview_result.name_pairs]
+            
             execution_result = self._unified_rename_engine.execute_rename(
                 files=file_items,
-                name_pairs=preview_result.name_pairs,
-                folder_path=current_folder or "",
+                new_names=new_names,
             )
 
             logger.info(
