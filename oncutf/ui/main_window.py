@@ -282,16 +282,36 @@ class MainWindow(QMainWindow):
         self.app_service.load_files_from_folder(folder_path, force)
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
-        """Load files from paths via Application Service."""
-        self.app_service.load_files_from_paths(file_paths, clear=clear)
+        """Load files from paths via FileLoadController or Application Service."""
+        if self._use_file_load_controller:
+            # Use new FileLoadController (Phase 1A)
+            result = self.file_load_controller.load_files(file_paths, clear=clear)
+            logger.debug(
+                "[Phase1A] load_files_from_paths via controller: %s",
+                result,
+                extra={"dev_only": True}
+            )
+        else:
+            # Fallback to ApplicationService
+            self.app_service.load_files_from_paths(file_paths, clear=clear)
 
     def load_files_from_dropped_items(
         self,
         paths: list[str],
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
     ) -> None:  # type: ignore
-        """Load files from dropped items via Application Service."""
-        self.app_service.load_files_from_dropped_items(paths, modifiers)
+        """Load files from dropped items via FileLoadController or Application Service."""
+        if self._use_file_load_controller:
+            # Use new FileLoadController (Phase 1A)
+            result = self.file_load_controller.handle_drop(paths, modifiers)
+            logger.debug(
+                "[Phase1A] load_files_from_dropped_items via controller: %s",
+                result,
+                extra={"dev_only": True}
+            )
+        else:
+            # Fallback to ApplicationService
+            self.app_service.load_files_from_dropped_items(paths, modifiers)
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Prepare folder load via Application Service."""
@@ -341,8 +361,18 @@ class MainWindow(QMainWindow):
         self.app_service.restore_fileitem_metadata_from_cache()
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
-        """Clear file table via Application Service."""
-        self.app_service.clear_file_table(message)
+        """Clear file table via FileLoadController or Application Service."""
+        if self._use_file_load_controller:
+            # Use new FileLoadController (Phase 1A)
+            success = self.file_load_controller.clear_files()
+            logger.debug(
+                "[Phase1A] clear_file_table via controller: success=%s",
+                success,
+                extra={"dev_only": True}
+            )
+        else:
+            # Fallback to ApplicationService
+            self.app_service.clear_file_table(message)
 
     def get_common_metadata_fields(self) -> list[str]:
         """Get common metadata fields via Application Service."""
