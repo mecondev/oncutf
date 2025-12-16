@@ -11,6 +11,7 @@ sequential file names based on configurable start value, step, and padding.
 
 from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
+    QComboBox,
     QHBoxLayout,
     QIntValidator,
     QLabel,
@@ -22,6 +23,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.utils.icons_loader import get_menu_icon
 
@@ -63,10 +65,15 @@ class CounterModule(BaseRenameModule):
         self.increment_input, row3 = self._create_row("Increment By", initial_value=1, min_val=1)
         layout.addLayout(row3)
 
+        # Row 4: Counter Scope (NEW)
+        scope_row = self._create_scope_row()
+        layout.addLayout(scope_row)
+
         # Connect inputs to update signal (debounced)
         self.start_input.textChanged.connect(self._on_value_change)
         self.padding_input.textChanged.connect(self._on_value_change)
         self.increment_input.textChanged.connect(self._on_value_change)
+        self.scope_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Initialize _last_value to prevent duplicate signals
         self._last_value = str(self.get_data())
@@ -155,17 +162,59 @@ class CounterModule(BaseRenameModule):
 
         return input_field, row_layout
 
+    def _create_scope_row(self) -> QHBoxLayout:
+        """
+        Create a row for counter scope selection.
+        Returns the layout containing label and combobox.
+        """
+        # Label with fixed width and right alignment
+        label = QLabel("Counter Scope")
+        label.setFixedWidth(self.LABEL_WIDTH)
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+
+        # ComboBox for scope selection
+        self.scope_combo = QComboBox()
+        self.scope_combo.setFixedWidth(150)
+        
+        # Add scope options
+        for scope in CounterScope:
+            self.scope_combo.addItem(scope.display_name, scope.value)
+        
+        # Set default to PER_FOLDER (fixes multi-folder issue)
+        self.scope_combo.setCurrentIndex(1)  # PER_FOLDER is index 1
+        
+        # Setup tooltip
+        setup_tooltip(
+            self.scope_combo,
+            "Control when the counter resets:\n"
+            "• Global: Single counter across all files\n"
+            "• Per Folder: Reset at folder boundaries\n"
+            "• Per Selection: Reset for each selection",
+            TooltipType.INFO
+        )
+
+        # Build row layout
+        row_layout = QHBoxLayout()
+        row_layout.setContentsMargins(2, 2, 2, 2)
+        row_layout.setSpacing(6)
+        row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(self.scope_combo, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addStretch()
+
+        return row_layout
+
     def get_data(self) -> dict:
         """
         Returns the current configuration of the counter module.
 
-        :return: dict with counter info
+        :return: dict with counter info including scope
         """
         return {
             "type": "counter",
             "start": int(self.start_input.text() or "0"),
             "padding": int(self.padding_input.text() or "0"),
             "step": int(self.increment_input.text() or "0"),
+            "scope": self.scope_combo.currentData() or CounterScope.PER_FOLDER.value,
         }
 
     def apply(self, file_item, index=0, metadata_cache=None) -> str:
@@ -186,10 +235,14 @@ class CounterModule(BaseRenameModule):
                 - 'start': int, the starting number
                 - 'padding': int, number of digits (e.g. 4 -> 0001)
                 - 'step': int, increment step
+                - 'scope': str, counter scope ('global', 'per_folder', 'per_selection')
         file_item : FileItem
             The file to rename (not used by counter).
         index : int, optional
             The position of the file in the list (used for offsetting).
+            NOTE: For PER_FOLDER scope, this should be the index within the folder group,
+                  not the global index. The preview engine is responsible for providing
+                  the correct index based on the scope.
         metadata_cache : dict, optional
             Not used in this module but accepted for API compatibility.
 
@@ -202,13 +255,18 @@ class CounterModule(BaseRenameModule):
             start = int(data.get("start", 1))
             step = int(data.get("step", 1))
             padding = int(data.get("padding", 4))
+            scope = data.get("scope", CounterScope.PER_FOLDER.value)
 
             value = start + index * step
             result = f"{value:0{padding}d}"
-            logger.debug(f"[CounterModule] index: {index}, value: {value}, padded: {result}")
+            logger.debug(
+                "[CounterModule] index: %d, value: %d, padded: %s, scope: %s",
+                index, value, result, scope,
+                extra={"dev_only": True}
+            )
             return result
         except Exception as e:
-            logger.exception(f"[CounterModule] Failed to apply counter logic: {e}")
+            logger.exception("[CounterModule] Failed to apply counter logic: %s", e)
             return "####"
 
     @staticmethod
