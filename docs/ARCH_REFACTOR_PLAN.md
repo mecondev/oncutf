@@ -584,11 +584,58 @@ rm -rf widgets/ models/ core/ modules/ utils/
 
 ## 6. Phased Refactoring Plan
 
-### Phase 1: State Management Fix (Priority: HIGH)
+### ✅ Phase 1: Controllers Architecture (COMPLETED - Dec 2025)
+
+**Goal**: Separate UI from business logic with MVC-inspired controller layer
+
+**Status**: COMPLETE (4 sub-phases, 57 new tests, 592 total tests passing)
+
+**Implementation Summary:**
+
+#### Phase 1A: FileLoadController ✅
+- Created controller for file loading orchestration
+- Methods: `load_files_from_drop()`, `load_folder()`, `clear_files()`
+- 11 comprehensive tests (100% coverage)
+- Separated drag & drop logic from MainWindow
+
+#### Phase 1B: MetadataController ✅
+- Created controller for metadata operations
+- Methods: `load_metadata()`, `reload_metadata()`, `clear_metadata_cache()`
+- 13 comprehensive tests covering all workflows
+- Orchestrates metadata loading with progress tracking
+
+#### Phase 1C: RenameController ✅
+- Created controller for rename workflows
+- Methods: `preview_rename()`, `execute_rename()`, `update_preview()`
+- 16 comprehensive tests with conflict scenarios
+- Handles rename preview, validation, and execution
+
+#### Phase 1D: MainWindowController ✅
+- Created controller for high-level orchestration
+- Methods: `restore_last_session_workflow()`, `coordinate_shutdown_workflow()`
+- 17 comprehensive tests for multi-service workflows
+- Coordinates FileLoad, Metadata, and Rename controllers
+
+**Results:**
+- Clean separation: UI → Controllers → Services
+- Testable architecture (controllers independent of Qt)
+- Zero regressions (all existing functionality preserved)
+- Foundation for future architectural improvements
+
+**Documentation:**
+- [PHASE1_EXECUTION_PLAN.md](PHASE1_EXECUTION_PLAN.md)
+- [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md)
+- [PHASE1D_COMPLETE.md](PHASE1D_COMPLETE.md)
+
+---
+
+### Phase 2: State Management Fix (Priority: HIGH)
 
 **Goal**: Single source of truth for file state
 
-#### Step 1.1: Consolidate FileStore
+**Note**: This was "Phase 1" in the original plan, renumbered after Controllers Architecture implementation.
+
+#### Step 2.1: Consolidate FileStore
 
 ```python
 # oncutf/models/file_store.py
@@ -612,7 +659,7 @@ class FileStore:
 **Test**: `test_file_store_groups.py`  
 **Commit**: `feat: add FileGroup concept to FileStore`
 
-#### Step 1.2: Fix Counter Scope
+#### Step 2.2: Fix Counter Scope
 
 ```python
 # oncutf/domain/rename/modules/counter.py
@@ -632,7 +679,7 @@ class CounterConfig:
 **Test**: `test_counter_scope.py`  
 **Commit**: `feat: add counter scope support (fixes multi-folder issue)`
 
-#### Step 1.3: Unified State Signals
+#### Step 2.3: Unified State Signals
 
 ```python
 # oncutf/controllers/state_coordinator.py
@@ -654,9 +701,11 @@ class StateCoordinator(QObject):
 
 ---
 
-### Phase 2: Metadata Module Fix (Priority: HIGH)
+### Phase 3: Metadata Module Fix (Priority: HIGH)
 
-#### Step 2.1: Split MetadataModule
+**Note**: Renumbered from "Phase 2" after Controllers Architecture implementation.
+
+#### Step 3.1: Split MetadataModule
 
 ```python
 # oncutf/domain/metadata/extractor.py (Pure Python)
@@ -676,7 +725,7 @@ class MetadataModuleWidget(QWidget):
 **Test**: `test_metadata_extractor.py`  
 **Commit**: `refactor: split MetadataModule into extractor and widget`
 
-#### Step 2.2: Fix ComboBox Styling
+#### Step 3.2: Fix ComboBox Styling
 
 ```python
 # oncutf/ui/widgets/styled_combo_box.py
@@ -696,7 +745,7 @@ class StyledComboBox(QComboBox):
 
 **Commit**: `fix: add StyledComboBox with proper delegate`
 
-#### Step 2.3: Instant Preview Updates
+#### Step 3.3: Instant Preview Updates
 
 ```python
 # oncutf/ui/widgets/metadata_module_widget.py
@@ -713,9 +762,11 @@ self.format_input.textChanged.connect(self._on_any_setting_change)
 
 ---
 
-### Phase 3: Text Removal Module Fix (Priority: MEDIUM)
+### Phase 4: Text Removal Module Fix (Priority: MEDIUM)
 
-#### Step 3.1: Add Match Preview
+**Note**: Renumbered from "Phase 3" after Controllers Architecture implementation.
+
+#### Step 4.1: Add Match Preview
 
 ```python
 # oncutf/domain/rename/modules/text_removal.py
@@ -733,7 +784,7 @@ class TextRemovalModule:
 **Test**: `test_text_removal_matches.py`  
 **Commit**: `feat: add match preview to text removal module`
 
-#### Step 3.2: UI with Highlighting
+#### Step 4.2: UI with Highlighting
 
 ```python
 # oncutf/ui/widgets/text_removal_widget.py
@@ -752,9 +803,11 @@ class TextRemovalWidget(QWidget):
 
 ---
 
-### Phase 4: Theme Consolidation (Priority: MEDIUM)
+### Phase 5: Theme Consolidation (Priority: MEDIUM)
 
-#### Step 4.1: Merge Theme Systems
+**Note**: Renumbered from "Phase 4" after Controllers Architecture implementation.
+
+#### Step 5.1: Merge Theme Systems
 
 ```python
 # oncutf/ui/theme/manager.py
@@ -774,7 +827,7 @@ class ThemeManager:
 
 **Commit**: `refactor: consolidate ThemeEngine and ThemeManager`
 
-#### Step 4.2: Component Base Classes
+#### Step 5.2: Component Base Classes
 
 ```python
 # oncutf/ui/components/base.py
@@ -794,9 +847,11 @@ class ThemedWidget(QWidget):
 
 ---
 
-### Phase 5: Domain Layer Purification (Priority: MEDIUM)
+### Phase 6: Domain Layer Purification (Priority: MEDIUM)
 
-#### Step 5.1: Remove Qt from Domain
+**Note**: Renumbered from "Phase 5" after Controllers Architecture implementation.
+
+#### Step 6.1: Remove Qt from Domain
 
 ```python
 # oncutf/domain/rename/pipeline.py
@@ -818,7 +873,7 @@ class RenamePipeline:
 
 **Commit**: `refactor: make domain layer Qt-free`
 
-#### Step 5.2: Service Interfaces
+#### Step 6.2: Service Interfaces
 
 ```python
 # oncutf/services/interfaces.py
@@ -1020,8 +1075,8 @@ class GraphExecutor:
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Import cycle during Phase 0 | App won't start | Use TYPE_CHECKING, fix incrementally |
-| State desync after Phase 1 | Wrong previews | Add state validation assertions |
-| Theme regression after Phase 4 | Visual bugs | Screenshot comparison tests |
+| State desync after Phase 2 | Wrong previews | Add state validation assertions |
+| Theme regression after Phase 5 | Visual bugs | Screenshot comparison tests |
 
 ### Medium Risk Items
 
@@ -1030,6 +1085,17 @@ class GraphExecutor:
 | Test breakage during moves | CI fails | Run tests after each commit |
 | Performance regression | Slow preview | Benchmark before/after |
 | User confusion (UX change) | Complaints | Document changes, gradual rollout |
+
+### Phase-Specific Risks
+
+| Phase | Risk | Mitigation |
+|-------|------|------------|
+| Phase 1 (Controllers) | ✅ COMPLETE | Successfully completed with zero regressions |
+| Phase 2 (State Mgmt) | Counter conflicts reintroduced | Comprehensive state tests |
+| Phase 3 (Metadata) | ComboBox styling breaks | Visual regression tests |
+| Phase 4 (Text Removal) | Match highlighting performance | Debounce preview updates |
+| Phase 5 (Theme) | Theme tokens missing | Fallback to defaults |
+| Phase 6 (Domain) | Service protocol violations | mypy strict mode |
 
 ### Rollback Strategy
 
