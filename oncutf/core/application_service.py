@@ -199,6 +199,18 @@ class ApplicationService:
         """Handle check change via TableManager."""
         self.main_window.table_manager.after_check_change()
 
+    def get_selected_files(self) -> list[FileItem]:
+        """Get selected files via TableManager."""
+        return self.main_window.table_manager.get_selected_files()
+
+    # =====================================
+    # Selection Operations
+    # =====================================
+
+    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
+        """Update preview from selection via SelectionManager."""
+        self.main_window.selection_manager.update_preview_from_selection(selected_rows)
+
     # =====================================
     # Rename Operations
     # =====================================
