@@ -103,6 +103,7 @@ select = [
     "PIE", # flake8-pie
     "T20", # flake8-print
     "PYI", # flake8-pyi
+    "G",   # flake8-logging-format (enforce lazy logging)
 ]
 ignore = [
     "E501",   # line too long (handled by black)

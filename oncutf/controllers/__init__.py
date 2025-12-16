@@ -19,5 +19,6 @@ This separation allows:
 """
 
 from oncutf.controllers.file_load_controller import FileLoadController
+from oncutf.controllers.metadata_controller import MetadataController
 
-__all__ = ["FileLoadController"]
+__all__ = ["FileLoadController", "MetadataController"]

@@ -202,10 +202,9 @@ class FileLoadController:
             }
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "[FileLoadController] Error during file loading: %s",
-                str(e),
-                exc_info=True
+                str(e)
             )
             errors.append(f"Loading error: {str(e)}")
             return {
@@ -272,10 +271,9 @@ class FileLoadController:
             return {"success": True, "loaded_count": -1, "errors": []}  # Count not available yet
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "[FileLoadController] Error loading folder: %s",
                 str(e),
-                exc_info=True
             )
             return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
@@ -315,10 +313,9 @@ class FileLoadController:
             return {"success": True, "errors": []}
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "[FileLoadController] Error handling drop: %s",
                 str(e),
-                exc_info=True
             )
             return {"success": False, "errors": [str(e)]}
 
@@ -342,10 +339,9 @@ class FileLoadController:
             return True
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "[FileLoadController] Error clearing files: %s",
                 str(e),
-                exc_info=True
             )
             return False
 

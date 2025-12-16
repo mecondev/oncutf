@@ -90,49 +90,12 @@ class ApplicationService:
         """Load single item from drop via FileLoadManager."""
         self.main_window.file_load_manager.load_single_item_from_drop(path, modifiers)
 
-    def load_metadata_for_items(
-        self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
-    ) -> None:
-        """Load metadata for items via UnifiedMetadataManager with proper cache checking."""
-        if not items:
-            return
-
-        logger.info(f"[{source}] Loading metadata for {len(items)} items")
-
-        # Delegate directly to UnifiedMetadataManager which has the cache checking logic
-        manager = self.main_window.metadata_manager
-        manager.load_metadata_for_items(items, use_extended=use_extended, source=source)
-
-    # =====================================
-    # Selection Operations
-    # =====================================
-
-    def select_all_rows(self):
-        """Select all rows in the file table."""
-        return self.main_window.selection_manager.select_all_rows()
-
-    def clear_all_selection(self):
-        """Clear all selection in the file table."""
-        return self.main_window.selection_manager.clear_all_selection()
-
-    def invert_selection(self):
-        """Invert current selection."""
-        return self.main_window.selection_manager.invert_selection()
-
-    def get_selected_files(self) -> list[FileItem]:
-        """Get selected files via TableManager."""
-        return self.main_window.table_manager.get_selected_files()
-
-    def get_selected_files_ordered(self):
-        """Get selected files in table display order."""
-        return self.main_window.get_selected_files_ordered()
-
-    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """Update preview from selection via SelectionManager."""
-        self.main_window.selection_manager.update_preview_from_selection(selected_rows)
-
     # =====================================
     # Metadata Operations
+    # NOTE: Metadata loading operations have been migrated to MetadataController (Phase 1B)
+    # The following methods remain for backward compatibility with shortcuts:
+    # - load_metadata_fast(), load_metadata_extended(), load_metadata_all_fast(),
+    #   load_metadata_all_extended()
     # =====================================
 
     def load_metadata_fast(self):
@@ -215,18 +178,11 @@ class ApplicationService:
         """Save all modified metadata."""
         return self.main_window.metadata_manager.save_all_modified_metadata()
 
-    def determine_metadata_mode(self) -> tuple[bool, bool]:
-        """Determine metadata mode via MetadataManager."""
-        return self.main_window.metadata_manager.determine_metadata_mode(
-            self.main_window.modifier_state
-        )
-
-    def should_use_extended_metadata(self) -> bool:
-        """Determine if extended metadata should be used via MetadataManager."""
-        return self.main_window.metadata_manager.should_use_extended_metadata(
-            self.main_window.modifier_state
-        )
-
+    # =====================================
+    # Table Operations
+    # NOTE: Some table operations related to metadata have been migrated
+    # to MetadataController (Phase 1B):
+    # - restore_fileitem_metadata_from_cache() → MetadataController
     # =====================================
     # Table Operations
     # =====================================
@@ -241,17 +197,9 @@ class ApplicationService:
         """Prepare file table via TableManager."""
         self.main_window.table_manager.prepare_file_table(file_items)
 
-    def restore_fileitem_metadata_from_cache(self) -> None:
-        """Restore metadata from cache via TableManager."""
-        self.main_window.table_manager.restore_fileitem_metadata_from_cache()
-
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """Clear file table via TableManager."""
         self.main_window.table_manager.clear_file_table(message)
-
-    def get_common_metadata_fields(self) -> list[str]:
-        """Get common metadata fields via TableManager."""
-        return self.main_window.table_manager.get_common_metadata_fields()
 
     def set_fields_from_list(self, field_names: list[str]) -> None:
         """Set fields from list via TableManager."""
