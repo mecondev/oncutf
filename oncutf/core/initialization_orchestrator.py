@@ -243,6 +243,20 @@ class InitializationOrchestrator:
             "[Phase1C] RenameController initialized",
             extra={"dev_only": True}
         )
+
+        # Phase 1D: Initialize MainWindowController (orchestration layer)
+        from oncutf.controllers.main_window_controller import MainWindowController
+        self.window.main_window_controller = MainWindowController(
+            app_context=self.window.context,
+            file_load_controller=self.window.file_load_controller,
+            metadata_controller=self.window.metadata_controller,
+            rename_controller=self.window.rename_controller,
+        )
+        logger.info(
+            "[Phase1D] MainWindowController initialized",
+            extra={"dev_only": True}
+        )
+
         self.window.rename_manager = RenameManager(self.window)
         self.window.drag_cleanup_manager = DragCleanupManager(self.window)
         self.window.shortcut_manager = ShortcutManager(self.window)
