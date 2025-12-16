@@ -180,7 +180,7 @@ def main() -> int:
             extra={"dev_only": True}
         )
 
-        # Initialize theme engine (legacy global stylesheet system)
+        # Initialize theme engine
         theme_manager = ThemeEngine()
 
         # Create custom splash screen

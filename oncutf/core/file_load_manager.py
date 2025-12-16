@@ -64,12 +64,13 @@ class FileLoadManager:
         - Consistent behavior between internal and external drag operations
         """
         logger.info(
-            f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})",
+            "[FileLoadManager] load_folder: %s (merge=%s, recursive=%s)",
+            folder_path, merge_mode, recursive,
             extra={"dev_only": True},
         )
 
         if not os.path.isdir(folder_path):
-            logger.error(f"Path is not a directory: {folder_path}")
+            logger.error("Path is not a directory: %s", folder_path)
             return
 
         # Store the recursive state for future reloads (if not merging)
@@ -77,7 +78,7 @@ class FileLoadManager:
         if not merge_mode:
             self.parent_window.context.set_recursive_mode(recursive)
             logger.info(
-                f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True}
+                "[FileLoadManager] Stored recursive state: %s", recursive, extra={"dev_only": True}
             )
 
         # CRITICAL: Force cleanup any active drag state immediately
@@ -106,20 +107,13 @@ class FileLoadManager:
         # This makes internal and external drag behavior consistent
         self._load_folder_with_wait_cursor(folder_path, merge_mode, recursive)
 
-    # Legacy method name for compatibility
-    def handle_folder_drop(
-        self, folder_path: str, merge_mode: bool = False, recursive: bool = False
-    ) -> None:
-        """Legacy method - redirects to unified load_folder."""
-        self.load_folder(folder_path, merge_mode, recursive)
-
     def load_files_from_paths(self, paths: list[str], clear: bool = True) -> None:
         """
         Load files from multiple paths (used by import button).
         Now uses same fast approach as drag operations for consistency.
         """
         logger.info(
-            f"[FileLoadManager] load_files_from_paths: {len(paths)} paths", extra={"dev_only": True}
+            "[FileLoadManager] load_files_from_paths: %d paths", len(paths), extra={"dev_only": True}
         )
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
@@ -155,7 +149,7 @@ class FileLoadManager:
         Uses unified load_folder method for consistent behavior.
         """
         logger.info(
-            f"[FileLoadManager] load_single_item_from_drop: {path}", extra={"dev_only": True}
+            "[FileLoadManager] load_single_item_from_drop: %s", path, extra={"dev_only": True}
         )
 
         # Parse modifiers
@@ -165,7 +159,8 @@ class FileLoadManager:
         merge_mode = shift
 
         logger.debug(
-            f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}",
+            "[Drop] Modifiers: ctrl=%s, shift=%s -> recursive=%s, merge=%s",
+            ctrl, shift, recursive, merge_mode,
             extra={"dev_only": True},
         )
 
@@ -202,7 +197,7 @@ class FileLoadManager:
             logger.info("[Drop] No files dropped in table.")
             return
 
-        logger.info(f"[Drop] {len(paths)} file(s)/folder(s) dropped in table view")
+        logger.info("[Drop] %d file(s)/folder(s) dropped in table view", len(paths))
 
         # Parse modifiers
         ctrl = bool(modifiers & Qt.ControlModifier)
@@ -231,7 +226,8 @@ class FileLoadManager:
     ) -> None:
         """Load folder with wait cursor only (fast approach for all operations)."""
         logger.debug(
-            f"[FileLoadManager] Loading folder with wait cursor: {folder_path} (recursive={recursive})",
+            "[FileLoadManager] Loading folder with wait cursor: %s (recursive=%s)",
+            folder_path, recursive,
             extra={"dev_only": True},
         )
 
@@ -296,14 +292,15 @@ class FileLoadManager:
 
             if companion_count > 0:
                 logger.info(
-                    f"[FileLoadManager] Filtered out {companion_count} companion files. "
-                    f"Showing {len(filtered_files)} main files."
+                    "[FileLoadManager] Filtered out %d companion files. "
+                    "Showing %d main files.",
+                    companion_count, len(filtered_files)
                 )
 
             return filtered_files
 
         except Exception as e:
-            logger.warning(f"[FileLoadManager] Error filtering companion files: {e}")
+            logger.warning("[FileLoadManager] Error filtering companion files: %s", e)
             return file_paths
 
     def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
@@ -319,7 +316,8 @@ class FileLoadManager:
         filtered_paths = self._filter_companion_files(file_paths)
 
         logger.info(
-            f"[FileLoadManager] Updating UI with {len(filtered_paths)} files (clear={clear})",
+            "[FileLoadManager] Updating UI with %d files (clear=%s)",
+            len(filtered_paths), clear,
             extra={"dev_only": True},
         )
 
@@ -330,7 +328,7 @@ class FileLoadManager:
                 file_item = FileItem.from_path(path)
                 file_items.append(file_item)
             except Exception as e:
-                logger.error(f"Error creating FileItem for {path}: {e}")
+                logger.error("Error creating FileItem for %s: %s", path, e)
 
         if not file_items:
             logger.warning("[FileLoadManager] No valid FileItem objects created")
@@ -363,11 +361,13 @@ class FileLoadManager:
                     # Set folder path and recursive mode in ApplicationContext (centralized state)
                     self.parent_window.context.set_current_folder(folder_path, has_subdirectory_files)
                     logger.info(
-                        f"[FileLoadManager] Set current_folder_path to: {folder_path}",
+                        "[FileLoadManager] Set current_folder_path to: %s",
+                        folder_path,
                         extra={"dev_only": True},
                     )
                     logger.info(
-                        f"[FileLoadManager] Recursive mode: {has_subdirectory_files}",
+                        "[FileLoadManager] Recursive mode: %s",
+                        has_subdirectory_files,
                         extra={"dev_only": True},
                     )
 
@@ -379,7 +379,7 @@ class FileLoadManager:
                 self._load_files_immediate(items, clear=clear)
 
         except Exception as e:
-            logger.error(f"[FileLoadManager] Error updating UI: {e}")
+            logger.error("[FileLoadManager] Error updating UI: %s", e)
 
     def _load_files_immediate(self, items: list[FileItem], clear: bool = True) -> None:
         """
@@ -392,7 +392,8 @@ class FileLoadManager:
             # Also update FileStore (centralized state)
             self.parent_window.context.file_store.set_loaded_files(items)
             logger.info(
-                f"[FileLoadManager] Replaced files with {len(items)} new items",
+                "[FileLoadManager] Replaced files with %d new items",
+                len(items),
                 extra={"dev_only": True},
             )
             # Refresh UI to ensure placeholders, header and labels are updated
@@ -429,8 +430,9 @@ class FileLoadManager:
             # Log the results
             if duplicate_count > 0:
                 logger.info(
-                    f"[FileLoadManager] Added {len(new_items)} new items, "
-                    f"skipped {duplicate_count} duplicates"
+                    "[FileLoadManager] Added %d new items, "
+                    "skipped %d duplicates",
+                    len(new_items), duplicate_count
                 )
 
     def _load_files_streaming(self, items: list[FileItem], clear: bool = True) -> None:
@@ -439,8 +441,9 @@ class FileLoadManager:
         Used for large file sets (> 200 files) to prevent UI freeze.
         """
         logger.info(
-            f"[FileLoadManager] Starting streaming load for {len(items)} files "
-            f"(batch_size={self._batch_size})"
+            "[FileLoadManager] Starting streaming load for %d files "
+            "(batch_size=%d)",
+            len(items), self._batch_size
         )
 
         # Clear existing files if requested
@@ -488,7 +491,8 @@ class FileLoadManager:
         loaded_count = len(combined_files)
         total_count = loaded_count + len(self._pending_files)
         logger.debug(
-            f"[FileLoadManager] Streaming progress: {loaded_count}/{total_count} files",
+            "[FileLoadManager] Streaming progress: %d/%d files",
+            loaded_count, total_count,
             extra={"dev_only": True},
         )
 
@@ -536,7 +540,8 @@ class FileLoadManager:
                     else:
                         self.parent_window.header.setEnabled(False)
                     logger.debug(
-                        f"[FileLoadManager] Header enabled state set to {total_files > 0}",
+                        "[FileLoadManager] Header enabled state set to %s",
+                        total_files > 0,
                         extra={"dev_only": True},
                     )
                 except Exception:
@@ -573,7 +578,8 @@ class FileLoadManager:
                     sort_column = self.parent_window.current_sort_column
                     sort_order = self.parent_window.current_sort_order
                     logger.debug(
-                        f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}",
+                        "[FileLoadManager] Restoring sort state: column=%s, order=%s",
+                        sort_column, sort_order,
                         extra={"dev_only": True},
                     )
 
@@ -634,14 +640,14 @@ class FileLoadManager:
             )
 
         except Exception as e:
-            logger.error(f"[FileLoadManager] Error refreshing UI: {e}")
+            logger.error("[FileLoadManager] Error refreshing UI: %s", e)
 
     def prepare_folder_load(self, folder_path: str, *, _clear: bool = True) -> list[str]:
         """
         Prepare folder for loading by getting file list.
         Returns list of file paths without loading them into UI.
         """
-        logger.info(f"[FileLoadManager] prepare_folder_load: {folder_path}")
+        logger.info("[FileLoadManager] prepare_folder_load: %s", folder_path)
         return self._get_files_from_folder(folder_path, recursive=False)
 
     def reload_current_folder(self) -> None:
@@ -652,7 +658,7 @@ class FileLoadManager:
     def set_allowed_extensions(self, extensions: set[str]) -> None:
         """Update the set of allowed file extensions."""
         self.allowed_extensions = extensions
-        logger.info(f"[FileLoadManager] Updated allowed extensions: {extensions}")
+        logger.info("[FileLoadManager] Updated allowed extensions: %s", extensions)
 
     def clear_metadata_operation_flag(self) -> None:
         """Clear the metadata operation flag."""

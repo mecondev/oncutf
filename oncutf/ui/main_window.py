@@ -157,7 +157,7 @@ class MainWindow(QMainWindow):
             dialog = MetadataHistoryDialog(self)
             dialog.exec_()
         except Exception as e:
-            logger.error(f"[MainWindow] Error showing command history dialog: {e}")
+            logger.error("[MainWindow] Error showing command history dialog: %s", e)
             logger.info("[MainWindow] Unified command history not yet fully implemented")
 
     def request_preview_update(self) -> None:
@@ -566,7 +566,7 @@ class MainWindow(QMainWindow):
             old_value: The previous value
             new_value: The new value
         """
-        logger.info(f"[MetadataEdit] Value changed: {key_path} = '{old_value}' -> '{new_value}'")
+        logger.info("[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value)
 
         # Use specialized metadata status method if status manager is available
         if hasattr(self, "status_manager") and self.status_manager:
@@ -578,7 +578,7 @@ class MainWindow(QMainWindow):
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         # Just log the change for debugging
-        logger.debug(f"[MetadataEdit] Modified metadata field: {key_path}")
+        logger.debug("[MetadataEdit] Modified metadata field: %s", key_path)
 
     def on_metadata_value_reset(self, key_path: str) -> None:
         """
@@ -587,7 +587,7 @@ class MainWindow(QMainWindow):
         Args:
             key_path: The metadata key path that was reset
         """
-        logger.info(f"[MetadataEdit] Value reset: {key_path}")
+        logger.info("[MetadataEdit] Value reset: %s", key_path)
 
         # Use specialized metadata status method if status manager is available
         if hasattr(self, "status_manager") and self.status_manager:
@@ -596,7 +596,7 @@ class MainWindow(QMainWindow):
             )
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
-        logger.debug(f"[MetadataEdit] Reset metadata field: {key_path}")
+        logger.debug("[MetadataEdit] Reset metadata field: %s", key_path)
 
     def on_metadata_value_copied(self, value: str) -> None:
         """
@@ -605,7 +605,7 @@ class MainWindow(QMainWindow):
         Args:
             value: The value that was copied to clipboard
         """
-        logger.debug(f"[MetadataEdit] Value copied to clipboard: {value}")
+        logger.debug("[MetadataEdit] Value copied to clipboard: %s", value)
 
         # Use specialized file operation status method if status manager is available
         if hasattr(self, "status_manager") and self.status_manager:
@@ -849,7 +849,7 @@ class MainWindow(QMainWindow):
                     else:
                         logger.warning("[CloseEvent] MetadataManager not available for saving")
                 except Exception as e:
-                    logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
+                    logger.error("[CloseEvent] Failed to save metadata before closing: %s", e)
                     # Show error but continue closing anyway
                     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
@@ -869,7 +869,7 @@ class MainWindow(QMainWindow):
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
         except Exception as e:
-            logger.error(f"[CloseEvent] Failed to save configuration: {e}")
+            logger.error("[CloseEvent] Failed to save configuration: %s", e)
 
         # Ignore this close event - we'll handle closing ourselves
         event.ignore()
@@ -943,13 +943,13 @@ class MainWindow(QMainWindow):
 
             # Log summary
             summary = self.shutdown_coordinator.get_summary()
-            logger.info(f"[CloseEvent] Shutdown summary: {summary}")
+            logger.info("[CloseEvent] Shutdown summary: %s", summary)
 
             # Complete shutdown
             self._complete_shutdown(success)
 
         except Exception as e:
-            logger.error(f"[CloseEvent] Error during coordinated shutdown: {e}", exc_info=True)
+            logger.error("[CloseEvent] Error during coordinated shutdown: %s", e, exc_info=True)
             # Fallback to emergency shutdown
             QApplication.restoreOverrideCursor()
             QApplication.quit()
@@ -963,7 +963,7 @@ class MainWindow(QMainWindow):
                     self.backup_manager.create_backup(reason="auto")  # type: ignore
                     logger.info("[CloseEvent] Database backup created")
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Database backup failed: {e}")
+                    logger.warning("[CloseEvent] Database backup failed: %s", e)
 
             # Save window configuration
             if hasattr(self, "window_config_manager") and self.window_config_manager:
@@ -971,7 +971,7 @@ class MainWindow(QMainWindow):
                     self.window_config_manager.save_window_config()
                     logger.info("[CloseEvent] Window configuration saved")
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Failed to save window config: {e}")
+                    logger.warning("[CloseEvent] Failed to save window config: %s", e)
 
             # Flush batch operations
             if hasattr(self, "batch_manager") and self.batch_manager:
@@ -980,7 +980,7 @@ class MainWindow(QMainWindow):
                         self.batch_manager.flush_operations()  # type: ignore
                         logger.info("[CloseEvent] Batch operations flushed")
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Batch flush failed: {e}")
+                    logger.warning("[CloseEvent] Batch flush failed: %s", e)
 
             # Cleanup drag operations
             if hasattr(self, "drag_manager") and self.drag_manager:
@@ -988,7 +988,7 @@ class MainWindow(QMainWindow):
                     self.drag_manager.force_cleanup()  # type: ignore
                     logger.info("[CloseEvent] Drag manager cleaned up")
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Drag cleanup failed: {e}")
+                    logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
 
             # Close dialogs
             if hasattr(self, "dialog_manager") and self.dialog_manager:
@@ -996,7 +996,7 @@ class MainWindow(QMainWindow):
                     self.dialog_manager.cleanup()  # type: ignore
                     logger.info("[CloseEvent] All dialogs closed")
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Dialog cleanup failed: {e}")
+                    logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
 
             # Stop metadata operations
             if hasattr(self, "metadata_thread") and self.metadata_thread:
@@ -1015,10 +1015,10 @@ class MainWindow(QMainWindow):
                     # Set to None to prevent double cleanup
                     self.metadata_thread = None
                 except Exception as e:
-                    logger.warning(f"[CloseEvent] Metadata thread cleanup failed: {e}")
+                    logger.warning("[CloseEvent] Metadata thread cleanup failed: %s", e)
 
         except Exception as e:
-            logger.error(f"[CloseEvent] Error in pre-coordinator cleanup: {e}")
+            logger.error("[CloseEvent] Error in pre-coordinator cleanup: %s", e)
 
     def _post_coordinator_cleanup(self):
         """Perform final cleanup after coordinator shutdown."""
@@ -1038,10 +1038,10 @@ class MainWindow(QMainWindow):
                     context.cleanup()  # type: ignore
                     logger.info("[CloseEvent] Application context cleaned up")
             except Exception as ctx_error:
-                logger.warning(f"[CloseEvent] Context cleanup failed: {ctx_error}")
+                logger.warning("[CloseEvent] Context cleanup failed: %s", ctx_error)
 
         except Exception as e:
-            logger.error(f"[CloseEvent] Error in post-coordinator cleanup: {e}")
+            logger.error("[CloseEvent] Error in post-coordinator cleanup: %s", e)
 
     def _complete_shutdown(self, success: bool = True):
         """Complete the shutdown process."""
@@ -1065,14 +1065,14 @@ class MainWindow(QMainWindow):
 
             # Log completion
             status = "successfully" if success else "with errors"
-            logger.info(f"[CloseEvent] Shutdown completed {status}")
+            logger.info("[CloseEvent] Shutdown completed %s", status)
 
             # Quit application (with guard against multiple calls)
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 
         except Exception as e:
-            logger.error(f"[CloseEvent] Error completing shutdown: {e}")
+            logger.error("[CloseEvent] Error completing shutdown: %s", e)
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 
@@ -1106,15 +1106,15 @@ class MainWindow(QMainWindow):
             has_modifications = any(modifications for modifications in all_modifications.values())
 
             if has_modifications:
-                logger.info(f"[CloseEvent] Found unsaved changes in {len(all_modifications)} files")
+                logger.info("[CloseEvent] Found unsaved changes in %d files", len(all_modifications))
                 for file_path, modifications in all_modifications.items():
                     if modifications:
-                        logger.debug(f"[CloseEvent] - {file_path}: {list(modifications.keys())}")
+                        logger.debug("[CloseEvent] - %s: %s", file_path, list(modifications.keys()))
 
             return has_modifications
 
         except Exception as e:
-            logger.warning(f"[CloseEvent] Error checking for unsaved changes: {e}")
+            logger.warning("[CloseEvent] Error checking for unsaved changes: %s", e)
             return False
 
     def _force_cleanup_background_workers(self) -> None:
@@ -1142,7 +1142,7 @@ class MainWindow(QMainWindow):
         threads = self.findChildren(QThread)
         for thread in threads:
             if thread.isRunning():
-                logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
+                logger.info("[CloseEvent] Terminating QThread: %s", thread.__class__.__name__)
                 thread.quit()
                 if not thread.wait(1000):  # Wait max 1 second
                     logger.warning(
@@ -1212,7 +1212,7 @@ class MainWindow(QMainWindow):
             else:
                 logger.warning("[MainWindow] UnifiedRenameEngine not available")
         except Exception as e:
-            logger.error(f"[MainWindow] Error in unified preview update: {e}")
+            logger.error("[MainWindow] Error in unified preview update: %s", e)
 
     def update_active_metadata_widget_options(self):
         """Find the active MetadataWidget and call trigger_update_options and emit_if_changed (for selection change)."""
@@ -1226,7 +1226,7 @@ class MainWindow(QMainWindow):
                         widget.trigger_update_options()
                         widget.emit_if_changed()
         except Exception as e:
-            logger.warning(f"[MainWindow] Error updating metadata widget: {e}")
+            logger.warning("[MainWindow] Error updating metadata widget: %s", e)
 
     def _register_managers_in_context(self):
         """
@@ -1292,7 +1292,7 @@ class MainWindow(QMainWindow):
             )
 
         except Exception as e:
-            logger.error(f"[MainWindow] Error registering managers in context: {e}")
+            logger.error("[MainWindow] Error registering managers in context: %s", e)
 
     def _register_shutdown_components(self):
         """Register all concurrent components with shutdown coordinator."""
@@ -1310,7 +1310,7 @@ class MainWindow(QMainWindow):
                 thread_pool_mgr = get_thread_pool_manager()
                 self.shutdown_coordinator.register_thread_pool_manager(thread_pool_mgr)
             except Exception as e:
-                logger.debug(f"[MainWindow] Thread pool manager not available: {e}")
+                logger.debug("[MainWindow] Thread pool manager not available: %s", e)
 
             # Register database manager
             if hasattr(self, "db_manager") and self.db_manager:
@@ -1325,9 +1325,9 @@ class MainWindow(QMainWindow):
                     exiftool = next(iter(ExifToolWrapper._instances))  # type: ignore
                     self.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
-                logger.debug(f"[MainWindow] ExifTool wrapper not available: {e}")
+                logger.debug("[MainWindow] ExifTool wrapper not available: %s", e)
 
             logger.info("[MainWindow] Shutdown components registered successfully")
 
         except Exception as e:
-            logger.error(f"[MainWindow] Error registering shutdown components: {e}")
+            logger.error("[MainWindow] Error registering shutdown components: %s", e)

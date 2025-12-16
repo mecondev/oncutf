@@ -67,7 +67,7 @@ LOG_DEBUG_FILE_LEVEL = "DEBUG"  # Debug log file level
 LOG_DEBUG_FILE_MAX_BYTES = 20_000_000  # 20MB per debug file
 LOG_DEBUG_FILE_BACKUP_COUNT = 3  # Keep 3 debug backups (total: 80MB max)
 
-# Development logging settings (legacy - use LOG_* settings above)
+# Development logging settings
 SHOW_DEV_ONLY_IN_CONSOLE = False
 ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 
@@ -722,7 +722,7 @@ TOOLTIP_POSITION_OFFSET = (
 UNDO_REDO_SETTINGS = {
     # Maximum number of undo steps to keep in memory
     "MAX_UNDO_STEPS": 300,
-    # Keyboard shortcuts (legacy - use GLOBAL_SHORTCUTS instead)
+    # Keyboard shortcuts
     "UNDO_SHORTCUT": "Ctrl+Z",
     "REDO_SHORTCUT": "Ctrl+Shift+Z",  # Changed from Ctrl+R to standard Ctrl+Shift+Z
     "HISTORY_SHORTCUT": "Ctrl+Y",  # Changed from Ctrl+Shift+Z to Ctrl+Y
