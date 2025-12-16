@@ -37,7 +37,7 @@ class WindowConfigManager:
             # Load geometry
             geometry = window_config.get("geometry")
             logger.debug(
-                f"[Config] Loaded geometry from config: {geometry}", extra={"dev_only": True}
+                "[Config] Loaded geometry from config: %s", geometry, extra={"dev_only": True}
             )
 
             if geometry:
@@ -45,7 +45,7 @@ class WindowConfigManager:
                     geometry["x"], geometry["y"], geometry["width"], geometry["height"]
                 )
                 logger.debug(
-                    f"[Config] Applied saved window geometry: {geometry}", extra={"dev_only": True}
+                    "[Config] Applied saved window geometry: %s", geometry, extra={"dev_only": True}
                 )
             else:
                 # No saved geometry - set smart defaults based on screen size
@@ -69,7 +69,7 @@ class WindowConfigManager:
             )
 
         except Exception as e:
-            logger.error(f"[Config] Failed to load window configuration: {e}")
+            logger.error("[Config] Failed to load window configuration: %s", e)
             # If config loading fails, still set smart defaults
             logger.info("[Config] Exception occurred, applying smart defaults as fallback")
             self._set_smart_default_geometry()
@@ -156,7 +156,7 @@ class WindowConfigManager:
             )
 
         except Exception as e:
-            logger.error(f"[Config] Failed to save window configuration: {e}")
+            logger.error("[Config] Failed to save window configuration: %s", e)
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
@@ -176,7 +176,7 @@ class WindowConfigManager:
             screen_width = screen_geometry.width()
             screen_height = screen_geometry.height()
 
-            logger.info(f"[Config] Primary screen detected: {screen_width}x{screen_height}")
+            logger.info("[Config] Primary screen detected: %dx%d", screen_width, screen_height)
 
             # Import screen size configuration from config
             from oncutf.core.config_imports import (
@@ -221,11 +221,11 @@ class WindowConfigManager:
             # Apply the geometry
             self.main_window.setGeometry(x, y, window_width, window_height)
             logger.info(
-                f"[Config] Smart geometry set: {window_width}x{window_height} at ({x}, {y})"
+                "[Config] Smart geometry set: %dx%d at (%d, %d)", window_width, window_height, x, y
             )
 
         except Exception as e:
-            logger.error(f"[Config] Failed to set smart default geometry: {e}")
+            logger.error("[Config] Failed to set smart default geometry: %s", e)
             # Ultimate fallback
             self.main_window.setGeometry(100, 100, 1200, 800)
 
@@ -239,14 +239,14 @@ class WindowConfigManager:
             if "horizontal" in splitter_states and hasattr(self.main_window, "horizontal_splitter"):
                 self.main_window.horizontal_splitter.setSizes(splitter_states["horizontal"])
                 logger.debug(
-                    f"[Config] Applied horizontal splitter: {splitter_states['horizontal']}",
+                    "[Config] Applied horizontal splitter: %s", splitter_states['horizontal'],
                     extra={"dev_only": True},
                 )
 
             if "vertical" in splitter_states and hasattr(self.main_window, "vertical_splitter"):
                 self.main_window.vertical_splitter.setSizes(splitter_states["vertical"])
                 logger.debug(
-                    f"[Config] Applied vertical splitter: {splitter_states['vertical']}",
+                    "[Config] Applied vertical splitter: %s", splitter_states['vertical'],
                     extra={"dev_only": True},
                 )
 
@@ -271,7 +271,7 @@ class WindowConfigManager:
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 
         except Exception as e:
-            logger.error(f"[Config] Failed to apply loaded configuration: {e}")
+            logger.error("[Config] Failed to apply loaded configuration: %s", e)
 
     def handle_window_state_change(self) -> None:
         """Handle window state changes (maximize, minimize, restore)."""
@@ -289,7 +289,7 @@ class WindowConfigManager:
                 self._refresh_file_table_for_window_change()
 
         except Exception as e:
-            logger.error(f"[Config] Error handling window state change: {e}")
+            logger.error("[Config] Error handling window state change: %s", e)
 
     def _refresh_file_table_for_window_change(self) -> None:
         """Refresh file table layout after window state changes."""
@@ -312,7 +312,7 @@ class WindowConfigManager:
                 get_timer_manager().schedule(refresh, delay=100, timer_type=TimerType.GENERIC)
 
         except Exception as e:
-            logger.error(f"[Config] Error refreshing file table for window change: {e}")
+            logger.error("[Config] Error refreshing file table for window change: %s", e)
 
     def center_window(self) -> None:
         """Center the window on the primary screen."""
@@ -332,10 +332,10 @@ class WindowConfigManager:
             y = screen_geometry.y() + (screen_geometry.height() - window_geometry.height()) // 2
 
             self.main_window.move(x, y)
-            logger.info(f"[Config] Window centered at ({x}, {y})")
+            logger.info("[Config] Window centered at (%d, %d)", x, y)
 
         except Exception as e:
-            logger.error(f"[Config] Error centering window: {e}")
+            logger.error("[Config] Error centering window: %s", e)
 
     def get_last_folder_from_config(self) -> str:
         """Get the last folder path from configuration."""
@@ -353,13 +353,63 @@ class WindowConfigManager:
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
+        # Phase 1D: Use MainWindowController if flag is enabled
+        if (
+            hasattr(self.main_window, "_use_main_window_controller")
+            and self.main_window._use_main_window_controller
+            and hasattr(self.main_window, "main_window_controller")
+        ):
+            # Get configuration values
+            last_folder = getattr(self.main_window, "_last_folder_from_config", None)
+            recursive = getattr(self.main_window, "_recursive_mode_from_config", False)
+            sort_column = getattr(self.main_window, "_sort_column_from_config", None)
+            sort_order = getattr(self.main_window, "_sort_order_from_config", None)
+
+            if last_folder:
+                logger.info("[Config] Using MainWindowController for session restore")
+
+                # Call MainWindowController orchestration method
+                result = self.main_window.main_window_controller.restore_last_session_workflow(
+                    last_folder=last_folder,
+                    recursive=recursive,
+                    load_metadata=False,  # Don't auto-load metadata on restore
+                    sort_column=sort_column,
+                    sort_order=sort_order,
+                )
+
+                # Apply sort configuration if needed
+                if (
+                    result.get('success')
+                    and result.get('sort_column') is not None
+                    and hasattr(self.main_window, "sort_by_column")
+                ):
+                    from oncutf.core.pyqt_imports import Qt
+
+                    qt_sort_order = (
+                        Qt.AscendingOrder
+                        if result['sort_order'] == 0
+                        else Qt.DescendingOrder
+                    )
+                    self.main_window.sort_by_column(
+                        result['sort_column'], qt_sort_order
+                    )
+
+                    logger.info(
+                        "[Config] Applied sort: column=%d, order=%s",
+                        result['sort_column'],
+                        "ASC" if result['sort_order'] == 0 else "DESC"
+                    )
+
+                return
+
+        # Fallback: Original implementation (when flag is False or controller not available)
         if (
             hasattr(self.main_window, "_last_folder_from_config")
             and self.main_window._last_folder_from_config
         ):
             last_folder = self.main_window._last_folder_from_config
             if os.path.exists(last_folder):
-                logger.info(f"[Config] Restoring last folder: {last_folder}")
+                logger.info("[Config] Restoring last folder: %s", last_folder)
                 # Use the file load manager to load the folder
                 recursive = getattr(self.main_window, "_recursive_mode_from_config", False)
                 if hasattr(self.main_window, "file_load_manager"):
@@ -383,7 +433,7 @@ class WindowConfigManager:
                             self.main_window._sort_column_from_config, sort_order
                         )
             else:
-                logger.warning(f"[Config] Last folder no longer exists: {last_folder}")
+                logger.warning("[Config] Last folder no longer exists: %s", last_folder)
 
     def ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
