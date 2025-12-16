@@ -177,6 +177,7 @@ class InitializationOrchestrator:
         - Configure window
         - Setup timers
         """
+        from oncutf.controllers.file_load_controller import FileLoadController
         from oncutf.core.column_manager import ColumnManager
         from oncutf.core.dialog_manager import DialogManager
         from oncutf.core.drag_cleanup_manager import DragCleanupManager
@@ -191,7 +192,6 @@ class InitializationOrchestrator:
         from oncutf.core.ui_manager import UIManager
         from oncutf.core.utility_manager import UtilityManager
         from oncutf.core.window_config_manager import WindowConfigManager
-        from oncutf.controllers.file_load_controller import FileLoadController
         from oncutf.utils.json_config_manager import get_app_config_manager
 
         # Initialize all managers
@@ -200,7 +200,7 @@ class InitializationOrchestrator:
         self.window.file_load_manager = FileLoadManager(self.window)
         self.window.file_validation_manager = get_file_validation_manager()
         self.window.table_manager = TableManager(self.window)
-        
+
         # Phase 1A: Initialize FileLoadController (orchestration layer)
         self.window.file_load_controller = FileLoadController(
             file_load_manager=self.window.file_load_manager,
@@ -212,7 +212,7 @@ class InitializationOrchestrator:
             "[Phase1A] FileLoadController initialized",
             extra={"dev_only": True}
         )
-        
+
         self.window.utility_manager = UtilityManager(self.window)
         self.window.rename_manager = RenameManager(self.window)
         self.window.drag_cleanup_manager = DragCleanupManager(self.window)

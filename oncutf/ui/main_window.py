@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
         """Restore metadata from cache via Application Service."""
         self.app_service.restore_fileitem_metadata_from_cache()
 
-    def clear_file_table(self, message: str = "No folder selected") -> None:
+    def clear_file_table(self, message: str = "No folder selected") -> None:  # noqa: ARG002
         """Clear file table via FileLoadController."""
         success = self.file_load_controller.clear_files()
         logger.debug(
