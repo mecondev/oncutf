@@ -103,16 +103,119 @@ class FileTreeView(QTreeView):
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
 
-        # Initialize file system watcher for drive detection
-        self._setup_file_system_watcher()
+        # Initialize filesystem monitor (new comprehensive system)
+        self._setup_filesystem_monitor()
 
         # Install custom tree view delegate for consistent hover/selection behavior
         self._delegate = TreeViewItemDelegate(self)
         self.setItemDelegate(self._delegate)
         self._delegate.install_event_filter(self)
 
+    def _setup_filesystem_monitor(self) -> None:
+        """Setup comprehensive filesystem monitoring."""
+        try:
+            from oncutf.core.filesystem_monitor import FilesystemMonitor
+
+            self._filesystem_monitor = FilesystemMonitor()
+
+            # Connect drive signals
+            self._filesystem_monitor.drive_added.connect(self._on_drive_added)
+            self._filesystem_monitor.drive_removed.connect(self._on_drive_removed)
+
+            # Connect directory change signal
+            self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)
+
+            # Set custom callback for tree refresh
+            self._filesystem_monitor.set_drive_change_callback(self._refresh_tree_on_drives_change)
+
+            # Start monitoring
+            self._filesystem_monitor.start()
+
+            logger.info("[FileTreeView] Filesystem monitor started")
+
+        except Exception as e:
+            logger.warning("[FileTreeView] Failed to setup filesystem monitor: %s", e)
+            self._filesystem_monitor = None
+
+    def _on_drive_added(self, drive_path: str) -> None:
+        """Handle new drive mounted.
+
+        Args:
+            drive_path: Path of mounted drive
+        """
+        logger.info("[FileTreeView] Drive added: %s", drive_path)
+        # Tree will be refreshed by drive_change_callback
+
+    def _on_drive_removed(self, drive_path: str) -> None:
+        """Handle drive unmounted.
+
+        Args:
+            drive_path: Path of unmounted drive
+        """
+        logger.info("[FileTreeView] Drive removed: %s", drive_path)
+        # Tree will be refreshed by drive_change_callback
+
+    def _on_directory_changed(self, dir_path: str) -> None:
+        """Handle directory content changed.
+
+        Args:
+            dir_path: Path of changed directory
+        """
+        logger.debug(
+            "[FileTreeView] Directory changed: %s",
+            dir_path,
+            extra={"dev_only": True}
+        )
+
+        # Refresh model if it supports refresh
+        model = self.model()
+        if model and hasattr(model, "refresh"):
+            try:
+                model.refresh()
+                logger.debug(
+                    "[FileTreeView] Model refreshed after directory change",
+                    extra={"dev_only": True}
+                )
+            except Exception as e:
+                logger.error("[FileTreeView] Model refresh error: %s", e)
+
+    def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
+        """Refresh tree when drives change.
+
+        Args:
+            _drives: Current list of available drives (unused)
+        """
+        logger.info("[FileTreeView] Drives changed, refreshing tree")
+
+        model = self.model()
+        if not model or not hasattr(model, "refresh"):
+            logger.debug(
+                "[FileTreeView] Model doesn't support refresh",
+                extra={"dev_only": True}
+            )
+            return
+
+        # Get current selected path before refresh
+        current_path = self.get_selected_path()
+
+        try:
+            # Refresh the model
+            model.refresh()
+            logger.debug("[FileTreeView] Model refreshed successfully", extra={"dev_only": True})
+
+            # Try to restore selection
+            if current_path and os.path.exists(current_path):
+                self.set_selected_path(current_path)
+
+        except Exception as e:
+            logger.error("[FileTreeView] Error refreshing model: %s", e)
+
     def _setup_file_system_watcher(self) -> None:
-        """Setup QFileSystemWatcher to detect drive changes."""
+        """Setup QFileSystemWatcher to detect drive changes.
+
+        DEPRECATED: Replaced by FilesystemMonitor.
+        Kept for backward compatibility but does nothing.
+        """
         try:
             from PyQt5.QtCore import QFileSystemWatcher, QTimer
 
@@ -182,14 +285,25 @@ class FileTreeView(QTreeView):
     def closeEvent(self, event) -> None:
         """Clean up resources before closing."""
         try:
-            # Stop the drive change timer
+            # Stop filesystem monitor
+            if hasattr(self, "_filesystem_monitor") and self._filesystem_monitor is not None:
+                try:
+                    self._filesystem_monitor.stop()
+                    self._filesystem_monitor.blockSignals(True)
+                    self._filesystem_monitor.deleteLater()
+                    self._filesystem_monitor = None
+                    logger.debug("[FileTreeView] Filesystem monitor stopped", extra={"dev_only": True})
+                except Exception as e:
+                    logger.warning("[FileTreeView] Error stopping filesystem monitor: %s", e)
+
+            # Stop the drive change timer (old system)
             if hasattr(self, "_drive_change_timer") and self._drive_change_timer is not None:
                 self._drive_change_timer.stop()
                 self._drive_change_timer.blockSignals(True)
                 self._drive_change_timer.deleteLater()
                 self._drive_change_timer = None
 
-            # Properly cleanup file system watcher
+            # Properly cleanup file system watcher (old system)
             if hasattr(self, "file_system_watcher") and self.file_system_watcher is not None:
                 # Disconnect all signals
                 with contextlib.suppress(RuntimeError, TypeError):
@@ -209,7 +323,7 @@ class FileTreeView(QTreeView):
             logger.debug("[FileTreeView] Cleanup completed", extra={"dev_only": True})
 
         except Exception as e:
-            logger.error(f"[FileTreeView] Error during cleanup: {e}")
+            logger.error("[FileTreeView] Error during cleanup: %s", e)
 
         # Call parent closeEvent
         super().closeEvent(event)

@@ -20,6 +20,7 @@ from PyQt5.QtCore import (
     QElapsedTimer,
     QEvent,
     QEventLoop,
+    QFileSystemWatcher,
     QItemSelection,
     QItemSelectionModel,
     QItemSelectionRange,
@@ -144,6 +145,7 @@ __all__ = [
     "QElapsedTimer",
     "QEvent",
     "QEventLoop",
+    "QFileSystemWatcher",
     "QItemSelection",
     "QItemSelectionModel",
     "QItemSelectionRange",
@@ -166,7 +168,6 @@ __all__ = [
     "QVariant",
     "pyqtSignal",
     "pyqtSlot",
-    "QEventLoop",
     # GUI
     "QBrush",
     "QColor",
