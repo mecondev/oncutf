@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Phase 1D - MainWindowController**: High-level orchestration controller
+  - New MainWindowController coordinating FileLoad, Metadata, and Rename controllers
+  - `restore_last_session_workflow()`: Orchestrates session restoration (folder validation, file loading, optional metadata, sort config)
+  - `coordinate_shutdown_workflow()`: Orchestrates graceful shutdown with progress callbacks
+  - 17 comprehensive tests for all orchestration workflows
+  - Integration with WindowConfigManager for session restore
+  - Testable orchestration layer separating UI from business logic
+
+### Changed
+- **Phase 1D - Architecture Improvements**:
+  - Session restoration now uses MainWindowController instead of direct manager calls
+  - Shutdown orchestration extracted from MainWindow to MainWindowController
+  - Improved code organization following MVC-inspired controller pattern
+  - Enhanced testability of complex multi-service workflows
+
 ### Refactoring
 - **Mixin Extraction from FileTableView** (Day 8 - 2025-12-04):
   - Extracted SelectionMixin (486 lines, 12 methods) for Windows Explorer-style selection
