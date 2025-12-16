@@ -11,7 +11,7 @@ Tests the controller's orchestration logic without Qt dependencies.
 import warnings
 from datetime import datetime
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -439,14 +439,24 @@ class TestExecuteRename:
         rename_controller._unified_rename_engine.validate_preview.return_value = mock_validation
         rename_controller._unified_rename_engine.execute_rename.return_value = mock_execution
 
-        # Execute
-        result = rename_controller.execute_rename(
-            file_items=sample_file_items,
-            modules_data=sample_modules_data,
-            post_transform=sample_post_transform,
-            metadata_cache={},
-            current_folder="/test",
-        )
+        # Mock validator to always pass validation
+        with patch('oncutf.core.pre_execution_validator.PreExecutionValidator') as mock_validator_class:
+            mock_validator = MagicMock()
+            mock_validator.validate.return_value = MagicMock(
+                is_valid=True,
+                issues=[],
+                valid_files=sample_file_items
+            )
+            mock_validator_class.return_value = mock_validator
+
+            # Execute
+            result = rename_controller.execute_rename(
+                file_items=sample_file_items,
+                modules_data=sample_modules_data,
+                post_transform=sample_post_transform,
+                metadata_cache={},
+                current_folder="/test",
+            )
 
         # Verify
         assert result["success"] is True
@@ -549,14 +559,24 @@ class TestExecuteRename:
         rename_controller._unified_rename_engine.validate_preview.return_value = mock_validation
         rename_controller._unified_rename_engine.execute_rename.return_value = mock_execution
 
-        # Execute
-        result = rename_controller.execute_rename(
-            file_items=sample_file_items,
-            modules_data=sample_modules_data,
-            post_transform=sample_post_transform,
-            metadata_cache={},
-            current_folder="/test",
-        )
+        # Mock validator to always pass validation
+        with patch('oncutf.core.pre_execution_validator.PreExecutionValidator') as mock_validator_class:
+            mock_validator = MagicMock()
+            mock_validator.validate.return_value = MagicMock(
+                is_valid=True,
+                issues=[],
+                valid_files=sample_file_items
+            )
+            mock_validator_class.return_value = mock_validator
+
+            # Execute
+            result = rename_controller.execute_rename(
+                file_items=sample_file_items,
+                modules_data=sample_modules_data,
+                post_transform=sample_post_transform,
+                metadata_cache={},
+                current_folder="/test",
+            )
 
         # Verify
         assert result["success"] is True  # Some files renamed

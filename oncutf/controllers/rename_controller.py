@@ -381,12 +381,60 @@ class RenameController:
                     ],
                 }
 
-            # Step 3: Execute rename
+            # Step 3: Pre-execution validation
+            logger.info("[RenameController] Validating files before execution...")
+            from oncutf.core.pre_execution_validator import PreExecutionValidator
+
+            validator = PreExecutionValidator(check_hash=False)
+            validation_result = validator.validate(file_items)
+
+            if not validation_result.is_valid:
+                logger.warning(
+                    "[RenameController] Pre-execution validation found %d issue(s)",
+                    len(validation_result.issues)
+                )
+
+                # Show validation dialog (if UI available)
+                user_decision = self._handle_validation_issues(validation_result)
+
+                if user_decision == "cancel":
+                    logger.info("[RenameController] User cancelled due to validation issues")
+                    return {
+                        "success": False,
+                        "renamed_count": 0,
+                        "failed_count": 0,
+                        "skipped_count": len(file_items),
+                        "errors": [validation_result.get_summary()],
+                    }
+                elif user_decision == "refresh":
+                    logger.info("[RenameController] User requested preview refresh")
+                    return {
+                        "success": False,
+                        "renamed_count": 0,
+                        "failed_count": 0,
+                        "skipped_count": len(file_items),
+                        "errors": ["Preview refresh requested"],
+                        "refresh_requested": True,
+                    }
+                elif user_decision == "skip":
+                    logger.info(
+                        "[RenameController] User chose to skip %d problematic files",
+                        len(validation_result.issues)
+                    )
+                    # Continue with only valid files
+                    file_items = validation_result.valid_files
+                    # Rebuild preview for valid files only
+                    preview_result = self._unified_rename_engine.generate_preview(
+                        file_items,
+                        current_folder
+                    )
+
+            # Step 4: Execute rename
             logger.info("[RenameController] Executing rename operation...")
-            
+
             # Extract new names from name_pairs
             new_names = [new_name for _, new_name in preview_result.name_pairs]
-            
+
             execution_result = self._unified_rename_engine.execute_rename(
                 files=file_items,
                 new_names=new_names,
@@ -506,3 +554,35 @@ class RenameController:
             )
         except Exception as e:
             logger.warning("[RenameController] Error clearing state: %s", str(e))
+    def _handle_validation_issues(
+        self, validation_result
+    ) -> str:
+        """Handle validation issues by showing dialog.
+
+        Args:
+            validation_result: ValidationResult with issues
+
+        Returns:
+            str: User decision ("skip", "cancel", or "refresh")
+        """
+        try:
+            from oncutf.ui.widgets.validation_issues_dialog import (
+                ValidationIssuesDialog,
+            )
+
+            dialog = ValidationIssuesDialog(validation_result)
+            result_code = dialog.exec_()
+
+            if result_code == ValidationIssuesDialog.SKIP_AND_CONTINUE:
+                return "skip"
+            elif result_code == ValidationIssuesDialog.REFRESH_PREVIEW:
+                return "refresh"
+            else:
+                return "cancel"
+
+        except Exception as e:
+            logger.error(
+                "[RenameController] Error showing validation dialog: %s", str(e)
+            )
+            # Fallback: cancel on error
+            return "cancel"

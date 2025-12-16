@@ -5,11 +5,11 @@ Author: Michael Economou
 Date: 2025-12-16
 """
 
-import pytest
 
 from oncutf.controllers.state_coordinator import StateCoordinator
 from oncutf.core.file_store import FileStore
 from oncutf.models.file_item import FileItem
+
 
 class TestStateCoordinatorCreation:
     """Test StateCoordinator creation and initialization."""
@@ -18,7 +18,7 @@ class TestStateCoordinatorCreation:
         """Test creating a StateCoordinator."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         assert coordinator.get_file_store() is file_store
 
@@ -29,7 +29,7 @@ class TestStateCoordinatorFilesChanged:
         """Test that notify_files_changed emits signal and updates store."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         # Create test files
         file1 = FileItem.from_path("/test/file1.txt")
@@ -48,7 +48,7 @@ class TestStateCoordinatorFilesChanged:
         """Test that files_changed signal carries correct payload."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         file1 = FileItem.from_path("/test/file1.txt")
         files = [file1]
@@ -72,7 +72,7 @@ class TestStateCoordinatorSelectionChanged:
         """Test that notify_selection_changed emits signal."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         selected = {0, 1, 2}
 
@@ -83,7 +83,7 @@ class TestStateCoordinatorSelectionChanged:
         """Test that selection_changed signal carries correct payload."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         selected = {0, 1, 2}
         received_selection = None
@@ -106,7 +106,7 @@ class TestStateCoordinatorPreviewInvalidated:
         """Test that notify_preview_invalidated emits signal."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         with qtbot.waitSignal(coordinator.preview_invalidated, timeout=1000):
             coordinator.notify_preview_invalidated()
@@ -115,7 +115,7 @@ class TestStateCoordinatorPreviewInvalidated:
         """Test that preview is invalidated when files change."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         file1 = FileItem.from_path("/test/file1.txt")
 
@@ -130,7 +130,7 @@ class TestStateCoordinatorPreviewInvalidated:
         """Test that preview is invalidated when metadata changes."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         # Both metadata_changed and preview_invalidated should emit
         with qtbot.waitSignals(
@@ -146,7 +146,7 @@ class TestStateCoordinatorMetadataChanged:
         """Test that notify_metadata_changed emits signal."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         with qtbot.waitSignal(coordinator.metadata_changed, timeout=1000):
             coordinator.notify_metadata_changed("/test/file1.txt")
@@ -155,7 +155,7 @@ class TestStateCoordinatorMetadataChanged:
         """Test that metadata_changed signal carries correct payload."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         file_path = "/test/file1.txt"
         received_path = None
@@ -178,7 +178,7 @@ class TestStateCoordinatorIntegration:
         """Test that multiple state changes can be coordinated."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-        
+
 
         file1 = FileItem.from_path("/test/file1.txt")
         files = [file1]

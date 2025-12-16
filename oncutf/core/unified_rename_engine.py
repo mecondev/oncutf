@@ -39,15 +39,42 @@ class PreviewResult:
             original.
         errors: Optional list of error messages captured during preview
             generation.
+        timestamp: Time when preview was generated (for staleness checking).
     """
 
     name_pairs: list[tuple[str, str]]
     has_changes: bool
     errors: list[str] = None # type: ignore
+    timestamp: float = 0.0  # Unix timestamp
 
     def __post_init__(self):
         if self.errors is None:
             self.errors = []
+        if self.timestamp == 0.0:
+            import time
+            self.timestamp = time.time()
+
+    def is_stale(self, max_age_seconds: float = 300.0) -> bool:
+        """Check if preview result is stale.
+
+        Args:
+            max_age_seconds: Maximum age before considering stale (default: 5 minutes)
+
+        Returns:
+            bool: True if preview is older than max_age_seconds
+        """
+        import time
+        age = time.time() - self.timestamp
+        return age > max_age_seconds
+
+    def get_age_seconds(self) -> float:
+        """Get age of preview result in seconds.
+
+        Returns:
+            float: Age in seconds
+        """
+        import time
+        return time.time() - self.timestamp
 
 
 @dataclass
