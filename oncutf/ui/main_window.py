@@ -282,16 +282,26 @@ class MainWindow(QMainWindow):
         self.app_service.load_files_from_folder(folder_path, force)
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
-        """Load files from paths via Application Service."""
-        self.app_service.load_files_from_paths(file_paths, clear=clear)
+        """Load files from paths via FileLoadController."""
+        result = self.file_load_controller.load_files(file_paths, clear=clear)
+        logger.debug(
+            "[FileLoadController] load_files result: %s",
+            result,
+            extra={"dev_only": True}
+        )
 
     def load_files_from_dropped_items(
         self,
         paths: list[str],
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
     ) -> None:  # type: ignore
-        """Load files from dropped items via Application Service."""
-        self.app_service.load_files_from_dropped_items(paths, modifiers)
+        """Load files from dropped items via FileLoadController."""
+        result = self.file_load_controller.handle_drop(paths, modifiers)
+        logger.debug(
+            "[FileLoadController] handle_drop result: %s",
+            result,
+            extra={"dev_only": True}
+        )
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Prepare folder load via Application Service."""
@@ -340,9 +350,14 @@ class MainWindow(QMainWindow):
         """Restore metadata from cache via Application Service."""
         self.app_service.restore_fileitem_metadata_from_cache()
 
-    def clear_file_table(self, message: str = "No folder selected") -> None:
-        """Clear file table via Application Service."""
-        self.app_service.clear_file_table(message)
+    def clear_file_table(self, message: str = "No folder selected") -> None:  # noqa: ARG002
+        """Clear file table via FileLoadController."""
+        success = self.file_load_controller.clear_files()
+        logger.debug(
+            "[FileLoadController] clear_files result: %s",
+            success,
+            extra={"dev_only": True}
+        )
 
     def get_common_metadata_fields(self) -> list[str]:
         """Get common metadata fields via Application Service."""
