@@ -50,9 +50,6 @@ class MainWindow(QMainWindow):
         # Prevent repaints during initialization (seamless display)
         self.setUpdatesEnabled(False)
 
-        # Phase 1B Feature Flag: Use MetadataController instead of ApplicationService
-        self._use_metadata_controller = True
-
         # Preview debounce timer (Day 1-2 Performance Optimization)
         self._preview_debounce_timer: QTimer | None = None
         self._preview_pending = False
@@ -329,18 +326,13 @@ class MainWindow(QMainWindow):
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
-        """Load metadata for items via MetadataController or Application Service."""
-        if self._use_metadata_controller:
-            # Use MetadataController (Phase 1B)
-            result = self.metadata_controller.load_metadata(items, use_extended, source)
-            logger.debug(
-                "[Phase1B] MetadataController.load_metadata result: %s",
-                result.get('success'),
-                extra={"dev_only": True}
-            )
-        else:
-            # Fallback to ApplicationService
-            self.app_service.load_metadata_for_items(items, use_extended, source)
+        """Load metadata for items via MetadataController."""
+        result = self.metadata_controller.load_metadata(items, use_extended, source)
+        logger.debug(
+            "[MetadataController] load_metadata result: %s",
+            result.get('success'),
+            extra={"dev_only": True}
+        )
 
     # =====================================
     # Table Operations via Application Service
@@ -360,18 +352,13 @@ class MainWindow(QMainWindow):
         self.app_service.prepare_file_table(file_items)
 
     def restore_fileitem_metadata_from_cache(self) -> None:
-        """Restore metadata from cache via MetadataController or Application Service."""
-        if self._use_metadata_controller:
-            # Use MetadataController (Phase 1B)
-            result = self.metadata_controller.restore_metadata_from_cache()
-            logger.debug(
-                "[Phase1B] MetadataController.restore_metadata_from_cache result: %s",
-                result.get('success'),
-                extra={"dev_only": True}
-            )
-        else:
-            # Fallback to ApplicationService
-            self.app_service.restore_fileitem_metadata_from_cache()
+        """Restore metadata from cache via MetadataController."""
+        result = self.metadata_controller.restore_metadata_from_cache()
+        logger.debug(
+            "[MetadataController] restore_metadata_from_cache result: %s",
+            result.get('success'),
+            extra={"dev_only": True}
+        )
 
     def clear_file_table(self, message: str = "No folder selected") -> None:  # noqa: ARG002
         """Clear file table via FileLoadController."""
@@ -383,13 +370,8 @@ class MainWindow(QMainWindow):
         )
 
     def get_common_metadata_fields(self) -> list[str]:
-        """Get common metadata fields via MetadataController or Application Service."""
-        if self._use_metadata_controller:
-            # Use MetadataController (Phase 1B)
-            return self.metadata_controller.get_common_metadata_fields()
-        else:
-            # Fallback to ApplicationService
-            return self.app_service.get_common_metadata_fields()
+        """Get common metadata fields via MetadataController."""
+        return self.metadata_controller.get_common_metadata_fields()
 
     def set_fields_from_list(self, field_names: list[str]) -> None:
         """Set fields from list via Application Service."""
@@ -472,22 +454,12 @@ class MainWindow(QMainWindow):
         return self.app_service.get_modifier_flags()
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
-        """Determine metadata mode via MetadataController or Application Service."""
-        if self._use_metadata_controller:
-            # Use MetadataController (Phase 1B)
-            return self.metadata_controller.determine_metadata_mode()
-        else:
-            # Fallback to ApplicationService
-            return self.app_service.determine_metadata_mode()
+        """Determine metadata mode via MetadataController."""
+        return self.metadata_controller.determine_metadata_mode()
 
     def should_use_extended_metadata(self) -> bool:
-        """Determine if extended metadata should be used via MetadataController or Application Service."""
-        if self._use_metadata_controller:
-            # Use MetadataController (Phase 1B)
-            return self.metadata_controller.should_use_extended_metadata()
-        else:
-            # Fallback to ApplicationService
-            return self.app_service.should_use_extended_metadata()
+        """Determine if extended metadata should be used via MetadataController."""
+        return self.metadata_controller.should_use_extended_metadata()
 
     def update_files_label(self) -> None:
         """Update files label via Application Service."""
