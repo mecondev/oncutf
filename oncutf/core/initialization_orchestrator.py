@@ -178,6 +178,7 @@ class InitializationOrchestrator:
         - Setup timers
         """
         from oncutf.controllers.file_load_controller import FileLoadController
+        from oncutf.controllers.metadata_controller import MetadataController
         from oncutf.core.column_manager import ColumnManager
         from oncutf.core.dialog_manager import DialogManager
         from oncutf.core.drag_cleanup_manager import DragCleanupManager
@@ -210,6 +211,17 @@ class InitializationOrchestrator:
         )
         logger.info(
             "[Phase1A] FileLoadController initialized",
+            extra={"dev_only": True}
+        )
+
+        # Phase 1B: Initialize MetadataController (orchestration layer)
+        self.window.metadata_controller = MetadataController(
+            unified_metadata_manager=self.window.metadata_manager,
+            structured_metadata_manager=self.window.structured_metadata_manager,
+            app_context=self.window.context,
+        )
+        logger.info(
+            "[Phase1B] MetadataController initialized",
             extra={"dev_only": True}
         )
 
