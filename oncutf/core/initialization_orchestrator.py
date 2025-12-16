@@ -191,12 +191,8 @@ class InitializationOrchestrator:
         from oncutf.core.ui_manager import UIManager
         from oncutf.core.utility_manager import UtilityManager
         from oncutf.core.window_config_manager import WindowConfigManager
+        from oncutf.controllers.file_load_controller import FileLoadController
         from oncutf.utils.json_config_manager import get_app_config_manager
-
-        # Phase 1A: FileLoadController feature flag
-        # When True: use new FileLoadController (orchestration layer)
-        # When False: use ApplicationService (current implementation)
-        self.window._use_file_load_controller = True
 
         # Initialize all managers
         self.window.dialog_manager = DialogManager()
@@ -205,26 +201,17 @@ class InitializationOrchestrator:
         self.window.file_validation_manager = get_file_validation_manager()
         self.window.table_manager = TableManager(self.window)
         
-        # Phase 1A: Initialize FileLoadController if flag is enabled
-        if self.window._use_file_load_controller:
-            from oncutf.controllers.file_load_controller import FileLoadController
-            
-            self.window.file_load_controller = FileLoadController(
-                file_load_manager=self.window.file_load_manager,
-                file_store=self.window.file_model,  # FileTableModel acts as FileStore
-                table_manager=self.window.table_manager,
-                context=self.window.context
-            )
-            logger.info(
-                "[Phase1A] FileLoadController initialized and ready",
-                extra={"dev_only": True}
-            )
-        else:
-            self.window.file_load_controller = None
-            logger.debug(
-                "[Phase1A] FileLoadController disabled (using ApplicationService fallback)",
-                extra={"dev_only": True}
-            )
+        # Phase 1A: Initialize FileLoadController (orchestration layer)
+        self.window.file_load_controller = FileLoadController(
+            file_load_manager=self.window.file_load_manager,
+            file_store=self.window.file_model,  # FileTableModel acts as FileStore
+            table_manager=self.window.table_manager,
+            context=self.window.context
+        )
+        logger.info(
+            "[Phase1A] FileLoadController initialized",
+            extra={"dev_only": True}
+        )
         
         self.window.utility_manager = UtilityManager(self.window)
         self.window.rename_manager = RenameManager(self.window)

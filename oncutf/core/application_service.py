@@ -65,6 +65,9 @@ class ApplicationService:
     # =====================================
     # File Operations
     # =====================================
+    # Note: File loading operations (load_files_from_paths, load_files_from_dropped_items,
+    # handle_folder_drop, handle_file_drop) have been moved to FileLoadController (Phase 1A).
+    # Remaining file operations delegate to other managers.
 
     def load_files_from_folder(self, folder_path: str, force: bool = False):  # noqa: ARG002
         """Load files from folder via FileLoadManager."""
@@ -77,16 +80,6 @@ class ApplicationService:
             folder_path, merge_mode=False, recursive=recursive
         )
 
-    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
-        """Load files from paths via FileLoadManager."""
-        self.main_window.file_load_manager.load_files_from_paths(file_paths, clear=clear)
-
-    def load_files_from_dropped_items(
-        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
-    ) -> None:
-        """Load files from dropped items via FileLoadManager."""
-        self.main_window.file_load_manager.load_files_from_dropped_items(paths, modifiers)
-
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Prepare folder load via FileLoadManager."""
         return self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear)
@@ -96,14 +89,6 @@ class ApplicationService:
     ) -> None:
         """Load single item from drop via FileLoadManager."""
         self.main_window.file_load_manager.load_single_item_from_drop(path, modifiers)
-
-    def handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
-        """Handle folder drop via FileLoadManager."""
-        self.main_window.file_load_manager._handle_folder_drop(folder_path, merge_mode, recursive)
-
-    def handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
-        """Handle file drop via FileLoadManager."""
-        self.main_window.file_load_manager._handle_file_drop(file_path, merge_mode)
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
