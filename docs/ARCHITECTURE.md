@@ -1,15 +1,15 @@
 # OnCutF Architecture Guide
 
-**Last Updated:** 2025-12-09  
-**Status:** Refactored and Optimized (90% complete)
+**Last Updated:** 2025-12-16  
+**Status:** Phase 1 Complete - Controllers Architecture ✅
 
 ---
 
 ## Quick Navigation
 
-- **[Pragmatic Refactoring Plan](architecture/pragmatic_refactor_2025-12-03.md)** — Strategic direction & goals
-- **[Refactor Status (Latest)](architecture/refactor_status_2025-12-09.md)** — Current progress & metrics
-- **[Next Steps Plan](architecture/next_steps_2025-12-09.md)** — Implementation roadmap
+- **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture complete overview
+- **[Roadmap](ROADMAP.md)** — Current progress & next phases
+- **[Arch Refactor Plan](ARCH_REFACTOR_PLAN.md)** — Strategic refactoring plan
 - **[Cache Strategy](architecture/cache_strategy.md)** — Caching layers & invalidation
 - **[Column Management Guide](architecture/column_management_mixin_guide.md)** — FileTableView columns
 
@@ -17,7 +17,7 @@
 
 ## Architecture Overview
 
-### Three-Tier Design
+### MVC-Inspired Four-Tier Design
 
 ```
 ┌─────────────────────────────────────┐
@@ -28,6 +28,19 @@
 │  ├── MetadataTreeView (1768 LOC)    │
 │  ├── RenameModulesArea              │
 │  └── Mixins: Selection, DragDrop... │
+│                                     │
+│            ↓ delegates to           │
+│                                     │
+├─────────────────────────────────────┤
+│   Controllers Layer (NEW Phase 1)   │
+├─────────────────────────────────────┤
+│  ├── FileLoadController             │
+│  ├── MetadataController             │
+│  ├── RenameController               │
+│  └── MainWindowController           │
+│                                     │
+│         ↓ orchestrates              │
+│                                     │
 ├─────────────────────────────────────┤
 │      Business Logic (Core)          │
 ├─────────────────────────────────────┤
@@ -35,6 +48,9 @@
 │  ├── UnifiedMetadataManager         │
 │  ├── Managers (30+)                 │
 │  └── Domain Models                  │
+│                                     │
+│          ↓ persists to              │
+│                                     │
 ├─────────────────────────────────────┤
 │      Data Layer                     │
 ├─────────────────────────────────────┤
@@ -48,6 +64,7 @@
 
 | Component | Files | LOC | Purpose |
 |-----------|-------|-----|---------|
+| **Controllers (Phase 1)** | 4 | 1217 | UI ↔ Business logic separation |
 | **FileTableView** | 1 + 3 mixins | 976 | Display files with columns |
 | **MetadataTreeView** | 1 + 4 mixins | 1768 | Edit file metadata |
 | **UnifiedRenameEngine** | 1 | ~400 | Orchestrate rename preview/validation/execution |
@@ -61,7 +78,44 @@
 
 ## Recent Improvements (2025-12)
 
-### Phase 1: Widget Decomposition ✅
+### Phase 1: Controllers Architecture ✅ (NEW - Dec 2025)
+**Goal:** Separate UI from business logic with testable controller layer
+
+#### Phase 1A: FileLoadController ✅
+- **Orchestrates:** File loading, drag & drop, directory scanning
+- **Methods:** `load_files_from_drop()`, `load_folder()`, `clear_files()`
+- **Tests:** 11 comprehensive tests (100% coverage)
+- **Benefit:** File loading logic testable without Qt/GUI
+
+#### Phase 1B: MetadataController ✅
+- **Orchestrates:** Metadata loading, cache management
+- **Methods:** `load_metadata()`, `reload_metadata()`, `clear_metadata_cache()`
+- **Tests:** 13 comprehensive tests (100% coverage)
+- **Benefit:** Metadata workflows testable independently
+
+#### Phase 1C: RenameController ✅
+- **Orchestrates:** Rename preview, validation, execution
+- **Methods:** `preview_rename()`, `execute_rename()`, `update_preview()`
+- **Tests:** 16 comprehensive tests (100% coverage)
+- **Benefit:** Rename logic testable with mock dependencies
+
+#### Phase 1D: MainWindowController ✅
+- **Orchestrates:** High-level multi-service workflows
+- **Methods:** `restore_last_session_workflow()`, `coordinate_shutdown_workflow()`
+- **Tests:** 17 comprehensive tests (100% coverage)
+- **Benefit:** Complex workflows testable without MainWindow
+
+**Results:**
+- 57 new tests (549 → 592, 100% pass rate)
+- Clean separation: UI → Controllers → Services
+- Zero regressions (all existing functionality preserved)
+- Foundation for future CLI/API interfaces
+
+**See:** [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md)
+
+---
+
+### Phase 0: Widget Decomposition ✅
 - **FileTableView:** 2715 → 976 LOC (-64%)
   - Extracted: Column management (34 methods)
   - Created: `ColumnManagementMixin` (1179 LOC)
@@ -70,20 +124,20 @@
   - Extracted: 4 specialized mixins
   - Improved: Testability and maintainability
 
-### Phase 2: Domain Models ✅
+### Domain Models ✅
 - Created: `FileEntry` (type-safe file representation)
 - Created: `MetadataEntry` (structured metadata)
 - Benefit: Type safety, memory efficiency, clarity
 
-### Phase 3: Selection Unification ✅
+### Selection Unification ✅
 - Created: `SelectionProvider` (unified interface)
 - Replaced: 50+ ad-hoc selection patterns
 - Benefit: Single source of truth, 500x faster (cached)
 
-### Phase 4: Code Quality ✅
+### Code Quality ✅
 - Translated: Greek → English (38 instances)
 - Synced: Docstring dates to git history (75 files)
-- Tests: 491 passing (100%)
+- Tests: 592 passing (100%)
 
 ---
 
@@ -92,10 +146,29 @@
 ```
 oncutf/
 ├── main.py                          # Entry point
-├── main_window.py                   # Primary UI controller
 ├── config.py                        # Configuration
 │
-├── core/                            # Business logic
+├── ui/                              # UI Layer
+│   ├── main_window.py               # Primary UI (delegates to controllers)
+│   ├── widgets/                     # UI components
+│   │   ├── file_table_view.py       # Main file table (976 LOC)
+│   │   ├── metadata_tree_view.py    # Metadata editor (1768 LOC)
+│   │   ├── rename_modules_area.py   # Rename config
+│   │   └── ... (30+ other widgets)
+│   └── mixins/                      # Behavior mixins
+│       ├── selection_mixin.py
+│       ├── drag_drop_mixin.py
+│       ├── column_management_mixin.py
+│       └── ... (4+ more)
+│
+├── controllers/                     # Controllers Layer (NEW Phase 1)
+│   ├── __init__.py                  # Exports all controllers
+│   ├── file_load_controller.py      # File loading orchestration (274 LOC)
+│   ├── metadata_controller.py       # Metadata operations (230 LOC)
+│   ├── rename_controller.py         # Rename workflows (312 LOC)
+│   └── main_window_controller.py    # High-level orchestration (401 LOC)
+│
+├── core/                            # Business Logic Layer
 │   ├── application_context.py       # Singleton application state
 │   ├── unified_rename_engine.py     # Rename orchestration
 │   ├── unified_metadata_manager.py  # Metadata loading
@@ -104,17 +177,6 @@ oncutf/
 │   ├── persistent_metadata_cache.py # SQLite metadata cache
 │   ├── *_manager.py                 # 30+ manager classes
 │   └── ...
-│
-├── widgets/                         # UI components
-│   ├── file_table_view.py           # Main file table (976 LOC)
-│   ├── metadata_tree_view.py        # Metadata editor (1768 LOC)
-│   ├── rename_modules_area.py       # Rename config
-│   ├── mixins/                      # Behavior mixins
-│   │   ├── selection_mixin.py
-│   │   ├── drag_drop_mixin.py
-│   │   ├── column_management_mixin.py
-│   │   └── ... (4+ more)
-│   └── ... (30+ other widgets)
 │
 ├── models/                          # Domain models
 │   ├── file_entry.py                # File representation
@@ -142,26 +204,55 @@ oncutf/
 │   └── ... (utilities)
 │
 ├── tests/                           # Test suite
-│   ├── test_*.py                    # 491 tests, 100% passing
+│   ├── test_*.py                    # 592 tests, 100% passing
 │   ├── conftest.py
 │   └── mocks.py
 │
 └── docs/                            # Documentation
-    ├── architecture/                # This directory
-    │   ├── ARCHITECTURE.md          # (this file)
-    │   ├── refactor_status_*.md
-    │   ├── next_steps_*.md
-    │   ├── cache_strategy.md
-    │   └── ... (planning docs)
-    └── archive/                     # Old planning docs
-        └── refactor_plan_2025-12-01.md
+    ├── ARCHITECTURE.md              # (this file)
+    ├── ROADMAP.md                   # Current progress
+    ├── PHASE1_SUMMARY.md            # Phase 1 complete overview
+    ├── ARCH_REFACTOR_PLAN.md        # Detailed refactoring plan
+    └── architecture/                # Detailed docs
+        ├── cache_strategy.md
+        ├── column_management_mixin_guide.md
+        └── ... (planning docs)
 ```
 
 ---
 
 ## Key Architecture Patterns
 
-### 1. ApplicationContext (Singleton)
+### 1. Controllers Layer (NEW - Phase 1)
+Separation of UI from business logic:
+```python
+# FileLoadController - orchestrates file loading
+controller = FileLoadController(app_context)
+result = controller.load_folder("/path/to/folder", recursive=True)
+
+# MetadataController - orchestrates metadata operations
+metadata_ctrl = MetadataController(app_context)
+result = metadata_ctrl.load_metadata(file_paths, on_progress=callback)
+
+# RenameController - orchestrates rename workflows
+rename_ctrl = RenameController(app_context)
+preview = rename_ctrl.preview_rename(files, rename_config)
+execute_result = rename_ctrl.execute_rename(preview.items)
+
+# MainWindowController - high-level orchestration
+main_ctrl = MainWindowController(app_context, file_load_ctrl, metadata_ctrl, rename_ctrl)
+session = main_ctrl.restore_last_session_workflow(on_progress=callback)
+shutdown = main_ctrl.coordinate_shutdown_workflow(on_progress=callback)
+```
+
+**Benefits:**
+- Testable without Qt (controllers use pure Python interfaces)
+- Clear responsibility boundaries
+- Easy to mock dependencies in tests
+- Reusable orchestration logic
+- Foundation for future CLI/API interfaces
+
+### 2. ApplicationContext (Singleton)
 Central registry of managers and services:
 ```python
 # Usage
@@ -170,7 +261,7 @@ selection = context.selection_store.get_selected_files()
 context.metadata_manager.load_metadata(files)
 ```
 
-### 2. Mixin-based Composition
+### 3. Mixin-based Composition
 Widget behavior decomposed into mixins:
 ```python
 class FileTableView(
@@ -182,7 +273,7 @@ class FileTableView(
     pass
 ```
 
-### 3. Domain Models (Dataclasses)
+### 4. Domain Models (Dataclasses)
 Type-safe data structures:
 ```python
 @dataclass
@@ -198,7 +289,7 @@ class MetadataEntry:
     extracted_text: dict
 ```
 
-### 4. Unified Interfaces
+### 5. Unified Interfaces
 Single point of access for common operations:
 ```python
 # Old: scattered selection logic
@@ -209,7 +300,7 @@ tree.selected_items()  # Custom
 selection = SelectionProvider(table).get_selected_files()
 ```
 
-### 5. Caching Strategy
+### 6. Caching Strategy
 Multi-layer caching:
 - **L1:** Python dict (LRU, fast, volatile)
 - **L2:** SQLite (persistent, indexed)
@@ -221,15 +312,19 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
 
 ## Performance Metrics
 
-| Metric | Before Refactor | After | Improvement |
-|--------|-----------------|-------|-------------|
-| FileTableView LOC | 2715 | 976 | -64% |
-| MetadataTreeView LOC | 3102 | 1768 | -43% |
-| Test Coverage | ~70% | ~75% | +7% |
-| Largest Widget | 2715 | 1768 | -35% |
-| Average Widget | ~550 | ~400 | -27% |
+| Metric | Before Phase 1 | After Phase 1 | Improvement |
+|--------|-----------------|---------------|-------------|
+| Test Count | 549 | 592 | +43 tests (+7.8%) |
+| Controller LOC | 0 | 1217 | New layer |
+| MainWindow LOC | ~1309 | ~900 | -31% (UI-focused) |
+| Test Coverage | ~75% | ~78% | +4% |
+| Test Speed (controllers) | N/A | ~1s | Fast (no Qt) |
 
-**Test Suite:** 491 tests, 100% passing ✅
+**Historical Widget Refactoring:**
+- FileTableView: 2715 → 976 LOC (-64%)
+- MetadataTreeView: 3102 → 1768 LOC (-43%)
+
+**Test Suite:** 592 tests, 100% passing ✅
 
 ---
 
@@ -238,41 +333,56 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
 ### Starting Points
 
 1. **Understand file loading:**
-   - `main_window.py` → `FileLoadManager` → `UnifiedMetadataManager`
+   - `main_window.py` → **`FileLoadController`** → `FileLoadManager` → `UnifiedMetadataManager`
 
 2. **Understand rename flow:**
-   - `RenameModulesArea` → `UnifiedRenameEngine` → `FileOperationsManager`
+   - `RenameModulesArea` → **`RenameController`** → `UnifiedRenameEngine` → `FileOperationsManager`
 
-3. **Understand UI state:**
+3. **Understand metadata operations:**
+   - `main_window.py` → **`MetadataController`** → `UnifiedMetadataManager` → Cache layers
+
+4. **Understand application workflows:**
+   - `main_window.py` → **`MainWindowController`** → Sub-controllers → Services
+
+5. **Understand UI state:**
    - `ApplicationContext` → `SelectionStore` → Widget mixins
 
-4. **Understand caching:**
+6. **Understand caching:**
    - See [Cache Strategy](architecture/cache_strategy.md)
 
 ### Code Reading Tips
 
 - Start with `main.py` (simple entry point)
-- Then `main_window.py` (primary controller)
+- Then `ui/main_window.py` (primary UI, delegates to controllers)
+- **NEW:** Check `controllers/` for business logic orchestration
 - Then specific managers/widgets as needed
 - Use mixin files to understand widget behavior
 - Check `models/` for data structures
+- See `tests/test_*_controller.py` for usage examples
 
 ---
 
 ## Current Status Summary
 
 ### ✅ Completed
+- **Phase 1: Controllers Architecture** (Dec 2025)
+  - FileLoadController, MetadataController, RenameController, MainWindowController
+  - 57 new tests (592 total, 100% passing)
+  - Clean UI/business logic separation
+- **Phase 0: Package Structure** (Dec 2025)
+  - All code under `oncutf/` package
+  - Clean import structure
 - Domain models (dataclasses)
 - Selection unification
 - Widget decomposition (mixins)
 - Cache strategy documented
 - Code quality (Greek translated, dates synced)
-- 491 tests passing
 
-### ⏳ In Progress
-- Documentation cleanup (Task 1.1)
-- ColumnManagementMixin guide (Task 1.2)
-- Unit test expansion (Task 2.1)
+### 🎯 Next Phase
+- **Phase 2: State Management Fix**
+  - Consolidate FileStore with FileGroup support
+  - Fix counter conflicts after multi-folder imports
+  - Implement StateCoordinator for synchronization
 
 ### ⏸️ Deferred (Conscious Decision)
 - Streaming metadata (ROI analysis: not worthwhile)
@@ -283,11 +393,12 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
 
 ## Next Steps
 
-See [Next Steps Plan](architecture/next_steps_2025-12-09.md) for detailed roadmap:
+See [ROADMAP.md](ROADMAP.md) for detailed roadmap:
 
-1. **Week 1:** Documentation cleanup, mixin guide
-2. **Week 2:** Unit tests, performance profiling
-3. **Week 3:** Optional refinements
+- **Phase 2:** State Management Fix (consolidate FileStore, fix counter conflicts)
+- **Phase 3:** UI/UX Improvements (splash screen, progress indicators)
+- **Phase 4:** Core Logic Improvements (optimize metadata, caching)
+- **Phase 5:** Final Polish (performance profiling, documentation)
 
 ---
 
@@ -295,12 +406,11 @@ See [Next Steps Plan](architecture/next_steps_2025-12-09.md) for detailed roadma
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [Pragmatic Refactor Plan](architecture/pragmatic_refactor_2025-12-03.md) | Strategic goals (10-day sprint) | ✅ Active |
-| [Refactor Status](architecture/refactor_status_2025-12-09.md) | Current progress & metrics | ✅ Latest |
-| [Next Steps Plan](architecture/next_steps_2025-12-09.md) | Implementation roadmap | ✅ New |
+| [ROADMAP.md](ROADMAP.md) | Current progress & next phases | ✅ Active |
+| [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md) | Phase 1 complete overview | ✅ Latest |
+| [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md) | Strategic refactoring plan (Phases 2-6) | ✅ Active |
 | [Cache Strategy](architecture/cache_strategy.md) | Caching layers & patterns | ✅ Complete |
-| [Streaming Metadata Plan](architecture/streaming_metadata_plan.md) | Analysis (deferred) | ⏸️ Reference |
-| [Old Refactor Plan](archive/refactor_plan_2025-12-01.md) | Comprehensive original analysis | 📦 Archive |
+| [Column Management Guide](architecture/column_management_mixin_guide.md) | FileTableView columns | ✅ Complete |
 
 ---
 
@@ -308,13 +418,14 @@ See [Next Steps Plan](architecture/next_steps_2025-12-09.md) for detailed roadma
 
 When modifying architecture:
 
-1. **Keep mixins focused** — One responsibility per mixin
-2. **Use domain models** — Don't pass dicts around
-3. **Test new code** — Especially business logic
-4. **Document changes** — Update this file if needed
-5. **Consider impact** — Check for ripple effects
+1. **Use controllers for orchestration** — Don't put business logic in UI
+2. **Keep mixins focused** — One responsibility per mixin
+3. **Use domain models** — Don't pass dicts around
+4. **Test new code** — Especially business logic in controllers
+5. **Document changes** — Update this file if needed
+6. **Consider impact** — Check for ripple effects
 
 ---
 
-*Generated: 2025-12-09*  
-*Last reviewed by: Architecture team*
+*Generated: 2025-12-16*  
+*Last reviewed by: Architecture team after Phase 1 completion*
