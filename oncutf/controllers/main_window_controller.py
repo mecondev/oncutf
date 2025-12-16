@@ -235,3 +235,166 @@ class MainWindowController:
         )
 
         return result
+
+    def coordinate_shutdown_workflow(
+        self,
+        main_window: Any,
+        progress_callback: Any = None,
+    ) -> dict[str, Any]:
+        """
+        Coordinate application shutdown workflow across all services.
+
+        This method orchestrates the graceful shutdown of the application by:
+        1. Saving configuration and window state
+        2. Creating database backup
+        3. Flushing pending operations
+        4. Cleaning up resources (drag manager, dialogs)
+        5. Coordinating with ShutdownCoordinator for final cleanup
+
+        Note: UI-specific parts (close event handling, dialog creation, cursor changes)
+        remain in MainWindow. This method handles only service orchestration.
+
+        Args:
+            main_window: Reference to MainWindow for accessing managers
+            progress_callback: Optional callback for progress updates (message, 0.0-1.0)
+
+        Returns:
+            dict: {
+                'success': bool,           # Overall success status
+                'config_saved': bool,      # Configuration saved successfully
+                'backup_created': bool,    # Database backup created
+                'operations_flushed': bool, # Batch operations flushed
+                'coordinator_success': bool, # ShutdownCoordinator executed
+                'errors': list[str],       # Any errors encountered
+                'summary': dict            # ShutdownCoordinator summary
+            }
+        """
+        logger.info("[MainWindowController] Starting coordinated shutdown workflow")
+        result: dict[str, Any] = {
+            'success': False,
+            'config_saved': False,
+            'backup_created': False,
+            'operations_flushed': False,
+            'coordinator_success': False,
+            'errors': [],
+            'summary': {},
+        }
+
+        def update_progress(message: str, progress: float) -> None:
+            """Internal progress updater."""
+            if progress_callback:
+                progress_callback(message, progress)
+
+        try:
+            # Step 1: Save configuration (10%)
+            update_progress("Saving configuration...", 0.1)
+            try:
+                from oncutf.utils.json_config_manager import get_app_config_manager
+                get_app_config_manager().save_immediate()
+                result['config_saved'] = True
+                logger.info("[Shutdown] Configuration saved")
+            except Exception as e:
+                error_msg = f"Failed to save configuration: {e}"
+                logger.error("[Shutdown] %s", error_msg)
+                result['errors'].append(error_msg)
+
+            # Step 2: Create database backup (20%)
+            update_progress("Creating database backup...", 0.2)
+            if hasattr(main_window, "backup_manager") and main_window.backup_manager:
+                try:
+                    main_window.backup_manager.create_backup(reason="auto")  # type: ignore
+                    result['backup_created'] = True
+                    logger.info("[Shutdown] Database backup created")
+                except Exception as e:
+                    error_msg = f"Database backup failed: {e}"
+                    logger.warning("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Step 3: Save window configuration (30%)
+            update_progress("Saving window state...", 0.3)
+            if hasattr(main_window, "window_config_manager") and main_window.window_config_manager:
+                try:
+                    main_window.window_config_manager.save_window_config()
+                    logger.info("[Shutdown] Window configuration saved")
+                except Exception as e:
+                    error_msg = f"Failed to save window config: {e}"
+                    logger.warning("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Step 4: Flush batch operations (40%)
+            update_progress("Flushing pending operations...", 0.4)
+            if hasattr(main_window, "batch_manager") and main_window.batch_manager:
+                try:
+                    if hasattr(main_window.batch_manager, "flush_operations"):
+                        main_window.batch_manager.flush_operations()  # type: ignore
+                        result['operations_flushed'] = True
+                        logger.info("[Shutdown] Batch operations flushed")
+                except Exception as e:
+                    error_msg = f"Batch flush failed: {e}"
+                    logger.warning("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Step 5: Cleanup drag operations (50%)
+            update_progress("Cleaning up drag operations...", 0.5)
+            if hasattr(main_window, "drag_manager") and main_window.drag_manager:
+                try:
+                    main_window.drag_manager.force_cleanup()  # type: ignore
+                    logger.info("[Shutdown] Drag manager cleaned up")
+                except Exception as e:
+                    error_msg = f"Drag cleanup failed: {e}"
+                    logger.warning("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Step 6: Close dialogs (60%)
+            update_progress("Closing dialogs...", 0.6)
+            if hasattr(main_window, "dialog_manager") and main_window.dialog_manager:
+                try:
+                    main_window.dialog_manager.cleanup()  # type: ignore
+                    logger.info("[Shutdown] All dialogs closed")
+                except Exception as e:
+                    error_msg = f"Dialog cleanup failed: {e}"
+                    logger.warning("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Step 7: Coordinate final shutdown via ShutdownCoordinator (70-100%)
+            update_progress("Coordinating final shutdown...", 0.7)
+            if hasattr(main_window, "shutdown_coordinator") and main_window.shutdown_coordinator:
+                try:
+                    def coordinator_progress(msg: str, prog: float) -> None:
+                        """Map coordinator progress (0-1) to our range (0.7-1.0)."""
+                        scaled_progress = 0.7 + (prog * 0.3)
+                        update_progress(msg, scaled_progress)
+
+                    coordinator_success = main_window.shutdown_coordinator.execute_shutdown(
+                        progress_callback=coordinator_progress,
+                        emergency=False
+                    )
+                    result['coordinator_success'] = coordinator_success
+                    result['summary'] = main_window.shutdown_coordinator.get_summary()
+                    logger.info("[Shutdown] ShutdownCoordinator executed: %s", coordinator_success)
+                except Exception as e:
+                    error_msg = f"ShutdownCoordinator failed: {e}"
+                    logger.error("[Shutdown] %s", error_msg)
+                    result['errors'].append(error_msg)
+
+            # Determine overall success
+            result['success'] = (
+                result['config_saved']
+                and (result['backup_created'] or len(result['errors']) == 0)
+                and result['coordinator_success']
+            )
+
+            update_progress("Shutdown complete", 1.0)
+            logger.info(
+                "[MainWindowController] Shutdown workflow completed: success=%s, errors=%d",
+                result['success'],
+                len(result['errors'])
+            )
+
+        except Exception as e:
+            error_msg = f"Unexpected error in shutdown workflow: {e}"
+            logger.exception("[MainWindowController] %s", error_msg)
+            result['errors'].append(error_msg)
+            result['success'] = False
+
+        return result
