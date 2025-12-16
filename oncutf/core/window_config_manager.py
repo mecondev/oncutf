@@ -9,7 +9,6 @@ Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
 
-import os
 
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
 from oncutf.utils.json_config_manager import get_app_config_manager
@@ -353,87 +352,53 @@ class WindowConfigManager:
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
-        # Phase 1D: Use MainWindowController if flag is enabled
+        # Phase 1D: Use MainWindowController for session restore orchestration
+        if not hasattr(self.main_window, "main_window_controller"):
+            logger.warning("[Config] MainWindowController not available for session restore")
+            return
+
+        # Get configuration values
+        last_folder = getattr(self.main_window, "_last_folder_from_config", None)
+        recursive = getattr(self.main_window, "_recursive_mode_from_config", False)
+        sort_column = getattr(self.main_window, "_sort_column_from_config", None)
+        sort_order = getattr(self.main_window, "_sort_order_from_config", None)
+
+        if not last_folder:
+            return
+
+        logger.info("[Config] Using MainWindowController for session restore")
+
+        # Call MainWindowController orchestration method
+        result = self.main_window.main_window_controller.restore_last_session_workflow(
+            last_folder=last_folder,
+            recursive=recursive,
+            load_metadata=False,  # Don't auto-load metadata on restore
+            sort_column=sort_column,
+            sort_order=sort_order,
+        )
+
+        # Apply sort configuration if needed
         if (
-            hasattr(self.main_window, "_use_main_window_controller")
-            and self.main_window._use_main_window_controller
-            and hasattr(self.main_window, "main_window_controller")
+            result.get('success')
+            and result.get('sort_column') is not None
+            and hasattr(self.main_window, "sort_by_column")
         ):
-            # Get configuration values
-            last_folder = getattr(self.main_window, "_last_folder_from_config", None)
-            recursive = getattr(self.main_window, "_recursive_mode_from_config", False)
-            sort_column = getattr(self.main_window, "_sort_column_from_config", None)
-            sort_order = getattr(self.main_window, "_sort_order_from_config", None)
+            from oncutf.core.pyqt_imports import Qt
 
-            if last_folder:
-                logger.info("[Config] Using MainWindowController for session restore")
+            qt_sort_order = (
+                Qt.AscendingOrder
+                if result['sort_order'] == 0
+                else Qt.DescendingOrder
+            )
+            self.main_window.sort_by_column(
+                result['sort_column'], qt_sort_order
+            )
 
-                # Call MainWindowController orchestration method
-                result = self.main_window.main_window_controller.restore_last_session_workflow(
-                    last_folder=last_folder,
-                    recursive=recursive,
-                    load_metadata=False,  # Don't auto-load metadata on restore
-                    sort_column=sort_column,
-                    sort_order=sort_order,
-                )
-
-                # Apply sort configuration if needed
-                if (
-                    result.get('success')
-                    and result.get('sort_column') is not None
-                    and hasattr(self.main_window, "sort_by_column")
-                ):
-                    from oncutf.core.pyqt_imports import Qt
-
-                    qt_sort_order = (
-                        Qt.AscendingOrder
-                        if result['sort_order'] == 0
-                        else Qt.DescendingOrder
-                    )
-                    self.main_window.sort_by_column(
-                        result['sort_column'], qt_sort_order
-                    )
-
-                    logger.info(
-                        "[Config] Applied sort: column=%d, order=%s",
-                        result['sort_column'],
-                        "ASC" if result['sort_order'] == 0 else "DESC"
-                    )
-
-                return
-
-        # Fallback: Original implementation (when flag is False or controller not available)
-        if (
-            hasattr(self.main_window, "_last_folder_from_config")
-            and self.main_window._last_folder_from_config
-        ):
-            last_folder = self.main_window._last_folder_from_config
-            if os.path.exists(last_folder):
-                logger.info("[Config] Restoring last folder: %s", last_folder)
-                # Use the file load manager to load the folder
-                recursive = getattr(self.main_window, "_recursive_mode_from_config", False)
-                if hasattr(self.main_window, "file_load_manager"):
-                    self.main_window.file_load_manager.load_folder(
-                        last_folder, merge=False, recursive=recursive
-                    )
-
-                # Apply sort configuration after loading
-                if hasattr(self.main_window, "_sort_column_from_config") and hasattr(
-                    self.main_window, "_sort_order_from_config"
-                ):
-                    from oncutf.core.pyqt_imports import Qt
-
-                    sort_order = (
-                        Qt.AscendingOrder
-                        if self.main_window._sort_order_from_config == 0
-                        else Qt.DescendingOrder
-                    )
-                    if hasattr(self.main_window, "sort_by_column"):
-                        self.main_window.sort_by_column(
-                            self.main_window._sort_column_from_config, sort_order
-                        )
-            else:
-                logger.warning("[Config] Last folder no longer exists: %s", last_folder)
+            logger.info(
+                "[Config] Applied sort: column=%d, order=%s",
+                result['sort_column'],
+                "ASC" if result['sort_order'] == 0 else "DESC"
+            )
 
     def ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""

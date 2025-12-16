@@ -252,11 +252,8 @@ class InitializationOrchestrator:
             metadata_controller=self.window.metadata_controller,
             rename_controller=self.window.rename_controller,
         )
-        # Feature flag for Phase 1D testing
-        self.window._use_main_window_controller = True
         logger.info(
-            "[Phase1D] MainWindowController initialized (flag=%s)",
-            self.window._use_main_window_controller,
+            "[Phase1D] MainWindowController initialized",
             extra={"dev_only": True}
         )
 
