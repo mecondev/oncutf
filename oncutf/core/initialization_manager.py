@@ -73,12 +73,29 @@ class InitializationManager:
             else:
                 pass
 
+            # Connect ApplicationContext files_changed signal to update UI
+            if context:
+                context.files_changed.connect(self._on_files_changed)
+                logger.debug(
+                    "[MainWindow] Connected ApplicationContext files_changed signal",
+                    extra={"dev_only": True}
+                )
+
             logger.debug(
                 "[MainWindow] Enabling SelectionStore mode in FileTableView",
                 extra={"dev_only": True},
             )
         except Exception as e:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
+
+    def _on_files_changed(self, files: list) -> None:
+        """Handle files changed from ApplicationContext."""
+        logger.info(
+            "[MainWindow] Files changed from context - updating UI with %d files",
+            len(files)
+        )
+        # Update the table to reflect the new file list
+        self.main_window.prepare_file_table(files)
 
     def update_status_from_preview(self, status_html: str) -> None:
         """
