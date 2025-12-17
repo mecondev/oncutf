@@ -246,6 +246,19 @@ class FilesystemMonitor(QObject):
             for folder in to_remove:
                 self.remove_folder(folder)
 
+            # Auto-remove files from FileStore if available
+            if self.file_store:
+                try:
+                    removed_count = self.file_store.remove_files_from_path(drive)
+                    if removed_count > 0:
+                        logger.info(
+                            "[FilesystemMonitor] Removed %d files from unmounted drive: %s",
+                            removed_count,
+                            drive
+                        )
+                except Exception as e:
+                    logger.exception("[FilesystemMonitor] Error removing files from unmounted drive: %s", e)
+
         # Update state
         if added or removed:
             self._current_drives = current_drives

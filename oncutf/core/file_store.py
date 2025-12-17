@@ -214,6 +214,45 @@ class FileStore(QObject):
         self.files_loaded.emit([])
         logger.debug("[FileStore] Files cleared")
 
+    def remove_files_from_path(self, path_prefix: str) -> int:
+        """Remove all files under a specific path (e.g., when drive unmounted).
+
+        Args:
+            path_prefix: Path prefix to match (e.g., "/media/user/USB")
+
+        Returns:
+            int: Number of files removed
+        """
+        import os
+        path_prefix_norm = os.path.normpath(path_prefix)
+
+        # Filter out files under the specified path
+        original_count = len(self._loaded_files)
+        self._loaded_files = [
+            file_item for file_item in self._loaded_files
+            if not os.path.normpath(file_item.full_path).startswith(path_prefix_norm)
+        ]
+        removed_count = original_count - len(self._loaded_files)
+
+        if removed_count > 0:
+            logger.info(
+                "[FileStore] Removed %d files from unmounted path: %s",
+                removed_count,
+                path_prefix
+            )
+            # Emit signal to update UI
+            self.files_loaded.emit(self._loaded_files)
+
+            # Clear cache entries for this path
+            folders_to_clear = [
+                folder for folder in self._file_cache
+                if os.path.normpath(folder).startswith(path_prefix_norm)
+            ]
+            for folder in folders_to_clear:
+                del self._file_cache[folder]
+
+        return removed_count
+
     # =====================================
     # File Validation & Filtering
     # =====================================
