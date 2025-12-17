@@ -117,7 +117,11 @@ class UtilityManager:
             use_extended,
         )
 
-        self.main_window.load_files_from_folder(self.main_window.current_folder_path, force=True)
+        # Show wait cursor during reload operation
+        from oncutf.utils.cursor_helper import wait_cursor
+
+        with wait_cursor():
+            self.main_window.load_files_from_folder(self.main_window.current_folder_path, force=True)
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """
