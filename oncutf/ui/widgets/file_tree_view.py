@@ -102,13 +102,24 @@ class FileTreeView(QTreeView):
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
 
-        # Initialize filesystem monitor (new comprehensive system)
-        self._setup_filesystem_monitor()
+        # Defer filesystem monitor setup until context is ready
+        # (context is initialized later in MainWindow setup)
+        self._filesystem_monitor = None
+        self._filesystem_monitor_setup_pending = True
 
         # Install custom tree view delegate for consistent hover/selection behavior
         self._delegate = TreeViewItemDelegate(self)
         self.setItemDelegate(self._delegate)
         self._delegate.install_event_filter(self)
+
+    def showEvent(self, event) -> None:
+        """Handle show event - setup filesystem monitor when widget becomes visible."""
+        super().showEvent(event)
+
+        # Setup filesystem monitor on first show (context should be ready by then)
+        if self._filesystem_monitor_setup_pending:
+            self._filesystem_monitor_setup_pending = False
+            self._setup_filesystem_monitor()
 
     def _setup_filesystem_monitor(self) -> None:
         """Setup comprehensive filesystem monitoring."""
