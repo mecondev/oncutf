@@ -167,24 +167,10 @@ class FileTreeView(QTreeView):
 
             self._filesystem_monitor = FilesystemMonitor(file_store=file_store)
 
-            # Connect drive signals
-            self._filesystem_monitor.drive_added.connect(self._on_drive_added)
-            self._filesystem_monitor.drive_removed.connect(self._on_drive_removed)
-
-            # Connect directory change signal
+            # Connect directory change signal for tree model refresh
             self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)
 
-            # Connect file change signal to new handler for FileTable refresh + deselect
-            if file_store is not None:
-                self._filesystem_monitor.directory_changed.connect(
-                    self._on_filesystem_change_for_table
-                )
-                logger.debug(
-                    "[FileTreeView] Connected filesystem changes to table refresh handler",
-                    extra={"dev_only": True}
-                )
-
-            # Set custom callback for tree refresh
+            # Set custom callback for tree refresh (handles drive mount/unmount)
             self._filesystem_monitor.set_drive_change_callback(self._refresh_tree_on_drives_change)
 
             # Start monitoring
@@ -195,24 +181,6 @@ class FileTreeView(QTreeView):
         except Exception as e:
             logger.warning("[FileTreeView] Failed to setup filesystem monitor: %s", e)
             self._filesystem_monitor = None
-
-    def _on_drive_added(self, drive_path: str) -> None:
-        """Handle new drive mounted.
-
-        Args:
-            drive_path: Path of mounted drive
-        """
-        logger.info("[FileTreeView] Drive added: %s", drive_path)
-        # Tree will be refreshed by drive_change_callback
-
-    def _on_drive_removed(self, drive_path: str) -> None:
-        """Handle drive unmounted.
-
-        Args:
-            drive_path: Path of unmounted drive
-        """
-        logger.info("[FileTreeView] Drive removed: %s", drive_path)
-        # Tree will be refreshed by drive_change_callback
 
     def _on_directory_changed(self, dir_path: str) -> None:
         """Handle directory content changed.
@@ -237,60 +205,6 @@ class FileTreeView(QTreeView):
                 )
             except Exception as e:
                 logger.exception("[FileTreeView] Model refresh error: %s", e)
-
-    def _on_filesystem_change_for_table(self, dir_path: str) -> None:
-        """Handle filesystem changes affecting loaded files (FileTable auto-refresh).
-
-        When filesystem changes are detected in loaded folders, this handler:
-        1. FileStore already refreshed by FilesystemMonitor
-        2. Clear all selections (better UX - avoid stale selection)
-        3. Clear preview cache (stale preview pairs)
-
-        Args:
-            dir_path: Path of changed directory
-        """
-        logger.info(
-            "[FileTreeView] Filesystem change detected in loaded folder: %s - clearing selections and preview",
-            dir_path
-        )
-
-        try:
-            # Get parent window to access services
-            parent = self.parent()
-            if not parent or not hasattr(parent, "context"):
-                logger.warning(
-                    "[FileTreeView] Cannot access parent window context for filesystem refresh",
-                    extra={"dev_only": True}
-                )
-                return
-
-            # 1. Clear all selections (better UX - filesystem changed)
-            selection_store = parent.context.selection_store
-            if selection_store:
-                selection_store.clear_selection(emit_signal=True)
-                logger.debug(
-                    "[FileTreeView] Cleared all selections after filesystem change",
-                    extra={"dev_only": True}
-                )
-
-            # 2. Clear preview cache (stale pairs)
-            if hasattr(parent, "preview_manager") and parent.preview_manager:
-                parent.preview_manager.clear_all_caches()
-                logger.debug(
-                    "[FileTreeView] Cleared preview cache after filesystem change",
-                    extra={"dev_only": True}
-                )
-
-            # 3. Clear preview tables (UI)
-            if hasattr(parent, "update_preview_tables_from_pairs"):
-                parent.update_preview_tables_from_pairs([])
-                logger.debug(
-                    "[FileTreeView] Cleared preview tables after filesystem change",
-                    extra={"dev_only": True}
-                )
-
-        except Exception as e:
-            logger.exception("[FileTreeView] Error handling filesystem change for table: %s", e)
 
     def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
         """Refresh tree when drives change.
