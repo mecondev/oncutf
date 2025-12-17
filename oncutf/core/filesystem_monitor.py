@@ -202,23 +202,34 @@ class FilesystemMonitor(QObject):
                         drives.add(str(volume))
 
         else:
-            # Linux: Check /media and /mnt
-            for mount_root in ["/media", "/mnt"]:
-                mount_path = Path(mount_root)
-                if mount_path.exists():
-                    # Get user-specific mounts (e.g., /media/username/...)
-                    try:
-                        for user_mount in mount_path.iterdir():
-                            if user_mount.is_dir():
-                                # Check subdirectories (actual mount points)
-                                try:
-                                    for mount in user_mount.iterdir():
-                                        if mount.is_dir():
-                                            drives.add(str(mount))
-                                except PermissionError:
-                                    pass
-                    except PermissionError:
-                        pass
+            # Linux: Check /media and /mnt for mount points
+            # For /media, typical structure is /media/username/device
+            # For /mnt, can be direct mounts like /mnt/data or /mnt/usb
+
+            # Check /media (Ubuntu/Debian style: /media/username/device)
+            media_path = Path("/media")
+            if media_path.exists():
+                try:
+                    for user_dir in media_path.iterdir():
+                        if user_dir.is_dir():
+                            try:
+                                for mount_point in user_dir.iterdir():
+                                    if mount_point.is_dir() and mount_point.is_mount():
+                                        drives.add(str(mount_point))
+                            except (PermissionError, OSError):
+                                pass
+                except (PermissionError, OSError):
+                    pass
+
+            # Check /mnt (can have direct mounts)
+            mnt_path = Path("/mnt")
+            if mnt_path.exists():
+                try:
+                    for mount_point in mnt_path.iterdir():
+                        if mount_point.is_dir() and mount_point.is_mount():
+                            drives.add(str(mount_point))
+                except (PermissionError, OSError):
+                    pass
 
         return drives
 
