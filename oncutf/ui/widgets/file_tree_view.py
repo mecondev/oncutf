@@ -10,7 +10,6 @@ No reliance on Qt built-in drag system - everything is manual and controlled.
 Single item selection only - no multi-selection complexity.
 """
 
-import contextlib
 import os
 
 from oncutf.config import ALLOWED_EXTENSIONS
@@ -198,7 +197,7 @@ class FileTreeView(QTreeView):
                     extra={"dev_only": True}
                 )
             except Exception as e:
-                logger.error("[FileTreeView] Model refresh error: %s", e)
+                logger.exception("[FileTreeView] Model refresh error: %s", e)
 
     def _on_filesystem_change_for_table(self, dir_path: str) -> None:
         """Handle filesystem changes affecting loaded files (FileTable auto-refresh).
@@ -252,7 +251,7 @@ class FileTreeView(QTreeView):
                 )
 
         except Exception as e:
-            logger.error("[FileTreeView] Error handling filesystem change for table: %s", e)
+            logger.exception("[FileTreeView] Error handling filesystem change for table: %s", e)
 
     def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
         """Refresh tree when drives change.
@@ -280,93 +279,10 @@ class FileTreeView(QTreeView):
 
             # Try to restore selection
             if current_path and os.path.exists(current_path):
-                self.set_selected_path(current_path)
+                self.select_path(current_path)
 
         except Exception as e:
-            logger.error("[FileTreeView] Error refreshing model: %s", e)
-
-    def _setup_file_system_watcher(self) -> None:
-        """Setup QFileSystemWatcher to detect drive changes.
-
-        DEPRECATED: Replaced by FilesystemMonitor.
-        Kept for backward compatibility but does nothing.
-        """
-        try:
-            from PyQt5.QtCore import QFileSystemWatcher, QTimer
-
-            self.file_system_watcher = QFileSystemWatcher()
-            self.file_system_watcher.setObjectName("FileTreeViewFSWatcher")
-
-            # Watch common drive locations
-            import platform
-
-            if platform.system() == "Windows":
-                # Watch root drives on Windows
-                import string
-
-                for drive in string.ascii_uppercase:
-                    drive_path = f"{drive}:\\"
-                    try:
-                        if os.path.exists(drive_path):
-                            self.file_system_watcher.addPath(drive_path)
-                            logger.debug(
-                                "[FileTreeView] Watching drive: %s",
-                                drive_path,
-                                extra={"dev_only": True},
-                            )
-                    except Exception:
-                        pass
-            elif platform.system() == "Darwin":
-                # Watch /Volumes on macOS
-                for watch_path in ["/Volumes"]:
-                    try:
-                        if os.path.exists(watch_path):
-                            self.file_system_watcher.addPath(watch_path)
-                            logger.debug(
-                                "[FileTreeView] Watching mount point: %s",
-                                watch_path,
-                                extra={"dev_only": True},
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            "[FileTreeView] Failed to watch %s: %s",
-                            watch_path,
-                            e,
-                        )
-            else:
-                # Watch /media and /mnt on Linux
-                for watch_path in ["/media", "/mnt"]:
-                    try:
-                        if os.path.exists(watch_path):
-                            self.file_system_watcher.addPath(watch_path)
-                            logger.debug(
-                                "[FileTreeView] Watching mount point: %s",
-                                watch_path,
-                                extra={"dev_only": True},
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            "[FileTreeView] Failed to watch %s: %s",
-                            watch_path,
-                            e,
-                        )
-            # Connect signals
-            self.file_system_watcher.directoryChanged.connect(self._on_drive_changed)
-
-            # Debounce timer to avoid multiple rapid updates
-            self._drive_change_timer = QTimer()
-            self._drive_change_timer.setSingleShot(True)
-            self._drive_change_timer.timeout.connect(self._refresh_tree_on_drive_change)
-            self._drive_change_timer.setInterval(500)  # Wait 500ms before refreshing
-
-            logger.debug(
-                "[FileTreeView] File system watcher initialized",
-                extra={"dev_only": True},
-            )
-
-        except Exception as e:
-            logger.warning("[FileTreeView] Failed to setup file system watcher: %s", e)
-            self.file_system_watcher = None  # Set to None if setup fails
+            logger.exception("[FileTreeView] Error refreshing model: %s", e)
 
     def closeEvent(self, event) -> None:
         """Clean up resources before closing."""
@@ -382,93 +298,13 @@ class FileTreeView(QTreeView):
                 except Exception as e:
                     logger.warning("[FileTreeView] Error stopping filesystem monitor: %s", e)
 
-            # Stop the drive change timer (old system)
-            if hasattr(self, "_drive_change_timer") and self._drive_change_timer is not None:
-                self._drive_change_timer.stop()
-                self._drive_change_timer.blockSignals(True)
-                self._drive_change_timer.deleteLater()
-                self._drive_change_timer = None
-
-            # Properly cleanup file system watcher (old system)
-            if hasattr(self, "file_system_watcher") and self.file_system_watcher is not None:
-                # Disconnect all signals
-                with contextlib.suppress(RuntimeError, TypeError):
-                    self.file_system_watcher.directoryChanged.disconnect()
-
-                # Clear all watched paths
-                watched_paths = self.file_system_watcher.directories()
-                for path in watched_paths:
-                    with contextlib.suppress(Exception):
-                        self.file_system_watcher.removePath(path)
-
-                # Block signals and delete
-                self.file_system_watcher.blockSignals(True)
-                self.file_system_watcher.deleteLater()
-                self.file_system_watcher = None
-
             logger.debug("[FileTreeView] Cleanup completed", extra={"dev_only": True})
 
         except Exception as e:
-            logger.error("[FileTreeView] Error during cleanup: %s", e)
+            logger.exception("[FileTreeView] Error during cleanup: %s", e)
 
         # Call parent closeEvent
         super().closeEvent(event)
-
-    def _on_drive_changed(self, path: str) -> None:
-        """Handle drive changes detected by QFileSystemWatcher."""
-        if not hasattr(self, "_drive_change_timer") or self._drive_change_timer is None:
-            return
-
-        logger.debug(
-            "[FileTreeView] Drive changed detected: %s",
-            path,
-            extra={"dev_only": True},
-        )
-
-        # Restart debounce timer
-        try:
-            self._drive_change_timer.stop()
-            self._drive_change_timer.start()
-        except RuntimeError:
-            # Timer was deleted
-            pass
-
-    def _refresh_tree_on_drive_change(self) -> None:
-        """Refresh the file tree after drive changes."""
-        try:
-            model = self.model()
-            if not model or not hasattr(model, "refresh"):
-                logger.debug(
-                    "[FileTreeView] Model doesn't support refresh",
-                    extra={"dev_only": True},
-                )
-                return
-
-            # Get current selected path before refresh
-            current_path = self.get_selected_path()
-
-            # Refresh the model
-            model.refresh()
-
-            # Restore selection if possible
-            if current_path and os.path.exists(current_path):
-                self.select_path(current_path)
-                logger.debug(
-                    "[FileTreeView] Tree refreshed and selection restored: %s",
-                    current_path,
-                    extra={"dev_only": True},
-                )
-            else:
-                logger.debug(
-                    "[FileTreeView] Tree refreshed (selection lost)",
-                    extra={"dev_only": True},
-                )
-
-        except RuntimeError:
-            # Widget was deleted
-            logger.debug("[FileTreeView] Widget deleted during refresh", extra={"dev_only": True})
-        except Exception as e:
-            logger.error("[FileTreeView] Error refreshing tree on drive change: %s", e)
 
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
