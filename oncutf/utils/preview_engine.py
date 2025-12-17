@@ -132,13 +132,34 @@ def calculate_scope_aware_index(
         )
         return ext_index
 
-    # PER_FILEGROUP: future feature, use global for now
+    # PER_FILEGROUP: calculate index within file group
     if scope_enum == CounterScope.PER_FILEGROUP:
-        logger.debug(
-            "[PreviewEngine] PER_FILEGROUP scope not yet implemented, using global index",
-            extra={"dev_only": True}
-        )
-        return global_index
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_FILEGROUP scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Import here to avoid circular dependency
+        from oncutf.utils.file_grouper import calculate_filegroup_counter_index
+
+        try:
+            filegroup_index = calculate_filegroup_counter_index(
+                file_item, all_files, global_index, groups=None
+            )
+            logger.debug(
+                "[PreviewEngine] PER_FILEGROUP scope: filegroup_index=%d",
+                filegroup_index,
+                extra={"dev_only": True}
+            )
+            return filegroup_index
+        except Exception as e:
+            logger.warning(
+                "[PreviewEngine] Error calculating filegroup index: %s, using global",
+                e
+            )
+            return global_index
 
     # Fallback
     return global_index
