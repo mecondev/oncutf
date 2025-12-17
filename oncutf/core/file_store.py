@@ -261,3 +261,64 @@ class FileStore(QObject):
             "last_load_time_ms": self._load_timer.elapsed() if self._load_timer.isValid() else 0,
             **cache_stats,
         }
+    # =====================================
+    # Filesystem Change Handling
+    # =====================================
+
+    def refresh_loaded_folders(self, changed_folder: str | None = None) -> bool:
+        """Refresh files from loaded folders after filesystem changes.
+
+        Args:
+            changed_folder: Specific folder that changed (optional)
+
+        Returns:
+            bool: True if files were refreshed
+        """
+        if not self._loaded_files:
+            logger.debug("[FileStore] No files loaded, skipping refresh")
+            return False
+
+        # Get unique folders from loaded files
+        loaded_folders = set()
+        for file_item in self._loaded_files:
+            folder = os.path.dirname(file_item.full_path)
+            loaded_folders.add(folder)
+
+        # If specific folder given, check if it's relevant
+        if changed_folder:
+            changed_folder_norm = os.path.normpath(changed_folder)
+            if changed_folder_norm not in loaded_folders:
+                logger.debug(
+                    "[FileStore] Changed folder not in loaded files: %s",
+                    changed_folder
+                )
+                return False
+
+            folders_to_refresh = {changed_folder_norm}
+        else:
+            folders_to_refresh = loaded_folders
+
+        logger.info(
+            "[FileStore] Refreshing %d folder(s) after filesystem change",
+            len(folders_to_refresh)
+        )
+
+        # Invalidate cache for affected folders
+        for folder in folders_to_refresh:
+            self._file_cache.pop(folder, None)
+
+        # Reload files from all loaded folders
+        refreshed_files: list[FileItem] = []
+        for folder in loaded_folders:
+            try:
+                folder_files = self.get_file_items_from_folder(folder, use_cache=False)
+                refreshed_files.extend(folder_files)
+            except Exception as e:
+                logger.error("[FileStore] Error refreshing folder %s: %s", folder, e)
+
+        # Update state
+        self._loaded_files = refreshed_files
+        self.files_loaded.emit(refreshed_files)
+
+        logger.info("[FileStore] Refreshed %d files", len(refreshed_files))
+        return True

@@ -116,7 +116,18 @@ class FileTreeView(QTreeView):
         try:
             from oncutf.core.filesystem_monitor import FilesystemMonitor
 
-            self._filesystem_monitor = FilesystemMonitor()
+            # Get FileStore from parent window if available
+            file_store = None
+            if hasattr(self, "parent") and self.parent():
+                parent = self.parent()
+                if hasattr(parent, "context") and hasattr(parent.context, "file_store"):
+                    file_store = parent.context.file_store
+                    logger.debug(
+                        "[FileTreeView] Found FileStore from parent window context",
+                        extra={"dev_only": True}
+                    )
+
+            self._filesystem_monitor = FilesystemMonitor(file_store=file_store)
 
             # Connect drive signals
             self._filesystem_monitor.drive_added.connect(self._on_drive_added)
@@ -124,6 +135,16 @@ class FileTreeView(QTreeView):
 
             # Connect directory change signal
             self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)
+
+            # Connect file change signal to new handler for FileTable refresh + deselect
+            if file_store is not None:
+                self._filesystem_monitor.directory_changed.connect(
+                    self._on_filesystem_change_for_table
+                )
+                logger.debug(
+                    "[FileTreeView] Connected filesystem changes to table refresh handler",
+                    extra={"dev_only": True}
+                )
 
             # Set custom callback for tree refresh
             self._filesystem_monitor.set_drive_change_callback(self._refresh_tree_on_drives_change)
@@ -178,6 +199,60 @@ class FileTreeView(QTreeView):
                 )
             except Exception as e:
                 logger.error("[FileTreeView] Model refresh error: %s", e)
+
+    def _on_filesystem_change_for_table(self, dir_path: str) -> None:
+        """Handle filesystem changes affecting loaded files (FileTable auto-refresh).
+
+        When filesystem changes are detected in loaded folders, this handler:
+        1. FileStore already refreshed by FilesystemMonitor
+        2. Clear all selections (better UX - avoid stale selection)
+        3. Clear preview cache (stale preview pairs)
+
+        Args:
+            dir_path: Path of changed directory
+        """
+        logger.info(
+            "[FileTreeView] Filesystem change detected in loaded folder: %s - clearing selections and preview",
+            dir_path
+        )
+
+        try:
+            # Get parent window to access services
+            parent = self.parent()
+            if not parent or not hasattr(parent, "context"):
+                logger.warning(
+                    "[FileTreeView] Cannot access parent window context for filesystem refresh",
+                    extra={"dev_only": True}
+                )
+                return
+
+            # 1. Clear all selections (better UX - filesystem changed)
+            selection_store = parent.context.selection_store
+            if selection_store:
+                selection_store.clear_selection(emit_signal=True)
+                logger.debug(
+                    "[FileTreeView] Cleared all selections after filesystem change",
+                    extra={"dev_only": True}
+                )
+
+            # 2. Clear preview cache (stale pairs)
+            if hasattr(parent, "preview_manager") and parent.preview_manager:
+                parent.preview_manager.clear_all_caches()
+                logger.debug(
+                    "[FileTreeView] Cleared preview cache after filesystem change",
+                    extra={"dev_only": True}
+                )
+
+            # 3. Clear preview tables (UI)
+            if hasattr(parent, "update_preview_tables_from_pairs"):
+                parent.update_preview_tables_from_pairs([])
+                logger.debug(
+                    "[FileTreeView] Cleared preview tables after filesystem change",
+                    extra={"dev_only": True}
+                )
+
+        except Exception as e:
+            logger.error("[FileTreeView] Error handling filesystem change for table: %s", e)
 
     def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
         """Refresh tree when drives change.

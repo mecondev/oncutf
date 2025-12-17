@@ -327,20 +327,18 @@ class FilesystemMonitor(QObject):
 
         # Check if any loaded file is in the changed directory
         changed_path_obj = Path(changed_path)
-        files_to_refresh: list[str] = []
+        has_files_in_folder = any(
+            Path(file_item.full_path).parent == changed_path_obj
+            for file_item in loaded_files
+        )
 
-        for file_item in loaded_files:
-            file_path = Path(file_item.full_path)
-            if file_path.parent == changed_path_obj:
-                files_to_refresh.append(file_item.full_path)
-
-        if files_to_refresh:
+        if has_files_in_folder:
             logger.info(
-                "[FilesystemMonitor] Refreshing %d files in changed directory",
-                len(files_to_refresh)
+                "[FilesystemMonitor] Refreshing FileStore for changed folder: %s",
+                changed_path
             )
-            # Note: FileStore needs a refresh method for this
-            # For now, just log - implementation depends on FileStore API
+            # Refresh files from affected folder
+            self.file_store.refresh_loaded_folders(changed_path)
 
     def get_monitored_folders(self) -> list[str]:
         """Get list of currently monitored folders.
