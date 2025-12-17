@@ -310,6 +310,14 @@ class FileStore(QObject):
         # Reload files from all loaded folders
         refreshed_files: list[FileItem] = []
         for folder in loaded_folders:
+            # Skip folders that no longer exist (e.g., unmounted USB drives)
+            if not os.path.exists(folder):
+                logger.info(
+                    "[FileStore] Folder no longer exists, removing its files: %s",
+                    folder
+                )
+                continue
+
             try:
                 folder_files = self.get_file_items_from_folder(folder, use_cache=False)
                 refreshed_files.extend(folder_files)
