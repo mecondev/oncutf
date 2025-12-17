@@ -246,18 +246,16 @@ class FilesystemMonitor(QObject):
             for folder in to_remove:
                 self.remove_folder(folder)
 
-            # Auto-remove files from FileStore if available
+            # Trigger FileStore refresh - files on unmounted drive will be automatically removed
             if self.file_store:
                 try:
-                    removed_count = self.file_store.remove_files_from_path(drive)
-                    if removed_count > 0:
-                        logger.info(
-                            "[FilesystemMonitor] Removed %d files from unmounted drive: %s",
-                            removed_count,
-                            drive
-                        )
+                    logger.info("[FilesystemMonitor] Refreshing FileStore after drive unmount: %s", drive)
+                    # Use refresh_loaded_folders() which will check if files still exist
+                    # and automatically update the UI through the normal reload flow
+                    if self.file_store.refresh_loaded_folders():
+                        logger.info("[FilesystemMonitor] FileStore refreshed after drive unmount")
                 except Exception as e:
-                    logger.exception("[FilesystemMonitor] Error removing files from unmounted drive: %s", e)
+                    logger.exception("[FilesystemMonitor] Error refreshing FileStore after unmount: %s", e)
 
         # Update state
         if added or removed:
