@@ -125,7 +125,10 @@ class ProgressWidget(QWidget):
         self._apply_styling()
 
         logger.debug(
-            f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})",
+            "[ProgressWidget] Initialized (size_info: %s, time_info: %s, progress_mode: %s)",
+            show_size_info,
+            show_time_info,
+            progress_mode,
             extra={"dev_only": True},
         )
 
@@ -333,7 +336,10 @@ class ProgressWidget(QWidget):
         if percentage % 10 == 0 and percentage != getattr(self, "_last_milestone", -1):
             self._last_milestone = percentage
             logger.debug(
-                f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)",
+                "[ProgressWidget] Progress milestone: %d%% (%d/%d bytes)",
+                percentage,
+                processed_bytes,
+                total_bytes,
                 extra={"dev_only": True},
             )
 
@@ -402,7 +408,7 @@ class ProgressWidget(QWidget):
             mode: Either "count" (file count based) or "size" (byte size based)
         """
         if mode not in ["count", "size"]:
-            logger.warning(f"[ProgressWidget] Invalid progress mode: {mode}, using 'count'")
+            logger.warning("[ProgressWidget] Invalid progress mode: %s, using 'count'", mode)
             mode = "count"
 
         old_mode = self.progress_mode
@@ -410,7 +416,9 @@ class ProgressWidget(QWidget):
 
         if old_mode != mode:
             logger.debug(
-                f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}",
+                "[ProgressWidget] Progress mode changed: %s -> %s",
+                old_mode,
+                mode,
                 extra={"dev_only": True},
             )
 
@@ -449,7 +457,8 @@ class ProgressWidget(QWidget):
             )
 
         logger.debug(
-            f"[ProgressWidget] Started tracking (total_size: {total_size})",
+            "[ProgressWidget] Started tracking (total_size: %d)",
+            total_size,
             extra={"dev_only": True},
         )
 
@@ -529,7 +538,10 @@ class ProgressWidget(QWidget):
 
         # Debug logging to see if this method is being called
         logger.debug(
-            f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}",
+            "[ProgressWidget] _update_time_display called: elapsed=%.1fs, processed=%d, total=%d",
+            elapsed,
+            self.processed_size,
+            self.total_size,
             extra={"dev_only": True},
         )
 
@@ -565,7 +577,9 @@ class ProgressWidget(QWidget):
                 time_text = f"{elapsed_str} of {estimated_total_str} Est."  # Use "of" and "Est."
                 self.time_label.setText(time_text)
                 logger.debug(
-                    f"[ProgressWidget] Time updated: {time_text}", extra={"dev_only": True}
+                    "[ProgressWidget] Time updated: %s",
+                    time_text,
+                    extra={"dev_only": True},
                 )
             else:
                 # Early stage - just show elapsed time until we have stable estimation
@@ -573,13 +587,16 @@ class ProgressWidget(QWidget):
                 time_text = f"{elapsed_str} of calculating... Est."
                 self.time_label.setText(time_text)
                 logger.debug(
-                    f"[ProgressWidget] Time updated (early): {time_text}", extra={"dev_only": True}
+                    "[ProgressWidget] Time updated (early): %s",
+                    time_text,
+                    extra={"dev_only": True},
                 )
         else:
             elapsed_str = self._format_time_hms(elapsed)
             self.time_label.setText(elapsed_str)
             logger.debug(
-                f"[ProgressWidget] Time updated (no progress): {elapsed_str}",
+                "[ProgressWidget] Time updated (no progress): %s",
+                elapsed_str,
                 extra={"dev_only": True},
             )
 

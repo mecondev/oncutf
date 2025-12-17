@@ -157,7 +157,8 @@ class CustomSplashScreen(QSplashScreen):
                             ):
                                 target_screen = screen
                                 logger.debug(
-                                    f"[Splash] Found target screen for saved main window position: {screen.name()}"
+                                    "[Splash] Found target screen for saved main window position: %s",
+                                    screen.name(),
                                 )
                                 break
 
@@ -185,12 +186,14 @@ class CustomSplashScreen(QSplashScreen):
 
                         self.move(target_x, target_y)
                         logger.debug(
-                            f"[Splash] Positioned on screen where main window will appear: {target_x}, {target_y}"
+                            "[Splash] Positioned on screen where main window will appear: %d, %d",
+                            target_x,
+                            target_y,
                         )
                         return
 
         except Exception as e:
-            logger.debug(f"[Splash] Error positioning on target screen: {e}")
+            logger.debug("[Splash] Error positioning on target screen: %s", e)
 
         # Fallback: Try to position on primary screen or the screen containing the mouse cursor
         try:
@@ -199,7 +202,8 @@ class CustomSplashScreen(QSplashScreen):
                 # First try to get the primary screen (this should work better for dual monitor)
                 target_screen = app.primaryScreen()
                 logger.debug(
-                    f"[Splash] Using primary screen: {target_screen.name() if target_screen else 'None'}"
+                    "[Splash] Using primary screen: %s",
+                    target_screen.name() if target_screen else "None",
                 )
 
                 # If no primary screen found, try to get the screen containing the mouse cursor
@@ -209,7 +213,7 @@ class CustomSplashScreen(QSplashScreen):
                         if hasattr(app.desktop().cursor(), "pos")
                         else None
                     )
-                    logger.debug(f"[Splash] Cursor position: {cursor_pos}")
+                    logger.debug("[Splash] Cursor position: %s", cursor_pos)
 
                     if cursor_pos:
                         for screen in app.screens():
@@ -224,14 +228,19 @@ class CustomSplashScreen(QSplashScreen):
                             ):
                                 target_screen = screen
                                 logger.debug(
-                                    f"[Splash] Found screen containing cursor: {screen.name()}"
+                                    "[Splash] Found screen containing cursor: %s",
+                                    screen.name(),
                                 )
                                 break
 
                 if target_screen:
                     screen_geometry = target_screen.availableGeometry()
                     logger.debug(
-                        f"[Splash] Target screen geometry: {screen_geometry.x()}, {screen_geometry.y()}, {screen_geometry.width()}x{screen_geometry.height()}"
+                        "[Splash] Target screen geometry: %d, %d, %dx%d",
+                        screen_geometry.x(),
+                        screen_geometry.y(),
+                        screen_geometry.width(),
+                        screen_geometry.height(),
                     )
 
                     # Calculate center position on the target screen
@@ -239,11 +248,16 @@ class CustomSplashScreen(QSplashScreen):
                     y = screen_geometry.y() + (screen_geometry.height() - self.splash_height) // 2
 
                     self.move(x, y)
-                    logger.debug(f"[Splash] Positioned on screen {target_screen.name()}: {x}, {y}")
+                    logger.debug(
+                        "[Splash] Positioned on screen %s: %d, %d",
+                        target_screen.name(),
+                        x,
+                        y,
+                    )
                     return
 
         except Exception as e:
-            logger.debug(f"[Splash] Error with multi-screen positioning: {e}")
+            logger.debug("[Splash] Error with multi-screen positioning: %s", e)
 
         # Ultimate fallback: use modern QScreen API instead of deprecated QDesktopWidget
         try:
@@ -254,7 +268,9 @@ class CustomSplashScreen(QSplashScreen):
                     screen_geometry = primary_screen.availableGeometry()
 
                     logger.debug(
-                        f"[Splash] Fallback using QScreen API primary screen: {screen_geometry.width()}x{screen_geometry.height()}"
+                        "[Splash] Fallback using QScreen API primary screen: %dx%d",
+                        screen_geometry.width(),
+                        screen_geometry.height(),
                     )
 
                     # Calculate center position on primary screen
@@ -262,11 +278,11 @@ class CustomSplashScreen(QSplashScreen):
                     y = screen_geometry.y() + (screen_geometry.height() - self.splash_height) // 2
 
                     self.move(x, y)
-                    logger.debug(f"[Splash] Positioned using QScreen API: {x}, {y}")
+                    logger.debug("[Splash] Positioned using QScreen API: %d, %d", x, y)
                     return
 
         except Exception as e:
-            logger.debug(f"[Splash] Error with QScreen API positioning: {e}")
+            logger.debug("[Splash] Error with QScreen API positioning: %s", e)
 
         # Final fallback: fixed position
         logger.debug("[Splash] Using fixed fallback position")

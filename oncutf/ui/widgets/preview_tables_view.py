@@ -79,7 +79,9 @@ class PreviewTableWidget(QTableWidget):
 
         except Exception as e:
             logger.debug(
-                f"[PreviewTableWidget] Error in mouseMoveEvent: {e}", extra={"dev_only": True}
+                "[PreviewTableWidget] Error in mouseMoveEvent: %s",
+                e,
+                extra={"dev_only": True},
             )
             super().mouseMoveEvent(event)
 
@@ -236,7 +238,9 @@ class PreviewTablesView(QWidget):
     def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
         """Show or hide preview table placeholders using the unified helper."""
         logger.debug(
-            f"[PreviewTablesView] Setting placeholders visible: {visible}", extra={"dev_only": True}
+            "[PreviewTablesView] Setting placeholders visible: %s",
+            visible,
+            extra={"dev_only": True},
         )
         if visible:
             self.old_names_placeholder_helper.show()
@@ -267,7 +271,8 @@ class PreviewTablesView(QWidget):
                     table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                 self._adjust_table_widths()
             logger.debug(
-                f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}",
+                "[PreviewTablesView] Placeholders disabled - tables enabled %s",
+                "(deferred)" if defer_width_adjustment else "(immediate)",
                 extra={"dev_only": True},
             )
 
@@ -336,14 +341,20 @@ class PreviewTablesView(QWidget):
                 header.setSectionResizeMode(0, QHeaderView.Fixed)
                 table.setColumnWidth(0, target_width)
                 logger.debug(
-                    f"[PreviewTablesView] {table.objectName() or 'Unknown'} expanded: {content_width}px → {target_width}px",
+                    "[PreviewTablesView] %s expanded: %dpx -> %dpx",
+                    table.objectName() or "Unknown",
+                    content_width,
+                    target_width,
                     extra={"dev_only": True},
                 )
             else:
                 # Keep content width (allows horizontal scrolling when needed)
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
                 logger.debug(
-                    f"[PreviewTablesView] {table.objectName() or 'Unknown'} content width: {content_width}px (viewport: {viewport_width}px) - scrolling enabled",
+                    "[PreviewTablesView] %s content width: %dpx (viewport: %dpx) - scrolling enabled",
+                    table.objectName() or "Unknown",
+                    content_width,
+                    viewport_width,
                     extra={"dev_only": True},
                 )
 

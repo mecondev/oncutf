@@ -256,7 +256,9 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Always emit the signal (like CounterModule does)
         logger.debug(
-            f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal",
+            "[SpecifiedText] Text changed to: '%s' (len=%d), emitting signal",
+            text,
+            len(text),
             extra={"dev_only": True},
         )
         self.updated.emit(self)
@@ -270,7 +272,9 @@ class SpecifiedTextModule(BaseRenameModule):
         """
         self._is_input_valid = is_valid
         logger.debug(
-            f"[SpecifiedText] Validation state changed: {is_valid}", extra={"dev_only": True}
+            "[SpecifiedText] Validation state changed: %s",
+            is_valid,
+            extra={"dev_only": True},
         )
 
         # Emit update signal so preview can refresh
@@ -302,7 +306,9 @@ class SpecifiedTextModule(BaseRenameModule):
         _metadata_cache: dict | None = None,
     ) -> str:
         logger.debug(
-            f"[SpecifiedTextModule] apply_from_data called with data: {data}", extra={"dev_only": True}
+            "[SpecifiedTextModule] apply_from_data called with data: %s",
+            data,
+            extra={"dev_only": True},
         )
         text = data.get("text", "")
 
@@ -316,7 +322,7 @@ class SpecifiedTextModule(BaseRenameModule):
         # Validate using new system
         is_valid, validated_text = validate_filename_part(text)
         if not is_valid:
-            logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
+            logger.warning("[SpecifiedTextModule] Invalid filename text: '%s'", text)
             from oncutf.config import INVALID_FILENAME_MARKER
 
             return INVALID_FILENAME_MARKER

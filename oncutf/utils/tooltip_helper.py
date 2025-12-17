@@ -130,7 +130,7 @@ class TooltipHelper:
                 cls._show_temporary_tooltip(widget, message, tooltip_type, duration)
 
         except Exception as e:
-            logger.error(f"[TooltipHelper] Failed to show tooltip: {e}")
+            logger.error("[TooltipHelper] Failed to show tooltip: %s", e)
 
     @classmethod
     def _show_temporary_tooltip(
@@ -168,9 +168,9 @@ class TooltipHelper:
         # Track active tooltip
         cls._active_tooltips.append((widget, tooltip))
 
-        logger.debug(
-            f"[TooltipHelper] Showed {tooltip_type} tooltip: {message[:50]}{'...' if len(message) > 50 else ''}"
-        )
+        truncated = message[:50]
+        suffix = "..." if len(message) > 50 else ""
+        logger.debug("[TooltipHelper] Showed %s tooltip: %s%s", tooltip_type, truncated, suffix)
 
     @classmethod
     def _setup_persistent_tooltip(cls, widget: QWidget, message: str, tooltip_type: str) -> None:
@@ -233,7 +233,7 @@ class TooltipHelper:
                     tooltip.hide()
             except RuntimeError as e:
                 # Qt object has been deleted - remove from tracking
-                logger.debug(f"[TooltipHelper] Tooltip object deleted, cleaning up: {e}")
+                logger.debug("[TooltipHelper] Tooltip object deleted, cleaning up: %s", e)
                 widget_id = id(widget)
                 if widget_id in cls._persistent_tooltips:
                     del cls._persistent_tooltips[widget_id]
@@ -277,12 +277,12 @@ class TooltipHelper:
 
         except RuntimeError as e:
             # Qt object has been deleted - remove from tracking
-            logger.debug(f"[TooltipHelper] Tooltip object deleted during show: {e}")
+            logger.debug("[TooltipHelper] Tooltip object deleted during show: %s", e)
             widget_id = id(widget)
             if widget_id in cls._persistent_tooltips:
                 del cls._persistent_tooltips[widget_id]
         except Exception as e:
-            logger.error(f"[TooltipHelper] Failed to show persistent tooltip: {e}")
+            logger.error("[TooltipHelper] Failed to show persistent tooltip: %s", e)
 
     @classmethod
     def setup_tooltip(
@@ -406,7 +406,7 @@ class TooltipHelper:
 
             return position
         except Exception as e:
-            logger.debug(f"[TooltipHelper] Could not adjust position to screen: {e}")
+            logger.debug("[TooltipHelper] Could not adjust position to screen: %s", e)
             return position
 
 

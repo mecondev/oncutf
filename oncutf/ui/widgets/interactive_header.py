@@ -200,7 +200,7 @@ class InteractiveHeader(QHeaderView):
             from oncutf.utils.logger_factory import get_cached_logger
 
             logger = get_cached_logger(__name__)
-            logger.warning(f"Failed to add column visibility menu: {e}")
+            logger.warning("Failed to add column visibility menu: %s", e)
 
     def _get_file_table_view(self):
         """Get the file table view that this header belongs to."""

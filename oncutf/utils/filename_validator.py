@@ -45,7 +45,7 @@ def clean_filename_text(text: str) -> str:
     # Remove invalid characters
     cleaned = "".join(char for char in text if is_valid_filename_char(char))
 
-    logger.debug(f"[FilenameValidator] Cleaned text: '{text}' -> '{cleaned}'")
+    logger.debug("[FilenameValidator] Cleaned text: '%s' -> '%s'", text, cleaned)
     return cleaned
 
 
@@ -63,7 +63,7 @@ def clean_trailing_chars(filename_part: str) -> str:
     cleaned = filename_part.rstrip(INVALID_TRAILING_CHARS)
 
     if cleaned != original:
-        logger.debug(f"[FilenameValidator] Removed trailing chars: '{original}' -> '{cleaned}'")
+        logger.debug("[FilenameValidator] Removed trailing chars: '%s' -> '%s'", original, cleaned)
 
     return cleaned
 
@@ -85,7 +85,7 @@ def validate_filename_part(filename_part: str) -> tuple[bool, str]:
     has_invalid_chars = any(char in INVALID_FILENAME_CHARS for char in filename_part)
 
     if has_invalid_chars:
-        logger.debug(f"[FilenameValidator] Invalid characters found in: '{filename_part}'")
+        logger.debug("[FilenameValidator] Invalid characters found in: '%s'", filename_part)
         return False, INVALID_FILENAME_MARKER
 
     # Clean trailing characters
@@ -93,7 +93,7 @@ def validate_filename_part(filename_part: str) -> tuple[bool, str]:
 
     # Check if result is empty after cleaning
     if not cleaned.strip():
-        logger.debug(f"[FilenameValidator] Empty filename after cleaning: '{filename_part}'")
+        logger.debug("[FilenameValidator] Empty filename after cleaning: '%s'", filename_part)
         return False, INVALID_FILENAME_MARKER
 
     # Check for Windows reserved names
@@ -123,7 +123,7 @@ def validate_filename_part(filename_part: str) -> tuple[bool, str]:
     }
 
     if cleaned.upper() in reserved_names:
-        logger.debug(f"[FilenameValidator] Reserved Windows name: '{cleaned}'")
+        logger.debug("[FilenameValidator] Reserved Windows name: '%s'", cleaned)
         return False, INVALID_FILENAME_MARKER
 
     return True, cleaned
@@ -258,7 +258,10 @@ def prepare_final_filename(filename_part: str, extension: str = "") -> str:
     final_filename = cleaned_part + extension
 
     logger.debug(
-        f"[FilenameValidator] Prepared final filename: '{filename_part}' + '{extension}' → '{final_filename}'"
+        "[FilenameValidator] Prepared final filename: '%s' + '%s' -> '%s'",
+        filename_part,
+        extension,
+        final_filename,
     )
 
     return final_filename

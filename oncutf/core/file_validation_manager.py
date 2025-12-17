@@ -259,7 +259,7 @@ class FileValidationManager:
             )
 
         except OSError as e:
-            logger.debug(f"[FileValidationManager] Error validating {file_path}: {e}")
+            logger.debug("[FileValidationManager] Error validating %s: %s", file_path, e)
             return ValidationResult(
                 is_valid=False,
                 file_exists=False,
@@ -303,7 +303,8 @@ class FileValidationManager:
                 row = cursor.fetchone()
                 if row:
                     logger.info(
-                        f"[FileValidationManager] Found moved file by exact content match: {row['filename']}"
+                        "[FileValidationManager] Found moved file by exact content match: %s",
+                        row["filename"],
                     )
                     return dict(row)
 
@@ -324,12 +325,13 @@ class FileValidationManager:
                 row = cursor.fetchone()
                 if row:
                     logger.info(
-                        f"[FileValidationManager] Found moved file by content hash + size: {row['filename']}"
+                        "[FileValidationManager] Found moved file by content hash + size: %s",
+                        row["filename"],
                     )
                     return dict(row)
 
         except Exception as e:
-            logger.error(f"[FileValidationManager] Error searching for moved file: {e}")
+            logger.error("[FileValidationManager] Error searching for moved file: %s", e)
 
         return None
 
@@ -365,7 +367,9 @@ class FileValidationManager:
                 if moved_file:
                     # Update path in database
                     self.db_manager.get_or_create_path_id(file_path)  # This updates the path
-                    logger.info(f"[FileValidationManager] Updated path for moved file: {file_path}")
+                    logger.info(
+                        "[FileValidationManager] Updated path for moved file: %s", file_path
+                    )
                     return moved_file, True  # Found by content, was moved
 
         return None, False  # New file
@@ -420,7 +424,9 @@ class FileValidationManager:
         }
 
         logger.debug(
-            f"[FileValidationManager] Remembered user choice: {choice} for {operation.value}"
+            "[FileValidationManager] Remembered user choice: %s for %s",
+            choice,
+            operation.value,
         )
 
     def validate_operation_batch(
@@ -509,7 +515,7 @@ class FileValidationManager:
             logger.debug("Cleaning up stale cache entries", extra={"dev_only": True})
             # Implementation would go here - currently just a placeholder
         except Exception as e:
-            logger.error(f"Error cleaning up stale cache entries: {e}")
+            logger.error("Error cleaning up stale cache entries: %s", e)
 
     def get_validation_stats(self) -> dict[str, Any]:
         """Get validation manager statistics."""
@@ -526,7 +532,7 @@ class FileValidationManager:
             }
 
         except Exception as e:
-            logger.error(f"[FileValidationManager] Error getting stats: {e}")
+            logger.error("[FileValidationManager] Error getting stats: %s", e)
             return {}
 
 

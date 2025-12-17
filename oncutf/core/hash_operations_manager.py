@@ -131,11 +131,15 @@ class HashOperationsManager:
             files_to_check = self.parent_window.file_table_model.get_all_file_items()
 
         if not files_to_check:
-            logger.warning(f"[HashManager] No files to check for duplicates (scope: {scope})")
+            logger.warning(
+                "[HashManager] No files to check for duplicates (scope: %s)", scope
+            )
             return
 
         logger.info(
-            f"[HashManager] Finding duplicates in {len(files_to_check)} files (scope: {scope})"
+            "[HashManager] Finding duplicates in %d files (scope: %s)",
+            len(files_to_check),
+            scope,
         )
 
         # Convert FileItem objects to file paths
@@ -227,7 +231,9 @@ class HashOperationsManager:
         self.hash_worker.start()
 
         logger.info(
-            f"[HashManager] Started hash operation: {operation} for {len(file_paths)} files"
+            "[HashManager] Started hash operation: %s for %d files",
+            operation,
+            len(file_paths),
         )
 
     def _create_hash_progress_dialog(self, _operation: str, file_count: int) -> None:
@@ -305,13 +311,16 @@ class HashOperationsManager:
                             wt.set_progress_mode("size")
 
                 # Update unified progress dialog with cumulative sizes
-                self.hash_dialog.update_progress(processed_bytes=current_bytes, total_bytes=total_bytes)
+                self.hash_dialog.update_progress(
+                    processed_bytes=current_bytes, total_bytes=total_bytes
+                )
             except Exception as e:
-                  # Fallback to previous behavior on any error
-                  logger.debug(f"[HashManager] Error updating size progress: {e}")
-                  import contextlib
-                  with contextlib.suppress(Exception):
-                      self.hash_dialog.update_progress(current_bytes, total_bytes)
+                # Fallback to previous behavior on any error
+                logger.debug("[HashManager] Error updating size progress: %s", e)
+                import contextlib
+
+                with contextlib.suppress(Exception):
+                    self.hash_dialog.update_progress(current_bytes, total_bytes)
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """
@@ -330,7 +339,9 @@ class HashOperationsManager:
                     hm = HashManager()
                     hm.store_hash(file_path, hash_value)
                 except Exception as e:
-                    logger.warning(f"[HashManager] Failed to store hash for {file_path}: {e}")
+                    logger.warning(
+                        "[HashManager] Failed to store hash for %s: %s", file_path, e
+                    )
 
             # Find FileItem in model
             if (
@@ -345,7 +356,8 @@ class HashOperationsManager:
 
                 # Log update
                 logger.debug(
-                    f"[HashWorker] Updated hash icon for {file_path}",
+                    "[HashWorker] Updated hash icon for %s",
+                    file_path,
                     extra={"dev_only": True},
                 )
             else:
@@ -353,7 +365,7 @@ class HashOperationsManager:
                 logger.warning("[HashManager] FileTableModel (file_model) missing or refresh_icon_for_file method missing")
 
         except Exception as e:
-            logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
+            logger.warning("[HashWorker] Error updating icon for %s: %s", file_path, e)
 
     # ===== Result Handlers =====
 
@@ -412,7 +424,7 @@ class HashOperationsManager:
 
     def _on_hash_operation_error(self, error_message: str) -> None:
         """Handle hash operation error."""
-        logger.error(f"[HashManager] Hash operation error: {error_message}")
+        logger.error("[HashManager] Hash operation error: %s", error_message)
 
         # Close dialog
         if hasattr(self, "hash_dialog") and self.hash_dialog:
@@ -492,7 +504,9 @@ class HashOperationsManager:
             )
 
         logger.info(
-            f"[HashManager] Showed duplicate results: {duplicate_count} files in {duplicate_groups} groups"
+            "[HashManager] Showed duplicate results: %d files in %d groups",
+            duplicate_count,
+            duplicate_groups,
         )
 
     def _show_comparison_results(self, results: dict, external_folder: str) -> None:
@@ -564,7 +578,9 @@ class HashOperationsManager:
                 )
 
         logger.info(
-            f"[HashManager] Showed comparison results: {matches} identical, {differences} different"
+            "[HashManager] Showed comparison results: %d identical, %d different",
+            matches,
+            differences,
         )
 
     def _show_hash_results(self, hash_results: dict, was_cancelled: bool = False) -> None:
@@ -620,8 +636,9 @@ class HashOperationsManager:
                 )
 
         logger.info(
-            f"[HashManager] Showed checksum results for {len(hash_results)} files"
-            + (" (cancelled)" if was_cancelled else "")
+            "[HashManager] Showed checksum results for %d files%s",
+            len(hash_results),
+            " (cancelled)" if was_cancelled else "",
         )
 
     # ===== Entry Point Handlers =====
@@ -659,7 +676,9 @@ class HashOperationsManager:
                 return
 
             logger.info(
-                f"[HashManager] Comparing {len(selected_files)} files with {external_folder}"
+                "[HashManager] Comparing %d files with %s",
+                len(selected_files),
+                external_folder,
             )
 
             # Convert FileItem objects to file paths
@@ -670,7 +689,7 @@ class HashOperationsManager:
             self._start_hash_operation("compare", file_paths, external_folder=external_folder)
 
         except Exception as e:
-            logger.error(f"[HashManager] Error setting up external comparison: {e}")
+            logger.error("[HashManager] Error setting up external comparison: %s", e)
             from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
@@ -688,7 +707,9 @@ class HashOperationsManager:
             logger.warning("[HashManager] No files selected for checksum calculation")
             return
 
-        logger.info(f"[HashManager] Calculating checksums for {len(selected_files)} files")
+        logger.info(
+            "[HashManager] Calculating checksums for %d files", len(selected_files)
+        )
 
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in selected_files]
@@ -723,7 +744,7 @@ class HashOperationsManager:
             self._show_hash_results(hash_results)
 
         except Exception as e:
-            logger.error(f"[HashManager] Error calculating checksum: {e}")
+            logger.error("[HashManager] Error calculating checksum: %s", e)
             from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(

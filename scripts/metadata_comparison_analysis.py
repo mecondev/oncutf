@@ -88,7 +88,7 @@ class MetadataComparisonAnalyzer:
             """)
 
             conn.commit()
-            logger.info(f"Analysis database initialized: {self.db_path}")
+            logger.info("Analysis database initialized: %s", self.db_path)
 
     def run_exiftool_fast(self, file_path: str) -> dict[str, Any]:
         """Run exiftool in fast mode (standard extraction)."""
@@ -109,14 +109,14 @@ class MetadataComparisonAnalyzer:
             )
 
             if result.returncode != 0:
-                logger.warning(f"ExifTool fast mode failed for {file_path}: {result.stderr}")
+                logger.warning("ExifTool fast mode failed for %s: %s", file_path, result.stderr)
                 return {}
 
             data = json.loads(result.stdout)
             return data[0] if data else {}
 
         except Exception as e:
-            logger.error(f"Error running exiftool fast mode on {file_path}: {e}")
+            logger.error("Error running exiftool fast mode on %s: %s", file_path, e)
             return {}
 
     def run_exiftool_extended(self, file_path: str) -> dict[str, Any]:
@@ -139,7 +139,7 @@ class MetadataComparisonAnalyzer:
             )
 
             if result.returncode != 0:
-                logger.warning(f"ExifTool extended mode failed for {file_path}: {result.stderr}")
+                logger.warning("ExifTool extended mode failed for %s: %s", file_path, result.stderr)
                 return {}
 
             data = json.loads(result.stdout)
@@ -161,12 +161,12 @@ class MetadataComparisonAnalyzer:
             return result_dict
 
         except Exception as e:
-            logger.error(f"Error running exiftool extended mode on {file_path}: {e}")
+            logger.error("Error running exiftool extended mode on %s: %s", file_path, e)
             return {}
 
     def analyze_file(self, file_path: Path) -> int:
         """Analyze a single file and store results in database."""
-        logger.info(f"Analyzing file: {file_path.name}")
+        logger.info("Analyzing file: %s", file_path.name)
 
         # Get file info
         try:
@@ -272,24 +272,24 @@ class MetadataComparisonAnalyzer:
 
     def analyze_all_files(self):
         """Analyze all files in the test directory."""
-        logger.info(f"Starting analysis of all files in: {self.test_dir}")
+        logger.info("Starting analysis of all files in: %s", self.test_dir)
 
         if not self.test_dir.exists():
-            logger.error(f"Test directory does not exist: {self.test_dir}")
+            logger.error("Test directory does not exist: %s", self.test_dir)
             return
 
         # Get all files (excluding .THM which are thumbnails)
         files = [f for f in self.test_dir.iterdir()
                 if f.is_file() and f.suffix.lower() != '.thm']
 
-        logger.info(f"Found {len(files)} files to analyze")
+        logger.info("Found %d files to analyze", len(files))
 
         for i, file_path in enumerate(files, 1):
-            logger.info(f"[{i}/{len(files)}] Analyzing: {file_path.name}")
+            logger.info("[%d/%d] Analyzing: %s", i, len(files), file_path.name)
             try:
                 self.analyze_file(file_path)
             except Exception as e:
-                logger.error(f"Failed to analyze {file_path.name}: {e}")
+                logger.error("Failed to analyze %s: %s", file_path.name, e)
 
         logger.info("Analysis complete!")
 

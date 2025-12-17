@@ -54,7 +54,8 @@ class SignalCoordinator:
         self.setup_metadata_refresh_signals()
         self.setup_timer_signals()
         logger.info(
-            f"SignalCoordinator: Connected {len(self._connected_signals)} signals",
+            "SignalCoordinator: Connected %d signals",
+            len(self._connected_signals),
             extra={"dev_only": True},
         )
 
@@ -85,7 +86,7 @@ class SignalCoordinator:
                     extra={"dev_only": True},
                 )
             except Exception as e:
-                logger.warning(f"[SignalCoordinator] Failed to connect hash_worker signal: {e}")
+                logger.warning("[SignalCoordinator] Failed to connect hash_worker signal: %s", e)
         else:
             logger.debug(
                 "[SignalCoordinator] hash_worker not available for signal connection",
@@ -130,7 +131,8 @@ class SignalCoordinator:
                 )
         except Exception as e:
             logger.debug(
-                f"[SignalCoordinator] ApplicationContext metadata_changed not available: {e}"
+                "[SignalCoordinator] ApplicationContext metadata_changed not available: %s",
+                e,
             )
 
         try:
@@ -149,7 +151,8 @@ class SignalCoordinator:
                 )
         except Exception as e:
             logger.debug(
-                f"[SignalCoordinator] UnifiedMetadataManager metadata_changed not available: {e}"
+                "[SignalCoordinator] UnifiedMetadataManager metadata_changed not available: %s",
+                e,
             )
 
     def setup_timer_signals(self) -> None:

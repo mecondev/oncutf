@@ -215,7 +215,9 @@ class SelectionManager:
                     selection_model.clearSelection()
 
                 logger.info(
-                    f"[InvertSelection] Selecting {len(checked_rows)} rows in {len(ranges)} ranges."
+                    "[InvertSelection] Selecting %d rows in %d ranges.",
+                    len(checked_rows),
+                    len(ranges),
                 )
 
                 for start, end in ranges:

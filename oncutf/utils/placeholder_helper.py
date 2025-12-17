@@ -54,7 +54,8 @@ class PlaceholderHelper:
         self.placeholder_label.setVisible(False)
 
         logger.debug(
-            f"[PlaceholderHelper] Created placeholder label for {icon_name}",
+            "[PlaceholderHelper] Created placeholder label for %s",
+            icon_name,
             extra={"dev_only": True},
         )
 
@@ -64,7 +65,11 @@ class PlaceholderHelper:
         # Apply theme-aware styling
         self._apply_styling()
 
-        logger.debug(f"[PlaceholderHelper] Initialized for {icon_name}", extra={"dev_only": True})
+        logger.debug(
+            "[PlaceholderHelper] Initialized for %s",
+            icon_name,
+            extra={"dev_only": True},
+        )
 
     def _setup_icon(self) -> None:
         """Load and setup the placeholder icon."""
@@ -78,14 +83,16 @@ class PlaceholderHelper:
                 )
                 self.placeholder_label.setPixmap(scaled)
                 logger.debug(
-                    f"[PlaceholderHelper] Icon loaded and set: {icon_path} (size: {scaled.size()})",
+                    "[PlaceholderHelper] Icon loaded and set: %s (size: %s)",
+                    icon_path,
+                    scaled.size(),
                     extra={"dev_only": True},
                 )
             else:
-                logger.warning(f"[PlaceholderHelper] Could not load icon: {icon_path}")
+                logger.warning("[PlaceholderHelper] Could not load icon: %s", icon_path)
 
         except Exception as e:
-            logger.error(f"[PlaceholderHelper] Error loading icon: {e}")
+            logger.error("[PlaceholderHelper] Error loading icon: %s", e)
             self.placeholder_icon = QPixmap()
 
     def _apply_styling(self) -> None:
@@ -108,11 +115,13 @@ class PlaceholderHelper:
 
             self.placeholder_label.setStyleSheet(style)
             logger.debug(
-                f"[PlaceholderHelper] Applied styling: {bg_color}", extra={"dev_only": True}
+                "[PlaceholderHelper] Applied styling: %s",
+                bg_color,
+                extra={"dev_only": True},
             )
 
         except Exception as e:
-            logger.error(f"[PlaceholderHelper] Error applying styling: {e}")
+            logger.error("[PlaceholderHelper] Error applying styling: %s", e)
             # Fallback styling
             self.placeholder_label.setStyleSheet("background-color: #181818;")
 
@@ -122,21 +131,30 @@ class PlaceholderHelper:
             self.placeholder_label.raise_()
             self.placeholder_label.show()
             logger.debug(
-                f"[PlaceholderHelper] Placeholder shown: {self.icon_name}", extra={"dev_only": True}
+                "[PlaceholderHelper] Placeholder shown: %s",
+                self.icon_name,
+                extra={"dev_only": True},
             )
         else:
-            logger.warning(f"[PlaceholderHelper] No placeholder label to show: {self.icon_name}")
+            logger.warning(
+                "[PlaceholderHelper] No placeholder label to show: %s",
+                self.icon_name,
+            )
 
     def hide(self) -> None:
         """Hide the placeholder."""
         if self.placeholder_label:
             self.placeholder_label.hide()
             logger.debug(
-                f"[PlaceholderHelper] Placeholder hidden: {self.icon_name}",
+                "[PlaceholderHelper] Placeholder hidden: %s",
+                self.icon_name,
                 extra={"dev_only": True},
             )
         else:
-            logger.warning(f"[PlaceholderHelper] No placeholder label to hide: {self.icon_name}")
+            logger.warning(
+                "[PlaceholderHelper] No placeholder label to hide: %s",
+                self.icon_name,
+            )
 
     def is_visible(self) -> bool:
         """Check if placeholder is currently visible."""
@@ -159,7 +177,10 @@ class PlaceholderHelper:
                 self.placeholder_label.resize(icon_size)
                 self.placeholder_label.move(x, y)
                 logger.debug(
-                    f"[PlaceholderHelper] Positioned at ({x}, {y}) with size {icon_size}",
+                    "[PlaceholderHelper] Positioned at (%d, %d) with size %s",
+                    x,
+                    y,
+                    icon_size,
                     extra={"dev_only": True},
                 )
             else:
@@ -167,7 +188,8 @@ class PlaceholderHelper:
                 self.placeholder_label.resize(viewport_size)
                 self.placeholder_label.move(0, 0)
                 logger.debug(
-                    f"[PlaceholderHelper] Fallback positioning with viewport size {viewport_size}",
+                    "[PlaceholderHelper] Fallback positioning with viewport size %s",
+                    viewport_size,
                     extra={"dev_only": True},
                 )
 

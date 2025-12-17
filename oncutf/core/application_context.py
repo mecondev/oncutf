@@ -106,7 +106,8 @@ class ApplicationContext(QObject):
         self._files = files.copy()
         self.files_changed.emit(self._files)
         logger.debug(
-            f"ApplicationContext: Files loaded signal relayed: {len(files)} files",
+            "ApplicationContext: Files loaded signal relayed: %d files",
+            len(files),
             extra={"dev_only": True},
         )
 
@@ -114,7 +115,9 @@ class ApplicationContext(QObject):
         """Handle folder change from FileStore."""
         self._current_folder = folder_path
         logger.debug(
-            f"ApplicationContext: Folder changed to {folder_path}", extra={"dev_only": True}
+            "ApplicationContext: Folder changed to %s",
+            folder_path,
+            extra={"dev_only": True},
         )
 
     def _on_selection_changed(self, selected_rows: list[int]) -> None:
@@ -133,14 +136,15 @@ class ApplicationContext(QObject):
             self.selection_changed.emit(set(selected_rows))
 
         logger.debug(
-            f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows",
+            "ApplicationContext: Selection changed signal relayed: %d rows",
+            len(selected_rows),
             extra={"dev_only": True},
         )
 
     def _on_checked_changed(self, checked_rows: list[int]) -> None:
         """Handle checked state changed from SelectionStore."""
         # For now, just log it - will be used by file model updates later
-        logger.debug(f"ApplicationContext: Checked state changed: {len(checked_rows)} rows")
+        logger.debug("ApplicationContext: Checked state changed: %d rows", len(checked_rows))
 
     @classmethod
     def get_instance(cls) -> "ApplicationContext":
@@ -200,7 +204,7 @@ class ApplicationContext(QObject):
         """Set current file list (legacy method)."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
-        logger.debug(f"Files updated (legacy): {len(files)} items")
+        logger.debug("Files updated (legacy): %d items", len(files))
 
     def get_current_folder(self) -> str | None:
         """Get current folder path."""
@@ -221,7 +225,7 @@ class ApplicationContext(QObject):
         if self._file_store is not None and folder_path:
             self._file_store.set_current_folder(folder_path)
 
-        logger.debug(f"Current folder: {folder_path}, recursive: {recursive}")
+        logger.debug("Current folder: %s, recursive: %s", folder_path, recursive)
 
     def is_recursive_mode(self) -> bool:
         """Check if current folder was loaded recursively."""
@@ -230,7 +234,7 @@ class ApplicationContext(QObject):
     def set_recursive_mode(self, recursive: bool) -> None:
         """Set recursive mode flag."""
         self._recursive_mode = recursive
-        logger.debug(f"Recursive mode set to: {recursive}")
+        logger.debug("Recursive mode set to: %s", recursive)
 
     # =====================================
     # Selection Management (Delegated to SelectionStore)
@@ -264,7 +268,7 @@ class ApplicationContext(QObject):
         """Set metadata for a file (placeholder implementation)."""
         self._metadata_cache[file_path] = metadata
         self.metadata_changed.emit(file_path, metadata)
-        logger.debug(f"Metadata updated for: {file_path}")
+        logger.debug("Metadata updated for: %s", file_path)
 
     # =====================================
     # Performance Tracking
@@ -273,7 +277,7 @@ class ApplicationContext(QObject):
     def track_performance(self, operation: str, duration_ms: float) -> None:
         """Track performance metrics for operations."""
         self._performance_metrics[operation] = duration_ms
-        logger.debug(f"Performance: {operation} took {duration_ms:.1f}ms")
+        logger.debug("Performance: %s took %.1fms", operation, duration_ms)
 
     def get_performance_report(self) -> dict[str, float]:
         """Get performance metrics report."""
@@ -307,11 +311,16 @@ class ApplicationContext(QObject):
         """
         if name in self._managers:
             logger.warning(
-                f"Manager '{name}' already registered, overwriting", extra={"dev_only": True}
+                "Manager '%s' already registered, overwriting",
+                name,
+                extra={"dev_only": True},
             )
         self._managers[name] = manager
         logger.debug(
-            f"Manager '{name}' registered: {type(manager).__name__}", extra={"dev_only": True}
+            "Manager '%s' registered: %s",
+            name,
+            type(manager).__name__,
+            extra={"dev_only": True},
         )
 
     def get_manager(self, name: str) -> Any:

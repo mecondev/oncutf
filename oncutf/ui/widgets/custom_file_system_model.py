@@ -124,13 +124,21 @@ class CustomFileSystemModel(QFileSystemModel):
                 if not icon.isNull():
                     self._icon_cache[icon_name] = icon
                     logger.debug(
-                        f"[CustomFileSystemModel] Preloaded icon: {icon_name}",
+                        "[CustomFileSystemModel] Preloaded icon: %s",
+                        icon_name,
                         extra={"dev_only": True},
                     )
                 else:
-                    logger.warning(f"[CustomFileSystemModel] Failed to load icon: {icon_name}")
+                    logger.warning(
+                        "[CustomFileSystemModel] Failed to load icon: %s",
+                        icon_name,
+                    )
             except Exception as e:
-                logger.error(f"[CustomFileSystemModel] Error loading icon {icon_name}: {e}")
+                logger.error(
+                    "[CustomFileSystemModel] Error loading icon %s: %s",
+                    icon_name,
+                    e,
+                )
 
     def _get_cached_icon(self, icon_name: str) -> QIcon:
         """Get icon from cache or load it if not cached"""
@@ -144,7 +152,11 @@ class CustomFileSystemModel(QFileSystemModel):
                     icon = self._icon_cache.get("file", QIcon())
                     self._icon_cache[icon_name] = icon
             except Exception as e:
-                logger.error(f"[CustomFileSystemModel] Error loading icon {icon_name}: {e}")
+                logger.error(
+                    "[CustomFileSystemModel] Error loading icon %s: %s",
+                    icon_name,
+                    e,
+                )
                 # Fallback to default file icon
                 icon = self._icon_cache.get("file", QIcon())
                 self._icon_cache[icon_name] = icon
@@ -218,16 +230,18 @@ class CustomFileSystemModel(QFileSystemModel):
                 self.setRootPath(root_path)
 
                 logger.info(
-                    f"[CustomFileSystemModel] Refreshed file system from: {root_path}",
+                    "[CustomFileSystemModel] Refreshed file system from: %s",
+                    root_path,
                     extra={"dev_only": True},
                 )
             else:
                 # Refresh specific index
                 self.directoryLoaded.emit(self.filePath(index))
                 logger.debug(
-                    f"[CustomFileSystemModel] Refreshed index: {self.filePath(index)}",
+                    "[CustomFileSystemModel] Refreshed index: %s",
+                    self.filePath(index),
                     extra={"dev_only": True},
                 )
 
         except Exception as e:
-            logger.error(f"[CustomFileSystemModel] Error refreshing model: {e}")
+            logger.error("[CustomFileSystemModel] Error refreshing model: %s", e)

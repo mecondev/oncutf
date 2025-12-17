@@ -42,8 +42,10 @@ def wait_cursor(restore_after: bool = True):
     if caller_line:
         short_path = caller_line.filename[caller_line.filename.find("oncutf/") :]
         logger.debug(
-            f"[Cursor] Wait cursor activated. Called from: {short_path}, "
-            f"line {caller_line.lineno}, in {caller_line.name}()",
+            "[Cursor] Wait cursor activated. Called from: %s, line %d, in %s()",
+            short_path,
+            caller_line.lineno,
+            caller_line.name,
             extra={"dev_only": True},
         )
     else:
@@ -77,7 +79,8 @@ def emergency_cursor_cleanup() -> int:
 
     if cursor_count > 0:
         logger.debug(
-            f"[Cursor] Emergency cleanup: Removed {cursor_count} stuck cursors",
+            "[Cursor] Emergency cleanup: Removed %d stuck cursors",
+            cursor_count,
             extra={"dev_only": True},
         )
 
@@ -95,12 +98,13 @@ def force_restore_cursor() -> None:
         count += 1
         if count > 20:  # Safety break
             logger.warning(
-                f"[Cursor] Force restore: Stopped after {count} cursors (possible infinite loop)"
+                "[Cursor] Force restore: Stopped after %d cursors (possible infinite loop)",
+                count,
             )
             break
 
     if count > 0:
-        logger.debug(f"[Cursor] Force restore: Removed {count} cursors", extra={"dev_only": True})
+        logger.debug("[Cursor] Force restore: Removed %d cursors", count, extra={"dev_only": True})
 
 
 def get_current_cursor_info() -> str | None:

@@ -78,7 +78,7 @@ class InitializationManager:
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
+            logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
     def update_status_from_preview(self, status_html: str) -> None:
         """
@@ -134,7 +134,7 @@ class InitializationManager:
                 not hasattr(self.main_window, component)
                 or getattr(self.main_window, component) is None
             ):
-                logger.warning(f"[InitializationManager] Missing required component: {component}")
+                logger.warning("[InitializationManager] Missing required component: %s", component)
                 return False
 
         logger.debug(

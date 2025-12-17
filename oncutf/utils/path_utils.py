@@ -55,7 +55,11 @@ def get_project_root() -> Path:
             logger.warning("Could not locate main.py, using current directory as project root")
             project_root = Path.cwd()
 
-    logger.debug(f"Project root determined as: {project_root}", extra={"dev_only": True})
+    logger.debug(
+        "Project root determined as: %s",
+        project_root,
+        extra={"dev_only": True},
+    )
     return project_root
 
 
@@ -158,17 +162,23 @@ def get_resource_path(relative_path: str) -> Path:
 
     # Log for debugging path issues
     logger.debug(
-        f"Resource path resolution: '{relative_path}' -> '{absolute_path}'",
+        "Resource path resolution: '%s' -> '%s'",
+        relative_path,
+        absolute_path,
         extra={"dev_only": True},
     )
 
     # Check if file exists and log warning if not found
     if not absolute_path.exists():
-        logger.warning(f"Resource not found: {absolute_path}")
+        logger.warning("Resource not found: %s", absolute_path)
         # Try fallback to current working directory (for backward compatibility)
         fallback_path = Path.cwd() / relative_path
         if fallback_path.exists():
-            logger.debug(f"Using fallback path: {fallback_path}", extra={"dev_only": True})
+            logger.debug(
+                "Using fallback path: %s",
+                fallback_path,
+                extra={"dev_only": True},
+            )
             return fallback_path
 
     return absolute_path

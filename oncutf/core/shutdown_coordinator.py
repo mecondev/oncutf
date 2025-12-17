@@ -133,7 +133,7 @@ class ShutdownCoordinator(QObject):
             timeout: Timeout in seconds
         """
         self.phase_timeouts[phase] = timeout
-        logger.debug(f"[ShutdownCoordinator] {phase.value} timeout set to {timeout}s")
+        logger.debug("[ShutdownCoordinator] %s timeout set to %ss", phase.value, timeout)
 
     def execute_shutdown(
         self,
@@ -159,7 +159,8 @@ class ShutdownCoordinator(QObject):
         self._results.clear()
 
         logger.info(
-            f"[ShutdownCoordinator] Starting {'EMERGENCY' if emergency else 'GRACEFUL'} shutdown"
+            "[ShutdownCoordinator] Starting %s shutdown",
+            "EMERGENCY" if emergency else "GRACEFUL",
         )
 
         start_time = time.time()
@@ -199,14 +200,18 @@ class ShutdownCoordinator(QObject):
             if not result.success:
                 overall_success = False
                 logger.error(
-                    f"[ShutdownCoordinator] Phase {phase_name} failed: {result.error}"
+                    "[ShutdownCoordinator] Phase %s failed: %s",
+                    phase_name,
+                    result.error,
                 )
 
             # Log result (use ASCII-safe characters for Windows console compatibility)
             status = "[OK]" if result.success else "[FAIL]"
             logger.info(
-                f"[ShutdownCoordinator] {status} {phase_name} "
-                f"({result.duration:.2f}s)"
+                "[ShutdownCoordinator] %s %s (%.2fs)",
+                status,
+                phase_name,
+                result.duration,
             )
 
         # Final progress update
@@ -218,8 +223,9 @@ class ShutdownCoordinator(QObject):
 
         # Log summary
         logger.info(
-            f"[ShutdownCoordinator] Shutdown {'succeeded' if overall_success else 'completed with errors'} "
-            f"in {total_duration:.2f}s"
+            "[ShutdownCoordinator] Shutdown %s in %.2fs",
+            "succeeded" if overall_success else "completed with errors",
+            total_duration,
         )
 
         # Emit completion signal
@@ -250,8 +256,10 @@ class ShutdownCoordinator(QObject):
             timeout = timeout / 2
 
         logger.debug(
-            f"[ShutdownCoordinator] Starting phase {phase.value} "
-            f"(timeout: {timeout}s, emergency: {self._emergency_mode})"
+            "[ShutdownCoordinator] Starting phase %s (timeout: %ss, emergency: %s)",
+            phase.value,
+            timeout,
+            self._emergency_mode,
         )
 
         # Get health check before shutdown (if not emergency mode)
@@ -260,8 +268,9 @@ class ShutdownCoordinator(QObject):
             health_before = self._get_component_health(phase)
             if health_before and not health_before.get("healthy", True):
                 logger.warning(
-                    f"[ShutdownCoordinator] Component for {phase.value} "
-                    f"reports unhealthy: {health_before}"
+                    "[ShutdownCoordinator] Component for %s reports unhealthy: %s",
+                    phase.value,
+                    health_before,
                 )
 
         try:
@@ -273,7 +282,7 @@ class ShutdownCoordinator(QObject):
             # Check if we exceeded timeout (soft warning)
             if duration > timeout:
                 warning = f"Phase exceeded timeout ({duration:.2f}s > {timeout}s)"
-                logger.warning(f"[ShutdownCoordinator] {warning}")
+                logger.warning("[ShutdownCoordinator] %s", warning)
                 return ShutdownResult(
                     phase=phase,
                     success=success,
@@ -294,7 +303,7 @@ class ShutdownCoordinator(QObject):
         except Exception as e:
             duration = time.time() - phase_start
             error_msg = f"Exception during shutdown: {e}"
-            logger.error(f"[ShutdownCoordinator] {error_msg}", exc_info=True)
+            logger.exception("[ShutdownCoordinator] %s", error_msg)
 
             return ShutdownResult(
                 phase=phase,
@@ -328,7 +337,7 @@ class ShutdownCoordinator(QObject):
                     return self._exiftool_wrapper.health_check()
 
         except Exception as e:
-            logger.warning(f"[ShutdownCoordinator] Error getting health for {phase.value}: {e}")
+            logger.warning("[ShutdownCoordinator] Error getting health for %s: %s", phase.value, e)
 
         return None
 
@@ -340,7 +349,7 @@ class ShutdownCoordinator(QObject):
         try:
             if hasattr(self._timer_manager, "cleanup_all"):
                 cancelled = self._timer_manager.cleanup_all()
-                logger.debug(f"[ShutdownCoordinator] Cleaned up {cancelled} timers")
+                logger.debug("[ShutdownCoordinator] Cleaned up %d timers", cancelled)
             return True, None
         except Exception as e:
             return False, f"Timer shutdown failed: {e}"
@@ -364,7 +373,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.error(f"Thread pool shutdown failed: {e}", exc_info=True)
+            logger.exception("Thread pool shutdown failed: %s", e)
             return False, f"Thread pool shutdown failed: {e}"
 
     def _shutdown_database(self) -> tuple[bool, str | None]:
@@ -393,7 +402,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.error(f"Database shutdown failed: {e}", exc_info=True)
+            logger.exception("Database shutdown failed: %s", e)
             return False, f"Database shutdown failed: {e}"
 
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
@@ -428,7 +437,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.error(f"ExifTool shutdown failed: {e}", exc_info=True)
+            logger.exception("ExifTool shutdown failed: %s", e)
             # Even on error, try force cleanup one more time
             try:
                 from oncutf.utils.exiftool_wrapper import ExifToolWrapper

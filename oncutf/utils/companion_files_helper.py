@@ -217,7 +217,11 @@ class CompanionFilesHelper:
                 match = re.match(pattern, filename, re.IGNORECASE)
                 if match and match.group(1) == main_name:
                     companions.append(file_path)
-                    logger.debug(f"[CompanionFiles] Found companion '{filename}' for '{main_file.name}'")
+                    logger.debug(
+                        "[CompanionFiles] Found companion '%s' for '%s'",
+                        filename,
+                        main_file.name,
+                    )
                     break
 
         return companions
@@ -256,7 +260,11 @@ class CompanionFilesHelper:
             for pattern in patterns:
                 match = re.match(pattern, companion_name, re.IGNORECASE)
                 if match and match.group(1) == file_obj.stem:
-                    logger.debug(f"[CompanionFiles] Found main file '{file_obj.name}' for companion '{companion_name}'")
+                    logger.debug(
+                        "[CompanionFiles] Found main file '%s' for companion '%s'",
+                        file_obj.name,
+                        companion_name,
+                    )
                     return file_path
 
         return None
@@ -313,7 +321,11 @@ class CompanionFilesHelper:
                 processed_files.add(companion)
             processed_files.add(file_path)
 
-        logger.info(f"[CompanionFiles] Grouped {len(file_paths)} files into {len(file_groups)} groups")
+        logger.info(
+            "[CompanionFiles] Grouped %d files into %d groups",
+            len(file_paths),
+            len(file_groups),
+        )
         return file_groups
 
     @classmethod
@@ -379,7 +391,9 @@ class CompanionFilesHelper:
 
             rename_pairs.append((companion_path, str(new_companion_path)))
 
-        logger.debug(f"[CompanionFiles] Generated {len(rename_pairs)} companion rename pairs")
+        logger.debug(
+            "[CompanionFiles] Generated %d companion rename pairs", len(rename_pairs)
+        )
         return rename_pairs
 
     @classmethod
@@ -404,7 +418,11 @@ class CompanionFilesHelper:
                 metadata = cls._parse_xmp_metadata(companion_path)
 
         except Exception as e:
-            logger.warning(f"[CompanionFiles] Failed to parse companion metadata from {companion_path}: {e}")
+            logger.warning(
+                "[CompanionFiles] Failed to parse companion metadata from %s: %s",
+                companion_path,
+                e,
+            )
 
         return metadata
 
@@ -421,7 +439,11 @@ class CompanionFilesHelper:
 
             # Check if this is actually a Sony XML file
             if root.tag != "NonRealTimeMeta":
-                logger.debug(f"[CompanionFiles] XML file {xml_path} is not Sony format (root: {root.tag})")
+                logger.debug(
+                    "[CompanionFiles] XML file %s is not Sony format (root: %s)",
+                    xml_path,
+                    root.tag,
+                )
                 return metadata
 
             # This is a Sony XML file
@@ -495,7 +517,11 @@ class CompanionFilesHelper:
                     metadata["audio_channels"] = num_channels
 
         except Exception as e:
-            logger.warning(f"[CompanionFiles] Error parsing Sony XML {xml_path}: {e}")
+            logger.warning(
+                "[CompanionFiles] Error parsing Sony XML %s: %s",
+                xml_path,
+                e,
+            )
 
         return metadata
 
@@ -531,6 +557,10 @@ class CompanionFilesHelper:
                     metadata["keywords"] = ", ".join(keyword_items)
 
         except Exception as e:
-            logger.warning(f"[CompanionFiles] Error parsing XMP {xmp_path}: {e}")
+            logger.warning(
+                "[CompanionFiles] Error parsing XMP %s: %s",
+                xmp_path,
+                e,
+            )
 
         return metadata

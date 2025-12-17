@@ -154,7 +154,7 @@ class LRUCache:
         if self._cache:
             key, _ = self._cache.popitem(last=False)
             self._evictions += 1
-            logger.debug(f"[MemoryManager] Evicted cache entry: {key}")
+            logger.debug("[MemoryManager] Evicted cache entry: %s", key)
 
     def get_memory_usage_mb(self) -> float:
         """Get current memory usage in MB."""
@@ -231,7 +231,7 @@ class MemoryManager(QObject):
             cache_object: Cache object (must have cleanup methods)
         """
         self._registered_caches[name] = cache_object
-        logger.debug(f"[MemoryManager] Registered cache: {name}")
+        logger.debug("[MemoryManager] Registered cache: %s", name)
 
     def register_cleanup_callback(self, callback: Callable) -> None:
         """
@@ -270,7 +270,7 @@ class MemoryManager(QObject):
                 miss_rate=0.0,
             )
         except Exception as e:
-            logger.error(f"[MemoryManager] Error getting memory stats: {e}")
+            logger.error("[MemoryManager] Error getting memory stats: %s", e)
             return MemoryStats(0, 0, 0, 0, 0, 0, 0, 0)
 
     def _perform_cleanup(self) -> None:
@@ -282,7 +282,9 @@ class MemoryManager(QObject):
             # Check if cleanup is needed
             if memory_usage_percent > self.memory_threshold_percent:
                 logger.info(
-                    f"[MemoryManager] Memory usage {memory_usage_percent:.1f}% exceeds threshold {self.memory_threshold_percent}%"
+                    "[MemoryManager] Memory usage %.1f%% exceeds threshold %s%%",
+                    memory_usage_percent,
+                    self.memory_threshold_percent,
                 )
 
                 cleaned_entries = self._cleanup_caches()
@@ -297,10 +299,10 @@ class MemoryManager(QObject):
                 self.memory_warning.emit(memory_usage_percent)
                 self.cache_cleaned.emit(cleaned_entries)
 
-                logger.info(f"[MemoryManager] Cleanup completed, freed {cleaned_entries} entries")
+                logger.info("[MemoryManager] Cleanup completed, freed %d entries", cleaned_entries)
 
         except Exception as e:
-            logger.error(f"[MemoryManager] Error during cleanup: {e}")
+            logger.error("[MemoryManager] Error during cleanup: %s", e)
 
     def _cleanup_caches(self) -> int:
         """Clean up registered caches."""
@@ -312,16 +314,16 @@ class MemoryManager(QObject):
             try:
                 cleaned = self._cleanup_cache_object(cache_obj, current_time)
                 total_cleaned += cleaned
-                logger.debug(f"[MemoryManager] Cleaned {cleaned} entries from {cache_name}")
+                logger.debug("[MemoryManager] Cleaned %d entries from %s", cleaned, cache_name)
             except Exception as e:
-                logger.error(f"[MemoryManager] Error cleaning cache {cache_name}: {e}")
+                logger.error("[MemoryManager] Error cleaning cache %s: %s", cache_name, e)
 
         # Call cleanup callbacks
         for callback in self._cleanup_callbacks:
             try:
                 callback()
             except Exception as e:
-                logger.error(f"[MemoryManager] Error in cleanup callback: {e}")
+                logger.error("[MemoryManager] Error in cleanup callback: %s", e)
 
         return total_cleaned
 
@@ -389,7 +391,7 @@ class MemoryManager(QObject):
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
-                logger.debug(f"[MemoryManager] Set {key} = {value}")
+                logger.debug("[MemoryManager] Set %s = %s", key, value)
 
     def shutdown(self) -> None:
         """Shutdown memory manager."""

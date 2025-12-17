@@ -16,10 +16,9 @@ class TestStateCoordinatorCreation:
 
     def test_create_state_coordinator(self, qtbot):
         """Test creating a StateCoordinator."""
+        assert qtbot is not None
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
-
         assert coordinator.get_file_store() is file_store
 
 class TestStateCoordinatorFilesChanged:
@@ -29,17 +28,17 @@ class TestStateCoordinatorFilesChanged:
         """Test that notify_files_changed emits signal and updates store."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
-
         # Create test files
         file1 = FileItem.from_path("/test/file1.txt")
         file2 = FileItem.from_path("/test/file2.txt")
         files = [file1, file2]
 
         # Wait for signals
-        with qtbot.waitSignal(coordinator.files_changed, timeout=1000):
-            with qtbot.waitSignal(coordinator.preview_invalidated, timeout=1000):
-                coordinator.notify_files_changed(files)
+        with (
+            qtbot.waitSignal(coordinator.files_changed, timeout=1000),
+            qtbot.waitSignal(coordinator.preview_invalidated, timeout=1000),
+        ):
+            coordinator.notify_files_changed(files)
 
         # Verify file store was updated
         assert file_store.get_loaded_files() == files

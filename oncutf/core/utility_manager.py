@@ -57,7 +57,9 @@ class UtilityManager:
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.main_window.modifier_state = QApplication.keyboardModifiers()
             logger.debug(
-                f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}",
+                "[Modifiers] eventFilter saw: %s with modifiers=%d",
+                event.type(),
+                int(event.modifiers()),
                 extra={"dev_only": True},
             )
 
@@ -109,8 +111,10 @@ class UtilityManager:
         self.main_window.force_extended_metadata = use_extended
 
         logger.info(
-            f"[ForceReload] Reloading {self.main_window.current_folder_path}, skip_metadata={skip_metadata} "
-            f"(use_extended={use_extended})"
+            "[ForceReload] Reloading %s, skip_metadata=%s (use_extended=%s)",
+            self.main_window.current_folder_path,
+            skip_metadata,
+            use_extended,
         )
 
         self.main_window.load_files_from_folder(self.main_window.current_folder_path, force=True)
@@ -180,11 +184,13 @@ class UtilityManager:
             self.main_window.move(window_geometry.topLeft())
 
             logger.debug(
-                f"Main window centered on screen {target_screen.name()}", extra={"dev_only": True}
+                "Main window centered on screen %s",
+                target_screen.name(),
+                extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error(f"Failed to center window: {e}")
+        except Exception:
+            logger.exception("Failed to center window")
             # Fallback to simple positioning
             self.main_window.move(100, 100)
 

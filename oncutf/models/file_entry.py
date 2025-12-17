@@ -54,7 +54,9 @@ class FileEntry:
         # Ensure filename matches path
         if self.filename != Path(self.full_path).name:
             logger.warning(
-                f"[FileEntry] Filename mismatch: {self.filename} vs {Path(self.full_path).name}"
+                "[FileEntry] Filename mismatch: %s vs %s",
+                self.filename,
+                Path(self.full_path).name,
             )
             self.filename = Path(self.full_path).name
 
@@ -82,8 +84,12 @@ class FileEntry:
         try:
             size = path.stat().st_size
             modified = datetime.fromtimestamp(path.stat().st_mtime)
-        except (OSError, ValueError) as e:
-            logger.warning(f"[FileEntry] Failed to stat {file_path}: {e}")
+        except (OSError, ValueError):
+            logger.warning(
+                "[FileEntry] Failed to stat %s",
+                file_path,
+                exc_info=True,
+            )
             size = 0
             modified = datetime.fromtimestamp(0)
 

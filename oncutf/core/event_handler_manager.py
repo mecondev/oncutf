@@ -74,7 +74,7 @@ class EventHandlerManager:
             modifiers = QApplication.keyboardModifiers()
             merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
-            logger.info(f"User selected folder: {folder_path} ({action_type})")
+            logger.info("User selected folder: %s (%s)", folder_path, action_type)
 
             # Use unified folder loading method
             if os.path.isdir(folder_path):
@@ -108,7 +108,10 @@ class EventHandlerManager:
         recursive = ctrl
 
         logger.info(
-            f"Loading folder: {selected_path} ({'Merge' if merge_mode else 'Replace'} + {'Recursive' if recursive else 'Shallow'})"
+            "Loading folder: %s (%s + %s)",
+            selected_path,
+            "Merge" if merge_mode else "Replace",
+            "Recursive" if recursive else "Shallow",
         )
 
         # Use unified folder loading method
@@ -141,7 +144,9 @@ class EventHandlerManager:
         has_selection = len(selected_files) > 0
 
         logger.debug(
-            f"Context menu: {len(selected_files)} selected files", extra={"dev_only": True}
+            "Context menu: %d selected files",
+            len(selected_files),
+            extra={"dev_only": True},
         )
 
         menu = QMenu(self.parent_window)
@@ -385,7 +390,7 @@ class EventHandlerManager:
             action_undo.setEnabled(command_manager.can_undo())
             action_redo.setEnabled(command_manager.can_redo())
         except Exception as e:
-            logger.debug(f"[FileTable] Could not check undo/redo state: {e}", extra={"dev_only": True})
+            logger.debug("[FileTable] Could not check undo/redo state: %s", e, extra={"dev_only": True})
             action_undo.setEnabled(False)
             action_redo.setEnabled(False)
 
@@ -426,7 +431,9 @@ class EventHandlerManager:
 
         # Enable/disable logic with enhanced debugging
         logger.debug(
-            f"Context menu: Selection state: {has_selection} ({len(selected_files)} files)",
+            "Context menu: Selection state: %s (%d files)",
+            has_selection,
+            len(selected_files),
             extra={"dev_only": True},
         )
 
@@ -538,7 +545,7 @@ class EventHandlerManager:
         row = index.row()
         if 0 <= row < len(self.parent_window.file_model.files):
             file = self.parent_window.file_model.files[row]
-            logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
+            logger.info("[DoubleClick] Requested metadata reload for: %s", file.filename)
 
             # Check for Ctrl modifier for extended metadata
             ctrl_pressed = bool(modifiers & Qt.ControlModifier)  # type: ignore
@@ -631,7 +638,7 @@ class EventHandlerManager:
         row = index.row()
         if 0 <= row < len(self.parent_window.file_model.files):
             file = self.parent_window.file_model.files[row]
-            logger.debug(f"[RowClick] Clicked on: {file.filename}", extra={"dev_only": True})
+            logger.debug("[RowClick] Clicked on: %s", file.filename, extra={"dev_only": True})
 
             # NOTE: Metadata updates are handled by the selection system automatically
             # Removed redundant refresh_metadata_from_selection() call that was causing conflicts
@@ -648,7 +655,7 @@ class EventHandlerManager:
             logger.warning("[BulkRotation] No files selected for bulk rotation")
             return
 
-        logger.info(f"[BulkRotation] Starting bulk rotation for {len(selected_files)} files")
+        logger.info("[BulkRotation] Starting bulk rotation for %d files", len(selected_files))
 
         # Analyze which files have metadata loaded
         files_with_metadata = []
@@ -661,8 +668,9 @@ class EventHandlerManager:
                 files_without_metadata.append(file_item)
 
         logger.debug(
-            f"[BulkRotation] Metadata analysis: {len(files_with_metadata)} with metadata, "
-            f"{len(files_without_metadata)} without metadata",
+            "[BulkRotation] Metadata analysis: %d with metadata, %d without metadata",
+            len(files_with_metadata),
+            len(files_without_metadata),
             extra={"dev_only": True}
         )
 
@@ -677,7 +685,8 @@ class EventHandlerManager:
             if choice == "load":
                 # Load metadata for files that don't have it
                 logger.info(
-                    f"[BulkRotation] Loading metadata for {len(files_without_metadata)} files"
+                    "[BulkRotation] Loading metadata for %d files",
+                    len(files_without_metadata),
                 )
                 self.parent_window.load_metadata_for_items(
                     files_without_metadata,
@@ -693,7 +702,8 @@ class EventHandlerManager:
                     return
                 files_to_process = files_with_metadata
                 logger.info(
-                    f"[BulkRotation] Skipping {len(files_without_metadata)} files without metadata"
+                    "[BulkRotation] Skipping %d files without metadata",
+                    len(files_without_metadata),
                 )
             else:  # cancel
                 logger.debug("[BulkRotation] User cancelled operation", extra={"dev_only": True})
@@ -714,13 +724,13 @@ class EventHandlerManager:
                 )
                 return
 
-            logger.info(f"[BulkRotation] Processing {len(final_files)} files")
+            logger.info("[BulkRotation] Processing %d files", len(final_files))
 
             # Apply rotation directly
             self._apply_bulk_rotation(final_files)
 
         except ImportError as e:
-            logger.error(f"[BulkRotation] Failed to import BulkRotationDialog: {e}")
+            logger.error("[BulkRotation] Failed to import BulkRotationDialog: %s", e)
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -729,7 +739,7 @@ class EventHandlerManager:
                 "Bulk rotation dialog is not available. Please check the installation.",
             )
         except Exception as e:
-            logger.exception(f"[BulkRotation] Unexpected error: {e}")
+            logger.exception("[BulkRotation] Unexpected error: %s", e)
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -872,7 +882,7 @@ class EventHandlerManager:
         if not files_to_process:
             return
 
-        logger.info(f"[BulkRotation] Checking rotation for {len(files_to_process)} files")
+        logger.info("[BulkRotation] Checking rotation for %d files", len(files_to_process))
 
         try:
             # Get staging manager
@@ -893,7 +903,8 @@ class EventHandlerManager:
                 # Skip files that already have 0° rotation
                 if current_rotation == "0":
                     logger.debug(
-                        f"[BulkRotation] Skipping {file_item.filename} - already has 0° rotation",
+                        "[BulkRotation] Skipping %s - already has 0° rotation",
+                        file_item.filename,
                         extra={"dev_only": True},
                     )
                     skipped_count += 1
@@ -925,7 +936,9 @@ class EventHandlerManager:
                     modified_count += 1
 
                     logger.debug(
-                        f"[BulkRotation] Set rotation=0 for {file_item.filename} (was: {current_rotation})",
+                        "[BulkRotation] Set rotation=0 for %s (was: %s)",
+                        file_item.filename,
+                        current_rotation,
                         extra={"dev_only": True},
                     )
 
@@ -945,7 +958,7 @@ class EventHandlerManager:
                                         self.parent_window.file_model.dataChanged.emit(idx, idx)
                                         break
                             except Exception as e:
-                                logger.warning(f"[BulkRotation] Error updating icon for {file_item.filename}: {e}")
+                                logger.warning("[BulkRotation] Error updating icon for %s: %s", file_item.filename, e)
 
                     # Also emit layoutChanged as backup
                     self.parent_window.file_model.layoutChanged.emit()
@@ -1009,7 +1022,9 @@ class EventHandlerManager:
                     )
 
                 logger.info(
-                    f"[BulkRotation] Successfully applied rotation to {modified_count} files, skipped {skipped_count} files"
+                    "[BulkRotation] Successfully applied rotation to %d files, skipped %d files",
+                    modified_count,
+                    skipped_count,
                 )
             else:
                 logger.info("[BulkRotation] No files needed rotation changes")
@@ -1021,7 +1036,7 @@ class EventHandlerManager:
                     )
 
         except Exception as e:
-            logger.exception(f"[BulkRotation] Error applying rotation: {e}")
+            logger.exception("[BulkRotation] Error applying rotation: %s", e)
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -1279,7 +1294,10 @@ class EventHandlerManager:
 
                 elapsed_time = time.time() - start_time
                 logger.debug(
-                    f"[EventHandler] Batch hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes"
+                    "[EventHandler] Batch hash check completed in %.3fs: %d/%d files have hashes",
+                    elapsed_time,
+                    len(files_with_hash),
+                    len(files),
                 )
             else:
                 # Fallback to individual checking
@@ -1291,12 +1309,16 @@ class EventHandlerManager:
 
                 elapsed_time = time.time() - start_time
                 logger.debug(
-                    f"[EventHandler] Individual hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes"
+                    "[EventHandler] Individual hash check completed in %.3fs: %d/%d files have hashes",
+                    elapsed_time,
+                    len(files_with_hash),
+                    len(files),
                 )
 
         except Exception as e:
             logger.warning(
-                f"[EventHandler] Batch hash check failed, falling back to individual checks: {e}"
+                "[EventHandler] Batch hash check failed, falling back to individual checks: %s",
+                e,
             )
             # Fallback to individual checking
             for file_item in files:
@@ -1307,7 +1329,10 @@ class EventHandlerManager:
 
             elapsed_time = time.time() - start_time
             logger.debug(
-                f"[EventHandler] Fallback hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes"
+                "[EventHandler] Fallback hash check completed in %.3fs: %d/%d files have hashes",
+                elapsed_time,
+                len(files_with_hash),
+                len(files),
             )
 
         total = len(files)
@@ -1408,13 +1433,15 @@ class EventHandlerManager:
 
             elapsed_time = time.time() - start_time
             logger.debug(
-                f"[EventHandler] Batch metadata check completed in {elapsed_time:.3f}s: "
-                f"{len(files_no_metadata)} no metadata, {len(files_fast_metadata)} fast, "
-                f"{len(files_extended_metadata)} extended"
+                "[EventHandler] Batch metadata check completed in %.3fs: %d no metadata, %d fast, %d extended",
+                elapsed_time,
+                len(files_no_metadata),
+                len(files_fast_metadata),
+                len(files_extended_metadata),
             )
 
         except Exception as e:
-            logger.warning(f"[EventHandler] Metadata state analysis failed: {e}")
+            logger.warning("[EventHandler] Metadata state analysis failed: %s", e)
             # Fallback: assume all files need metadata
             files_no_metadata = files
             files_fast_metadata = []

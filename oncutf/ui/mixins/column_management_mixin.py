@@ -76,13 +76,16 @@ class ColumnManagementMixin:
                 # Apply if different
                 if recommended_width != current_width:
                     logger.debug(
-                        f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px to reduce elision"
+                        "[ColumnWidth] Adjusting column '%s' width from %dpx to %dpx to reduce elision",
+                        column_key,
+                        current_width,
+                        recommended_width,
                     )
                     self.setColumnWidth(column_index, recommended_width)
                     self._schedule_column_save(column_key, recommended_width)
 
         except Exception as e:
-            logger.warning(f"Error ensuring all columns proper width: {e}")
+            logger.warning("Error ensuring all columns proper width: %s", e)
 
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
@@ -107,7 +110,7 @@ class ColumnManagementMixin:
                 self._configure_columns_delayed, delay=10, timer_id=f"column_config_{id(self)}"
             )
         except Exception as e:
-            logger.error(f"[ColumnConfig] Error during column configuration: {e}")
+            logger.error("[ColumnConfig] Error during column configuration: %s", e)
             self._configuring_columns = False
 
     def _configure_columns_delayed(self) -> None:
@@ -132,7 +135,8 @@ class ColumnManagementMixin:
 
                 visible_columns = get_column_service().get_visible_columns()
                 logger.warning(
-                    f"[ColumnConfig] Model doesn't have get_visible_columns, using service: {visible_columns}"
+                    "[ColumnConfig] Model doesn't have get_visible_columns, using service: %s",
+                    visible_columns,
                 )
 
             # Configure each visible column
@@ -149,7 +153,10 @@ class ColumnManagementMixin:
 
                 else:
                     logger.error(
-                        f"[ColumnConfig] CRITICAL: Column {actual_column_index} ({column_key}) exceeds model columnCount {self.model().columnCount()}"
+                        "[ColumnConfig] CRITICAL: Column %d (%s) exceeds model columnCount %d",
+                        actual_column_index,
+                        column_key,
+                        self.model().columnCount(),
                     )
                     logger.error(
                         "[ColumnConfig] This indicates a sync issue between view and model visible columns"
@@ -168,7 +175,7 @@ class ColumnManagementMixin:
             self._update_header_visibility()
 
         except Exception as e:
-            logger.error(f"[ColumnConfig] Error during delayed column configuration: {e}")
+            logger.error("[ColumnConfig] Error during delayed column configuration: %s", e)
         finally:
             self._configuring_columns = False
 
@@ -190,7 +197,11 @@ class ColumnManagementMixin:
         # If current width is suspiciously small (likely from saved config), use recommended width
         if current_width < min_width:
             logger.debug(
-                f"[ColumnWidth] Column '{column_key}' width {current_width}px is below minimum {min_width}px, using recommended {recommended_width}px"
+                "[ColumnWidth] Column '%s' width %dpx is below minimum %dpx, using recommended %dpx",
+                column_key,
+                current_width,
+                min_width,
+                recommended_width,
             )
             return recommended_width
 
@@ -266,7 +277,9 @@ class ColumnManagementMixin:
         header.setVisible(not is_empty)
 
         logger.debug(
-            f"[FileTableView] Header visibility: {'hidden' if is_empty else 'visible'} (empty: {is_empty})",
+            "[FileTableView] Header visibility: %s (empty: %s)",
+            "hidden" if is_empty else "visible",
+            is_empty,
             extra={"dev_only": True},
         )
 
@@ -300,7 +313,9 @@ class ColumnManagementMixin:
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
         logger.debug(
-            f"[ColumnWidth] Loading width for column '{column_key}'", extra={"dev_only": True}
+            "[ColumnWidth] Loading width for column '%s'",
+            column_key,
+            extra={"dev_only": True},
         )
         try:
             # First, get the default width from UnifiedColumnService
@@ -310,7 +325,9 @@ class ColumnManagementMixin:
             column_cfg = service.get_column_config(column_key)
             default_width = column_cfg.width if column_cfg else 100
             logger.debug(
-                f"[ColumnWidth] Default width for '{column_key}': {default_width}px",
+                "[ColumnWidth] Default width for '%s': %dpx",
+                column_key,
+                default_width,
                 extra={"dev_only": True},
             )
 
@@ -325,27 +342,36 @@ class ColumnManagementMixin:
                     if column_key in column_widths:
                         saved_width = column_widths[column_key]
                         logger.debug(
-                            f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px",
+                            "[ColumnWidth] Found saved width for '%s': %dpx",
+                            column_key,
+                            saved_width,
                             extra={"dev_only": True},
                         )
                         if saved_width == 100 and default_width > 120:
                             logger.debug(
-                                f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px"
+                                "[ColumnWidth] Column '%s' has suspicious saved width (100px), using default %dpx",
+                                column_key,
+                                default_width,
                             )
                             return default_width
                         logger.debug(
-                            f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px",
+                            "[ColumnWidth] Using saved width for '%s': %dpx",
+                            column_key,
+                            saved_width,
                             extra={"dev_only": True},
                         )
                         return saved_width
                     else:
                         logger.debug(
-                            f"[ColumnWidth] No saved width found for '{column_key}' in main config",
+                            "[ColumnWidth] No saved width found for '%s' in main config",
+                            column_key,
                             extra={"dev_only": True},
                         )
                 except Exception as e:
                     logger.warning(
-                        f"[ColumnWidth] Error accessing main config for '{column_key}': {e}"
+                        "[ColumnWidth] Error accessing main config for '%s': %s",
+                        column_key,
+                        e,
                     )
 
             # Fallback to old method
@@ -356,28 +382,39 @@ class ColumnManagementMixin:
             if column_key in column_widths:
                 saved_width = column_widths[column_key]
                 logger.debug(
-                    f"[ColumnWidth] Found saved width in fallback for '{column_key}': {saved_width}px"
+                    "[ColumnWidth] Found saved width in fallback for '%s': %dpx",
+                    column_key,
+                    saved_width,
                 )
                 if saved_width == 100 and default_width > 120:
                     logger.debug(
-                        f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px"
+                        "[ColumnWidth] Column '%s' has suspicious saved width (100px), using default %dpx",
+                        column_key,
+                        default_width,
                     )
                     return default_width
                 logger.debug(
-                    f"[ColumnWidth] Using fallback saved width for '{column_key}': {saved_width}px"
+                    "[ColumnWidth] Using fallback saved width for '%s': %dpx",
+                    column_key,
+                    saved_width,
                 )
                 return saved_width
             else:
                 logger.debug(
-                    f"[ColumnWidth] No saved width found for '{column_key}' in fallback config"
+                    "[ColumnWidth] No saved width found for '%s' in fallback config",
+                    column_key,
                 )
 
             # Return default width from UnifiedColumnService
-            logger.debug(f"[ColumnWidth] Using default width for '{column_key}': {default_width}px")
+            logger.debug(
+                "[ColumnWidth] Using default width for '%s': %dpx",
+                column_key,
+                default_width,
+            )
             return default_width
 
         except Exception as e:
-            logger.warning(f"[ColumnWidth] Failed to load column width for {column_key}: {e}")
+            logger.warning("[ColumnWidth] Failed to load column width for %s: %s", column_key, e)
             # Emergency fallback to UnifiedColumnService defaults
             from oncutf.core.unified_column_service import get_column_service
 
@@ -385,7 +422,9 @@ class ColumnManagementMixin:
             column_cfg = service.get_column_config(column_key)
             fallback_width = column_cfg.width if column_cfg else 100
             logger.debug(
-                f"[ColumnWidth] Using emergency fallback width for '{column_key}': {fallback_width}px"
+                "[ColumnWidth] Using emergency fallback width for '%s': %dpx",
+                column_key,
+                fallback_width,
             )
             return fallback_width
 
@@ -403,7 +442,7 @@ class ColumnManagementMixin:
                     window_config.set("file_table_column_widths", {})
                     config_manager.mark_dirty()
                 except Exception as e:
-                    logger.warning(f"[ColumnWidth] Error clearing main config: {e}")
+                    logger.warning("[ColumnWidth] Error clearing main config: %s", e)
                     # Continue to old format
 
             # Also clear from old format
@@ -420,7 +459,7 @@ class ColumnManagementMixin:
             logger.info("Column widths reset to defaults successfully")
 
         except Exception as e:
-            logger.error(f"Failed to reset column widths to defaults: {e}")
+            logger.error("Failed to reset column widths to defaults: %s", e)
 
     def _save_column_width(self, column_key: str, width: int) -> None:
         """Save column width to main config system."""
@@ -440,7 +479,7 @@ class ColumnManagementMixin:
                     # Mark dirty for debounced save
                     config_manager.mark_dirty()
                 except Exception as e:
-                    logger.warning(f"[ColumnWidth] Error saving to main config: {e}")
+                    logger.warning("[ColumnWidth] Error saving to main config: %s", e)
                     # Continue to fallback method
             else:
                 # Fallback to old method if main window not available
@@ -452,7 +491,7 @@ class ColumnManagementMixin:
                 config["file_table_column_widths"][column_key] = width
                 save_config(config)
         except Exception as e:
-            logger.warning(f"Failed to save column width for {column_key}: {e}")
+            logger.warning("Failed to save column width for %s: %s", column_key, e)
 
     def _schedule_column_save(self, column_key: str, width: int) -> None:
         """Schedule delayed save of column width changes."""
@@ -479,7 +518,9 @@ class ColumnManagementMixin:
         self._config_save_timer.start(7000)  # 7 seconds delay
 
         logger.debug(
-            f"[FileTable] Scheduled delayed save for column '{column_key}' width {width}px (will save in 7 seconds)"
+            "[FileTable] Scheduled delayed save for column '%s' width %dpx (will save in 7 seconds)",
+            column_key,
+            width,
         )
 
     def _save_pending_column_changes(self) -> None:
@@ -504,7 +545,8 @@ class ColumnManagementMixin:
                     config_manager.mark_dirty()
 
                     logger.info(
-                        f"Saved {len(self._pending_column_changes)} column width changes to main config"
+                        "Saved %d column width changes to main config",
+                        len(self._pending_column_changes),
                     )
 
                     # Clear pending changes
@@ -512,7 +554,7 @@ class ColumnManagementMixin:
                     return
 
                 except Exception as e:
-                    logger.warning(f"Failed to save to main config: {e}, trying fallback")
+                    logger.warning("Failed to save to main config: %s, trying fallback", e)
 
             # Fallback to old method
             from oncutf.utils.json_config_manager import load_config, save_config
@@ -528,14 +570,15 @@ class ColumnManagementMixin:
             save_config(config)
 
             logger.info(
-                f"Saved {len(self._pending_column_changes)} column width changes to fallback config"
+                "Saved %d column width changes to fallback config",
+                len(self._pending_column_changes),
             )
 
             # Clear pending changes
             self._pending_column_changes.clear()
 
         except Exception as e:
-            logger.error(f"Failed to save pending column changes: {e}")
+            logger.error("Failed to save pending column changes: %s", e)
         finally:
             # Clean up timer
             if hasattr(self, "_config_save_timer"):
@@ -577,7 +620,11 @@ class ColumnManagementMixin:
             self.setColumnWidth(logical_index, min_width)
             self._programmatic_resize = False
             new_size = min_width  # Update the size we're working with
-            logger.debug(f"[FileTable] Column '{column_key}' enforced minimum width: {min_width}px")
+            logger.debug(
+                "[FileTable] Column '%s' enforced minimum width: %dpx",
+                column_key,
+                min_width,
+            )
 
         # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
@@ -598,7 +645,12 @@ class ColumnManagementMixin:
         # Update header visibility after column resize
         self._update_header_visibility()
 
-        logger.debug(f"[FileTable] Column '{column_key}' resized from {old_size}px to {new_size}px")
+        logger.debug(
+            "[FileTable] Column '%s' resized from %dpx to %dpx",
+            column_key,
+            old_size,
+            new_size,
+        )
 
     def _on_column_moved(
         self, logical_index: int, old_visual_index: int, new_visual_index: int
@@ -615,9 +667,13 @@ class ColumnManagementMixin:
         try:
             # config = load_config()
             # TODO: Implement column order saving
-            logger.debug(f"Column moved from position {old_visual_index} to {new_visual_index}")
+            logger.debug(
+                "Column moved from position %d to %d",
+                old_visual_index,
+                new_visual_index,
+            )
         except Exception as e:
-            logger.warning(f"Failed to save column order: {e}")
+            logger.warning("Failed to save column order: %s", e)
 
         # Update header visibility after column move
         self._update_header_visibility()
@@ -656,7 +712,10 @@ class ColumnManagementMixin:
                 saved_visibility = window_config.get("file_table_columns", {})
 
                 if saved_visibility:
-                    logger.debug(f"[ColumnVisibility] Loaded from main config: {saved_visibility}")
+                    logger.debug(
+                        "[ColumnVisibility] Loaded from main config: %s",
+                        saved_visibility,
+                    )
                     # Ensure we have all columns from config, not just saved ones
                     from oncutf.core.unified_column_service import get_column_service
 
@@ -667,7 +726,8 @@ class ColumnManagementMixin:
                         # Use saved value if available, otherwise use default
                         complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
                     logger.debug(
-                        f"[ColumnVisibility] Complete visibility state: {complete_visibility}"
+                        "[ColumnVisibility] Complete visibility state: %s",
+                        complete_visibility,
                     )
                     return complete_visibility
 
@@ -678,7 +738,10 @@ class ColumnManagementMixin:
             saved_visibility = config.get("file_table_columns", {})
 
             if saved_visibility:
-                logger.debug(f"[ColumnVisibility] Loaded from fallback config: {saved_visibility}")
+                logger.debug(
+                    "[ColumnVisibility] Loaded from fallback config: %s",
+                    saved_visibility,
+                )
                 # Ensure we have all columns from config, not just saved ones
                 from oncutf.core.unified_column_service import get_column_service
 
@@ -688,11 +751,14 @@ class ColumnManagementMixin:
                 for key, cfg in service.get_all_columns().items():
                     # Use saved value if available, otherwise use default
                     complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
-                logger.debug(f"[ColumnVisibility] Complete visibility state: {complete_visibility}")
+                logger.debug(
+                    "[ColumnVisibility] Complete visibility state: %s",
+                    complete_visibility,
+                )
                 return complete_visibility
 
         except Exception as e:
-            logger.warning(f"[ColumnVisibility] Error loading config: {e}")
+            logger.warning("[ColumnVisibility] Error loading config: %s", e)
 
         # Return default configuration
         from oncutf.core.unified_column_service import get_column_service
@@ -716,7 +782,10 @@ class ColumnManagementMixin:
                 # Save current visibility state
                 if hasattr(self, "_visible_columns"):
                     window_config.set("file_table_columns", self._visible_columns)
-                    logger.debug(f"[ColumnVisibility] Saved to main config: {self._visible_columns}")
+                    logger.debug(
+                        "[ColumnVisibility] Saved to main config: %s",
+                        self._visible_columns,
+                    )
 
                     # Mark dirty for debounced save
                     config_manager.mark_dirty()
@@ -729,10 +798,11 @@ class ColumnManagementMixin:
                     config["file_table_columns"] = self._visible_columns
                     save_config(config)
                     logger.debug(
-                        f"[ColumnVisibility] Saved to fallback config: {self._visible_columns}"
+                        "[ColumnVisibility] Saved to fallback config: %s",
+                        self._visible_columns,
                     )
         except Exception as e:
-            logger.warning(f"Failed to save column visibility config: {e}")
+            logger.warning("Failed to save column visibility config: %s", e)
 
     def _sync_view_model_columns(self) -> None:
         """Ensure view and model have synchronized column visibility."""
@@ -751,8 +821,8 @@ class ColumnManagementMixin:
             view_visible = [key for key, visible in self._visible_columns.items() if visible]
             model_visible = model.get_visible_columns()
 
-            logger.debug(f"[ColumnSync] View visible: {view_visible}")
-            logger.debug(f"[ColumnSync] Model visible: {model_visible}")
+            logger.debug("[ColumnSync] View visible: %s", view_visible)
+            logger.debug("[ColumnSync] Model visible: %s", model_visible)
 
             # Sort both lists to ensure consistent comparison
             view_visible_sorted = sorted(view_visible)
@@ -761,27 +831,33 @@ class ColumnManagementMixin:
             # If they don't match, update model to match view (view is authoritative)
             if view_visible_sorted != model_visible_sorted:
                 logger.warning("[ColumnSync] Columns out of sync! Updating model to match view")
-                logger.debug(f"[ColumnSync] View wants: {view_visible_sorted}")
-                logger.debug(f"[ColumnSync] Model has: {model_visible_sorted}")
+                logger.debug("[ColumnSync] View wants: %s", view_visible_sorted)
+                logger.debug("[ColumnSync] Model has: %s", model_visible_sorted)
 
                 if hasattr(model, "update_visible_columns"):
                     model.update_visible_columns(view_visible)
 
                     # Verify the update worked
                     updated_model_visible = model.get_visible_columns()
-                    logger.debug(f"[ColumnSync] Model updated to: {sorted(updated_model_visible)}")
+                    logger.debug(
+                        "[ColumnSync] Model updated to: %s",
+                        sorted(updated_model_visible),
+                    )
 
                     if sorted(updated_model_visible) != view_visible_sorted:
                         logger.error("[ColumnSync] CRITICAL: Model update failed!")
-                        logger.error(f"[ColumnSync] Expected: {view_visible_sorted}")
-                        logger.error(f"[ColumnSync] Got: {sorted(updated_model_visible)}")
+                        logger.error("[ColumnSync] Expected: %s", view_visible_sorted)
+                        logger.error(
+                            "[ColumnSync] Got: %s",
+                            sorted(updated_model_visible),
+                        )
                 else:
                     logger.error("[ColumnSync] Model doesn't support update_visible_columns")
             else:
                 logger.debug("[ColumnSync] View and model are already synchronized")
 
         except Exception as e:
-            logger.error(f"[ColumnSync] Error syncing columns: {e}", exc_info=True)
+            logger.exception("[ColumnSync] Error syncing columns: %s", e)
 
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
@@ -790,12 +866,12 @@ class ColumnManagementMixin:
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
-            logger.warning(f"Unknown column key: {column_key}")
+            logger.warning("Unknown column key: %s", column_key)
             return
 
         column_config = all_columns[column_key]
         if not getattr(column_config, "removable", True):
-            logger.warning(f"Cannot toggle non-removable column: {column_key}")
+            logger.warning("Cannot toggle non-removable column: %s", column_key)
             return  # Can't toggle non-removable columns
 
         # Ensure we have complete visibility state
@@ -808,8 +884,15 @@ class ColumnManagementMixin:
         new_visibility = not current_visibility
         self._visible_columns[column_key] = new_visibility
 
-        logger.info(f"Toggled column '{column_key}' visibility to {new_visibility}")
-        logger.debug(f"[ColumnToggle] Current visibility state: {self._visible_columns}")
+        logger.info(
+            "Toggled column '%s' visibility to %s",
+            column_key,
+            new_visibility,
+        )
+        logger.debug(
+            "[ColumnToggle] Current visibility state: %s",
+            self._visible_columns,
+        )
 
         # Verify we have all columns in visibility state
         from oncutf.core.unified_column_service import get_column_service
@@ -818,7 +901,9 @@ class ColumnManagementMixin:
             if key not in self._visible_columns:
                 self._visible_columns[key] = cfg.default_visible
                 logger.debug(
-                    f"[ColumnToggle] Added missing column '{key}' with default visibility {cfg.default_visible}"
+                    "[ColumnToggle] Added missing column '%s' with default visibility %s",
+                    key,
+                    cfg.default_visible,
                 )
 
         # Save configuration immediately
@@ -830,11 +915,11 @@ class ColumnManagementMixin:
         # Update table display (clears selection)
         self._update_table_columns()
 
-        logger.info(f"Column '{column_key}' visibility toggle completed")
+        logger.info("Column '%s' visibility toggle completed", column_key)
 
         # Debug: Show current visible columns
         visible_cols = [key for key, visible in self._visible_columns.items() if visible]
-        logger.debug(f"[ColumnToggle] Currently visible columns: {visible_cols}")
+        logger.debug("[ColumnToggle] Currently visible columns: %s", visible_cols)
 
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
@@ -842,7 +927,7 @@ class ColumnManagementMixin:
         from oncutf.core.unified_column_service import get_column_service
 
         if column_key not in get_column_service().get_all_columns():
-            logger.warning(f"Cannot add unknown column: {column_key}")
+            logger.warning("Cannot add unknown column: %s", column_key)
             return
 
         # Ensure we have complete visibility state
@@ -852,7 +937,7 @@ class ColumnManagementMixin:
         # Make column visible
         if not self._visible_columns.get(column_key, False):
             self._visible_columns[column_key] = True
-            logger.info(f"Added column '{column_key}' to table")
+            logger.info("Added column '%s' to table", column_key)
 
             # Save and update
             self._save_column_visibility_config()
@@ -877,9 +962,9 @@ class ColumnManagementMixin:
 
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
-            logger.debug(f"[AddColumn] Currently visible columns: {visible_cols}")
+            logger.debug("[AddColumn] Currently visible columns: %s", visible_cols)
         else:
-            logger.debug(f"Column '{column_key}' is already visible")
+            logger.debug("Column '%s' is already visible", column_key)
 
     def _ensure_new_column_proper_width(self) -> None:
         """Ensure newly added column has proper width."""
@@ -910,13 +995,16 @@ class ColumnManagementMixin:
                 # Apply if different
                 if recommended_width != current_width:
                     logger.debug(
-                        f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px"
+                        "[ColumnWidth] Adjusting column '%s' width from %dpx to %dpx",
+                        column_key,
+                        current_width,
+                        recommended_width,
                     )
                     self.setColumnWidth(column_index, recommended_width)
                     self._schedule_column_save(column_key, recommended_width)
 
         except Exception as e:
-            logger.warning(f"Error ensuring new column proper width: {e}")
+            logger.warning("Error ensuring new column proper width: %s", e)
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
@@ -925,12 +1013,12 @@ class ColumnManagementMixin:
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
-            logger.warning(f"Cannot remove unknown column: {column_key}")
+            logger.warning("Cannot remove unknown column: %s", column_key)
             return
 
         column_config = all_columns[column_key]
         if not getattr(column_config, "removable", True):
-            logger.warning(f"Cannot remove non-removable column: {column_key}")
+            logger.warning("Cannot remove non-removable column: %s", column_key)
             return
 
         # Ensure we have complete visibility state
@@ -940,7 +1028,7 @@ class ColumnManagementMixin:
         # Make column invisible
         if self._visible_columns.get(column_key, False):
             self._visible_columns[column_key] = False
-            logger.info(f"Removed column '{column_key}' from table")
+            logger.info("Removed column '%s' from table", column_key)
 
             # Save and update
             self._save_column_visibility_config()
@@ -949,9 +1037,9 @@ class ColumnManagementMixin:
 
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
-            logger.debug(f"[RemoveColumn] Currently visible columns: {visible_cols}")
+            logger.debug("[RemoveColumn] Currently visible columns: %s", visible_cols)
         else:
-            logger.debug(f"Column '{column_key}' is already invisible")
+            logger.debug("Column '%s' is already invisible", column_key)
 
     def get_visible_columns_list(self) -> list:
         """Get list of currently visible column keys."""
@@ -963,15 +1051,15 @@ class ColumnManagementMixin:
         """Debug method to print current column state."""
         logger.debug("[ColumnDebug] === FileTableView Column State ===")
         if hasattr(self, "_visible_columns"):
-            logger.debug(f"[ColumnDebug] _visible_columns: {self._visible_columns}")
+            logger.debug("[ColumnDebug] _visible_columns: %s", self._visible_columns)
         visible_cols = self.get_visible_columns_list()
-        logger.debug(f"[ColumnDebug] Visible columns list: {visible_cols}")
+        logger.debug("[ColumnDebug] Visible columns list: %s", visible_cols)
 
         model = self.model()
         if model and hasattr(model, "get_visible_columns"):
             model_visible = model.get_visible_columns()
-            logger.debug(f"[ColumnDebug] Model visible columns: {model_visible}")
-            logger.debug(f"[ColumnDebug] Model column count: {model.columnCount()}")
+            logger.debug("[ColumnDebug] Model visible columns: %s", model_visible)
+            logger.debug("[ColumnDebug] Model column count: %d", model.columnCount())
 
             if hasattr(model, "debug_column_state"):
                 model.debug_column_state()
@@ -998,7 +1086,7 @@ class ColumnManagementMixin:
             self._clear_selection_for_column_update(force_emit_signal=False)
             update_function()
         except Exception as e:
-            logger.error(f"[ColumnUpdate] Error during column update: {e}")
+            logger.exception("[ColumnUpdate] Error during column update: %s", e)
             raise
         finally:
             self._updating_columns = False
@@ -1062,7 +1150,7 @@ class ColumnManagementMixin:
             self._update_header_visibility()
 
         except Exception as e:
-            logger.error(f"Error resetting columns to default: {e}")
+            logger.error("Error resetting columns to default: %s", e)
 
     def _auto_fit_columns_to_content(self) -> None:
         """Auto-fit all column widths to their content (Ctrl+T).
@@ -1119,7 +1207,7 @@ class ColumnManagementMixin:
             self._update_header_visibility()
 
         except Exception as e:
-            logger.error(f"Error auto-fitting columns to content: {e}")
+            logger.error("Error auto-fitting columns to content: %s", e)
 
     def refresh_columns_after_model_change(self) -> None:
         """Refresh columns after model changes."""
@@ -1176,4 +1264,4 @@ class ColumnManagementMixin:
                     schedule_ui_update(self._configure_columns, delay=10)
 
         except Exception as e:
-            logger.error(f"Failed to check column widths: {e}")
+            logger.error("Failed to check column widths: %s", e)

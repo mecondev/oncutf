@@ -316,7 +316,7 @@ class DragDropMixin:
                 logger.warning("[DragDropMixin] No valid file items found for metadata tree drop")
                 return False
         except (AttributeError, IndexError) as e:
-            logger.error(f"[DragDropMixin] Error getting selected files: {e}")
+            logger.error("[DragDropMixin] Error getting selected files: %s", e)
             return False
 
         # Get modifiers for metadata loading decision (Shift = extended)
@@ -341,8 +341,9 @@ class DragDropMixin:
             # Set flag to indicate successful metadata drop
             self._successful_metadata_drop = True
             logger.info(
-                f"[DragDropMixin] Metadata load initiated: {len(file_items)} files "
-                f"(extended={use_extended})"
+                "[DragDropMixin] Metadata load initiated: %d files (extended=%s)",
+                len(file_items),
+                use_extended,
             )
 
             # Schedule final status update
@@ -357,7 +358,7 @@ class DragDropMixin:
             return True
 
         except Exception as e:
-            logger.error(f"[DragDropMixin] Error initiating metadata load: {e}")
+            logger.error("[DragDropMixin] Error initiating metadata load: %s", e)
             return False
 
     def _get_parent_with_metadata_tree(self):

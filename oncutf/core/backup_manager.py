@@ -78,9 +78,12 @@ class BackupManager(QObject):
         if self.periodic_enabled and self.backup_interval > 0:
             self.start_periodic_backups()
 
-        logger.info(f"BackupManager initialized for {self.database_path}")
+        logger.info("BackupManager initialized for %s", self.database_path)
         logger.info(
-            f"Backup count: {self.backup_count}, Interval: {self.backup_interval}s, Periodic: {self.periodic_enabled}"
+            "Backup count: %d, Interval: %ds, Periodic: %s",
+            self.backup_count,
+            self.backup_interval,
+            self.periodic_enabled,
         )
 
     def create_backup(self, reason: str = "manual") -> str | None:
@@ -96,7 +99,7 @@ class BackupManager(QObject):
         try:
             # Check if database file exists
             if not self.database_path.exists():
-                logger.warning(f"Database file not found: {self.database_path}")
+                logger.warning("Database file not found: %s", self.database_path)
                 return None
 
             # Generate backup filename
@@ -108,7 +111,7 @@ class BackupManager(QObject):
             # Create the backup
             shutil.copy2(self.database_path, backup_path)
 
-            logger.info(f"Database backup created ({reason}): {backup_path}")
+            logger.info("Database backup created (%s): %s", reason, backup_path)
 
             # Clean up old backups
             self._cleanup_old_backups()
@@ -142,18 +145,22 @@ class BackupManager(QObject):
                 for old_backup in files_to_remove:
                     try:
                         old_backup.unlink()
-                        logger.info(f"Removed old backup: {old_backup}")
+                        logger.info("Removed old backup: %s", old_backup)
                     except Exception as e:
-                        logger.error(f"Failed to remove old backup {old_backup}: {e}")
+                        logger.error(
+                            "Failed to remove old backup %s: %s", old_backup, e
+                        )
 
         except Exception as e:
-            logger.error(f"Error during backup cleanup: {e}")
+            logger.error("Error during backup cleanup: %s", e)
 
     def start_periodic_backups(self) -> None:
         """Start the periodic backup timer."""
         if self.backup_interval > 0:
             self.backup_timer.start(self.backup_interval * 1000)  # Convert to milliseconds
-            logger.info(f"Periodic backups started (every {self.backup_interval} seconds)")
+            logger.info(
+                "Periodic backups started (every %d seconds)", self.backup_interval
+            )
 
     def stop_periodic_backups(self) -> None:
         """Stop the periodic backup timer."""
@@ -182,12 +189,12 @@ class BackupManager(QObject):
             count: New backup count
         """
         if count < 1:
-            logger.warning(f"Invalid backup count: {count}. Must be >= 1")
+            logger.warning("Invalid backup count: %d. Must be >= 1", count)
             return
 
         old_count = self.backup_count
         self.backup_count = count
-        logger.info(f"Backup count changed from {old_count} to {count}")
+        logger.info("Backup count changed from %d to %d", old_count, count)
 
         # Clean up immediately if we reduced the count
         if count < old_count:
@@ -201,12 +208,14 @@ class BackupManager(QObject):
             interval: New interval in seconds
         """
         if interval < 0:
-            logger.warning(f"Invalid backup interval: {interval}. Must be >= 0")
+            logger.warning("Invalid backup interval: %d. Must be >= 0", interval)
             return
 
         old_interval = self.backup_interval
         self.backup_interval = interval
-        logger.info(f"Backup interval changed from {old_interval}s to {interval}s")
+        logger.info(
+            "Backup interval changed from %ds to %ds", old_interval, interval
+        )
 
         # Restart timer with new interval
         if self.periodic_enabled:
@@ -249,7 +258,7 @@ class BackupManager(QObject):
             return backup_files
 
         except Exception as e:
-            logger.error(f"Error getting backup files: {e}")
+            logger.error("Error getting backup files: %s", e)
             return []
 
     def get_status(self) -> dict:

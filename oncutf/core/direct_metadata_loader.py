@@ -72,7 +72,9 @@ class DirectMetadataLoader(QObject):
 
         except Exception as e:
             logger.warning(
-                f"[DirectMetadataLoader] Error checking cache for {file_item.filename}: {e}"
+                "[DirectMetadataLoader] Error checking cache for %s: %s",
+                file_item.filename,
+                e,
             )
             return None
 
@@ -91,7 +93,9 @@ class DirectMetadataLoader(QObject):
 
         except Exception as e:
             logger.warning(
-                f"[DirectMetadataLoader] Error checking hash cache for {file_item.filename}: {e}"
+                "[DirectMetadataLoader] Error checking hash cache for %s: %s",
+                file_item.filename,
+                e,
             )
             return None
 
@@ -110,7 +114,9 @@ class DirectMetadataLoader(QObject):
 
         except Exception as e:
             logger.warning(
-                f"[DirectMetadataLoader] Error checking metadata existence for {file_item.filename}: {e}"
+                "[DirectMetadataLoader] Error checking metadata existence for %s: %s",
+                file_item.filename,
+                e,
             )
             return False
 
@@ -129,7 +135,9 @@ class DirectMetadataLoader(QObject):
 
         except Exception as e:
             logger.warning(
-                f"[DirectMetadataLoader] Error checking hash existence for {file_item.filename}: {e}"
+                "[DirectMetadataLoader] Error checking hash existence for %s: %s",
+                file_item.filename,
+                e,
             )
             return False
 
@@ -158,12 +166,14 @@ class DirectMetadataLoader(QObject):
 
         if not files_to_load:
             logger.info(
-                f"[DirectMetadataLoader] All {len(files)} files already have cached metadata"
+                "[DirectMetadataLoader] All %d files already have cached metadata", len(files)
             )
             return
 
         logger.info(
-            f"[DirectMetadataLoader] Loading metadata for {len(files_to_load)} files ({source})"
+            "[DirectMetadataLoader] Loading metadata for %d files (%s)",
+            len(files_to_load),
+            source,
         )
 
         # Show progress dialog for multiple files
@@ -211,7 +221,7 @@ class DirectMetadataLoader(QObject):
             self._start_metadata_loading_with_progress(files, use_extended, source)
 
         except Exception as e:
-            logger.error(f"[DirectMetadataLoader] Error showing progress dialog: {e}")
+            logger.error("[DirectMetadataLoader] Error showing progress dialog: %s", e)
             # Fallback to loading without progress dialog
             self._start_metadata_loading(files, use_extended, source)
 
@@ -304,11 +314,13 @@ class DirectMetadataLoader(QObject):
                     self._currently_loading.add(hash_key)
 
         if not files_to_load:
-            logger.info(f"[DirectMetadataLoader] All {len(files)} files already have cached hashes")
+            logger.info("[DirectMetadataLoader] All %d files already have cached hashes", len(files))
             return
 
         logger.info(
-            f"[DirectMetadataLoader] Loading hashes for {len(files_to_load)} files ({source})"
+            "[DirectMetadataLoader] Loading hashes for %d files (%s)",
+            len(files_to_load),
+            source,
         )
 
         # Show progress dialog for multiple files
@@ -352,7 +364,7 @@ class DirectMetadataLoader(QObject):
             self._start_hash_loading_with_progress(files, source)
 
         except Exception as e:
-            logger.error(f"[DirectMetadataLoader] Error showing hash progress dialog: {e}")
+            logger.error("[DirectMetadataLoader] Error showing hash progress dialog: %s", e)
             # Fallback to loading without progress dialog
             self._start_hash_loading(files, source)
 
@@ -435,7 +447,7 @@ class DirectMetadataLoader(QObject):
         self._metadata_thread.start()
 
         logger.debug(
-            f"[DirectMetadataLoader] Started metadata loading thread for {len(files)} files"
+            "[DirectMetadataLoader] Started metadata loading thread for %d files", len(files)
         )
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
@@ -462,7 +474,7 @@ class DirectMetadataLoader(QObject):
         # Start thread
         self._hash_thread.start()
 
-        logger.debug(f"[DirectMetadataLoader] Started hash loading thread for {len(files)} files")
+        logger.debug("[DirectMetadataLoader] Started hash loading thread for %d files", len(files))
 
     def _on_file_metadata_loaded(self, file_path: str) -> None:
         """Handle individual file metadata loaded."""
@@ -476,7 +488,7 @@ class DirectMetadataLoader(QObject):
         if self.parent_window and hasattr(self.parent_window, "file_model"):
             self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[DirectMetadataLoader] Metadata loaded for {file_path}")
+        logger.debug("[DirectMetadataLoader] Metadata loaded for %s", file_path)
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated."""
@@ -491,7 +503,7 @@ class DirectMetadataLoader(QObject):
                 hm = HashManager()
                 hm.store_hash(file_path, hash_value)
             except Exception as e:
-                logger.warning(f"[DirectMetadataLoader] Failed to store hash for {file_path}: {e}")
+                logger.warning("[DirectMetadataLoader] Failed to store hash for %s: %s", file_path, e)
 
         # Update file table icons
         if self.parent_window and hasattr(self.parent_window, "file_model"):
@@ -500,7 +512,7 @@ class DirectMetadataLoader(QObject):
             else:
                 self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[DirectMetadataLoader] Hash calculated for {file_path}")
+        logger.debug("[DirectMetadataLoader] Hash calculated for %s", file_path)
 
     def _on_metadata_finished(self) -> None:
         """Handle metadata loading completion."""
@@ -520,7 +532,7 @@ class DirectMetadataLoader(QObject):
             logger.debug("[DirectMetadataLoader] Metadata loading finished")
 
         except Exception as e:
-            logger.error(f"[DirectMetadataLoader] Error in metadata finished handler: {e}")
+            logger.error("[DirectMetadataLoader] Error in metadata finished handler: %s", e)
         finally:
             # Emit completion signal
             self.loading_finished.emit()
@@ -551,7 +563,7 @@ class DirectMetadataLoader(QObject):
             logger.debug("[DirectMetadataLoader] Hash loading finished")
 
         except Exception as e:
-            logger.error(f"[DirectMetadataLoader] Error in hash finished handler: {e}")
+            logger.error("[DirectMetadataLoader] Error in hash finished handler: %s", e)
         finally:
             # Emit completion signal
             self.loading_finished.emit()
@@ -600,7 +612,7 @@ class DirectMetadataLoader(QObject):
             logger.info("[DirectMetadataLoader] Cleanup completed")
 
         except Exception as e:
-            logger.error(f"[DirectMetadataLoader] Error during cleanup: {e}")
+            logger.error("[DirectMetadataLoader] Error during cleanup: %s", e)
 
 
 # Global instance

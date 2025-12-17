@@ -61,7 +61,7 @@ class MetadataCommandManager(QObject):
         self._pending_commands: list[MetadataCommand] = []
         self._last_command_time: datetime | None = None
 
-        logger.info(f"[MetadataCommandManager] Initialized with max_history={self.max_history}")
+        logger.info("[MetadataCommandManager] Initialized with max_history=%d", self.max_history)
 
     def execute_command(self, command: MetadataCommand, group_with_previous: bool = False) -> bool:
         """
@@ -78,7 +78,8 @@ class MetadataCommandManager(QObject):
             # Execute the command
             if not command.execute():
                 logger.warning(
-                    f"[MetadataCommandManager] Failed to execute command: {command.get_description()}"
+                    "[MetadataCommandManager] Failed to execute command: %s",
+                    command.get_description(),
                 )
                 return False
 
@@ -99,11 +100,11 @@ class MetadataCommandManager(QObject):
             self.command_executed.emit(command.get_description())
             self._emit_state_signals()
 
-            logger.debug(f"[MetadataCommandManager] Executed: {command.get_description()}")
+            logger.debug("[MetadataCommandManager] Executed: %s", command.get_description())
             return True
 
         except Exception as e:
-            logger.error(f"[MetadataCommandManager] Error executing command: {e}")
+            logger.error("[MetadataCommandManager] Error executing command: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -131,18 +132,19 @@ class MetadataCommandManager(QObject):
                 self.command_undone.emit(command.get_description())
                 self._emit_state_signals()
 
-                logger.debug(f"[MetadataCommandManager] Undone: {command.get_description()}")
+                logger.debug("[MetadataCommandManager] Undone: %s", command.get_description())
                 return True
             else:
                 # If undo failed, put command back
                 self._undo_stack.append(command)
                 logger.warning(
-                    f"[MetadataCommandManager] Failed to undo: {command.get_description()}"
+                    "[MetadataCommandManager] Failed to undo: %s",
+                    command.get_description(),
                 )
                 return False
 
         except Exception as e:
-            logger.error(f"[MetadataCommandManager] Error undoing command: {e}")
+            logger.error("[MetadataCommandManager] Error undoing command: %s", e)
             return False
 
     def redo(self) -> bool:
@@ -167,18 +169,19 @@ class MetadataCommandManager(QObject):
                 self.command_redone.emit(command.get_description())
                 self._emit_state_signals()
 
-                logger.debug(f"[MetadataCommandManager] Redone: {command.get_description()}")
+                logger.debug("[MetadataCommandManager] Redone: %s", command.get_description())
                 return True
             else:
                 # If redo failed, put command back
                 self._redo_stack.append(command)
                 logger.warning(
-                    f"[MetadataCommandManager] Failed to redo: {command.get_description()}"
+                    "[MetadataCommandManager] Failed to redo: %s",
+                    command.get_description(),
                 )
                 return False
 
         except Exception as e:
-            logger.error(f"[MetadataCommandManager] Error redoing command: {e}")
+            logger.error("[MetadataCommandManager] Error redoing command: %s", e)
             return False
 
     def can_undo(self) -> bool:
@@ -304,7 +307,8 @@ class MetadataCommandManager(QObject):
         """Add command to pending group."""
         self._pending_commands.append(command)
         logger.debug(
-            f"[MetadataCommandManager] Added to pending group: {command.get_description()}"
+            "[MetadataCommandManager] Added to pending group: %s",
+            command.get_description(),
         )
 
     def _finalize_pending_group(self) -> None:
@@ -336,7 +340,7 @@ class MetadataCommandManager(QObject):
         if len(self._undo_stack) > self.max_history:
             self._undo_stack.pop(0)
 
-        logger.debug(f"[MetadataCommandManager] Added to undo stack: {command.get_description()}")
+        logger.debug("[MetadataCommandManager] Added to undo stack: %s", command.get_description())
 
     def _emit_state_signals(self) -> None:
         """Emit signals for UI state updates."""

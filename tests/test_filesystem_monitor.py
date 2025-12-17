@@ -7,7 +7,6 @@ Date: 2025-12-16
 Tests for FilesystemMonitor.
 """
 
-import os
 import platform
 import tempfile
 from pathlib import Path
@@ -96,11 +95,11 @@ class TestFilesystemMonitor:
         """Test clearing all monitored folders."""
         # Add multiple folders
         monitor.add_folder(temp_dir)
-        
+
         # Create second temp dir
         with tempfile.TemporaryDirectory() as tmpdir2:
             monitor.add_folder(tmpdir2)
-            
+
             # Clear all
             monitor.clear_folders()
             assert len(monitor._monitored_folders) == 0
@@ -136,42 +135,42 @@ class TestFilesystemMonitor:
         """Test drive_added signal emission."""
         # Mock _get_available_drives to simulate drive addition
         monitor._current_drives = {"/existing/drive"}
-        
+
         with qtbot.waitSignal(monitor.drive_added, timeout=100) as blocker:
             # Simulate new drive
             monitor._current_drives = {"/existing/drive"}
             new_drives = {"/existing/drive", "/new/drive"}
-            
+
             with patch.object(monitor, '_get_available_drives', return_value=new_drives):
                 monitor._poll_drives()
-        
+
         assert blocker.args[0] == "/new/drive"
 
     def test_drive_removed_signal(self, monitor, qtbot):
         """Test drive_removed signal emission."""
         # Setup initial state
         monitor._current_drives = {"/drive1", "/drive2"}
-        
+
         with qtbot.waitSignal(monitor.drive_removed, timeout=100) as blocker:
             # Simulate drive removal
             new_drives = {"/drive1"}
-            
+
             with patch.object(monitor, '_get_available_drives', return_value=new_drives):
                 monitor._poll_drives()
-        
+
         assert blocker.args[0] == "/drive2"
 
     def test_directory_changed_signal(self, monitor, temp_dir, qtbot):
         """Test directory_changed signal emission."""
         # Add folder to monitoring
         monitor.add_folder(temp_dir)
-        
+
         # Wait for signal (with timeout)
         with qtbot.waitSignal(monitor.directory_changed, timeout=2000):
             # Create a file in the directory
             test_file = Path(temp_dir) / "test.txt"
             test_file.write_text("test")
-            
+
             # Process events to allow watcher to trigger
             import time
             time.sleep(0.1)

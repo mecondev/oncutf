@@ -166,7 +166,7 @@ QProgressBar {{
 }}
 """
 
-    logger.debug(f"[Theme] Generated DPI-aware CSS with font sizes: {font_sizes}")
+    logger.debug("[Theme] Generated DPI-aware CSS with font sizes: %s", font_sizes)
     return css_template
 
 

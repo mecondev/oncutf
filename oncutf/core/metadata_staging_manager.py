@@ -58,9 +58,7 @@ class MetadataStagingManager(QObject):
 
         self._staged_changes[norm_path][key] = str(value)
 
-        logger.info(
-            f"[Staging] Staged change for {file_path}: {key} = {value}"
-        )
+        logger.info("[Staging] Staged change for %s: %s = %s", file_path, key, value)
 
         self.change_staged.emit(file_path, key, str(value))
 
@@ -102,7 +100,12 @@ class MetadataStagingManager(QObject):
         norm_path = normalize_path(file_path)
         if norm_path in self._staged_changes and key in self._staged_changes[norm_path]:
             del self._staged_changes[norm_path][key]
-            logger.debug(f"[Staging] Cleared specific change for {file_path}: {key}", extra={"dev_only": True})
+            logger.debug(
+                "[Staging] Cleared specific change for %s: %s",
+                file_path,
+                key,
+                extra={"dev_only": True},
+            )
 
             # Remove file entry if no more changes
             if not self._staged_changes[norm_path]:
@@ -121,7 +124,9 @@ class MetadataStagingManager(QObject):
         norm_path = normalize_path(file_path)
         if norm_path in self._staged_changes:
             del self._staged_changes[norm_path]
-            logger.debug(f"[Staging] Cleared changes for {file_path}", extra={"dev_only": True})
+            logger.debug(
+                "[Staging] Cleared changes for %s", file_path, extra={"dev_only": True}
+            )
             self.file_cleared.emit(file_path)
 
     def clear_all(self) -> None:

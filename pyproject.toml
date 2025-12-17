@@ -69,7 +69,9 @@ python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 warn_unused_configs = true
+warn_unused_ignores = true
 warn_return_any = true
+check_untyped_defs = true
 warn_redundant_casts = true
 exclude = '.*(backups|\.cache|temp|reports)/'  # Global exclude, only one allowed
 

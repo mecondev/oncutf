@@ -51,7 +51,9 @@ class SplitterManager:
             index: Index of the splitter section that moved
         """
         logger.debug(
-            f"[SplitterManager] Horizontal moved: pos={pos}, index={index}",
+            "[SplitterManager] Horizontal moved: pos=%d, index=%d",
+            pos,
+            index,
             extra={"dev_only": True},
         )
 
@@ -72,7 +74,10 @@ class SplitterManager:
             index: Index of the splitter section that moved
         """
         logger.debug(
-            f"[SplitterManager] Vertical moved: pos={pos}, index={index}", extra={"dev_only": True}
+            "[SplitterManager] Vertical moved: pos=%d, index=%d",
+            pos,
+            index,
+            extra={"dev_only": True},
         )
 
         # Update any UI elements that need to respond to vertical space changes
@@ -113,7 +118,8 @@ class SplitterManager:
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
             logger.debug(
-                f"[SplitterManager] Ultra-wide screen layout: {optimal_sizes}",
+                "[SplitterManager] Ultra-wide screen layout: %s",
+                optimal_sizes,
                 extra={"dev_only": True},
             )
 
@@ -124,7 +130,9 @@ class SplitterManager:
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
             logger.debug(
-                f"[SplitterManager] Wide screen layout: {optimal_sizes}", extra={"dev_only": True}
+                "[SplitterManager] Wide screen layout: %s",
+                optimal_sizes,
+                extra={"dev_only": True},
             )
 
         else:
@@ -142,14 +150,19 @@ class SplitterManager:
 
             optimal_sizes = [left_width, center_width, right_width]
             logger.debug(
-                f"[SplitterManager] Standard screen layout: {optimal_sizes}",
+                "[SplitterManager] Standard screen layout: %s",
+                optimal_sizes,
                 extra={"dev_only": True},
             )
 
         # Log the calculation details
         logger.debug(
-            f"[SplitterManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
-            f"(left: {optimal_sizes[0]}, center: {optimal_sizes[1]}, right: {optimal_sizes[2]})",
+            "[SplitterManager] Calculated splitter sizes for %dpx: %s (left: %d, center: %d, right: %d)",
+            window_width,
+            optimal_sizes,
+            optimal_sizes[0],
+            optimal_sizes[1],
+            optimal_sizes[2],
             extra={"dev_only": True},
         )
 
@@ -177,10 +190,15 @@ class SplitterManager:
             # Update splitter sizes
             self.parent_window.horizontal_splitter.setSizes(optimal_sizes)
             logger.debug(
-                f"[SplitterManager] Updated splitter sizes for {window_width}px: {optimal_sizes}"
+                "[SplitterManager] Updated splitter sizes for %dpx: %s",
+                window_width,
+                optimal_sizes,
             )
         else:
-            logger.debug(f"[SplitterManager] Splitter sizes already optimal for {window_width}px")
+            logger.debug(
+                "[SplitterManager] Splitter sizes already optimal for %dpx",
+                window_width,
+            )
 
     def _sizes_differ_significantly(
         self, current_sizes: list[int], optimal_sizes: list[int], threshold: int = 50

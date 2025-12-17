@@ -176,7 +176,7 @@ class BatchOperationsManager:
                     # Replace with newer operation (higher priority wins)
                     if operation.priority <= existing_op.priority:
                         existing_ops[i] = operation
-                        logger.debug(f"[BatchOps] Replaced operation: {operation.key}")
+                        logger.debug("[BatchOps] Replaced operation: %s", operation.key)
                         return
 
             # Add new operation
@@ -184,7 +184,10 @@ class BatchOperationsManager:
             self._stats.total_operations += 1
 
             logger.debug(
-                f"[BatchOps] Queued {batch_type}: {operation.key} (batch size: {len(existing_ops) + 1})"
+                "[BatchOps] Queued %s: %s (batch size: %d)",
+                batch_type,
+                operation.key,
+                len(existing_ops) + 1,
             )
 
             # Check if we should auto-flush
@@ -199,14 +202,16 @@ class BatchOperationsManager:
         # Flush if batch is full
         if len(batch) >= self._max_batch_size:
             logger.debug(
-                f"[BatchOps] Auto-flush triggered by size: {batch_type} ({len(batch)} ops)"
+                "[BatchOps] Auto-flush triggered by size: %s (%d ops)",
+                batch_type,
+                len(batch),
             )
             self._flush_batch_type(batch_type)
             return
 
         # Flush if oldest operation is too old
         if batch and (current_time - batch[0].timestamp.timestamp()) > self._max_batch_age:
-            logger.debug(f"[BatchOps] Auto-flush triggered by age: {batch_type}")
+            logger.debug("[BatchOps] Auto-flush triggered by age: %s", batch_type)
             self._flush_batch_type(batch_type)
             return
 
@@ -224,7 +229,7 @@ class BatchOperationsManager:
                 if self._batches[batch_type]:
                     results[batch_type] = self._flush_batch_type(batch_type)
 
-        logger.info(f"[BatchOps] Flushed all batches: {results}")
+        logger.info("[BatchOps] Flushed all batches: %s", results)
         return results
 
     def flush_batch_type(self, batch_type: str) -> int:
@@ -256,7 +261,7 @@ class BatchOperationsManager:
             # Get the appropriate handler
             handler = self._operation_handlers.get(batch_type)
             if not handler:
-                logger.warning(f"[BatchOps] No handler for batch type: {batch_type}")
+                logger.warning("[BatchOps] No handler for batch type: %s", batch_type)
                 return 0
 
             # Execute the batch
@@ -279,19 +284,22 @@ class BatchOperationsManager:
             self._stats.total_time_saved += time_saved
 
             logger.info(
-                f"[BatchOps] Flushed {batch_type}: {operations_count} ops in {batch_time:.3f}s "
-                f"(saved ~{time_saved:.3f}s)"
+                "[BatchOps] Flushed %s: %d ops in %.3fs (saved ~%.3fs)",
+                batch_type,
+                operations_count,
+                batch_time,
+                time_saved,
             )
 
         except Exception as e:
-            logger.error(f"[BatchOps] Error flushing {batch_type}: {e}")
+            logger.error("[BatchOps] Error flushing %s: %s", batch_type, e)
             # Execute callbacks with error
             for operation in batch:
                 if operation.callback:
                     try:
                         operation.callback(error=e)
                     except Exception as callback_error:
-                        logger.error(f"[BatchOps] Callback error: {callback_error}")
+                        logger.error("[BatchOps] Callback error: %s", callback_error)
         finally:
             # Clear the batch
             self._batches[batch_type].clear()
@@ -342,7 +350,7 @@ class BatchOperationsManager:
                             operation.callback(success=True)
 
                     except Exception as e:
-                        logger.error(f"[BatchOps] Metadata set failed for {operation.key}: {e}")
+                        logger.error("[BatchOps] Metadata set failed for %s: %s", operation.key, e)
                         if operation.callback:
                             operation.callback(success=False, error=e)
 
@@ -351,11 +359,11 @@ class BatchOperationsManager:
                     cache.commit_batch()
 
             except Exception as e:
-                logger.error(f"[BatchOps] Metadata batch failed: {e}")
+                logger.error("[BatchOps] Metadata batch failed: %s", e)
                 if hasattr(cache, "rollback_batch"):
                     cache.rollback_batch()
 
-        logger.debug(f"[BatchOps] Metadata batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] Metadata batch: %d/%d successful", success_count, len(operations))
 
     def _handle_hash_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of hash cache store operations."""
@@ -395,7 +403,7 @@ class BatchOperationsManager:
                         operation.callback(success=True)
 
                 except Exception as e:
-                    logger.error(f"[BatchOps] Hash store failed for {operation.key}: {e}")
+                    logger.error("[BatchOps] Hash store failed for %s: %s", operation.key, e)
                     if operation.callback:
                         operation.callback(success=False, error=e)
 
@@ -404,11 +412,11 @@ class BatchOperationsManager:
                 cache.commit_batch()
 
         except Exception as e:
-            logger.error(f"[BatchOps] Hash batch failed: {e}")
+            logger.error("[BatchOps] Hash batch failed: %s", e)
             if hasattr(cache, "rollback_batch"):
                 cache.rollback_batch()
 
-        logger.debug(f"[BatchOps] Hash batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] Hash batch: %d/%d successful", success_count, len(operations))
 
     def _handle_db_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of database query operations."""
@@ -446,14 +454,14 @@ class BatchOperationsManager:
                                 operation.callback(success=True, result=result)
 
                         except Exception as e:
-                            logger.error(f"[BatchOps] DB query failed: {query}: {e}")
+                            logger.error("[BatchOps] DB query failed: %s: %s", query, e)
                             if operation.callback:
                                 operation.callback(success=False, error=e)
 
             except Exception as e:
-                logger.error(f"[BatchOps] DB batch failed for {query_type}: {e}")
+                logger.error("[BatchOps] DB batch failed for %s: %s", query_type, e)
 
-        logger.debug(f"[BatchOps] DB batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] DB batch: %d/%d successful", success_count, len(operations))
 
     def _handle_file_io_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of file I/O operations."""
@@ -505,11 +513,11 @@ class BatchOperationsManager:
                     operation.callback(success=True, result=result)
 
             except Exception as e:
-                logger.error(f"[BatchOps] File read failed for {operation.key}: {e}")
+                logger.error("[BatchOps] File read failed for %s: %s", operation.key, e)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
-        logger.debug(f"[BatchOps] File read batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] File read batch: %d/%d successful", success_count, len(operations))
 
     def _handle_file_write_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch file write operations."""
@@ -539,11 +547,11 @@ class BatchOperationsManager:
                     operation.callback(success=True)
 
             except Exception as e:
-                logger.error(f"[BatchOps] File write failed for {operation.key}: {e}")
+                logger.error("[BatchOps] File write failed for %s: %s", operation.key, e)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
-        logger.debug(f"[BatchOps] File write batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] File write batch: %d/%d successful", success_count, len(operations))
 
     def _handle_cache_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch cache update operations."""
@@ -559,11 +567,11 @@ class BatchOperationsManager:
                     operation.callback(success=True)
 
             except Exception as e:
-                logger.error(f"[BatchOps] Cache operation failed for {operation.key}: {e}")
+                logger.error("[BatchOps] Cache operation failed for %s: %s", operation.key, e)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
-        logger.debug(f"[BatchOps] Cache batch: {success_count}/{len(operations)} successful")
+        logger.debug("[BatchOps] Cache batch: %d/%d successful", success_count, len(operations))
 
     def get_stats(self) -> BatchStats:
         """Get current batch operation statistics."""
@@ -586,8 +594,10 @@ class BatchOperationsManager:
             self._auto_flush_enabled = auto_flush
 
         logger.info(
-            f"[BatchOps] Config updated: batch_size={self._max_batch_size}, "
-            f"batch_age={self._max_batch_age}s, auto_flush={self._auto_flush_enabled}"
+            "[BatchOps] Config updated: batch_size=%d, batch_age=%ss, auto_flush=%s",
+            self._max_batch_size,
+            self._max_batch_age,
+            self._auto_flush_enabled,
         )
 
     def cleanup(self) -> None:
@@ -606,7 +616,7 @@ class BatchOperationsManager:
         with self._batch_lock:
             self._batches.clear()
 
-        logger.info(f"[BatchOps] Cleanup completed. Final stats: {self._stats}")
+        logger.info("[BatchOps] Cleanup completed. Final stats: %s", self._stats)
 
 
 # Global instance

@@ -98,7 +98,7 @@ class HashWorker(QThread):
     def enable_batch_operations(self, enabled: bool = True) -> None:
         """Enable or disable batch operations optimization."""
         self._enable_batching = enabled
-        logger.debug(f"[HashWorker] Batch operations {'enabled' if enabled else 'disabled'}")
+        logger.debug("[HashWorker] Batch operations %s", 'enabled' if enabled else 'disabled')
 
     def setup_duplicate_scan(self, file_paths: list[str]) -> None:
         """Configure worker for duplicate detection."""
@@ -146,7 +146,7 @@ class HashWorker(QThread):
         """Set the total size from external calculation to avoid duplicate work."""
         with QMutexLocker(self._mutex):
             self._total_bytes = total_size
-            logger.debug(f"[HashWorker] Total size set to: {total_size:,} bytes")
+            logger.debug("[HashWorker] Total size set to: %d bytes", total_size)
 
     def cancel(self) -> None:
         """Cancel the current operation."""
@@ -194,11 +194,13 @@ class HashWorker(QThread):
                         )
 
             except (OSError, PermissionError) as e:
-                logger.debug(f"[HashWorker] Could not get size for {file_path}: {e}")
+                logger.debug("[HashWorker] Could not get size for %s: %s", file_path, e)
                 continue
 
         logger.info(
-            f"[HashWorker] Total size calculated: {total_size:,} bytes for {files_counted} files"
+            "[HashWorker] Total size calculated: %s bytes for %d files",
+            format(total_size, ","),
+            files_counted,
         )
         return total_size
 
@@ -217,7 +219,7 @@ class HashWorker(QThread):
                     self._batch_manager = get_batch_manager(self.main_window)
                     logger.debug("[HashWorker] Batch operations manager initialized")
                 except Exception as e:
-                    logger.warning(f"[HashWorker] Failed to initialize batch manager: {e}")
+                    logger.warning("[HashWorker] Failed to initialize batch manager: %s", e)
                     self._enable_batching = False
 
             # Get configuration safely
@@ -243,31 +245,33 @@ class HashWorker(QThread):
                 self._calculate_checksums(file_paths)
 
         except Exception as e:
-            logger.exception(f"[HashWorker] Unexpected error: {e}")
+            logger.exception("[HashWorker] Unexpected error: %s", e)
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
         finally:
             # Flush any remaining batch operations
             if self._enable_batching and self._batch_manager and self._batch_operations:
                 logger.info(
-                    f"[HashWorker] Flushing {len(self._batch_operations)} batched hash operations"
+                    "[HashWorker] Flushing %d batched hash operations",
+                    len(self._batch_operations),
                 )
 
                 try:
                     # Force flush all hash operations
                     flushed = self._batch_manager.flush_batch_type("hash_store")
-                    logger.info(f"[HashWorker] Successfully flushed {flushed} hash operations")
+                    logger.info("[HashWorker] Successfully flushed %d hash operations", flushed)
 
                     # Get batch statistics
                     stats = self._batch_manager.get_stats()
                     logger.info(
-                        f"[HashWorker] Batch stats: {stats.batched_operations} batched, "
-                        f"avg batch size: {stats.average_batch_size:.1f}, "
-                        f"time saved: {stats.total_time_saved:.2f}s"
+                        "[HashWorker] Batch stats: %d batched, avg batch size: %.1f, time saved: %.2fs",
+                        stats.batched_operations,
+                        stats.average_batch_size,
+                        stats.total_time_saved,
                     )
 
                 except Exception as e:
-                    logger.error(f"[HashWorker] Error flushing batch operations: {e}")
+                    logger.error("[HashWorker] Error flushing batch operations: %s", e)
 
     def _check_cache_before_calculation(self, file_path: str) -> str | None:
         """
@@ -280,14 +284,14 @@ class HashWorker(QThread):
             hash_value = self._hash_manager.get_cached_hash(file_path)
             if hash_value is not None:
                 self._cache_hits += 1
-                logger.debug(f"[HashWorker] Cache hit for: {os.path.basename(file_path)}")
+                logger.debug("[HashWorker] Cache hit for: %s", os.path.basename(file_path))
                 return hash_value
             else:
                 self._cache_misses += 1
-                logger.debug(f"[HashWorker] Cache miss for: {os.path.basename(file_path)}")
+                logger.debug("[HashWorker] Cache miss for: %s", os.path.basename(file_path))
                 return None
         except Exception as e:
-            logger.debug(f"[HashWorker] Cache check failed for {file_path}: {e}")
+            logger.debug("[HashWorker] Cache check failed for %s: %s", file_path, e)
             self._cache_misses += 1
             return None
 
@@ -296,7 +300,7 @@ class HashWorker(QThread):
     ) -> None:
         """Store hash using batch operations if available."""
         if self._enable_batching and self._batch_manager:
-            logger.debug(f"[HashWorker] Queuing hash for batching: {os.path.basename(file_path)}")
+            logger.debug("[HashWorker] Queuing hash for batching: %s", os.path.basename(file_path))
 
             # Queue for batch processing
             self._batch_manager.queue_hash_store(
@@ -312,7 +316,7 @@ class HashWorker(QThread):
             )
         else:
             # Fallback to direct storage
-            logger.debug(f"[HashWorker] Storing hash directly: {os.path.basename(file_path)}")
+            logger.debug("[HashWorker] Storing hash directly: %s", os.path.basename(file_path))
             self._hash_manager.store_hash(file_path, hash_value, algorithm)
 
     def _process_file_with_progress(
@@ -346,7 +350,8 @@ class HashWorker(QThread):
                         self._cumulative_processed_bytes = new_cumulative
                     else:
                         logger.warning(
-                            f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes"
+                            "[HashWorker] Size overflow detected, capping progress at %s bytes",
+                            format(self._cumulative_processed_bytes, ","),
                         )
 
                 self.size_progress.emit(
@@ -357,7 +362,7 @@ class HashWorker(QThread):
             return file_hash, file_size
 
         # Hash not in cache - need to calculate
-        logger.debug(f"[HashWorker] Calculating hash for: {filename}")
+        logger.debug("[HashWorker] Calculating hash for: %s", filename)
 
         # For large files (>100MB), use real-time progress callback
         progress_callback = None
@@ -390,7 +395,8 @@ class HashWorker(QThread):
                 else:
                     # Overflow detected - cap at current value and log warning
                     logger.warning(
-                        f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes"
+                        "[HashWorker] Size overflow detected, capping progress at %s bytes",
+                        format(self._cumulative_processed_bytes, ","),
                     )
 
             # Emit with explicit 64-bit integers to prevent overflow
@@ -399,7 +405,7 @@ class HashWorker(QThread):
         # Emit signal for real-time UI update only when hash is newly calculated (not from cache)
         if file_hash is not None:
             self.file_hash_calculated.emit(file_path)
-            logger.debug(f"[HashWorker] Emitted file_hash_calculated signal for: {filename}")
+            logger.debug("[HashWorker] Emitted file_hash_calculated signal for: %s", filename)
 
         return file_hash, file_size
 
@@ -419,7 +425,8 @@ class HashWorker(QThread):
                 # Show partial results if operation was cancelled
                 if hash_results:
                     logger.info(
-                        f"[HashWorker] Operation cancelled - showing results for {len(hash_results)} files that were processed"
+                        "[HashWorker] Operation cancelled - showing results for %d files that were processed",
+                        len(hash_results),
                     )
                     self.checksums_calculated.emit(hash_results)
                 self.finished_processing.emit(False)
@@ -444,12 +451,17 @@ class HashWorker(QThread):
             f"CRC32 checksums calculated for {len(hash_results)} files! Cache hit rate: {cache_hit_rate:.1f}%{batch_info}"
         )
 
-        logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
+        logger.info("[HashWorker] Calculated checksums for %d files", len(hash_results))
         logger.info(
-            f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%"
+            "[HashWorker] Cache performance - Hits: %d, Misses: %d, Hit rate: %.1f%%",
+            self._cache_hits,
+            self._cache_misses,
+            cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
+            logger.info(
+                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
+            )
         self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
 
@@ -476,7 +488,8 @@ class HashWorker(QThread):
                     }
                     if partial_duplicates:
                         logger.info(
-                            f"[HashWorker] Operation cancelled - showing partial duplicate results for {len(partial_duplicates)} groups"
+                            "[HashWorker] Operation cancelled - showing partial duplicate results for %d groups",
+                            len(partial_duplicates),
                         )
                         self.duplicates_found.emit(partial_duplicates)
                 self.finished_processing.emit(False)
@@ -510,13 +523,20 @@ class HashWorker(QThread):
         }
 
         logger.info(
-            f"[HashWorker] Found {len(duplicates)} duplicate groups from {total_files} files"
+            "[HashWorker] Found %d duplicate groups from %d files",
+            len(duplicates),
+            total_files,
         )
         logger.info(
-            f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%"
+            "[HashWorker] Cache performance - Hits: %d, Misses: %d, Hit rate: %.1f%%",
+            self._cache_hits,
+            self._cache_misses,
+            cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
+            logger.info(
+                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
+            )
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
 
@@ -536,7 +556,8 @@ class HashWorker(QThread):
                 # Show partial results if operation was cancelled
                 if comparison_results:
                     logger.info(
-                        f"[HashWorker] Operation cancelled - showing partial comparison results for {len(comparison_results)} files"
+                        "[HashWorker] Operation cancelled - showing partial comparison results for %d files",
+                        len(comparison_results),
                     )
                     self.comparison_result.emit(comparison_results)
                 self.finished_processing.emit(False)
@@ -585,11 +606,16 @@ class HashWorker(QThread):
             f"File comparison complete! Cache hit rate: {cache_hit_rate:.1f}%{batch_info}"
         )
 
-        logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")
+        logger.info("[HashWorker] Compared %d files with external folder", len(file_paths))
         logger.info(
-            f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%"
+            "[HashWorker] Cache performance - Hits: %d, Misses: %d, Hit rate: %.1f%%",
+            self._cache_hits,
+            self._cache_misses,
+            cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
+            logger.info(
+                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
+            )
         self.comparison_result.emit(comparison_results)
         self.finished_processing.emit(True)

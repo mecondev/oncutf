@@ -235,7 +235,8 @@ class FileTreeView(QTreeView):
                         if os.path.exists(drive_path):
                             self.file_system_watcher.addPath(drive_path)
                             logger.debug(
-                                f"[FileTreeView] Watching drive: {drive_path}",
+                                "[FileTreeView] Watching drive: %s",
+                                drive_path,
                                 extra={"dev_only": True},
                             )
                     except Exception:
@@ -247,11 +248,16 @@ class FileTreeView(QTreeView):
                         if os.path.exists(watch_path):
                             self.file_system_watcher.addPath(watch_path)
                             logger.debug(
-                                f"[FileTreeView] Watching mount point: {watch_path}",
+                                "[FileTreeView] Watching mount point: %s",
+                                watch_path,
                                 extra={"dev_only": True},
                             )
                     except Exception as e:
-                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
+                        logger.warning(
+                            "[FileTreeView] Failed to watch %s: %s",
+                            watch_path,
+                            e,
+                        )
             else:
                 # Watch /media and /mnt on Linux
                 for watch_path in ["/media", "/mnt"]:
@@ -259,11 +265,16 @@ class FileTreeView(QTreeView):
                         if os.path.exists(watch_path):
                             self.file_system_watcher.addPath(watch_path)
                             logger.debug(
-                                f"[FileTreeView] Watching mount point: {watch_path}",
+                                "[FileTreeView] Watching mount point: %s",
+                                watch_path,
                                 extra={"dev_only": True},
                             )
                     except Exception as e:
-                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
+                        logger.warning(
+                            "[FileTreeView] Failed to watch %s: %s",
+                            watch_path,
+                            e,
+                        )
             # Connect signals
             self.file_system_watcher.directoryChanged.connect(self._on_drive_changed)
 
@@ -279,7 +290,7 @@ class FileTreeView(QTreeView):
             )
 
         except Exception as e:
-            logger.warning(f"[FileTreeView] Failed to setup file system watcher: {e}")
+            logger.warning("[FileTreeView] Failed to setup file system watcher: %s", e)
             self.file_system_watcher = None  # Set to None if setup fails
 
     def closeEvent(self, event) -> None:
@@ -334,7 +345,8 @@ class FileTreeView(QTreeView):
             return
 
         logger.debug(
-            f"[FileTreeView] Drive changed detected: {path}",
+            "[FileTreeView] Drive changed detected: %s",
+            path,
             extra={"dev_only": True},
         )
 
@@ -367,7 +379,8 @@ class FileTreeView(QTreeView):
             if current_path and os.path.exists(current_path):
                 self.select_path(current_path)
                 logger.debug(
-                    f"[FileTreeView] Tree refreshed and selection restored: {current_path}",
+                    "[FileTreeView] Tree refreshed and selection restored: %s",
+                    current_path,
                     extra={"dev_only": True},
                 )
             else:
@@ -380,7 +393,7 @@ class FileTreeView(QTreeView):
             # Widget was deleted
             logger.debug("[FileTreeView] Widget deleted during refresh", extra={"dev_only": True})
         except Exception as e:
-            logger.error(f"[FileTreeView] Error refreshing tree on drive change: {e}")
+            logger.error("[FileTreeView] Error refreshing tree on drive change: %s", e)
 
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
@@ -412,7 +425,8 @@ class FileTreeView(QTreeView):
 
         except Exception as e:
             logger.debug(
-                f"[FileTreeView] Branch icons setup skipped: {e}",
+                "[FileTreeView] Branch icons setup skipped: %s",
+                e,
                 extra={"dev_only": True}
             )
             # Fallback to default Qt icons
@@ -486,7 +500,9 @@ class FileTreeView(QTreeView):
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                 logger.debug(
-                    f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar",
+                    "[FileTreeView] Content exceeds viewport (%d > %d) - enabling scrollbar",
+                    content_width,
+                    viewport_width,
                     extra={"dev_only": True},
                 )
 
@@ -633,7 +649,8 @@ class FileTreeView(QTreeView):
 
             if cursor_count > 0:
                 logger.debug(
-                    f"[FileTreeView] Cleaned {cursor_count} stuck cursors after drag",
+                    "[FileTreeView] Cleaned %d stuck cursors after drag",
+                    cursor_count,
                     extra={"dev_only": True},
                 )
 
@@ -669,7 +686,8 @@ class FileTreeView(QTreeView):
 
         if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
             logger.warning(
-                f"[FileTreeView] Blocked drag on mount point/root: {clicked_path}",
+                "[FileTreeView] Blocked drag on mount point/root: %s",
+                clicked_path,
                 extra={"dev_only": True},
             )
             return
@@ -733,7 +751,9 @@ class FileTreeView(QTreeView):
         self._start_drag_feedback_loop()
 
         logger.debug(
-            f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True}
+            "[FileTreeView] Custom drag started: %s",
+            clicked_path,
+            extra={"dev_only": True},
         )
 
     def _start_drag_feedback_loop(self):
@@ -808,7 +828,8 @@ class FileTreeView(QTreeView):
             self._restore_hover_after_drag()
 
             logger.debug(
-                f"[FileTreeView] Custom drag ended (cancelled): {self._drag_path}",
+                "[FileTreeView] Custom drag ended (cancelled): %s",
+                self._drag_path,
                 extra={"dev_only": True},
             )
             return
@@ -816,7 +837,9 @@ class FileTreeView(QTreeView):
         # Check if we dropped on a valid target (only FileTableView allowed)
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         logger.debug(
-            f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True}
+            "[FileTreeView] Widget under cursor: %s",
+            widget_under_cursor,
+            extra={"dev_only": True},
         )
 
         # Use visual manager to validate drop target
@@ -829,14 +852,16 @@ class FileTreeView(QTreeView):
             parent = widget_under_cursor
             while parent:
                 logger.debug(
-                    f"[FileTreeView] Checking parent: {parent.__class__.__name__}",
+                    "[FileTreeView] Checking parent: %s",
+                    parent.__class__.__name__,
                     extra={"dev_only": True},
                 )
 
                 # Check with visual manager
                 if visual_manager.is_valid_drop_target(parent, "file_tree"):
                     logger.debug(
-                        f"[FileTreeView] Valid drop target found: {parent.__class__.__name__}",
+                        "[FileTreeView] Valid drop target found: %s",
+                        parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
                     self._handle_drop_on_table()
@@ -847,7 +872,8 @@ class FileTreeView(QTreeView):
                 if hasattr(parent, "parent") and parent.parent():
                     if visual_manager.is_valid_drop_target(parent.parent(), "file_tree"):
                         logger.debug(
-                            f"[FileTreeView] Valid drop target found via viewport: {parent.parent().__class__.__name__}",
+                            "[FileTreeView] Valid drop target found via viewport: %s",
+                            parent.parent().__class__.__name__,
                             extra={"dev_only": True},
                         )
                         self._handle_drop_on_table()
@@ -857,7 +883,8 @@ class FileTreeView(QTreeView):
                 # Check for policy violations
                 if parent.__class__.__name__ in ["FileTreeView", "MetadataTreeView"]:
                     logger.debug(
-                        f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)",
+                        "[FileTreeView] Rejecting drop on %s (policy violation)",
+                        parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
                     break
@@ -918,12 +945,15 @@ class FileTreeView(QTreeView):
                 # Selection was lost, restore it
                 self.select_path(self._drag_path)
                 logger.debug(
-                    f"[FileTreeView] Restored folder selection: {self._drag_path}",
+                    "[FileTreeView] Restored folder selection: %s",
+                    self._drag_path,
                     extra={"dev_only": True},
                 )
 
         logger.debug(
-            f"[FileTreeView] Custom drag ended: {self._drag_path} (valid_drop: {valid_drop})",
+            "[FileTreeView] Custom drag ended: %s (valid_drop: %s)",
+            self._drag_path,
+            valid_drop,
             extra={"dev_only": True},
         )
 
@@ -973,8 +1003,11 @@ class FileTreeView(QTreeView):
         update_source_info(display_text)
 
         logger.debug(
-            f"[FileTreeView] Updated drag count: {display_text} "
-            f"(recursive={is_recursive}, timeout={count.timed_out}, {count.elapsed_ms:.1f}ms)",
+            "[FileTreeView] Updated drag count: %s (recursive=%s, timeout=%s, %.1fms)",
+            display_text,
+            is_recursive,
+            count.timed_out,
+            count.elapsed_ms,
             extra={"dev_only": True}
         )
 
@@ -993,7 +1026,10 @@ class FileTreeView(QTreeView):
         _, _, action = decode_modifiers_to_flags(modifiers)
 
         logger.info(
-            f"[FileTreeView] Dropped: {self._drag_path} ({action})", extra={"dev_only": True}
+            "[FileTreeView] Dropped: %s (%s)",
+            self._drag_path,
+            action,
+            extra={"dev_only": True},
         )
 
     def _is_valid_drag_target(self, path: str) -> bool:
@@ -1004,7 +1040,8 @@ class FileTreeView(QTreeView):
 
             if is_mount_point_or_root(path):
                 logger.warning(
-                    f"[FileTreeView] Blocked drag of mount point/root: {path}",
+                    "[FileTreeView] Blocked drag of mount point/root: %s",
+                    path,
                     extra={"dev_only": True},
                 )
                 return False
@@ -1017,7 +1054,8 @@ class FileTreeView(QTreeView):
 
         if ext not in ALLOWED_EXTENSIONS:
             logger.debug(
-                f"[FileTreeView] Skipping drag for non-allowed extension: {ext}",
+                "[FileTreeView] Skipping drag for non-allowed extension: %s",
+                ext,
                 extra={"dev_only": True},
             )
             return False

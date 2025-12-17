@@ -126,7 +126,9 @@ class TimerManager(QObject):
                 existing_id = self._find_consolidatable_timer(timer_type, delay)
                 if existing_id:
                     logger.debug(
-                        f"[TimerManager] Consolidating timer {timer_id} with {existing_id}",
+                        "[TimerManager] Consolidating timer %s with %s",
+                        timer_id,
+                        existing_id,
                         extra={"dev_only": True},
                     )
                     # Cancel the new timer request and use existing
@@ -150,7 +152,10 @@ class TimerManager(QObject):
             timer.start(delay)
 
             logger.debug(
-                f"[TimerManager] Scheduled {timer_type.value} timer '{timer_id}' with {delay}ms delay",
+                "[TimerManager] Scheduled %s timer '%s' with %dms delay",
+                timer_type.value,
+                timer_id,
+                delay,
                 extra={"dev_only": True},
             )
             self.timer_started.emit(timer_id, delay)
@@ -179,7 +184,11 @@ class TimerManager(QObject):
         del self._timer_callbacks[timer_id]
         del self._timer_types[timer_id]
 
-        logger.debug(f"[TimerManager] Cancelled timer '{timer_id}'", extra={"dev_only": True})
+        logger.debug(
+            "[TimerManager] Cancelled timer '%s'",
+            timer_id,
+            extra={"dev_only": True},
+        )
         return True
 
     def cancel_by_type(self, timer_type: TimerType) -> int:
@@ -203,7 +212,9 @@ class TimerManager(QObject):
 
         if cancelled_count > 0:
             logger.debug(
-                f"[TimerManager] Cancelled {cancelled_count} timers of type {timer_type.value}",
+                "[TimerManager] Cancelled %d timers of type %s",
+                cancelled_count,
+                timer_type.value,
                 extra={"dev_only": True},
             )
 
@@ -228,7 +239,8 @@ class TimerManager(QObject):
                     except RuntimeError:
                         # Timer has been deleted, remove it from our tracking
                         logger.debug(
-                            f"[TimerManager] Removing deleted timer '{timer_id}'",
+                            "[TimerManager] Removing deleted timer '%s'",
+                            timer_id,
                             extra={"dev_only": True},
                         )
                         self._cleanup_deleted_timer(timer_id)
@@ -264,11 +276,13 @@ class TimerManager(QObject):
                 callback()
                 self._completed_timers += 1
                 logger.debug(
-                    f"[TimerManager] Executed {timer_type.value if timer_type else 'unknown'} timer '{timer_id}'",
+                    "[TimerManager] Executed %s timer '%s'",
+                    timer_type.value if timer_type else "unknown",
+                    timer_id,
                     extra={"dev_only": True},
                 )
             except Exception as e:
-                logger.error(f"[TimerManager] Error executing timer '{timer_id}': {e}")
+                logger.error("[TimerManager] Error executing timer '%s': %s", timer_id, e)
                 self._last_error = f"Timer {timer_id}: {e}"
                 self._failed_callbacks += 1
 
@@ -301,7 +315,8 @@ class TimerManager(QObject):
 
         if cancelled_count > 0:
             logger.debug(
-                f"[TimerManager] Cleaned up {cancelled_count} active timers",
+                "[TimerManager] Cleaned up %d active timers",
+                cancelled_count,
                 extra={"dev_only": True},
             )
 

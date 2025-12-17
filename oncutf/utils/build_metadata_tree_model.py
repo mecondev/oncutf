@@ -445,7 +445,9 @@ def build_metadata_tree_model(
     """
     logger.debug(">>> build_metadata_tree_model called", extra={"dev_only": True})
     logger.debug(
-        f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}",
+        "metadata type: %s | keys: %s",
+        type(metadata),
+        list(metadata.keys()) if isinstance(metadata, dict) else "N/A",
         extra={"dev_only": True},
     )
 
@@ -485,7 +487,10 @@ def build_metadata_tree_model(
     for group_name in ordered_groups:
         items = grouped[group_name]
         logger.debug(
-            f"Creating group: {group_name} with {len(items)} items", extra={"dev_only": True}
+            "Creating group: %s with %d items",
+            group_name,
+            len(items),
+            extra={"dev_only": True},
         )
 
         # Sort items alphabetically within each group

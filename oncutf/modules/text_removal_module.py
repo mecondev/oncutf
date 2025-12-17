@@ -103,20 +103,22 @@ class TextRemovalModule(BaseRenameModule):
     def on_text_changed(self):
         """Handle text input changes."""
         text = self.text_input.text()
-        logger.debug(f"[TextRemoval] Text changed to: '{text}'", extra={"dev_only": True})
+        logger.debug("[TextRemoval] Text changed to: '%s'", text, extra={"dev_only": True})
         self.updated.emit(self)
 
     def on_position_changed(self):
         """Handle position combo changes."""
         position = self.position_combo.currentText()
-        logger.debug(f"[TextRemoval] Position changed to: '{position}'", extra={"dev_only": True})
+        logger.debug("[TextRemoval] Position changed to: '%s'", position, extra={"dev_only": True})
         self.updated.emit(self)
 
     def on_case_changed(self):
         """Handle case sensitivity changes."""
         case_sensitive = self.case_sensitive_check.isChecked()
         logger.debug(
-            f"[TextRemoval] Case sensitivity changed to: {case_sensitive}", extra={"dev_only": True}
+            "[TextRemoval] Case sensitivity changed to: %s",
+            case_sensitive,
+            extra={"dev_only": True},
         )
         self.updated.emit(self)
 

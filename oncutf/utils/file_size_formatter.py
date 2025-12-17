@@ -45,10 +45,10 @@ def _ensure_locale_setup():
         else:
             # Unix/Linux locale setup
             locale.setlocale(locale.LC_ALL, "")
-        logger.debug(f"[FileSizeFormatter] Locale set to: {locale.getlocale()}")
+        logger.debug("[FileSizeFormatter] Locale set to: %s", locale.getlocale())
         _locale_initialized = True
     except locale.Error as e:
-        logger.warning(f"[FileSizeFormatter] Failed to set locale: {e}, using default")
+        logger.warning("[FileSizeFormatter] Failed to set locale: %s, using default", e)
         # Fallback to C locale
         try:
             locale.setlocale(locale.LC_ALL, "C")

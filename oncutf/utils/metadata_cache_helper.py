@@ -79,7 +79,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error getting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error getting metadata for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return {}
 
@@ -106,7 +108,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error getting cache entry for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error getting cache entry for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return None
 
@@ -140,7 +144,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error setting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error setting metadata for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
 
     def has_metadata(self, file_item, extended: bool = None) -> bool:
@@ -197,7 +203,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error checking metadata for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return False
 
@@ -258,8 +266,9 @@ class MetadataCacheHelper:
             if metadata is None or not metadata:
                 # If no metadata in cache, this is a problem - we shouldn't edit metadata that doesn't exist
                 logger.warning(
-                    f"[MetadataCacheHelper] Cannot set {key_path} - no metadata found in cache for {getattr(file_item, 'filename', 'unknown')}. "
-                    "Metadata must be loaded before editing.",
+                    "[MetadataCacheHelper] Cannot set %s - no metadata found in cache for %s. Metadata must be loaded before editing.",
+                    key_path,
+                    getattr(file_item, "filename", "unknown"),
                     extra={"dev_only": False},
                 )
                 return False
@@ -304,7 +313,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error setting metadata value for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error setting metadata value for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return False
 
@@ -328,7 +339,9 @@ class MetadataCacheHelper:
 
         except Exception as e:
             logger.error(
-                f"[MetadataCacheHelper] Error checking modification status for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[MetadataCacheHelper] Error checking modification status for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return False
 

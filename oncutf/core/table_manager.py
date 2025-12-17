@@ -79,13 +79,15 @@ class TableManager:
 
         if should_clear_modifications:
             logger.debug(
-                f"[TableManager] Clearing metadata modifications: {message}",
+                "[TableManager] Clearing metadata modifications: %s",
+                message,
                 extra={"dev_only": True},
             )
             self.parent_window.metadata_tree_view.clear_for_folder_change()
         else:
             logger.debug(
-                f"[TableManager] Preserving metadata modifications: {message}",
+                "[TableManager] Preserving metadata modifications: %s",
+                message,
                 extra={"dev_only": True},
             )
             # Just clear the view without losing modifications
@@ -262,4 +264,4 @@ class TableManager:
             if isinstance(cached, dict) and cached:
                 file.metadata = cached
                 restored += 1
-        logger.info(f"[MetadataRestore] Restored metadata from cache for {restored} files.")
+        logger.info("[MetadataRestore] Restored metadata from cache for %d files.", restored)

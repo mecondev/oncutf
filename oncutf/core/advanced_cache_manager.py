@@ -107,7 +107,7 @@ class DiskCache:
                     # Cache expired, remove it
                     os.remove(cache_path)
         except Exception as e:
-            logger.warning(f"[DiskCache] Error reading cache for {key}: {e}")
+            logger.warning("[DiskCache] Error reading cache for %s: %s", key, e)
 
         self.misses += 1
         return None
@@ -120,7 +120,7 @@ class DiskCache:
             with open(cache_path, "wb") as f:
                 pickle.dump(value, f)
         except Exception as e:
-            logger.warning(f"[DiskCache] Error writing cache for {key}: {e}")
+            logger.warning("[DiskCache] Error writing cache for %s: %s", key, e)
 
     def clear(self) -> None:
         """Clear disk cache."""
@@ -131,7 +131,7 @@ class DiskCache:
             self.hits = 0
             self.misses = 0
         except Exception as e:
-            logger.error(f"[DiskCache] Error clearing cache: {e}")
+            logger.error("[DiskCache] Error clearing cache: %s", e)
 
     def get_stats(self) -> dict[str, Any]:
         """Get disk cache statistics."""
@@ -242,7 +242,9 @@ class AdvancedCacheManager:
                 invalidated_count += 1
 
         if invalidated_count > 0:
-            logger.debug(f"[AdvancedCacheManager] Invalidated {invalidated_count} cache entries")
+            logger.debug(
+                "[AdvancedCacheManager] Invalidated %d cache entries", invalidated_count
+            )
 
     def optimize_cache_size(self) -> None:
         """Optimize cache size."""
@@ -258,4 +260,6 @@ class AdvancedCacheManager:
             for key, value in list(old_cache.items())[-new_size:]:
                 self.memory_cache.set(key, value)
 
-            logger.debug(f"[AdvancedCacheManager] Optimized memory cache size to {new_size}")
+            logger.debug(
+                "[AdvancedCacheManager] Optimized memory cache size to %d", new_size
+            )

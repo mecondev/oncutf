@@ -158,7 +158,9 @@ class MetadataCacheMixin:
         file_item.metadata_status = "modified"
 
         logger.debug(
-            f"[MetadataCacheMixin] Updated {key_path} in cache for {file_item.filename}",
+            "[MetadataCacheMixin] Updated %s in cache for %s",
+            key_path,
+            file_item.filename,
             extra={"dev_only": True},
         )
 
@@ -183,7 +185,9 @@ class MetadataCacheMixin:
         cache_helper.set_metadata_value(file_item, key_path, new_value)
 
         logger.debug(
-            f"[MetadataCacheMixin] Set {key_path} in cache for {file_item.filename}",
+            "[MetadataCacheMixin] Set %s in cache for %s",
+            key_path,
+            file_item.filename,
             extra={"dev_only": True},
         )
 
@@ -219,7 +223,9 @@ class MetadataCacheMixin:
             file_item.metadata[group][key] = new_value
 
         logger.debug(
-            f"[MetadataCacheMixin] Set {key_path} in file_item.metadata for {file_item.filename}",
+            "[MetadataCacheMixin] Set %s in file_item.metadata for %s",
+            key_path,
+            file_item.filename,
             extra={"dev_only": True},
         )
 
@@ -287,7 +293,9 @@ class MetadataCacheMixin:
             del cache_entry.data[key_path]
 
         logger.debug(
-            f"[MetadataCacheMixin] Removed {key_path} from cache for {file_item.filename}",
+            "[MetadataCacheMixin] Removed %s from cache for %s",
+            key_path,
+            file_item.filename,
             extra={"dev_only": True},
         )
 
@@ -414,17 +422,19 @@ class MetadataCacheMixin:
                 metadata = self._cache_helper.get_metadata_for_file(file_item)
                 if metadata:
                     logger.debug(
-                        f"[MetadataCacheMixin] Loaded metadata via cache helper for {file_item.filename}",
+                        "[MetadataCacheMixin] Loaded metadata via cache helper for %s",
+                        file_item.filename,
                         extra={"dev_only": True},
                     )
                     return metadata
 
             logger.debug(
-                f"[MetadataCacheMixin] No metadata found for {file_item.filename}",
+                "[MetadataCacheMixin] No metadata found for %s",
+                file_item.filename,
                 extra={"dev_only": True},
             )
             return None
 
         except Exception as e:
-            logger.error(f"[MetadataCacheMixin] Error in fallback metadata loading: {e}")
+            logger.exception("[MetadataCacheMixin] Error in fallback metadata loading: %s", e)
             return None

@@ -93,7 +93,7 @@ class ResultsTableDialog(QDialog):
         self._load_geometry()
         self._populate_data()
 
-        logger.debug(f"[ResultsTableDialog] Created with {len(self.data)} rows")
+        logger.debug("[ResultsTableDialog] Created with %d rows", len(self.data))
 
     def _setup_ui(self):
         """Setup the dialog UI components."""
@@ -263,7 +263,7 @@ class ResultsTableDialog(QDialog):
             try:
                 x, y, width, height = geometry
                 self.setGeometry(x, y, width, height)
-                logger.debug(f"[ResultsTableDialog] Loaded geometry: {geometry}")
+                logger.debug("[ResultsTableDialog] Loaded geometry: %s", geometry)
 
                 # Enforce min/max
                 if getattr(self, "config_key", "").startswith("hash"):
@@ -281,7 +281,7 @@ class ResultsTableDialog(QDialog):
                 self.setMinimumSize(min_w, min_h)
                 self.setMaximumHeight(max_h)
             except Exception as e:
-                logger.warning(f"[ResultsTableDialog] Failed to restore geometry: {e}")
+                logger.warning("[ResultsTableDialog] Failed to restore geometry: %s", e)
                 self._set_default_geometry()
         else:
             self._set_default_geometry()
@@ -292,9 +292,9 @@ class ResultsTableDialog(QDialog):
         if column_widths and len(column_widths) == 2:
             try:
                 self.table.setColumnWidth(0, column_widths[0])
-                logger.debug(f"[ResultsTableDialog] Loaded column widths: {column_widths}")
+                logger.debug("[ResultsTableDialog] Loaded column widths: %s", column_widths)
             except Exception as e:
-                logger.warning(f"[ResultsTableDialog] Failed to restore column widths: {e}")
+                logger.warning("[ResultsTableDialog] Failed to restore column widths: %s", e)
                 self._set_default_column_widths()
         else:
             self._set_default_column_widths()
@@ -335,13 +335,13 @@ class ResultsTableDialog(QDialog):
             y = parent_geo.y() + (parent_geo.height() - height) // 2
             self.move(x, y)
 
-        logger.debug(f"[ResultsTableDialog] Set default geometry: {width}x{height}")
+        logger.debug("[ResultsTableDialog] Set default geometry: %dx%d", width, height)
 
     def _set_default_column_widths(self):
         """Set default column widths from config."""
         left_width = RESULTS_TABLE_LEFT_COLUMN_WIDTH
         self.table.setColumnWidth(0, left_width)
-        logger.debug(f"[ResultsTableDialog] Set default column width: {left_width}")
+        logger.debug("[ResultsTableDialog] Set default column width: %d", left_width)
 
     def _on_column_resized(self, logical_index: int, _old_size: int, new_size: int):
         """Handle column resize and persist to config."""
@@ -360,8 +360,12 @@ class ResultsTableDialog(QDialog):
 
             dialogs_config.set(column_widths_key, [left_width, right_width])
             config_manager.mark_dirty()
-            logger.debug(f"[ResultsTableDialog] Marked column widths dirty: [{left_width}, {right_width}]",
-                extra={"dev_only": True})
+            logger.debug(
+                "[ResultsTableDialog] Marked column widths dirty: [%d, %d]",
+                left_width,
+                right_width,
+                extra={"dev_only": True},
+            )
 
     def _on_table_context_menu(self, pos):
         """Show context menu for copying values - works on entire row."""
@@ -398,8 +402,11 @@ class ResultsTableDialog(QDialog):
         dialogs_config.set(geometry_key, geometry)
         config_manager.save_immediate()
 
-        logger.debug(f"[ResultsTableDialog] Saved geometry immediately: {geometry}",
-            extra={"dev_only": True})
+        logger.debug(
+            "[ResultsTableDialog] Saved geometry immediately: %s",
+            geometry,
+            extra={"dev_only": True},
+        )
 
         super().closeEvent(event)
 

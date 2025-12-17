@@ -37,13 +37,17 @@ class NameTransformModule:
         greeklish = data.get("greeklish", False)
 
         logger.debug(
-            f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep} | greeklish: {greeklish}"
+            "[NameTransformModule] Input: %s | case: %s | sep: %s | greeklish: %s",
+            base_name,
+            case,
+            sep,
+            greeklish,
         )
 
         # Apply Greeklish first (if enabled)
         if greeklish:
             base_name = apply_transform(base_name, "greeklish")
-            logger.debug(f"[NameTransformModule] After Greeklish: {base_name}")
+            logger.debug("[NameTransformModule] After Greeklish: %s", base_name)
 
         # Apply case transformation
         if case in ("lower", "UPPER", "Capitalize", "camelCase", "PascalCase", "Title Case"):
@@ -54,7 +58,7 @@ class NameTransformModule:
             base_name = apply_transform(base_name, sep)
 
         if not base_name.strip():
-            logger.warning(f"[NameTransformModule] Empty output, fallback to original: {original}")
+            logger.warning("[NameTransformModule] Empty output, fallback to original: %s", original)
             return original
 
         return base_name

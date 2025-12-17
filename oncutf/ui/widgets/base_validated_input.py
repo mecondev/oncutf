@@ -161,13 +161,16 @@ class BaseValidatedInput:
                 # Apply temporary error styling
                 self._apply_temporary_error_style()
 
-                logger.debug(f"[BaseValidatedInput] Blocked character: '{event.text()}'")
+                logger.debug(
+                    "[BaseValidatedInput] Blocked character: '%s'",
+                    event.text(),
+                )
                 return False  # Block the character
 
             return True  # Allow the character
 
-        except Exception as e:
-            logger.error(f"[BaseValidatedInput] Error in handle_key_press_validation: {e}")
+        except Exception:
+            logger.exception("[BaseValidatedInput] Error in handle_key_press_validation")
             return True  # Allow on error to prevent blocking valid input
 
     def handle_paste_validation(self, text: str) -> str:
@@ -191,13 +194,14 @@ class BaseValidatedInput:
                 show_error_tooltip(self, error_msg)  # type: ignore
 
                 logger.debug(
-                    f"[BaseValidatedInput] Cleaned paste content. Removed: {removed_chars}"
+                    "[BaseValidatedInput] Cleaned paste content. Removed: %s",
+                    removed_chars,
                 )
 
             return cleaned_text
 
-        except Exception as e:
-            logger.error(f"[BaseValidatedInput] Error in handle_paste_validation: {e}")
+        except Exception:
+            logger.exception("[BaseValidatedInput] Error in handle_paste_validation")
             return text  # Return original text on error
 
     def update_validation_state(self, text: str) -> None:
@@ -223,8 +227,8 @@ class BaseValidatedInput:
             # Update visual styling
             self._update_visual_styling(text)
 
-        except Exception as e:
-            logger.error(f"[BaseValidatedInput] Error in update_validation_state: {e}")
+        except Exception:
+            logger.exception("[BaseValidatedInput] Error in update_validation_state")
 
     def _update_visual_styling(self, text: str) -> None:
         """
@@ -271,8 +275,8 @@ class BaseValidatedInput:
 
             self.setStyleSheet(style)
 
-        except Exception as e:
-            logger.error(f"[BaseValidatedInput] Error in _update_visual_styling: {e}")
+        except Exception:
+            logger.exception("[BaseValidatedInput] Error in _update_visual_styling")
 
     def _apply_temporary_error_style(self) -> None:
         """Apply temporary error styling for blocked characters."""
@@ -295,8 +299,8 @@ class BaseValidatedInput:
 
             schedule_ui_update(revert_style, 500)
 
-        except Exception as e:
-            logger.error(f"[BaseValidatedInput] Error in _apply_temporary_error_style: {e}")
+        except Exception:
+            logger.exception("[BaseValidatedInput] Error in _apply_temporary_error_style")
 
     def is_valid(self) -> bool:
         """

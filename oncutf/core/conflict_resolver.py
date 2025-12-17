@@ -152,7 +152,7 @@ class ConflictResolver:
         # Create backup before overwriting
         if os.path.exists(path):
             backup_path = self._create_backup(path)
-            logger.debug(f"[ConflictResolver] Created backup: {backup_path}")
+            logger.debug("[ConflictResolver] Created backup: %s", backup_path)
 
         return path
 
@@ -167,7 +167,7 @@ class ConflictResolver:
             shutil.copy2(path, backup_path)
             return backup_path
         except Exception as e:
-            logger.error(f"[ConflictResolver] Failed to create backup: {e}")
+            logger.error("[ConflictResolver] Failed to create backup: %s", e)
             return ""
 
     def _execute_operation(
@@ -212,7 +212,7 @@ class ConflictResolver:
             error_msg = str(e)
             operation.error_message = error_msg
 
-            logger.error(f"[ConflictResolver] Operation failed: {error_msg}")
+            logger.error("[ConflictResolver] Operation failed: %s", error_msg)
 
             return ConflictResolution(
                 original_path=old_path,
@@ -248,7 +248,7 @@ class ConflictResolver:
             )
 
         except Exception as e:
-            logger.error(f"[ConflictResolver] Undo failed: {e}")
+            logger.error("[ConflictResolver] Undo failed: %s", e)
             return ConflictResolution(
                 original_path=operation.new_path,
                 resolved_path=operation.old_path,
@@ -270,9 +270,9 @@ class ConflictResolver:
 
             # Log conflict resolution
             if result.success:
-                logger.debug(f"[ConflictResolver] Resolved: {old_path} -> {result.resolved_path}")
+                logger.debug("[ConflictResolver] Resolved: %s -> %s", old_path, result.resolved_path)
             else:
-                logger.error(f"[ConflictResolver] Failed: {old_path} -> {result.error_message}")
+                logger.error("[ConflictResolver] Failed: %s -> %s", old_path, result.error_message)
 
         return results
 

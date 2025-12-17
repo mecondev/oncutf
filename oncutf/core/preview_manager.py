@@ -73,7 +73,9 @@ class PreviewManager:
         elapsed = time.time() - start_time
         if elapsed > 0.1:  # Log slow preview generation
             logger.info(
-                f"[PreviewManager] Preview generation took {elapsed:.3f}s for {len(selected_files)} files"
+                "[PreviewManager] Preview generation took %.3fs for %d files",
+                elapsed,
+                len(selected_files),
             )
 
         return result
@@ -170,7 +172,9 @@ class PreviewManager:
                 # Validate new basename; if invalid, log and fallback to original filename
                 if not self._is_valid_filename_text(new_basename):
                     logger.debug(
-                        f"[PreviewManager] Invalid basename from modules for '{file.filename}': '{new_basename}' - falling back to original",
+                        "[PreviewManager] Invalid basename from modules for '%s': '%s' - falling back to original",
+                        file.filename,
+                        new_basename,
                         extra={"dev_only": True},
                     )
                     name_pairs.append((file.filename, file.filename))
@@ -180,7 +184,7 @@ class PreviewManager:
                 name_pairs.append((file.filename, new_name))
 
             except Exception as e:
-                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
+                logger.warning("Failed to generate preview for %s: %s", file.filename, e)
                 name_pairs.append((file.filename, file.filename))
 
         return name_pairs
@@ -253,7 +257,9 @@ class PreviewManager:
         clamped_width = min(max(pixel_width, 250), 1000)
 
         logger.debug(
-            f"Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)"
+            "Longest filename length: %d chars -> width: %d px (clamped)",
+            max_len,
+            clamped_width,
         )
         return clamped_width
 

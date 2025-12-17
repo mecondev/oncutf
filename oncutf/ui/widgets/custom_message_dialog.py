@@ -286,17 +286,17 @@ class CustomMessageDialog(QDialog):
             The total value for the progress bar range. If provided,
             updates the progress bar range to (0, total).
         """
-        logger.debug(f"[Dialog] set_progress called with value={value}, total={total}")
+        logger.debug("[Dialog] set_progress called with value=%d, total=%s", value, total)
         if not self.progress_bar:
             logger.warning("[Dialog] Progress bar is missing!")
             return
 
         if total is not None:
-            logger.debug(f"[Dialog] Progress bar range set to 0–{total}")
+            logger.debug("[Dialog] Progress bar range set to 0-%d", total)
             self.progress_bar.setRange(0, total)
 
         self.progress_bar.setValue(value)
-        logger.debug(f"[Dialog] Progress bar value set to {value}")
+        logger.debug("[Dialog] Progress bar value set to %d", value)
 
     @staticmethod
     def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
@@ -346,7 +346,7 @@ class CustomMessageDialog(QDialog):
         msg : str
             The new message to display in the dialog.
         """
-        logger.debug(f"Dialog message updated: {msg}")
+        logger.debug("Dialog message updated: %s", msg)
         self.label.setText(msg)
 
     @staticmethod
@@ -366,7 +366,7 @@ class CustomMessageDialog(QDialog):
         CustomMessageDialog
             The waiting dialog.
         """
-        logger.debug(f"Creating waiting dialog: {message}")
+        logger.debug("Creating waiting dialog: %s", message)
 
         dlg = CustomMessageDialog(
             "Please Wait", message, buttons=None, parent=parent, show_progress=True
@@ -387,7 +387,7 @@ class CustomMessageDialog(QDialog):
             self.progress_bar.setValue(0)
 
     def keyPressEvent(self, event):
-        logger.warning(f"[CustomMessageDialog] keyPressEvent: {event.key()}")
+        logger.warning("[CustomMessageDialog] keyPressEvent: %s", event.key())
         if event.key() == Qt.Key_Escape:
             self.set_message("Canceling metadata scan...")
             self.reject()

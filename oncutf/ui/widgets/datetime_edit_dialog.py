@@ -297,8 +297,10 @@ class DateTimeEditDialog(QDialog):
 
         self.result_files = selected
         logger.info(
-            f"[DateTimeEditDialog] User selected {len(selected)} files "
-            f"for {self.date_type} date change to {self.get_new_datetime()}"
+            "[DateTimeEditDialog] User selected %d files for %s date change to %s",
+            len(selected),
+            self.date_type,
+            self.get_new_datetime(),
         )
         super().accept()
 

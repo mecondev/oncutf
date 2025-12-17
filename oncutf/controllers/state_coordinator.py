@@ -22,11 +22,11 @@ if TYPE_CHECKING:
 class StateCoordinator(QObject):
     """
     Central coordinator for state changes.
-    
+
     Emits signals when state changes occur, allowing components to react
     without tight coupling. This is the single source of truth for state
     change notifications.
-    
+
     Signals:
         files_changed: Emitted when file list changes (list[FileItem])
         selection_changed: Emitted when selection changes (set of indices)
@@ -43,7 +43,7 @@ class StateCoordinator(QObject):
     def __init__(self, file_store: FileStore) -> None:
         """
         Initialize StateCoordinator.
-        
+
         Args:
             file_store: The FileStore instance to coordinate
         """
@@ -53,12 +53,12 @@ class StateCoordinator(QObject):
     def notify_files_changed(self, files: list[FileItem]) -> None:
         """
         Notify that the file list has changed.
-        
+
         This will:
         1. Update the FileStore
         2. Emit files_changed signal
         3. Invalidate preview (since file list changed)
-        
+
         Args:
             files: New list of FileItem objects
         """
@@ -72,7 +72,7 @@ class StateCoordinator(QObject):
     def notify_selection_changed(self, selected_indices: set[int]) -> None:
         """
         Notify that the selection has changed.
-        
+
         Args:
             selected_indices: Set of selected row indices
         """
@@ -81,7 +81,7 @@ class StateCoordinator(QObject):
     def notify_preview_invalidated(self) -> None:
         """
         Notify that the preview needs to be refreshed.
-        
+
         This should be called when:
         - Rename settings change
         - File order changes
@@ -92,7 +92,7 @@ class StateCoordinator(QObject):
     def notify_metadata_changed(self, file_path: str) -> None:
         """
         Notify that metadata for a file has changed.
-        
+
         Args:
             file_path: Path of the file whose metadata changed
         """

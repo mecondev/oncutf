@@ -143,15 +143,17 @@ class EditMetadataFieldCommand(MetadataCommand):
                 self.executed = True
                 self.undone = False
                 logger.debug(
-                    f"[EditMetadataFieldCommand] Executed: {self.field_path} = {self.new_value}"
+                    "[EditMetadataFieldCommand] Executed: %s = %s",
+                    self.field_path,
+                    self.new_value,
                 )
                 return True
             else:
-                logger.warning(f"[EditMetadataFieldCommand] Failed to execute: {self.field_path}")
+                logger.warning("[EditMetadataFieldCommand] Failed to execute: %s", self.field_path)
                 return False
 
         except Exception as e:
-            logger.error(f"[EditMetadataFieldCommand] Error executing: {e}")
+            logger.error("[EditMetadataFieldCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -166,15 +168,17 @@ class EditMetadataFieldCommand(MetadataCommand):
             if success:
                 self.undone = True
                 logger.debug(
-                    f"[EditMetadataFieldCommand] Undone: {self.field_path} = {self.old_value}"
+                    "[EditMetadataFieldCommand] Undone: %s = %s",
+                    self.field_path,
+                    self.old_value,
                 )
                 return True
             else:
-                logger.warning(f"[EditMetadataFieldCommand] Failed to undo: {self.field_path}")
+                logger.warning("[EditMetadataFieldCommand] Failed to undo: %s", self.field_path)
                 return False
 
         except Exception as e:
-            logger.error(f"[EditMetadataFieldCommand] Error undoing: {e}")
+            logger.error("[EditMetadataFieldCommand] Error undoing: %s", e)
             return False
 
     def _update_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -202,7 +206,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
             if staging_manager:
                 staging_manager.stage_change(self.file_path, field_path, str(value))
-                logger.info(f"[EditMetadataFieldCommand] Staged change via command: {field_path} = {value}")
+                logger.info("[EditMetadataFieldCommand] Staged change via command: %s = %s", field_path, value)
             else:
                 logger.warning("[EditMetadataFieldCommand] No staging manager available, using fallback")
                 # Fallback to old cache method
@@ -223,7 +227,7 @@ class EditMetadataFieldCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error(f"[EditMetadataFieldCommand] Error updating metadata field: {e}")
+            logger.error("[EditMetadataFieldCommand] Error updating metadata field: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -277,15 +281,17 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 self.executed = True
                 self.undone = False
                 logger.debug(
-                    f"[ResetMetadataFieldCommand] Executed: {self.field_path} reset to {self.original_value}"
+                    "[ResetMetadataFieldCommand] Executed: %s reset to %s",
+                    self.field_path,
+                    self.original_value,
                 )
                 return True
             else:
-                logger.warning(f"[ResetMetadataFieldCommand] Failed to execute: {self.field_path}")
+                logger.warning("[ResetMetadataFieldCommand] Failed to execute: %s", self.field_path)
                 return False
 
         except Exception as e:
-            logger.error(f"[ResetMetadataFieldCommand] Error executing: {e}")
+            logger.error("[ResetMetadataFieldCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -300,15 +306,17 @@ class ResetMetadataFieldCommand(MetadataCommand):
             if success:
                 self.undone = True
                 logger.debug(
-                    f"[ResetMetadataFieldCommand] Undone: {self.field_path} = {self.current_value}"
+                    "[ResetMetadataFieldCommand] Undone: %s = %s",
+                    self.field_path,
+                    self.current_value,
                 )
                 return True
             else:
-                logger.warning(f"[ResetMetadataFieldCommand] Failed to undo: {self.field_path}")
+                logger.warning("[ResetMetadataFieldCommand] Failed to undo: %s", self.field_path)
                 return False
 
         except Exception as e:
-            logger.error(f"[ResetMetadataFieldCommand] Error undoing: {e}")
+            logger.error("[ResetMetadataFieldCommand] Error undoing: %s", e)
             return False
 
     def _reset_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -348,7 +356,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error(f"[ResetMetadataFieldCommand] Error resetting metadata field: {e}")
+            logger.error("[ResetMetadataFieldCommand] Error resetting metadata field: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -388,11 +396,11 @@ class SaveMetadataCommand(MetadataCommand):
             # This is just for tracking purposes
             self.executed = True
             self.undone = False
-            logger.debug(f"[SaveMetadataCommand] Executed: saved {len(self.file_paths)} files")
+            logger.debug("[SaveMetadataCommand] Executed: saved %d files", len(self.file_paths))
             return True
 
         except Exception as e:
-            logger.error(f"[SaveMetadataCommand] Error executing: {e}")
+            logger.error("[SaveMetadataCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -412,7 +420,7 @@ class SaveMetadataCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error(f"[SaveMetadataCommand] Error undoing: {e}")
+            logger.error("[SaveMetadataCommand] Error undoing: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -459,14 +467,17 @@ class BatchMetadataCommand(MetadataCommand):
                     success_count += 1
                 else:
                     logger.warning(
-                        f"[BatchMetadataCommand] Failed to execute: {command.get_description()}"
+                        "[BatchMetadataCommand] Failed to execute: %s",
+                        command.get_description(),
                     )
 
             if success_count > 0:
                 self.executed = True
                 self.undone = False
                 logger.debug(
-                    f"[BatchMetadataCommand] Executed: {success_count}/{len(self.commands)} commands"
+                    "[BatchMetadataCommand] Executed: %d/%d commands",
+                    success_count,
+                    len(self.commands),
                 )
                 return True
             else:
@@ -474,7 +485,7 @@ class BatchMetadataCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error(f"[BatchMetadataCommand] Error executing batch: {e}")
+            logger.error("[BatchMetadataCommand] Error executing batch: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -490,13 +501,16 @@ class BatchMetadataCommand(MetadataCommand):
                     success_count += 1
                 else:
                     logger.warning(
-                        f"[BatchMetadataCommand] Failed to undo: {command.get_description()}"
+                        "[BatchMetadataCommand] Failed to undo: %s",
+                        command.get_description(),
                     )
 
             if success_count > 0:
                 self.undone = True
                 logger.debug(
-                    f"[BatchMetadataCommand] Undone: {success_count}/{len(self.commands)} commands"
+                    "[BatchMetadataCommand] Undone: %d/%d commands",
+                    success_count,
+                    len(self.commands),
                 )
                 return True
             else:
@@ -504,7 +518,7 @@ class BatchMetadataCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error(f"[BatchMetadataCommand] Error undoing batch: {e}")
+            logger.error("[BatchMetadataCommand] Error undoing batch: %s", e)
             return False
 
     def get_description(self) -> str:

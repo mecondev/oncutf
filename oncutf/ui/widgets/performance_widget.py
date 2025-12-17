@@ -155,7 +155,7 @@ class PerformanceWidget(QWidget):
                 self.operations_layout.addWidget(label)
 
         except Exception as e:
-            logger.error(f"[PerformanceWidget] Error updating display: {e}")
+            logger.error("[PerformanceWidget] Error updating display: %s", e)
 
     def clear_metrics(self):
         """Clear performance metrics."""
@@ -169,7 +169,7 @@ class PerformanceWidget(QWidget):
                     main_window.unified_rename_engine.clear_performance_metrics()
                     self.update_display()
         except Exception as e:
-            logger.error(f"[PerformanceWidget] Error clearing metrics: {e}")
+            logger.error("[PerformanceWidget] Error clearing metrics: %s", e)
 
     def showEvent(self, event):
         """Show event - start timer."""
