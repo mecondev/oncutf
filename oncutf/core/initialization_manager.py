@@ -89,13 +89,28 @@ class InitializationManager:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
     def _on_files_changed(self, files: list) -> None:
-        """Handle files changed from ApplicationContext."""
+        """Handle files changed from ApplicationContext.
+        
+        This is called when FileStore updates its internal state (e.g., after USB unmount).
+        We only update the UI here - FileStore has already been updated.
+        """
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files",
             len(files)
         )
-        # Update the table to reflect the new file list
-        self.main_window.prepare_file_table(files)
+        
+        # Update only the table view and UI elements, NOT the FileStore
+        # (FileStore already updated - that's why we got this signal)
+        self.main_window.file_table_view.prepare_table(files)
+        
+        # Update placeholder visibility
+        if files:
+            self.main_window.file_table_view.set_placeholder_visible(False)
+        else:
+            self.main_window.file_table_view.set_placeholder_visible(True)
+        
+        # Update UI labels
+        self.main_window.update_files_label()
 
     def update_status_from_preview(self, status_html: str) -> None:
         """

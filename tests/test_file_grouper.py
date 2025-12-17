@@ -7,8 +7,6 @@ Date: 2025-12-17
 Tests for file_grouper utility functions.
 """
 
-import os
-from pathlib import Path
 
 import pytest
 
