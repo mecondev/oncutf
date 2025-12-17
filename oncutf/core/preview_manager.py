@@ -159,7 +159,9 @@ class PreviewManager:
         for idx, file in enumerate(selected_files):
             try:
                 basename, extension = os.path.splitext(file.filename)
-                new_fullname = apply_rename_modules(modules_data, idx, file, metadata_cache)
+                new_fullname = apply_rename_modules(
+                    modules_data, idx, file, metadata_cache, all_files=selected_files
+                )
 
                 if extension and new_fullname.lower().endswith(extension.lower()):
                     new_basename = new_fullname[: -(len(extension))]

@@ -533,6 +533,7 @@ class UnifiedPreviewManager:
                     metadata_cache,
                     hash_availability,
                     metadata_availability,
+                    all_files=files,  # Pass full file list for scope-aware counters
                 )
 
                 # Strip extension from generated fullname
@@ -570,12 +571,22 @@ class UnifiedPreviewManager:
         metadata_cache: Any,
         hash_availability: dict[str, bool],
         metadata_availability: dict[str, bool],
+        all_files: list[FileItem] | None = None,
     ) -> str:
         """Apply rename modules for a single file, checking required data.
 
         Modules that depend on hash or metadata availability will be
         short-circuited and a sentinel string (e.g. "missing_hash") will be
         returned when preconditions are not met.
+
+        Args:
+            file: File being renamed
+            modules_data: List of module configurations
+            index: Global index in file list
+            metadata_cache: Metadata cache
+            hash_availability: Dict of hash availability per file
+            metadata_availability: Dict of metadata availability per file
+            all_files: Full file list (for scope-aware counters)
         """
 
         from oncutf.utils.preview_engine import apply_rename_modules
@@ -593,8 +604,8 @@ class UnifiedPreviewManager:
                     if not metadata_availability.get(file.full_path, False):
                         return "missing_metadata"
 
-        # Apply modules normally
-        return apply_rename_modules(modules_data, index, file, metadata_cache)
+        # Apply modules normally with full file list for scope-aware counters
+        return apply_rename_modules(modules_data, index, file, metadata_cache, all_files=all_files)
 
     def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
         """Strip extension from fullname if present.

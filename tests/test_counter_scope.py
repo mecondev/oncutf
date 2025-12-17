@@ -17,25 +17,29 @@ class TestCounterScope:
         """Test that all scope values are defined correctly."""
         assert CounterScope.GLOBAL.value == "global"
         assert CounterScope.PER_FOLDER.value == "per_folder"
-        assert CounterScope.PER_SELECTION.value == "per_selection"
+        assert CounterScope.PER_EXTENSION.value == "per_extension"
+        assert CounterScope.PER_FILEGROUP.value == "per_filegroup"
 
     def test_scope_str(self):
         """Test string representation of CounterScope."""
         assert str(CounterScope.GLOBAL) == "global"
         assert str(CounterScope.PER_FOLDER) == "per_folder"
-        assert str(CounterScope.PER_SELECTION) == "per_selection"
+        assert str(CounterScope.PER_EXTENSION) == "per_extension"
+        assert str(CounterScope.PER_FILEGROUP) == "per_filegroup"
 
     def test_scope_display_name(self):
         """Test display names for UI."""
         assert CounterScope.GLOBAL.display_name == "Global (all files)"
         assert CounterScope.PER_FOLDER.display_name == "Per Folder"
-        assert CounterScope.PER_SELECTION.display_name == "Per Selection"
+        assert CounterScope.PER_EXTENSION.display_name == "Per Extension"
+        assert CounterScope.PER_FILEGROUP.display_name == "Per File Group"
 
     def test_scope_description(self):
         """Test descriptions."""
         assert "Single counter" in CounterScope.GLOBAL.description
         assert "Reset counter at folder" in CounterScope.PER_FOLDER.description
-        assert "Reset counter for each selection" in CounterScope.PER_SELECTION.description
+        assert "Reset counter for each extension" in CounterScope.PER_EXTENSION.description
+        assert "Reset counter for each file group" in CounterScope.PER_FILEGROUP.description
 
 
 class TestCounterModuleScope:
@@ -62,11 +66,11 @@ class TestCounterModuleScope:
 
         assert data["scope"] == CounterScope.GLOBAL.value
 
-        # Change to PER_SELECTION scope
-        counter.scope_combo.setCurrentIndex(2)  # PER_SELECTION is index 2
+        # Change to PER_EXTENSION scope
+        counter.scope_combo.setCurrentIndex(2)  # PER_EXTENSION is index 2
         data = counter.get_data()
 
-        assert data["scope"] == CounterScope.PER_SELECTION.value
+        assert data["scope"] == CounterScope.PER_EXTENSION.value
 
     def test_counter_apply_with_scope_global(self):
         """Test counter with GLOBAL scope (legacy behavior)."""

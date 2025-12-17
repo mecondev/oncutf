@@ -19,6 +19,7 @@ to generate preview names and resolve rename plans for batch processing.
 import os
 import time
 
+from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.counter_module import CounterModule
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.modules.original_name_module import OriginalNameModule
@@ -44,9 +45,115 @@ _cache_timestamp = 0
 _cache_validity_duration = 0.05  # 50ms cache validity
 
 
-def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
+def calculate_scope_aware_index(
+    scope: str,
+    global_index: int,
+    file_item,
+    all_files: list | None = None
+) -> int:
+    """
+    Calculate the appropriate counter index based on scope.
+
+    Args:
+        scope: Counter scope ('global', 'per_folder', 'per_extension', 'per_filegroup')
+        global_index: The global index in the full file list
+        file_item: Current file being processed
+        all_files: Full list of files (needed for per_folder/per_extension calculation)
+
+    Returns:
+        The scope-adjusted index to use for counter calculation
+
+    Note:
+        For GLOBAL scope: returns global_index unchanged
+        For PER_FOLDER: returns index within current folder group
+        For PER_EXTENSION: returns index within current extension group
+        For PER_FILEGROUP: returns index within file group (future feature)
+    """
+    # Default to global scope if not recognized
+    try:
+        scope_enum = CounterScope(scope)
+    except ValueError:
+        logger.warning("[PreviewEngine] Unknown counter scope: %s, using GLOBAL", scope)
+        return global_index
+
+    # GLOBAL: use index as-is
+    if scope_enum == CounterScope.GLOBAL:
+        return global_index
+
+    # PER_FOLDER: calculate index within folder
+    if scope_enum == CounterScope.PER_FOLDER:
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_FOLDER scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Count files in same folder before this one
+        current_folder = os.path.dirname(file_item.full_path)
+        folder_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.dirname(f.full_path) == current_folder:
+                folder_index += 1
+
+        logger.debug(
+            "[PreviewEngine] PER_FOLDER scope: folder=%s, folder_index=%d",
+            current_folder,
+            folder_index,
+            extra={"dev_only": True}
+        )
+        return folder_index
+
+    # PER_EXTENSION: calculate index within extension group
+    if scope_enum == CounterScope.PER_EXTENSION:
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_EXTENSION scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Count files with same extension before this one
+        current_ext = os.path.splitext(file_item.filename)[1].lower()
+        ext_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.splitext(f.filename)[1].lower() == current_ext:
+                ext_index += 1
+
+        logger.debug(
+            "[PreviewEngine] PER_EXTENSION scope: ext=%s, ext_index=%d",
+            current_ext,
+            ext_index,
+            extra={"dev_only": True}
+        )
+        return ext_index
+
+    # PER_FILEGROUP: future feature, use global for now
+    if scope_enum == CounterScope.PER_FILEGROUP:
+        logger.debug(
+            "[PreviewEngine] PER_FILEGROUP scope not yet implemented, using global index",
+            extra={"dev_only": True}
+        )
+        return global_index
+
+    # Fallback
+    return global_index
+
+
+def apply_rename_modules(modules_data, index, file_item, metadata_cache=None, all_files=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
+
+    Args:
+        modules_data: List of module configurations
+        index: Global index of file in the list
+        file_item: FileItem being renamed
+        metadata_cache: Optional metadata cache
+        all_files: Optional full list of files (required for scope-aware counters)
     """
     logger.debug(
         "[DEBUG] [PreviewEngine] apply_rename_modules CALLED for %s",
@@ -91,14 +198,18 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
         part = ""
 
         if module_type == "counter":
-            start = data.get("start", 1)
-            step = data.get("step", 1)
-            padding = data.get("padding", 1)
-            value = start + (index * step)
-            part = str(value).zfill(padding)
+            # Calculate scope-aware index for counter
+            scope = data.get("scope", CounterScope.PER_FOLDER.value)
+            counter_index = calculate_scope_aware_index(scope, index, file_item, all_files)
+
+            # Use CounterModule.apply_from_data() for proper counter logic including scope
+            part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
             logger.debug(
-                "[DEBUG] [PreviewEngine] Counter result: %s",
+                "[DEBUG] [PreviewEngine] Counter result: %s (scope=%s, global_index=%d, scope_index=%d)",
                 part,
+                scope,
+                index,
+                counter_index,
                 extra={"dev_only": True},
             )
 

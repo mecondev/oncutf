@@ -189,7 +189,8 @@ class CounterModule(BaseRenameModule):
             "Control when the counter resets:\n"
             "• Global: Single counter across all files\n"
             "• Per Folder: Reset at folder boundaries\n"
-            "• Per Selection: Reset for each selection",
+            "• Per Extension: Reset for each file type\n"
+            "• Per File Group: Reset for each group (future)",
             TooltipType.INFO
         )
 
