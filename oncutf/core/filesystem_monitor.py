@@ -254,8 +254,12 @@ class FilesystemMonitor(QObject):
                     # and automatically update the UI through the normal reload flow
                     if self.file_store.refresh_loaded_folders():
                         logger.info("[FilesystemMonitor] FileStore refreshed after drive unmount")
+                    else:
+                        logger.info("[FilesystemMonitor] FileStore refresh returned False (no files loaded)")
                 except Exception as e:
                     logger.exception("[FilesystemMonitor] Error refreshing FileStore after unmount: %s", e)
+            else:
+                logger.warning("[FilesystemMonitor] FileStore not available - cannot auto-refresh on unmount")
 
         # Update state
         if added or removed:

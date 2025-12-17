@@ -117,14 +117,42 @@ class FileTreeView(QTreeView):
 
             # Get FileStore from parent window if available
             file_store = None
+
+            # Try multiple paths to find FileStore
             if hasattr(self, "parent") and self.parent():
                 parent = self.parent()
+
+                # Try 1: parent.context.file_store (MainWindow with context)
                 if hasattr(parent, "context") and hasattr(parent.context, "file_store"):
                     file_store = parent.context.file_store
                     logger.debug(
-                        "[FileTreeView] Found FileStore from parent window context",
+                        "[FileTreeView] Found FileStore from parent.context",
                         extra={"dev_only": True}
                     )
+                # Try 2: parent._file_store (direct attribute)
+                elif hasattr(parent, "_file_store"):
+                    file_store = parent._file_store
+                    logger.debug(
+                        "[FileTreeView] Found FileStore from parent._file_store",
+                        extra={"dev_only": True}
+                    )
+                # Try 3: Walk up parent chain looking for MainWindow
+                else:
+                    current = parent
+                    while current is not None:
+                        if hasattr(current, "context") and hasattr(current.context, "file_store"):
+                            file_store = current.context.file_store
+                            logger.debug(
+                                "[FileTreeView] Found FileStore from ancestor context",
+                                extra={"dev_only": True}
+                            )
+                            break
+                        current = current.parent() if hasattr(current, "parent") else None
+
+            if file_store is None:
+                logger.warning(
+                    "[FileTreeView] FileStore not found - auto-refresh on USB unmount won't work"
+                )
 
             self._filesystem_monitor = FilesystemMonitor(file_store=file_store)
 
