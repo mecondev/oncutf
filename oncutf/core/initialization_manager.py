@@ -95,37 +95,41 @@ class InitializationManager:
         We update the UI here - FileStore has already been updated.
         Also clears stale selections and preview data.
         """
+        from oncutf.utils.cursor_helper import wait_cursor
+        
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files",
             len(files)
         )
         
-        # 1. Clear stale selections (files may no longer exist)
-        try:
-            from oncutf.core.application_context import get_app_context
-            context = get_app_context()
-            if context and context.selection_store:
-                context.selection_store.clear_selection(emit_signal=False)
-        except Exception:
-            pass
-        
-        # 2. Clear preview cache and tables (stale data)
-        if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
-            self.main_window.preview_manager.clear_all_caches()
-        if hasattr(self.main_window, "update_preview_tables_from_pairs"):
-            self.main_window.update_preview_tables_from_pairs([])
-        
-        # 3. Update table view (FileStore already updated)
-        self.main_window.file_table_view.prepare_table(files)
-        
-        # 4. Update placeholder visibility
-        if files:
-            self.main_window.file_table_view.set_placeholder_visible(False)
-        else:
-            self.main_window.file_table_view.set_placeholder_visible(True)
-        
-        # 5. Update UI labels
-        self.main_window.update_files_label()
+        # Show wait cursor during UI update (runs in main thread - visible to user)
+        with wait_cursor():
+            # 1. Clear stale selections (files may no longer exist)
+            try:
+                from oncutf.core.application_context import get_app_context
+                context = get_app_context()
+                if context and context.selection_store:
+                    context.selection_store.clear_selection(emit_signal=False)
+            except Exception:
+                pass
+            
+            # 2. Clear preview cache and tables (stale data)
+            if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
+                self.main_window.preview_manager.clear_all_caches()
+            if hasattr(self.main_window, "update_preview_tables_from_pairs"):
+                self.main_window.update_preview_tables_from_pairs([])
+            
+            # 3. Update table view (FileStore already updated)
+            self.main_window.file_table_view.prepare_table(files)
+            
+            # 4. Update placeholder visibility
+            if files:
+                self.main_window.file_table_view.set_placeholder_visible(False)
+            else:
+                self.main_window.file_table_view.set_placeholder_visible(True)
+            
+            # 5. Update UI labels
+            self.main_window.update_files_label()
 
     def update_status_from_preview(self, status_html: str) -> None:
         """
