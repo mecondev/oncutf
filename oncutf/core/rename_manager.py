@@ -78,7 +78,7 @@ class RenameManager:
                     current_folder_path=self.main_window.current_folder_path,
                 )
             except Exception as e:
-                logger.error(f"[RenameManager] Critical error during rename: {e}")
+                logger.error("[RenameManager] Critical error during rename: %s", e)
                 return
 
             # Record rename operation in history for undo functionality
@@ -105,11 +105,12 @@ class RenameManager:
                         )
                         if operation_id:
                             logger.info(
-                                f"[RenameManager] Recorded rename operation {operation_id[:8]}... for undo"
+                                "[RenameManager] Recorded rename operation %s... for undo",
+                                operation_id[:8],
                             )
 
                 except Exception as e:
-                    logger.warning(f"[RenameManager] Failed to record rename history: {e}")
+                    logger.warning("[RenameManager] Failed to record rename history: %s", e)
 
             if renamed_count == 0:
                 return
@@ -134,8 +135,9 @@ class RenameManager:
                         logger.info("[RenameManager] Starting safe post-rename workflow")
                         self._execute_post_rename_workflow_safe(checked_paths)
                     except Exception as e:
-                        logger.error(
-                            f"[RenameManager] Error in post-rename workflow: {e}", exc_info=True
+                        logger.exception(
+                            "[RenameManager] Error in post-rename workflow: %s",
+                            e,
                         )
                         # Fallback: just show a simple status message
                         if hasattr(self.main_window, "set_status"):
@@ -153,7 +155,8 @@ class RenameManager:
                 )
 
                 logger.info(
-                    f"[RenameManager] Scheduled post-rename workflow for {renamed_count} files"
+                    "[RenameManager] Scheduled post-rename workflow for %d files",
+                    renamed_count,
                 )
             else:
                 logger.info("[RenameManager] No files renamed, skipping post-rename workflow")
@@ -215,7 +218,8 @@ class RenameManager:
                     self._update_info_icons_safe()
 
                     logger.info(
-                        f"[RenameManager] Post-rename workflow completed: {restored_count} files restored"
+                        "[RenameManager] Post-rename workflow completed: %d files restored",
+                        restored_count,
                     )
 
                     # Execute pending completion dialog if available
@@ -225,7 +229,8 @@ class RenameManager:
                     if hasattr(self.main_window, "pending_completion_dialog"):
                         completion_dialog = self.main_window.pending_completion_dialog
                         logger.debug(
-                            f"[RenameManager] restore_state: pending_completion_dialog exists: {completion_dialog is not None}"
+                            "[RenameManager] restore_state: pending_completion_dialog exists: %s",
+                            completion_dialog is not None,
                         )
                         if completion_dialog:
                             logger.debug("[RenameManager] Executing pending completion dialog")
@@ -252,7 +257,10 @@ class RenameManager:
                         logger.debug("[RenameManager] No pending_completion_dialog attribute found")
 
                 except Exception as e:
-                    logger.error(f"[RenameManager] Error in state restoration: {e}", exc_info=True)
+                    logger.exception(
+                        "[RenameManager] Error in state restoration: %s",
+                        e,
+                    )
 
             # Schedule state restoration with a small delay
             logger.debug("[RenameManager] Scheduling restore_state function")
@@ -267,8 +275,9 @@ class RenameManager:
             )
 
         except Exception as e:
-            logger.error(
-                f"[RenameManager] Critical error in post-rename workflow: {e}", exc_info=True
+            logger.exception(
+                "[RenameManager] Critical error in post-rename workflow: %s",
+                e,
             )
 
     def _execute_post_rename_workflow(self, checked_paths: set[str]) -> None:
@@ -299,7 +308,9 @@ class RenameManager:
         self._update_info_icons()
 
         logger.debug(
-            f"[Rename] Restored {restored_count} checked out of {len(self.main_window.file_model.files)} files"
+            "[Rename] Restored %d checked out of %d files",
+            restored_count,
+            len(self.main_window.file_model.files),
         )
 
     def _restore_checked_state_safe(self, checked_paths: set[str]) -> int:
@@ -324,11 +335,15 @@ class RenameManager:
                         file.checked = True
                         restored_count += 1
                 except Exception as e:
-                    logger.debug(f"[RenameManager] Could not restore checked state for {path}: {e}")
+                    logger.debug(
+                        "[RenameManager] Could not restore checked state for %s: %s",
+                        path,
+                        e,
+                    )
                     continue
 
         except Exception as e:
-            logger.error(f"[RenameManager] Error in _restore_checked_state_safe: {e}")
+            logger.error("[RenameManager] Error in _restore_checked_state_safe: %s", e)
 
         return restored_count
 
@@ -376,14 +391,18 @@ class RenameManager:
                             rect = file_table_view.visualRect(index)
                             file_table_view.viewport().update(rect)
                 except Exception as e:
-                    logger.debug(f"[RenameManager] Could not update icon for row {row}: {e}")
+                    logger.debug(
+                        "[RenameManager] Could not update icon for row %d: %s",
+                        row,
+                        e,
+                    )
                     continue
 
             # Update entire viewport
             file_table_view.viewport().update()
 
         except Exception as e:
-            logger.error(f"[RenameManager] Error in _update_info_icons_safe: {e}")
+            logger.error("[RenameManager] Error in _update_info_icons_safe: %s", e)
 
     def _update_info_icons(self) -> None:
         """Force update info icons in column 0 after rename."""

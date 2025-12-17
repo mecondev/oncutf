@@ -85,7 +85,10 @@ class UIManager:
         screen_aspect = screen_width / screen_height
 
         logger.debug(
-            f"Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}",
+            "Screen resolution: %dx%d, aspect: %.2f",
+            screen_width,
+            screen_height,
+            screen_aspect,
             extra={"dev_only": True},
         )
 
@@ -120,7 +123,9 @@ class UIManager:
         optimal_size = QSize(target_width, target_height)
 
         logger.debug(
-            f"Calculated optimal window size: {target_width}x{target_height}",
+            "Calculated optimal window size: %dx%d",
+            target_width,
+            target_height,
             extra={"dev_only": True},
         )
         return optimal_size
@@ -192,7 +197,9 @@ class UIManager:
         optimal_sizes = [left_width, center_width, right_width]
 
         logger.debug(
-            f"Legacy calculated splitter sizes for {window_width}px: {optimal_sizes}",
+            "Legacy calculated splitter sizes for %dpx: %s",
+            window_width,
+            optimal_sizes,
             extra={"dev_only": True},
         )
         return optimal_sizes

@@ -80,13 +80,16 @@ class FileTableModel(QAbstractTableModel):
         service = get_column_service()
         mapping = service.get_column_mapping()
         logger.debug(
-            f"[ColumnMapping] Created mapping from service: {mapping}", extra={"dev_only": True}
+            "[ColumnMapping] Created mapping from service: %s",
+            mapping,
+            extra={"dev_only": True},
         )
         return mapping
 
     def update_visible_columns(self, visible_columns: list) -> None:
         logger.debug(
-            f"[FileTableModel] update_visible_columns called with: {visible_columns}",
+            "[FileTableModel] update_visible_columns called with: %s",
+            visible_columns,
             extra={"dev_only": True},
         )
 
@@ -102,7 +105,9 @@ class FileTableModel(QAbstractTableModel):
             new_column_count = len(visible_columns) + 1
 
             logger.debug(
-                f"[FileTableModel] Column count changing from {old_column_count} to {new_column_count}"
+                "[FileTableModel] Column count changing from %d to %d",
+                old_column_count,
+                new_column_count,
             )
 
             # Debug state before changes
@@ -117,10 +122,14 @@ class FileTableModel(QAbstractTableModel):
             removed_columns = old_columns - new_columns
 
             logger.debug(
-                f"[FileTableModel] Added columns: {added_columns}", extra={"dev_only": True}
+                "[FileTableModel] Added columns: %s",
+                added_columns,
+                extra={"dev_only": True},
             )
             logger.debug(
-                f"[FileTableModel] Removed columns: {removed_columns}", extra={"dev_only": True}
+                "[FileTableModel] Removed columns: %s",
+                removed_columns,
+                extra={"dev_only": True},
             )
 
             # Since we always add/remove one column at a time, use the optimized methods
@@ -143,12 +152,15 @@ class FileTableModel(QAbstractTableModel):
                 else:
                     # Should not happen in normal use, but handle gracefully
                     logger.warning(
-                        f"[FileTableModel] Unexpected column change pattern: +{len(added_columns)}, -{len(removed_columns)}"
+                        "[FileTableModel] Unexpected column change pattern: +%d, -%d",
+                        len(added_columns),
+                        len(removed_columns),
                     )
                     self._handle_reset_model(visible_columns)
-            except Exception as e:
+            except Exception:
                 logger.warning(
-                    f"[FileTableModel] Column operation failed: {e}, falling back to reset"
+                    "[FileTableModel] Column operation failed, falling back to reset",
+                    exc_info=True,
                 )
                 self._handle_reset_model(visible_columns)
 
@@ -186,7 +198,8 @@ class FileTableModel(QAbstractTableModel):
         # Store current files to preserve them
         current_files = self.files.copy() if self.files else []
         logger.debug(
-            f"[FileTableModel] Storing {len(current_files)} files before reset",
+            "[FileTableModel] Storing %d files before reset",
+            len(current_files),
             extra={"dev_only": True},
         )
 
@@ -199,7 +212,8 @@ class FileTableModel(QAbstractTableModel):
         # Always restore files after reset (they should be preserved)
         self.files = current_files
         logger.debug(
-            f"[FileTableModel] Restored {len(self.files)} files after reset",
+            "[FileTableModel] Restored %d files after reset",
+            len(self.files),
             extra={"dev_only": True},
         )
 
@@ -207,7 +221,7 @@ class FileTableModel(QAbstractTableModel):
 
     def _handle_single_column_addition(self, new_visible_columns: list, added_column: str) -> None:
         """Handle adding a single column efficiently."""
-        logger.debug(f"[FileTableModel] Adding single column: {added_column}")
+        logger.debug("[FileTableModel] Adding single column: %s", added_column)
 
         try:
             # Find where this column should be inserted
@@ -216,7 +230,9 @@ class FileTableModel(QAbstractTableModel):
             insert_position = new_index + 1
 
             logger.debug(
-                f"[FileTableModel] Inserting column '{added_column}' at position {insert_position}",
+                "[FileTableModel] Inserting column '%s' at position %d",
+                added_column,
+                insert_position,
                 extra={"dev_only": True},
             )
 
@@ -228,7 +244,8 @@ class FileTableModel(QAbstractTableModel):
             self._column_mapping = self._create_column_mapping()
 
             logger.debug(
-                f"[FileTableModel] Updated column mapping: {self._column_mapping}",
+                "[FileTableModel] Updated column mapping: %s",
+                self._column_mapping,
                 extra={"dev_only": True},
             )
 
@@ -239,15 +256,13 @@ class FileTableModel(QAbstractTableModel):
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error(
-                f"[FileTableModel] Error in _handle_single_column_addition: {e}", exc_info=True
-            )
+        except Exception:
+            logger.exception("[FileTableModel] Error in _handle_single_column_addition")
             raise  # Re-raise to trigger fallback
 
     def _handle_single_column_removal(self, new_visible_columns: list, removed_column: str) -> None:
         """Handle removing a single column efficiently."""
-        logger.debug(f"[FileTableModel] Removing single column: {removed_column}")
+        logger.debug("[FileTableModel] Removing single column: %s", removed_column)
 
         try:
             # Find where this column currently is
@@ -257,7 +272,9 @@ class FileTableModel(QAbstractTableModel):
                 remove_position = old_index + 1
 
                 logger.debug(
-                    f"[FileTableModel] Removing column '{removed_column}' from position {remove_position}",
+                    "[FileTableModel] Removing column '%s' from position %d",
+                    removed_column,
+                    remove_position,
                     extra={"dev_only": True},
                 )
 
@@ -269,7 +286,8 @@ class FileTableModel(QAbstractTableModel):
                 self._column_mapping = self._create_column_mapping()
 
                 logger.debug(
-                    f"[FileTableModel] Updated column mapping: {self._column_mapping}",
+                    "[FileTableModel] Updated column mapping: %s",
+                    self._column_mapping,
                     extra={"dev_only": True},
                 )
 
@@ -281,14 +299,13 @@ class FileTableModel(QAbstractTableModel):
                 )
             else:
                 logger.warning(
-                    f"[FileTableModel] Column '{removed_column}' not found in current visible columns"
+                    "[FileTableModel] Column '%s' not found in current visible columns",
+                    removed_column,
                 )
                 raise ValueError(f"Column '{removed_column}' not found in current visible columns")
 
-        except Exception as e:
-            logger.error(
-                f"[FileTableModel] Error in _handle_single_column_removal: {e}", exc_info=True
-            )
+        except Exception:
+            logger.exception("[FileTableModel] Error in _handle_single_column_removal")
             raise  # Re-raise to trigger fallback
 
 
@@ -300,14 +317,30 @@ class FileTableModel(QAbstractTableModel):
         """Debug method to print current column state."""
         logger.debug("[ColumnDebug] === FileTableModel Column State ===", extra={"dev_only": True})
         logger.debug(
-            f"[ColumnDebug] Visible columns: {self._visible_columns}", extra={"dev_only": True}
+            "[ColumnDebug] Visible columns: %s",
+            self._visible_columns,
+            extra={"dev_only": True},
         )
         logger.debug(
-            f"[ColumnDebug] Column mapping: {self._column_mapping}", extra={"dev_only": True}
+            "[ColumnDebug] Column mapping: %s",
+            self._column_mapping,
+            extra={"dev_only": True},
         )
-        logger.debug(f"[ColumnDebug] Column count: {self.columnCount()}", extra={"dev_only": True})
-        logger.debug(f"[ColumnDebug] Row count: {self.rowCount()}", extra={"dev_only": True})
-        logger.debug(f"[ColumnDebug] Files loaded: {len(self.files)}", extra={"dev_only": True})
+        logger.debug(
+            "[ColumnDebug] Column count: %d",
+            self.columnCount(),
+            extra={"dev_only": True},
+        )
+        logger.debug(
+            "[ColumnDebug] Row count: %d",
+            self.rowCount(),
+            extra={"dev_only": True},
+        )
+        logger.debug(
+            "[ColumnDebug] Files loaded: %d",
+            len(self.files),
+            extra={"dev_only": True},
+        )
         logger.debug(
             "[ColumnDebug] =========================================", extra={"dev_only": True}
         )
@@ -452,9 +485,11 @@ class FileTableModel(QAbstractTableModel):
 
                             value = MetadataFieldMapper.get_metadata_value(entry.data, column_key)
                             return value
-                    except Exception as e:
+                    except Exception:
                         logger.debug(
-                            f"Error accessing metadata cache for {column_key}: {e}",
+                            "Error accessing metadata cache for %s",
+                            column_key,
+                            exc_info=True,
                             extra={"dev_only": True},
                         )
 
@@ -467,9 +502,11 @@ class FileTableModel(QAbstractTableModel):
                         value = MetadataFieldMapper.get_metadata_value(file.metadata, column_key)
                         if value:
                             return value
-                    except Exception as e:
+                    except Exception:
                         logger.debug(
-                            f"Error accessing file metadata for {column_key}: {e}",
+                            "Error accessing file metadata for %s",
+                            column_key,
+                            exc_info=True,
                             extra={"dev_only": True},
                         )
 
@@ -611,14 +648,21 @@ class FileTableModel(QAbstractTableModel):
 
                 title = FILE_TABLE_COLUMN_CONFIG.get(col_key, {}).get("title", col_key)
                 logger.debug(
-                    f"[HeaderData] Section {section} -> column '{col_key}' -> title '{title}'",
+                    "[HeaderData] Section %d -> column '%s' -> title '%s'",
+                    section,
+                    col_key,
+                    title,
                     extra={"dev_only": True},
                 )
                 return title
             else:
-                logger.warning(f"[HeaderData] No column mapping found for section {section}")
+                logger.warning(
+                    "[HeaderData] No column mapping found for section %d",
+                    section,
+                )
                 logger.debug(
-                    f"[HeaderData] Available mappings: {self._column_mapping}",
+                    "[HeaderData] Available mappings: %s",
+                    self._column_mapping,
                     extra={"dev_only": True},
                 )
                 return ""
@@ -737,7 +781,9 @@ class FileTableModel(QAbstractTableModel):
             self.parent_window.current_sort_column = column
             self.parent_window.current_sort_order = order
             logger.debug(
-                f"[Model] Stored sort state: column={column}, order={order}",
+                "[Model] Stored sort state: column=%d, order=%s",
+                column,
+                order,
                 extra={"dev_only": True},
             )
 
@@ -750,7 +796,11 @@ class FileTableModel(QAbstractTableModel):
                 bottom_right = self.index(row, self.columnCount() - 1)
                 selection_range = QItemSelectionRange(top_left, bottom_right)
                 selection.append(selection_range)
-                logger.debug(f"[Model] dataChanged.emit() for row {row}", extra={"dev_only": True})
+                logger.debug(
+                    "[Model] dataChanged.emit() for row %d",
+                    row,
+                    extra={"dev_only": True},
+                )
 
         selection_model.select(selection, QItemSelectionModel.Select)
 
@@ -773,7 +823,11 @@ class FileTableModel(QAbstractTableModel):
 
     def set_files(self, files: list[FileItem]) -> None:
         """Set the files to be displayed in the table."""
-        logger.debug(f"set_files called with {len(files)} files", extra={"dev_only": True})
+        logger.debug(
+            "set_files called with %d files",
+            len(files),
+            extra={"dev_only": True},
+        )
         self.beginResetModel()
         self.files = files
         # self._update_column_mapping()  # Removed because it's not needed and causes error
@@ -784,7 +838,8 @@ class FileTableModel(QAbstractTableModel):
         self._update_icons_immediately()
         self.endResetModel()
         logger.debug(
-            f"set_files finished, now self.files has {len(self.files)} files",
+            "set_files finished, now self.files has %d files",
+            len(self.files),
             extra={"dev_only": True},
         )
         # Update custom tooltips for new files
@@ -793,7 +848,8 @@ class FileTableModel(QAbstractTableModel):
             # Ensure columns are reconfigured after model reset
             if hasattr(self._table_view_ref, "refresh_columns_after_model_change"):
                 logger.debug(
-                    f"Calling refresh_columns_after_model_change, files in model: {len(self.files)}"
+                    "Calling refresh_columns_after_model_change, files in model: %d",
+                    len(self.files),
                 )
                 self._table_view_ref.refresh_columns_after_model_change()
 
@@ -807,7 +863,8 @@ class FileTableModel(QAbstractTableModel):
         bottom_right = self.index(len(self.files) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
         logger.debug(
-            f"[FileTableModel] Updated icons immediately for {len(self.files)} files",
+            "[FileTableModel] Updated icons immediately for %d files",
+            len(self.files),
             extra={"dev_only": True},
         )
 
@@ -867,7 +924,8 @@ class FileTableModel(QAbstractTableModel):
         bottom_right = self.index(len(self.files) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
         logger.debug(
-            f"[FileTableModel] Refreshed icons for {len(self.files)} files",
+            "[FileTableModel] Refreshed icons for %d files",
+            len(self.files),
             extra={"dev_only": True},
         )
 
@@ -888,13 +946,15 @@ class FileTableModel(QAbstractTableModel):
                 index = self.index(i, 0)
                 self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
                 logger.debug(
-                    f"[FileTableModel] Refreshed icon for {file_item.filename}",
+                    "[FileTableModel] Refreshed icon for %s",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
                 return
 
         logger.debug(
-            f"[FileTableModel] File not found for icon refresh: {file_path}",
+            "[FileTableModel] File not found for icon refresh: %s",
+            file_path,
             extra={"dev_only": True},
         )
 

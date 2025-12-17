@@ -207,7 +207,7 @@ class CompanionFilesWidget(QWidget):
         """Handle settings changes."""
         settings = self.get_current_settings()
         self.settings_changed.emit(settings)
-        logger.debug(f"[CompanionFilesWidget] Settings changed: {settings}")
+        logger.debug("[CompanionFilesWidget] Settings changed: %s", settings)
 
     def _detect_companion_files(self):
         """Detect companion files in current folder and show report."""
@@ -225,7 +225,7 @@ class CompanionFilesWidget(QWidget):
             )
 
         except Exception as e:
-            logger.error(f"[CompanionFilesWidget] Error detecting companion files: {e}")
+            logger.error("[CompanionFilesWidget] Error detecting companion files: %s", e)
 
     def _reset_to_defaults(self):
         """Reset settings to default values."""
@@ -255,7 +255,7 @@ class CompanionFilesWidget(QWidget):
             self.load_metadata_checkbox.setChecked(settings['load_metadata'])
 
         self._update_controls_state()
-        logger.debug(f"[CompanionFilesWidget] Applied settings: {settings}")
+        logger.debug("[CompanionFilesWidget] Applied settings: %s", settings)
 
 
 class CompanionFilesDialog(QWidget):
@@ -291,13 +291,13 @@ class CompanionFilesDialog(QWidget):
 
     def _on_settings_changed(self, settings):
         """Handle settings changes."""
-        logger.debug(f"[CompanionFilesDialog] Settings changed: {settings}")
+        logger.debug("[CompanionFilesDialog] Settings changed: %s", settings)
         # Here you would save settings to config or emit signal to main app
 
     def _apply_settings(self):
         """Apply current settings."""
         settings = self.companion_widget.get_current_settings()
-        logger.info(f"[CompanionFilesDialog] Applying settings: {settings}")
+        logger.info("[CompanionFilesDialog] Applying settings: %s", settings)
         # Here you would save settings and apply them
 
     def accept(self):

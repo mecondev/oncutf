@@ -66,7 +66,7 @@ class ParallelMetadataLoader:
         self._active_processes = []  # Track active subprocess for cancellation
         self._process_lock = threading.Lock()
 
-        logger.info(f"[ParallelMetadataLoader] Initialized with {max_workers} workers")
+        logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
 
     def load_metadata_parallel(
         self,
@@ -100,8 +100,10 @@ class ParallelMetadataLoader:
         completed = 0
 
         logger.info(
-            f"[ParallelMetadataLoader] Starting parallel load for {total_files} files "
-            f"(extended={use_extended}, workers={self.max_workers})"
+            "[ParallelMetadataLoader] Starting parallel load for %d files (extended=%s, workers=%d)",
+            total_files,
+            use_extended,
+            self.max_workers,
         )
 
         try:
@@ -139,9 +141,9 @@ class ParallelMetadataLoader:
                                         proc.terminate()
                                         terminated_count += 1
                                 except Exception as e:
-                                    logger.debug(f"[ParallelMetadataLoader] Error terminating process: {e}")
+                                    logger.debug("[ParallelMetadataLoader] Error terminating process: %s", e)
                             if terminated_count > 0:
-                                logger.info(f"[ParallelMetadataLoader] Terminated {terminated_count} active processes")
+                                logger.info("[ParallelMetadataLoader] Terminated %d active processes", terminated_count)
                             self._active_processes.clear()
 
                         # Cancel all pending futures
@@ -150,7 +152,7 @@ class ParallelMetadataLoader:
                             if f.cancel():
                                 cancelled_count += 1
 
-                        logger.info(f"[ParallelMetadataLoader] Cancelled {cancelled_count} pending tasks")
+                        logger.info("[ParallelMetadataLoader] Cancelled %d pending tasks", cancelled_count)
 
                         # Shutdown executor without waiting
                         executor.shutdown(wait=False, cancel_futures=True)
@@ -168,14 +170,18 @@ class ParallelMetadataLoader:
                             progress_callback(completed, total_files, item, metadata)
 
                         logger.debug(
-                            f"[ParallelMetadataLoader] Loaded {completed}/{total_files}: {item.filename}",
+                            "[ParallelMetadataLoader] Loaded %d/%d: %s",
+                            completed,
+                            total_files,
+                            item.filename,
                             extra={"dev_only": True}
                         )
 
                     except Exception as e:
-                        logger.error(
-                            f"[ParallelMetadataLoader] Failed to load {item.filename}: {e}",
-                            exc_info=True
+                        logger.exception(
+                            "[ParallelMetadataLoader] Failed to load %s: %s",
+                            item.filename,
+                            e,
                         )
                         # Store empty metadata on error
                         results[item.full_path] = (item, {})
@@ -192,7 +198,7 @@ class ParallelMetadataLoader:
                     executor.shutdown(wait=False, cancel_futures=True)
 
         except Exception as e:
-            logger.error(f"[ParallelMetadataLoader] Parallel loading failed: {e}", exc_info=True)
+            logger.exception("[ParallelMetadataLoader] Parallel loading failed: %s", e)
 
         finally:
             # Call completion callback
@@ -209,8 +215,10 @@ class ParallelMetadataLoader:
                 ordered_results.append((item, {}))
 
         logger.info(
-            f"[ParallelMetadataLoader] Completed: {len(results)}/{total_files} files loaded "
-            f"(cancelled={self._cancelled})"
+            "[ParallelMetadataLoader] Completed: %d/%d files loaded (cancelled=%s)",
+            len(results),
+            total_files,
+            self._cancelled,
         )
 
         return ordered_results
@@ -230,7 +238,9 @@ class ParallelMetadataLoader:
         """
         try:
             logger.info(
-                f"[ParallelMetadataLoader] Loading {item.filename}: use_extended={use_extended}"
+                "[ParallelMetadataLoader] Loading %s: use_extended=%s",
+                item.filename,
+                use_extended,
             )
 
             metadata = self._exiftool_wrapper.get_metadata(
@@ -248,14 +258,16 @@ class ParallelMetadataLoader:
                 return metadata
             else:
                 logger.warning(
-                    f"[ParallelMetadataLoader] No metadata returned for {item.filename}"
+                    "[ParallelMetadataLoader] No metadata returned for %s",
+                    item.filename,
                 )
                 return {}
 
         except Exception as e:
-            logger.error(
-                f"[ParallelMetadataLoader] Error loading {item.filename}: {e}",
-                exc_info=True
+            logger.exception(
+                "[ParallelMetadataLoader] Error loading %s: %s",
+                item.filename,
+                e,
             )
             return {}
 
@@ -333,11 +345,14 @@ def update_file_item_metadata(
                         i, parent_window.file_model.columnCount() - 1
                     )
                     logger.debug(
-                        f"[ParallelMetadataLoader] Emitting dataChanged for file '{item.filename}' at row {i}",
+                        "[ParallelMetadataLoader] Emitting dataChanged for file '%s' at row %d",
+                        item.filename,
+                        i,
                         extra={"dev_only": True},
                     )
                     logger.debug(
-                        "[ParallelMetadataLoader] dataChanged stack:\n" + "".join(traceback.format_stack(limit=8)),
+                        "[ParallelMetadataLoader] dataChanged stack:\n%s",
+                        "".join(traceback.format_stack(limit=8)),
                         extra={"dev_only": True},
                     )
                     parent_window.file_model.dataChanged.emit(
@@ -346,5 +361,7 @@ def update_file_item_metadata(
                     break
         except Exception as e:
             logger.warning(
-                f"[ParallelMetadataLoader] Failed to emit dataChanged for {item.filename}: {e}"
+                "[ParallelMetadataLoader] Failed to emit dataChanged for %s: %s",
+                item.filename,
+                e,
             )

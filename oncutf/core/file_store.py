@@ -80,7 +80,9 @@ class FileStore(QObject):
         if use_cache and folder_path in self._file_cache:
             cached_items = self._file_cache[folder_path]
             logger.debug(
-                f"[FileStore] Using cached files for {folder_path}: {len(cached_items)} items"
+                "[FileStore] Using cached files for %s: %d items",
+                folder_path,
+                len(cached_items),
             )
             return cached_items.copy()
 
@@ -96,7 +98,7 @@ class FileStore(QObject):
                     try:
                         file_items.append(FileItem.from_path(file_path))
                     except OSError as e:
-                        logger.warning(f"Could not create FileItem for {filename}: {e}")
+                        logger.warning("Could not create FileItem for %s: %s", filename, e)
                         continue
 
         # Cache results
@@ -104,7 +106,7 @@ class FileStore(QObject):
             self._file_cache[folder_path] = file_items.copy()
 
         elapsed = self._load_timer.elapsed()
-        logger.info(f"[FileStore] Scanned {folder_path}: {len(file_items)} files in {elapsed}ms")
+        logger.info("[FileStore] Scanned %s: %d files in %dms", folder_path, len(file_items), elapsed)
 
         return file_items
 
@@ -142,7 +144,9 @@ class FileStore(QObject):
                     folder_items = self.get_file_items_from_folder(path)
                     file_items.extend(folder_items)
                     logger.debug(
-                        f"[FileStore] Loaded {len(folder_items)} files from folder: {path}"
+                        "[FileStore] Loaded %d files from folder: %s",
+                        len(folder_items),
+                        path,
                     )
 
                 elif os.path.isfile(path):
@@ -150,12 +154,12 @@ class FileStore(QObject):
                     ext = os.path.splitext(path)[1][1:].lower()
                     if ext in ALLOWED_EXTENSIONS:
                         file_items.append(FileItem.from_path(path))
-                        logger.debug(f"[FileStore] Loaded file: {os.path.basename(path)}")
+                        logger.debug("[FileStore] Loaded file: %s", os.path.basename(path))
                     else:
-                        logger.debug(f"[FileStore] Skipped unsupported file: {path}")
+                        logger.debug("[FileStore] Skipped unsupported file: %s", path)
 
             except OSError as e:
-                logger.error(f"[FileStore] Error loading path {path}: {e}")
+                logger.error("[FileStore] Error loading path %s: %s", path, e)
                 continue
 
         # Update state
@@ -165,7 +169,7 @@ class FileStore(QObject):
             self._loaded_files.extend(file_items)
 
         elapsed = self._load_timer.elapsed()
-        logger.info(f"[FileStore] Loaded {len(file_items)} total files in {elapsed}ms")
+        logger.info("[FileStore] Loaded %d total files in %dms", len(file_items), elapsed)
 
         # Emit signal
         self.files_loaded.emit(file_items)
@@ -189,7 +193,7 @@ class FileStore(QObject):
         """
         self._loaded_files = files.copy() if files else []
         self.files_loaded.emit(self._loaded_files)
-        logger.debug(f"[FileStore] Loaded files set directly: {len(self._loaded_files)} files")
+        logger.debug("[FileStore] Loaded files set directly: %d files", len(self._loaded_files))
 
     def get_current_folder(self) -> str | None:
         """Get current folder path."""
@@ -202,7 +206,7 @@ class FileStore(QObject):
 
         if old_folder != folder_path:
             self.folder_changed.emit(folder_path)
-            logger.debug(f"[FileStore] Current folder changed: {folder_path}")
+            logger.debug("[FileStore] Current folder changed: %s", folder_path)
 
     def clear_files(self) -> None:
         """Clear all loaded files."""
@@ -226,7 +230,7 @@ class FileStore(QObject):
         """Filter loaded files by extension."""
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
-        logger.debug(f"[FileStore] Filtered files: {len(filtered)} match extensions {extensions}")
+        logger.debug("[FileStore] Filtered files: %d match extensions %s", len(filtered), extensions)
         return filtered
 
     # =====================================
@@ -257,3 +261,72 @@ class FileStore(QObject):
             "last_load_time_ms": self._load_timer.elapsed() if self._load_timer.isValid() else 0,
             **cache_stats,
         }
+    # =====================================
+    # Filesystem Change Handling
+    # =====================================
+
+    def refresh_loaded_folders(self, changed_folder: str | None = None) -> bool:
+        """Refresh files from loaded folders after filesystem changes.
+
+        Args:
+            changed_folder: Specific folder that changed (optional)
+
+        Returns:
+            bool: True if files were refreshed
+        """
+        if not self._loaded_files:
+            logger.debug("[FileStore] No files loaded, skipping refresh")
+            return False
+
+        # Get unique folders from loaded files
+        loaded_folders = set()
+        for file_item in self._loaded_files:
+            folder = os.path.dirname(file_item.full_path)
+            loaded_folders.add(folder)
+
+        # If specific folder given, check if it's relevant
+        if changed_folder:
+            changed_folder_norm = os.path.normpath(changed_folder)
+            if changed_folder_norm not in loaded_folders:
+                logger.debug(
+                    "[FileStore] Changed folder not in loaded files: %s",
+                    changed_folder
+                )
+                return False
+
+            folders_to_refresh = {changed_folder_norm}
+        else:
+            folders_to_refresh = loaded_folders
+
+        logger.info(
+            "[FileStore] Refreshing %d folder(s) after filesystem change",
+            len(folders_to_refresh)
+        )
+
+        # Invalidate cache for affected folders
+        for folder in folders_to_refresh:
+            self._file_cache.pop(folder, None)
+
+        # Reload files from all loaded folders
+        refreshed_files: list[FileItem] = []
+        for folder in loaded_folders:
+            # Skip folders that no longer exist (e.g., unmounted USB drives)
+            if not os.path.exists(folder):
+                logger.info(
+                    "[FileStore] Folder no longer exists, removing its files: %s",
+                    folder
+                )
+                continue
+
+            try:
+                folder_files = self.get_file_items_from_folder(folder, use_cache=False)
+                refreshed_files.extend(folder_files)
+            except Exception as e:
+                logger.error("[FileStore] Error refreshing folder %s: %s", folder, e)
+
+        # Update state
+        self._loaded_files = refreshed_files
+        self.files_loaded.emit(refreshed_files)
+
+        logger.info("[FileStore] Refreshed %d files", len(refreshed_files))
+        return True

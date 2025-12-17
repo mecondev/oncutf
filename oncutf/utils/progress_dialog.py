@@ -101,7 +101,10 @@ class ProgressDialog(QDialog):
         self._setup_wait_cursor()
 
         logger.debug(
-            f"[ProgressDialog] Created for operation: {operation_type} (enhanced: {show_enhanced_info}, exit_save: {is_exit_save})"
+            "[ProgressDialog] Created for operation: %s (enhanced: %s, exit_save: %s)",
+            operation_type,
+            show_enhanced_info,
+            is_exit_save,
         )
 
     def _setup_dialog(self) -> None:
@@ -165,9 +168,12 @@ class ProgressDialog(QDialog):
         key = event.key()
 
         logger.debug(
-            f"[ProgressDialog] keyPressEvent: key={key}, ESC={Qt.Key_Escape}, "
-            f"is_cancelling={self._is_cancelling}, operation={self.operation_type}",
-            extra={"dev_only": True}
+            "[ProgressDialog] keyPressEvent: key=%s, ESC=%s, is_cancelling=%s, operation=%s",
+            key,
+            Qt.Key_Escape,
+            self._is_cancelling,
+            self.operation_type,
+            extra={"dev_only": True},
         )
 
         if key == Qt.Key_Escape:
@@ -180,13 +186,15 @@ class ProgressDialog(QDialog):
             # Check if ESC should be blocked for this operation
             if self._should_block_esc():
                 logger.debug(
-                    f"[ProgressDialog] ESC blocked for {self.operation_type} (exit_save: {self.is_exit_save})"
+                    "[ProgressDialog] ESC blocked for %s (exit_save: %s)",
+                    self.operation_type,
+                    self.is_exit_save,
                 )
                 event.ignore()
                 return
 
             # Handle cancellation
-            logger.info(f"[ProgressDialog] ESC pressed - initiating cancellation for {self.operation_type}")
+            logger.info("[ProgressDialog] ESC pressed - initiating cancellation for %s", self.operation_type)
             self._handle_cancellation()
             event.accept()
         else:
@@ -218,7 +226,7 @@ class ProgressDialog(QDialog):
             return  # Already cancelling
 
         self._is_cancelling = True
-        logger.info(f"[ProgressDialog] User cancelled {self.operation_type} operation")
+        logger.info("[ProgressDialog] User cancelled %s operation", self.operation_type)
 
         # Update UI immediately
         self.waiting_widget.set_status("Cancelling...")
@@ -230,7 +238,7 @@ class ProgressDialog(QDialog):
             try:
                 self.cancel_callback()
             except Exception as e:
-                logger.error(f"[ProgressDialog] Error in cancel callback: {e}")
+                logger.error("[ProgressDialog] Error in cancel callback: %s", e)
 
         # Restore cursors
         self._restore_cursors()
@@ -282,7 +290,7 @@ class ProgressDialog(QDialog):
         """Start progress tracking with optional total size."""
         if hasattr(self.waiting_widget, "start_progress_tracking"):
             self.waiting_widget.start_progress_tracking(total_size)
-            logger.debug(f"[ProgressDialog] Started progress tracking (total_size: {total_size})")
+            logger.debug("[ProgressDialog] Started progress tracking (total_size: %d)", total_size)
 
     def update_progress_with_size(self, current: int, total: int, current_size: int = 0) -> None:
         """Update progress with size tracking."""
@@ -370,7 +378,9 @@ class ProgressDialog(QDialog):
         if use_size_based_progress and hasattr(dialog.waiting_widget, "set_progress_mode"):
             dialog.waiting_widget.set_progress_mode("size")
             logger.debug(
-                f"[ProgressDialog] Metadata dialog configured with size-based progress (extended: {is_extended})"
+                "[ProgressDialog] Metadata dialog configured with size-based progress (extended: %s)",
+                is_extended,
+                extra={"dev_only": True}
             )
 
         return dialog

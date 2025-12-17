@@ -334,10 +334,12 @@ class MetadataHistoryDialog(QDialog):
             # Update button states
             self._update_button_states()
 
-            logger.debug(f"[MetadataHistoryDialog] Loaded {len(all_operations)} operations")
+            logger.debug(
+                "[MetadataHistoryDialog] Loaded %d operations", len(all_operations)
+            )
 
         except Exception as e:
-            logger.error(f"[MetadataHistoryDialog] Error loading history: {e}")
+            logger.error("[MetadataHistoryDialog] Error loading history: %s", e)
 
     def _on_selection_changed(self):
         """Handle selection change in operations table."""
@@ -402,7 +404,7 @@ class MetadataHistoryDialog(QDialog):
             self.details_text.setPlainText("\n".join(details))
 
         except Exception as e:
-            logger.error(f"[MetadataHistoryDialog] Error loading operation details: {e}")
+            logger.error("[MetadataHistoryDialog] Error loading operation details: %s", e)
             self.details_text.setPlainText(f"Error loading details: {e}")
 
     def _update_button_states(self):

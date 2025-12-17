@@ -19,6 +19,7 @@ to generate preview names and resolve rename plans for batch processing.
 import os
 import time
 
+from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.counter_module import CounterModule
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.modules.original_name_module import OriginalNameModule
@@ -44,18 +45,147 @@ _cache_timestamp = 0
 _cache_validity_duration = 0.05  # 50ms cache validity
 
 
-def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
+def calculate_scope_aware_index(
+    scope: str,
+    global_index: int,
+    file_item,
+    all_files: list | None = None
+) -> int:
+    """
+    Calculate the appropriate counter index based on scope.
+
+    Args:
+        scope: Counter scope ('global', 'per_folder', 'per_extension', 'per_filegroup')
+        global_index: The global index in the full file list
+        file_item: Current file being processed
+        all_files: Full list of files (needed for per_folder/per_extension calculation)
+
+    Returns:
+        The scope-adjusted index to use for counter calculation
+
+    Note:
+        For GLOBAL scope: returns global_index unchanged
+        For PER_FOLDER: returns index within current folder group
+        For PER_EXTENSION: returns index within current extension group
+        For PER_FILEGROUP: returns index within file group (future feature)
+    """
+    # Default to global scope if not recognized
+    try:
+        scope_enum = CounterScope(scope)
+    except ValueError:
+        logger.warning("[PreviewEngine] Unknown counter scope: %s, using GLOBAL", scope)
+        return global_index
+
+    # GLOBAL: use index as-is
+    if scope_enum == CounterScope.GLOBAL:
+        return global_index
+
+    # PER_FOLDER: calculate index within folder
+    if scope_enum == CounterScope.PER_FOLDER:
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_FOLDER scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Count files in same folder before this one
+        current_folder = os.path.dirname(file_item.full_path)
+        folder_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.dirname(f.full_path) == current_folder:
+                folder_index += 1
+
+        logger.debug(
+            "[PreviewEngine] PER_FOLDER scope: folder=%s, folder_index=%d",
+            current_folder,
+            folder_index,
+            extra={"dev_only": True}
+        )
+        return folder_index
+
+    # PER_EXTENSION: calculate index within extension group
+    if scope_enum == CounterScope.PER_EXTENSION:
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_EXTENSION scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Count files with same extension before this one
+        current_ext = os.path.splitext(file_item.filename)[1].lower()
+        ext_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.splitext(f.filename)[1].lower() == current_ext:
+                ext_index += 1
+
+        logger.debug(
+            "[PreviewEngine] PER_EXTENSION scope: ext=%s, ext_index=%d",
+            current_ext,
+            ext_index,
+            extra={"dev_only": True}
+        )
+        return ext_index
+
+    # PER_FILEGROUP: calculate index within file group
+    if scope_enum == CounterScope.PER_FILEGROUP:
+        if not all_files or not file_item:
+            logger.debug(
+                "[PreviewEngine] PER_FILEGROUP scope but no files list, using global index",
+                extra={"dev_only": True}
+            )
+            return global_index
+
+        # Import here to avoid circular dependency
+        from oncutf.utils.file_grouper import calculate_filegroup_counter_index
+
+        try:
+            filegroup_index = calculate_filegroup_counter_index(
+                file_item, all_files, global_index, groups=None
+            )
+            logger.debug(
+                "[PreviewEngine] PER_FILEGROUP scope: filegroup_index=%d",
+                filegroup_index,
+                extra={"dev_only": True}
+            )
+            return filegroup_index
+        except Exception as e:
+            logger.warning(
+                "[PreviewEngine] Error calculating filegroup index: %s, using global",
+                e
+            )
+            return global_index
+
+    # Fallback
+    return global_index
+
+
+def apply_rename_modules(modules_data, index, file_item, metadata_cache=None, all_files=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
+
+    Args:
+        modules_data: List of module configurations
+        index: Global index of file in the list
+        file_item: FileItem being renamed
+        metadata_cache: Optional metadata cache
+        all_files: Optional full list of files (required for scope-aware counters)
     """
     logger.debug(
-        f"[DEBUG] [PreviewEngine] apply_rename_modules CALLED for {file_item.filename}",
+        "[DEBUG] [PreviewEngine] apply_rename_modules CALLED for %s",
+        file_item.filename,
         extra={"dev_only": True},
     )
-    logger.debug(f"[DEBUG] [PreviewEngine] modules_data: {modules_data}", extra={"dev_only": True})
-    logger.debug(f"[DEBUG] [PreviewEngine] index: {index}", extra={"dev_only": True})
+    logger.debug("[DEBUG] [PreviewEngine] modules_data: %s", modules_data, extra={"dev_only": True})
+    logger.debug("[DEBUG] [PreviewEngine] index: %s", index, extra={"dev_only": True})
     logger.debug(
-        f"[DEBUG] [PreviewEngine] metadata_cache provided: {metadata_cache is not None}",
+        "[DEBUG] [PreviewEngine] metadata_cache provided: %s",
+        metadata_cache is not None,
         extra={"dev_only": True},
     )
 
@@ -69,7 +199,8 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
 
     if cache_key in _module_cache and current_time - _cache_timestamp < _cache_validity_duration:
         logger.debug(
-            f"[DEBUG] [PreviewEngine] Using cached result for {file_item.filename}",
+            "[DEBUG] [PreviewEngine] Using cached result for %s",
+            file_item.filename,
             extra={"dev_only": True},
         )
         return _module_cache[cache_key]
@@ -78,26 +209,37 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     for i, data in enumerate(modules_data):
         module_type = data.get("type")
         logger.debug(
-            f"[DEBUG] [PreviewEngine] Processing module {i}: type={module_type}, data={data}",
+            "[DEBUG] [PreviewEngine] Processing module %d: type=%s, data=%s",
+            i,
+            module_type,
+            data,
             extra={"dev_only": True},
         )
 
         part = ""
 
         if module_type == "counter":
-            start = data.get("start", 1)
-            step = data.get("step", 1)
-            padding = data.get("padding", 1)
-            value = start + (index * step)
-            part = str(value).zfill(padding)
+            # Calculate scope-aware index for counter
+            scope = data.get("scope", CounterScope.PER_FOLDER.value)
+            counter_index = calculate_scope_aware_index(scope, index, file_item, all_files)
+
+            # Use CounterModule.apply_from_data() for proper counter logic including scope
+            part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
             logger.debug(
-                f"[DEBUG] [PreviewEngine] Counter result: {part}", extra={"dev_only": True}
+                "[DEBUG] [PreviewEngine] Counter result: %s (scope=%s, global_index=%d, scope_index=%d)",
+                part,
+                scope,
+                index,
+                counter_index,
+                extra={"dev_only": True},
             )
 
         elif module_type == "specified_text":
             part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
             logger.debug(
-                f"[DEBUG] [PreviewEngine] SpecifiedText result: {part}", extra={"dev_only": True}
+                "[DEBUG] [PreviewEngine] SpecifiedText result: %s",
+                part,
+                extra={"dev_only": True},
             )
 
         elif module_type == "original_name":
@@ -105,7 +247,9 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             if not part:
                 part = "originalname"
             logger.debug(
-                f"[DEBUG] [PreviewEngine] OriginalName result: {part}", extra={"dev_only": True}
+                "[DEBUG] [PreviewEngine] OriginalName result: %s",
+                part,
+                extra={"dev_only": True},
             )
 
         elif module_type == "remove_text_from_original_name":
@@ -116,17 +260,22 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             # Extract just the base name without extension
             part, _ = os.path.splitext(result_filename)
             logger.debug(
-                f"[DEBUG] [PreviewEngine] TextRemoval result: {part}", extra={"dev_only": True}
+                "[DEBUG] [PreviewEngine] TextRemoval result: %s",
+                part,
+                extra={"dev_only": True},
             )
 
         elif module_type == "metadata":
             logger.debug(
-                f"[DEBUG] [PreviewEngine] Calling MetadataModule.apply_from_data for {file_item.filename}",
+                "[DEBUG] [PreviewEngine] Calling MetadataModule.apply_from_data for %s",
+                file_item.filename,
                 extra={"dev_only": True},
             )
             part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
             logger.debug(
-                f"[DEBUG] [PreviewEngine] MetadataModule result: {part}", extra={"dev_only": True}
+                "[DEBUG] [PreviewEngine] MetadataModule result: %s",
+                part,
+                extra={"dev_only": True},
             )
 
         new_name_parts.append(part)
@@ -134,7 +283,9 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     # Join all parts
     new_fullname = "".join(new_name_parts)
     logger.debug(
-        f"[DEBUG] [PreviewEngine] Final result for {file_item.filename}: {new_fullname}",
+        "[DEBUG] [PreviewEngine] Final result for %s: %s",
+        file_item.filename,
+        new_fullname,
         extra={"dev_only": True},
     )
 

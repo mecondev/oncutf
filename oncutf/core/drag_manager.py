@@ -70,7 +70,7 @@ class DragManager(QObject):
             source: String identifier of the drag source widget
         """
         if self._drag_active:
-            logger.warning(f"[DragManager] Drag already active from {self._drag_source}")
+            logger.warning("[DragManager] Drag already active from %s", self._drag_source)
             return  # Don't interrupt active drag
 
         import time
@@ -85,7 +85,7 @@ class DragManager(QObject):
         # Start safety timer (longer timeout - 10 seconds)
         self._cleanup_timer.start(10000)
 
-        logger.debug(f"[DragManager] Drag started from: {source}", extra={"dev_only": True})
+        logger.debug("[DragManager] Drag started from: %s", source, extra={"dev_only": True})
 
     def end_drag(self, source: str = None) -> None:
         """
@@ -102,12 +102,15 @@ class DragManager(QObject):
 
         if source and source != self._drag_source:
             logger.warning(
-                f"[DragManager] Drag end from {source} but started from {self._drag_source}"
+                "[DragManager] Drag end from %s but started from %s",
+                source,
+                self._drag_source,
             )
 
         self._perform_cleanup()
         logger.debug(
-            f"[DragManager] Drag ended from: {source or self._drag_source}",
+            "[DragManager] Drag ended from: %s",
+            source or self._drag_source,
             extra={"dev_only": True},
         )
 
@@ -159,7 +162,9 @@ class DragManager(QObject):
 
         if cursor_count > 0:
             logger.debug(
-                f"[DragManager] Restored {cursor_count} override cursors", extra={"dev_only": True}
+                "[DragManager] Restored %d override cursors",
+                cursor_count,
+                extra={"dev_only": True},
             )
 
         # Reset state
@@ -168,7 +173,8 @@ class DragManager(QObject):
         self._drag_start_time = None
 
         logger.debug(
-            f"[DragManager] Cleanup completed (attempt #{self._cleanup_count})",
+            "[DragManager] Cleanup completed (attempt #%d)",
+            self._cleanup_count,
             extra={"dev_only": True},
         )
 
@@ -184,7 +190,8 @@ class DragManager(QObject):
             # If we restored cursors, log it
             if cursor_count > 0:
                 logger.debug(
-                    f"[DragManager] Force-restored {cursor_count} override cursors",
+                    "[DragManager] Force-restored %d override cursors",
+                    cursor_count,
                     extra={"dev_only": True},
                 )
 
@@ -196,13 +203,14 @@ class DragManager(QObject):
                 )
 
         except Exception as e:
-            logger.warning(f"[DragManager] Error during cursor restoration: {e}")
+            logger.warning("[DragManager] Error during cursor restoration: %s", e)
 
     def _safety_cleanup(self) -> None:
         """Safety cleanup triggered by timer (only for stuck drags)."""
         if self._drag_active:
             logger.warning(
-                f"[DragManager] Safety cleanup after timeout (source: {self._drag_source})"
+                "[DragManager] Safety cleanup after timeout (source: %s)",
+                self._drag_source,
             )
 
             # Force cursor restoration before general cleanup

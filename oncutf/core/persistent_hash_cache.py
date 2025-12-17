@@ -55,12 +55,14 @@ class PersistentHashCache:
             success = self._db_manager.store_hash(norm_path, hash_value, algorithm)
             if success:
                 logger.debug(
-                    f"[PersistentHashCache] Stored {algorithm} hash for: {os.path.basename(file_path)}"
+                    "[PersistentHashCache] Stored %s hash for: %s",
+                    algorithm,
+                    os.path.basename(file_path),
                 )
             return success
 
         except Exception as e:
-            logger.error(f"[PersistentHashCache] Error storing hash for {file_path}: {e}")
+            logger.error("[PersistentHashCache] Error storing hash for %s: %s", file_path, e)
             return False
 
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
@@ -83,7 +85,7 @@ class PersistentHashCache:
                 return hash_value
 
         except Exception as e:
-            logger.error(f"[PersistentHashCache] Error loading hash for {file_path}: {e}")
+            logger.error("[PersistentHashCache] Error loading hash for %s: %s", file_path, e)
 
         return None
 
@@ -100,7 +102,7 @@ class PersistentHashCache:
         try:
             return self._db_manager.has_hash(norm_path, algorithm)
         except Exception as e:
-            logger.error(f"[PersistentHashCache] Error checking hash for {file_path}: {e}")
+            logger.error("[PersistentHashCache] Error checking hash for %s: %s", file_path, e)
             return False
 
     def remove_hash(self, file_path: str) -> bool:
@@ -114,7 +116,7 @@ class PersistentHashCache:
 
         # For v2, we'd need a specific method to remove just hashes
         # For now, just remove from memory
-        logger.debug(f"[PersistentHashCache] Removed from memory cache: {file_path}")
+        logger.debug("[PersistentHashCache] Removed from memory cache: %s", file_path)
         return True
 
     def find_duplicates(
@@ -136,7 +138,9 @@ class PersistentHashCache:
         }
 
         logger.info(
-            f"[PersistentHashCache] Found {len(duplicates)} duplicate groups from {len(file_paths)} files"
+            "[PersistentHashCache] Found %d duplicate groups from %d files",
+            len(duplicates),
+            len(file_paths),
         )
         return duplicates
 
@@ -148,7 +152,7 @@ class PersistentHashCache:
 
         # Would need to calculate current hash to compare
         # This is a placeholder for the interface
-        logger.debug(f"[PersistentHashCache] Integrity check requested for: {file_path}")
+        logger.debug("[PersistentHashCache] Integrity check requested for: %s", file_path)
         return None  # Implementation would go here
 
     def get_files_with_hash(self, file_paths: list[str], algorithm: str = "CRC32") -> list[str]:
@@ -174,7 +178,8 @@ class PersistentHashCache:
                 return self.get_files_with_hash(file_paths, algorithm)
         except Exception as e:
             logger.warning(
-                f"[PersistentHashCache] Batch query failed, falling back to individual checks: {e}"
+                "[PersistentHashCache] Batch query failed, falling back to individual checks: %s",
+                e,
             )
             return self.get_files_with_hash(file_paths, algorithm)
 

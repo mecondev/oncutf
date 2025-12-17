@@ -202,7 +202,7 @@ class MetadataOperationsManager:
                 )
 
         except Exception as e:
-            logger.exception(f"[EventHandler] Export error: {e}")
+            logger.exception("[EventHandler] Export error: %s", e)
             QMessageBox.critical(
                 self.parent_window, "Export Error", f"An error occurred during export:\n{str(e)}"
             )
@@ -218,10 +218,14 @@ class MetadataOperationsManager:
             field_name: Name of the field to edit (Title, Artist, etc.)
         """
         if not selected_files:
-            logger.warning(f"[MetadataEdit] No files selected for {field_name} editing")
+            logger.warning("[MetadataEdit] No files selected for %s editing", field_name)
             return
 
-        logger.info(f"[MetadataEdit] Starting {field_name} editing for {len(selected_files)} files")
+        logger.info(
+            "[MetadataEdit] Starting %s editing for %d files",
+            field_name,
+            len(selected_files),
+        )
 
         try:
             # Get current value (for single file editing)
@@ -241,11 +245,11 @@ class MetadataOperationsManager:
             )
 
             if not success:
-                logger.debug(f"[MetadataEdit] User cancelled {field_name} editing")
+                logger.debug("[MetadataEdit] User cancelled %s editing", field_name)
                 return
 
             if not files_to_modify:
-                logger.debug(f"[MetadataEdit] No files selected for {field_name} modification")
+                logger.debug("[MetadataEdit] No files selected for %s modification", field_name)
                 return
 
             # Apply the changes
@@ -261,11 +265,13 @@ class MetadataOperationsManager:
                 )
 
             logger.info(
-                f"[MetadataEdit] Successfully updated {field_name} for {len(files_to_modify)} files"
+                "[MetadataEdit] Successfully updated %s for %d files",
+                field_name,
+                len(files_to_modify),
             )
 
         except ImportError as e:
-            logger.error(f"[MetadataEdit] Failed to import MetadataEditDialog: {e}")
+            logger.error("[MetadataEdit] Failed to import MetadataEditDialog: %s", e)
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -274,7 +280,9 @@ class MetadataOperationsManager:
                 "Metadata editing dialog is not available. Please check the installation.",
             )
         except Exception as e:
-            logger.exception(f"[MetadataEdit] Unexpected error during {field_name} editing: {e}")
+            logger.exception(
+                "[MetadataEdit] Unexpected error during %s editing: %s", field_name, e
+            )
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -319,7 +327,9 @@ class MetadataOperationsManager:
             return ""
 
         except Exception as e:
-            logger.debug(f"[MetadataEdit] Error getting current {field_name} value: {e}")
+            logger.debug(
+                "[MetadataEdit] Error getting current %s value: %s", field_name, e
+            )
             return ""
 
     def _get_field_standards_for_reading(self, field_name: str) -> list:
@@ -350,14 +360,19 @@ class MetadataOperationsManager:
         # Apply changes to each file
         for file_item in files_to_modify:
             logger.debug(
-                f"[EventHandler] Applying {field_name} change to {file_item.filename}: '{new_value}'"
+                "[EventHandler] Applying %s change to %s: '%s'",
+                field_name,
+                file_item.filename,
+                new_value,
             )
 
             # Get the preferred field standard for this file
             field_standard = self._get_preferred_field_standard(file_item, field_name)
             if not field_standard:
                 logger.warning(
-                    f"[EventHandler] No field standard found for {field_name} in {file_item.filename}"
+                    "[EventHandler] No field standard found for %s in %s",
+                    field_name,
+                    file_item.filename,
                 )
                 continue
 
@@ -366,7 +381,11 @@ class MetadataOperationsManager:
                 file_item.full_path, field_standard, new_value
             )
 
-        logger.info(f"[EventHandler] Applied {field_name} changes to {len(files_to_modify)} files")
+        logger.info(
+            "[EventHandler] Applied %s changes to %d files",
+            field_name,
+            len(files_to_modify),
+        )
 
     def _get_preferred_field_standard(self, file_item, field_name: str) -> str | None:
         """
@@ -419,7 +438,10 @@ class MetadataOperationsManager:
             for standard in priorities:
                 if standard in metadata:
                     logger.debug(
-                        f"[FieldStandard] Using existing {standard} for {field_name} in {file_item.filename}"
+                        "[FieldStandard] Using existing %s for %s in %s",
+                        standard,
+                        field_name,
+                        file_item.filename,
                     )
                     return standard
 
@@ -428,14 +450,19 @@ class MetadataOperationsManager:
             if field_name in file_type_support:
                 # Use the first (highest priority) standard
                 logger.debug(
-                    f"[FieldStandard] Using new {priorities[0]} for {field_name} in {file_item.filename}"
+                    "[FieldStandard] Using new %s for %s in %s",
+                    priorities[0],
+                    field_name,
+                    file_item.filename,
                 )
                 return priorities[0]
 
             return None
 
         except Exception as e:
-            logger.debug(f"[FieldStandard] Error getting preferred standard for {field_name}: {e}")
+            logger.debug(
+                "[FieldStandard] Error getting preferred standard for %s: %s", field_name, e
+            )
             return None
 
     # ===== Field Compatibility Detection =====
@@ -454,7 +481,8 @@ class MetadataOperationsManager:
         """
         if not selected_files:
             logger.debug(
-                f"[FieldCompatibility] No files provided for {field_name} compatibility check",
+                "[FieldCompatibility] No files provided for %s compatibility check",
+                field_name,
                 extra={"dev_only": True},
             )
             return False
@@ -463,7 +491,8 @@ class MetadataOperationsManager:
         files_with_metadata = [f for f in selected_files if self._file_has_metadata(f)]
         if len(files_with_metadata) != len(selected_files):
             logger.debug(
-                f"[FieldCompatibility] Not all files have metadata loaded for {field_name} check",
+                "[FieldCompatibility] Not all files have metadata loaded for %s check",
+                field_name,
                 extra={"dev_only": True},
             )
             return False
@@ -476,7 +505,11 @@ class MetadataOperationsManager:
         # Enable only if ALL selected files support the field
         result = supported_count == len(selected_files)
         logger.debug(
-            f"[FieldCompatibility] {field_name} support: {supported_count}/{len(selected_files)} files, enabled: {result}",
+            "[FieldCompatibility] %s support: %d/%d files, enabled: %s",
+            field_name,
+            supported_count,
+            len(selected_files),
+            result,
             extra={"dev_only": True},
         )
         return result
@@ -498,7 +531,8 @@ class MetadataOperationsManager:
             cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
             if not cache_entry or not hasattr(cache_entry, "data") or not cache_entry.data:
                 logger.debug(
-                    f"[FieldSupport] No metadata cache for {file_item.filename}",
+                    "[FieldSupport] No metadata cache for %s",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
                 return False
@@ -538,7 +572,9 @@ class MetadataOperationsManager:
             supported_fields = field_support_map.get(field_name, [])
             if not supported_fields:
                 logger.debug(
-                    f"[FieldSupport] Unknown field name: {field_name}", extra={"dev_only": True}
+                    "[FieldSupport] Unknown field name: %s",
+                    field_name,
+                    extra={"dev_only": True},
                 )
                 return False
 
@@ -549,7 +585,10 @@ class MetadataOperationsManager:
             for field in supported_fields:
                 if field in metadata:
                     logger.debug(
-                        f"[FieldSupport] {file_item.filename} supports {field_name} via existing {field}"
+                        "[FieldSupport] %s supports %s via existing %s",
+                        file_item.filename,
+                        field_name,
+                        field,
                     )
                     return True
 
@@ -560,16 +599,24 @@ class MetadataOperationsManager:
             supports_field = field_name in file_type_support
             if supports_field:
                 logger.debug(
-                    f"[FieldSupport] {file_item.filename} supports {field_name} via file type compatibility"
+                    "[FieldSupport] %s supports %s via file type compatibility",
+                    file_item.filename,
+                    field_name,
                 )
             else:
-                logger.debug(f"[FieldSupport] {file_item.filename} does not support {field_name}")
+                logger.debug(
+                    "[FieldSupport] %s does not support %s",
+                    file_item.filename,
+                    field_name,
+                )
 
             return supports_field
 
         except Exception as e:
             logger.debug(
-                f"[FieldSupport] Error checking field support for {getattr(file_item, 'filename', 'unknown')}: {e}"
+                "[FieldSupport] Error checking field support for %s: %s",
+                getattr(file_item, "filename", "unknown"),
+                e,
             )
             return False
 
@@ -614,7 +661,7 @@ class MetadataOperationsManager:
             return supported_fields
 
         except Exception as e:
-            logger.debug(f"[FileTypeSupport] Error determining file type support: {e}")
+            logger.debug("[FileTypeSupport] Error determining file type support: %s", e)
             # Return basic fields as fallback
             return {"Title", "Description", "Keywords"}
 

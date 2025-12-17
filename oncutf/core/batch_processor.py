@@ -43,7 +43,9 @@ class BatchProcessor:
         self.stats["total_batches"] = len(batches)
         self.stats["total_items"] = len(items)
 
-        logger.debug(f"[BatchProcessor] Processing {len(items)} items in {len(batches)} batches")
+        logger.debug(
+            "[BatchProcessor] Processing %d items in %d batches", len(items), len(batches)
+        )
 
         # Process batches
         results = []
@@ -64,13 +66,13 @@ class BatchProcessor:
                     results.extend(batch_result)
                     successful_batches += 1
                 except Exception as e:
-                    logger.error(f"[BatchProcessor] Batch failed: {e}")
+                    logger.error("[BatchProcessor] Batch failed: %s", e)
                     failed_batches += 1
                     # Add original items as fallback
                     results.extend(batch)
 
         except Exception as e:
-            logger.error(f"[BatchProcessor] Processing failed: {e}")
+            logger.error("[BatchProcessor] Processing failed: %s", e)
             # Return original items as fallback
             results = items
 
@@ -79,7 +81,7 @@ class BatchProcessor:
         self.stats["successful_batches"] = successful_batches
         self.stats["failed_batches"] = failed_batches
 
-        logger.debug(f"[BatchProcessor] Completed in {self.stats['total_time']:.3f}s")
+        logger.debug("[BatchProcessor] Completed in %.3fs", self.stats["total_time"])
         return results
 
     def _split_into_batches(self, items: list[Any]) -> list[list[Any]]:
@@ -159,14 +161,18 @@ class SmartBatchProcessor(BatchProcessor):
             # Reduce batch size if too slow
             new_batch_size = max(10, current_batch_size // 2)
             logger.debug(
-                f"[SmartBatchProcessor] Reducing batch size from {current_batch_size} to {new_batch_size}"
+                "[SmartBatchProcessor] Reducing batch size from %d to %d",
+                current_batch_size,
+                new_batch_size,
             )
             self.batch_size = new_batch_size
         elif sample_time < self.optimization_threshold / 4:
             # Increase batch size if very fast
             new_batch_size = min(500, current_batch_size * 2)
             logger.debug(
-                f"[SmartBatchProcessor] Increasing batch size from {current_batch_size} to {new_batch_size}"
+                "[SmartBatchProcessor] Increasing batch size from %d to %d",
+                current_batch_size,
+                new_batch_size,
             )
             self.batch_size = new_batch_size
 
@@ -189,11 +195,11 @@ class SmartBatchProcessor(BatchProcessor):
         if avg_time > target_time * 1.5:
             # Too slow, reduce batch size
             self.batch_size = max(10, self.batch_size // 2)
-            logger.debug(f"[SmartBatchProcessor] Optimized batch size to {self.batch_size}")
+            logger.debug("[SmartBatchProcessor] Optimized batch size to %d", self.batch_size)
         elif avg_time < target_time * 0.5:
             # Too fast, increase batch size
             self.batch_size = min(500, self.batch_size * 2)
-            logger.debug(f"[SmartBatchProcessor] Optimized batch size to {self.batch_size}")
+            logger.debug("[SmartBatchProcessor] Optimized batch size to %d", self.batch_size)
 
 
 class BatchProcessorFactory:

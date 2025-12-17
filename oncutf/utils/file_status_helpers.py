@@ -20,7 +20,7 @@ try:
         extra={"dev_only": True},
     )
 except Exception as e:
-    logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: {e}")
+    logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: %s", e)
     raise
 
 try:
@@ -31,7 +31,7 @@ try:
         extra={"dev_only": True},
     )
 except Exception as e:
-    logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: {e}")
+    logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: %s", e)
     raise
 
 from oncutf.utils.path_normalizer import normalize_path
@@ -57,7 +57,9 @@ def has_metadata(file_path: str | Path) -> bool:
     metadata = get_metadata_for_file(file_path)
     has_meta = metadata is not None
     logger.debug(
-        f"[DEBUG] [FileStatusHelpers] has_metadata for {file_path}: {has_meta}",
+        "[DEBUG] [FileStatusHelpers] has_metadata for %s: %s",
+        file_path,
+        has_meta,
         extra={"dev_only": True},
     )
     return has_meta
@@ -85,7 +87,9 @@ def batch_metadata_status(file_paths: list[str | Path]) -> dict[str, bool]:
         has_meta = has_metadata(p)
         result[norm_path] = has_meta
     logger.debug(
-        f"[DEBUG] [FileStatusHelpers] batch_metadata_status: {result}", extra={"dev_only": True}
+        "[DEBUG] [FileStatusHelpers] batch_metadata_status: %s",
+        result,
+        extra={"dev_only": True},
     )
     return result
 

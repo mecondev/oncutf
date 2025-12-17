@@ -46,7 +46,10 @@ class MetadataEntry:
         """Validate metadata after initialization."""
         # Ensure data is a dict
         if not isinstance(self.data, dict):
-            logger.warning(f"[MetadataEntry] Invalid data type: {type(self.data)}, converting to dict")
+            logger.warning(
+                "[MetadataEntry] Invalid data type: %s, converting to dict",
+                type(self.data),
+            )
             self.data = {}
 
         # Clean internal markers from data if present
@@ -162,7 +165,8 @@ class MetadataEntry:
                 self.data[group] = {}
             elif not isinstance(self.data[group], dict):
                 logger.warning(
-                    f"[MetadataEntry] Group {group} is not a dict, replacing with new dict"
+                    "[MetadataEntry] Group %s is not a dict, replacing with new dict",
+                    group,
                 )
                 self.data[group] = {}
 

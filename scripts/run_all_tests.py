@@ -50,7 +50,7 @@ class ComprehensiveTestRunner:
         self.start_time = time.time()
         self.test_results = {}
 
-        logger.info(f"[ComprehensiveTestRunner] Initialized with output dir: {self.output_dir}")
+        logger.info("[ComprehensiveTestRunner] Initialized with output dir: %s", self.output_dir)
 
     def run_unit_tests(self) -> dict[str, Any]:
         """Run existing unit tests."""
@@ -81,12 +81,12 @@ class ComprehensiveTestRunner:
             if unit_results['success']:
                 logger.info("[ComprehensiveTestRunner] Unit tests passed")
             else:
-                logger.error(f"[ComprehensiveTestRunner] Unit tests failed: {result.stderr}")
+                logger.error("[ComprehensiveTestRunner] Unit tests failed: %s", result.stderr)
 
             return unit_results
 
         except Exception as e:
-            logger.error(f"[ComprehensiveTestRunner] Error running unit tests: {e}")
+            logger.error("[ComprehensiveTestRunner] Error running unit tests: %s", e)
             return {
                 'success': False,
                 'error': str(e),
@@ -112,14 +112,14 @@ class ComprehensiveTestRunner:
             }
 
             if success:
-                logger.info(f"[ComprehensiveTestRunner] Performance benchmarks completed in {benchmark_duration:.1f}s")
+                logger.info("[ComprehensiveTestRunner] Performance benchmarks completed in %.1fs", benchmark_duration)
             else:
                 logger.error("[ComprehensiveTestRunner] Performance benchmarks failed")
 
             return benchmark_results
 
         except Exception as e:
-            logger.error(f"[ComprehensiveTestRunner] Error running performance benchmarks: {e}")
+            logger.error("[ComprehensiveTestRunner] Error running performance benchmarks: %s", e)
             return {
                 'success': False,
                 'error': str(e),
@@ -144,14 +144,14 @@ class ComprehensiveTestRunner:
             }
 
             if success:
-                logger.info(f"[ComprehensiveTestRunner] Memory profiling completed in {memory_duration:.1f}s")
+                logger.info("[ComprehensiveTestRunner] Memory profiling completed in %.1fs", memory_duration)
             else:
                 logger.error("[ComprehensiveTestRunner] Memory profiling failed")
 
             return memory_results
 
         except Exception as e:
-            logger.error(f"[ComprehensiveTestRunner] Error running memory profiling: {e}")
+            logger.error("[ComprehensiveTestRunner] Error running memory profiling: %s", e)
             return {
                 'success': False,
                 'error': str(e),
@@ -185,7 +185,7 @@ class ComprehensiveTestRunner:
             if integration_results['success']:
                 logger.info("[ComprehensiveTestRunner] Integration tests passed")
             else:
-                logger.error(f"[ComprehensiveTestRunner] Integration tests failed: {result.stderr}")
+                logger.error("[ComprehensiveTestRunner] Integration tests failed: %s", result.stderr)
 
             return integration_results
 
@@ -197,7 +197,7 @@ class ComprehensiveTestRunner:
                 'duration': 60.0
             }
         except Exception as e:
-            logger.error(f"[ComprehensiveTestRunner] Error running integration tests: {e}")
+            logger.error("[ComprehensiveTestRunner] Error running integration tests: %s", e)
             return {
                 'success': False,
                 'error': str(e),
@@ -291,7 +291,7 @@ class ComprehensiveTestRunner:
             return validation_results
 
         except Exception as e:
-            logger.error(f"[ComprehensiveTestRunner] Error in system validation: {e}")
+            logger.error("[ComprehensiveTestRunner] Error in system validation: %s", e)
             return {
                 'success': False,
                 'error': str(e),
@@ -381,7 +381,7 @@ class ComprehensiveTestRunner:
         with open(filename, 'w') as f:
             json.dump(report, f, indent=2)
 
-        logger.info(f"[ComprehensiveTestRunner] Report saved to {filename}")
+        logger.info("[ComprehensiveTestRunner] Report saved to %s", filename)
 
     def print_summary(self):
         """Print test summary to console."""
@@ -449,7 +449,7 @@ class ComprehensiveTestRunner:
         # Print summary
         self.print_summary()
 
-        logger.info(f"[ComprehensiveTestRunner] All tests completed. Report: {report_filename}")
+        logger.info("[ComprehensiveTestRunner] All tests completed. Report: %s", report_filename)
 
         return self.generate_comprehensive_report()
 
@@ -494,7 +494,7 @@ Examples:
         logger.info("[ComprehensiveTestRunner] Test execution interrupted by user")
         return 1
     except Exception as e:
-        logger.error(f"[ComprehensiveTestRunner] Test execution failed: {e}")
+        logger.error("[ComprehensiveTestRunner] Test execution failed: %s", e)
         return 1
 
 

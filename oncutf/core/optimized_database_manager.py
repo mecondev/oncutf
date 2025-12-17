@@ -127,7 +127,7 @@ class ConnectionPool:
                 try:
                     conn.close()
                 except Exception as e:
-                    logger.error(f"[ConnectionPool] Error closing connection: {e}")
+                    logger.error("[ConnectionPool] Error closing connection: %s", e)
 
             self._connections.clear()
             self._available_connections.clear()
@@ -273,7 +273,7 @@ class OptimizedDatabaseManager(QObject):
         # Initialize database
         self._initialize_database()
 
-        logger.info(f"[OptimizedDatabaseManager] Initialized with {max_connections} connections")
+        logger.info("[OptimizedDatabaseManager] Initialized with %d connections", max_connections)
 
     def _get_user_data_directory(self) -> Path:
         """Get user data directory for storing database."""
@@ -329,9 +329,9 @@ class OptimizedDatabaseManager(QObject):
                 return results
 
         except Exception as e:
-            logger.error(f"[OptimizedDatabaseManager] Query execution failed: {e}")
-            logger.error(f"[OptimizedDatabaseManager] Query: {query}")
-            logger.error(f"[OptimizedDatabaseManager] Params: {params}")
+            logger.error("[OptimizedDatabaseManager] Query execution failed: %s", e)
+            logger.error("[OptimizedDatabaseManager] Query: %s", query)
+            logger.error("[OptimizedDatabaseManager] Params: %s", params)
             return None
 
     def execute_update(self, query: str, params: tuple = (), use_prepared: bool = True) -> bool:
@@ -368,9 +368,9 @@ class OptimizedDatabaseManager(QObject):
                 return True
 
         except Exception as e:
-            logger.error(f"[OptimizedDatabaseManager] Update execution failed: {e}")
-            logger.error(f"[OptimizedDatabaseManager] Query: {query}")
-            logger.error(f"[OptimizedDatabaseManager] Params: {params}")
+            logger.error("[OptimizedDatabaseManager] Update execution failed: %s", e)
+            logger.error("[OptimizedDatabaseManager] Query: %s", query)
+            logger.error("[OptimizedDatabaseManager] Params: %s", params)
             return False
 
     def execute_batch(
@@ -423,9 +423,9 @@ class OptimizedDatabaseManager(QObject):
                     raise e
 
         except Exception as e:
-            logger.error(f"[OptimizedDatabaseManager] Batch execution failed: {e}")
-            logger.error(f"[OptimizedDatabaseManager] Query: {query}")
-            logger.error(f"[OptimizedDatabaseManager] Batch size: {len(params_list)}")
+            logger.error("[OptimizedDatabaseManager] Batch execution failed: %s", e)
+            logger.error("[OptimizedDatabaseManager] Query: %s", query)
+            logger.error("[OptimizedDatabaseManager] Batch size: %d", len(params_list))
             return False
 
     def _record_query_stats(self, query_hash: str, query_text: str, execution_time: float):
@@ -442,7 +442,8 @@ class OptimizedDatabaseManager(QObject):
             if execution_time > self.slow_query_threshold:
                 self.slow_query_detected.emit(query_text, execution_time)
                 logger.warning(
-                    f"[OptimizedDatabaseManager] Slow query detected: {execution_time:.3f}s"
+                    "[OptimizedDatabaseManager] Slow query detected: %.3fs",
+                    execution_time,
                 )
 
     def get_query_stats(self) -> dict[str, Any]:
@@ -512,7 +513,7 @@ class OptimizedDatabaseManager(QObject):
                 logger.info("[OptimizedDatabaseManager] Database optimization completed")
 
         except Exception as e:
-            logger.error(f"[OptimizedDatabaseManager] Database optimization failed: {e}")
+            logger.error("[OptimizedDatabaseManager] Database optimization failed: %s", e)
 
     def _initialize_database(self):
         """Initialize database with optimized schema."""
@@ -546,11 +547,12 @@ class OptimizedDatabaseManager(QObject):
                     conn.commit()
 
                 logger.info(
-                    f"[OptimizedDatabaseManager] Database initialized (version {self.SCHEMA_VERSION})"
+                    "[OptimizedDatabaseManager] Database initialized (version %s)",
+                    self.SCHEMA_VERSION,
                 )
 
         except Exception as e:
-            logger.error(f"[OptimizedDatabaseManager] Database initialization failed: {e}")
+            logger.error("[OptimizedDatabaseManager] Database initialization failed: %s", e)
 
     def _create_optimized_schema(self, cursor: sqlite3.Cursor):
         """Create optimized database schema."""

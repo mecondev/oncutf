@@ -115,7 +115,7 @@ class ShortcutManager:
                     )
 
         except Exception as e:
-            logger.error(f"[MainWindow] UNDO: Error during undo operation: {e}")
+            logger.error("[MainWindow] UNDO: Error during undo operation: %s", e)
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -159,7 +159,7 @@ class ShortcutManager:
                     )
 
         except Exception as e:
-            logger.error(f"[MainWindow] REDO: Error during redo operation: {e}")
+            logger.error("[MainWindow] REDO: Error during redo operation: %s", e)
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -182,7 +182,7 @@ class ShortcutManager:
             logger.info("[MainWindow] HISTORY: History dialog shown successfully")
 
         except Exception as e:
-            logger.error(f"[MainWindow] HISTORY: Error showing history dialog: {e}")
+            logger.error("[MainWindow] HISTORY: Error showing history dialog: %s", e)
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -205,7 +205,7 @@ class ShortcutManager:
             logger.info("[MainWindow] RENAME_HISTORY: Rename history dialog shown successfully")
 
         except Exception as e:
-            logger.error(f"[MainWindow] RENAME_HISTORY: Error showing rename history dialog: {e}")
+            logger.error("[MainWindow] RENAME_HISTORY: Error showing rename history dialog: %s", e)
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -259,7 +259,7 @@ class ShortcutManager:
             files_with_hash_paths = hash_cache.get_files_with_hash_batch(selected_file_paths, "CRC32")
 
             if not files_with_hash_paths:
-                logger.info(f"[MainWindow] RESULTS_HASH_LIST: No hashes found for any of {len(selected_files)} selected files")
+                logger.info("[MainWindow] RESULTS_HASH_LIST: No hashes found for any of %d selected files", len(selected_files))
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_file_operation_status(
                         f"No hashes in {len(selected_files)} selected file(s)", success=False, auto_reset=True
@@ -318,10 +318,10 @@ class ShortcutManager:
             self.main_window.results_dialog.raise_()
             self.main_window.results_dialog.activateWindow()
 
-            logger.info(f"[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully with {len(hash_results)} hashes from {len(selected_files)} selected files")
+            logger.info("[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully with %d hashes from %d selected files", len(hash_results), len(selected_files))
 
         except Exception as e:
-            logger.error(f"[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: {e}")
+            logger.error("[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: %s", e)
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -349,7 +349,7 @@ class ShortcutManager:
                 "redo_description": command_manager.get_redo_description(),
             }
         except Exception as e:
-            logger.warning(f"[ShortcutManager] Error getting command status: {e}")
+            logger.warning("[ShortcutManager] Error getting command status: %s", e)
             command_status = {
                 "can_undo": False,
                 "can_redo": False,

@@ -33,7 +33,10 @@ class BaseRenameModule(QWidget):
         Emits the updated signal only if the value differs from the last known.
         """
         logger.debug(
-            f"[Signal] {self.__class__.__name__} emit_if_changed: old={getattr(self, '_last_value', None)!r} new={value!r}"
+            "[Signal] %s emit_if_changed: old=%r new=%r",
+            self.__class__.__name__,
+            getattr(self, "_last_value", None),
+            value,
         )
 
         if not hasattr(self, "_last_value"):
@@ -76,5 +79,6 @@ class BaseRenameModule(QWidget):
         # that may bleed into child widgets (e.g., combo trees) and break state colors.
         # Global theming via ThemeEngine handles consistent styling.
         logger.debug(
-            f"[{self.__class__.__name__}] Theme inheritance via global ThemeEngine (no per-widget QSS)"
+            "[%s] Theme inheritance via global ThemeEngine (no per-widget QSS)",
+            self.__class__.__name__,
         )

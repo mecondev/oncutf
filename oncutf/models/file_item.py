@@ -80,12 +80,17 @@ class FileItem:
     @property
     def has_metadata(self) -> bool:
         logger.debug(
-            f"[DEBUG] Checking has_metadata for {self.filename} | metadata: {self.metadata}",
+            "[DEBUG] Checking has_metadata for %s | metadata: %s",
+            self.filename,
+            self.metadata,
             extra={"dev_only": True},
         )
         result = isinstance(self.metadata, dict) and bool(self.metadata)
         logger.debug(
-            f"[DEBUG] has_metadata result for {self.filename}: {result}", extra={"dev_only": True}
+            "[DEBUG] has_metadata result for %s: %s",
+            self.filename,
+            result,
+            extra={"dev_only": True},
         )
         return result
 
@@ -101,8 +106,12 @@ class FileItem:
         if self.full_path and os.path.exists(self.full_path):
             try:
                 return os.path.getsize(self.full_path)
-            except Exception as e:
-                logger.warning(f"[FileItem] Failed to get size for {self.full_path}: {e}")
+            except Exception:
+                logger.warning(
+                    "[FileItem] Failed to get size for %s",
+                    self.full_path,
+                    exc_info=True,
+                )
         return 0
 
     def get_human_readable_size(self) -> str:

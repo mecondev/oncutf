@@ -212,9 +212,12 @@ class RenameModulesArea(QWidget):
         Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
-        logger.debug(f"[Preview] Modules: {self.module_widgets}", extra={"dev_only": True})
         logger.debug(
-            f"[Preview] Effective check: {[m.is_effective() for m in self.module_widgets]}",
+            "[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True}
+        )
+        logger.debug(
+            "[Preview] Effective check: %s",
+            [m.is_effective() for m in self.module_widgets],
             extra={"dev_only": True},
         )
 
@@ -229,7 +232,9 @@ class RenameModulesArea(QWidget):
         """
         self.current_theme = theme
         # Theme styling is now handled by the global theme engine
-        logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})
+        logger.debug(
+            "[RenameModulesArea] Theme changed to: %s", theme, extra={"dev_only": True}
+        )
 
     def _setup_rename_engine(self):
         """Setup UnifiedRenameEngine."""
@@ -239,7 +244,7 @@ class RenameModulesArea(QWidget):
             self.rename_engine = UnifiedRenameEngine()
             logger.debug("[RenameModulesArea] UnifiedRenameEngine initialized")
         except Exception as e:
-            logger.error(f"[RenameModulesArea] Error initializing UnifiedRenameEngine: {e}")
+            logger.error("[RenameModulesArea] Error initializing UnifiedRenameEngine: %s", e)
 
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
@@ -258,7 +263,7 @@ class RenameModulesArea(QWidget):
                 self.rename_engine.clear_cache()
                 logger.debug("[RenameModulesArea] Central preview update triggered")
         except Exception as e:
-            logger.error(f"[RenameModulesArea] Error in central preview update: {e}")
+            logger.error("[RenameModulesArea] Error in central preview update: %s", e)
 
     def trigger_preview_update(self):
         """Public method to trigger preview update."""
@@ -268,7 +273,9 @@ class RenameModulesArea(QWidget):
     def module_drag_started(self, module):
         """Handle when a module starts being dragged."""
         self.dragged_module = module
-        logger.debug(f"[RenameModulesArea] Module drag started: {module}", extra={"dev_only": True})
+        logger.debug(
+            "[RenameModulesArea] Module drag started: %s", module, extra={"dev_only": True}
+        )
         # Create a visual placeholder to reserve space while dragging
         self._create_drag_placeholder(module)
         # Optional: keep thin indicators for clarity
@@ -278,7 +285,9 @@ class RenameModulesArea(QWidget):
 
     def module_drag_ended(self, module):
         """Handle when a module drag ends."""
-        logger.debug(f"[RenameModulesArea] Module drag ended: {module}", extra={"dev_only": True})
+        logger.debug(
+            "[RenameModulesArea] Module drag ended: %s", module, extra={"dev_only": True}
+        )
 
         # Stop auto-scrolling
         self.auto_scroll_timer.stop()
@@ -392,7 +401,9 @@ class RenameModulesArea(QWidget):
             return
 
         logger.debug(
-            f"[RenameModulesArea] Reordering module from {old_index} to {new_index}",
+            "[RenameModulesArea] Reordering module from %d to %d",
+            old_index,
+            new_index,
             extra={"dev_only": True},
         )
 

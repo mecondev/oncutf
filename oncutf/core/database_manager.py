@@ -70,7 +70,7 @@ class DatabaseManager:
 
         if DEBUG_RESET_DATABASE:
             if self.db_path.exists():
-                logger.info(f"[DEBUG] Deleting database for fresh start: {self.db_path}")
+                logger.info("[DEBUG] Deleting database for fresh start: %s", self.db_path)
                 try:
                     self.db_path.unlink()
                     # Also remove WAL and SHM files if they exist
@@ -82,10 +82,10 @@ class DatabaseManager:
                         shm_path.unlink()
                     logger.info("[DEBUG] Database files deleted successfully")
                 except Exception as e:
-                    logger.error(f"[DEBUG] Failed to delete database: {e}")
+                    logger.error("[DEBUG] Failed to delete database: %s", e)
 
         self._initialize_database()
-        logger.info(f"[DatabaseManager] Initialized with database: {self.db_path}")
+        logger.info("[DatabaseManager] Initialized with database: %s", self.db_path)
 
     def _get_user_data_directory(self) -> Path:
         """Get user data directory for storing database."""
@@ -173,7 +173,8 @@ class DatabaseManager:
         self.initialize_default_metadata_schema()
 
         logger.debug(
-            f"[DatabaseManager] Schema initialized (version {self.SCHEMA_VERSION})",
+            "[DatabaseManager] Schema initialized (version %d)",
+            self.SCHEMA_VERSION,
             extra={"dev_only": True},
         )
 
@@ -301,7 +302,9 @@ class DatabaseManager:
     def _migrate_schema(self, cursor: sqlite3.Cursor, from_version: int):
         """Migrate from older schema versions."""
         logger.info(
-            f"[DatabaseManager] Migrating from version {from_version} to {self.SCHEMA_VERSION}"
+            "[DatabaseManager] Migrating from version %d to %d",
+            from_version,
+            self.SCHEMA_VERSION,
         )
 
         # Migration from version 2 to 3: Add structured metadata tables
@@ -508,12 +511,14 @@ class DatabaseManager:
                 conn.commit()
 
                 logger.debug(
-                    f"[DatabaseManager] Stored {metadata_type} metadata for: {os.path.basename(file_path)}"
+                    "[DatabaseManager] Stored %s metadata for: %s",
+                    metadata_type,
+                    os.path.basename(file_path),
                 )
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error storing metadata for {file_path}: {e}")
+            logger.error("[DatabaseManager] Error storing metadata for %s: %s", file_path, e)
             return False
 
     def batch_store_metadata(
@@ -563,7 +568,9 @@ class DatabaseManager:
 
                     except Exception as e:
                         logger.error(
-                            f"[DatabaseManager] Error in batch storing metadata for {file_path}: {e}"
+                            "[DatabaseManager] Error in batch storing metadata for %s: %s",
+                            file_path,
+                            e,
                         )
                         continue
 
@@ -571,12 +578,14 @@ class DatabaseManager:
                 conn.commit()
 
                 logger.debug(
-                    f"[DatabaseManager] Batch stored metadata for {success_count}/{len(metadata_items)} files"
+                    "[DatabaseManager] Batch stored metadata for %d/%d files",
+                    success_count,
+                    len(metadata_items),
                 )
                 return success_count
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error in batch store metadata: {e}")
+            logger.error("[DatabaseManager] Error in batch store metadata: %s", e)
             return 0
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
@@ -614,7 +623,7 @@ class DatabaseManager:
                 return metadata
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving metadata for {file_path}: {e}")
+            logger.error("[DatabaseManager] Error retrieving metadata for %s: %s", file_path, e)
             return None
 
     def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
@@ -683,7 +692,7 @@ class DatabaseManager:
                 return results
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error in batch metadata retrieval: {e}")
+            logger.error("[DatabaseManager] Error in batch metadata retrieval: %s", e)
             return dict.fromkeys(file_paths)
 
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
@@ -718,7 +727,7 @@ class DatabaseManager:
                 return cursor.fetchone() is not None
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error checking metadata for {file_path}: {e}")
+            logger.error("[DatabaseManager] Error checking metadata for %s: %s", file_path, e)
             return False
 
     # =====================================
@@ -764,12 +773,14 @@ class DatabaseManager:
                 conn.commit()
 
                 logger.debug(
-                    f"[DatabaseManager] Stored {algorithm} hash for: {os.path.basename(file_path)}"
+                    "[DatabaseManager] Stored %s hash for: %s",
+                    algorithm,
+                    os.path.basename(file_path),
                 )
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error storing hash for {file_path}: {e}")
+            logger.error("[DatabaseManager] Error storing hash for %s: %s", file_path, e)
             return False
 
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
@@ -795,7 +806,7 @@ class DatabaseManager:
                 return row["hash_value"] if row else None
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving hash for {file_path}: {e}")
+            logger.error("[DatabaseManager] Error retrieving hash for %s: %s", file_path, e)
             return None
 
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
@@ -846,7 +857,10 @@ class DatabaseManager:
             files_with_hash = [row["file_path"] for row in cursor.fetchall()]
 
             logger.debug(
-                f"[DatabaseManager] Batch hash check: {len(files_with_hash)}/{len(file_paths)} files have {algorithm} hashes"
+                "[DatabaseManager] Batch hash check: %d/%d files have %s hashes",
+                len(files_with_hash),
+                len(file_paths),
+                algorithm,
             )
 
             return files_with_hash
@@ -874,7 +888,9 @@ class DatabaseManager:
                 return cursor.lastrowid
         except Exception as e:
             logger.error(
-                f"[DatabaseManager] Error creating metadata category '{category_name}': {e}"
+                "[DatabaseManager] Error creating metadata category '%s': %s",
+                category_name,
+                e,
             )
             return None
 
@@ -892,7 +908,7 @@ class DatabaseManager:
                 )
                 return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting metadata categories: {e}")
+            logger.error("[DatabaseManager] Error getting metadata categories: %s", e)
             return []
 
     def create_metadata_field(
@@ -931,7 +947,7 @@ class DatabaseManager:
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error creating metadata field '{field_key}': {e}")
+            logger.error("[DatabaseManager] Error creating metadata field '%s': %s", field_key, e)
             return None
 
     def get_metadata_fields(self, category_id: int = None) -> list[dict[str, Any]]:
@@ -967,7 +983,7 @@ class DatabaseManager:
 
                 return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting metadata fields: {e}")
+            logger.error("[DatabaseManager] Error getting metadata fields: %s", e)
             return []
 
     def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
@@ -989,7 +1005,7 @@ class DatabaseManager:
                 row = cursor.fetchone()
                 return dict(row) if row else None
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting metadata field '{field_key}': {e}")
+            logger.error("[DatabaseManager] Error getting metadata field '%s': %s", field_key, e)
             return None
 
     def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
@@ -1001,7 +1017,7 @@ class DatabaseManager:
             field_info = self.get_metadata_field_by_key(field_key)
             if not field_info:
                 logger.warning(
-                    f"[DatabaseManager] Field '{field_key}' not found in metadata_fields"
+                    "[DatabaseManager] Field '%s' not found in metadata_fields", field_key
                 )
                 return False
 
@@ -1022,7 +1038,7 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(
-                f"[DatabaseManager] Error storing structured metadata for {file_path}: {e}"
+                "[DatabaseManager] Error storing structured metadata for %s: %s", file_path, e
             )
             return False
 
@@ -1055,7 +1071,8 @@ class DatabaseManager:
                     valid_data.append((path_id, field_info["id"], field_value))
                 else:
                     logger.debug(
-                        f"[DatabaseManager] Field '{field_key}' not found in metadata_fields - skipping"
+                        "[DatabaseManager] Field '%s' not found in metadata_fields - skipping",
+                        field_key,
                     )
 
             if not valid_data:
@@ -1075,13 +1092,16 @@ class DatabaseManager:
                 conn.commit()
 
                 logger.debug(
-                    f"[DatabaseManager] Batch stored {len(valid_data)} structured metadata fields"
+                    "[DatabaseManager] Batch stored %d structured metadata fields",
+                    len(valid_data),
                 )
                 return len(valid_data)
 
         except Exception as e:
             logger.error(
-                f"[DatabaseManager] Error in batch store structured metadata for {file_path}: {e}"
+                "[DatabaseManager] Error in batch store structured metadata for %s: %s",
+                file_path,
+                e,
             )
             return 0
 
@@ -1123,7 +1143,7 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(
-                f"[DatabaseManager] Error getting structured metadata for {file_path}: {e}"
+                "[DatabaseManager] Error getting structured metadata for %s: %s", file_path, e
             )
             return {}
 
@@ -1374,7 +1394,7 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error initializing default metadata schema: {e}")
+            logger.error("[DatabaseManager] Error initializing default metadata schema: %s", e)
             return False
 
     # =====================================
@@ -1407,7 +1427,7 @@ class DatabaseManager:
                 return stats
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting database stats: {e}")
+            logger.error("[DatabaseManager] Error getting database stats: %s", e)
             return {}
 
     def close(self):

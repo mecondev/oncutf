@@ -284,7 +284,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error(f"[MetadataTreeView] Failed to initialize MetadataCacheHelper: {e}")
+            logger.exception("[MetadataTreeView] Failed to initialize MetadataCacheHelper: %s", e)
             self._cache_helper = None
 
     def _get_cache_helper(self) -> MetadataCacheHelper | None:
@@ -312,7 +312,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 )
                 self._direct_loader = None
         except Exception as e:
-            logger.error(f"[MetadataTreeView] Failed to initialize UnifiedMetadataManager: {e}")
+            logger.exception("[MetadataTreeView] Failed to initialize UnifiedMetadataManager: %s", e)
             self._direct_loader = None
 
     def _get_direct_loader(self):
@@ -417,7 +417,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                             )
 
                 logger.debug(
-                    f"[MetadataTreeView] Drop processed: {len(files)} files (extended={use_extended})",
+                    "[MetadataTreeView] Drop processed: %d files (extended=%s)",
+                    len(files),
+                    use_extended,
                     extra={"dev_only": True},
                 )
 
@@ -646,7 +648,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         header.setVisible(not self._is_placeholder_mode)
 
         logger.debug(
-            f"[MetadataTree] Header visibility: {'hidden' if self._is_placeholder_mode else 'visible'} (placeholder_mode: {self._is_placeholder_mode})",
+            "[MetadataTree] Header visibility: %s (placeholder_mode: %s)",
+            "hidden" if self._is_placeholder_mode else "visible",
+            self._is_placeholder_mode,
             extra={"dev_only": True},
         )
 
@@ -736,7 +740,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                         if 0 <= row < len(file_model.files):
                             selected_files.append(file_model.files[row])
         except Exception as e:
-            logger.debug(f"[MetadataTree] Method 1 failed: {e}", extra={"dev_only": True})
+            logger.debug("[MetadataTree] Method 1 failed: %s", e, extra={"dev_only": True})
 
         # Method 2: Use file table view's internal selection method
         if not selected_files:
@@ -749,7 +753,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                             if 0 <= row < len(file_model.files):
                                 selected_files.append(file_model.files[row])
             except Exception as e:
-                logger.debug(f"[MetadataTree] Method 2 failed: {e}", extra={"dev_only": True})
+                logger.debug("[MetadataTree] Method 2 failed: %s", e, extra={"dev_only": True})
 
         return selected_files
 
@@ -770,7 +774,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             if not cache_helper.set_metadata_value(file_item, key_path, new_value):
                 # Failed to set metadata - show error and abort
                 logger.error(
-                    f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded"
+                    "[MetadataTree] Cannot edit %s for %s - metadata not loaded",
+                    key_path,
+                    file_item.filename,
                 )
                 from oncutf.core.pyqt_imports import QMessageBox
 
@@ -937,7 +943,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 extra={"dev_only": True},
             )
             logger.debug(
-                "[MetadataTree] setSourceModel (placeholder) stack:\n" + "".join(traceback.format_stack(limit=8)),
+                "[MetadataTree] setSourceModel (placeholder) stack:\n%s",
+                "".join(traceback.format_stack(limit=8)),
                 extra={"dev_only": True},
             )
             parent_window.metadata_proxy_model.setSourceModel(model)
@@ -998,12 +1005,13 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             self._update_search_field_state(True)
 
             logger.debug(
-                f"[MetadataTree] Displayed metadata for context: {context}",
+                "[MetadataTree] Displayed metadata for context: %s",
+                context,
                 extra={"dev_only": True},
             )
 
         except Exception as e:
-            logger.error(f"[MetadataTree] Error displaying metadata: {e}")
+            logger.exception("[MetadataTree] Error displaying metadata: %s", e)
             self.show_empty_state("Error loading metadata")
 
         # Update header visibility after metadata display
@@ -1136,12 +1144,13 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 self._search_field.update_suggestions(sorted(suggestions))
 
             logger.debug(
-                f"[MetadataTree] Updated search suggestions: {len(suggestions)} items",
+                "[MetadataTree] Updated search suggestions: %d items",
+                len(suggestions),
                 extra={"dev_only": True},
             )
 
         except Exception as e:
-            logger.error(f"[MetadataTree] Error updating search suggestions: {e}")
+            logger.exception("[MetadataTree] Error updating search suggestions: %s", e)
 
     def _collect_suggestions_from_tree_model(self, model, suggestions: set):
         """Collect search suggestions from the current tree model."""
@@ -1253,7 +1262,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         This ensures all model operations happen in the main thread via Qt event queue.
         """
         logger.debug(
-            f"[MetadataTree] Emitting rebuild_requested signal (context={context})",
+            "[MetadataTree] Emitting rebuild_requested signal (context=%s)",
+            context,
             extra={"dev_only": True},
         )
         self.rebuild_requested.emit(metadata, context)
@@ -1268,14 +1278,16 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Uses rebuild lock to prevent concurrent model swaps that cause segfaults.
         """
         logger.debug(
-            f"[MetadataTree] Processing queued rebuild request (context={context})",
+            "[MetadataTree] Processing queued rebuild request (context=%s)",
+            context,
             extra={"dev_only": True},
         )
 
         # Check if a rebuild is already in progress
         if self._rebuild_in_progress:
             logger.debug(
-                f"[MetadataTree] Rebuild already in progress, deferring request (context={context})",
+                "[MetadataTree] Rebuild already in progress, deferring request (context=%s)",
+                context,
                 extra={"dev_only": True},
             )
             # Store the pending request to process after current rebuild finishes
@@ -1284,7 +1296,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         if not isinstance(metadata, dict):
             logger.error(
-                f"[render_metadata_view] Called with invalid metadata: {type(metadata)} → {metadata}"
+                "[render_metadata_view] Called with invalid metadata: %s -> %s",
+                type(metadata),
+                metadata,
             )
             self.clear_view()
             return
@@ -1342,7 +1356,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             # Set rebuild lock BEFORE model operations
             self._rebuild_in_progress = True
             logger.debug(
-                f"[MetadataTree] Rebuild lock acquired (context={context})",
+                "[MetadataTree] Rebuild lock acquired (context=%s)",
+                context,
                 extra={"dev_only": True},
             )
 
@@ -1359,7 +1374,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 # CRITICAL: Disconnect view from model BEFORE changing source model
                 # This prevents Qt internal race conditions during model swap
                 logger.debug(
-                    f"[MetadataTree] Disconnecting view before model swap for file '{filename}'",
+                    "[MetadataTree] Disconnecting view before model swap for file '%s'",
+                    filename,
                     extra={"dev_only": True},
                 )
                 # Clear delegate hover state when model changes to prevent stale index references
@@ -1371,11 +1387,13 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
                 # Log and set the source model to the proxy model (debug help for race conditions)
                 logger.debug(
-                    f"[MetadataTree] Setting source model on metadata_proxy_model for file '{filename}'",
+                    "[MetadataTree] Setting source model on metadata_proxy_model for file '%s'",
+                    filename,
                     extra={"dev_only": True},
                 )
                 logger.debug(
-                    "[MetadataTree] setSourceModel stack:\n" + "".join(traceback.format_stack(limit=8)),
+                    "[MetadataTree] setSourceModel stack:\n%s",
+                    "".join(traceback.format_stack(limit=8)),
                     extra={"dev_only": True},
                 )
                 parent_window.metadata_proxy_model.setSourceModel(tree_model)
@@ -1390,7 +1408,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             else:
                 # Fallback: set model directly if proxy model is disabled or unavailable
                 logger.debug(
-                    f"[MetadataTree] Proxy disabled/unavailable - setting model directly for file '{filename}'",
+                    "[MetadataTree] Proxy disabled/unavailable - setting model directly for file '%s'",
+                    filename,
                     extra={"dev_only": True},
                 )
                 # Clear delegate hover state when model changes to prevent stale index references
@@ -1420,13 +1439,14 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             self._update_header_visibility()
 
         except Exception as e:
-            logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
+            logger.exception("[render_metadata_view] Unexpected error while rendering: %s", e)
             self.clear_view()
         finally:
             # ALWAYS release rebuild lock, even on error
             self._rebuild_in_progress = False
             logger.debug(
-                f"[MetadataTree] Rebuild lock released (context={context})",
+                "[MetadataTree] Rebuild lock released (context=%s)",
+                context,
                 extra={"dev_only": True},
             )
 
@@ -1435,7 +1455,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 pending_metadata, pending_context = self._pending_rebuild_request
                 self._pending_rebuild_request = None
                 logger.debug(
-                    f"[MetadataTree] Emitting deferred rebuild signal (context={pending_context})",
+                    "[MetadataTree] Emitting deferred rebuild signal (context=%s)",
+                    pending_context,
                     extra={"dev_only": True},
                 )
                 # Emit signal - it will be queued automatically via QueuedConnection
@@ -1493,7 +1514,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 parent_window.information_label.setStyleSheet("")
 
         except Exception as e:
-            logger.debug(f"Error updating information label: {e}", extra={"dev_only": True})
+            logger.debug("Error updating information label: %s", e, extra={"dev_only": True})
 
     def _apply_modified_values_to_display_data(self, display_data: dict[str, Any]) -> None:
         """
@@ -1583,7 +1604,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 if os.path.exists(full_path):
                     self.set_current_file_path(full_path)
                     logger.debug(
-                        f"[MetadataTree] Set current file from metadata: {full_path}",
+                        "[MetadataTree] Set current file from metadata: %s",
+                        full_path,
                         extra={"dev_only": True},
                     )
                     return
@@ -1595,13 +1617,15 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                     if os.path.exists(potential_path):
                         self.set_current_file_path(potential_path)
                         logger.debug(
-                            f"[MetadataTree] Set current file from {field}: {potential_path}",
+                            "[MetadataTree] Set current file from %s: %s",
+                            field,
+                            potential_path,
                             extra={"dev_only": True},
                         )
                         return
 
         except Exception as e:
-            logger.debug(f"Error determining current file: {e}", extra={"dev_only": True})
+            logger.debug("Error determining current file: %s", e, extra={"dev_only": True})
 
     # =====================================
     # Selection-based Metadata Management
@@ -1638,7 +1662,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 if metadata:
                     self.display_metadata(metadata, "parent_selection")
                     logger.debug(
-                        f"[MetadataTree] Updated from parent selection: {file_item.filename}",
+                        "[MetadataTree] Updated from parent selection: %s",
+                        file_item.filename,
                         extra={"dev_only": True},
                     )
                 else:
@@ -1647,12 +1672,13 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 # Multiple files selected
                 self.show_empty_state(f"{len(selection)} files selected")
                 logger.debug(
-                    f"[MetadataTree] Multiple files selected: {len(selection)}",
+                    "[MetadataTree] Multiple files selected: %d",
+                    len(selection),
                     extra={"dev_only": True},
                 )
 
         except Exception as e:
-            logger.error(f"[MetadataTree] Error updating from parent selection: {e}")
+            logger.exception("[MetadataTree] Error updating from parent selection: %s", e)
             self.show_empty_state("Error loading metadata")
 
     def refresh_metadata_from_selection(self) -> None:
@@ -1726,7 +1752,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             # Check if we have stale modifications
             if self._path_in_dict(normalized_path, self.modified_items_per_file):
                 logger.debug(
-                    f"[MetadataTree] Clearing stale modifications for {file_item.filename} on metadata display",
+                    "[MetadataTree] Clearing stale modifications for %s on metadata display",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
                 self._remove_from_path_dict(normalized_path, self.modified_items_per_file)
@@ -1811,18 +1838,23 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         """Smart display logic for metadata or empty state."""
         try:
             logger.debug(
-                f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}",
+                "[MetadataTree] smart_display_metadata_or_empty_state called: metadata=%s, selected_count=%d, context=%s",
+                bool(metadata),
+                selected_count,
+                context,
                 extra={"dev_only": True},
             )
 
             if metadata and self.should_display_metadata_for_selection(selected_count):
                 logger.debug(
-                    f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)",
+                    "[MetadataTree] Displaying metadata for %d selected file(s)",
+                    selected_count,
                     extra={"dev_only": True},
                 )
                 self.display_metadata(metadata, context)
                 logger.debug(
-                    f"[MetadataTree] Smart display: showing metadata (context: {context})",
+                    "[MetadataTree] Smart display: showing metadata (context: %s)",
+                    context,
                     extra={"dev_only": True},
                 )
             else:
@@ -1834,12 +1866,13 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                     self.show_empty_state("No metadata available")
 
                 logger.debug(
-                    f"[MetadataTree] Smart display: showing empty state (selected: {selected_count})",
+                    "[MetadataTree] Smart display: showing empty state (selected: %d)",
+                    selected_count,
                     extra={"dev_only": True},
                 )
 
         except Exception as e:
-            logger.error(f"[MetadataTree] Error in smart display: {e}")
+            logger.exception("[MetadataTree] Error in smart display: %s", e)
             self.show_empty_state("Error loading metadata")
 
         # Update header visibility after smart display
@@ -2008,7 +2041,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         if os.path.exists(value):
             self.set_current_file_path(value)
             logger.debug(
-                f"[MetadataTreeView] Set current file from metadata field '{field}': {value}"
+                "[MetadataTreeView] Set current file from metadata field '%s': %s",
+                field,
+                value,
             )
             return
 
@@ -2036,7 +2071,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             if os.path.exists(full_path):
                 self.set_current_file_path(full_path)
                 logger.debug(
-                    f"[MetadataTreeView] Set current file from constructed path: {full_path}"
+                    "[MetadataTreeView] Set current file from constructed path: %s",
+                    full_path,
                 )
                 return
 
@@ -2049,6 +2085,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 if os.path.exists(potential_path):
                     self.set_current_file_path(potential_path)
                     logger.debug(
-                        f"[MetadataTreeView] Set current file from metadata field '{field}': {potential_path}"
+                        "[MetadataTreeView] Set current file from metadata field '%s': %s",
+                        field,
+                        potential_path,
                     )
                     return

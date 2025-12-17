@@ -152,7 +152,7 @@ class MetadataFieldMappingHelper:
         category = cls.get_file_category(file_path)
 
         if generic_field not in cls.WRITE_FIELD_MAPPING:
-            logger.warning(f"[FieldMapper] Unknown generic field: {generic_field}")
+            logger.warning("[FieldMapper] Unknown generic field: %s", generic_field)
             return None
 
         field_mapping = cls.WRITE_FIELD_MAPPING[generic_field]
@@ -160,12 +160,17 @@ class MetadataFieldMappingHelper:
 
         if specific_field is None:
             logger.debug(
-                f"[FieldMapper] Field '{generic_field}' not supported for {category} files"
+                "[FieldMapper] Field '%s' not supported for %s files",
+                generic_field,
+                category,
             )
             return None
 
         logger.debug(
-            f"[FieldMapper] Mapping {generic_field} -> {specific_field} for {category} file"
+            "[FieldMapper] Mapping %s -> %s for %s file",
+            generic_field,
+            specific_field,
+            category,
         )
         return specific_field
 
@@ -192,7 +197,11 @@ class MetadataFieldMappingHelper:
                 converted_value = category_conversions.get(value, value)
 
                 logger.debug(
-                    f"[FieldMapper] Converting {generic_field} value '{value}' -> '{converted_value}' for {category}"
+                    "[FieldMapper] Converting %s value '%s' -> '%s' for %s",
+                    generic_field,
+                    value,
+                    converted_value,
+                    category,
                 )
                 return converted_value
 
@@ -214,13 +223,21 @@ class MetadataFieldMappingHelper:
         prepared_changes = {}
         category = cls.get_file_category(file_path)
 
-        logger.debug(f"[FieldMapper] Preparing {len(metadata_changes)} metadata changes for {category} file")
+        logger.debug(
+            "[FieldMapper] Preparing %d metadata changes for %s file",
+            len(metadata_changes),
+            category,
+        )
 
         for generic_field, value in metadata_changes.items():
             # Get the file-specific field name
             specific_field = cls.get_write_field_name(generic_field, file_path)
             if specific_field is None:
-                logger.warning(f"[FieldMapper] Skipping unsupported field '{generic_field}' for {category} file")
+                logger.warning(
+                    "[FieldMapper] Skipping unsupported field '%s' for %s file",
+                    generic_field,
+                    category,
+                )
                 continue
 
             # Convert the value if necessary
@@ -228,7 +245,7 @@ class MetadataFieldMappingHelper:
 
             prepared_changes[specific_field] = converted_value
 
-        logger.debug(f"[FieldMapper] Prepared {len(prepared_changes)} field mappings")
+        logger.debug("[FieldMapper] Prepared %d field mappings", len(prepared_changes))
         return prepared_changes
 
     @classmethod

@@ -137,7 +137,7 @@ class MetadataExporter:
                 return self._export_json(files, output_dir, scope)
 
         except Exception as e:
-            logger.exception(f"[MetadataExporter] Export failed: {e}")
+            logger.exception("[MetadataExporter] Export failed: %s", e)
             return False
 
     def _export_json(self, files: list[Any], output_dir: str, _scope: str) -> bool:
@@ -174,13 +174,13 @@ class MetadataExporter:
                     json.dump(export_data, f, indent=2, ensure_ascii=False)
 
                 exported_count += 1
-                logger.debug(f"[MetadataExporter] Exported JSON for: {source_filename}")
+                logger.debug("[MetadataExporter] Exported JSON for: %s", source_filename)
 
-            logger.info(f"[MetadataExporter] JSON export completed: {exported_count} files")
+            logger.info("[MetadataExporter] JSON export completed: %d files", exported_count)
             return exported_count > 0
 
         except Exception as e:
-            logger.error(f"[MetadataExporter] JSON export failed: {e}")
+            logger.error("[MetadataExporter] JSON export failed: %s", e)
             return False
 
     def _export_markdown(self, files: list[Any], output_dir: str, _scope: str) -> bool:
@@ -248,13 +248,13 @@ class MetadataExporter:
                     )
 
                 exported_count += 1
-                logger.debug(f"[MetadataExporter] Exported Markdown for: {source_filename}")
+                logger.debug("[MetadataExporter] Exported Markdown for: %s", source_filename)
 
-            logger.info(f"[MetadataExporter] Markdown export completed: {exported_count} files")
+            logger.info("[MetadataExporter] Markdown export completed: %d files", exported_count)
             return exported_count > 0
 
         except Exception as e:
-            logger.error(f"[MetadataExporter] Markdown export failed: {e}")
+            logger.error("[MetadataExporter] Markdown export failed: %s", e)
             return False
 
     def _prepare_file_data(self, file_item: Any) -> dict[str, Any] | None:
@@ -298,7 +298,7 @@ class MetadataExporter:
             return file_data
 
         except Exception as e:
-            logger.error(f"[MetadataExporter] Error preparing file data: {e}")
+            logger.error("[MetadataExporter] Error preparing file data: %s", e)
             return None
 
     def _get_hash_info(self, file_item: Any) -> dict[str, str] | None:
@@ -321,12 +321,12 @@ class MetadataExporter:
                     if hash_value:
                         return {"algorithm": "CRC32", "value": hash_value}
                 except Exception as e:
-                    logger.debug(f"[MetadataExporter] HashManager error: {e}")
+                    logger.debug("[MetadataExporter] HashManager error: %s", e)
 
             return None
 
         except Exception as e:
-            logger.debug(f"[MetadataExporter] Could not get hash info: {e}")
+            logger.debug("[MetadataExporter] Could not get hash info: %s", e)
             return None
 
     def _get_metadata_for_file(self, file_item: Any) -> dict[str, Any] | None:
@@ -346,7 +346,7 @@ class MetadataExporter:
             return None
 
         except Exception as e:
-            logger.debug(f"[MetadataExporter] Could not get metadata: {e}")
+            logger.debug("[MetadataExporter] Could not get metadata: %s", e)
             return None
 
     def _group_metadata(self, metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:

@@ -169,7 +169,7 @@ class RealTimeValidationWidget(QWidget):
                 self.progress_bar.setVisible(False)
 
         except Exception as e:
-            logger.error(f"[RealTimeValidationWidget] Error updating validation: {e}")
+            logger.error("[RealTimeValidationWidget] Error updating validation: %s", e)
 
     def _show_error_details(self, items: list):
         """Show error details."""

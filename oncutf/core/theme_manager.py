@@ -66,7 +66,8 @@ class ThemeManager(QObject):
 
             self._theme_tokens = THEME_TOKENS
             logger.debug(
-                f"[ThemeManager] Loaded {len(self._theme_tokens)} theme definitions",
+                "[ThemeManager] Loaded %d theme definitions",
+                len(self._theme_tokens),
                 extra={"dev_only": True},
             )
         except ImportError:
@@ -102,7 +103,7 @@ class ThemeManager(QObject):
             old_theme = self._current_theme
             self._current_theme = theme_name
             self._qss_cache = ""  # Invalidate cache
-            logger.info(f"[ThemeManager] Theme changed: {old_theme} -> {theme_name}")
+            logger.info("[ThemeManager] Theme changed: %s -> %s", old_theme, theme_name)
             self.theme_changed.emit(theme_name)
 
     def get_color(self, token: str) -> str:
@@ -121,7 +122,9 @@ class ThemeManager(QObject):
         theme_colors = self._theme_tokens.get(self._current_theme, {})
         if token not in theme_colors:
             logger.warning(
-                f"[ThemeManager] Color token '{token}' not found in theme '{self._current_theme}'"
+                "[ThemeManager] Color token '%s' not found in theme '%s'",
+                token,
+                self._current_theme,
             )
             raise KeyError(f"Color token '{token}' not found in theme '{self._current_theme}'")
 
@@ -168,7 +171,7 @@ class ThemeManager(QObject):
         template_path = os.path.join("resources", "styles", "main.qss.template")
 
         if not os.path.exists(template_path):
-            logger.warning(f"[ThemeManager] QSS template not found: {template_path}")
+            logger.warning("[ThemeManager] QSS template not found: %s", template_path)
             return ""
 
         try:
@@ -185,13 +188,14 @@ class ThemeManager(QObject):
             template = template.replace("{{theme_name}}", self._current_theme)
 
             logger.debug(
-                f"[ThemeManager] Rendered QSS template ({len(template)} chars)",
+                "[ThemeManager] Rendered QSS template (%d chars)",
+                len(template),
                 extra={"dev_only": True},
             )
             return template
 
         except Exception as e:
-            logger.error(f"[ThemeManager] Error rendering QSS template: {e}")
+            logger.error("[ThemeManager] Error rendering QSS template: %s", e)
             return ""
 
     def apply_theme(self, app) -> None:
@@ -206,7 +210,7 @@ class ThemeManager(QObject):
         qss = self.get_qss()
         if qss:
             app.setStyleSheet(qss)
-            logger.info(f"[ThemeManager] Applied theme '{self._current_theme}' to application")
+            logger.info("[ThemeManager] Applied theme '%s' to application", self._current_theme)
         else:
             logger.warning("[ThemeManager] No QSS to apply (empty or error)")
 

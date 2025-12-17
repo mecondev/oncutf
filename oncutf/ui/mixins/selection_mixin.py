@@ -123,8 +123,8 @@ class SelectionMixin:
             finally:
                 self.blockSignals(False)
 
-        except Exception as e:
-            logger.error(f"[SyncQt] Error syncing selection: {e}")
+        except Exception:
+            logger.exception("[SyncQt] Error syncing selection")
 
     def _get_current_selection(self) -> set:
         """
@@ -411,7 +411,8 @@ class SelectionMixin:
                 )
                 return
             logger.debug(
-                f"[SelectionMixin] Fallback: selecting all {row_count} files",
+                "[SelectionMixin] Fallback: selecting all %d files",
+                row_count,
                 extra={"dev_only": True},
             )
             self.select_rows_range(0, row_count - 1)

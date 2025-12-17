@@ -62,7 +62,7 @@ class RenameConflictResolver(QObject):
             strategy: The default strategy to use
         """
         self.default_strategy = strategy
-        logger.debug(f"Default conflict resolution strategy set to: {strategy.value}")
+        logger.debug("Default conflict resolution strategy set to: %s", strategy.value)
 
     def resolve_conflict(
         self,
@@ -85,7 +85,10 @@ class RenameConflictResolver(QObject):
             strategy = self.default_strategy
 
         logger.debug(
-            f"Resolving conflict for {original_path} -> {target_path} using {strategy.value}"
+            "Resolving conflict for %s -> %s using %s",
+            original_path,
+            target_path,
+            strategy.value,
         )
 
         try:
@@ -98,22 +101,24 @@ class RenameConflictResolver(QObject):
             elif strategy == ConflictResolutionStrategy.ASK_USER:
                 return self._ask_user_for_resolution(original_path, target_path)
             else:
-                logger.warning(f"Unknown conflict resolution strategy: {strategy}")
+                logger.warning("Unknown conflict resolution strategy: %s", strategy)
                 return self._skip_conflict(original_path, target_path)
 
         except Exception as e:
-            logger.error(f"Error resolving conflict: {e}")
+            logger.error("Error resolving conflict: %s", e)
             return self._skip_conflict(original_path, target_path)
 
     def _skip_conflict(self, original_path: str, target_path: str) -> str:
         """Skip the conflicting rename operation."""
-        logger.info(f"Skipping rename due to conflict: {original_path} -> {target_path}")
+        logger.info(
+            "Skipping rename due to conflict: %s -> %s", original_path, target_path
+        )
         self.conflict_resolved.emit(original_path, target_path, "skipped")
         return ""
 
     def _overwrite_conflict(self, original_path: str, target_path: str) -> str:
         """Overwrite the existing target file."""
-        logger.info(f"Overwriting existing file: {target_path}")
+        logger.info("Overwriting existing file: %s", target_path)
         self.conflict_resolved.emit(original_path, target_path, "overwritten")
         return target_path
 
@@ -131,7 +136,9 @@ class RenameConflictResolver(QObject):
 
             if not new_path.exists():
                 new_target = str(new_path)
-                logger.info(f"Resolving conflict with suffix: {original_path} -> {new_target}")
+                logger.info(
+                    "Resolving conflict with suffix: %s -> %s", original_path, new_target
+                )
                 self.conflict_resolved.emit(original_path, target_path, f"renamed_to_{new_target}")
                 return new_target
 
@@ -158,4 +165,4 @@ class RenameConflictResolver(QObject):
             callback: Function to call when resolution is needed
         """
         self.resolution_callbacks[conflict_id] = callback
-        logger.debug(f"Registered resolution callback for conflict: {conflict_id}")
+        logger.debug("Registered resolution callback for conflict: %s", conflict_id)

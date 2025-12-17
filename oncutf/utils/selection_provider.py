@@ -89,7 +89,9 @@ class SelectionProvider:
                     return result
             except Exception as e:
                 logger.debug(
-                    f"[SelectionProvider] Strategy {strategy.__name__} failed: {e}",
+                    "[SelectionProvider] Strategy %s failed: %s",
+                    strategy.__name__,
+                    e,
                     extra={"dev_only": True}
                 )
 
@@ -189,7 +191,7 @@ class SelectionProvider:
                 cls._cached_selected_rows = result
                 return result
             except Exception as e:
-                logger.debug(f"[SelectionProvider] SelectionStore failed: {e}", extra={"dev_only": True})
+                logger.debug("[SelectionProvider] SelectionStore failed: %s", e, extra={"dev_only": True})
 
         # Fallback: use selection model
         if hasattr(parent_window, "file_table_view"):

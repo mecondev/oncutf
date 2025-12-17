@@ -140,7 +140,9 @@ class SmartIconCache(QObject):
         self._cleanup_timer.start(300000)  # 5 minutes
 
         logger.info(
-            f"[SmartIconCache] Initialized with {max_entries} entries, {max_memory_mb}MB limit"
+            "[SmartIconCache] Initialized with %d entries, %dMB limit",
+            max_entries,
+            max_memory_mb
         )
 
     def get_icon(self, name: str, size: QSize = None, theme: str = None) -> QIcon:
@@ -201,16 +203,19 @@ class SmartIconCache(QObject):
                     )
                     icon = QIcon(scaled_pixmap)
                     logger.debug(
-                        f"[SmartIconCache] Loaded icon: {name} ({size.width()}x{size.height()})"
+                        "[SmartIconCache] Loaded icon: %s (%dx%d)",
+                        name,
+                        size.width(),
+                        size.height()
                     )
                     return icon
 
             # Fallback to system icon or empty icon
-            logger.warning(f"[SmartIconCache] Icon not found: {name}")
+            logger.warning("[SmartIconCache] Icon not found: %s", name)
             return QIcon()
 
         except Exception as e:
-            logger.error(f"[SmartIconCache] Error loading icon {name}: {e}")
+            logger.error("[SmartIconCache] Error loading icon %s: %s", name, e)
             return QIcon()
 
     def _find_icon_path(self, name: str, theme: str) -> str | None:
@@ -253,7 +258,7 @@ class SmartIconCache(QObject):
             self._evict_if_needed()
 
         except Exception as e:
-            logger.error(f"[SmartIconCache] Error storing icon {cache_key}: {e}")
+            logger.error("[SmartIconCache] Error storing icon %s: %s", cache_key, e)
 
     def _estimate_icon_memory_size(self, _icon: QIcon, size: QSize) -> int:
         """Estimate memory size of an icon."""
@@ -279,14 +284,14 @@ class SmartIconCache(QObject):
             cache_key, entry = self._cache.popitem(last=False)
             self._evictions += 1
             self.cache_evicted.emit(cache_key)
-            logger.debug(f"[SmartIconCache] Evicted: {cache_key}")
+            logger.debug("[SmartIconCache] Evicted: %s", cache_key)
 
     def preload_common_icons(self, theme: str = None):
         """Preload commonly used icons."""
         if theme is None:
             theme = self._current_theme
 
-        logger.info(f"[SmartIconCache] Preloading common icons for theme: {theme}")
+        logger.info("[SmartIconCache] Preloading common icons for theme: %s", theme)
 
         for icon_name in self._common_icons:
             for size in self._common_sizes:
@@ -294,14 +299,18 @@ class SmartIconCache(QObject):
                     self.get_icon(icon_name, size, theme)
                     self._preloads += 1
                 except Exception as e:
-                    logger.debug(f"[SmartIconCache] Could not preload {icon_name}: {e}")
+                    logger.debug("[SmartIconCache] Could not preload %s: %s", icon_name, e)
 
-        logger.info(f"[SmartIconCache] Preloaded {self._preloads} icons")
+        logger.info("[SmartIconCache] Preloaded %d icons", self._preloads)
 
     def set_theme(self, theme: str):
         """Set current theme and optionally preload icons."""
         if theme != self._current_theme:
-            logger.info(f"[SmartIconCache] Theme changed: {self._current_theme} -> {theme}")
+            logger.info(
+                "[SmartIconCache] Theme changed: %s -> %s",
+                self._current_theme,
+                theme,
+            )
             self._current_theme = theme
 
             # Optionally clear cache for old theme
@@ -322,7 +331,9 @@ class SmartIconCache(QObject):
                 del self._cache[key]
 
             logger.debug(
-                f"[SmartIconCache] Cleared {len(keys_to_remove)} entries for theme: {old_theme}"
+                "[SmartIconCache] Cleared %d entries for theme: %s",
+                len(keys_to_remove),
+                old_theme,
             )
 
     def get_memory_usage_mb(self) -> float:
@@ -370,10 +381,13 @@ class SmartIconCache(QObject):
                     del self._cache[key]
 
                 if keys_to_remove:
-                    logger.debug(f"[SmartIconCache] Cleaned up {len(keys_to_remove)} old entries")
+                    logger.debug(
+                        "[SmartIconCache] Cleaned up %d old entries",
+                        len(keys_to_remove),
+                    )
 
         except Exception as e:
-            logger.error(f"[SmartIconCache] Error during cleanup: {e}")
+            logger.error("[SmartIconCache] Error during cleanup: %s", e)
 
     def clear(self):
         """Clear all cached icons."""

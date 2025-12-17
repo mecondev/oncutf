@@ -40,7 +40,9 @@ class DragZoneValidator:
         cls._initial_drag_widgets[drag_source] = widget_class_name
         cls._has_left_initial[drag_source] = False  # Reset the "has left" flag
         logger.debug(
-            f"[DragZoneValidator] Initial drag widget set: {widget_class_name} (source: {drag_source})",
+            "[DragZoneValidator] Initial drag widget set: %s (source: %s)",
+            widget_class_name,
+            drag_source,
             extra={"dev_only": True},
         )
 
@@ -66,10 +68,16 @@ class DragZoneValidator:
 
         widget_class_name = widget_under_cursor.__class__.__name__
         logger.debug(
-            f"{log_prefix} Widget under cursor: {widget_class_name}", extra={"dev_only": True}
+            "%s Widget under cursor: %s",
+            log_prefix,
+            widget_class_name,
+            extra={"dev_only": True},
         )
         logger.debug(
-            f"{log_prefix} Initial widget: {cls._initial_drag_widgets.get(drag_source)}, Has left: {cls._has_left_initial.get(drag_source)}",
+            "%s Initial widget: %s, Has left: %s",
+            log_prefix,
+            cls._initial_drag_widgets.get(drag_source),
+            cls._has_left_initial.get(drag_source),
             extra={"dev_only": True},
         )
 
@@ -81,7 +89,9 @@ class DragZoneValidator:
         if not is_initial_widget and not cls._has_left_initial.get(drag_source, False):
             cls._has_left_initial[drag_source] = True
             logger.debug(
-                f"{log_prefix} Left initial widget ({initial_widget}) - enabling invalid state on return",
+                "%s Left initial widget (%s) - enabling invalid state on return",
+                log_prefix,
+                initial_widget,
                 extra={"dev_only": True},
             )
 
@@ -93,7 +103,9 @@ class DragZoneValidator:
                 # Still in initial widget and haven't left yet - show as VALID (with action icons)
                 cls._set_cursor_state(DropZoneState.VALID)
                 logger.debug(
-                    f"{log_prefix} VALID zone (initial drag widget, haven't left): {widget_class_name}",
+                    "%s VALID zone (initial drag widget, haven't left): %s",
+                    log_prefix,
+                    widget_class_name,
                     extra={"dev_only": True},
                 )
                 return
@@ -101,7 +113,9 @@ class DragZoneValidator:
                 # Returned to initial widget after leaving - now show as INVALID
                 cls._set_cursor_state(DropZoneState.INVALID)
                 logger.debug(
-                    f"{log_prefix} INVALID zone (returned to initial after leaving): {widget_class_name}",
+                    "%s INVALID zone (returned to initial after leaving): %s",
+                    log_prefix,
+                    widget_class_name,
                     extra={"dev_only": True},
                 )
                 return
@@ -114,20 +128,26 @@ class DragZoneValidator:
         if widget_class_name in valid_zones:
             cls._set_cursor_state(DropZoneState.VALID)
             logger.debug(
-                f"{log_prefix} VALID drop zone detected: {widget_class_name}",
+                "%s VALID drop zone detected: %s",
+                log_prefix,
+                widget_class_name,
                 extra={"dev_only": True},
             )
         elif widget_class_name in invalid_zones:
             cls._set_cursor_state(DropZoneState.INVALID)
             logger.debug(
-                f"{log_prefix} INVALID drop zone detected: {widget_class_name}",
+                "%s INVALID drop zone detected: %s",
+                log_prefix,
+                widget_class_name,
                 extra={"dev_only": True},
             )
         else:
             # Unknown widget - treat as neutral
             cls._set_cursor_state(DropZoneState.NEUTRAL)
             logger.debug(
-                f"{log_prefix} NEUTRAL zone (unknown widget): {widget_class_name}",
+                "%s NEUTRAL zone (unknown widget): %s",
+                log_prefix,
+                widget_class_name,
                 extra={"dev_only": True},
             )
 

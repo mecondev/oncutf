@@ -38,13 +38,20 @@ def get_screen_for_widget(widget: QWidget) -> QScreen | None:
     # Find the screen that contains the widget center
     for screen in app.screens():
         if screen.geometry().contains(widget_center):
-            logger.debug(f"Found screen '{screen.name()}' for widget at {widget_center}")
+            logger.debug(
+                "Found screen '%s' for widget at %s",
+                screen.name(),
+                widget_center,
+            )
             return screen
 
     # If widget is not on any screen, return primary screen
     primary_screen = app.primaryScreen()
     if primary_screen:
-        logger.debug(f"Widget not on any screen, using primary screen '{primary_screen.name()}'")
+        logger.debug(
+            "Widget not on any screen, using primary screen '%s'",
+            primary_screen.name(),
+        )
     else:
         logger.warning("No primary screen found")
 
@@ -111,7 +118,7 @@ def center_dialog_on_screen(dialog: QWidget, screen: QScreen | None = None) -> N
     # Move dialog to center
     dialog.move(x, y)
 
-    logger.debug(f"Centered dialog on screen '{screen.name()}' at ({x}, {y})")
+    logger.debug("Centered dialog on screen '%s' at (%d, %d)", screen.name(), x, y)
 
 
 def position_dialog_relative_to_parent(dialog: QWidget, parent: QWidget | None = None) -> None:
@@ -162,7 +169,10 @@ def position_dialog_relative_to_parent(dialog: QWidget, parent: QWidget | None =
     dialog.move(x, y)
 
     logger.debug(
-        f"Positioned dialog relative to parent on screen '{parent_screen.name()}' at ({x}, {y})"
+        "Positioned dialog relative to parent on screen '%s' at (%d, %d)",
+        parent_screen.name(),
+        x,
+        y,
     )
 
 
@@ -178,12 +188,12 @@ def ensure_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = Non
     try:
         position_dialog_relative_to_parent(dialog, parent)
     except Exception as e:
-        logger.error(f"Error positioning dialog: {e}")
+        logger.error("Error positioning dialog: %s", e)
         # Fallback to simple centering
         try:
             center_dialog_on_parent_screen(dialog, parent)
         except Exception as e2:
-            logger.error(f"Error in fallback positioning: {e2}")
+            logger.error("Error in fallback positioning: %s", e2)
             # Final fallback - just move to a safe position
             dialog.move(100, 100)
 

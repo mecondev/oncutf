@@ -176,9 +176,9 @@ class ThemeEngine:
             from oncutf.utils.fonts import _get_inter_fonts
 
             inter_fonts = _get_inter_fonts()
-            logger.debug(f"[Theme] Inter fonts loaded: {len(inter_fonts.loaded_fonts)} fonts")
+            logger.debug("[Theme] Inter fonts loaded: %d fonts", len(inter_fonts.loaded_fonts))
         except Exception as e:
-            logger.error(f"[Theme] Failed to load Inter fonts: {e}")
+            logger.error("[Theme] Failed to load Inter fonts: %s", e)
 
     def _get_complete_stylesheet(self) -> str:
         """Get the complete stylesheet for the application."""

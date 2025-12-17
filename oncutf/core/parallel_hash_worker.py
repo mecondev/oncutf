@@ -84,7 +84,7 @@ class ParallelHashWorker(QThread):
         else:
             self._max_workers = max(1, max_workers)
 
-        logger.info(f"[ParallelHashWorker] Initialized with {self._max_workers} worker threads")
+        logger.info("[ParallelHashWorker] Initialized with %d worker threads", self._max_workers)
 
         # Shared hash manager for cache access
         from oncutf.core.hash_manager import HashManager
@@ -117,8 +117,10 @@ class ParallelHashWorker(QThread):
     def enable_batch_operations(self, enabled: bool = True) -> None:
         """Enable or disable batch operations optimization."""
         self._enable_batching = enabled
+        batch_state = "enabled" if enabled else "disabled"
         logger.debug(
-            f"[ParallelHashWorker] Batch operations {'enabled' if enabled else 'disabled'}"
+            "[ParallelHashWorker] Batch operations %s",
+            batch_state,
         )
 
     def setup_duplicate_scan(self, file_paths: list[str]) -> None:
@@ -149,7 +151,7 @@ class ParallelHashWorker(QThread):
         """Set total size from external calculation."""
         with QMutexLocker(self._mutex):
             self._total_bytes = total_size
-            logger.debug(f"[ParallelHashWorker] Total size set to: {total_size:,} bytes")
+            logger.debug("[ParallelHashWorker] Total size set to: %d bytes", total_size)
 
     def cancel(self) -> None:
         """Cancel the current operation."""
@@ -200,11 +202,13 @@ class ParallelHashWorker(QThread):
                         )
 
             except (OSError, PermissionError) as e:
-                logger.debug(f"[ParallelHashWorker] Could not get size for {file_path}: {e}")
+                logger.debug("[ParallelHashWorker] Could not get size for %s: %s", file_path, e)
                 continue
 
         logger.info(
-            f"[ParallelHashWorker] Total size: {total_size:,} bytes for {files_counted} files"
+            "[ParallelHashWorker] Total size: %s bytes for %d files",
+            format(total_size, ","),
+            files_counted,
         )
         return total_size
 
@@ -236,14 +240,14 @@ class ParallelHashWorker(QThread):
             # Cache hit
             with QMutexLocker(self._mutex):
                 self._cache_hits += 1
-            logger.debug(f"[ParallelHashWorker] Cache hit: {filename}")
+            logger.debug("[ParallelHashWorker] Cache hit: %s", filename)
             return (file_path, hash_value, file_size)
 
         # Cache miss - calculate hash
         with QMutexLocker(self._mutex):
             self._cache_misses += 1
 
-        logger.debug(f"[ParallelHashWorker] Calculating hash: {filename}")
+        logger.debug("[ParallelHashWorker] Calculating hash: %s", filename)
 
         try:
             hash_value = self._hash_manager.calculate_hash(file_path)
@@ -255,7 +259,7 @@ class ParallelHashWorker(QThread):
             return (file_path, hash_value, file_size)
 
         except Exception as e:
-            logger.warning(f"[ParallelHashWorker] Error processing {filename}: {e}")
+            logger.warning("[ParallelHashWorker] Error processing %s: %s", filename, e)
             with QMutexLocker(self._mutex):
                 self._errors.append((file_path, str(e)))
             return (file_path, None, file_size)
@@ -274,7 +278,8 @@ class ParallelHashWorker(QThread):
         with QMutexLocker(self._mutex):
             if self._enable_batching and self._batch_manager:
                 logger.debug(
-                    f"[ParallelHashWorker] Queuing hash for batch: {os.path.basename(file_path)}"
+                    "[ParallelHashWorker] Queuing hash for batch: %s",
+                    os.path.basename(file_path),
                 )
                 self._batch_manager.queue_hash_store(
                     file_path=file_path,
@@ -318,7 +323,7 @@ class ParallelHashWorker(QThread):
                     self._batch_manager = get_batch_manager(self.main_window)
                     logger.debug("[ParallelHashWorker] Batch manager initialized")
                 except Exception as e:
-                    logger.warning(f"[ParallelHashWorker] Failed to init batch manager: {e}")
+                    logger.warning("[ParallelHashWorker] Failed to init batch manager: %s", e)
                     self._enable_batching = False
 
             # Get operation config
@@ -345,26 +350,29 @@ class ParallelHashWorker(QThread):
                 self._calculate_checksums_parallel(file_paths)
 
         except Exception as e:
-            logger.exception(f"[ParallelHashWorker] Unexpected error: {e}")
+            logger.exception("[ParallelHashWorker] Unexpected error: %s", e)
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
         finally:
             # Flush batch operations
             if self._enable_batching and self._batch_manager and self._batch_operations:
                 logger.info(
-                    f"[ParallelHashWorker] Flushing {len(self._batch_operations)} batched ops"
+                    "[ParallelHashWorker] Flushing %d batched ops",
+                    len(self._batch_operations),
                 )
                 try:
                     flushed = self._batch_manager.flush_batch_type("hash_store")
-                    logger.info(f"[ParallelHashWorker] Flushed {flushed} hash operations")
+                    logger.info("[ParallelHashWorker] Flushed %d hash operations", flushed)
 
                     stats = self._batch_manager.get_stats()
                     logger.info(
-                        f"[ParallelHashWorker] Batch stats: {stats.batched_operations} batched, "
-                        f"avg: {stats.average_batch_size:.1f}, saved: {stats.total_time_saved:.2f}s"
+                        "[ParallelHashWorker] Batch stats: %d batched, avg: %.1f, saved: %.2fs",
+                        stats.batched_operations,
+                        stats.average_batch_size,
+                        stats.total_time_saved,
                     )
                 except Exception as e:
-                    logger.error(f"[ParallelHashWorker] Error flushing batches: {e}")
+                    logger.error("[ParallelHashWorker] Error flushing batches: %s", e)
 
     def _calculate_checksums_parallel(self, file_paths: list[str]) -> None:
         """Calculate checksums using parallel workers."""
@@ -389,7 +397,8 @@ class ParallelHashWorker(QThread):
 
                     if hash_results:
                         logger.info(
-                            f"[ParallelHashWorker] Cancelled - showing {len(hash_results)} results"
+                            "[ParallelHashWorker] Cancelled - showing %d results",
+                            len(hash_results),
                         )
                         self.checksums_calculated.emit(hash_results)
 
@@ -409,7 +418,7 @@ class ParallelHashWorker(QThread):
                     self._update_progress(file_path, file_size)
 
                 except Exception as e:
-                    logger.warning(f"[ParallelHashWorker] Task failed: {e}")
+                    logger.warning("[ParallelHashWorker] Task failed: %s", e)
 
         # Report completion
         self.progress_updated.emit(total_files, total_files, "Complete")
@@ -432,9 +441,11 @@ class ParallelHashWorker(QThread):
         )
 
         logger.info(
-            f"[ParallelHashWorker] Completed {len(hash_results)} files "
-            f"(hits: {self._cache_hits}, misses: {self._cache_misses}, "
-            f"rate: {cache_hit_rate:.1f}%)"
+            "[ParallelHashWorker] Completed %d files (hits: %d, misses: %d, rate: %.1f%%)",
+            len(hash_results),
+            self._cache_hits,
+            self._cache_misses,
+            cache_hit_rate,
         )
 
         self.checksums_calculated.emit(hash_results)
@@ -471,12 +482,12 @@ class ParallelHashWorker(QThread):
                     self._update_progress(file_path, file_size)
 
                 except Exception as e:
-                    logger.warning(f"[ParallelHashWorker] Duplicate scan task failed: {e}")
+                    logger.warning("[ParallelHashWorker] Duplicate scan task failed: %s", e)
 
         # Filter to only duplicates (hash with multiple files)
         duplicates = {h: files for h, files in hash_to_files.items() if len(files) > 1}
 
-        logger.info(f"[ParallelHashWorker] Found {len(duplicates)} duplicate groups")
+        logger.info("[ParallelHashWorker] Found %d duplicate groups", len(duplicates))
 
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
@@ -538,9 +549,9 @@ class ParallelHashWorker(QThread):
                     self._update_progress(source_path, file_size)
 
                 except Exception as e:
-                    logger.warning(f"[ParallelHashWorker] Comparison task failed: {e}")
+                    logger.warning("[ParallelHashWorker] Comparison task failed: %s", e)
 
-        logger.info(f"[ParallelHashWorker] Compared {len(comparison_results)} files")
+        logger.info("[ParallelHashWorker] Compared %d files", len(comparison_results))
 
         self.comparison_result.emit(comparison_results)
         self.finished_processing.emit(True)

@@ -109,7 +109,7 @@ class MetadataFieldMapper:
         # Get possible metadata keys for this field
         possible_keys = cls.FIELD_KEY_MAPPING.get(field_key, [])
         if not possible_keys:
-            logger.debug(f"No mapping defined for field key: {field_key}")
+            logger.debug("No mapping defined for field key: %s", field_key)
             return ""
 
         # Try each possible key until we find a value
@@ -125,7 +125,8 @@ class MetadataFieldMapper:
             # Debug logging for UMID specifically
             if field_key == "target_umid":
                 logger.debug(
-                    f"UMID not found. Available keys: {list(metadata_dict.keys())[:10]}...",
+                    "UMID not found. Available keys: %s...",
+                    list(metadata_dict.keys())[:10],
                     extra={"dev_only": True},
                 )
             return ""
@@ -134,7 +135,11 @@ class MetadataFieldMapper:
         formatted_value = cls._format_value_for_display(field_key, found_key, raw_value)
 
         logger.debug(
-            f"Mapped {field_key} -> {found_key} = '{raw_value}' -> '{formatted_value}'",
+            "Mapped %s -> %s = '%s' -> '%s'",
+            field_key,
+            found_key,
+            raw_value,
+            formatted_value,
             extra={"dev_only": True},
         )
         return formatted_value

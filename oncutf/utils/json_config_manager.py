@@ -168,7 +168,9 @@ class JSONConfigManager:
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(
-            f"[JSONConfigManager] Initialized for '{app_name}' with dir: {self.config_dir}",
+            "[JSONConfigManager] Initialized for '%s' with dir: %s",
+            app_name,
+            self.config_dir,
             extra={"dev_only": True},
         )
 
@@ -193,7 +195,7 @@ class JSONConfigManager:
         category = self._categories.get(category_name)
         if not category and create_if_not_exists:
             # Dynamically create a generic category if it doesn't exist
-            logger.debug(f"Category '{category_name}' not found, creating it dynamically.")
+            logger.debug("Category '%s' not found, creating it dynamically.", category_name)
             new_category = ConfigCategory(category_name, {})
             self.register_category(new_category)
             return new_category
@@ -213,7 +215,8 @@ class JSONConfigManager:
                 if DEBUG_RESET_CONFIG:
                     if self.config_file.exists():
                         logger.info(
-                            f"[DEBUG] Deleting config file for fresh start: {self.config_file}"
+                            "[DEBUG] Deleting config file for fresh start: %s",
+                            self.config_file,
                         )
                         try:
                             self.config_file.unlink()
@@ -222,7 +225,7 @@ class JSONConfigManager:
                                 self.backup_file.unlink()
                             logger.info("[DEBUG] Config files deleted successfully")
                         except Exception as e:
-                            logger.error(f"[DEBUG] Failed to delete config file: {e}")
+                            logger.error("[DEBUG] Failed to delete config file: %s", e)
 
                 if not self.config_file.exists():
                     logger.info(
@@ -245,7 +248,7 @@ class JSONConfigManager:
                 return True
 
             except Exception as e:
-                logger.error(f"[JSONConfigManager] Failed to load configuration: {e}")
+                logger.error("[JSONConfigManager] Failed to load configuration: %s", e)
                 return False
 
     def save(self, create_backup: bool = True) -> bool:
@@ -278,7 +281,7 @@ class JSONConfigManager:
                 return True
 
             except Exception as e:
-                logger.error(f"[JSONConfigManager] Failed to save configuration: {e}")
+                logger.error("[JSONConfigManager] Failed to save configuration: %s", e)
                 return False
 
     def _schedule_auto_save(self) -> None:
@@ -306,11 +309,12 @@ class JSONConfigManager:
                 consolidate=True,
             )
             logger.debug(
-                f"[JSONConfigManager] Auto-save scheduled in {CONFIG_AUTO_SAVE_DELAY}s",
+                "[JSONConfigManager] Auto-save scheduled in %ss",
+                CONFIG_AUTO_SAVE_DELAY,
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.warning(f"[JSONConfigManager] Failed to schedule auto-save: {e}")
+            logger.warning("[JSONConfigManager] Failed to schedule auto-save: %s", e)
 
     def _auto_save(self) -> None:
         """Auto-save if dirty (called by timer)."""
@@ -337,7 +341,7 @@ class JSONConfigManager:
                     timer_mgr.cancel(self._auto_save_timer_id)
                     self._auto_save_timer_id = None
                 except Exception as e:
-                    logger.warning(f"[JSONConfigManager] Failed to cancel timer: {e}")
+                    logger.warning("[JSONConfigManager] Failed to cancel timer: %s", e)
 
             # Save if dirty or forced
             if force or self._dirty:
@@ -414,9 +418,13 @@ class JSONConfigManager:
                 if category:
                     category.set(key, value)
             except Exception as e:
-                logger.warning(f"[JSONConfigManager] Failed to flush cache key '{cache_key}': {e}")
+                logger.warning(
+                    "[JSONConfigManager] Failed to flush cache key '%s': %s",
+                    cache_key,
+                    e,
+                )
 
-        logger.debug(f"[JSONConfigManager] Flushed {len(self._cache)} cache entries")
+        logger.debug("[JSONConfigManager] Flushed %d cache entries", len(self._cache))
         self._cache.clear()
 
     def clear_cache(self) -> None:
@@ -429,7 +437,7 @@ class JSONConfigManager:
         self._cache_enabled = enabled
         if not enabled:
             self.clear_cache()
-        logger.debug(f"[JSONConfigManager] Cache {'enabled' if enabled else 'disabled'}")
+        logger.debug("[JSONConfigManager] Cache %s", "enabled" if enabled else "disabled")
 
     def get_config_info(self) -> dict[str, Any]:
         """Get information about configuration file and categories."""
@@ -492,7 +500,7 @@ def load_config() -> dict:
         with open(config_manager.config_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logger.warning(f"Failed to load config: {e}")
+        logger.warning("Failed to load config: %s", e)
         return {}
 
 
@@ -509,9 +517,9 @@ def save_config(config_data: dict) -> bool:
         with open(config_manager.config_file, "w", encoding="utf-8") as f:
             json.dump(config_data, f, indent=2, ensure_ascii=False)
 
-        logger.debug(f"Configuration saved to {config_manager.config_file}")
+        logger.debug("Configuration saved to %s", config_manager.config_file)
         return True
 
     except Exception as e:
-        logger.error(f"Failed to save config: {e}")
+        logger.error("Failed to save config: %s", e)
         return False

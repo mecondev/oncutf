@@ -105,23 +105,23 @@ class HashManager:
         if self._use_persistent_cache:
             cached_hash = self._persistent_cache.get_hash(cache_key)
             if cached_hash:
-                logger.debug(f"[HashManager] Cache hit for: {file_path.name}")
+                logger.debug("[HashManager] Cache hit for: %s", file_path.name)
                 return cached_hash
         else:
             if cache_key in self._hash_cache:
-                logger.debug(f"[HashManager] Cache hit for: {file_path.name}")
+                logger.debug("[HashManager] Cache hit for: %s", file_path.name)
                 return self._hash_cache[cache_key]
 
         # Cache miss - need to calculate hash
-        logger.debug(f"[HashManager] Cache miss, calculating hash for: {file_path.name}")
+        logger.debug("[HashManager] Cache miss, calculating hash for: %s", file_path.name)
 
         try:
             if not file_path.exists():
-                logger.warning(f"[HashManager] File does not exist: {file_path}")
+                logger.warning("[HashManager] File does not exist: %s", file_path)
                 return None
 
             if not file_path.is_file():
-                logger.warning(f"[HashManager] Path is not a file: {file_path}")
+                logger.warning("[HashManager] Path is not a file: %s", file_path)
                 return None
 
             # Adaptive buffer sizing based on file size
@@ -164,13 +164,13 @@ class HashManager:
             return hash_result
 
         except PermissionError:
-            logger.error(f"[HashManager] Permission denied accessing file: {file_path}")
+            logger.error("[HashManager] Permission denied accessing file: %s", file_path)
             return None
         except OSError as e:
-            logger.error(f"[HashManager] OS error reading file {file_path}: {e}")
+            logger.error("[HashManager] OS error reading file %s: %s", file_path, e)
             return None
         except Exception as e:
-            logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
+            logger.error("[HashManager] Unexpected error hashing file %s: %s", file_path, e)
             return None
 
     def compare_folders(
@@ -193,13 +193,15 @@ class HashManager:
 
         if not folder1.exists() or not folder1.is_dir():
             logger.error(
-                f"[HashManager] First folder does not exist or is not a directory: {folder1}"
+                "[HashManager] First folder does not exist or is not a directory: %s",
+                folder1,
             )
             return {}
 
         if not folder2.exists() or not folder2.is_dir():
             logger.error(
-                f"[HashManager] Second folder does not exist or is not a directory: {folder2}"
+                "[HashManager] Second folder does not exist or is not a directory: %s",
+                folder2,
             )
             return {}
 
@@ -221,14 +223,15 @@ class HashManager:
                         files_processed += 1
                     else:
                         logger.warning(
-                            f"[HashManager] Could not hash one or both files: {file1.name}"
+                            "[HashManager] Could not hash one or both files: %s",
+                            file1.name,
                         )
 
-            logger.info(f"[HashManager] Compared {files_processed} files between folders")
+            logger.info("[HashManager] Compared %d files between folders", files_processed)
             return result
 
         except Exception as e:
-            logger.error(f"[HashManager] Error comparing folders: {e}")
+            logger.error("[HashManager] Error comparing folders: %s", e)
             return {}
 
     def find_duplicates_in_list(self, file_items: list[FileItem]) -> dict[str, list[FileItem]]:
@@ -247,7 +250,7 @@ class HashManager:
         hash_to_files: dict[str, list[FileItem]] = {}
         processed_count = 0
 
-        logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates...")
+        logger.info("[HashManager] Scanning %d files for duplicates...", len(file_items))
 
         for file_item in file_items:
             try:
@@ -258,7 +261,9 @@ class HashManager:
                     hash_to_files[file_hash].append(file_item)
                     processed_count += 1
             except Exception as e:
-                logger.error(f"[HashManager] Error processing file {file_item.filename}: {e}")
+                logger.error(
+                    "[HashManager] Error processing file %s: %s", file_item.filename, e
+                )
 
         # Filter to only return groups with duplicates
         duplicates = {
@@ -269,7 +274,9 @@ class HashManager:
         duplicate_groups = len(duplicates)
 
         logger.info(
-            f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups"
+            "[HashManager] Found %d duplicate files in %d groups",
+            duplicate_count,
+            duplicate_groups,
         )
 
         return duplicates
@@ -290,7 +297,7 @@ class HashManager:
         hash_to_paths: dict[str, list[str]] = {}
         processed_count = 0
 
-        logger.info(f"[HashManager] Scanning {len(file_paths)} files for duplicates...")
+        logger.info("[HashManager] Scanning %d files for duplicates...", len(file_paths))
 
         for file_path in file_paths:
             try:
@@ -301,7 +308,7 @@ class HashManager:
                     hash_to_paths[file_hash].append(file_path)
                     processed_count += 1
             except Exception as e:
-                logger.error(f"[HashManager] Error processing file {file_path}: {e}")
+                logger.error("[HashManager] Error processing file %s: %s", file_path, e)
 
         # Filter to only return groups with duplicates
         duplicates = {
@@ -312,7 +319,9 @@ class HashManager:
         duplicate_groups = len(duplicates)
 
         logger.info(
-            f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups"
+            "[HashManager] Found %d duplicate files in %d groups",
+            duplicate_count,
+            duplicate_groups,
         )
 
         return duplicates
@@ -335,7 +344,9 @@ class HashManager:
         matches = actual_hash.lower() == expected_hash.lower()
 
         if not matches:
-            logger.warning(f"[HashManager] File integrity check failed: {Path(file_path).name}")
+            logger.warning(
+                "[HashManager] File integrity check failed: %s", Path(file_path).name
+            )
 
         return matches
 

@@ -57,7 +57,7 @@ class FileOperationsManager:
                 )
             return 0
 
-        logger.info(f"[Rename] Starting rename process for {len(selected_files)} files...")
+        logger.info("[Rename] Starting rename process for %d files...", len(selected_files))
 
         # Start operation tracking
         operation_id = f"rename_{len(selected_files)}_files"
@@ -73,12 +73,12 @@ class FileOperationsManager:
         def safe_conflict_callback(_parent, filename):
             """Safe conflict callback that prevents blocking."""
             try:
-                logger.info(f"[Rename] File conflict detected for: {filename}")
+                logger.info("[Rename] File conflict detected for: %s", filename)
                 # For now, automatically skip conflicts to prevent blocking
                 # TODO: Implement non-blocking conflict resolution UI
                 return "skip"
             except Exception as e:
-                logger.error(f"[Rename] Error in conflict callback: {e}")
+                logger.error("[Rename] Error in conflict callback: %s", e)
                 return "skip"
 
         renamer = Renamer(
@@ -102,9 +102,9 @@ class FileOperationsManager:
                     item.filename = os.path.basename(result.new_path)
                     item.full_path = result.new_path
             elif result.skip_reason:
-                logger.info(f"[Rename] Skipped: {result.old_path} — Reason: {result.skip_reason}")
+                logger.info("[Rename] Skipped: %s — Reason: %s", result.old_path, result.skip_reason)
             elif result.error:
-                logger.error(f"[Rename] Error: {result.old_path} — {result.error}")
+                logger.error("[Rename] Error: %s — %s", result.old_path, result.error)
 
         # Use specialized rename status method
         if self.parent_window and hasattr(self.parent_window, "status_manager"):
@@ -122,7 +122,7 @@ class FileOperationsManager:
                 final_message=f"Rename operation completed: {renamed_count}/{len(selected_files)} files renamed",
             )
 
-        logger.info(f"[Rename] Completed: {renamed_count} renamed out of {len(results)} total")
+        logger.info("[Rename] Completed: %d renamed out of %d total", renamed_count, len(results))
 
         # Store the completion dialog information to be shown after the post-rename workflow
         if renamed_count > 0 and self.parent_window:
@@ -139,7 +139,7 @@ class FileOperationsManager:
                     ):
                         QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
                 except Exception as e:
-                    logger.error(f"[FileOperationsManager] Error showing completion dialog: {e}")
+                    logger.error("[FileOperationsManager] Error showing completion dialog: %s", e)
 
             # Store the dialog function in the parent window for later execution
             if hasattr(self.parent_window, "pending_completion_dialog"):

@@ -173,11 +173,11 @@ class SmartWorkerThread(QThread):
         self._tasks_processed = 0
         self._total_execution_time = 0.0
 
-        logger.debug(f"[SmartWorkerThread] Created worker: {worker_id}")
+        logger.debug("[SmartWorkerThread] Created worker: %s", worker_id)
 
     def run(self):
         """Main thread execution loop."""
-        logger.debug(f"[SmartWorkerThread] Worker {self.worker_id} started")
+        logger.debug("[SmartWorkerThread] Worker %s started", self.worker_id)
 
         while not self._shutdown_requested:
             try:
@@ -193,9 +193,9 @@ class SmartWorkerThread(QThread):
                 self._execute_task(task)
 
             except Exception as e:
-                logger.error(f"[SmartWorkerThread] Worker {self.worker_id} error: {e}")
+                logger.exception("[SmartWorkerThread] Worker %s error: %s", self.worker_id, e)
 
-        logger.debug(f"[SmartWorkerThread] Worker {self.worker_id} stopped")
+        logger.debug("[SmartWorkerThread] Worker %s stopped", self.worker_id)
 
     def _execute_task(self, task: WorkerTask):
         """Execute a single task."""
@@ -219,7 +219,11 @@ class SmartWorkerThread(QThread):
                 try:
                     task.callback(result)
                 except Exception as e:
-                    logger.error(f"[SmartWorkerThread] Callback error for task {task.task_id}: {e}")
+                    logger.exception(
+                        "[SmartWorkerThread] Callback error for task %s: %s",
+                        task.task_id,
+                        e,
+                    )
 
             # Emit completion signal
             self.task_completed.emit(task.task_id, result)
@@ -230,7 +234,7 @@ class SmartWorkerThread(QThread):
 
             # Emit failure signal
             self.task_failed.emit(task.task_id, str(e))
-            logger.error(f"[SmartWorkerThread] Task {task.task_id} failed: {e}")
+            logger.exception("[SmartWorkerThread] Task %s failed: %s", task.task_id, e)
 
             # Track error in manager (will be set via signal connection)
             # Note: Manager should connect to task_failed signal to update its health state
@@ -241,7 +245,10 @@ class SmartWorkerThread(QThread):
     def request_shutdown(self):
         """Request thread shutdown."""
         self._shutdown_requested = True
-        logger.debug(f"[SmartWorkerThread] Shutdown requested for worker: {self.worker_id}")
+        logger.debug(
+            "[SmartWorkerThread] Shutdown requested for worker: %s",
+            self.worker_id,
+        )
 
     def get_stats(self) -> dict[str, Any]:
         """Get worker statistics."""
@@ -321,7 +328,9 @@ class ThreadPoolManager(QObject):
         self._resize_pool(self.min_threads)
 
         logger.info(
-            f"[ThreadPoolManager] Initialized with {min_threads}-{self.max_threads} threads"
+            "[ThreadPoolManager] Initialized with %d-%d threads",
+            min_threads,
+            self.max_threads,
         )
 
     def submit_task(
@@ -353,7 +362,7 @@ class ThreadPoolManager(QObject):
         try:
             with QMutexLocker(self._mutex):
                 if task_id in self._tasks:
-                    logger.warning(f"[ThreadPoolManager] Task {task_id} already exists")
+                    logger.warning("[ThreadPoolManager] Task %s already exists", task_id)
                     return False
 
                 task = WorkerTask(
@@ -373,11 +382,11 @@ class ThreadPoolManager(QObject):
                 self._check_pool_resize()
 
                 self.task_submitted.emit(task_id, priority.name)
-                logger.debug(f"[ThreadPoolManager] Submitted task: {task_id}")
+                logger.debug("[ThreadPoolManager] Submitted task: %s", task_id)
                 return True
 
         except Exception as e:
-            logger.error(f"[ThreadPoolManager] Error submitting task {task_id}: {e}")
+            logger.exception("[ThreadPoolManager] Error submitting task %s: %s", task_id, e)
             return False
 
     def _check_pool_resize(self):
@@ -421,7 +430,11 @@ class ThreadPoolManager(QObject):
 
         if new_size != current_size:
             self.pool_resized.emit(new_size)
-            logger.info(f"[ThreadPoolManager] Pool resized from {current_size} to {new_size}")
+            logger.info(
+                "[ThreadPoolManager] Pool resized from %d to %d",
+                current_size,
+                new_size,
+            )
 
     def _add_worker(self, worker_id: str):
         """Add a new worker thread."""
@@ -432,7 +445,7 @@ class ThreadPoolManager(QObject):
         self._workers[worker_id] = worker
         worker.start()
 
-        logger.debug(f"[ThreadPoolManager] Added worker: {worker_id}")
+        logger.debug("[ThreadPoolManager] Added worker: %s", worker_id)
 
     def _remove_worker(self, worker_id: str):
         """Remove a worker thread."""
@@ -442,13 +455,19 @@ class ThreadPoolManager(QObject):
 
             # Wait with timeout to prevent infinite hang
             if not worker.wait(5000):  # Wait up to 5 seconds
-                logger.warning(f"[ThreadPoolManager] Worker {worker_id} did not stop gracefully, terminating...")
+                logger.warning(
+                    "[ThreadPoolManager] Worker %s did not stop gracefully, terminating...",
+                    worker_id,
+                )
                 worker.terminate()
                 if not worker.wait(1000):  # Wait another 1 second for termination
-                    logger.error(f"[ThreadPoolManager] Worker {worker_id} did not terminate after 1s")
+                    logger.error(
+                        "[ThreadPoolManager] Worker %s did not terminate after 1s",
+                        worker_id,
+                    )
 
             del self._workers[worker_id]
-            logger.debug(f"[ThreadPoolManager] Removed worker: {worker_id}")
+            logger.debug("[ThreadPoolManager] Removed worker: %s", worker_id)
 
     def _on_task_completed(self, task_id: str, result: Any):
         """Handle task completion."""
@@ -473,8 +492,10 @@ class ThreadPoolManager(QObject):
 
             # Log performance metrics
             logger.debug(
-                f"[ThreadPoolManager] Pool stats: {stats.active_threads} threads, "
-                f"{stats.queued_tasks} queued, {stats.cpu_usage_percent:.1f}% CPU"
+                "[ThreadPoolManager] Pool stats: %d threads, %d queued, %.1f%% CPU",
+                stats.active_threads,
+                stats.queued_tasks,
+                stats.cpu_usage_percent,
             )
 
             # Check for performance issues
@@ -487,7 +508,7 @@ class ThreadPoolManager(QObject):
                 self._resize_pool(max(stats.active_threads - 1, self.min_threads))
 
         except Exception as e:
-            logger.error(f"[ThreadPoolManager] Monitor error: {e}")
+            logger.exception("[ThreadPoolManager] Monitor error: %s", e)
 
     def get_stats(self) -> ThreadPoolStats:
         """Get thread pool statistics."""
@@ -527,7 +548,10 @@ class ThreadPoolManager(QObject):
             for task_id in completed_tasks:
                 del self._tasks[task_id]
 
-            logger.debug(f"[ThreadPoolManager] Cleared {len(completed_tasks)} completed tasks")
+            logger.debug(
+                "[ThreadPoolManager] Cleared %d completed tasks",
+                len(completed_tasks),
+            )
 
     def is_healthy(self) -> bool:
         """Check if thread pool is healthy.
@@ -572,7 +596,8 @@ class ThreadPoolManager(QObject):
         if self._failed_tasks_count > 10:
             self._is_healthy = False
             logger.warning(
-                f"[ThreadPoolManager] Marked as unhealthy after {self._failed_tasks_count} failures"
+                "[ThreadPoolManager] Marked as unhealthy after %d failures",
+                self._failed_tasks_count,
             )
 
     def shutdown(self):

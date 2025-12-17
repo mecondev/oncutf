@@ -73,12 +73,63 @@ class InitializationManager:
             else:
                 pass
 
+            # Connect ApplicationContext files_changed signal to update UI
+            if context:
+                context.files_changed.connect(self._on_files_changed)
+                logger.debug(
+                    "[MainWindow] Connected ApplicationContext files_changed signal",
+                    extra={"dev_only": True}
+                )
+
             logger.debug(
                 "[MainWindow] Enabling SelectionStore mode in FileTableView",
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
+            logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
+
+    def _on_files_changed(self, files: list) -> None:
+        """Handle files changed from ApplicationContext.
+
+        This is called when FileStore updates its internal state (e.g., after USB unmount).
+        We update the UI here - FileStore has already been updated.
+        Also clears stale selections and preview data.
+        """
+        from oncutf.utils.cursor_helper import wait_cursor
+
+        logger.info(
+            "[MainWindow] Files changed from context - updating UI with %d files",
+            len(files)
+        )
+
+        # Show wait cursor during UI update (runs in main thread - visible to user)
+        with wait_cursor():
+            # 1. Clear stale selections (files may no longer exist)
+            try:
+                from oncutf.core.application_context import get_app_context
+                context = get_app_context()
+                if context and context.selection_store:
+                    context.selection_store.clear_selection(emit_signal=False)
+            except Exception:
+                pass
+
+            # 2. Clear preview cache and tables (stale data)
+            if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
+                self.main_window.preview_manager.clear_all_caches()
+            if hasattr(self.main_window, "update_preview_tables_from_pairs"):
+                self.main_window.update_preview_tables_from_pairs([])
+
+            # 3. Update table view (FileStore already updated)
+            self.main_window.file_table_view.prepare_table(files)
+
+            # 4. Update placeholder visibility
+            if files:
+                self.main_window.file_table_view.set_placeholder_visible(False)
+            else:
+                self.main_window.file_table_view.set_placeholder_visible(True)
+
+            # 5. Update UI labels
+            self.main_window.update_files_label()
 
     def update_status_from_preview(self, status_html: str) -> None:
         """
@@ -134,7 +185,7 @@ class InitializationManager:
                 not hasattr(self.main_window, component)
                 or getattr(self.main_window, component) is None
             ):
-                logger.warning(f"[InitializationManager] Missing required component: {component}")
+                logger.warning("[InitializationManager] Missing required component: %s", component)
                 return False
 
         logger.debug(

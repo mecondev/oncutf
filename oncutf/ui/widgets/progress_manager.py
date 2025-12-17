@@ -75,7 +75,7 @@ class ProgressManager:
         # Create appropriate progress widget based on operation type
         self._create_progress_widget()
 
-        logger.debug(f"[ProgressManager] Initialized for {operation_type} operations")
+        logger.debug("[ProgressManager] Initialized for %s operations", operation_type)
 
     def _create_progress_widget(self):
         """Create the appropriate progress widget based on operation type."""
@@ -109,12 +109,15 @@ class ProgressManager:
             # Size-based operations
             if total_size <= 0:
                 logger.warning(
-                    f"[ProgressManager] {self.operation_type} operation requires total_size > 0"
+                    "[ProgressManager] %s operation requires total_size > 0",
+                    self.operation_type,
                 )
                 return
             self.progress_widget.start_progress_tracking(total_size)
             logger.debug(
-                f"[ProgressManager] Started {self.operation_type} tracking: {total_size:,} bytes"
+                "[ProgressManager] Started %s tracking: %d bytes",
+                self.operation_type,
+                total_size,
             )
 
         elif self.operation_type == "metadata":
@@ -124,7 +127,9 @@ class ProgressManager:
             if total_size > 0:
                 self.progress_widget.start_progress_tracking(total_size)
             logger.debug(
-                f"[ProgressManager] Started metadata tracking: {total_files} files, {total_size:,} bytes"
+                "[ProgressManager] Started metadata tracking: %d files, %d bytes",
+                total_files,
+                total_size,
             )
 
     def update_progress(
@@ -195,7 +200,7 @@ class ProgressManager:
         if self.progress_widget:
             self.progress_widget.reset()
         self._is_tracking = False
-        logger.debug(f"[ProgressManager] Reset {self.operation_type} progress tracking")
+        logger.debug("[ProgressManager] Reset %s progress tracking", self.operation_type)
 
     def get_widget(self) -> ProgressWidget:
         """Get the underlying progress widget."""

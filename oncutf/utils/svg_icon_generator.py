@@ -68,10 +68,10 @@ class SVGIconGenerator:
             with open(svg_path, encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
-            logger.error(f"[SVGIconGenerator] Feather icon not found: {svg_path}")
+            logger.error("[SVGIconGenerator] Feather icon not found: %s", svg_path)
             return None
         except Exception as e:
-            logger.error(f"[SVGIconGenerator] Error reading SVG: {e}")
+            logger.error("[SVGIconGenerator] Error reading SVG: %s", e)
             return None
 
     def _colorize_svg(self, svg_content: str, color: str) -> str:
@@ -124,7 +124,7 @@ class SVGIconGenerator:
         color = METADATA_ICON_COLORS.get(status)
 
         if not icon_name or not color:
-            logger.warning(f"[SVGIconGenerator] Unknown status: {status}")
+            logger.warning("[SVGIconGenerator] Unknown status: %s", status)
             return self._create_fallback_pixmap(size)
 
         # Load and colorize SVG
@@ -170,7 +170,7 @@ class SVGIconGenerator:
             return pixmap
 
         except Exception as e:
-            logger.error(f"[SVGIconGenerator] Error rendering SVG: {e}")
+            logger.error("[SVGIconGenerator] Error rendering SVG: %s", e)
             return self._create_fallback_pixmap(size)
 
     def _create_fallback_pixmap(self, size: int) -> QPixmap:
@@ -201,7 +201,8 @@ class SVGIconGenerator:
             size = self.size
 
         logger.debug(
-            f"[SVGIconGenerator] Generating all metadata icons at {size}px",
+            "[SVGIconGenerator] Generating all metadata icons at %dpx",
+            size,
             extra={"dev_only": True},
         )
 
@@ -211,7 +212,9 @@ class SVGIconGenerator:
             icons[status] = self.generate_icon(status, size)
 
         logger.debug(
-            f"[SVGIconGenerator] Generated {len(icons)} metadata icons", extra={"dev_only": True}
+            "[SVGIconGenerator] Generated %d metadata icons",
+            len(icons),
+            extra={"dev_only": True},
         )
         return icons
 

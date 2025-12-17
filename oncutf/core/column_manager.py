@@ -181,7 +181,8 @@ class ColumnManager:
         # Skip preview tables as they auto-regulate
         if table_type in ["preview_old", "preview_new"]:
             logger.debug(
-                f"[ColumnManager] Skipping auto-regulating table type: {table_type}",
+                "[ColumnManager] Skipping auto-regulating table type: %s",
+                table_type,
                 extra={"dev_only": True},
             )
             return
@@ -195,11 +196,11 @@ class ColumnManager:
             return
 
         if table_type not in self.table_configs:
-            logger.warning(f"[ColumnManager] Unknown table type: {table_type}")
+            logger.warning("[ColumnManager] Unknown table type: %s", table_type)
             return
 
         if not table_view.model():
-            logger.warning(f"[ColumnManager] No model set for table type: {table_type}")
+            logger.warning("[ColumnManager] No model set for table type: %s", table_type)
             return
 
         # Get header - QTableView has horizontalHeader(), QTreeView has header()
@@ -210,7 +211,7 @@ class ColumnManager:
             header = table_view.header()
 
         if not header:
-            logger.warning(f"[ColumnManager] No header found for table type: {table_type}")
+            logger.warning("[ColumnManager] No header found for table type: %s", table_type)
             return
 
         # Get font metrics for text-based calculations
@@ -219,14 +220,17 @@ class ColumnManager:
         # Configure each column
         config = self.table_configs[table_type]
         logger.debug(
-            f"[ColumnManager] Configuring {len(config)} columns for {table_type}",
+            "[ColumnManager] Configuring %d columns for %s",
+            len(config),
+            table_type,
             extra={"dev_only": True},
         )
 
         for column_index, column_config in config.items():
             if column_index >= table_view.model().columnCount():
                 logger.debug(
-                    f"[ColumnManager] Skipping column {column_index} - exceeds model column count",
+                    "[ColumnManager] Skipping column %d - exceeds model column count",
+                    column_index,
                     extra={"dev_only": True},
                 )
                 continue
@@ -234,14 +238,20 @@ class ColumnManager:
             # Set resize mode
             header.setSectionResizeMode(column_index, column_config.resize_mode)
             logger.debug(
-                f"[ColumnManager] SectionResizeMode for column {column_index}: {column_config.resize_mode}",
+                "[ColumnManager] SectionResizeMode for column %d: %s",
+                column_index,
+                column_config.resize_mode,
                 extra={"dev_only": True},
             )
 
             # Calculate and set width
             width = self._calculate_column_width(table_view, table_type, column_config)
             logger.debug(
-                f"[ColumnManager] Will set column {column_index} width to {width}px (config default: {column_config.default_width}px, min: {column_config.min_width}px)",
+                "[ColumnManager] Will set column %d width to %dpx (config default: %dpx, min: %dpx)",
+                column_index,
+                width,
+                column_config.default_width,
+                column_config.min_width,
                 extra={"dev_only": True},
             )
             table_view.setColumnWidth(column_index, width)
@@ -249,7 +259,9 @@ class ColumnManager:
         # After configuration, log the actual widths
         for i in range(table_view.model().columnCount()):
             logger.debug(
-                f"[ColumnManager] Actual width for column {i}: {table_view.columnWidth(i)}px",
+                "[ColumnManager] Actual width for column %d: %dpx",
+                i,
+                table_view.columnWidth(i),
                 extra={"dev_only": True},
             )
 
@@ -261,7 +273,8 @@ class ColumnManager:
             self.ensure_horizontal_scrollbar_state(table_view)
 
         logger.debug(
-            f"[ColumnManager] Configured columns for table type: {table_type}",
+            "[ColumnManager] Configured columns for table type: %s",
+            table_type,
             extra={"dev_only": True},
         )
 
@@ -284,13 +297,15 @@ class ColumnManager:
                 logger.warning("[ColumnManager] Could not obtain font metrics")
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error updating font metrics: {e}")
+            logger.warning("[ColumnManager] Error updating font metrics: %s", e)
 
     def _calculate_column_width(
         self, table_view: QTableView | QTreeView, table_type: str, column_config: ColumnConfig
     ) -> int:
         logger.debug(
-            f"[ColumnManager] Calculating width for column {column_config.column_index} (type: {column_config.column_type})",
+            "[ColumnManager] Calculating width for column %d (type: %s)",
+            column_config.column_index,
+            column_config.column_type,
             extra={"dev_only": True},
         )
         # Check if user has a preference for this column
@@ -298,7 +313,9 @@ class ColumnManager:
             user_width = self.state.user_preferred_widths.get(column_config.column_index)
             if user_width and user_width >= column_config.min_width:
                 logger.debug(
-                    f"[ColumnManager] Using user preference: {user_width}px for column {column_config.column_index}",
+                    "[ColumnManager] Using user preference: %dpx for column %d",
+                    user_width,
+                    column_config.column_index,
                     extra={"dev_only": True},
                 )
                 return user_width
@@ -308,7 +325,9 @@ class ColumnManager:
             saved_width = self._load_saved_column_width(column_config.column_index)
             if saved_width and saved_width >= column_config.min_width:
                 logger.debug(
-                    f"[ColumnManager] Using saved width: {saved_width}px for column {column_config.column_index}",
+                    "[ColumnManager] Using saved width: %dpx for column %d",
+                    saved_width,
+                    column_config.column_index,
                     extra={"dev_only": True},
                 )
                 return saved_width
@@ -316,7 +335,9 @@ class ColumnManager:
         # Handle different column types
         if column_config.column_type == ColumnType.FIXED:
             logger.debug(
-                f"[ColumnManager] Using fixed width: {column_config.default_width}px for column {column_config.column_index}",
+                "[ColumnManager] Using fixed width: %dpx for column %d",
+                column_config.default_width,
+                column_config.column_index,
                 extra={"dev_only": True},
             )
             return column_config.default_width
@@ -324,7 +345,11 @@ class ColumnManager:
         elif column_config.column_type == ColumnType.INTERACTIVE:
             width = max(column_config.default_width, column_config.min_width)
             logger.debug(
-                f"[ColumnManager] Using interactive width: {width}px (default: {column_config.default_width}, min: {column_config.min_width}) for column {column_config.column_index}",
+                "[ColumnManager] Using interactive width: %dpx (default: %d, min: %d) for column %d",
+                width,
+                column_config.default_width,
+                column_config.min_width,
+                column_config.column_index,
                 extra={"dev_only": True},
             )
             return width
@@ -332,20 +357,26 @@ class ColumnManager:
         elif column_config.column_type == ColumnType.STRETCH:
             width = self._calculate_stretch_column_width(table_view, table_type, column_config)
             logger.debug(
-                f"[ColumnManager] Using stretch width: {width}px for column {column_config.column_index}",
+                "[ColumnManager] Using stretch width: %dpx for column %d",
+                width,
+                column_config.column_index,
                 extra={"dev_only": True},
             )
             return width
 
         elif column_config.column_type == ColumnType.CONTENT_BASED:
             logger.debug(
-                f"[ColumnManager] Using content-based width: {column_config.default_width}px for column {column_config.column_index}",
+                "[ColumnManager] Using content-based width: %dpx for column %d",
+                column_config.default_width,
+                column_config.column_index,
                 extra={"dev_only": True},
             )
             return column_config.default_width
 
         logger.debug(
-            f"[ColumnManager] Using fallback width: {column_config.default_width}px for column {column_config.column_index}",
+            "[ColumnManager] Using fallback width: %dpx for column %d",
+            column_config.default_width,
+            column_config.column_index,
             extra={"dev_only": True},
         )
         return column_config.default_width
@@ -354,7 +385,8 @@ class ColumnManager:
         """Load saved column width from config system."""
         try:
             logger.debug(
-                f"[ColumnManager] Loading saved width for column {column_index}",
+                "[ColumnManager] Loading saved width for column %d",
+                column_index,
                 extra={"dev_only": True},
             )
 
@@ -364,7 +396,8 @@ class ColumnManager:
                 column_widths = window_config.get("file_table_column_widths", {})
 
                 logger.debug(
-                    f"[ColumnManager] Found column widths in window config: {column_widths}",
+                    "[ColumnManager] Found column widths in window config: %s",
+                    column_widths,
                     extra={"dev_only": True},
                 )
 
@@ -375,13 +408,16 @@ class ColumnManager:
                     if column_key in column_widths:
                         width = column_widths[column_key]
                         logger.debug(
-                            f"[ColumnManager] Found saved width for {column_key}: {width}px",
+                            "[ColumnManager] Found saved width for %s: %dpx",
+                            column_key,
+                            width,
                             extra={"dev_only": True},
                         )
                         return width
                     else:
                         logger.debug(
-                            f"[ColumnManager] No saved width found for {column_key}",
+                            "[ColumnManager] No saved width found for %s",
+                            column_key,
                             extra={"dev_only": True},
                         )
 
@@ -392,7 +428,8 @@ class ColumnManager:
             column_widths = config.get("file_table_column_widths", {})
 
             logger.debug(
-                f"[ColumnManager] Found column widths in old config: {column_widths}",
+                "[ColumnManager] Found column widths in old config: %s",
+                column_widths,
                 extra={"dev_only": True},
             )
 
@@ -402,16 +439,19 @@ class ColumnManager:
                 if column_key in column_widths:
                     width = column_widths[column_key]
                     logger.debug(
-                        f"[ColumnManager] Found saved width in old config for {column_key}: {width}px",
+                        "[ColumnManager] Found saved width in old config for %s: %dpx",
+                        column_key,
+                        width,
                         extra={"dev_only": True},
                     )
                     return width
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error loading saved column width: {e}")
+            logger.warning("[ColumnManager] Error loading saved column width: %s", e)
 
         logger.debug(
-            f"[ColumnManager] No saved width found for column {column_index}",
+            "[ColumnManager] No saved width found for column %d",
+            column_index,
             extra={"dev_only": True},
         )
         return None
@@ -459,7 +499,7 @@ class ColumnManager:
             return max(available_width, column_config.min_width)
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error calculating stretch column width: {e}")
+            logger.warning("[ColumnManager] Error calculating stretch column width: %s", e)
             return column_config.default_width
 
     def _needs_vertical_scrollbar(self, table_view: QTableView | QTreeView) -> bool:
@@ -499,7 +539,7 @@ class ColumnManager:
             return (total_content_height + header_height) > viewport_height
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error checking scrollbar need: {e}")
+            logger.warning("[ColumnManager] Error checking scrollbar need: %s", e)
             return False
 
     def _get_scrollbar_width(self, table_view: QTableView | QTreeView) -> int:
@@ -543,14 +583,16 @@ class ColumnManager:
                     if current_scroll_position <= hbar.maximum():
                         hbar.setValue(current_scroll_position)
                         logger.debug(
-                            f"[ColumnManager] Restored horizontal scrollbar to position: {current_scroll_position}",
+                            "[ColumnManager] Restored horizontal scrollbar to position: %d",
+                            current_scroll_position,
                             extra={"dev_only": True},
                         )
                     else:
                         # If the stored position is beyond the new range, go to the rightmost valid position
                         hbar.setValue(hbar.maximum())
                         logger.debug(
-                            f"[ColumnManager] Adjusted horizontal scrollbar to maximum: {hbar.maximum()}",
+                            "[ColumnManager] Adjusted horizontal scrollbar to maximum: %d",
+                            hbar.maximum(),
                             extra={"dev_only": True},
                         )
                 else:
@@ -562,12 +604,14 @@ class ColumnManager:
                     )
 
                 logger.debug(
-                    f"[ColumnManager] Updated horizontal scrollbar: max={hbar.maximum()}, value={hbar.value()}",
+                    "[ColumnManager] Updated horizontal scrollbar: max=%d, value=%d",
+                    hbar.maximum(),
+                    hbar.value(),
                     extra={"dev_only": True},
                 )
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error updating horizontal scrollbar state: {e}")
+            logger.warning("[ColumnManager] Error updating horizontal scrollbar state: %s", e)
 
     def _connect_resize_signals(self, table_view: QTableView | QTreeView, table_type: str) -> None:
         """Connect resize signals for user preference tracking."""
@@ -592,7 +636,7 @@ class ColumnManager:
                 header.sectionResized.connect(resize_handler)
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error connecting resize signals: {e}")
+            logger.warning("[ColumnManager] Error connecting resize signals: %s", e)
 
     def _on_column_resized(
         self,
@@ -626,7 +670,10 @@ class ColumnManager:
                 # Track user preference
                 self.state.set_user_preference(logical_index, new_size)
                 logger.debug(
-                    f"[ColumnManager] User preference set for {table_type} column {logical_index}: {new_size}",
+                    "[ColumnManager] User preference set for %s column %d: %d",
+                    table_type,
+                    logical_index,
+                    new_size,
                     extra={"dev_only": True},
                 )
 
@@ -681,7 +728,9 @@ class ColumnManager:
         if column_index is not None:
             self.state.clear_user_preference(column_index)
             logger.debug(
-                f"[ColumnManager] Reset user preference for {table_type} column {column_index}",
+                "[ColumnManager] Reset user preference for %s column %d",
+                table_type,
+                column_index,
                 extra={"dev_only": True},
             )
         else:
@@ -690,7 +739,8 @@ class ColumnManager:
                 for column_index in self.table_configs[table_type]:
                     self.state.clear_user_preference(column_index)
                 logger.debug(
-                    f"[ColumnManager] Reset all user preferences for {table_type}",
+                    "[ColumnManager] Reset all user preferences for %s",
+                    table_type,
                     extra={"dev_only": True},
                 )
 
@@ -741,11 +791,13 @@ class ColumnManager:
                     self.state.manual_resize_flags[int(column_index)] = flag
 
             logger.debug(
-                f"[ColumnManager] Loaded column state for {table_type}", extra={"dev_only": True}
+                "[ColumnManager] Loaded column state for %s",
+                table_type,
+                extra={"dev_only": True},
             )
 
         except Exception as e:
-            logger.warning(f"[ColumnManager] Error loading column state: {e}")
+            logger.warning("[ColumnManager] Error loading column state: %s", e)
 
     def get_column_config(self, table_type: str, column_index: int) -> ColumnConfig | None:
         """
@@ -777,6 +829,8 @@ class ColumnManager:
                 if hasattr(config, key):
                     setattr(config, key, value)
             logger.debug(
-                f"[ColumnManager] Updated config for {table_type} column {column_index}",
+                "[ColumnManager] Updated config for %s column %d",
+                table_type,
+                column_index,
                 extra={"dev_only": True},
             )

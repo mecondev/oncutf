@@ -204,7 +204,9 @@ class SelectionStore(QObject):
 
         if emit_signal and old_count != new_count:
             logger.debug(
-                f"Synced selection->checked: {old_count} -> {new_count} rows",
+                "Synced selection->checked: %d -> %d rows",
+                old_count,
+                new_count,
                 extra={"dev_only": True},
             )
             self._schedule_checked_signal()
@@ -226,7 +228,9 @@ class SelectionStore(QObject):
 
         if new_count != old_count:
             logger.debug(
-                f"Checked state extended: +{new_count - old_count} rows (total: {new_count})",
+                "Checked state extended: +%d rows (total: %d)",
+                new_count - old_count,
+                new_count,
                 extra={"dev_only": True},
             )
             if emit_signal:
@@ -249,7 +253,9 @@ class SelectionStore(QObject):
 
         if new_count != old_count:
             logger.debug(
-                f"Checked state reduced: -{old_count - new_count} rows (total: {new_count})",
+                "Checked state reduced: -%d rows (total: %d)",
+                old_count - new_count,
+                new_count,
                 extra={"dev_only": True},
             )
             if emit_signal:
@@ -291,7 +297,7 @@ class SelectionStore(QObject):
         old_anchor = self._anchor_row
         self._anchor_row = row
 
-        logger.debug(f"Anchor changed: {old_anchor} -> {row}")
+        logger.debug("Anchor changed: %s -> %s", old_anchor, row)
 
         if emit_signal:
             self.anchor_changed.emit(row if row is not None else -1)
@@ -323,7 +329,7 @@ class SelectionStore(QObject):
         self._selected_rows = all_rows
         self._checked_rows = all_rows
 
-        logger.info(f"Selected all: {total_files} files")
+        logger.info("Selected all: %d files", total_files)
 
         # Emit both signals
         self._schedule_selection_signal()
@@ -350,7 +356,7 @@ class SelectionStore(QObject):
         self._selected_rows = inverted_rows
         self._checked_rows = inverted_rows
 
-        logger.info(f"Inverted selection: {old_count} -> {new_count} files")
+        logger.info("Inverted selection: %d -> %d files", old_count, new_count)
 
         # Emit both signals
         self._schedule_selection_signal()
@@ -408,7 +414,7 @@ class SelectionStore(QObject):
             if self._anchor_row is not None and self._anchor_row >= total:
                 self._anchor_row = None
 
-        logger.debug(f"Total files updated: {old_total} -> {total}")
+        logger.debug("Total files updated: %d -> %d", old_total, total)
 
     def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics."""

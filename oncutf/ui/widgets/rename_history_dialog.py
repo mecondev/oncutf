@@ -201,10 +201,10 @@ class RenameHistoryDialog(QDialog):
             # Resize rows to content
             self.operations_table.resizeRowsToContents()
 
-            logger.debug(f"[RenameHistoryDialog] Loaded {len(operations)} operations")
+            logger.debug("[RenameHistoryDialog] Loaded %d operations", len(operations))
 
         except Exception as e:
-            logger.error(f"[RenameHistoryDialog] Error loading history: {e}")
+            logger.error("[RenameHistoryDialog] Error loading history: %s", e)
             CustomMessageDialog.critical(self, "Error", f"Failed to load rename history: {str(e)}")
 
     def _on_selection_changed(self):
@@ -273,7 +273,7 @@ class RenameHistoryDialog(QDialog):
             self.details_text.setPlainText("\n".join(details))
 
         except Exception as e:
-            logger.error(f"[RenameHistoryDialog] Error loading operation details: {e}")
+            logger.error("[RenameHistoryDialog] Error loading operation details: %s", e)
             self.details_text.setPlainText(f"Error loading details: {str(e)}")
 
     def _undo_operation(self):
@@ -321,7 +321,7 @@ class RenameHistoryDialog(QDialog):
                 CustomMessageDialog.warning(self, "Undo Failed", message)
 
         except Exception as e:
-            logger.error(f"[RenameHistoryDialog] Error during undo: {e}")
+            logger.error("[RenameHistoryDialog] Error during undo: %s", e)
             CustomMessageDialog.critical(self, "Error", f"Failed to undo operation: {str(e)}")
 
     def _cleanup_history(self):
@@ -349,7 +349,7 @@ class RenameHistoryDialog(QDialog):
                 )
 
         except Exception as e:
-            logger.error(f"[RenameHistoryDialog] Error during cleanup: {e}")
+            logger.error("[RenameHistoryDialog] Error during cleanup: %s", e)
             CustomMessageDialog.critical(self, "Error", f"Failed to cleanup history: {str(e)}")
 
 

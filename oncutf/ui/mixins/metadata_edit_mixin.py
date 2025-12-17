@@ -224,7 +224,7 @@ class MetadataEditMixin:
                     break
 
             if not found:
-                logger.debug(f"[MetadataEditMixin] Path item not found: {text}")
+                logger.debug("[MetadataEditMixin] Path item not found: %s", text)
                 return None
 
         return current_index
@@ -278,7 +278,10 @@ class MetadataEditMixin:
         if restored_index and restored_index.isValid():
             self.setCurrentIndex(restored_index)
             self.scrollTo(restored_index)
-            logger.debug(f"[MetadataEditMixin] Restored selection to: {' > '.join(path)}")
+            logger.debug(
+                "[MetadataEditMixin] Restored selection to: %s",
+                " > ".join(path),
+            )
         else:
             logger.debug("[MetadataEditMixin] Could not restore selection, path not found")
 
@@ -302,7 +305,10 @@ class MetadataEditMixin:
         if not saved_path and key_path:
             saved_path = self._find_path_by_key(key_path)
             if saved_path:
-                logger.debug(f"[MetadataEditMixin] Using fallback path from key_path: {key_path}")
+                logger.debug(
+                    "[MetadataEditMixin] Using fallback path from key_path: %s",
+                    key_path,
+                )
 
         # Get selected files and metadata cache
         selected_files = self._get_current_selection()
@@ -352,11 +358,13 @@ class MetadataEditMixin:
 
                         if command_manager.execute_command(command, group_with_previous=True):
                             logger.debug(
-                                f"[MetadataEditMixin] Executed edit command for {file_item.filename}"
+                                "[MetadataEditMixin] Executed edit command for %s",
+                                file_item.filename,
                             )
                         else:
                             logger.warning(
-                                f"[MetadataEditMixin] Failed to execute edit command for {file_item.filename}"
+                                "[MetadataEditMixin] Failed to execute edit command for %s",
+                                file_item.filename,
                             )
                 else:
                     # Fallback if command system not available
@@ -398,7 +406,10 @@ class MetadataEditMixin:
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
         staging_manager = get_metadata_staging_manager()
 
-        logger.info(f"[MetadataEditMixin] Fallback edit: staging_manager={staging_manager}")
+        logger.info(
+            "[MetadataEditMixin] Fallback edit: staging_manager=%s",
+            staging_manager,
+        )
 
         if not staging_manager:
             logger.error("Staging manager not available")
@@ -408,7 +419,10 @@ class MetadataEditMixin:
 
         for file_item in files_to_modify:
             logger.info(
-                f"[MetadataEditMixin] Staging change: {file_item.full_path}, {key_path}, {new_value}"
+                "[MetadataEditMixin] Staging change: %s, %s, %s",
+                file_item.full_path,
+                key_path,
+                new_value,
             )
             staging_manager.stage_change(file_item.full_path, key_path, new_value)
             success_count += 1
@@ -464,7 +478,10 @@ class MetadataEditMixin:
             datetime_str = new_datetime.strftime("%Y:%m:%d %H:%M:%S")
 
             logger.info(
-                f"[MetadataEditMixin] Editing {date_type} date for {len(result_files)} files to {datetime_str}"
+                "[MetadataEditMixin] Editing %s date for %d files to %s",
+                date_type,
+                len(result_files),
+                datetime_str,
             )
 
             # Use command system for undo/redo support
@@ -499,11 +516,13 @@ class MetadataEditMixin:
 
                         if command_manager.execute_command(command, group_with_previous=True):
                             logger.debug(
-                                f"[MetadataEditMixin] Executed date edit command for {file_item.filename}"
+                                "[MetadataEditMixin] Executed date edit command for %s",
+                                file_item.filename,
                             )
                         else:
                             logger.warning(
-                                f"[MetadataEditMixin] Failed to execute date edit command for {file_item.filename}"
+                                "[MetadataEditMixin] Failed to execute date edit command for %s",
+                                file_item.filename,
                             )
                 else:
                     logger.warning("[MetadataEditMixin] Command system not available for date editing")
@@ -551,7 +570,8 @@ class MetadataEditMixin:
             current_value = metadata[key_path]
             if current_value in ["0", "0°", 0]:
                 logger.debug(
-                    f"[MetadataEditMixin] Rotation already set to 0° for {file_item.filename}",
+                    "[MetadataEditMixin] Rotation already set to 0 deg for %s",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
                 return
@@ -569,7 +589,8 @@ class MetadataEditMixin:
                 self.mark_as_modified(key_path)
 
                 logger.debug(
-                    f"[MetadataEditMixin] Set rotation to 0° for {file_item.filename} via UnifiedMetadataManager",
+                    "[MetadataEditMixin] Set rotation to 0 deg for %s via UnifiedMetadataManager",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
 
@@ -579,8 +600,9 @@ class MetadataEditMixin:
 
                 return
             except Exception as e:
-                logger.error(
-                    f"[MetadataEditMixin] Failed to set rotation via UnifiedMetadataManager: {e}"
+                logger.exception(
+                    "[MetadataEditMixin] Failed to set rotation via UnifiedMetadataManager: %s",
+                    e,
                 )
 
         # Fallback to manual method
@@ -638,7 +660,7 @@ class MetadataEditMixin:
         # Get original value
         original_value = self._get_original_value_from_cache(key_path)
         if original_value is None:
-            logger.warning(f"[MetadataEditMixin] No original value found for {key_path}")
+            logger.warning("[MetadataEditMixin] No original value found for %s", key_path)
             return
 
         # Use unified metadata manager if available
@@ -659,7 +681,8 @@ class MetadataEditMixin:
                     staging_manager.clear_staged_change(self._current_file_path, key_path)
 
                 logger.debug(
-                    f"[MetadataEditMixin] Executed reset command for {file_item.filename}",
+                    "[MetadataEditMixin] Executed reset command for %s",
+                    file_item.filename,
                     extra={"dev_only": True},
                 )
 
@@ -669,7 +692,10 @@ class MetadataEditMixin:
 
                 return
             except Exception as e:
-                logger.error(f"[MetadataEditMixin] Failed to reset via UnifiedMetadataManager: {e}")
+                logger.exception(
+                    "[MetadataEditMixin] Failed to reset via UnifiedMetadataManager: %s",
+                    e,
+                )
 
         # Fallback to manual method
         self._fallback_reset_value(key_path, original_value)
@@ -777,7 +803,10 @@ class MetadataEditMixin:
         if new_str != original_str:
             self.mark_as_modified(key_path)
             logger.debug(
-                f"[MetadataEditMixin] Marked as modified: {key_path} ('{original_str}' -> '{new_str}')",
+                "[MetadataEditMixin] Marked as modified: %s ('%s' -> '%s')",
+                key_path,
+                original_str,
+                new_str,
                 extra={"dev_only": True},
             )
         else:
@@ -785,7 +814,8 @@ class MetadataEditMixin:
             if hasattr(self, 'modified_items') and key_path in self.modified_items:
                 self.modified_items.remove(key_path)
                 logger.debug(
-                    f"[MetadataEditMixin] Removed modification mark: {key_path} (value restored to original)",
+                    "[MetadataEditMixin] Removed modification mark: %s (value restored to original)",
+                    key_path,
                     extra={"dev_only": True},
                 )
 
@@ -820,7 +850,7 @@ class MetadataEditMixin:
                     )
 
         except Exception as e:
-            logger.error(f"[MetadataEditMixin] Error during undo operation: {e}")
+            logger.exception("[MetadataEditMixin] Error during undo operation: %s", e)
 
     def _redo_metadata_operation(self) -> None:
         """Redo the last undone metadata operation from context menu."""
@@ -849,7 +879,7 @@ class MetadataEditMixin:
                     )
 
         except Exception as e:
-            logger.error(f"[MetadataEditMixin] Error during redo operation: {e}")
+            logger.exception("[MetadataEditMixin] Error during redo operation: %s", e)
 
     def _show_history_dialog(self) -> None:
         """Show metadata history dialog."""

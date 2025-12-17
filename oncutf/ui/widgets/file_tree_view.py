@@ -10,7 +10,6 @@ No reliance on Qt built-in drag system - everything is manual and controlled.
 Single item selection only - no multi-selection complexity.
 """
 
-import contextlib
 import os
 
 from oncutf.config import ALLOWED_EXTENSIONS
@@ -103,170 +102,162 @@ class FileTreeView(QTreeView):
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
 
-        # Initialize file system watcher for drive detection
-        self._setup_file_system_watcher()
+        # Defer filesystem monitor setup until context is ready
+        # (context is initialized later in MainWindow setup)
+        self._filesystem_monitor = None
+        self._filesystem_monitor_setup_pending = True
 
         # Install custom tree view delegate for consistent hover/selection behavior
         self._delegate = TreeViewItemDelegate(self)
         self.setItemDelegate(self._delegate)
         self._delegate.install_event_filter(self)
 
-    def _setup_file_system_watcher(self) -> None:
-        """Setup QFileSystemWatcher to detect drive changes."""
+    def showEvent(self, event) -> None:
+        """Handle show event - setup filesystem monitor when widget becomes visible."""
+        super().showEvent(event)
+
+        # Setup filesystem monitor on first show (context should be ready by then)
+        if self._filesystem_monitor_setup_pending:
+            self._filesystem_monitor_setup_pending = False
+            self._setup_filesystem_monitor()
+
+    def _setup_filesystem_monitor(self) -> None:
+        """Setup comprehensive filesystem monitoring."""
         try:
-            from PyQt5.QtCore import QFileSystemWatcher, QTimer
+            from oncutf.core.filesystem_monitor import FilesystemMonitor
 
-            self.file_system_watcher = QFileSystemWatcher()
-            self.file_system_watcher.setObjectName("FileTreeViewFSWatcher")
+            # Get FileStore from parent window if available
+            file_store = None
 
-            # Watch common drive locations
-            import platform
+            # Try multiple paths to find FileStore
+            if hasattr(self, "parent") and self.parent():
+                parent = self.parent()
 
-            if platform.system() == "Windows":
-                # Watch root drives on Windows
-                import string
-
-                for drive in string.ascii_uppercase:
-                    drive_path = f"{drive}:\\"
-                    try:
-                        if os.path.exists(drive_path):
-                            self.file_system_watcher.addPath(drive_path)
+                # Try 1: parent.context.file_store (MainWindow with context)
+                if hasattr(parent, "context") and hasattr(parent.context, "file_store"):
+                    file_store = parent.context.file_store
+                    logger.debug(
+                        "[FileTreeView] Found FileStore from parent.context",
+                        extra={"dev_only": True}
+                    )
+                # Try 2: parent._file_store (direct attribute)
+                elif hasattr(parent, "_file_store"):
+                    file_store = parent._file_store
+                    logger.debug(
+                        "[FileTreeView] Found FileStore from parent._file_store",
+                        extra={"dev_only": True}
+                    )
+                # Try 3: Walk up parent chain looking for MainWindow
+                else:
+                    current = parent
+                    while current is not None:
+                        if hasattr(current, "context") and hasattr(current.context, "file_store"):
+                            file_store = current.context.file_store
                             logger.debug(
-                                f"[FileTreeView] Watching drive: {drive_path}",
-                                extra={"dev_only": True},
+                                "[FileTreeView] Found FileStore from ancestor context",
+                                extra={"dev_only": True}
                             )
-                    except Exception:
-                        pass
-            elif platform.system() == "Darwin":
-                # Watch /Volumes on macOS
-                for watch_path in ["/Volumes"]:
-                    try:
-                        if os.path.exists(watch_path):
-                            self.file_system_watcher.addPath(watch_path)
-                            logger.debug(
-                                f"[FileTreeView] Watching mount point: {watch_path}",
-                                extra={"dev_only": True},
-                            )
-                    except Exception as e:
-                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
-            else:
-                # Watch /media and /mnt on Linux
-                for watch_path in ["/media", "/mnt"]:
-                    try:
-                        if os.path.exists(watch_path):
-                            self.file_system_watcher.addPath(watch_path)
-                            logger.debug(
-                                f"[FileTreeView] Watching mount point: {watch_path}",
-                                extra={"dev_only": True},
-                            )
-                    except Exception as e:
-                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
-            # Connect signals
-            self.file_system_watcher.directoryChanged.connect(self._on_drive_changed)
+                            break
+                        current = current.parent() if hasattr(current, "parent") else None
 
-            # Debounce timer to avoid multiple rapid updates
-            self._drive_change_timer = QTimer()
-            self._drive_change_timer.setSingleShot(True)
-            self._drive_change_timer.timeout.connect(self._refresh_tree_on_drive_change)
-            self._drive_change_timer.setInterval(500)  # Wait 500ms before refreshing
+            if file_store is None:
+                logger.warning(
+                    "[FileTreeView] FileStore not found - auto-refresh on USB unmount won't work"
+                )
 
-            logger.debug(
-                "[FileTreeView] File system watcher initialized",
-                extra={"dev_only": True},
-            )
+            self._filesystem_monitor = FilesystemMonitor(file_store=file_store)
+
+            # Connect directory change signal for tree model refresh
+            self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)
+
+            # Set custom callback for tree refresh (handles drive mount/unmount)
+            self._filesystem_monitor.set_drive_change_callback(self._refresh_tree_on_drives_change)
+
+            # Start monitoring
+            self._filesystem_monitor.start()
+
+            logger.info("[FileTreeView] Filesystem monitor started")
 
         except Exception as e:
-            logger.warning(f"[FileTreeView] Failed to setup file system watcher: {e}")
-            self.file_system_watcher = None  # Set to None if setup fails
+            logger.warning("[FileTreeView] Failed to setup filesystem monitor: %s", e)
+            self._filesystem_monitor = None
+
+    def _on_directory_changed(self, dir_path: str) -> None:
+        """Handle directory content changed.
+
+        Args:
+            dir_path: Path of changed directory
+        """
+        logger.debug(
+            "[FileTreeView] Directory changed: %s",
+            dir_path,
+            extra={"dev_only": True}
+        )
+
+        # Refresh model if it supports refresh
+        model = self.model()
+        if model and hasattr(model, "refresh"):
+            try:
+                model.refresh()
+                logger.debug(
+                    "[FileTreeView] Model refreshed after directory change",
+                    extra={"dev_only": True}
+                )
+            except Exception as e:
+                logger.exception("[FileTreeView] Model refresh error: %s", e)
+
+    def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
+        """Refresh tree when drives change.
+
+        Args:
+            _drives: Current list of available drives (unused)
+        """
+        logger.info("[FileTreeView] Drives changed, refreshing tree")
+
+        model = self.model()
+        if not model or not hasattr(model, "refresh"):
+            logger.debug(
+                "[FileTreeView] Model doesn't support refresh",
+                extra={"dev_only": True}
+            )
+            return
+
+        # Get current selected path before refresh
+        current_path = self.get_selected_path()
+
+        try:
+            # Refresh the model
+            model.refresh()
+            logger.debug("[FileTreeView] Model refreshed successfully", extra={"dev_only": True})
+
+            # Try to restore selection
+            if current_path and os.path.exists(current_path):
+                self.select_path(current_path)
+
+        except Exception as e:
+            logger.exception("[FileTreeView] Error refreshing model: %s", e)
 
     def closeEvent(self, event) -> None:
         """Clean up resources before closing."""
         try:
-            # Stop the drive change timer
-            if hasattr(self, "_drive_change_timer") and self._drive_change_timer is not None:
-                self._drive_change_timer.stop()
-                self._drive_change_timer.blockSignals(True)
-                self._drive_change_timer.deleteLater()
-                self._drive_change_timer = None
-
-            # Properly cleanup file system watcher
-            if hasattr(self, "file_system_watcher") and self.file_system_watcher is not None:
-                # Disconnect all signals
-                with contextlib.suppress(RuntimeError, TypeError):
-                    self.file_system_watcher.directoryChanged.disconnect()
-
-                # Clear all watched paths
-                watched_paths = self.file_system_watcher.directories()
-                for path in watched_paths:
-                    with contextlib.suppress(Exception):
-                        self.file_system_watcher.removePath(path)
-
-                # Block signals and delete
-                self.file_system_watcher.blockSignals(True)
-                self.file_system_watcher.deleteLater()
-                self.file_system_watcher = None
+            # Stop filesystem monitor
+            if hasattr(self, "_filesystem_monitor") and self._filesystem_monitor is not None:
+                try:
+                    self._filesystem_monitor.stop()
+                    self._filesystem_monitor.blockSignals(True)
+                    self._filesystem_monitor.deleteLater()
+                    self._filesystem_monitor = None
+                    logger.debug("[FileTreeView] Filesystem monitor stopped", extra={"dev_only": True})
+                except Exception as e:
+                    logger.warning("[FileTreeView] Error stopping filesystem monitor: %s", e)
 
             logger.debug("[FileTreeView] Cleanup completed", extra={"dev_only": True})
 
         except Exception as e:
-            logger.error(f"[FileTreeView] Error during cleanup: {e}")
+            logger.exception("[FileTreeView] Error during cleanup: %s", e)
 
         # Call parent closeEvent
         super().closeEvent(event)
-
-    def _on_drive_changed(self, path: str) -> None:
-        """Handle drive changes detected by QFileSystemWatcher."""
-        if not hasattr(self, "_drive_change_timer") or self._drive_change_timer is None:
-            return
-
-        logger.debug(
-            f"[FileTreeView] Drive changed detected: {path}",
-            extra={"dev_only": True},
-        )
-
-        # Restart debounce timer
-        try:
-            self._drive_change_timer.stop()
-            self._drive_change_timer.start()
-        except RuntimeError:
-            # Timer was deleted
-            pass
-
-    def _refresh_tree_on_drive_change(self) -> None:
-        """Refresh the file tree after drive changes."""
-        try:
-            model = self.model()
-            if not model or not hasattr(model, "refresh"):
-                logger.debug(
-                    "[FileTreeView] Model doesn't support refresh",
-                    extra={"dev_only": True},
-                )
-                return
-
-            # Get current selected path before refresh
-            current_path = self.get_selected_path()
-
-            # Refresh the model
-            model.refresh()
-
-            # Restore selection if possible
-            if current_path and os.path.exists(current_path):
-                self.select_path(current_path)
-                logger.debug(
-                    f"[FileTreeView] Tree refreshed and selection restored: {current_path}",
-                    extra={"dev_only": True},
-                )
-            else:
-                logger.debug(
-                    "[FileTreeView] Tree refreshed (selection lost)",
-                    extra={"dev_only": True},
-                )
-
-        except RuntimeError:
-            # Widget was deleted
-            logger.debug("[FileTreeView] Widget deleted during refresh", extra={"dev_only": True})
-        except Exception as e:
-            logger.error(f"[FileTreeView] Error refreshing tree on drive change: {e}")
 
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
@@ -298,7 +289,8 @@ class FileTreeView(QTreeView):
 
         except Exception as e:
             logger.debug(
-                f"[FileTreeView] Branch icons setup skipped: {e}",
+                "[FileTreeView] Branch icons setup skipped: %s",
+                e,
                 extra={"dev_only": True}
             )
             # Fallback to default Qt icons
@@ -372,7 +364,9 @@ class FileTreeView(QTreeView):
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                 logger.debug(
-                    f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar",
+                    "[FileTreeView] Content exceeds viewport (%d > %d) - enabling scrollbar",
+                    content_width,
+                    viewport_width,
                     extra={"dev_only": True},
                 )
 
@@ -519,7 +513,8 @@ class FileTreeView(QTreeView):
 
             if cursor_count > 0:
                 logger.debug(
-                    f"[FileTreeView] Cleaned {cursor_count} stuck cursors after drag",
+                    "[FileTreeView] Cleaned %d stuck cursors after drag",
+                    cursor_count,
                     extra={"dev_only": True},
                 )
 
@@ -555,7 +550,8 @@ class FileTreeView(QTreeView):
 
         if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
             logger.warning(
-                f"[FileTreeView] Blocked drag on mount point/root: {clicked_path}",
+                "[FileTreeView] Blocked drag on mount point/root: %s",
+                clicked_path,
                 extra={"dev_only": True},
             )
             return
@@ -619,7 +615,9 @@ class FileTreeView(QTreeView):
         self._start_drag_feedback_loop()
 
         logger.debug(
-            f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True}
+            "[FileTreeView] Custom drag started: %s",
+            clicked_path,
+            extra={"dev_only": True},
         )
 
     def _start_drag_feedback_loop(self):
@@ -694,7 +692,8 @@ class FileTreeView(QTreeView):
             self._restore_hover_after_drag()
 
             logger.debug(
-                f"[FileTreeView] Custom drag ended (cancelled): {self._drag_path}",
+                "[FileTreeView] Custom drag ended (cancelled): %s",
+                self._drag_path,
                 extra={"dev_only": True},
             )
             return
@@ -702,7 +701,9 @@ class FileTreeView(QTreeView):
         # Check if we dropped on a valid target (only FileTableView allowed)
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         logger.debug(
-            f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True}
+            "[FileTreeView] Widget under cursor: %s",
+            widget_under_cursor,
+            extra={"dev_only": True},
         )
 
         # Use visual manager to validate drop target
@@ -715,14 +716,16 @@ class FileTreeView(QTreeView):
             parent = widget_under_cursor
             while parent:
                 logger.debug(
-                    f"[FileTreeView] Checking parent: {parent.__class__.__name__}",
+                    "[FileTreeView] Checking parent: %s",
+                    parent.__class__.__name__,
                     extra={"dev_only": True},
                 )
 
                 # Check with visual manager
                 if visual_manager.is_valid_drop_target(parent, "file_tree"):
                     logger.debug(
-                        f"[FileTreeView] Valid drop target found: {parent.__class__.__name__}",
+                        "[FileTreeView] Valid drop target found: %s",
+                        parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
                     self._handle_drop_on_table()
@@ -733,7 +736,8 @@ class FileTreeView(QTreeView):
                 if hasattr(parent, "parent") and parent.parent():
                     if visual_manager.is_valid_drop_target(parent.parent(), "file_tree"):
                         logger.debug(
-                            f"[FileTreeView] Valid drop target found via viewport: {parent.parent().__class__.__name__}",
+                            "[FileTreeView] Valid drop target found via viewport: %s",
+                            parent.parent().__class__.__name__,
                             extra={"dev_only": True},
                         )
                         self._handle_drop_on_table()
@@ -743,7 +747,8 @@ class FileTreeView(QTreeView):
                 # Check for policy violations
                 if parent.__class__.__name__ in ["FileTreeView", "MetadataTreeView"]:
                     logger.debug(
-                        f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)",
+                        "[FileTreeView] Rejecting drop on %s (policy violation)",
+                        parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
                     break
@@ -804,12 +809,15 @@ class FileTreeView(QTreeView):
                 # Selection was lost, restore it
                 self.select_path(self._drag_path)
                 logger.debug(
-                    f"[FileTreeView] Restored folder selection: {self._drag_path}",
+                    "[FileTreeView] Restored folder selection: %s",
+                    self._drag_path,
                     extra={"dev_only": True},
                 )
 
         logger.debug(
-            f"[FileTreeView] Custom drag ended: {self._drag_path} (valid_drop: {valid_drop})",
+            "[FileTreeView] Custom drag ended: %s (valid_drop: %s)",
+            self._drag_path,
+            valid_drop,
             extra={"dev_only": True},
         )
 
@@ -859,8 +867,11 @@ class FileTreeView(QTreeView):
         update_source_info(display_text)
 
         logger.debug(
-            f"[FileTreeView] Updated drag count: {display_text} "
-            f"(recursive={is_recursive}, timeout={count.timed_out}, {count.elapsed_ms:.1f}ms)",
+            "[FileTreeView] Updated drag count: %s (recursive=%s, timeout=%s, %.1fms)",
+            display_text,
+            is_recursive,
+            count.timed_out,
+            count.elapsed_ms,
             extra={"dev_only": True}
         )
 
@@ -879,7 +890,10 @@ class FileTreeView(QTreeView):
         _, _, action = decode_modifiers_to_flags(modifiers)
 
         logger.info(
-            f"[FileTreeView] Dropped: {self._drag_path} ({action})", extra={"dev_only": True}
+            "[FileTreeView] Dropped: %s (%s)",
+            self._drag_path,
+            action,
+            extra={"dev_only": True},
         )
 
     def _is_valid_drag_target(self, path: str) -> bool:
@@ -890,7 +904,8 @@ class FileTreeView(QTreeView):
 
             if is_mount_point_or_root(path):
                 logger.warning(
-                    f"[FileTreeView] Blocked drag of mount point/root: {path}",
+                    "[FileTreeView] Blocked drag of mount point/root: %s",
+                    path,
                     extra={"dev_only": True},
                 )
                 return False
@@ -903,7 +918,8 @@ class FileTreeView(QTreeView):
 
         if ext not in ALLOWED_EXTENSIONS:
             logger.debug(
-                f"[FileTreeView] Skipping drag for non-allowed extension: {ext}",
+                "[FileTreeView] Skipping drag for non-allowed extension: %s",
+                ext,
                 extra={"dev_only": True},
             )
             return False

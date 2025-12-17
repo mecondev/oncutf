@@ -82,7 +82,9 @@ class DragCleanupManager:
                 reset_delay=1000,
             )
             logger.info(
-                f"[MainWindow] FORCE CLEANUP: Cleaned {cursor_count} cursors, drag_active={has_active_drag}"
+                "[MainWindow] FORCE CLEANUP: Cleaned %d cursors, drag_active=%s",
+                cursor_count,
+                has_active_drag,
             )
         else:
             logger.info("[MainWindow] FORCE CLEANUP: Nothing to clean")
@@ -156,7 +158,8 @@ class DragCleanupManager:
             # Only cleanup after 2 consecutive detections (10 seconds total)
             if self.main_window._stuck_cursor_count >= 2:
                 logger.warning(
-                    f"[Emergency] Stuck drag cursor detected for {self.main_window._stuck_cursor_count * 5}s, forcing cleanup"
+                    "[Emergency] Stuck drag cursor detected for %ss, forcing cleanup",
+                    self.main_window._stuck_cursor_count * 5,
                 )
                 drag_manager.force_cleanup()
                 self.main_window.set_status(
@@ -168,7 +171,8 @@ class DragCleanupManager:
                 self.main_window._stuck_cursor_count = 0
             else:
                 logger.debug(
-                    f"[Emergency] Suspicious cursor detected ({self.main_window._stuck_cursor_count}/2)"
+                    "[Emergency] Suspicious cursor detected (%d/2)",
+                    self.main_window._stuck_cursor_count,
                 )
         else:
             # Reset count if drag is actually active

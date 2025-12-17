@@ -45,7 +45,9 @@ class MetadataLoader:
         self, files: list[FileItem], force: bool = False, use_extended: bool = False, cache=None
     ) -> None:
         logger.debug(
-            f"[Loader] load() final params: use_extended={use_extended}, force={force}",
+            "[Loader] load() final params: use_extended=%s, force=%s",
+            use_extended,
+            force,
             extra={"dev_only": True},
         )
         updated_count = 0
@@ -56,20 +58,26 @@ class MetadataLoader:
             already_extended = entry.is_extended if entry else False
 
             logger.debug(
-                f"[Loader] Loading {file.filename} — already_extended={already_extended}, already_has_metadata={already_has_metadata}",
+                "[Loader] Loading %s - already_extended=%s, already_has_metadata=%s",
+                file.filename,
+                already_extended,
+                already_has_metadata,
                 extra={"dev_only": True},
             )
 
             if use_extended and already_extended:
                 logger.debug(
-                    f"[Loader] Skipping (already extended): {file.filename}",
+                    "[Loader] Skipping (already extended): %s",
+                    file.filename,
                     extra={"dev_only": True},
                 )
                 continue
 
             if not use_extended and already_has_metadata and not force:
                 logger.debug(
-                    f"[Loader] Skipping (already cached): {file.filename}", extra={"dev_only": True}
+                    "[Loader] Skipping (already cached): %s",
+                    file.filename,
+                    extra={"dev_only": True},
                 )
                 continue
 
@@ -83,16 +91,20 @@ class MetadataLoader:
             # Determine effective extended status
             effective_extended = use_extended or metadata_has_extended
 
-            logger.debug(f"[Loader] Metadata for {file.filename}:", extra={"dev_only": True})
+            logger.debug("[Loader] Metadata for %s:", file.filename, extra={"dev_only": True})
             logger.debug(
-                f"[Loader] - use_extended parameter: {use_extended}", extra={"dev_only": True}
-            )
-            logger.debug(
-                f"[Loader] - metadata has __extended__ flag: {metadata_has_extended}",
+                "[Loader] - use_extended parameter: %s",
+                use_extended,
                 extra={"dev_only": True},
             )
             logger.debug(
-                f"[Loader] - effective extended status: {effective_extended}",
+                "[Loader] - metadata has __extended__ flag: %s",
+                metadata_has_extended,
+                extra={"dev_only": True},
+            )
+            logger.debug(
+                "[Loader] - effective extended status: %s",
+                effective_extended,
                 extra={"dev_only": True},
             )
 
@@ -104,18 +116,27 @@ class MetadataLoader:
                     index = self.model.index(row, 0)
                     self.model.dataChanged.emit(index, index, [Qt.DecorationRole])  # type: ignore
                 except Exception as e:
-                    logger.warning(f"[Loader] Failed to emit dataChanged for {file.filename}: {e}")
+                    logger.warning(
+                        "[Loader] Failed to emit dataChanged for %s: %s",
+                        file.filename,
+                        e,
+                    )
 
             if cache:
                 cache.set(file.full_path, metadata, is_extended=effective_extended)
 
             logger.debug(
-                f"[Loader] Read metadata for: {file.filename} | extended={effective_extended}",
+                "[Loader] Read metadata for: %s | extended=%s",
+                file.filename,
+                effective_extended,
                 extra={"dev_only": True},
             )
 
         logger.debug(
-            f"[Loader] Total updated: {updated_count} / {len(files)}", extra={"dev_only": True}
+            "[Loader] Total updated: %d / %d",
+            updated_count,
+            len(files),
+            extra={"dev_only": True},
         )
 
     def read_metadata(
@@ -138,22 +159,32 @@ class MetadataLoader:
         filepath = normalize_path(filepath)
 
         logger.debug(
-            f"[Loader] read_metadata() called: use_extended={use_extended}, filepath={filepath}",
+            "[Loader] read_metadata() called: use_extended=%s, filepath=%s",
+            use_extended,
+            filepath,
             extra={"dev_only": True},
         )
 
         if use_extended:
             logger.debug(
-                f"[Loader] Extended scan requested for: {filepath}", extra={"dev_only": True}
+                "[Loader] Extended scan requested for: %s",
+                filepath,
+                extra={"dev_only": True},
             )
             result = self.exiftool.get_metadata(filepath, use_extended=True)
         else:
-            logger.debug(f"[Loader] Fast scan requested for: {filepath}", extra={"dev_only": True})
+            logger.debug(
+                "[Loader] Fast scan requested for: %s",
+                filepath,
+                extra={"dev_only": True},
+            )
             result = self.exiftool.get_metadata(filepath, use_extended=False)
 
         if isinstance(result, dict):
             logger.debug(
-                f"[Loader] Result keys for {filepath}: {list(result.keys())[:10]}",
+                "[Loader] Result keys for %s: %s",
+                filepath,
+                list(result.keys())[:10],
                 extra={"dev_only": True},
             )
 
@@ -161,13 +192,21 @@ class MetadataLoader:
             date_keys = [k for k in result if "date" in k.lower() or "time" in k.lower()]
             if date_keys:
                 logger.debug(
-                    f"[Loader] Date/Time fields found: {date_keys}", extra={"dev_only": True}
+                    "[Loader] Date/Time fields found: %s",
+                    date_keys,
+                    extra={"dev_only": True},
                 )
                 for key in date_keys[:5]:  # Log first 5 date fields
-                    logger.debug(f"[Loader] {key} = {result[key]}", extra={"dev_only": True})
+                    logger.debug(
+                        "[Loader] %s = %s",
+                        key,
+                        result[key],
+                        extra={"dev_only": True},
+                    )
 
             logger.debug(
-                f"[Loader] '__extended__' in result? {'__extended__' in result}",
+                "[Loader] '__extended__' in result? %s",
+                "__extended__" in result,
                 extra={"dev_only": True},
             )
 
@@ -178,7 +217,9 @@ class MetadataLoader:
             return result
 
         logger.warning(
-            f"[Loader] Read failed or returned non-dict for: {filepath} → type={type(result)}"
+            "[Loader] Read failed or returned non-dict for: %s -> type=%s",
+            filepath,
+            type(result),
         )
         return {}
 
@@ -198,7 +239,7 @@ class MetadataLoader:
                     self._active_proc.terminate()
                     logger.info("[Loader] Subprocess terminated.")
                 except Exception as e:
-                    logger.error(f"[Loader] Termination failed: {e}")
+                    logger.error("[Loader] Termination failed: %s", e)
 
     def close(self) -> None:
         if self.exiftool:

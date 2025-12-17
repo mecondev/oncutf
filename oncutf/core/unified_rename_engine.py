@@ -39,15 +39,42 @@ class PreviewResult:
             original.
         errors: Optional list of error messages captured during preview
             generation.
+        timestamp: Time when preview was generated (for staleness checking).
     """
 
     name_pairs: list[tuple[str, str]]
     has_changes: bool
     errors: list[str] = None # type: ignore
+    timestamp: float = 0.0  # Unix timestamp
 
     def __post_init__(self):
         if self.errors is None:
             self.errors = []
+        if self.timestamp == 0.0:
+            import time
+            self.timestamp = time.time()
+
+    def is_stale(self, max_age_seconds: float = 300.0) -> bool:
+        """Check if preview result is stale.
+
+        Args:
+            max_age_seconds: Maximum age before considering stale (default: 5 minutes)
+
+        Returns:
+            bool: True if preview is older than max_age_seconds
+        """
+        import time
+        age = time.time() - self.timestamp
+        return age > max_age_seconds
+
+    def get_age_seconds(self) -> float:
+        """Get age of preview result in seconds.
+
+        Returns:
+            float: Age in seconds
+        """
+        import time
+        return time.time() - self.timestamp
 
 
 @dataclass
@@ -228,8 +255,8 @@ class BatchQueryManager:
 
             return result
 
-        except Exception as e:
-            logger.error(f"[BatchQueryManager] Error getting hash availability: {e}")
+        except Exception:
+            logger.exception("[BatchQueryManager] Error getting hash availability")
             return {}
 
     def get_metadata_availability(self, files: list[FileItem]) -> dict[str, bool]:
@@ -260,19 +287,22 @@ class BatchQueryManager:
                     # Check if file has metadata
                     has_metadata = self._file_has_metadata(file.full_path, metadata_cache)
                     logger.debug(
-                        f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}",
+                        "[DEBUG] [UnifiedRenameEngine] get_metadata_availability: %s has_metadata=%s",
+                        file.full_path,
+                        has_metadata,
                         extra={"dev_only": True},
                     )
                     result[file.full_path] = has_metadata
 
             logger.debug(
-                f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}",
+                "[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: %s",
+                result,
                 extra={"dev_only": True},
             )
             return result
 
-        except Exception as e:
-            logger.error(f"[BatchQueryManager] Error getting metadata availability: {e}")
+        except Exception:
+            logger.exception("[BatchQueryManager] Error getting metadata availability")
             return {}
 
     def _file_has_metadata(self, file_path: str, metadata_cache) -> bool:
@@ -295,8 +325,12 @@ class BatchQueryManager:
                     }
                     return len(metadata_fields) > 0
             return False
-        except Exception as e:
-            logger.debug(f"[BatchQueryManager] Error checking metadata for {file_path}: {e}")
+        except Exception:
+            logger.debug(
+                "[BatchQueryManager] Error checking metadata for %s",
+                file_path,
+                exc_info=True,
+            )
             return False
 
 
@@ -438,7 +472,9 @@ class UnifiedPreviewManager:
         elapsed = time.time() - start_time
         if elapsed > 0.05:  # Log slow preview generation
             logger.info(
-                f"[UnifiedPreviewManager] Preview generation took {elapsed:.3f}s for {len(files)} files"
+                "[UnifiedPreviewManager] Preview generation took %.3fs for %d files",
+                elapsed,
+                len(files),
             )
 
         return result
@@ -497,6 +533,7 @@ class UnifiedPreviewManager:
                     metadata_cache,
                     hash_availability,
                     metadata_availability,
+                    all_files=files,  # Pass full file list for scope-aware counters
                 )
 
                 # Strip extension from generated fullname
@@ -516,8 +553,12 @@ class UnifiedPreviewManager:
                 new_name = self._build_final_filename(new_basename, extension)
                 name_pairs.append((file.filename, new_name))
 
-            except Exception as e:
-                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
+            except Exception:
+                logger.warning(
+                    "Failed to generate preview for %s",
+                    file.filename,
+                    exc_info=True,
+                )
                 name_pairs.append((file.filename, file.filename))
 
         return name_pairs
@@ -530,12 +571,22 @@ class UnifiedPreviewManager:
         metadata_cache: Any,
         hash_availability: dict[str, bool],
         metadata_availability: dict[str, bool],
+        all_files: list[FileItem] | None = None,
     ) -> str:
         """Apply rename modules for a single file, checking required data.
 
         Modules that depend on hash or metadata availability will be
         short-circuited and a sentinel string (e.g. "missing_hash") will be
         returned when preconditions are not met.
+
+        Args:
+            file: File being renamed
+            modules_data: List of module configurations
+            index: Global index in file list
+            metadata_cache: Metadata cache
+            hash_availability: Dict of hash availability per file
+            metadata_availability: Dict of metadata availability per file
+            all_files: Full file list (for scope-aware counters)
         """
 
         from oncutf.utils.preview_engine import apply_rename_modules
@@ -553,8 +604,8 @@ class UnifiedPreviewManager:
                     if not metadata_availability.get(file.full_path, False):
                         return "missing_metadata"
 
-        # Apply modules normally
-        return apply_rename_modules(modules_data, index, file, metadata_cache)
+        # Apply modules normally with full file list for scope-aware counters
+        return apply_rename_modules(modules_data, index, file, metadata_cache, all_files=all_files)
 
     def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
         """Strip extension from fullname if present.
@@ -820,18 +871,29 @@ class UnifiedExecutionManager:
 
         if unchanged_count > 0:
             logger.info(
-                f"[UnifiedRenameEngine] {unchanged_count} files already have correct names "
-                f"(will process {len(items) - unchanged_count} files with changes)"
+                "[UnifiedRenameEngine] %d files already have correct names (will process %d files with changes)",
+                unchanged_count,
+                len(items) - unchanged_count,
             )
 
         # Add companion file renames if enabled
         if COMPANION_FILES_ENABLED and AUTO_RENAME_COMPANION_FILES:
-            logger.info(f"[UnifiedRenameEngine] Companion files enabled: building companion execution plan for {len(files)} files")
+            logger.info(
+                "[UnifiedRenameEngine] Companion files enabled: building companion execution plan for %d files",
+                len(files),
+            )
             companion_items = self._build_companion_execution_plan(files, new_names)
             items.extend(companion_items)
-            logger.info(f"[UnifiedRenameEngine] Added {len(companion_items)} companion file renames to execution plan")
+            logger.info(
+                "[UnifiedRenameEngine] Added %d companion file renames to execution plan",
+                len(companion_items),
+            )
         else:
-            logger.debug(f"[UnifiedRenameEngine] Companion rename disabled (ENABLED={COMPANION_FILES_ENABLED}, AUTO_RENAME={AUTO_RENAME_COMPANION_FILES})")
+            logger.debug(
+                "[UnifiedRenameEngine] Companion rename disabled (ENABLED=%s, AUTO_RENAME=%s)",
+                COMPANION_FILES_ENABLED,
+                AUTO_RENAME_COMPANION_FILES,
+            )
 
         return items
 
@@ -877,15 +939,22 @@ class UnifiedExecutionManager:
                         )
                         companion_items.append(companion_item)
                         logger.debug(
-                            f"[UnifiedExecutionManager] Added companion rename: "
-                            f"{os.path.basename(old_companion_path)} → {os.path.basename(new_companion_path)}"
+                            "[UnifiedExecutionManager] Added companion rename: %s -> %s",
+                            os.path.basename(old_companion_path),
+                            os.path.basename(new_companion_path),
                         )
 
-        except Exception as e:
-            logger.warning(f"[UnifiedExecutionManager] Error building companion execution plan: {e}")
+        except Exception:
+            logger.warning(
+                "[UnifiedExecutionManager] Error building companion execution plan",
+                exc_info=True,
+            )
 
         if companion_items:
-            logger.info(f"[UnifiedExecutionManager] Added {len(companion_items)} companion file renames")
+            logger.info(
+                "[UnifiedExecutionManager] Added %d companion file renames",
+                len(companion_items),
+            )
 
         return companion_items
 
@@ -898,8 +967,8 @@ class UnifiedExecutionManager:
         if self.conflict_callback:
             try:
                 return self.conflict_callback(None, os.path.basename(item.new_path))
-            except Exception as e:
-                logger.error(f"[UnifiedExecutionManager] Error in conflict callback: {e}")
+            except Exception:
+                logger.exception("[UnifiedExecutionManager] Error in conflict callback")
                 return "skip"
         return "skip"  # Default to skip
 
@@ -918,7 +987,10 @@ class UnifiedExecutionManager:
 
             # Skip if no change (same name, same path)
             if old_name == new_name and item.old_path == item.new_path:
-                logger.debug(f"[UnifiedExecutionManager] Skipping unchanged file: {old_name}")
+                logger.debug(
+                    "[UnifiedExecutionManager] Skipping unchanged file: %s",
+                    old_name,
+                )
                 return True  # Not an error, just no-op
 
             # Use safe case rename for case-only changes
@@ -931,7 +1003,10 @@ class UnifiedExecutionManager:
 
         except Exception as e:
             item.error_message = str(e)
-            logger.error(f"[UnifiedExecutionManager] Rename failed for {item.old_path}: {e}")
+            logger.exception(
+                "[UnifiedExecutionManager] Rename failed for %s",
+                item.old_path,
+            )
             return False
 
 

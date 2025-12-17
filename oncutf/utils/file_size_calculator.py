@@ -53,12 +53,15 @@ def calculate_files_total_size(file_items: list) -> int:
                     item.file_size = size
 
         except (OSError, AttributeError) as e:
-            logger.debug(f"[FileSizeCalculator] Error getting size for {item}: {e}")
+            logger.debug("[FileSizeCalculator] Error getting size for %s: %s", item, e)
             continue
 
     logger.debug(
-        f"[FileSizeCalculator] Total size: {total_size} bytes for {len(file_items)} files "
-        f"({files_cached} cached, {files_checked} checked)"
+        "[FileSizeCalculator] Total size: %d bytes for %d files (%d cached, %d checked)",
+        total_size,
+        len(file_items),
+        files_cached,
+        files_checked,
     )
     return total_size
 
@@ -98,7 +101,7 @@ def calculate_processed_size(file_items: list, current_index: int) -> int:
                 processed_size += size
 
         except (OSError, AttributeError) as e:
-            logger.debug(f"[FileSizeCalculator] Error getting size for {item}: {e}")
+            logger.debug("[FileSizeCalculator] Error getting size for %s: %s", item, e)
             continue
 
     return processed_size
@@ -137,10 +140,12 @@ def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> in
                         continue
 
     except (OSError, PermissionError) as e:
-        logger.debug(f"[FileSizeCalculator] Error calculating folder size for {folder_path}: {e}")
+        logger.debug("[FileSizeCalculator] Error calculating folder size for %s: %s", folder_path, e)
 
     logger.debug(
-        f"[FileSizeCalculator] Folder size calculated: {total_size} bytes for {folder_path}"
+        "[FileSizeCalculator] Folder size calculated: %d bytes for %s",
+        total_size,
+        folder_path,
     )
     return total_size
 
@@ -181,6 +186,10 @@ def estimate_operation_time(
     estimated_time = max(estimated_time, 1.0)
 
     logger.debug(
-        f"[FileSizeCalculator] Estimated {operation_type} time: {estimated_time:.1f}s for {file_count} files ({total_size} bytes)"
+        "[FileSizeCalculator] Estimated %s time: %.1fs for %d files (%d bytes)",
+        operation_type,
+        estimated_time,
+        file_count,
+        total_size,
     )
     return estimated_time

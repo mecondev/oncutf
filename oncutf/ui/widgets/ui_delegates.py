@@ -324,7 +324,11 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     def _log_guard_warning(self, message: str) -> None:
         """Log guard-triggered warnings only once per delegate instance."""
         if not self._guard_warning_logged:
-            logger.debug(f"[TreeViewItemDelegate] Paint guard triggered: {message}", extra={"dev_only": True})
+            logger.debug(
+                "[TreeViewItemDelegate] Paint guard triggered: %s",
+                message,
+                extra={"dev_only": True},
+            )
             self._guard_warning_logged = True
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:

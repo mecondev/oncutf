@@ -249,7 +249,7 @@ class RenameModuleWidget(QWidget):
                 # Connect the module's updated signal to emit our updated signal
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
             except Exception as e:
-                logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
+                logger.warning("[RenameModuleWidget] Signal connection failed: %s", e)
 
     def update_module_content(self, module_name: str) -> None:
         """

@@ -68,18 +68,18 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
                 temp_name = f"_temp_rename_{hash(dst_name)}_{counter}.tmp"
                 temp_path = os.path.join(src_dir, temp_name)
                 if counter > 100:  # Safety valve
-                    logger.error(f"Could not find unique temp name for case rename: {src_path}")
+                    logger.error("Could not find unique temp name for case rename: %s", src_path)
                     return False
 
             # Step 2: Rename to temporary name
             os.rename(src_path, temp_path)
-            logger.debug(f"Case rename step 1: {src_name} -> {temp_name}")
+            logger.debug("Case rename step 1: %s -> %s", src_name, temp_name)
 
             # Step 3: Rename from temporary to final name
             os.rename(temp_path, dst_path)
-            logger.debug(f"Case rename step 2: {temp_name} -> {dst_name}")
+            logger.debug("Case rename step 2: %s -> %s", temp_name, dst_name)
 
-            logger.info(f"Successfully completed case-only rename: {src_name} -> {dst_name}")
+            logger.info("Successfully completed case-only rename: %s -> %s", src_name, dst_name)
             return True
         else:
             # On Unix-like systems, case-sensitive filesystems should work with direct rename
@@ -87,7 +87,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
             return True
 
     except Exception as e:
-        logger.error(f"Failed to perform case rename from {src_path} to {dst_path}: {e}")
+        logger.error("Failed to perform case rename from %s to %s: %s", src_path, dst_path, e)
 
         # Cleanup: if we created a temp file but failed, try to restore original
         try:
@@ -98,9 +98,9 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
             ):
                 if not os.path.exists(src_path):
                     os.rename(temp_path, src_path)
-                    logger.info(f"Restored original file after failed case rename: {src_path}")
+                    logger.info("Restored original file after failed case rename: %s", src_path)
         except Exception as cleanup_error:
-            logger.error(f"Failed to cleanup after case rename failure: {cleanup_error}")
+            logger.error("Failed to cleanup after case rename failure: %s", cleanup_error)
 
         return False
 
@@ -212,15 +212,15 @@ def execute_rename_plan(plan: list[dict]) -> int:
             if entry.get("is_case_only", False):
                 if safe_case_rename(entry["src_path"], entry["dst_path"]):
                     success_count += 1
-                    logger.info(f"Case-only rename successful: {entry['src']} -> {entry['dst']}")
+                    logger.info("Case-only rename successful: %s -> %s", entry['src'], entry['dst'])
                 else:
-                    logger.warning(f"Case-only rename failed: {entry['src']} -> {entry['dst']}")
+                    logger.warning("Case-only rename failed: %s -> %s", entry['src'], entry['dst'])
             else:
                 # Regular rename
                 os.rename(entry["src_path"], entry["dst_path"])
                 success_count += 1
         except Exception as e:
-            logger.error(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
+            logger.error("Failed to rename %s -> %s: %s", entry['src'], entry['dst'], e)
 
     return success_count
 

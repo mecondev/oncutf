@@ -89,7 +89,7 @@ class PerformanceMonitor:
     ) -> None:
         """End timing an operation and record metric."""
         if operation not in self.operation_timers:
-            logger.warning(f"[PerformanceMonitor] Operation {operation} was not started")
+            logger.warning("[PerformanceMonitor] Operation %s was not started", operation)
             return
 
         start_time = self.operation_timers.pop(operation)
@@ -116,13 +116,17 @@ class PerformanceMonitor:
         """Log warnings for slow operations."""
         if metric.duration > self.very_slow_operation_threshold:
             logger.warning(
-                f"[PerformanceMonitor] Very slow {metric.operation}: {metric.duration:.3f}s "
-                f"for {metric.file_count} files"
+                "[PerformanceMonitor] Very slow %s: %.3fs for %d files",
+                metric.operation,
+                metric.duration,
+                metric.file_count,
             )
         elif metric.duration > self.slow_operation_threshold:
             logger.info(
-                f"[PerformanceMonitor] Slow {metric.operation}: {metric.duration:.3f}s "
-                f"for {metric.file_count} files"
+                "[PerformanceMonitor] Slow %s: %.3fs for %d files",
+                metric.operation,
+                metric.duration,
+                metric.file_count,
             )
 
     def get_stats(self, operation: str | None = None) -> PerformanceStats:

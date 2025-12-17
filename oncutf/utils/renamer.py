@@ -87,7 +87,7 @@ class Renamer:
             List[RenameResult]: Outcome of each rename attempt.
         """
         logger.debug(
-            f"Starting rename process for {len(self.files)} files...", extra={"dev_only": True}
+            "Starting rename process for %d files...", len(self.files), extra={"dev_only": True}
         )
 
         # Step 1: Generate preview names from modules
@@ -96,7 +96,7 @@ class Renamer:
         )
 
         if has_error:
-            logger.warning(f"Preview generation failed: {tooltip}")
+            logger.warning("Preview generation failed: %s", tooltip)
             return [RenameResult(f.full_path, "", success=False, error=tooltip) for f in self.files]
 
         # Step 2: Map old path to new name
@@ -114,7 +114,7 @@ class Renamer:
                 new_basename = NameTransformModule.apply_from_data(
                     self.post_transform, new_basename
                 )
-                logger.debug(f"Transform applied: {new_basename}")
+                logger.debug("Transform applied: %s", new_basename)
 
             # Final cleanup: strip any remaining leading/trailing spaces from basename
             new_basename = new_basename.strip()
@@ -130,7 +130,7 @@ class Renamer:
         for file in self.files:
             src = file.full_path
             if src is None:
-                logger.error(f"File {file.filename} has no full_path")
+                logger.error("File %s has no full_path", file.filename)
                 results.append(RenameResult("", "", success=False, error="No full path"))
                 continue
 
@@ -140,7 +140,7 @@ class Renamer:
             # Validation
             is_valid, error_msg = self.validator(new_filename)
             if not is_valid:
-                logger.warning(f"Invalid filename: {new_filename} - {error_msg}")
+                logger.warning("Invalid filename: %s - %s", new_filename, error_msg)
                 results.append(RenameResult(src, dst, success=False, error=error_msg))
                 continue
 
@@ -185,7 +185,7 @@ class Renamer:
                 # Verify source file exists before attempting rename
                 if not os.path.exists(src_normalized):
                     error_msg = f"Source file not found: {src_normalized}"
-                    logger.error(f"[Rename] {error_msg}")
+                    logger.error("[Rename] %s", error_msg)
                     results.append(RenameResult(src, dst, success=False, error=error_msg))
                     continue
 
@@ -196,30 +196,30 @@ class Renamer:
                 if is_case_only_change(src_name, dst_name):
                     if safe_case_rename(src_normalized, dst_normalized):
                         results.append(RenameResult(src, dst, success=True))
-                        logger.info(f"Case-only rename successful: {src_name} -> {dst_name}")
+                        logger.info("Case-only rename successful: %s -> %s", src_name, dst_name)
                     else:
                         results.append(
                             RenameResult(src, dst, success=False, error="Case-only rename failed")
                         )
-                        logger.error(f"Case-only rename failed: {src_name} -> {dst_name}")
+                        logger.error("Case-only rename failed: %s -> %s", src_name, dst_name)
                 else:
                     # Regular rename with normalized paths
                     os.rename(src_normalized, dst_normalized)
                     results.append(RenameResult(src, dst, success=True))
                     logger.debug(
-                        f"[Rename] Success: {src_name} -> {dst_name}", extra={"dev_only": True}
+                        "[Rename] Success: %s -> %s", src_name, dst_name, extra={"dev_only": True}
                     )
             except PermissionError as e:
                 error_msg = f"Permission denied (file may be in use): {str(e)}"
-                logger.error(f"[Rename] {error_msg} for {src}")
+                logger.error("[Rename] %s for %s", error_msg, src)
                 results.append(RenameResult(src, dst, success=False, error=error_msg))
             except OSError as e:
                 error_msg = f"OS error during rename: {str(e)}"
-                logger.error(f"[Rename] {error_msg} for {src}")
+                logger.error("[Rename] %s for %s", error_msg, src)
                 results.append(RenameResult(src, dst, success=False, error=error_msg))
             except Exception as e:
                 error_msg = f"Unexpected error: {str(e)}"
-                logger.error(f"[Rename] {error_msg} for {src}")
+                logger.error("[Rename] %s for %s", error_msg, src)
                 results.append(RenameResult(src, dst, success=False, error=error_msg))
 
         # Update metadata cache for renamed files
@@ -233,7 +233,7 @@ class Renamer:
                         clean_meta["FileName"] = os.path.basename(result.new_path)
                         self.metadata_cache.set(result.new_path, clean_meta)
         except Exception as e:
-            logger.error(f"[Renamer] Error updating metadata cache: {e}")
+            logger.error("[Renamer] Error updating metadata cache: %s", e)
 
         return results
 

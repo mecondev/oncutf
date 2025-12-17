@@ -245,11 +245,11 @@ class UnifiedColumnService:
                 config_dict[key] = config
 
             except (KeyError, ValueError, TypeError) as e:
-                logger.warning(f"[UnifiedColumnService] Invalid config for column {key}: {e}")
+                logger.warning("[UnifiedColumnService] Invalid config for column %s: %s", key, e)
                 continue
 
         self._config_cache = config_dict
-        logger.debug(f"[UnifiedColumnService] Loaded {len(config_dict)} column configurations")
+        logger.debug("[UnifiedColumnService] Loaded %d column configurations", len(config_dict))
 
     def _compute_visible_columns(self) -> None:
         """Compute list of visible columns based on configuration and user settings."""
@@ -275,7 +275,7 @@ class UnifiedColumnService:
         visible_columns.sort(key=lambda x: config_order.index(x) if x in config_order else 999)
 
         self._visible_columns_cache = visible_columns
-        logger.debug(f"[UnifiedColumnService] Computed visible columns: {visible_columns}")
+        logger.debug("[UnifiedColumnService] Computed visible columns: %s", visible_columns)
 
     def _compute_column_mapping(self) -> None:
         """Compute column index to key mapping."""
@@ -287,7 +287,7 @@ class UnifiedColumnService:
             mapping[i + 1] = column_key
 
         self._column_mapping_cache = mapping
-        logger.debug(f"[UnifiedColumnService] Computed column mapping: {mapping}")
+        logger.debug("[UnifiedColumnService] Computed column mapping: %s", mapping)
 
     def _get_user_settings(self) -> dict[str, Any]:
         """Get user settings with caching, compatible with existing header menu system."""
@@ -312,7 +312,10 @@ class UnifiedColumnService:
                     logger.debug("[UnifiedColumnService] Loaded settings from JSON fallback")
 
             except Exception as e:
-                logger.warning(f"[UnifiedColumnService] Failed to load user settings: {e}")
+                logger.warning(
+                    "[UnifiedColumnService] Failed to load user settings: %s",
+                    e,
+                )
                 # Final fallback - empty settings
                 self._user_settings_cache = {}
 
@@ -347,7 +350,7 @@ class UnifiedColumnService:
             self._user_settings_cache = None
 
         except Exception as e:
-            logger.error(f"[UnifiedColumnService] Failed to save user settings: {e}")
+            logger.error("[UnifiedColumnService] Failed to save user settings: %s", e)
 
 
 # Global service instance

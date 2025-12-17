@@ -43,11 +43,13 @@ class StructuredMetadataManager:
             self._field_cache = {field["field_key"]: field for field in fields}
 
             logger.debug(
-                f"[StructuredMetadataManager] Loaded {len(self._category_cache)} categories and {len(self._field_cache)} fields"
+                "[StructuredMetadataManager] Loaded %d categories and %d fields",
+                len(self._category_cache),
+                len(self._field_cache),
             )
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error loading caches: {e}")
+            logger.error("[StructuredMetadataManager] Error loading caches: %s", e)
 
     def refresh_caches(self):
         """Refresh the internal caches."""
@@ -78,7 +80,8 @@ class StructuredMetadataManager:
                     # For unknown fields, we could either skip them or create dynamic fields
                     # For now, we'll skip them but log for debugging
                     logger.debug(
-                        f"[StructuredMetadataManager] Unknown field '{field_key}' - skipping"
+                        "[StructuredMetadataManager] Unknown field '%s' - skipping",
+                        field_key,
                     )
                     continue
 
@@ -92,18 +95,23 @@ class StructuredMetadataManager:
                     file_path, batch_data
                 )
                 logger.debug(
-                    f"[StructuredMetadataManager] Stored {stored_count} structured metadata fields for {Path(file_path).name}"
+                    "[StructuredMetadataManager] Stored %d structured metadata fields for %s",
+                    stored_count,
+                    Path(file_path).name,
                 )
                 return stored_count > 0
             else:
                 logger.debug(
-                    f"[StructuredMetadataManager] No valid fields to store for {Path(file_path).name}"
+                    "[StructuredMetadataManager] No valid fields to store for %s",
+                    Path(file_path).name,
                 )
                 return True
 
         except Exception as e:
             logger.error(
-                f"[StructuredMetadataManager] Error processing metadata for {file_path}: {e}"
+                "[StructuredMetadataManager] Error processing metadata for %s: %s",
+                file_path,
+                e,
             )
             return False
 
@@ -164,7 +172,7 @@ class StructuredMetadataManager:
                 return str(field_value)
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error formatting field '{field_key}': {e}")
+            logger.error("[StructuredMetadataManager] Error formatting field '%s': %s", field_key, e)
             return str(field_value)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, dict[str, Any]]:
@@ -204,7 +212,9 @@ class StructuredMetadataManager:
 
         except Exception as e:
             logger.error(
-                f"[StructuredMetadataManager] Error getting structured metadata for {file_path}: {e}"
+                "[StructuredMetadataManager] Error getting structured metadata for %s: %s",
+                file_path,
+                e,
             )
             return {}
 
@@ -226,7 +236,10 @@ class StructuredMetadataManager:
 
         except Exception as e:
             logger.error(
-                f"[StructuredMetadataManager] Error getting field '{field_key}' for {file_path}: {e}"
+                "[StructuredMetadataManager] Error getting field '%s' for %s: %s",
+                field_key,
+                file_path,
+                e,
             )
             return None
 
@@ -252,7 +265,7 @@ class StructuredMetadataManager:
                 return self.db_manager.get_metadata_fields()
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error getting available fields: {e}")
+            logger.error("[StructuredMetadataManager] Error getting available fields: %s", e)
             return []
 
     def get_available_categories(self) -> list[dict[str, Any]]:
@@ -265,7 +278,7 @@ class StructuredMetadataManager:
         try:
             return self.db_manager.get_metadata_categories()
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error getting available categories: {e}")
+            logger.error("[StructuredMetadataManager] Error getting available categories: %s", e)
             return []
 
     def add_custom_field(
@@ -297,7 +310,10 @@ class StructuredMetadataManager:
             # Get category ID
             category_info = self._category_cache.get(category_name)
             if not category_info:
-                logger.error(f"[StructuredMetadataManager] Category '{category_name}' not found")
+                logger.error(
+                    "[StructuredMetadataManager] Category '%s' not found",
+                    category_name,
+                )
                 return False
 
             # Create the field
@@ -314,14 +330,16 @@ class StructuredMetadataManager:
             if field_id:
                 # Refresh cache
                 self.refresh_caches()
-                logger.info(f"[StructuredMetadataManager] Added custom field '{field_key}'")
+                logger.info("[StructuredMetadataManager] Added custom field '%s'", field_key)
                 return True
 
             return False
 
         except Exception as e:
             logger.error(
-                f"[StructuredMetadataManager] Error adding custom field '{field_key}': {e}"
+                "[StructuredMetadataManager] Error adding custom field '%s': %s",
+                field_key,
+                e,
             )
             return False
 
@@ -341,11 +359,14 @@ class StructuredMetadataManager:
             # Check if field is editable
             field_info = self._field_cache.get(field_key)
             if not field_info:
-                logger.error(f"[StructuredMetadataManager] Field '{field_key}' not found")
+                logger.error("[StructuredMetadataManager] Field '%s' not found", field_key)
                 return False
 
             if not field_info.get("is_editable", False):
-                logger.error(f"[StructuredMetadataManager] Field '{field_key}' is not editable")
+                logger.error(
+                    "[StructuredMetadataManager] Field '%s' is not editable",
+                    field_key,
+                )
                 return False
 
             # Format the new value
@@ -358,13 +379,15 @@ class StructuredMetadataManager:
 
             if success:
                 logger.info(
-                    f"[StructuredMetadataManager] Updated field '{field_key}' for {Path(file_path).name}"
+                    "[StructuredMetadataManager] Updated field '%s' for %s",
+                    field_key,
+                    Path(file_path).name,
                 )
 
             return success
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error updating field '{field_key}': {e}")
+            logger.error("[StructuredMetadataManager] Error updating field '%s': %s", field_key, e)
             return False
 
     def search_files_by_metadata(
@@ -385,7 +408,10 @@ class StructuredMetadataManager:
             # Check if field is searchable
             field_info = self._field_cache.get(field_key)
             if not field_info or not field_info.get("is_searchable", True):
-                logger.warning(f"[StructuredMetadataManager] Field '{field_key}' is not searchable")
+                logger.warning(
+                    "[StructuredMetadataManager] Field '%s' is not searchable",
+                    field_key,
+                )
                 return []
 
             # This would require a more complex query - for now, return empty list
@@ -394,7 +420,7 @@ class StructuredMetadataManager:
             return []
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error searching by metadata: {e}")
+            logger.error("[StructuredMetadataManager] Error searching by metadata: %s", e)
             return []
 
 

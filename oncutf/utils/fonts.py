@@ -68,17 +68,20 @@ class InterFonts:
                                 self.loaded_fonts[font_key] = font_id
                                 self.font_families[font_key] = families[0]
                                 logger.debug(
-                                    f"Loaded {font_key}: {families[0]} from {font_path}",
+                                    "Loaded %s: %s from %s",
+                                    font_key,
+                                    families[0],
+                                    font_path,
                                     extra={"dev_only": True},
                                 )
                             else:
-                                logger.warning(f"No families found for {font_key}")
+                                logger.warning("No families found for %s", font_key)
                         else:
-                            logger.error(f"Failed to load font {font_key} from {font_path}")
+                            logger.error("Failed to load font %s from %s", font_key, font_path)
                     else:
-                        logger.error(f"Font file not found: {font_path}")
+                        logger.error("Font file not found: %s", font_path)
             else:
-                logger.error(f"Fonts directory not found: {fonts_dir}")
+                logger.error("Fonts directory not found: %s", fonts_dir)
 
         # Fallback: try QResource if filesystem loading failed
         if not self.loaded_fonts and not USE_EMBEDDED_FONTS:
@@ -112,12 +115,14 @@ class InterFonts:
                                     self.loaded_fonts[font_key] = font_id
                                     self.font_families[font_key] = families[0]
                                     logger.debug(
-                                        f"Loaded {font_key}: {families[0]} from resources",
+                                        "Loaded %s: %s from resources",
+                                        font_key,
+                                        families[0],
                                         extra={"dev_only": True},
                                     )
 
             except ImportError as e:
-                logger.error(f"Could not import fonts_rc: {e}")
+                logger.error("Could not import fonts_rc: %s", e)
                 logger.info("Run: pyrcc5 resources/fonts.qrc -o resources/fonts_rc.py")
 
     def _load_from_qresource(self) -> None:
@@ -150,18 +155,20 @@ class InterFonts:
                             self.loaded_fonts[font_key] = font_id
                             self.font_families[font_key] = families[0]
                             logger.debug(
-                                f"Loaded {font_key}: {families[0]} from embedded resources",
+                                "Loaded %s: %s from embedded resources",
+                                font_key,
+                                families[0],
                                 extra={"dev_only": True},
                             )
                         else:
-                            logger.warning(f"No families found for embedded {font_key}")
+                            logger.warning("No families found for embedded %s", font_key)
                     else:
-                        logger.error(f"Failed to load embedded font {font_key}")
+                        logger.error("Failed to load embedded font %s", font_key)
                 else:
-                    logger.error(f"No data found for embedded font {font_key} at {resource_path}")
+                    logger.error("No data found for embedded font %s at %s", font_key, resource_path)
 
         except ImportError as e:
-            logger.error(f"Could not import fonts_rc for embedded fonts: {e}")
+            logger.error("Could not import fonts_rc for embedded fonts: %s", e)
             logger.info("Run: pyrcc5 resources/fonts.qrc -o utils/fonts_rc.py")
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
@@ -206,7 +213,7 @@ class InterFonts:
 
             return font
         else:
-            logger.warning(f"Font key '{font_key}' not loaded, using system default")
+            logger.warning("Font key '%s' not loaded, using system default", font_key)
             return QFont("Arial", scaled_size)
 
     def get_css_weight(self, use_case: str) -> int:

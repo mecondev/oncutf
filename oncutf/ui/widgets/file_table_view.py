@@ -279,7 +279,9 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     def setModel(self, model) -> None:
         """Set the model for the table view."""
         logger.debug(
-            f"FileTableView setModel called with model: {type(model)}", extra={"dev_only": True}
+            "FileTableView setModel called with model: %s",
+            type(model),
+            extra={"dev_only": True},
         )
 
         if model is self.model():
@@ -320,7 +322,11 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
     def prepare_table(self, file_items: list) -> None:
         """Prepare the table for display with file items."""
-        logger.debug(f"prepare_table called with {len(file_items)} items", extra={"dev_only": True})
+        logger.debug(
+            "prepare_table called with %d items",
+            len(file_items),
+            extra={"dev_only": True},
+        )
         self._has_manual_preference = False
         self._user_preferred_width = None
         for file_item in file_items:
@@ -947,7 +953,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         if cursor_count > 0:
             logger.debug(
-                f"[FileTableView] Force cleaned {cursor_count} stuck cursors during drag",
+                "[FileTableView] Force cleaned %d stuck cursors during drag",
+                cursor_count,
                 extra={"dev_only": True},
             )
 
@@ -1019,7 +1026,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                         preview_view.clear_view()
 
         except Exception as e:
-            logger.warning(f"Error clearing preview/metadata displays: {e}")
+            logger.warning("Error clearing preview/metadata displays: %s", e)
 
     # =====================================
     # Column Management Shortcuts

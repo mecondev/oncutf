@@ -189,7 +189,10 @@ class MetadataContextMenuMixin:
             undo_desc = command_manager.get_undo_description() if can_undo else None
             redo_desc = command_manager.get_redo_description() if can_redo else None
         except Exception as e:
-            logger.warning(f"[MetadataContextMenuMixin] Error checking command manager status: {e}")
+            logger.warning(
+                "[MetadataContextMenuMixin] Error checking command manager status: %s",
+                e,
+            )
             can_undo = False
             can_redo = False
             undo_desc = None
@@ -295,7 +298,7 @@ class MetadataContextMenuMixin:
                 return visible_columns.get(column_key, default_visible)
 
         except Exception as e:
-            logger.warning(f"Error checking column visibility: {e}")
+            logger.warning("Error checking column visibility: %s", e)
 
         return False
 
@@ -329,10 +332,14 @@ class MetadataContextMenuMixin:
                 if hasattr(file_table_view, "_update_table_columns"):
                     file_table_view._update_table_columns()
 
-                logger.info(f"Added column '{key_path}' -> '{column_key}' to file view")
+                logger.info(
+                    "Added column '%s' -> '%s' to file view",
+                    key_path,
+                    column_key,
+                )
 
         except Exception as e:
-            logger.error(f"Error adding column to file view: {e}")
+            logger.exception("Error adding column to file view: %s", e)
 
     def _remove_column_from_file_view(self, key_path: str) -> None:
         """
@@ -364,10 +371,14 @@ class MetadataContextMenuMixin:
                 if hasattr(file_table_view, "_update_table_columns"):
                     file_table_view._update_table_columns()
 
-                logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
+                logger.info(
+                    "Removed column '%s' -> '%s' from file view",
+                    key_path,
+                    column_key,
+                )
 
         except Exception as e:
-            logger.error(f"Error removing column from file view: {e}")
+            logger.exception("Error removing column from file view: %s", e)
 
     def _get_file_table_view(self):
         """
@@ -398,7 +409,7 @@ class MetadataContextMenuMixin:
                 parent = parent.parent()
 
         except Exception as e:
-            logger.warning(f"Error finding file table view: {e}")
+            logger.warning("Error finding file table view: %s", e)
 
         return None
 
@@ -497,7 +508,7 @@ class MetadataContextMenuMixin:
                 return "file_hash"
 
         except Exception as e:
-            logger.warning(f"Error mapping metadata key to column key: {e}")
+            logger.warning("Error mapping metadata key to column key: %s", e)
 
         return None
 

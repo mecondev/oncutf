@@ -126,7 +126,8 @@ class InitializationWorker(QObject):
             self._results['duration_ms'] = duration_ms
 
             logger.info(
-                f"[InitWorker] Background initialization completed in {duration_ms:.0f}ms"
+                "[InitWorker] Background initialization completed in %.0fms",
+                duration_ms,
             )
 
             # Emit finished signal with results
@@ -134,7 +135,7 @@ class InitializationWorker(QObject):
 
         except Exception as e:
             error_msg = f"Initialization failed: {e}"
-            logger.error(f"[InitWorker] {error_msg}\n{traceback.format_exc()}")
+            logger.error("[InitWorker] %s\n%s", error_msg, traceback.format_exc())
             self.error.emit(error_msg)
 
     def _load_fonts(self) -> None:
@@ -158,17 +159,17 @@ class InitializationWorker(QObject):
             font_files = list(fonts_dir.glob("*.ttf")) + list(fonts_dir.glob("*.otf"))
 
             if font_files:
-                logger.info(f"[InitWorker] Found {len(font_files)} custom fonts")
+                logger.info("[InitWorker] Found %d custom fonts", len(font_files))
                 # Note: Actual QFontDatabase.addApplicationFont() must be called
                 # in main thread later - we just verify the files exist here
                 for font_file in font_files:
                     if not font_file.exists():
-                        logger.warning(f"[InitWorker] Font file missing: {font_file}")
+                        logger.warning("[InitWorker] Font file missing: %s", font_file)
             else:
                 logger.debug("[InitWorker] No custom fonts found")
 
         except Exception as e:
-            logger.warning(f"[InitWorker] Font loading failed (non-critical): {e}")
+            logger.warning("[InitWorker] Font loading failed (non-critical): %s", e)
             # Don't fail initialization if fonts can't be loaded
 
     def _prepare_theme(self) -> None:
@@ -187,7 +188,7 @@ class InitializationWorker(QObject):
             # Import here to avoid circular dependencies
             from oncutf.config import THEME_NAME
 
-            logger.debug(f"[InitWorker] Preparing theme: {THEME_NAME}")
+            logger.debug("[InitWorker] Preparing theme: %s", THEME_NAME)
 
             # We can read theme files and validate them, but NOT apply to GUI
             # This is just file I/O and string processing
@@ -198,12 +199,12 @@ class InitializationWorker(QObject):
             valid_themes = ['light', 'dark', 'auto']
             if THEME_NAME.lower() not in valid_themes:
                 logger.warning(
-                    f"[InitWorker] Invalid theme '{THEME_NAME}', "
-                    f"will fallback to 'light'"
+                    "[InitWorker] Invalid theme '%s', will fallback to 'light'",
+                    THEME_NAME,
                 )
 
         except Exception as e:
-            logger.warning(f"[InitWorker] Theme preparation failed (non-critical): {e}")
+            logger.warning("[InitWorker] Theme preparation failed (non-critical): %s", e)
             # Don't fail initialization if theme prep fails
 
     def _validate_database(self) -> None:
@@ -228,7 +229,7 @@ class InitializationWorker(QObject):
             logger.debug("[InitWorker] Database validation placeholder")
 
         except Exception as e:
-            logger.warning(f"[InitWorker] Database validation failed (non-critical): {e}")
+            logger.warning("[InitWorker] Database validation failed (non-critical): %s", e)
             # Don't fail initialization if database validation fails
 
     def _warmup_caches(self) -> None:
@@ -248,6 +249,6 @@ class InitializationWorker(QObject):
             time.sleep(0.05)  # 50ms simulated work
 
         except Exception as e:
-            logger.warning(f"[InitWorker] Cache warmup failed (non-critical): {e}")
+            logger.warning("[InitWorker] Cache warmup failed (non-critical): %s", e)
             # Don't fail initialization if cache warmup fails
 

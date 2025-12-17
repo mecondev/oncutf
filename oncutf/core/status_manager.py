@@ -355,7 +355,7 @@ class StatusManager:
                 "last_update": datetime.now(),
             }
 
-        logger.debug(f"[StatusManager] Started operation: {operation_id} ({operation_type})")
+        logger.debug("[StatusManager] Started operation: %s (%s)", operation_id, operation_type)
 
     def update_operation(self, operation_id: str, **kwargs) -> None:
         """Update operation context with additional information."""
@@ -401,8 +401,10 @@ class StatusManager:
                     }
 
                 logger.info(
-                    f"[StatusManager] Finished operation: {operation_id} "
-                    f"(duration: {duration:.1f}s, success: {success})"
+                    "[StatusManager] Finished operation: %s (duration: %.1fs, success: %s)",
+                    operation_id,
+                    duration,
+                    success,
                 )
 
                 # Clean up old operation context
@@ -558,7 +560,9 @@ class StatusManager:
                 )
 
         logger.debug(
-            f"[StatusManager] Files label updated: {total_files} total, {selected_files} selected",
+            "[StatusManager] Files label updated: %d total, %d selected",
+            total_files,
+            selected_files,
             extra={"dev_only": True},
         )
 
@@ -610,7 +614,9 @@ class StatusManager:
         )
 
         logger.debug(
-            f"[StatusManager] Preview status: {clean_text[:50]}...", extra={"dev_only": True}
+            "[StatusManager] Preview status: %s...",
+            clean_text[:50],
+            extra={"dev_only": True},
         )
 
     # =====================================

@@ -779,8 +779,10 @@ class MainWindow(QMainWindow):
             )
 
             self._restore_geometry = current_geo if is_manually_resized else self._initial_geometry
+            geometry_kind = "manual" if is_manually_resized else "initial"
             logger.debug(
-                f"[MainWindow] Stored {'manual' if is_manually_resized else 'initial'} geometry for restore"
+                "[MainWindow] Stored %s geometry for restore",
+                geometry_kind,
             )
 
         # Handle restore: restore stored geometry
@@ -822,9 +824,8 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
 
-        logger.info(
-            f"Application shutting down at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}..."
-        )
+        shutdown_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        logger.info("Application shutting down at %s...", shutdown_timestamp)
 
         # 0. Check for unsaved metadata changes
         if self._check_for_unsaved_changes():
@@ -949,7 +950,7 @@ class MainWindow(QMainWindow):
             self._complete_shutdown(success)
 
         except Exception as e:
-            logger.error("[CloseEvent] Error during coordinated shutdown: %s", e, exc_info=True)
+            logger.exception("[CloseEvent] Error during coordinated shutdown: %s", e)
             # Fallback to emergency shutdown
             QApplication.restoreOverrideCursor()
             QApplication.quit()
@@ -1146,12 +1147,14 @@ class MainWindow(QMainWindow):
                 thread.quit()
                 if not thread.wait(1000):  # Wait max 1 second
                     logger.warning(
-                        f"[CloseEvent] Thread {thread.__class__.__name__} did not quit gracefully, terminating..."
+                        "[CloseEvent] Thread %s did not quit gracefully, terminating...",
+                        thread.__class__.__name__,
                     )
                     thread.terminate()
                     if not thread.wait(500):  # CRITICAL: Add timeout to prevent infinite hang
                         logger.error(
-                            f"[CloseEvent] Thread {thread.__class__.__name__} did not terminate after 500ms"
+                            "[CloseEvent] Thread %s did not terminate after 500ms",
+                            thread.__class__.__name__,
                         )
 
     def _force_close_progress_dialogs(self) -> None:
@@ -1180,7 +1183,8 @@ class MainWindow(QMainWindow):
 
         if dialogs_closed > 0:
             logger.info(
-                f"[CloseEvent] Force closed {dialogs_closed} progress dialogs (excluding shutdown dialog)"
+                "[CloseEvent] Force closed %d progress dialogs (excluding shutdown dialog)",
+                dialogs_closed,
             )
 
     def refresh_metadata_widgets(self):
@@ -1283,11 +1287,13 @@ class MainWindow(QMainWindow):
             self.context.register_manager("rename_engine", self.unified_rename_engine)
 
             logger.info(
-                f"[MainWindow] Registered {len(self.context.list_managers())} managers in ApplicationContext",
+                "[MainWindow] Registered %d managers in ApplicationContext",
+                len(self.context.list_managers()),
                 extra={"dev_only": True},
             )
             logger.debug(
-                f"[MainWindow] Available managers: {', '.join(self.context.list_managers())}",
+                "[MainWindow] Available managers: %s",
+                self.context.list_managers(),
                 extra={"dev_only": True},
             )
 

@@ -91,16 +91,20 @@ def count_folder_contents(
         result.elapsed_ms = elapsed
 
         logger.debug(
-            f"[FolderCounter] Counted {folder_path}: {result.folders} folders, {result.files} files "
-            f"({'recursive' if recursive else 'shallow'}, {elapsed:.1f}ms, "
-            f"{'TIMEOUT' if result.timed_out else 'completed'})",
+            "[FolderCounter] Counted %s: %d folders, %d files (%s, %.1fms, %s)",
+            folder_path,
+            result.folders,
+            result.files,
+            "recursive" if recursive else "shallow",
+            elapsed,
+            "TIMEOUT" if result.timed_out else "completed",
             extra={"dev_only": True},
         )
 
     except PermissionError:
-        logger.debug(f"[FolderCounter] Permission denied: {folder_path}", extra={"dev_only": True})
+        logger.debug("[FolderCounter] Permission denied: %s", folder_path, extra={"dev_only": True})
     except Exception as e:
-        logger.warning(f"[FolderCounter] Error counting {folder_path}: {e}")
+        logger.warning("[FolderCounter] Error counting %s: %s", folder_path, e)
 
     return result
 
@@ -140,17 +144,19 @@ def _count_shallow(folder_path: str, include_hidden: bool) -> FolderCount:
                 else:
                     # Debug: log filtered files
                     logger.debug(
-                        f"[FolderCounter] Skipped file (extension filter): {file}",
+                        "[FolderCounter] Skipped file (extension filter): %s",
+                        file,
                         extra={"dev_only": True}
                     )
 
     except PermissionError:
         logger.debug(
-            f"[FolderCounter] Permission denied in shallow scan: {folder_path}",
+            "[FolderCounter] Permission denied in shallow scan: %s",
+            folder_path,
             extra={"dev_only": True}
         )
     except Exception as e:
-        logger.warning(f"[FolderCounter] Error in shallow scan: {e}")
+        logger.warning("[FolderCounter] Error in shallow scan: %s", e)
 
     return result
 
@@ -189,7 +195,7 @@ def _count_recursive(
     except PermissionError:
         pass
     except Exception as e:
-        logger.debug(f"[FolderCounter] Error in recursive scan: {e}", extra={"dev_only": True})
+        logger.debug("[FolderCounter] Error in recursive scan: %s", e, extra={"dev_only": True})
 
     return result
 

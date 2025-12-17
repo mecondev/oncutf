@@ -162,7 +162,10 @@ class HierarchicalComboBox(QComboBox):
             self._current_selected_data = data
 
             logger.debug(
-                f"[HierarchicalComboBox] Item clicked: {text} ({data})", extra={"dev_only": True}
+                "[HierarchicalComboBox] Item clicked: %s (%s)",
+                text,
+                data,
+                extra={"dev_only": True},
             )
 
             # Update display
@@ -270,7 +273,7 @@ class HierarchicalComboBox(QComboBox):
         self.model.clear()
         self._categories.clear()
 
-        logger.debug(f"Populating combo box with groups: {list(groups.keys())}")
+        logger.debug("Populating combo box with groups: %s", list(groups.keys()))
 
         first_item = None
         non_empty_groups = [(g, items) for g, items in groups.items() if items]
@@ -331,7 +334,9 @@ class HierarchicalComboBox(QComboBox):
             self.item_selected.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole))
             QTimer.singleShot(0, lambda: self.selection_confirmed.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole)))
             logger.debug(
-                f"Selected first item: {first_item.text()} with data: {first_item.data(Qt.ItemDataRole.UserRole)}"
+                "Selected first item: %s with data: %s",
+                first_item.text(),
+                first_item.data(Qt.ItemDataRole.UserRole),
             )
         else:
             logger.debug("No items to auto-select in hierarchical combo box")
@@ -354,11 +359,13 @@ class HierarchicalComboBox(QComboBox):
                         self.item_selected.emit(child_item.text(), data)
 
                         logger.debug(
-                            f"Selected item by data: {child_item.text()} with data: {data}"
+                            "Selected item by data: %s with data: %s",
+                            child_item.text(),
+                            data,
                         )
                         return
 
-        logger.warning(f"select_item_by_data: No item found with data: {data}")
+        logger.warning("select_item_by_data: No item found with data: %s", data)
 
     def expand_all(self) -> None:
         """Expand all categories."""

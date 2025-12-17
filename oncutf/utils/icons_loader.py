@@ -63,7 +63,9 @@ def load_metadata_icons(_base_dir: str | None = None) -> dict[str, QPixmap]:
     icon_map["basic"] = generator.generate_icon("basic")
 
     logger.debug(
-        f"[IconLoader] Generated {len(icon_map)} SVG metadata icons", extra={"dev_only": True}
+        "[IconLoader] Generated %d SVG metadata icons",
+        len(icon_map),
+        extra={"dev_only": True},
     )
 
     # Cache the result
@@ -167,7 +169,7 @@ class ThemeIconLoader:
             theme: The theme to use ("dark" or "light")
         """
         if theme not in ["dark", "light"]:
-            logger.warning(f"Invalid theme: {theme}, using 'dark' instead")
+            logger.warning("Invalid theme: %s, using 'dark' instead", theme)
             theme = "dark"
 
         self.theme = theme
@@ -196,10 +198,10 @@ class ThemeIconLoader:
         favicon_path = get_assets_dir() / "favicon.ico"
 
         if os.path.exists(str(favicon_path)):
-            logger.debug(f"[IconLoader] Loading app icon from: {favicon_path}")
+            logger.debug("[IconLoader] Loading app icon from: %s", favicon_path)
             return QIcon(str(favicon_path))
         else:
-            logger.warning(f"[IconLoader] App icon not found at: {favicon_path}")
+            logger.warning("[IconLoader] App icon not found at: %s", favicon_path)
             return QIcon()
 
 
@@ -248,11 +250,11 @@ def get_menu_icon_path(icon_name: str) -> str:
             return str(icon_path_svg)
 
         # Log warning if neither found
-        logger.warning(f"Icon not found: {icon_name}")
+        logger.warning("Icon not found: %s", icon_name)
         return ""
 
     except Exception as e:
-        logger.error(f"Error getting icon path for '{icon_name}': {e}")
+        logger.error("Error getting icon path for '%s': %s", icon_name, e)
         # Return empty string as fallback
         return ""
 
