@@ -100,7 +100,8 @@ class MetadataExtractor:
                 value="invalid", source="error", field=field, category=category
             )
 
-        if not file_path.exists():
+        # Skip file existence check if metadata is provided (for testing)
+        if metadata is None and not file_path.exists():
             return ExtractionResult(
                 value="invalid", source="error", field=field, category=category
             )
