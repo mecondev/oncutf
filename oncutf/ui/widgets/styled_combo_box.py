@@ -1,0 +1,62 @@
+"""
+Module: styled_combo_box.py
+
+Author: Michael Economou
+Date: December 18, 2025
+
+StyledComboBox - QComboBox with automatic theme integration.
+Provides consistent styling and proper delegate setup.
+"""
+
+from PyQt5.QtWidgets import QComboBox, QWidget
+
+from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
+from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.theme_engine import ThemeEngine
+
+logger = get_cached_logger(__name__)
+
+
+class StyledComboBox(QComboBox):
+    """
+    ComboBox with automatic theme integration.
+    
+    Features:
+    - Automatic ComboBoxItemDelegate setup
+    - Theme-aware height configuration
+    - Consistent appearance across the application
+    """
+
+    def __init__(self, parent: QWidget | None = None):
+        """
+        Initialize the styled combo box.
+        
+        Args:
+            parent: Parent widget
+        """
+        super().__init__(parent)
+        self._setup_delegate()
+        self._apply_theme()
+        logger.debug("StyledComboBox initialized")
+
+    def _setup_delegate(self) -> None:
+        """Setup the item delegate for proper dropdown styling."""
+        try:
+            theme = ThemeEngine()
+            delegate = ComboBoxItemDelegate(self, theme)
+            self.setItemDelegate(delegate)
+            logger.debug("ComboBoxItemDelegate set successfully")
+        except Exception as e:
+            logger.warning("Failed to set ComboBoxItemDelegate: %s", e)
+
+    def _apply_theme(self) -> None:
+        """Apply theme-aware styling."""
+        try:
+            theme = ThemeEngine()
+            combo_height = theme.get_constant("combo_height")
+            self.setFixedHeight(combo_height)
+            logger.debug("Theme applied: height=%d", combo_height)
+        except Exception as e:
+            logger.warning("Failed to apply theme: %s", e)
+            # Fallback to default height
+            self.setFixedHeight(32)

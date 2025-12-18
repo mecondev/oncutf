@@ -6,35 +6,25 @@ Date: 2025-05-06
 
 This module provides logic for extracting metadata fields (such as creation date,
 modification date, or EXIF tag) to include in renamed filenames.
-It is used in the oncutf tool to dynamically extract and apply file
-metadata during batch renaming.
+
+Refactored in Phase 3 (Dec 2025) to delegate extraction logic to MetadataExtractor domain layer.
 """
 
 import os
-import time
-from datetime import datetime
+from pathlib import Path
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_status_helpers import get_hash_for_file
 
 # initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
-# Performance optimization: Cache for metadata lookups
-_metadata_cache: dict = {}
-_cache_timestamp = 0
-_cache_validity_duration = 0.1  # 100ms cache validity
-
-# Global cache variables to avoid UnboundLocalError
-_global_cache_timestamp = 0
-
 
 class MetadataModule:
     """
     Logic component (non-UI) for extracting and formatting metadata fields.
-    Used during rename preview and execution.
+    Uses MetadataExtractor for actual extraction logic.
     """
 
     @staticmethod
@@ -42,8 +32,8 @@ class MetadataModule:
         """
         Clean metadata value for filename safety by replacing problematic characters.
 
-        Windows-safe filename cleaning that handles all invalid characters.
-        Time separators and timezone offsets use underscores for consistency.
+        DEPRECATED: Use MetadataExtractor.clean_for_filename() instead.
+        Kept for backwards compatibility.
 
         Args:
             value (str): The raw metadata value
@@ -51,34 +41,30 @@ class MetadataModule:
         Returns:
             str: Cleaned value safe for use in filenames
         """
-        if not value:
-            return value
+        from oncutf.domain.metadata.extractor import MetadataExtractor
 
-        # Windows invalid filename characters: < > : " / \ | ? *
-        # Replace colons (common in date/time) with underscore for filename safety
-        cleaned = value.replace(":", "_")
-
-        # Replace other invalid characters with underscore
-        invalid_chars = ["<", ">", '"', "/", "\\", "|", "?", "*"]
-        for char in invalid_chars:
-            cleaned = cleaned.replace(char, "_")
-
-        # Replace multiple spaces with single underscore
-        while "  " in cleaned:
-            cleaned = cleaned.replace("  ", " ")
-
-        # Replace spaces with underscore for filename safety
-        cleaned = cleaned.replace(" ", "_")
-
-        # Remove leading/trailing underscores
-        cleaned = cleaned.strip("_")
-
-        return cleaned
+        extractor = MetadataExtractor()
+        return extractor.clean_for_filename(value)
 
     @staticmethod
     def apply_from_data(
         data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict | None = None
     ) -> str:
+        """
+        Apply metadata extraction using MetadataExtractor domain logic.
+
+        This method delegates to MetadataExtractor for actual extraction,
+        maintaining backwards compatibility with existing code.
+
+        Args:
+            data: Configuration dict with 'field' and 'category'
+            file_item: File to extract metadata from
+            index: File index (unused in metadata extraction)
+            metadata_cache: Optional metadata cache
+
+        Returns:
+            Extracted metadata value or fallback
+        """
         logger.debug(
             "[DEBUG] [MetadataModule] apply_from_data CALLED for %s",
             file_item.filename,
@@ -91,90 +77,10 @@ class MetadataModule:
             extra={"dev_only": True},
         )
 
-        global _metadata_cache, _global_cache_timestamp
-
-        def _finalize_result(raw_value: str) -> str:
-            """Normalize, validate and cache a metadata-derived filename-safe value.
-            Returns a safe string or falls back to OriginalNameModule when not possible.
-            """
-            nonlocal cache_key, current_time
-            try:
-                candidate = MetadataModule.clean_metadata_value(str(raw_value).strip())
-
-                # Quick validity check
-                try:
-                    from oncutf.utils.validate_filename_text import is_valid_filename_text
-
-                    if is_valid_filename_text(candidate):
-                        _metadata_cache[cache_key] = candidate
-                        _global_cache_timestamp = current_time
-                        return candidate
-                except Exception:
-                    # If validator not available, proceed to cleaning attempts
-                    pass
-
-                # Try more aggressive cleaning using filename_validator
-                try:
-                    from oncutf.utils.filename_validator import clean_filename_text
-                    from oncutf.utils.validate_filename_text import is_valid_filename_text
-
-                    cleaned = clean_filename_text(candidate)
-                    if is_valid_filename_text(cleaned):
-                        _metadata_cache[cache_key] = cleaned
-                        _global_cache_timestamp = current_time
-                        return cleaned
-                except Exception:
-                    pass
-
-                # Regex fallback: allow alnum, dash, underscore and dot
-                import re
-
-                alt = re.sub(r"[^A-Za-z0-9_.+-]+", "_", candidate).strip("_")
-                try:
-                    from oncutf.utils.validate_filename_text import is_valid_filename_text
-
-                    if is_valid_filename_text(alt):
-                        _metadata_cache[cache_key] = alt
-                        _global_cache_timestamp = current_time
-                        return alt
-                except Exception:
-                    # If validator missing accept alt conservatively
-                    _metadata_cache[cache_key] = alt
-                    _global_cache_timestamp = current_time
-                    return alt
-
-            except Exception as e:
-                logger.debug("[MetadataModule] _finalize_result error: %s", e, extra={"dev_only": True})
-
-            # Fallback to original name base
-            try:
-                from oncutf.modules.original_name_module import OriginalNameModule
-
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-            except Exception:
-                # Last-resort fallback: basename without extension
-                base = os.path.splitext(os.path.basename(file_item.filename))[0]
-                return base
-
-        # end _finalize_result
-
-        # Performance optimization: Check cache first
-        cache_key = f"{file_item.full_path}_{hash(str(data))}"
-        current_time = time.time()
-
-        if (
-            cache_key in _metadata_cache
-            and current_time - _global_cache_timestamp < _cache_validity_duration
-        ):
-            logger.debug(
-                "[DEBUG] [MetadataModule] Returning cached result for %s",
-                file_item.filename,
-                extra={"dev_only": True},
-            )
-            return _metadata_cache[cache_key]
-
+        # Extract field and category from data
         field = data.get("field")
-        logger.debug("[DEBUG] [MetadataModule] Field: %s", field, extra={"dev_only": True})
+        category = data.get("category", "file_dates")
+
         if not field:
             logger.debug(
                 "[DEBUG] [MetadataModule] No field specified - returning 'invalid'",
@@ -182,34 +88,66 @@ class MetadataModule:
             )
             return "invalid"
 
-        # Normalize path for Windows compatibility at the very start
+        # Get file path
         from oncutf.utils.path_normalizer import normalize_path
 
         path = file_item.full_path
         if not path:
             logger.debug(
-                "[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True}
+                "[DEBUG] [MetadataModule] No path - returning 'invalid'",
+                extra={"dev_only": True},
             )
             return "invalid"
 
-        # CRITICAL: Normalize path for Windows
+        # Normalize path for Windows compatibility
         path = normalize_path(path)
-        logger.debug("[DEBUG] [MetadataModule] Normalized path: %s", path, extra={"dev_only": True})
+        logger.debug(
+            "[DEBUG] [MetadataModule] Normalized path: %s", path, extra={"dev_only": True}
+        )
 
-        # Use the same persistent cache as the UI if no cache provided
+        # Get metadata dict
+        metadata_dict = MetadataModule._get_metadata_dict(path, metadata_cache)
+
+        # Use MetadataExtractor for extraction
+        from oncutf.domain.metadata.extractor import MetadataExtractor
+
+        extractor = MetadataExtractor()
+        result = extractor.extract(
+            file_path=Path(path), field=field, category=category, metadata=metadata_dict
+        )
+
+        logger.debug(
+            "[DEBUG] [MetadataModule] Extraction result: value=%s, source=%s",
+            result.value,
+            result.source,
+            extra={"dev_only": True},
+        )
+
+        return result.value
+
+    @staticmethod
+    def _get_metadata_dict(path: str, metadata_cache: dict | None = None) -> dict:
+        """
+        Get metadata dict from cache or persistent cache.
+
+        Args:
+            path: Normalized file path
+            metadata_cache: Optional metadata cache
+
+        Returns:
+            Metadata dict (empty if not found)
+        """
         if not metadata_cache:
+            # Use persistent metadata cache
             from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
-            # Use normalized path for cache lookup.
-            # Persistent cache exposes get_entry(...) (or batch methods); handle both persistent cache objects and dict-like fallbacks.
             if persistent_cache:
                 try:
                     if hasattr(persistent_cache, "get_entry"):
                         entry = persistent_cache.get_entry(path)
                         metadata = getattr(entry, "data", {}) or {}
                     else:
-                        # Some implementations may offer .get(path) (but may not accept a default arg)
                         try:
                             metadata = persistent_cache.get(path)  # type: ignore
                             if metadata is None:
@@ -226,16 +164,12 @@ class MetadataModule:
             else:
                 metadata = {}
             logger.debug(
-                "[DEBUG] [MetadataModule] Using persistent cache for %s, path: %s, has_metadata: %s",
-                file_item.filename,
-                path,
+                "[DEBUG] [MetadataModule] Using persistent cache, has_metadata: %s",
                 bool(metadata),
                 extra={"dev_only": True},
             )
         else:
-            # metadata_cache might be:
-            # - a PersistentMetadataCache-like object (get_entry / get_entries_batch)
-            # - a plain dict (used in tests)
+            # Use provided cache
             try:
                 if hasattr(metadata_cache, "get_entry"):
                     entry = metadata_cache.get_entry(path)
@@ -243,7 +177,6 @@ class MetadataModule:
                 elif isinstance(metadata_cache, dict):
                     metadata = metadata_cache.get(path, {})
                 elif hasattr(metadata_cache, "get"):
-                    # fallback; some cache-like objects implement get(path)
                     try:
                         metadata = metadata_cache.get(path)  # type: ignore
                         if metadata is None:
@@ -260,253 +193,41 @@ class MetadataModule:
                 )
                 metadata = {}
             logger.debug(
-                "[DEBUG] [MetadataModule] Using provided cache for %s, path: %s, has_metadata: %s",
-                file_item.filename,
-                path,
+                "[DEBUG] [MetadataModule] Using provided cache, has_metadata: %s",
                 bool(metadata),
                 extra={"dev_only": True},
             )
 
         if not isinstance(metadata, dict):
-            metadata = {}  # fallback to empty
+            metadata = {}
             logger.debug(
                 "[DEBUG] [MetadataModule] Metadata is not dict, using empty dict",
                 extra={"dev_only": True},
             )
 
-        # After getting metadata, log what we found
-        if metadata:
-            logger.debug(
-                "[DEBUG] [MetadataModule] Metadata keys available: %s",
-                list(metadata.keys())[:20],
-                extra={"dev_only": True},
-            )
-
-            # Log date-related fields specifically
-            date_fields = {
-                k: v for k, v in metadata.items() if "date" in k.lower() or "time" in k.lower()
-            }
-            if date_fields:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Date/Time fields: %s",
-                    date_fields,
-                    extra={"dev_only": True},
-                )
-
-        # Handle filesystem-based date formats
-        if field and field.startswith("last_modified_"):
-            logger.debug(
-                "[DEBUG] [MetadataModule] Handling filesystem date format: %s",
-                field,
-                extra={"dev_only": True},
-            )
-            try:
-                ts = os.path.getmtime(path)
-                dt = datetime.fromtimestamp(ts)
-
-                if field == "last_modified_yymmdd":
-                    result = dt.strftime("%y%m%d")
-                elif field == "last_modified_iso":
-                    result = dt.strftime("%Y-%m-%d")
-                elif field == "last_modified_eu":
-                    # Use dash separator for EU format to be consistent with other displays
-                    result = dt.strftime("%d-%m-%Y")
-                elif field == "last_modified_us":
-                    result = dt.strftime("%m-%d-%Y")
-                elif field == "last_modified_year":
-                    result = dt.strftime("%Y")
-                elif field == "last_modified_month":
-                    result = dt.strftime("%Y-%m")
-                # New formats with time included
-                elif field == "last_modified_iso_time":
-                    # ISO-like with time (HH:MM) and safe for filenames (no colon)
-                    result = dt.strftime("%Y-%m-%d_%H-%M")
-                elif field == "last_modified_eu_time":
-                    # EU style with time
-                    result = dt.strftime("%d-%m-%Y_%H-%M")
-                elif field == "last_modified_compact":
-                    # Compact sortable with time YYMMDD_HHMM
-                    result = dt.strftime("%y%m%d_%H%M")
-                else:
-                    # Fallback to YYMMDD format for unknown last_modified variants
-                    result = dt.strftime("%y%m%d")
-
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Filesystem date result: %s",
-                    result,
-                    extra={"dev_only": True},
-                )
-                return _finalize_result(result)
-
-            except Exception as e:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Error getting filesystem date: %s",
-                    e,
-                    extra={"dev_only": True},
-                )
-                return "invalid"
-
-        # Legacy support for old "last_modified" field name
-        if field == "last_modified":
-            logger.debug(
-                "[DEBUG] [MetadataModule] Handling legacy last_modified field",
-                extra={"dev_only": True},
-            )
-            try:
-                ts = os.path.getmtime(path)
-                result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Legacy last_modified result: %s",
-                    result,
-                    extra={"dev_only": True},
-                )
-                return _finalize_result(result)
-            except Exception as e:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Error getting legacy last_modified: %s",
-                    e,
-                    extra={"dev_only": True},
-                )
-                return "invalid"
-
-        # Handle category-based metadata access
-        category = data.get("category", "file_dates")
-        logger.debug("[DEBUG] [MetadataModule] Category: %s", category, extra={"dev_only": True})
-
-        if category == "hash" and field:
-            logger.debug(
-                "[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True}
-            )
-            # Handle hash fields for the hash category
-            if field.startswith("hash_"):
-                try:
-                    hash_type = field.replace("hash_", "").upper()
-                    result = MetadataModule._get_file_hash(path, hash_type)
-                    logger.debug(
-                        "[DEBUG] [MetadataModule] Hash result: %s",
-                        result,
-                        extra={"dev_only": True},
-                    )
-                    return _finalize_result(result)
-                except Exception as e:
-                    logger.debug(
-                        "[DEBUG] [MetadataModule] Error getting hash: %s",
-                        e,
-                        extra={"dev_only": True},
-                    )
-                    return "invalid"
-            else:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Invalid hash field: %s",
-                    field,
-                    extra={"dev_only": True},
-                )
-                return "invalid"
-
-        if category == "metadata_keys" and field:
-            logger.debug(
-                "[DEBUG] [MetadataModule] Handling metadata_keys category for field: %s",
-                field,
-                extra={"dev_only": True},
-            )
-            # Access custom metadata key from file metadata
-            value = metadata.get(field)
-            logger.debug(
-                "[DEBUG] [MetadataModule] Metadata value for field '%s': %s",
-                field,
-                value,
-                extra={"dev_only": True},
-            )
-            if value is None:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Field '%s' not found in metadata, falling back to original name",
-                    field,
-                    extra={"dev_only": True},
-                )
-                # Fallback: return original name
-                from oncutf.modules.original_name_module import OriginalNameModule
-
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-
-            # Format the value appropriately and clean it for filename safety
-            try:
-                return _finalize_result(value)
-            except Exception as e:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Error cleaning metadata value: %s",
-                    e,
-                    extra={"dev_only": True},
-                )
-                return "invalid"
-
-        # Handle legacy metadata-based fields for backwards compatibility
-        if field == "creation_date":
-            value = metadata.get("creation_date") or metadata.get("date_created")
-            if not value:
-                from oncutf.modules.original_name_module import OriginalNameModule
-
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-            return _finalize_result(value)
-
-        if field == "date":
-            value = metadata.get("date")
-            if not value:
-                from oncutf.modules.original_name_module import OriginalNameModule
-
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-            return _finalize_result(value)
-
-        # === Generic metadata field fallback using centralized mapper ===
-        if field:
-            # Try using the centralized field mapper for better key mapping
-            try:
-                from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
-
-                # Check if this field has a mapping in our centralized mapper
-                if MetadataFieldMapper.has_field_mapping(field):
-                    value = MetadataFieldMapper.get_metadata_value(metadata, field)
-                    if value:
-                        # For rename module, we want raw values not formatted ones
-                        # So get the raw value using the mapper's key lookup
-                        possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(field)
-                        for key in possible_keys:
-                            if key in metadata:
-                                raw_value = metadata[key]
-                                if raw_value is not None:
-                                    return _finalize_result(raw_value)
-                        from oncutf.modules.original_name_module import OriginalNameModule
-
-                        return OriginalNameModule.apply_from_data(
-                            {},
-                            file_item,
-                            index,
-                            metadata_cache,  # type: ignore
-                        )
-            except ImportError:
-                # Fallback if mapper not available
-                pass
-
-        # Final fallback: try direct metadata access
-        value = metadata.get(field)
-        if value is not None:
-            return _finalize_result(value)
-
-        # If we get here, the field was not found
-        from oncutf.modules.original_name_module import OriginalNameModule
-
-        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
+        return metadata
 
     @staticmethod
     def clear_cache():
-        """Clear the metadata cache."""
-        global _metadata_cache, _global_cache_timestamp
-        _metadata_cache.clear()
-        _global_cache_timestamp = 0
+        """
+        Clear the metadata cache.
+
+        NOTE: Caching is now handled by MetadataExtractor internally.
+        This method is kept for backwards compatibility.
+        """
+        from oncutf.domain.metadata.extractor import MetadataExtractor
+
+        extractor = MetadataExtractor()
+        extractor.clear_cache()
+        logger.debug("[MetadataModule] Cache cleared")
 
     @staticmethod
     def _get_file_hash(file_path: str, hash_type: str) -> str:
         """
-        Get file hash using the hash cache. If hash is missing, return original name without showing dialog.
+        Get file hash using the hash cache.
+
+        DEPRECATED: Hash extraction is now handled by MetadataExtractor.
+        Kept for backwards compatibility.
 
         Args:
             file_path: Path to the file
@@ -515,23 +236,23 @@ class MetadataModule:
         Returns:
             str: Hash value or original name if not available
         """
+        from oncutf.utils.file_status_helpers import get_hash_for_file
+
         try:
             hash_value = get_hash_for_file(file_path, hash_type)
             if hash_value:
                 return hash_value
-            # Fallback to original filename if hash is missing
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
         except Exception as e:
             logger.warning("[MetadataModule] Error getting hash for %s: %s", file_path, e)
-            # Fallback to original filename on error
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
 
     @staticmethod
     def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
         """
-        This method is no longer used - hash calculation is handled manually by the user.
+        DEPRECATED: Hash calculation is handled manually by the user.
         Kept for backward compatibility.
         """
         return False
@@ -539,12 +260,22 @@ class MetadataModule:
     @staticmethod
     def _start_hash_calculation(file_path: str, hash_type: str) -> None:
         """
-        This method is no longer used - hash calculation is handled manually by the user.
+        DEPRECATED: Hash calculation is handled manually by the user.
+        Kept for backward compatibility.
         """
+        pass
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        # All metadata fields are effective, including last_modified and hash
+        """
+        Check if module is effective (will produce output).
+
+        Args:
+            data: Configuration dict with 'field' and 'category'
+
+        Returns:
+            True if module will produce output
+        """
         field = data.get("field")
         category = data.get("category", "file_dates")
 
