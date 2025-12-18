@@ -173,15 +173,63 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 ---
 
-### 🎯 Phase 5: Core Logic Improvements (PLANNED)
-**Goal:** Refactor and optimize core business logic  
-**Status:** Planned
+### 🎯 Phase 5: Theme Consolidation (COMPLETE)
+**Goal:** Unify fragmented theme system into single ThemeManager  
+**Status:** COMPLETE (December 18, 2025)
 
-**Planned Tasks:**
-- [ ] Optimize metadata loading
-- [ ] Enhance rename engine
-- [ ] Improve caching strategies
-- [ ] Refactor file operations
+**Completion Summary:**
+
+#### Step 5.1: Theme Usage Audit ✅
+- Created comprehensive usage audit (PHASE5_AUDIT.md)
+- Identified 27 files using ThemeEngine
+- Identified 25 files using ThemeManager
+- Identified 7 files using theme.py helpers
+- No circular import risks found
+
+#### Step 5.2: Color Definition Consolidation ✅
+- Added missing tooltip color tokens to THEME_TOKENS
+- Added layout/spacing constants (table_row_height, button_height, combo_height)
+- All colors now in single THEME_TOKENS dict
+- Dark theme complete, light theme template ready
+
+#### Step 5.3: ThemeManager API Extension ✅
+- Added `get_constant()` method for sizing constants
+- Added `get_font_sizes()` and `fonts` property
+- Added `constants` property for spacing values
+- Added `apply_complete_theme()` for full app theming
+- Full backwards compatibility with ThemeEngine API
+
+#### Step 5.4: ThemeEngine Facade ✅
+- Refactored ThemeEngine to delegate to ThemeManager
+- Removed duplicate color definitions
+- Added color mapping for legacy color names
+- Maintained 100% backwards compatibility
+- Marked as DEPRECATED for new code
+
+#### Step 5.5: theme.py Migration ✅
+- Migrated all helper functions to use ThemeManager
+- Removed redundant _theme_engine singleton
+- Added color mapping for legacy names
+- Simplified codebase (removed ~30 LOC)
+- All tests passing
+
+**Results:**
+- ✅ Single `get_theme_manager()` entry point
+- ✅ ThemeEngine works identically (facade pattern)
+- ✅ theme.py simplified (delegates to ThemeManager)
+- ✅ All 776 tests passing (4 skipped)
+- ✅ Zero regressions
+- ✅ ~200 LOC code reduction
+- ✅ Unified theme architecture
+
+**Commits:**
+1. `8513902e` - docs: audit theme system usage
+2. `13bf71ae` - feat: consolidate color definitions
+3. `11177c69` - feat: extend ThemeManager API
+4. `64166238` - refactor: ThemeEngine facade
+5. `52522033` - refactor: theme.py uses ThemeManager
+
+**See:** [PHASE5_EXECUTION_PLAN.md](PHASE5_EXECUTION_PLAN.md), [PHASE5_AUDIT.md](PHASE5_AUDIT.md)
 
 ---
 
