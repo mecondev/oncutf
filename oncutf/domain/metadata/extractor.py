@@ -47,11 +47,12 @@ class MetadataExtractor:
     Pure Python metadata extraction logic.
     No Qt/PyQt5 dependencies - fully testable in isolation.
 
-    Supports optional dependency injection for services:
+    Supports dependency injection for services:
     - metadata_service: For loading EXIF/file metadata
     - hash_service: For computing file hashes
 
-    If services are not provided, falls back to internal implementations.
+    If services are not provided, they are retrieved from ServiceRegistry.
+    This ensures loose coupling while maintaining ease of use.
     """
 
     def __init__(
@@ -63,13 +64,51 @@ class MetadataExtractor:
 
         Args:
             metadata_service: Optional service for metadata loading.
+                              If None, retrieved from ServiceRegistry.
             hash_service: Optional service for hash computation.
+                          If None, retrieved from ServiceRegistry.
         """
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
         self._cache_validity_duration = 0.1  # 100ms cache validity
-        self._metadata_service = metadata_service
-        self._hash_service = hash_service
+
+        # Use provided services or get from registry
+        if metadata_service is not None:
+            self._metadata_service = metadata_service
+        else:
+            self._metadata_service = self._get_service_from_registry("metadata")
+
+        if hash_service is not None:
+            self._hash_service = hash_service
+        else:
+            self._hash_service = self._get_service_from_registry("hash")
+
+    def _get_service_from_registry(
+        self, service_type: str
+    ) -> MetadataServiceProtocol | HashServiceProtocol | None:
+        """Get a service from the ServiceRegistry.
+
+        Args:
+            service_type: Either "metadata" or "hash"
+
+        Returns:
+            The service instance or None if not registered.
+        """
+        try:
+            from oncutf.services.interfaces import (
+                HashServiceProtocol as HashProto,
+                MetadataServiceProtocol as MetaProto,
+            )
+            from oncutf.services.registry import get_service_registry
+
+            registry = get_service_registry()
+            if service_type == "metadata":
+                return registry.get(MetaProto)
+            elif service_type == "hash":
+                return registry.get(HashProto)
+        except ImportError:
+            logger.debug("ServiceRegistry not available, using fallback")
+        return None
 
     def extract(
         self,
