@@ -228,28 +228,28 @@ class MetadataExtractor:
             )
 
     def _extract_hash(self, file_path: Path, field: str) -> ExtractionResult:
-        """Extract file hash.
+        """Extract file hash using the injected hash_service.
 
-        Uses injected hash_service if available, otherwise falls back to
-        internal implementation via get_hash_for_file helper.
+        Requires hash_service to be available (via injection or ServiceRegistry).
         """
         if not field.startswith("hash_"):
             return ExtractionResult(
                 value="invalid", source="error", field=field, category="hash"
             )
 
+        if self._hash_service is None:
+            logger.warning("No hash_service available for hash extraction")
+            return ExtractionResult(
+                value=file_path.stem,
+                source="fallback",
+                raw_value=None,
+                field=field,
+                category="hash",
+            )
+
         try:
             hash_type = field.replace("hash_", "").lower()
-            hash_value: str | None = None
-
-            # Use injected service if available
-            if self._hash_service is not None:
-                hash_value = self._hash_service.compute_hash(file_path, hash_type)
-            else:
-                # Fallback to internal helper
-                from oncutf.utils.file_status_helpers import get_hash_for_file
-
-                hash_value = get_hash_for_file(str(file_path), hash_type.upper())
+            hash_value = self._hash_service.compute_hash(file_path, hash_type)
 
             if hash_value:
                 return ExtractionResult(
@@ -260,10 +260,9 @@ class MetadataExtractor:
                     category="hash",
                 )
 
-            # Fallback to filename if hash not available
-            base_name = file_path.stem
+            # Fallback to filename if hash computation failed
             return ExtractionResult(
-                value=base_name,
+                value=file_path.stem,
                 source="fallback",
                 raw_value=None,
                 field=field,
@@ -272,9 +271,8 @@ class MetadataExtractor:
 
         except Exception as e:
             logger.warning("Error getting hash for %s: %s", file_path.name, e)
-            base_name = file_path.stem
             return ExtractionResult(
-                value=base_name,
+                value=file_path.stem,
                 source="fallback",
                 raw_value=None,
                 field=field,
