@@ -689,6 +689,29 @@ THEME_TOKENS = {
         # ===== Component-Specific: History Dialog =====
         "history_title_text": "#f0ebd8",
         "history_info_text": "#888888",
+
+        # ===== Component-Specific: Tooltips =====
+        "tooltip_bg": "#2b2b2b",
+        "tooltip_text": "#f0ebd8",
+        "tooltip_border": "#555555",
+        "tooltip_error_bg": "#3d1e1e",
+        "tooltip_error_text": "#ffaaaa",
+        "tooltip_error_border": "#cc4444",
+        "tooltip_warning_bg": "#3d3d1e",
+        "tooltip_warning_text": "#ffffaa",
+        "tooltip_warning_border": "#cccc44",
+        "tooltip_info_bg": "#1e2d3d",
+        "tooltip_info_text": "#aaccff",
+        "tooltip_info_border": "#4488cc",
+        "tooltip_success_bg": "#1e3d1e",
+        "tooltip_success_text": "#aaffaa",
+        "tooltip_success_border": "#44cc44",
+
+        # ===== Layout & Spacing Constants (numeric) =====
+        # These are stored as strings for now, will be accessed via get_constant()
+        "table_row_height": "22",
+        "button_height": "24",
+        "combo_height": "24",
     },
     "light": {
         # Placeholder for light theme - to be implemented later
