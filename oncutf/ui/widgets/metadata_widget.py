@@ -41,6 +41,7 @@ class MetadataWidget(QWidget):
     """
 
     updated = pyqtSignal(object)
+    settings_changed = pyqtSignal(dict)  # Emitted on ANY setting change for instant preview
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -100,9 +101,11 @@ class MetadataWidget(QWidget):
 
         # Connections (delegate setup handled by StyledComboBox)
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
+        self.category_combo.currentIndexChanged.connect(self._emit_settings_changed)
         # Use new confirmed-selection signal to avoid preview races
         self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)  # keep legacy
         self.options_combo.selection_confirmed.connect(self._on_hierarchical_selection_confirmed)
+        self.options_combo.selection_confirmed.connect(self._emit_settings_changed)
         logger.debug("Connected to hierarchical combo selection_confirmed signal")
 
         # Initialize category availability
@@ -151,6 +154,22 @@ class MetadataWidget(QWidget):
 
         except Exception as e:
             logger.error("Error in _on_category_changed: %s", e)
+
+    def _emit_settings_changed(self) -> None:
+        """
+        Emit settings_changed signal on ANY user interaction.
+        
+        This provides instant preview updates while maintaining
+        backwards compatibility with the 'updated' signal.
+        """
+        try:
+            config = self.get_data()
+            logger.debug("Emitting settings_changed with config: %s", config)
+            self.settings_changed.emit(config)
+            # Also emit legacy 'updated' signal for backwards compatibility
+            self.updated.emit(config)
+        except Exception as e:
+            logger.warning("Error emitting settings_changed: %s", e)
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
