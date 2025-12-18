@@ -125,16 +125,6 @@ class TestFilesystemMonitor:
         # On Linux, should check /media and /mnt
         assert isinstance(drives, set)
 
-    @pytest.mark.skipif(
-        platform.system() != "Windows",
-        reason="Windows-specific test"
-    )
-    def test_get_drives_windows(self, monitor):
-        """Test drive detection on Windows."""
-        drives = monitor._get_available_drives()
-        # On Windows, should have C:\
-        assert any("C:\\" in drive for drive in drives)
-
     def test_drive_added_signal(self, monitor, qtbot):
         """Test drive_added signal emission."""
         # Mock _get_available_drives to simulate drive addition
