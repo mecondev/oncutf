@@ -501,8 +501,14 @@ class FileLoadManager:
             self.parent_window.update_files_label()
 
         # Schedule next batch (5ms delay to allow UI updates)
-        from oncutf.core.pyqt_imports import QTimer
-        QTimer.singleShot(5, self._process_next_batch)
+        from oncutf.utils.timer_manager import TimerType, get_timer_manager
+
+        get_timer_manager().schedule(
+            self._process_next_batch,
+            delay=5,
+            timer_type=TimerType.UI_UPDATE,
+            timer_id="file_load_next_batch",
+        )
 
     def _refresh_ui_after_file_load(self) -> None:
         """

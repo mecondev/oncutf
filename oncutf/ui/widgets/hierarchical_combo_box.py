@@ -18,7 +18,6 @@ from oncutf.core.pyqt_imports import (
     QStandardItem,
     QStandardItemModel,
     Qt,
-    QTimer,  # added for delayed emission/unblock timer
     QTreeView,
     QWidget,
     pyqtSignal,
@@ -178,11 +177,23 @@ class HierarchicalComboBox(QComboBox):
             self.hidePopup()
 
             # Start short timed blocker to avoid immediate re-open mouse press race
+            from oncutf.utils.timer_manager import TimerType, get_timer_manager
+
             self._closing_popup = True
-            QTimer.singleShot(self._closing_unblock_ms, lambda: setattr(self, "_closing_popup", False))
+            get_timer_manager().schedule(
+                lambda: setattr(self, "_closing_popup", False),
+                delay=self._closing_unblock_ms,
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="hierarchical_combo_closing",
+            )
 
             # Emit confirmed selection after popup has closed (next event loop)
-            QTimer.singleShot(0, lambda: self.selection_confirmed.emit(text, data))
+            get_timer_manager().schedule(
+                lambda: self.selection_confirmed.emit(text, data),
+                delay=0,
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="hierarchical_combo_confirm",
+            )
         else:
             # For categories, toggle expansion
             if self.tree_view.isExpanded(index):
@@ -325,6 +336,8 @@ class HierarchicalComboBox(QComboBox):
 
         # Select first item if available and requested
         if first_item and auto_select_first:
+            from oncutf.utils.timer_manager import TimerType, get_timer_manager
+
             index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
             self.setCurrentText(first_item.text())
@@ -332,7 +345,14 @@ class HierarchicalComboBox(QComboBox):
             self._selected_item_data = first_item.data(Qt.ItemDataRole.UserRole)
             # Emit immediate item_selected and schedule confirmed emission after popup actions
             self.item_selected.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole))
-            QTimer.singleShot(0, lambda: self.selection_confirmed.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole)))
+            get_timer_manager().schedule(
+                lambda: self.selection_confirmed.emit(
+                    first_item.text(), first_item.data(Qt.ItemDataRole.UserRole)
+                ),
+                delay=0,
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="hierarchical_combo_first_select",
+            )
             logger.debug(
                 "Selected first item: %s with data: %s",
                 first_item.text(),
