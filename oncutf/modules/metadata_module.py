@@ -108,10 +108,12 @@ class MetadataModule:
         # Get metadata dict
         metadata_dict = MetadataModule._get_metadata_dict(path, metadata_cache)
 
-        # Use MetadataExtractor for extraction
+        # Use MetadataExtractor with cached-only hash service for rename preview
+        # This ensures no expensive hash computation happens during preview
         from oncutf.domain.metadata.extractor import MetadataExtractor
+        from oncutf.services.cached_hash_service import CachedHashService
 
-        extractor = MetadataExtractor()
+        extractor = MetadataExtractor(hash_service=CachedHashService())
         result = extractor.extract(
             file_path=Path(path), field=field, category=category, metadata=metadata_dict
         )
