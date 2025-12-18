@@ -71,44 +71,43 @@ class MetadataExtractor:
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
         self._cache_validity_duration = 0.1  # 100ms cache validity
+        self._metadata_service: MetadataServiceProtocol | None
+        self._hash_service: HashServiceProtocol | None
 
         # Use provided services or get from registry
         if metadata_service is not None:
             self._metadata_service = metadata_service
         else:
-            self._metadata_service = self._get_service_from_registry("metadata")
+            self._metadata_service = self._get_metadata_service_from_registry()
 
         if hash_service is not None:
             self._hash_service = hash_service
         else:
-            self._hash_service = self._get_service_from_registry("hash")
+            self._hash_service = self._get_hash_service_from_registry()
 
-    def _get_service_from_registry(
-        self, service_type: str
-    ) -> MetadataServiceProtocol | HashServiceProtocol | None:
-        """Get a service from the ServiceRegistry.
-
-        Args:
-            service_type: Either "metadata" or "hash"
-
-        Returns:
-            The service instance or None if not registered.
-        """
+    def _get_metadata_service_from_registry(self) -> MetadataServiceProtocol | None:
+        """Get metadata service from the ServiceRegistry."""
         try:
-            from oncutf.services.interfaces import (
-                HashServiceProtocol as HashProto,
-                MetadataServiceProtocol as MetaProto,
-            )
+            from oncutf.services.interfaces import MetadataServiceProtocol as MetaProto
             from oncutf.services.registry import get_service_registry
 
             registry = get_service_registry()
-            if service_type == "metadata":
-                return registry.get(MetaProto)
-            elif service_type == "hash":
-                return registry.get(HashProto)
+            return registry.get(MetaProto)  # type: ignore[type-abstract]
         except ImportError:
             logger.debug("ServiceRegistry not available, using fallback")
-        return None
+            return None
+
+    def _get_hash_service_from_registry(self) -> HashServiceProtocol | None:
+        """Get hash service from the ServiceRegistry."""
+        try:
+            from oncutf.services.interfaces import HashServiceProtocol as HashProto
+            from oncutf.services.registry import get_service_registry
+
+            registry = get_service_registry()
+            return registry.get(HashProto)  # type: ignore[type-abstract]
+        except ImportError:
+            logger.debug("ServiceRegistry not available, using fallback")
+            return None
 
     def extract(
         self,

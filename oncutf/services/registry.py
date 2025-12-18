@@ -107,12 +107,13 @@ class ServiceRegistry:
         """
         # Check direct registrations first
         if protocol in self._services:
-            return self._services[protocol]
+            service: Any = self._services[protocol]
+            return service  # type: ignore[no-any-return]
 
         # Check factories
         if protocol in self._factories:
-            factory = self._factories[protocol]
-            implementation = factory()
+            factory: Any = self._factories[protocol]
+            implementation: Any = factory()
             self._services[protocol] = implementation
             del self._factories[protocol]
             logger.debug(
@@ -120,7 +121,7 @@ class ServiceRegistry:
                 protocol.__name__,
                 type(implementation).__name__,
             )
-            return implementation
+            return implementation  # type: ignore[no-any-return]
 
         logger.warning("No service registered for: %s", protocol.__name__)
         return None
@@ -224,8 +225,8 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
     )
 
     # Register default implementations using factories for lazy init
-    registry.register_factory(MetadataServiceProtocol, ExifToolService)
-    registry.register_factory(HashServiceProtocol, HashService)
-    registry.register_factory(FilesystemServiceProtocol, FilesystemService)
+    registry.register_factory(MetadataServiceProtocol, ExifToolService)  # type: ignore[type-abstract]
+    registry.register_factory(HashServiceProtocol, HashService)  # type: ignore[type-abstract]
+    registry.register_factory(FilesystemServiceProtocol, FilesystemService)  # type: ignore[type-abstract]
 
     logger.debug("Default services configured")
