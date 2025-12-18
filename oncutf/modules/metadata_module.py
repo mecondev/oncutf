@@ -263,7 +263,6 @@ class MetadataModule:
         DEPRECATED: Hash calculation is handled manually by the user.
         Kept for backward compatibility.
         """
-        pass
 
     @staticmethod
     def is_effective(data: dict) -> bool:

@@ -67,26 +67,22 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 [tool.mypy]
 python_version = "3.12"
 # Default to non-strict across the repo.
-# Enable strict only for the core/domain packages via overrides below.
+# Enable strict only for specific packages via overrides below.
 strict = false
 ignore_missing_imports = true
 warn_unused_configs = true
 warn_unused_ignores = true
-# Keep the base configuration lightweight; strict packages will turn on the
-# additional checks automatically.
-warn_return_any = false
-check_untyped_defs = false
+# Stricter defaults for all modules
+warn_return_any = true
+check_untyped_defs = true
 warn_redundant_casts = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
-no_implicit_optional = false
-# NOTE:
-# - Keep strict typing for the core package.
-# - Relax typing for UI/tests via per-module overrides below.
+no_implicit_optional = true
 # - Exclude scripts by path, because mypy per-module overrides operate on module
 #   names (and scripts are not a package by default).
-exclude = '.*(backups|\.cache|temp|reports|scripts)/'  # Global exclude, only one allowed
+exclude = '.*(backups|\.cache|temp|reports|scripts|examples)/'  # Global exclude, only one allowed
 
 [[tool.mypy.overrides]]
 module = ["PyQt5.*"]
@@ -118,8 +114,17 @@ module = [
 ]
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = ["oncutf.domain.*"]
+strict = true
+warn_return_any = true
+check_untyped_defs = true
+
 # NOTE: Strict type checking for core modules is disabled temporarily.
 # These modules need proper type annotations before enabling strict checks.
+# 
+# Domain package (oncutf.domain) uses strict mode for better type safety.
+# 
 # TODO: Enable strict checks for these modules after adding type annotations:
 # - oncutf.core.unified_metadata_manager
 # - oncutf.core.structured_metadata_manager

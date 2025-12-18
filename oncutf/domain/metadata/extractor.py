@@ -16,10 +16,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    pass
+from typing import Any
 
 # Initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
@@ -44,7 +41,7 @@ class MetadataExtractor:
     No Qt/PyQt5 dependencies - fully testable in isolation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the metadata extractor."""
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
