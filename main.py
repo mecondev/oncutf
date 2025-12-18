@@ -183,6 +183,12 @@ def main() -> int:
         # Initialize theme engine
         theme_manager = ThemeEngine()
 
+        # Configure default services for dependency injection (Phase 6)
+        logger.debug("Configuring default services...", extra={"dev_only": True})
+        from oncutf.services import configure_default_services
+        configure_default_services()
+        logger.info("Default services configured (Phase 6 DI)")
+
         # Create custom splash screen
         from oncutf.utils.path_utils import get_images_dir
 
