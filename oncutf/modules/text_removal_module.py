@@ -9,8 +9,11 @@ It supports removing text from the start, end, or anywhere in the filename,
 with case-sensitive or case-insensitive matching.
 """
 
+from __future__ import annotations
+
 import logging
 import re
+from dataclasses import dataclass
 
 from oncutf.core.pyqt_imports import (
     QCheckBox,
@@ -25,6 +28,15 @@ from oncutf.core.pyqt_imports import (
 from oncutf.modules.base_module import BaseRenameModule
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TextRemovalMatch:
+    """Represents a matched text region for removal."""
+
+    start: int
+    end: int
+    matched_text: str
 
 
 class TextRemovalModule(BaseRenameModule):
@@ -149,6 +161,95 @@ class TextRemovalModule(BaseRenameModule):
         self.case_sensitive_check.setChecked(data.get("case_sensitive", False))
 
     @staticmethod
+    def find_matches(
+        text: str,
+        pattern: str,
+        position: str = "End of name",
+        case_sensitive: bool = False,
+    ) -> list[TextRemovalMatch]:
+        """
+        Find all matches of pattern in text based on position and case sensitivity.
+
+        Args:
+            text: Text to search in
+            pattern: Pattern to search for
+            position: Where to search (\"End of name\", \"Start of name\", \"Anywhere (first)\", \"Anywhere (all)\")
+            case_sensitive: Whether to use case-sensitive matching
+
+        Returns:
+            List of TextRemovalMatch objects representing matched regions
+        """
+        if not pattern:
+            return []
+
+        matches: list[TextRemovalMatch] = []
+
+        search_text = pattern if case_sensitive else pattern.lower()
+        target_text = text if case_sensitive else text.lower()
+
+        if position == "End of name":
+            if target_text.endswith(search_text):
+                start = len(text) - len(pattern)
+                end = len(text)
+                matches.append(TextRemovalMatch(start, end, text[start:end]))
+
+        elif position == "Start of name":
+            if target_text.startswith(search_text):
+                matches.append(TextRemovalMatch(0, len(pattern), text[0:len(pattern)]))
+
+        elif position == "Anywhere (first)":
+            if case_sensitive:
+                idx = text.find(pattern)
+                if idx != -1:
+                    matches.append(TextRemovalMatch(idx, idx + len(pattern), text[idx:idx + len(pattern)]))
+            else:
+                regex_pattern = re.escape(pattern)
+                match = re.search(regex_pattern, text, flags=re.IGNORECASE)
+                if match:
+                    matches.append(TextRemovalMatch(match.start(), match.end(), match.group()))
+
+        elif position == "Anywhere (all)":
+            if case_sensitive:
+                start = 0
+                while True:
+                    idx = text.find(pattern, start)
+                    if idx == -1:
+                        break
+                    matches.append(TextRemovalMatch(idx, idx + len(pattern), text[idx:idx + len(pattern)]))
+                    start = idx + len(pattern)
+            else:
+                regex_pattern = re.escape(pattern)
+                for match in re.finditer(regex_pattern, text, flags=re.IGNORECASE):
+                    matches.append(TextRemovalMatch(match.start(), match.end(), match.group()))
+
+        return matches
+
+    @staticmethod
+    def apply_removal(text: str, matches: list[TextRemovalMatch]) -> str:
+        """
+        Apply removal of matched text regions.
+
+        Args:
+            text: Original text
+            matches: List of matches to remove
+
+        Returns:
+            Text with matched regions removed
+        """
+        if not matches:
+            return text
+
+        result_parts: list[str] = []
+        last_end = 0
+
+        for match in sorted(matches, key=lambda m: m.start):
+            result_parts.append(text[last_end:match.start])
+            last_end = match.end
+
+        result_parts.append(text[last_end:])
+        return "".join(result_parts)
+
+    @staticmethod
     def is_effective(data: dict) -> bool:
         """
         Check if this module configuration is effective.
@@ -178,7 +279,6 @@ class TextRemovalModule(BaseRenameModule):
         """
         import os
 
-        # Get original filename without extension
         original_name = file_item.filename
         name_without_ext, ext = os.path.splitext(original_name)
 
@@ -189,53 +289,11 @@ class TextRemovalModule(BaseRenameModule):
         position = data.get("position", "End of name")
         case_sensitive = data.get("case_sensitive", False)
 
-        # Prepare text for comparison
-        if case_sensitive:
-            search_text = text_to_remove
-            target_text = name_without_ext
-        else:
-            search_text = text_to_remove.lower()
-            target_text = name_without_ext.lower()
+        matches = TextRemovalModule.find_matches(
+            name_without_ext, text_to_remove, position, case_sensitive
+        )
+        result_name = TextRemovalModule.apply_removal(name_without_ext, matches)
 
-        # Apply removal based on position
-        result_name = name_without_ext
-
-        if position == "End of name":
-            if target_text.endswith(search_text):
-                # Remove from end
-                if case_sensitive:
-                    result_name = name_without_ext[: -len(text_to_remove)]
-                else:
-                    result_name = name_without_ext[: -len(text_to_remove)]
-
-        elif position == "Start of name":
-            if target_text.startswith(search_text):
-                # Remove from start
-                if case_sensitive:
-                    result_name = name_without_ext[len(text_to_remove) :]
-                else:
-                    result_name = name_without_ext[len(text_to_remove) :]
-
-        elif position == "Anywhere (first)":
-            # Remove first occurrence
-            if case_sensitive:
-                if text_to_remove in name_without_ext:
-                    result_name = name_without_ext.replace(text_to_remove, "", 1)
-            else:
-                # Case insensitive replacement
-                pattern = re.escape(text_to_remove)
-                result_name = re.sub(pattern, "", name_without_ext, count=1, flags=re.IGNORECASE)
-
-        elif position == "Anywhere (all)":
-            # Remove all occurrences
-            if case_sensitive:
-                result_name = name_without_ext.replace(text_to_remove, "")
-            else:
-                # Case insensitive replacement
-                pattern = re.escape(text_to_remove)
-                result_name = re.sub(pattern, "", name_without_ext, flags=re.IGNORECASE)
-
-        # Return result with extension
         return f"{result_name}{ext}"
 
     def get_preview_text(self, file_item, index: int, metadata_cache=None) -> str:

@@ -115,7 +115,19 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 ---
 
-### 🔧 Phase 4: Core Logic Improvements (PLANNED)
+### 🔧 Phase 4: Text Removal Module Fix (PLANNED)
+**Goal:** Reliable match preview and highlighting for text removal  
+**Status:** Planned
+
+**Planned Tasks:**
+- [ ] Add match preview with visual highlighting
+- [ ] Validate regex patterns and surface user-friendly errors
+- [ ] Debounce preview updates for large file sets
+- [ ] Cover edge cases with dedicated tests
+
+---
+
+### 🎯 Phase 5: Core Logic Improvements (PLANNED)
 **Goal:** Refactor and optimize core business logic  
 **Status:** Planned
 
@@ -127,7 +139,7 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 ---
 
-### 🎯 Phase 5: Final Polish (PLANNED)
+### Phase 6: Final Polish (PLANNED)
 **Goal:** Performance optimization and final cleanup  
 **Status:** Planned
 

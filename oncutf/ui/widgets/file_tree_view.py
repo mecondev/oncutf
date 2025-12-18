@@ -106,6 +106,7 @@ class FileTreeView(QTreeView):
         # (context is initialized later in MainWindow setup)
         self._filesystem_monitor = None
         self._filesystem_monitor_setup_pending = True
+        self._last_monitored_path: str | None = None
 
         # Install custom tree view delegate for consistent hover/selection behavior
         self._delegate = TreeViewItemDelegate(self)
@@ -175,6 +176,19 @@ class FileTreeView(QTreeView):
 
             # Start monitoring
             self._filesystem_monitor.start()
+
+            # Watch the current root path to pick up directory changes (Windows needs explicit watch)
+            root_path = ""
+            model = self.model()
+            if model and hasattr(model, "rootPath"):
+                try:
+                    root_path = model.rootPath()
+                except Exception:
+                    root_path = ""
+
+            if root_path and os.path.isdir(root_path):
+                if self._filesystem_monitor.add_folder(root_path):
+                    self._last_monitored_path = root_path
 
             logger.info("[FileTreeView] Filesystem monitor started")
 
@@ -311,6 +325,20 @@ class FileTreeView(QTreeView):
             path = self.model().filePath(indexes[0])
             if path:
                 selected_path = path
+
+        # Keep filesystem watcher aligned with the active folder so directory changes refresh the tree
+        if selected_path and os.path.isdir(selected_path) and self._filesystem_monitor:
+            try:
+                if self._last_monitored_path:
+                    self._filesystem_monitor.remove_folder(self._last_monitored_path)
+                if self._filesystem_monitor.add_folder(selected_path):
+                    self._last_monitored_path = selected_path
+            except Exception as e:
+                logger.debug(
+                    "[FileTreeView] Failed to update monitored folder: %s",
+                    e,
+                    extra={"dev_only": True},
+                )
 
         self.selection_changed.emit(selected_path)
 
