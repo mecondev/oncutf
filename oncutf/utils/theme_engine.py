@@ -5,7 +5,10 @@ Author: Michael Economou
 Date: 2025-06-20
 
 Simplified theme engine for OnCutF application.
-Applies all styling globally to handle dynamically created widgets.
+Delegates to ThemeManager for centralized theme management.
+
+DEPRECATED: This module is a facade for backwards compatibility.
+Use ThemeManager (from oncutf.core.theme_manager) directly for new code.
 """
 
 import logging
@@ -15,18 +18,39 @@ from PyQt5.QtGui import QColor, QPalette
 
 import oncutf.config
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
+from oncutf.core.theme_manager import get_theme_manager
 
 logger = logging.getLogger(__name__)
 
 
 class ThemeEngine:
-    """Simplified theme engine that applies all styling globally."""
+    """
+    Simplified theme engine that applies all styling globally.
+
+    DEPRECATED: This is a facade for backwards compatibility.
+    Delegates to ThemeManager for actual theme management.
+    """
 
     def __init__(self, theme_name: str = "dark"):
+        """
+        Initialize ThemeEngine (facade).
+
+        Args:
+            theme_name: Theme name to use (passed to ThemeManager)
+        """
         self.theme_name = theme_name or oncutf.config.THEME_NAME
         self.is_windows = platform.system() == "Windows"
 
-        # Color definitions
+        # Delegate to ThemeManager singleton
+        self._manager = get_theme_manager()
+        if theme_name and theme_name != "dark":
+            try:
+                self._manager.set_theme(theme_name)
+            except ValueError:
+                logger.warning("[Theme] Invalid theme '%s', using dark", theme_name)
+
+        # IMPORTANT: Keep hardcoded colors for backwards compatibility
+        # These are the original ThemeEngine color keys that existing code expects
         self.colors = {
             # Base application colors
             "app_background": "#212121",
@@ -121,17 +145,131 @@ class ThemeEngine:
 
         # Layout & Sizing constants
         self.constants = {
-            "table_row_height": 22,  # Fixed row height for all tables (file table, preview, dialogs)
-            "button_height": 24,      # Standard button height for dialogs
-            "combo_height": 24,       # Standard combo box height (metadata widgets, transforms)
+            "table_row_height": 22,
+            "button_height": 24,
+            "combo_height": 24,
         }
 
+    def get_color(self, color_key: str) -> str:
+        """
+        Get a color from the current theme.
+
+        Args:
+            color_key: Color token name
+
+        Returns:
+            Hex color string
+        """
+        # First try the local colors dict (backwards compatible keys)
+        if color_key in self.colors:
+            return self.colors[color_key]
+
+        # Then try ThemeManager with mapping
+        color_mapping = {
+            "app_background": "background",
+            "app_text": "text",
+            "input_background": "input_bg",
+            "input_text": "input_text",
+            "input_border": "input_border",
+            "input_border_hover": "border_hover",
+            "input_border_focus": "input_focus_border",
+            "input_background_hover": "input_hover_bg",
+            "input_background_focus": "input_focus_bg",
+            "input_selection_bg": "selected",
+            "input_selection_text": "selected_text",
+            "button_background": "button_bg",
+            "button_text": "button_text",
+            "button_background_hover": "button_hover_bg",
+            "button_background_pressed": "button_pressed_bg",
+            "button_text_pressed": "button_pressed_text",
+            "button_background_disabled": "button_disabled_bg",
+            "button_text_disabled": "button_disabled_text",
+            "button_border": "border",
+            "combo_background": "button_bg",
+            "combo_text": "button_text",
+            "combo_background_hover": "button_hover_bg",
+            "combo_background_pressed": "button_pressed_bg",
+            "combo_text_pressed": "button_pressed_text",
+            "combo_dropdown_background": "table_background",
+            "combo_item_background_hover": "table_hover_bg",
+            "combo_item_background_selected": "table_selection_bg",
+            "combo_border": "border",
+            "table_background": "table_background",
+            "table_text": "table_background",
+            "table_alternate_background": "table_alternate",
+            "table_selection_background": "table_selection_bg",
+            "table_selection_text": "table_selection_text",
+            "table_header_background": "table_header_bg",
+            "table_hover_background": "table_hover_bg",
+            "scroll_area_background": "scrollbar_bg",
+            "scroll_track_background": "scrollbar_bg",
+            "scroll_handle_background": "scrollbar_handle",
+            "scroll_handle_hover": "scrollbar_handle_hover",
+            "scroll_handle_pressed": "button_pressed_bg",
+            "module_background": "module_plate_bg",
+            "module_border": "module_plate_border",
+            "module_drag_handle": "module_drag_handle",
+            "dialog_background": "dialog_background",
+            "dialog_text": "text",
+            "tooltip_background": "tooltip_bg",
+            "tooltip_text": "tooltip_text",
+            "tooltip_border": "tooltip_border",
+            "tooltip_error_background": "tooltip_error_bg",
+            "tooltip_error_text": "tooltip_error_text",
+            "tooltip_error_border": "tooltip_error_border",
+            "tooltip_warning_background": "tooltip_warning_bg",
+            "tooltip_warning_text": "tooltip_warning_text",
+            "tooltip_warning_border": "tooltip_warning_border",
+            "tooltip_info_background": "tooltip_info_bg",
+            "tooltip_info_text": "tooltip_info_text",
+            "tooltip_info_border": "tooltip_info_border",
+            "tooltip_success_background": "tooltip_success_bg",
+            "tooltip_success_text": "tooltip_success_text",
+            "tooltip_success_border": "tooltip_success_border",
+            "highlight_blue": "selected",
+            "highlight_light_blue": "selected_hover",
+            "accent_color": "selected",
+            "separator_background": "separator",
+            "separator_light": "border_light",
+            "border_color": "border",
+            "disabled_background": "background",
+            "disabled_text": "text_disabled",
+        }
+
+        # Use mapping if available, otherwise use the key directly
+        token = color_mapping.get(color_key, color_key)
+
+        try:
+            return self._manager.get_color(token)
+        except KeyError:
+            # Fallback: return the old colors dict if available
+            if hasattr(self, "_old_colors") and color_key in self._old_colors:
+                return self._old_colors[color_key]
+            logger.warning("[Theme] Color '%s' (mapped to '%s') not found", color_key, token)
+            return "#000000"  # Default fallback
+
     def get_constant(self, key: str) -> int:
-        """Get a layout/sizing constant."""
+        """
+        Get a layout/sizing constant.
+
+        Args:
+            key: Constant name
+
+        Returns:
+            Integer value
+        """
         return self.constants.get(key, 0)
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
-        """Apply complete theming to the entire application."""
+        """
+        Apply complete theming to the entire application.
+
+        Delegates to ThemeManager and adds backwards-compatible styling.
+
+        Args:
+            app: QApplication instance
+            main_window: QMainWindow instance
+        """
         # Clear any existing stylesheets
         app.setStyleSheet("")
         main_window.setStyleSheet("")
@@ -162,8 +300,8 @@ class ThemeEngine:
 
         # Set palette colors for alternating row backgrounds
         palette = app.palette()
-        palette.setColor(QPalette.ColorRole.Base, QColor(self.colors["table_background"]))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.colors["table_alternate_background"]))
+        palette.setColor(QPalette.ColorRole.Base, QColor(self.get_color("table_background")))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate")))
         app.setPalette(palette)
 
         # Apply Windows-specific ComboBox fixes if on Windows
@@ -1462,10 +1600,6 @@ class ThemeEngine:
             }}
 
         """
-
-    def get_color(self, color_key: str) -> str:
-        """Get a color value by key."""
-        return self.colors.get(color_key, "#ffffff")
 
     def get_context_menu_stylesheet(self) -> str:
         """Get the stylesheet for context menus.

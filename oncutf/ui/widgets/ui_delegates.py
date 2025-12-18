@@ -79,18 +79,18 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
                 )
             elif option.state & QStyle.StateFlag.State_MouseOver:
                 option.palette.setBrush(
-                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
                 )
                 option.palette.setBrush(
                     QPalette.ColorRole.Highlight,
                     QBrush(
-                        QColor(self.theme.get_color("table_hover_background"))
+                        QColor(self.theme.get_color("table_hover_bg"))
                     ),  # Use same hover color as file table
                 )
             else:
                 # Normal state
                 option.palette.setBrush(
-                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
                 )
                 option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
 
@@ -109,7 +109,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         self.hovered_row: int = -1
 
         # Get colors from theme system
-        self.hover_color: QColor = get_qcolor("table_hover_background")
+        self.hover_color: QColor = get_qcolor("table_hover_bg")
 
     def update_hover_row(self, row: int) -> None:
         """Update the row that should be highlighted on hover."""
@@ -189,16 +189,16 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         background_color = None
         if is_selected and is_hovered:
             # Selected + hovered: slightly lighter than normal selection
-            background_color = QColor(get_theme_color("highlight_light_blue"))
+            background_color = QColor(get_theme_color("selected_hover"))
         elif is_selected:
             # Normal selection color
-            background_color = QColor(get_theme_color("table_selection_background"))
+            background_color = QColor(get_theme_color("table_selection_bg"))
         elif is_hovered:
             # Hover color - paint over alternate background
             background_color = self.hover_color
         elif row % 2 == 1:
             # Alternate row color for odd rows (only if not selected/hovered)
-            background_color = QColor(get_theme_color("table_alternate_background"))
+            background_color = QColor(get_theme_color("table_alternate"))
         # For even rows, use default background (no painting needed)
 
         if background_color:
@@ -209,7 +209,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         # Draw border for selected rows (only on the last column to avoid overlaps)
         if is_selected and model and column == model.columnCount() - 1:
             painter.save()
-            border_color = QColor(get_theme_color("table_selection_background")).darker(130)
+            border_color = QColor(get_theme_color("table_selection_bg")).darker(130)
             painter.setPen(QPen(border_color, 1))
 
             # Calculate full row rect
@@ -251,7 +251,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
                 text_color = QColor(get_theme_color("table_selection_text"))
             else:
                 # All other cases (normal, hover only, selected only): light text
-                text_color = QColor(get_theme_color("table_text"))
+                text_color = QColor(get_theme_color("text"))
 
             painter.save()
             painter.setPen(text_color)
@@ -377,11 +377,11 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_color = None
 
             if is_selected and is_hovered:
-                bg_color = get_qcolor("highlight_light_blue")
+                bg_color = get_qcolor("selected_hover")
             elif is_selected:
-                bg_color = get_qcolor("table_selection_background")
+                bg_color = get_qcolor("table_selection_bg")
             elif is_hovered:
-                bg_color = get_qcolor("table_hover_background")
+                bg_color = get_qcolor("table_hover_bg")
             elif tree_view.alternatingRowColors() and index.row() % 2 == 1:
                 # Only odd rows get alternating color
                 bg_color = tree_view.palette().color(QPalette.ColorRole.AlternateBase)
@@ -421,7 +421,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 elif isinstance(custom_foreground, QColor):
                     text_color = custom_foreground
                 else:
-                    text_color = get_qcolor("combo_text")
+                    text_color = get_qcolor("text")
             else:
                 if is_selected and is_hovered:
                     text_color = get_qcolor("table_selection_text")
@@ -429,7 +429,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                     text_color = get_qcolor("text_secondary")
                 else:
                     # Normal, hover, or selected-only: use light text
-                    text_color = get_qcolor("combo_text")
+                    text_color = get_qcolor("text")
 
             opt = QStyleOptionViewItem(option)
             self.initStyleOption(opt, index)

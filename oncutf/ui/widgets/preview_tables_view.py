@@ -195,8 +195,8 @@ class PreviewTablesView(QWidget):
         self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.icon_table.setShowGrid(False)
         self.icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        # Set background color to match main application (#232323)
-        bg_color = get_theme_color("button_background_disabled")
+        # Set background color to match main application
+        bg_color = get_theme_color("button_disabled_bg")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         # Use same row height from theme engine
         from oncutf.utils.theme_engine import ThemeEngine

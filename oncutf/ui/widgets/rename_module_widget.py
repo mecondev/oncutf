@@ -103,7 +103,7 @@ class RenameModuleWidget(QWidget):
         from oncutf.utils.theme_engine import ThemeEngine
 
         theme = ThemeEngine()
-        app_background = theme.get_color("app_background")
+        app_background = theme.get_color("background")  # Main app background
         drag_handle_background = theme.get_color("module_drag_handle")
 
         # --- Main plate container ---

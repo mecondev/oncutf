@@ -116,7 +116,7 @@ class SpecifiedTextModule(BaseRenameModule):
                     icon-size: 16px;
                 }}
                 QMenu::item:selected {{
-                    background-color: {theme.get_color("accent_color")};
+                    background-color: {theme.get_color("accent")};
                     color: {theme.get_color("input_selection_text")};
                 }}
                 QMenu::item:disabled {{
