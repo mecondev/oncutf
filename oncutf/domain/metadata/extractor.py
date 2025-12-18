@@ -282,7 +282,32 @@ class MetadataExtractor:
     def _extract_metadata_field(
         self, file_path: Path, field: str, metadata: dict[str, Any]
     ) -> ExtractionResult:
-        """Extract metadata field from EXIF/metadata dict."""
+        """Extract metadata field from EXIF/metadata dict.
+
+        Uses injected metadata_service to load metadata if not provided.
+        """
+        # If no metadata provided, try to load via service
+        if not metadata and self._metadata_service is not None:
+            loaded = self._metadata_service.load_metadata(file_path)
+            if loaded:
+                metadata = loaded
+
+        # If still no metadata and no service, warn and fallback
+        if not metadata:
+            if self._metadata_service is None:
+                logger.debug(
+                    "No metadata_service available and no metadata provided for %s",
+                    file_path.name,
+                    extra={"dev_only": True},
+                )
+            return ExtractionResult(
+                value=file_path.stem,
+                source="fallback",
+                raw_value=None,
+                field=field,
+                category="metadata_keys",
+            )
+
         # Legacy field mappings
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")
