@@ -690,20 +690,6 @@ THEME_TOKENS = {
         "history_title_text": "#f0ebd8",
         "history_info_text": "#888888",
 
-        # ===== Legacy Compatibility Aliases =====
-        # These aliases ensure backwards compatibility with old color keys
-        "table_hover_background": "#3e5c76",  # Alias for table_hover_bg
-        "button_background_disabled": "#232323",  # Alias for button_disabled_bg
-        "combo_text": "#f0ebd8",  # Alias for button_text (same color)
-        "app_background": "#212121",  # Application background
-        "app_text": "#f0ebd8",  # Application text
-        "highlight_light_blue": "#8a9bb4",  # Light blue highlight
-        "table_selection_background": "#748cab",  # Alias for table_selection_bg
-        "table_text": "#f0ebd8",  # Alias for table text color (same as text)
-        "table_alternate_background": "#232323",  # Alias for table_alternate
-        "accent_color": "#748cab",  # Accent color
-        "border_color": "#3a3b40",  # Alias for border
-
         # ===== Component-Specific: Tooltips =====
         "tooltip_bg": "#2b2b2b",
         "tooltip_text": "#f0ebd8",

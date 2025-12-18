@@ -84,7 +84,7 @@ class TestHierarchicalComboBox:
             combo.tree_view.setStyleSheet(f"""
                 QTreeView {{
                     background-color: {theme_engine.get_color("combo_dropdown_background")};
-                    color: {theme_engine.get_color("combo_text")};
+                    color: {theme_engine.get_color("text")};
                 }}
             """)
         return combo
@@ -184,7 +184,7 @@ class TestHierarchicalComboBox:
             style_sheet = f"""
                 QTreeView {{
                     background-color: {theme_engine.get_color("combo_dropdown_background")};
-                    color: {theme_engine.get_color("combo_text")};
+                    color: {theme_engine.get_color("text")};
                 }}
                 QTreeView::item:hover {{
                     background-color: {theme_engine.get_color("combo_item_background_hover")};

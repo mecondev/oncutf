@@ -59,7 +59,7 @@ class TestMetadataTreeView:
         tree.setStyleSheet(f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("table_text")};
+                color: {theme_engine.get_color("text")};
             }}
         """)
         qtbot.addWidget(tree)
@@ -78,7 +78,7 @@ class TestMetadataTreeView:
         style_sheet = f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("table_text")};
+                color: {theme_engine.get_color("text")};
             }}
             QTreeView::branch:has-children:closed {{
                 image: url(:/icons/chevron-right.svg);
@@ -186,10 +186,10 @@ class TestMetadataTreeView:
         style_sheet = f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("table_text")};
+                color: {theme_engine.get_color("text")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color("table_selection_background")};
+                background-color: {theme_engine.get_color("table_selection_bg")};
                 color: {theme_engine.get_color("table_selection_text")};
             }}
         """
@@ -198,7 +198,7 @@ class TestMetadataTreeView:
 
         # Should have consistent theme colors
         assert theme_engine.get_color("table_background") in style
-        assert theme_engine.get_color("table_text") in style
+        assert theme_engine.get_color("text") in style
 
         # Note: This test checks for actual color values
         assert len(style) > 0, "Style sheet should not be empty"

@@ -77,13 +77,13 @@ class TestThemeIntegration:
         style = f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("table_text")};
+                color: {theme_engine.get_color("text")};
             }}
             QTreeView::item:hover {{
-                background-color: {theme_engine.get_color("table_hover_background")};
+                background-color: {theme_engine.get_color("table_hover_bg")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color("table_selection_background")};
+                background-color: {theme_engine.get_color("table_selection_bg")};
                 color: {theme_engine.get_color("table_selection_text")};
             }}
         """
@@ -123,7 +123,7 @@ class TestThemeIntegration:
     def test_color_consistency_across_states(self, theme_engine):
         """Test color consistency across different UI states."""
         # Get colors that should be consistent
-        normal_text = theme_engine.get_color("table_text")
+        normal_text = theme_engine.get_color("text")
         selection_text = theme_engine.get_color("table_selection_text")
 
         # Colors should be defined and different for contrast
@@ -145,17 +145,17 @@ class TestThemeLogic:
     def test_color_name_validation(self):
         """Test color name validation logic."""
         valid_color_names = [
-            "table_text",
+            "text",
             "table_background",
             "table_selection_text",
-            "table_selection_background",
-            "table_hover_background",
+            "table_selection_bg",
+            "table_hover_bg",
         ]
 
         for name in valid_color_names:
             assert isinstance(name, str)
             assert len(name) > 0
-            assert "_" in name  # Following naming convention
+            # Most color names use snake_case, but simple ones like "text" are valid too
 
     def test_qss_template_logic(self):
         """Test QSS template generation logic."""

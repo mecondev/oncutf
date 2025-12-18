@@ -1360,7 +1360,7 @@ class MetadataWidget(QWidget):
                 /* Custom styling for disabled items in custom model */
                 QComboBox QAbstractItemView::item {{
                     background-color: transparent;
-                    color: {theme.get_color("combo_text")};
+                    color: {theme.get_color("text")};
                     padding: 6px 8px;
                     border: none;
                     min-height: 18px;
@@ -1370,7 +1370,7 @@ class MetadataWidget(QWidget):
 
                 QComboBox QAbstractItemView::item:hover {{
                     background-color: {theme.get_color("combo_item_background_hover")};
-                    color: {theme.get_color("combo_text")};
+                    color: {theme.get_color("text")};
                 }}
 
                 QComboBox QAbstractItemView::item:selected {{
