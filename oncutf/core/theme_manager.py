@@ -224,6 +224,95 @@ class ThemeManager(QObject):
         self._qss_cache = ""
         logger.info("[ThemeManager] Theme tokens reloaded")
 
+    def get_constant(self, key: str) -> int:
+        """
+        Get a layout/sizing constant from theme tokens.
+
+        Provides backwards compatibility with ThemeEngine.get_constant().
+
+        Args:
+            key: Constant name (e.g., 'table_row_height', 'button_height', 'combo_height')
+
+        Returns:
+            Integer value for the constant (default: 0 if not found)
+        """
+        try:
+            value_str = self.get_color(key)
+            return int(value_str)
+        except (KeyError, ValueError):
+            logger.debug(
+                "[ThemeManager] Constant '%s' not found or not numeric",
+                key,
+                extra={"dev_only": True},
+            )
+            return 0
+
+    def get_font_sizes(self) -> dict:
+        """
+        Get font size definitions for the current theme.
+
+        Provides backwards compatibility with ThemeEngine.fonts.
+
+        Returns:
+            Dictionary with font size configurations
+        """
+        return {
+            "base_family": "Inter",
+            "base_size": "9pt",
+            "base_weight": "400",
+            "interface_size": "9pt",
+            "tree_size": "10pt",
+            "medium_weight": "500",
+            "semibold_weight": "600",
+        }
+
+    @property
+    def fonts(self) -> dict:
+        """
+        Get fonts configuration (property for ThemeEngine compatibility).
+
+        Returns:
+            Dictionary with font settings
+        """
+        return self.get_font_sizes()
+
+    @property
+    def constants(self) -> dict:
+        """
+        Get layout/sizing constants (property for ThemeEngine compatibility).
+
+        Returns:
+            Dictionary with constant values
+        """
+        return {
+            "table_row_height": self.get_constant("table_row_height"),
+            "button_height": self.get_constant("button_height"),
+            "combo_height": self.get_constant("combo_height"),
+        }
+
+    def apply_complete_theme(self, app, main_window=None) -> None:
+        """
+        Apply complete theming to the entire application.
+
+        Provides backwards compatibility with ThemeEngine.apply_complete_theme().
+
+        Args:
+            app: QApplication instance
+            main_window: Optional QMainWindow instance (for additional styling)
+        """
+        # Clear any existing stylesheets
+        app.setStyleSheet("")
+        if main_window:
+            main_window.setStyleSheet("")
+
+        # Apply the theme using get_qss
+        qss = self.get_qss()
+        if qss:
+            app.setStyleSheet(qss)
+            logger.info("[ThemeManager] Applied complete theme '%s' to application", self._current_theme)
+        else:
+            logger.warning("[ThemeManager] No QSS available for complete theme")
+
 
 def get_theme_manager() -> ThemeManager:
     """
