@@ -699,6 +699,8 @@ THEME_TOKENS = {
         "app_text": "#f0ebd8",  # Application text
         "highlight_light_blue": "#8a9bb4",  # Light blue highlight
         "table_selection_background": "#748cab",  # Alias for table_selection_bg
+        "table_text": "#f0ebd8",  # Alias for table text color (same as text)
+        "table_alternate_background": "#232323",  # Alias for table_alternate
         "accent_color": "#748cab",  # Accent color
         "border_color": "#3a3b40",  # Alias for border
 
