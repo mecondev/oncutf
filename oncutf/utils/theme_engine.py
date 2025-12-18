@@ -49,16 +49,110 @@ class ThemeEngine:
             except ValueError:
                 logger.warning("[Theme] Invalid theme '%s', using dark", theme_name)
 
-        # Provide backwards-compatible properties
-        self.colors = self._manager.colors
-        self.fonts = self._manager.get_font_sizes()
-        self.constants = self._manager.constants
+        # IMPORTANT: Keep hardcoded colors for backwards compatibility
+        # These are the original ThemeEngine color keys that existing code expects
+        self.colors = {
+            # Base application colors
+            "app_background": "#212121",
+            "app_text": "#f0ebd8",
+            # Input field colors
+            "input_background": "#181818",
+            "input_text": "#f0ebd8",
+            "input_border": "#3a3b40",
+            "input_border_hover": "#555555",
+            "input_border_focus": "#748cab",
+            "input_background_hover": "#1f1f1f",
+            "input_background_focus": "#181818",
+            "input_selection_bg": "#748cab",
+            "input_selection_text": "#0d1321",
+            # Button colors
+            "button_background": "#2a2a2a",
+            "button_text": "#f0ebd8",
+            "button_background_hover": "#3e5c76",
+            "button_background_pressed": "#748cab",
+            "button_text_pressed": "#0d1321",
+            "button_background_disabled": "#232323",
+            "button_text_disabled": "#888888",
+            "button_border": "#3a3b40",
+            # ComboBox colors
+            "combo_background": "#2a2a2a",
+            "combo_text": "#f0ebd8",
+            "combo_background_hover": "#3e5c76",
+            "combo_background_pressed": "#748cab",
+            "combo_text_pressed": "#0d1321",
+            "combo_dropdown_background": "#181818",
+            "combo_item_background_hover": "#3e5c76",
+            "combo_item_background_selected": "#748cab",
+            "combo_border": "#3a3b40",
+            # Table/Tree view colors
+            "table_background": "#181818",
+            "table_text": "#f0ebd8",
+            "table_alternate_background": "#232323",
+            "table_selection_background": "#748cab",
+            "table_selection_text": "#0d1321",
+            "table_header_background": "#181818",
+            "table_hover_background": "#3e5c76",
+            # Scroll area colors
+            "scroll_area_background": "#181818",
+            "scroll_track_background": "#2c2c2c",
+            "scroll_handle_background": "#555555",
+            "scroll_handle_hover": "#3e5c76",
+            "scroll_handle_pressed": "#748cab",
+            # Module/Card colors
+            "module_background": "#181818",
+            "module_border": "#3a3b40",
+            "module_drag_handle": "#2a2a2a",
+            # Dialog colors
+            "dialog_background": "#2a2a2a",
+            "dialog_text": "#f0ebd8",
+            # Tooltip colors
+            "tooltip_background": "#2b2b2b",
+            "tooltip_text": "#f0ebd8",
+            "tooltip_border": "#555555",
+            "tooltip_error_background": "#3d1e1e",
+            "tooltip_error_text": "#ffaaaa",
+            "tooltip_error_border": "#cc4444",
+            "tooltip_warning_background": "#3d3d1e",
+            "tooltip_warning_text": "#ffffaa",
+            "tooltip_warning_border": "#cccc44",
+            "tooltip_info_background": "#1e2d3d",
+            "tooltip_info_text": "#aaccff",
+            "tooltip_info_border": "#4488cc",
+            "tooltip_success_background": "#1e3d1e",
+            "tooltip_success_text": "#aaffaa",
+            "tooltip_success_border": "#44cc44",
+            # Special colors
+            "highlight_blue": "#4a6fa5",
+            "highlight_light_blue": "#8a9bb4",
+            "accent_color": "#748cab",
+            "separator_background": "#444444",
+            "separator_light": "#555555",
+            "border_color": "#3a3b40",
+            "disabled_background": "#181818",
+            "disabled_text": "#666666",
+        }
+
+        # Font definitions (using Inter fonts for all platforms)
+        self.fonts = {
+            "base_family": "Inter",
+            "base_size": "9pt",
+            "base_weight": "400",
+            "interface_size": "9pt",
+            "tree_size": "10pt",
+            "medium_weight": "500",
+            "semibold_weight": "600",
+        }
+
+        # Layout & Sizing constants
+        self.constants = {
+            "table_row_height": 22,
+            "button_height": 24,
+            "combo_height": 24,
+        }
 
     def get_color(self, color_key: str) -> str:
         """
         Get a color from the current theme.
-
-        Delegates to ThemeManager.get_color().
 
         Args:
             color_key: Color token name
@@ -66,7 +160,11 @@ class ThemeEngine:
         Returns:
             Hex color string
         """
-        # Map old ThemeEngine color names to new tokens if needed
+        # First try the local colors dict (backwards compatible keys)
+        if color_key in self.colors:
+            return self.colors[color_key]
+
+        # Then try ThemeManager with mapping
         color_mapping = {
             "app_background": "background",
             "app_text": "text",
@@ -154,15 +252,13 @@ class ThemeEngine:
         """
         Get a layout/sizing constant.
 
-        Delegates to ThemeManager.get_constant().
-
         Args:
             key: Constant name
 
         Returns:
             Integer value
         """
-        return self._manager.get_constant(key)
+        return self.constants.get(key, 0)
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
         """
