@@ -1049,8 +1049,14 @@ class MainWindow(QMainWindow):
         import contextlib
 
         try:
-            # Close shutdown dialog
+            # Hide shutdown dialog first (safer than close during paint)
             if hasattr(self, "shutdown_dialog") and self.shutdown_dialog:
+                with contextlib.suppress(RuntimeError, AttributeError):
+                    self.shutdown_dialog.hide()
+                # Process events to ensure hide is applied
+                with contextlib.suppress(RuntimeError):
+                    QApplication.processEvents()
+                # Now safe to close and delete
                 with contextlib.suppress(RuntimeError, AttributeError):
                     self.shutdown_dialog.close()
                     self.shutdown_dialog.deleteLater()
