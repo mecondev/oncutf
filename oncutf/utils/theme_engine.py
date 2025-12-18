@@ -5,7 +5,10 @@ Author: Michael Economou
 Date: 2025-06-20
 
 Simplified theme engine for OnCutF application.
-Applies all styling globally to handle dynamically created widgets.
+Delegates to ThemeManager for centralized theme management.
+
+DEPRECATED: This module is a facade for backwards compatibility.
+Use ThemeManager (from oncutf.core.theme_manager) directly for new code.
 """
 
 import logging
@@ -15,123 +18,162 @@ from PyQt5.QtGui import QColor, QPalette
 
 import oncutf.config
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
+from oncutf.core.theme_manager import get_theme_manager
 
 logger = logging.getLogger(__name__)
 
 
 class ThemeEngine:
-    """Simplified theme engine that applies all styling globally."""
+    """
+    Simplified theme engine that applies all styling globally.
+
+    DEPRECATED: This is a facade for backwards compatibility.
+    Delegates to ThemeManager for actual theme management.
+    """
 
     def __init__(self, theme_name: str = "dark"):
+        """
+        Initialize ThemeEngine (facade).
+
+        Args:
+            theme_name: Theme name to use (passed to ThemeManager)
+        """
         self.theme_name = theme_name or oncutf.config.THEME_NAME
         self.is_windows = platform.system() == "Windows"
 
-        # Color definitions
-        self.colors = {
-            # Base application colors
-            "app_background": "#212121",
-            "app_text": "#f0ebd8",
-            # Input field colors
-            "input_background": "#181818",
-            "input_text": "#f0ebd8",
-            "input_border": "#3a3b40",
-            "input_border_hover": "#555555",
-            "input_border_focus": "#748cab",
-            "input_background_hover": "#1f1f1f",
-            "input_background_focus": "#181818",
-            "input_selection_bg": "#748cab",
-            "input_selection_text": "#0d1321",
-            # Button colors
-            "button_background": "#2a2a2a",
-            "button_text": "#f0ebd8",
-            "button_background_hover": "#3e5c76",
-            "button_background_pressed": "#748cab",
-            "button_text_pressed": "#0d1321",
-            "button_background_disabled": "#232323",
-            "button_text_disabled": "#888888",
-            "button_border": "#3a3b40",
-            # ComboBox colors
-            "combo_background": "#2a2a2a",
-            "combo_text": "#f0ebd8",
-            "combo_background_hover": "#3e5c76",
-            "combo_background_pressed": "#748cab",
-            "combo_text_pressed": "#0d1321",
-            "combo_dropdown_background": "#181818",
-            "combo_item_background_hover": "#3e5c76",
-            "combo_item_background_selected": "#748cab",
-            "combo_border": "#3a3b40",
-            # Table/Tree view colors
-            "table_background": "#181818",
-            "table_text": "#f0ebd8",
-            "table_alternate_background": "#232323",
-            "table_selection_background": "#748cab",
-            "table_selection_text": "#0d1321",
-            "table_header_background": "#181818",
-            "table_hover_background": "#3e5c76",
-            # Scroll area colors
-            "scroll_area_background": "#181818",
-            "scroll_track_background": "#2c2c2c",
-            "scroll_handle_background": "#555555",
-            "scroll_handle_hover": "#3e5c76",
-            "scroll_handle_pressed": "#748cab",
-            # Module/Card colors
-            "module_background": "#181818",
-            "module_border": "#3a3b40",
-            "module_drag_handle": "#2a2a2a",
-            # Dialog colors
-            "dialog_background": "#2a2a2a",
-            "dialog_text": "#f0ebd8",
-            # Tooltip colors
-            "tooltip_background": "#2b2b2b",
-            "tooltip_text": "#f0ebd8",
-            "tooltip_border": "#555555",
-            "tooltip_error_background": "#3d1e1e",
-            "tooltip_error_text": "#ffaaaa",
-            "tooltip_error_border": "#cc4444",
-            "tooltip_warning_background": "#3d3d1e",
-            "tooltip_warning_text": "#ffffaa",
-            "tooltip_warning_border": "#cccc44",
-            "tooltip_info_background": "#1e2d3d",
-            "tooltip_info_text": "#aaccff",
-            "tooltip_info_border": "#4488cc",
-            "tooltip_success_background": "#1e3d1e",
-            "tooltip_success_text": "#aaffaa",
-            "tooltip_success_border": "#44cc44",
-            # Special colors
-            "highlight_blue": "#4a6fa5",
-            "highlight_light_blue": "#8a9bb4",
-            "accent_color": "#748cab",
-            "separator_background": "#444444",
-            "separator_light": "#555555",
-            "border_color": "#3a3b40",
-            "disabled_background": "#181818",
-            "disabled_text": "#666666",
+        # Delegate to ThemeManager singleton
+        self._manager = get_theme_manager()
+        if theme_name and theme_name != "dark":
+            try:
+                self._manager.set_theme(theme_name)
+            except ValueError:
+                logger.warning("[Theme] Invalid theme '%s', using dark", theme_name)
+
+        # Provide backwards-compatible properties
+        self.colors = self._manager.colors
+        self.fonts = self._manager.get_font_sizes()
+        self.constants = self._manager.constants
+
+    def get_color(self, color_key: str) -> str:
+        """
+        Get a color from the current theme.
+
+        Delegates to ThemeManager.get_color().
+
+        Args:
+            color_key: Color token name
+
+        Returns:
+            Hex color string
+        """
+        # Map old ThemeEngine color names to new tokens if needed
+        color_mapping = {
+            "app_background": "background",
+            "app_text": "text",
+            "input_background": "input_bg",
+            "input_text": "input_text",
+            "input_border": "input_border",
+            "input_border_hover": "border_hover",
+            "input_border_focus": "input_focus_border",
+            "input_background_hover": "input_hover_bg",
+            "input_background_focus": "input_focus_bg",
+            "input_selection_bg": "selected",
+            "input_selection_text": "selected_text",
+            "button_background": "button_bg",
+            "button_text": "button_text",
+            "button_background_hover": "button_hover_bg",
+            "button_background_pressed": "button_pressed_bg",
+            "button_text_pressed": "button_pressed_text",
+            "button_background_disabled": "button_disabled_bg",
+            "button_text_disabled": "button_disabled_text",
+            "button_border": "border",
+            "combo_background": "button_bg",
+            "combo_text": "button_text",
+            "combo_background_hover": "button_hover_bg",
+            "combo_background_pressed": "button_pressed_bg",
+            "combo_text_pressed": "button_pressed_text",
+            "combo_dropdown_background": "table_background",
+            "combo_item_background_hover": "table_hover_bg",
+            "combo_item_background_selected": "table_selection_bg",
+            "combo_border": "border",
+            "table_background": "table_background",
+            "table_text": "table_background",
+            "table_alternate_background": "table_alternate",
+            "table_selection_background": "table_selection_bg",
+            "table_selection_text": "table_selection_text",
+            "table_header_background": "table_header_bg",
+            "table_hover_background": "table_hover_bg",
+            "scroll_area_background": "scrollbar_bg",
+            "scroll_track_background": "scrollbar_bg",
+            "scroll_handle_background": "scrollbar_handle",
+            "scroll_handle_hover": "scrollbar_handle_hover",
+            "scroll_handle_pressed": "button_pressed_bg",
+            "module_background": "module_plate_bg",
+            "module_border": "module_plate_border",
+            "module_drag_handle": "module_drag_handle",
+            "dialog_background": "dialog_background",
+            "dialog_text": "text",
+            "tooltip_background": "tooltip_bg",
+            "tooltip_text": "tooltip_text",
+            "tooltip_border": "tooltip_border",
+            "tooltip_error_background": "tooltip_error_bg",
+            "tooltip_error_text": "tooltip_error_text",
+            "tooltip_error_border": "tooltip_error_border",
+            "tooltip_warning_background": "tooltip_warning_bg",
+            "tooltip_warning_text": "tooltip_warning_text",
+            "tooltip_warning_border": "tooltip_warning_border",
+            "tooltip_info_background": "tooltip_info_bg",
+            "tooltip_info_text": "tooltip_info_text",
+            "tooltip_info_border": "tooltip_info_border",
+            "tooltip_success_background": "tooltip_success_bg",
+            "tooltip_success_text": "tooltip_success_text",
+            "tooltip_success_border": "tooltip_success_border",
+            "highlight_blue": "selected",
+            "highlight_light_blue": "selected_hover",
+            "accent_color": "selected",
+            "separator_background": "separator",
+            "separator_light": "border_light",
+            "border_color": "border",
+            "disabled_background": "background",
+            "disabled_text": "text_disabled",
         }
 
-        # Font definitions (using Inter fonts for all platforms)
-        self.fonts = {
-            "base_family": "Inter",
-            "base_size": "9pt",
-            "base_weight": "400",
-            "interface_size": "9pt",
-            "tree_size": "10pt",
-            "medium_weight": "500",
-            "semibold_weight": "600",
-        }
+        # Use mapping if available, otherwise use the key directly
+        token = color_mapping.get(color_key, color_key)
 
-        # Layout & Sizing constants
-        self.constants = {
-            "table_row_height": 22,  # Fixed row height for all tables (file table, preview, dialogs)
-            "button_height": 24,      # Standard button height for dialogs
-            "combo_height": 24,       # Standard combo box height (metadata widgets, transforms)
-        }
+        try:
+            return self._manager.get_color(token)
+        except KeyError:
+            # Fallback: return the old colors dict if available
+            if hasattr(self, "_old_colors") and color_key in self._old_colors:
+                return self._old_colors[color_key]
+            logger.warning("[Theme] Color '%s' (mapped to '%s') not found", color_key, token)
+            return "#000000"  # Default fallback
 
     def get_constant(self, key: str) -> int:
-        """Get a layout/sizing constant."""
-        return self.constants.get(key, 0)
+        """
+        Get a layout/sizing constant.
+
+        Delegates to ThemeManager.get_constant().
+
+        Args:
+            key: Constant name
+
+        Returns:
+            Integer value
+        """
+        return self._manager.get_constant(key)
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
-        """Apply complete theming to the entire application."""
+        """
+        Apply complete theming to the entire application.
+
+        Delegates to ThemeManager and adds backwards-compatible styling.
+
+        Args:
+            app: QApplication instance
+            main_window: QMainWindow instance
+        """
         # Clear any existing stylesheets
         app.setStyleSheet("")
         main_window.setStyleSheet("")
@@ -162,8 +204,8 @@ class ThemeEngine:
 
         # Set palette colors for alternating row backgrounds
         palette = app.palette()
-        palette.setColor(QPalette.ColorRole.Base, QColor(self.colors["table_background"]))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.colors["table_alternate_background"]))
+        palette.setColor(QPalette.ColorRole.Base, QColor(self.get_color("table_background")))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate_background")))
         app.setPalette(palette)
 
         # Apply Windows-specific ComboBox fixes if on Windows
@@ -1462,10 +1504,6 @@ class ThemeEngine:
             }}
 
         """
-
-    def get_color(self, color_key: str) -> str:
-        """Get a color value by key."""
-        return self.colors.get(color_key, "#ffffff")
 
     def get_context_menu_stylesheet(self) -> str:
         """Get the stylesheet for context menus.
