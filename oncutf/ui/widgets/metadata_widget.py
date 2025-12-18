@@ -12,10 +12,10 @@ from typing import Any
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
-from oncutf.core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
-from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
@@ -70,12 +70,8 @@ class MetadataWidget(QWidget):
         category_label.setFixedWidth(70)
         category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
-        self.category_combo = QComboBox()
+        self.category_combo = StyledComboBox()
         self.category_combo.setFixedWidth(150)
-        # Use theme constant for combo height
-        from oncutf.utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        self.category_combo.setFixedHeight(theme.get_constant("combo_height"))
 
         category_row.addWidget(category_label)
         category_row.addWidget(self.category_combo)
@@ -95,20 +91,14 @@ class MetadataWidget(QWidget):
         # Use HierarchicalComboBox for better organization
         self.options_combo = HierarchicalComboBox()
         self.options_combo.setFixedWidth(200)  # Increased width for metadata field names
-        self.options_combo.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
+        # HierarchicalComboBox handles its own height
 
         options_row.addWidget(self.options_label)
         options_row.addWidget(self.options_combo)
         options_row.addStretch()
         layout.addLayout(options_row)
 
-        # Apply custom delegates for better dropdown styling
-        theme = ThemeEngine()
-        self.category_combo.setItemDelegate(ComboBoxItemDelegate(self.category_combo, theme))
-        # Don't override HierarchicalComboBox's TreeViewItemDelegate
-        # self.options_combo.setItemDelegate(ComboBoxItemDelegate(self.options_combo, theme))
-
-        # Connections
+        # Connections (delegate setup handled by StyledComboBox)
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
         # Use new confirmed-selection signal to avoid preview races
         self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)  # keep legacy
