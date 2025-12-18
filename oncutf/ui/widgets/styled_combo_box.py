@@ -20,7 +20,7 @@ logger = get_cached_logger(__name__)
 class StyledComboBox(QComboBox):
     """
     ComboBox with automatic theme integration.
-    
+
     Features:
     - Automatic ComboBoxItemDelegate setup
     - Theme-aware height configuration
@@ -30,7 +30,7 @@ class StyledComboBox(QComboBox):
     def __init__(self, parent: QWidget | None = None):
         """
         Initialize the styled combo box.
-        
+
         Args:
             parent: Parent widget
         """

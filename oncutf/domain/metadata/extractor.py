@@ -351,8 +351,8 @@ class MetadataExtractor:
         Returns:
             List of field names
         """
-        if category == "file_dates":
-            return [
+        category_fields = {
+            "file_dates": [
                 "last_modified_yymmdd",
                 "last_modified_iso",
                 "last_modified_eu",
@@ -362,15 +362,11 @@ class MetadataExtractor:
                 "last_modified_iso_time",
                 "last_modified_eu_time",
                 "last_modified_compact",
-            ]
-        elif category == "hash":
-            return ["hash_crc32"]
-        elif category == "metadata_keys":
-            # This would need metadata to determine available keys
-            # Return common ones for now
-            return ["creation_date", "date", "DateTimeOriginal", "CreateDate"]
-        else:
-            return []
+            ],
+            "hash": ["hash_crc32"],
+            "metadata_keys": ["creation_date", "date", "DateTimeOriginal", "CreateDate"],
+        }
+        return category_fields.get(category, [])
 
     def clear_cache(self) -> None:
         """Clear the extraction cache."""

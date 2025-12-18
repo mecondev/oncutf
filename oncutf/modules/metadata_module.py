@@ -48,7 +48,7 @@ class MetadataModule:
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict | None = None
+        data: dict, file_item: FileItem, _index: int = 0, metadata_cache: dict | None = None
     ) -> str:
         """
         Apply metadata extraction using MetadataExtractor domain logic.
@@ -59,7 +59,7 @@ class MetadataModule:
         Args:
             data: Configuration dict with 'field' and 'category'
             file_item: File to extract metadata from
-            index: File index (unused in metadata extraction)
+            _index: File index (unused in metadata extraction)
             metadata_cache: Optional metadata cache
 
         Returns:

@@ -158,7 +158,7 @@ class MetadataWidget(QWidget):
     def _emit_settings_changed(self) -> None:
         """
         Emit settings_changed signal on ANY user interaction.
-        
+
         This provides instant preview updates while maintaining
         backwards compatibility with the 'updated' signal.
         """

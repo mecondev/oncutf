@@ -53,7 +53,7 @@ class TestMetadataTreeView:
         return ThemeEngine()
 
     @pytest.fixture
-    def tree_view(self, qapp, theme_engine, qtbot):
+    def tree_view(self, qapp, theme_engine, qtbot):  # noqa: ARG002
         """Create a MetadataTreeView for testing."""
         tree = MetadataTreeView()
         tree.setStyleSheet(f"""
@@ -99,7 +99,7 @@ class TestMetadataTreeView:
         assert has_branch_styling, "Tree should have branch/chevron styling"
 
     @pytest.mark.skip(reason="Qt model operations still segfault; needs deeper fix")
-    def test_expand_collapse_functionality(self, tree_view, qapp):
+    def test_expand_collapse_functionality(self, tree_view, qapp):  # noqa: ARG002
         """Test tree expansion and collapse behavior."""
         from PyQt5.QtGui import QStandardItem, QStandardItemModel
 
@@ -124,7 +124,7 @@ class TestMetadataTreeView:
         assert parent_index.isValid()
 
     @pytest.mark.skip(reason="Qt model operations still segfault; needs deeper fix")
-    def test_selection_behavior(self, tree_view, qapp):
+    def test_selection_behavior(self, tree_view, qapp):  # noqa: ARG002
         """Test selection state management."""
         from PyQt5.QtGui import QStandardItem, QStandardItemModel
 
@@ -147,7 +147,7 @@ class TestMetadataTreeView:
             assert tree_view.selectionModel().isSelected(index1) is True
 
     @pytest.mark.skip(reason="Qt model operations still segfault; needs deeper fix")
-    def test_metadata_population(self, tree_view, qapp):
+    def test_metadata_population(self, tree_view, qapp):  # noqa: ARG002
         """Test metadata tree basic functionality without actual data."""
         from PyQt5.QtGui import QStandardItem, QStandardItemModel
 
