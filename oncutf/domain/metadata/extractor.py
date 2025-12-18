@@ -6,6 +6,10 @@ Date: December 17, 2025
 
 Pure Python metadata extraction logic with no UI dependencies.
 Extracts metadata from files (filesystem dates, EXIF, hashes) for use in rename operations.
+
+Supports dependency injection via service protocols for testability:
+- MetadataServiceProtocol for EXIF/metadata loading
+- HashServiceProtocol for hash computation
 """
 
 from __future__ import annotations
@@ -16,10 +20,13 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # Initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.services.interfaces import HashServiceProtocol, MetadataServiceProtocol
 
 logger = get_cached_logger(__name__)
 
@@ -39,13 +46,68 @@ class MetadataExtractor:
     """
     Pure Python metadata extraction logic.
     No Qt/PyQt5 dependencies - fully testable in isolation.
+
+    Supports dependency injection for services:
+    - metadata_service: For loading EXIF/file metadata
+    - hash_service: For computing file hashes
+
+    If services are not provided, they are retrieved from ServiceRegistry.
+    This ensures loose coupling while maintaining ease of use.
     """
 
-    def __init__(self) -> None:
-        """Initialize the metadata extractor."""
+    def __init__(
+        self,
+        metadata_service: MetadataServiceProtocol | None = None,
+        hash_service: HashServiceProtocol | None = None,
+    ) -> None:
+        """Initialize the metadata extractor.
+
+        Args:
+            metadata_service: Optional service for metadata loading.
+                              If None, retrieved from ServiceRegistry.
+            hash_service: Optional service for hash computation.
+                          If None, retrieved from ServiceRegistry.
+        """
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
         self._cache_validity_duration = 0.1  # 100ms cache validity
+        self._metadata_service: MetadataServiceProtocol | None
+        self._hash_service: HashServiceProtocol | None
+
+        # Use provided services or get from registry
+        if metadata_service is not None:
+            self._metadata_service = metadata_service
+        else:
+            self._metadata_service = self._get_metadata_service_from_registry()
+
+        if hash_service is not None:
+            self._hash_service = hash_service
+        else:
+            self._hash_service = self._get_hash_service_from_registry()
+
+    def _get_metadata_service_from_registry(self) -> MetadataServiceProtocol | None:
+        """Get metadata service from the ServiceRegistry."""
+        try:
+            from oncutf.services.interfaces import MetadataServiceProtocol as MetaProto
+            from oncutf.services.registry import get_service_registry
+
+            registry = get_service_registry()
+            return registry.get(MetaProto)  # type: ignore[type-abstract]
+        except ImportError:
+            logger.debug("ServiceRegistry not available, using fallback")
+            return None
+
+    def _get_hash_service_from_registry(self) -> HashServiceProtocol | None:
+        """Get hash service from the ServiceRegistry."""
+        try:
+            from oncutf.services.interfaces import HashServiceProtocol as HashProto
+            from oncutf.services.registry import get_service_registry
+
+            registry = get_service_registry()
+            return registry.get(HashProto)  # type: ignore[type-abstract]
+        except ImportError:
+            logger.debug("ServiceRegistry not available, using fallback")
+            return None
 
     def extract(
         self,
@@ -165,19 +227,28 @@ class MetadataExtractor:
             )
 
     def _extract_hash(self, file_path: Path, field: str) -> ExtractionResult:
-        """Extract file hash."""
+        """Extract file hash using the injected hash_service.
+
+        Requires hash_service to be available (via injection or ServiceRegistry).
+        """
         if not field.startswith("hash_"):
             return ExtractionResult(
                 value="invalid", source="error", field=field, category="hash"
             )
 
+        if self._hash_service is None:
+            logger.warning("No hash_service available for hash extraction")
+            return ExtractionResult(
+                value=file_path.stem,
+                source="fallback",
+                raw_value=None,
+                field=field,
+                category="hash",
+            )
+
         try:
-            hash_type = field.replace("hash_", "").upper()
-
-            # Use the hash helper
-            from oncutf.utils.file_status_helpers import get_hash_for_file
-
-            hash_value = get_hash_for_file(str(file_path), hash_type)
+            hash_type = field.replace("hash_", "").lower()
+            hash_value = self._hash_service.compute_hash(file_path, hash_type)
 
             if hash_value:
                 return ExtractionResult(
@@ -188,10 +259,9 @@ class MetadataExtractor:
                     category="hash",
                 )
 
-            # Fallback to filename if hash not available
-            base_name = file_path.stem
+            # Fallback to filename if hash computation failed
             return ExtractionResult(
-                value=base_name,
+                value=file_path.stem,
                 source="fallback",
                 raw_value=None,
                 field=field,
@@ -200,9 +270,8 @@ class MetadataExtractor:
 
         except Exception as e:
             logger.warning("Error getting hash for %s: %s", file_path.name, e)
-            base_name = file_path.stem
             return ExtractionResult(
-                value=base_name,
+                value=file_path.stem,
                 source="fallback",
                 raw_value=None,
                 field=field,
@@ -212,7 +281,32 @@ class MetadataExtractor:
     def _extract_metadata_field(
         self, file_path: Path, field: str, metadata: dict[str, Any]
     ) -> ExtractionResult:
-        """Extract metadata field from EXIF/metadata dict."""
+        """Extract metadata field from EXIF/metadata dict.
+
+        Uses injected metadata_service to load metadata if not provided.
+        """
+        # If no metadata provided, try to load via service
+        if not metadata and self._metadata_service is not None:
+            loaded = self._metadata_service.load_metadata(file_path)
+            if loaded:
+                metadata = loaded
+
+        # If still no metadata and no service, warn and fallback
+        if not metadata:
+            if self._metadata_service is None:
+                logger.debug(
+                    "No metadata_service available and no metadata provided for %s",
+                    file_path.name,
+                    extra={"dev_only": True},
+                )
+            return ExtractionResult(
+                value=file_path.stem,
+                source="fallback",
+                raw_value=None,
+                field=field,
+                category="metadata_keys",
+            )
+
         # Legacy field mappings
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")

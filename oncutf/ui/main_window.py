@@ -880,73 +880,29 @@ class MainWindow(QMainWindow):
 
     def _start_coordinated_shutdown(self):
         """Start the coordinated shutdown process using ShutdownCoordinator."""
+        from oncutf.utils.cursor_helper import wait_cursor
+
         try:
-            # Set wait cursor for the entire shutdown process
-            QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
+            # Use wait cursor for the entire shutdown process (simpler than dialog)
+            with wait_cursor(restore_after=False):
+                logger.info("[CloseEvent] Starting coordinated shutdown with wait cursor")
 
-            # Create custom shutdown dialog
-            from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
+                # Perform additional cleanup before coordinator shutdown
+                self._pre_coordinator_cleanup()
 
-            class ShutdownDialog(MetadataWaitingDialog):
-                """Custom dialog for shutdown that ignores ESC key."""
+                # Execute coordinated shutdown (no dialog progress needed)
+                success = self.shutdown_coordinator.execute_shutdown(
+                    progress_callback=None, emergency=False
+                )
 
-                def keyPressEvent(self, event):
-                    if event.key() == Qt.Key_Escape:  # type: ignore
-                        logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
-                        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
-                        return
-                    super().keyPressEvent(event)
+                # Perform final cleanup after coordinator
+                self._post_coordinator_cleanup()
 
-            self.shutdown_dialog = ShutdownDialog(self, is_extended=False)
-            self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
-            self.shutdown_dialog.set_status("Preparing to close...")
+                # Log summary
+                summary = self.shutdown_coordinator.get_summary()
+                logger.info("[CloseEvent] Shutdown summary: %s", summary)
 
-            # Prevent dialog from being closed by user
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint  # type: ignore
-            )
-
-            # Show dialog
-            self.shutdown_dialog.show()
-
-            # Position dialog on the same screen as the main window
-            from oncutf.utils.multiscreen_helper import center_dialog_on_parent_screen
-
-            center_dialog_on_parent_screen(self.shutdown_dialog, self)
-
-            # Single processEvents to show dialog, avoid multiple calls during shutdown
-            QApplication.processEvents()
-
-            logger.info("[CloseEvent] Shutdown dialog created, starting coordinated shutdown")
-
-            # Define progress callback for shutdown coordinator
-            def update_progress(message: str, progress: float):
-                """Update shutdown dialog with progress."""
-                if hasattr(self, "shutdown_dialog") and self.shutdown_dialog:
-                    self.shutdown_dialog.set_status(message)
-                    # Convert 0-1 progress to percentage
-                    percent = int(progress * 100)
-                    if hasattr(self.shutdown_dialog, "set_progress_percentage"):
-                        self.shutdown_dialog.set_progress_percentage(percent)
-                # Avoid excessive processEvents during shutdown
-                # QApplication.processEvents()
-
-            # Perform additional cleanup before coordinator shutdown
-            self._pre_coordinator_cleanup()
-
-            # Execute coordinated shutdown
-            success = self.shutdown_coordinator.execute_shutdown(
-                progress_callback=update_progress, emergency=False
-            )
-
-            # Perform final cleanup after coordinator
-            self._post_coordinator_cleanup()
-
-            # Log summary
-            summary = self.shutdown_coordinator.get_summary()
-            logger.info("[CloseEvent] Shutdown summary: %s", summary)
-
-            # Complete shutdown
+            # Complete shutdown (cursor restored by context manager exit)
             self._complete_shutdown(success)
 
         except Exception as e:
@@ -1049,16 +1005,10 @@ class MainWindow(QMainWindow):
         import contextlib
 
         try:
-            # Close shutdown dialog
-            if hasattr(self, "shutdown_dialog") and self.shutdown_dialog:
-                with contextlib.suppress(RuntimeError, AttributeError):
-                    self.shutdown_dialog.close()
-                    self.shutdown_dialog.deleteLater()
-                self.shutdown_dialog = None
-
-            # Restore cursor
+            # Restore any remaining override cursors
             with contextlib.suppress(RuntimeError):
-                QApplication.restoreOverrideCursor()
+                while QApplication.overrideCursor():
+                    QApplication.restoreOverrideCursor()
 
             # Process any pending deleteLater events
             with contextlib.suppress(RuntimeError):
