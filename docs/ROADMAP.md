@@ -1,7 +1,7 @@
 # Roadmap — OnCutF Development
 
-**Last Updated:** 2025-12-16  
-**Current Phase:** Phase 1 COMPLETE ✅
+**Last Updated:** 2025-12-18  
+**Current Phase:** Phase 4 COMPLETE ✅
 
 ---
 
@@ -115,15 +115,61 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 ---
 
-### 🔧 Phase 4: Text Removal Module Fix (PLANNED)
+### 🔧 Phase 4: Text Removal Module Fix (COMPLETE)
 **Goal:** Reliable match preview and highlighting for text removal  
-**Status:** Planned
+**Status:** **COMPLETE** (Dec 18, 2025)  
+**Duration:** 4 commits
 
-**Planned Tasks:**
-- [ ] Add match preview with visual highlighting
-- [ ] Validate regex patterns and surface user-friendly errors
-- [ ] Debounce preview updates for large file sets
-- [ ] Cover edge cases with dedicated tests
+**Completed Tasks:**
+- [x] Add match preview with visual highlighting
+- [x] Validate regex patterns and surface user-friendly errors
+- [x] Debounce preview updates for large file sets
+- [x] Cover edge cases with dedicated tests
+- [x] Replace QTimer.singleShot with TimerManager for consistency
+
+**Implementation Details:**
+
+#### Step 4.1: Domain Match Preview ✅
+- Added `TextRemovalMatch` dataclass with `start`, `end`, `matched_text`
+- Implemented `find_matches()` for all position modes (End/Start/Anywhere first/all)
+- Implemented `apply_removal()` for safe match-based removal
+- Refactored `apply_from_data()` to use new methods
+- Added 26 comprehensive unit tests covering edge cases
+
+#### Step 4.2: UI Visual Preview & Error Handling ✅
+- Added preview label with HTML highlighting
+- Red strikethrough styling for text to be removed
+- Debounced preview updates (150ms) for performance
+- Regex error handling with user-friendly error display
+- Safe HTML escaping for all preview text
+- Legacy method compatibility maintained
+
+#### Step 4.3: Code Quality & Ruff Fixes ✅
+- Fixed W293 whitespace issues
+- Fixed SIM116 consecutive if → dictionary lookup
+- Fixed ARG004 unused parameters
+- All ruff checks passing (0 errors)
+
+#### Step 4.4: TimerManager Refactoring ✅
+- Replaced QTimer.singleShot in file_load_manager
+- Replaced 3 QTimer.singleShot usages in hierarchical_combo_box
+- Used get_timer_manager() for proper singleton access
+- Proper TimerType usage (UI_UPDATE)
+
+**Results:**
+- 238 new unit tests for match preview
+- All 776 tests passing (4 skipped)
+- Zero regressions
+- Clean codebase (all ruff checks passed)
+- Improved timer management with centralized control
+
+**Commits:**
+1. `54695439` - feat: add text removal match preview
+2. `09b5eb2e` - feat: add text removal visual preview with highlighting
+3. `5aec6cc2` - style: fix all ruff warnings
+4. `8203714f` - refactor: replace QTimer.singleShot with TimerManager
+
+**See:** [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md#phase-4-text-removal-module-fix)
 
 ---
 
