@@ -1,7 +1,7 @@
 # Roadmap — OnCutF Development
 
-**Last Updated:** 2025-12-18  
-**Current Phase:** Phase 4 COMPLETE ✅
+**Last Updated:** 2025-12-19  
+**Current Phase:** Phase 6 COMPLETE ✅
 
 ---
 
@@ -100,22 +100,24 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 **Original Source:** ARCH_REFACTOR_PLAN.md "Phase 1: State Management Fix"
 
+**Note:** This is the next priority phase for implementation.
+
 ---
 
-### 📋 Phase 3: UI/UX Improvements (PLANNED)
-**Goal:** Enhance user interface and experience  
+### 📋 Phase 7: Final Polish (PLANNED)
+**Goal:** Performance optimization, documentation, and final cleanup  
 **Status:** Planned
 
 **Planned Tasks:**
-- [ ] Improve splash screen feedback
-- [ ] Enhance progress indicators
-- [ ] Refine metadata display
-- [ ] Optimize column management UI
-- [ ] Improve error messaging
+- [ ] Performance profiling and optimization
+- [ ] Memory usage optimization
+- [ ] Complete documentation review and updates
+- [ ] User guide improvements
+- [ ] Final code cleanup and consistency checks
 
 ---
 
-### 🔧 Phase 4: Text Removal Module Fix (COMPLETE)
+## Historical Achievements
 **Goal:** Reliable match preview and highlighting for text removal  
 **Status:** **COMPLETE** (Dec 18, 2025)  
 **Duration:** 4 commits
@@ -233,19 +235,55 @@ OnCutF is undergoing a structured refactoring process to improve code organizati
 
 ---
 
-### Phase 6: Final Polish (PLANNED)
-**Goal:** Performance optimization and final cleanup  
-**Status:** Planned
+### 🧬 Phase 6: Domain Layer Purification (COMPLETE)
+**Goal:** Create services layer with protocol interfaces for dependency injection  
+**Status:** COMPLETE (December 18-19, 2025)
 
-**Planned Tasks:**
-- [ ] Performance profiling
-- [ ] Memory optimization
-- [ ] Documentation updates
-- [ ] User guide improvements
+**Completion Summary:**
+
+#### Services Package Creation ✅
+- Created `oncutf/services/` package
+- 5 protocol interfaces (MetadataServiceProtocol, HashServiceProtocol, etc.)
+- 3 concrete implementations (ExifToolService, HashService, FilesystemService)
+- 1 specialized implementation (CachedHashService for rename preview)
+- ServiceRegistry for dependency injection with lazy instantiation
+
+#### Domain Layer Refactoring ✅
+- MetadataExtractor updated for service injection
+- ServiceRegistry integration with fallback support
+- Removed internal implementation dependencies
+- Pure DI pattern: services from registry or explicit injection
+
+#### Additional Improvements ✅
+- Simplified UI shutdown (removed dialog, use wait cursor only)
+- Removed 4 permanently skipped tests (dead code cleanup)
+- Fixed mypy strict type checking (280 files checked)
+- Configured default services at application startup
+
+**Results:**
+- ✅ 6 new service files + registry
+- ✅ 88 new tests (776 → 860, net +84 after cleanup)
+- ✅ ServiceRegistry DI container
+- ✅ CachedHashService prevents expensive hash computation during preview
+- ✅ All 860 tests passing, mypy clean, ruff clean
+- ✅ ~133 LOC reduction (shutdown + dead tests)
+- ✅ 16 commits on phase6-refactoring branch, merged to main
+
+**Commits:**
+1. Create services package with protocol interfaces
+2-5. Add ExifToolService, HashService, FilesystemService, ServiceRegistry
+6-7. Domain layer DI support, public API exports
+8. Documentation (PHASE6_EXECUTION_PLAN, PHASE6_COMPLETE)
+9-10. Shutdown simplification, test cleanup
+11-13. ServiceRegistry integration, hash fallback removal, metadata service usage
+14. Mypy type fixes
+15-17. Startup configuration, CachedHashService for rename preview
+
+**See:** [PHASE6_EXECUTION_PLAN.md](PHASE6_EXECUTION_PLAN.md), [PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)
 
 ---
 
-## Historical Achievements
+### 🔄 Phase 2: State Management Fix (READY)
 
 ### Phase 1: Controllers Architecture (2025-12-16)
 - **FileLoadController:** File loading orchestration (11 tests)
