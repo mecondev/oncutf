@@ -446,3 +446,67 @@ class TestExtractionResult:
         assert result.raw_value is None
         assert result.field == ""
         assert result.category == ""
+
+
+class TestMetadataExtractorDependencyInjection:
+    """Tests for service dependency injection."""
+
+    def test_init_with_services(self):
+        """Test initialization with injected services."""
+        # Create mock services
+        class MockMetadataService:
+            def load_metadata(self, path):  # noqa: ARG002
+                return {"test": "value"}
+
+            def load_metadata_batch(self, paths):  # noqa: ARG002
+                return {}
+
+        class MockHashService:
+            def compute_hash(self, path, algorithm="crc32"):  # noqa: ARG002
+                return "abc12345"
+
+            def compute_hashes_batch(self, paths, algorithm="crc32"):  # noqa: ARG002
+                return {}
+
+        metadata_svc = MockMetadataService()
+        hash_svc = MockHashService()
+
+        extractor = MetadataExtractor(
+            metadata_service=metadata_svc,
+            hash_service=hash_svc,
+        )
+
+        assert extractor._metadata_service is metadata_svc
+        assert extractor._hash_service is hash_svc
+
+    def test_extract_hash_uses_injected_service(self, temp_file):
+        """Test that hash extraction uses injected service."""
+
+        class MockHashService:
+            call_count = 0
+
+            def compute_hash(self, path, algorithm="crc32"):  # noqa: ARG002
+                self.call_count += 1
+                return "injected_hash"
+
+            def compute_hashes_batch(self, paths, algorithm="crc32"):  # noqa: ARG002
+                return {}
+
+        mock_service = MockHashService()
+        extractor = MetadataExtractor(hash_service=mock_service)
+
+        result = extractor.extract(temp_file, "hash_crc32", category="hash")
+
+        assert result.value == "injected_hash"
+        assert mock_service.call_count == 1
+
+    def test_extract_hash_fallback_without_service(self, temp_file):
+        """Test that hash extraction works without injected service."""
+        # Without service, falls back to internal implementation
+        extractor = MetadataExtractor()
+
+        result = extractor.extract(temp_file, "hash_crc32", category="hash")
+
+        # Should still return a hash (from internal implementation)
+        assert result.source in ("hash", "fallback")
+

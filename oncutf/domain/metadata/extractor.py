@@ -6,6 +6,10 @@ Date: December 17, 2025
 
 Pure Python metadata extraction logic with no UI dependencies.
 Extracts metadata from files (filesystem dates, EXIF, hashes) for use in rename operations.
+
+Supports dependency injection via service protocols for testability:
+- MetadataServiceProtocol for EXIF/metadata loading
+- HashServiceProtocol for hash computation
 """
 
 from __future__ import annotations
@@ -16,10 +20,13 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # Initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.services.interfaces import HashServiceProtocol, MetadataServiceProtocol
 
 logger = get_cached_logger(__name__)
 
@@ -39,13 +46,30 @@ class MetadataExtractor:
     """
     Pure Python metadata extraction logic.
     No Qt/PyQt5 dependencies - fully testable in isolation.
+
+    Supports optional dependency injection for services:
+    - metadata_service: For loading EXIF/file metadata
+    - hash_service: For computing file hashes
+
+    If services are not provided, falls back to internal implementations.
     """
 
-    def __init__(self) -> None:
-        """Initialize the metadata extractor."""
+    def __init__(
+        self,
+        metadata_service: MetadataServiceProtocol | None = None,
+        hash_service: HashServiceProtocol | None = None,
+    ) -> None:
+        """Initialize the metadata extractor.
+
+        Args:
+            metadata_service: Optional service for metadata loading.
+            hash_service: Optional service for hash computation.
+        """
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
         self._cache_validity_duration = 0.1  # 100ms cache validity
+        self._metadata_service = metadata_service
+        self._hash_service = hash_service
 
     def extract(
         self,
@@ -165,19 +189,28 @@ class MetadataExtractor:
             )
 
     def _extract_hash(self, file_path: Path, field: str) -> ExtractionResult:
-        """Extract file hash."""
+        """Extract file hash.
+
+        Uses injected hash_service if available, otherwise falls back to
+        internal implementation via get_hash_for_file helper.
+        """
         if not field.startswith("hash_"):
             return ExtractionResult(
                 value="invalid", source="error", field=field, category="hash"
             )
 
         try:
-            hash_type = field.replace("hash_", "").upper()
+            hash_type = field.replace("hash_", "").lower()
+            hash_value: str | None = None
 
-            # Use the hash helper
-            from oncutf.utils.file_status_helpers import get_hash_for_file
+            # Use injected service if available
+            if self._hash_service is not None:
+                hash_value = self._hash_service.compute_hash(file_path, hash_type)
+            else:
+                # Fallback to internal helper
+                from oncutf.utils.file_status_helpers import get_hash_for_file
 
-            hash_value = get_hash_for_file(str(file_path), hash_type)
+                hash_value = get_hash_for_file(str(file_path), hash_type.upper())
 
             if hash_value:
                 return ExtractionResult(
