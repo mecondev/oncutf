@@ -15,7 +15,8 @@ The services layer sits between the domain layer and external systems:
 
 Usage:
     from oncutf.services import MetadataServiceProtocol, HashServiceProtocol
-    from oncutf.services import ServiceRegistry
+    from oncutf.services import ServiceRegistry, get_service_registry
+    from oncutf.services import ExifToolService, HashService, FilesystemService
 
 Modules:
     interfaces: Protocol definitions for all services
@@ -27,4 +28,40 @@ Modules:
 
 from __future__ import annotations
 
-__all__: list[str] = []
+# Import concrete implementations
+from oncutf.services.exiftool_service import ExifToolService
+from oncutf.services.filesystem_service import FilesystemService
+from oncutf.services.hash_service import HashService
+
+# Import protocols for convenient access
+from oncutf.services.interfaces import (
+    ConfigServiceProtocol,
+    DatabaseServiceProtocol,
+    FilesystemServiceProtocol,
+    HashServiceProtocol,
+    MetadataServiceProtocol,
+)
+
+# Import registry utilities
+from oncutf.services.registry import (
+    ServiceRegistry,
+    configure_default_services,
+    get_service_registry,
+)
+
+__all__ = [
+    # Protocols
+    "MetadataServiceProtocol",
+    "HashServiceProtocol",
+    "FilesystemServiceProtocol",
+    "DatabaseServiceProtocol",
+    "ConfigServiceProtocol",
+    # Implementations
+    "ExifToolService",
+    "HashService",
+    "FilesystemService",
+    # Registry
+    "ServiceRegistry",
+    "get_service_registry",
+    "configure_default_services",
+]
