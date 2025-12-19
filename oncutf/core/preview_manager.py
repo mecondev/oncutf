@@ -13,6 +13,7 @@ import os
 import time
 from typing import Any
 
+from oncutf.core.type_aliases import MetadataCache, NamePairsList
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
 from oncutf.utils.logger_factory import get_cached_logger
@@ -41,9 +42,9 @@ class PreviewManager:
         self,
         selected_files: list[FileItem],
         rename_data: dict[str, Any],
-        metadata_cache: Any,
+        metadata_cache: MetadataCache | None,
         all_modules: list[Any],
-    ) -> tuple[list[tuple[str, str]], bool]:
+    ) -> tuple[NamePairsList, bool]:
         """Generate preview names for selected files with caching."""
         if not selected_files:
             return [], False
