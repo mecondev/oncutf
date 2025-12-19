@@ -21,7 +21,7 @@ Benefits:
 """
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 
@@ -183,7 +183,7 @@ class ProgressSignals(QObject):
 
 
 def create_progress_callback(
-    progress_signal=None, size_signal=None  # type: ignore[no-untyped-def]
+    progress_signal: Any | None = None, size_signal: Any | None = None
 ) -> tuple[ProgressCallback | None, SizeProgressCallback | None]:
     """
     Create callback functions from Qt signals.

@@ -16,6 +16,7 @@ Features:
 """
 
 from datetime import datetime, timedelta
+from typing import Any, cast
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -50,8 +51,11 @@ class MetadataCommandManager(QObject):
             max_history: Maximum number of commands to keep in history
         """
         super().__init__()
-        self.max_history = max_history or UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
-        self.grouping_timeout = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
+        config_max_history: Any = UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
+        config_grouping_timeout: Any = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
+
+        self.max_history = int(max_history) if max_history is not None else int(cast(int, config_max_history))
+        self.grouping_timeout = float(cast(float, config_grouping_timeout))
 
         # Command stacks
         self._undo_stack: list[MetadataCommand] = []

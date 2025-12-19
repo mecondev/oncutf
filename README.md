@@ -10,10 +10,10 @@
 
 ## 🚀 Quick Links
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & refactoring status
-- **[Refactoring Status](docs/architecture/refactor_status_2025-12-09.md)** — Recent improvements (90% complete)
-- **[Next Steps](docs/architecture/next_steps_2025-12-09.md)** — Implementation roadmap
-- **[Column Management Guide](docs/architecture/column_management_mixin_guide.md)** — UI customization
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & current state
+- **[Phase 7 Plan](docs/PHASE7_EXECUTION_PLAN.md)** — Final polish and documentation scope
+- **[Progress Summary](docs/PROGRESS_SUMMARY.md)** — Latest status and metrics
+- **[Performance Baseline](docs/PERFORMANCE_BASELINE.md)** — Startup and memory measurements
 
 ---
 
@@ -170,52 +170,30 @@ python3.12 main.py
 
 ```
 oncutf/
-├── main.py                 # Application entry point
-├── main_window.py          # Main window and core logic
-├── config.py               # Global configuration constants
-├── core/                   # Core application components
-│   ├── application_context.py  # Application-wide context management
-│   ├── backup_manager.py   # Automatic database backup system
-│   ├── ui_manager.py       # UI setup and management
-│   ├── metadata_manager.py # Metadata operations
-│   ├── rename_manager.py   # File renaming logic
-│   └── event_handler_manager.py # Event handling
-├── models/                 # Data structures
-│   ├── file_item.py        # File representation model
-│   └── file_table_model.py # Table data model
-├── modules/                # Rename logic modules
-│   ├── base_module.py      # Base class for rename modules
-│   ├── counter_module.py   # Sequential numbering
-│   ├── specified_text_module.py  # Custom text insertion
-│   ├── metadata_module.py  # File dates and metadata extraction
-│   ├── original_name_module.py   # Original name preservation
-│   └── name_transform_module.py  # Case and separator transforms
-├── widgets/                # PyQt5 UI components
-│   ├── file_tree_view.py   # Folder navigation with drag support
-│   ├── file_table_view.py  # File list with multi-selection
-│   ├── metadata_tree_view.py      # Hierarchical metadata display
-│   ├── rename_modules_area.py     # Module container and management
-│   ├── final_transform_container.py # Post-processing options
-│   └── preview_tables_view.py     # Before/after filename preview
-├── utils/                  # Helper utilities
-│   ├── exiftool_wrapper.py # ExifTool integration
-│   ├── metadata_loader.py  # Threaded metadata processing
-│   ├── metadata_cache.py   # Intelligent caching system
-│   ├── json_config_manager.py     # JSON configuration system
-│   ├── path_utils.py       # Cross-platform path utilities
-│   └── drag_visual_manager.py     # Advanced drag & drop feedback
-├── style/                  # QSS styling files
-│   ├── dark_theme/         # Dark theme stylesheets
-│   └── light_theme/        # Light theme stylesheets
-├── resources/              # Application resources
-│   ├── icons/              # Application icons
-│   ├── fonts/              # Embedded fonts
-│   └── images/             # UI images
-├── assets/                 # Project assets
-├── tests/                  # Comprehensive test suite
-├── docs/                   # Documentation (see docs/README.md)
-├── examples/               # Usage examples
-└── scripts/                # Utility scripts
+├── main.py                  # Application entry point
+├── config.py                # Global configuration constants
+├── ui/                      # UI layer (PyQt5 widgets)
+│   └── main_window.py       # Main window wired to controllers
+├── controllers/             # UI-agnostic orchestration layer
+│   ├── file_load_controller.py
+│   ├── metadata_controller.py
+│   ├── rename_controller.py
+│   └── main_window_controller.py
+├── core/                    # Business logic and managers
+│   ├── application_context.py
+│   ├── unified_rename_engine.py
+│   ├── persistent_hash_cache.py
+│   ├── persistent_metadata_cache.py
+│   ├── backup_manager.py
+│   └── ... (managers, services, protocols)
+├── modules/                 # Rename modules (composable steps)
+├── models/                  # Domain models
+├── widgets/                 # Custom PyQt5 widgets
+├── utils/                   # Helper utilities
+├── docs/                    # Documentation (see docs/README.md)
+├── tests/                   # Comprehensive test suite (866+ tests)
+├── scripts/                 # Tooling (profiling, maintenance)
+└── assets/resources/        # Icons, fonts, images
 ```
 
 ---

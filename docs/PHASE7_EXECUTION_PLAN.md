@@ -506,23 +506,26 @@ if __name__ == "__main__":
 
 ---
 
-## Step 7.7: Release Preparation
+## Step 7.7: Release Preparation (Docs Only)
 
-**Goal**: Prepare for release.
+**Goal**: Finalize documentation for the release; version bump and git tagging are intentionally deferred.
 
-### Sub-step 7.7.1: Version Bump
+### Sub-step 7.7.1: Final Documentation Sweep
 
-**Action**: Update version number.
+**Action**: Update user and developer docs, removing obsolete guidance and ensuring Phase 7 notes are current.
 
-**Files to Update**:
-- `pyproject.toml` - version field
-- `oncutf/__init__.py` - __version__ (if present)
+**Files to Update** (as needed):
+- `CHANGELOG.md` – capture Phase 7 highlights
+- `docs/PHASE7_EXECUTION_PLAN.md` – align plan with documentation-only scope
+- `docs/PROGRESS_SUMMARY.md` – refresh current status
+- Other docs called out during the sweep
 
-**Commit Message**: `chore: bump version to X.Y.Z`
+**Commit Message**: `docs: finalize release documentation`
 
 **Definition of Done**:
-- [ ] Version updated consistently
-- [ ] CHANGELOG reflects version
+- [ ] Obsolete instructions removed (version bump/tag steps omitted)
+- [ ] Phase 7 documentation reflects latest state
+- [ ] Release notes (CHANGELOG) updated where applicable
 
 ---
 
@@ -541,21 +544,9 @@ if __name__ == "__main__":
 
 ---
 
-### Sub-step 7.7.3: Create Release Tag
+### Sub-step 7.7.3: (Intentionally Deferred)
 
-**Action**: Create git tag for release.
-
-```bash
-git tag -a vX.Y.Z -m "Release X.Y.Z - Final Polish"
-git push origin vX.Y.Z
-```
-
-**Commit Message**: N/A (tag only)
-
-**Definition of Done**:
-- [ ] Tag created
-- [ ] Tag pushed to remote
-- [ ] Release notes written
+Version bump and git tagging are out of scope for this pass and will be handled separately if/when release packaging is required.
 
 ---
 

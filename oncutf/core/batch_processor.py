@@ -137,7 +137,7 @@ class SmartBatchProcessor(BatchProcessor):
     def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs: object) -> None:  # noqa: ARG002
         super().__init__(initial_batch_size, max_workers)
         self.initial_batch_size = initial_batch_size
-        self.performance_history: list[tuple[int, float]] = []
+        self.performance_history: list[float] = []
         self.optimization_threshold = 0.5  # 500ms
 
     def process_batches_optimized(self, items: list[Any], processor_func: Any) -> list[Any]:
@@ -209,9 +209,9 @@ class BatchProcessorFactory:
     def create_processor(processor_type: str = "simple", **kwargs: object) -> BatchProcessor:
         """Create batch processor based on type."""
         if processor_type == "smart":
-            return SmartBatchProcessor(**kwargs)
+            return SmartBatchProcessor(**kwargs)  # type: ignore[arg-type]
         else:
-            return BatchProcessor(**kwargs)
+            return BatchProcessor(**kwargs)  # type: ignore[arg-type]
 
     @staticmethod
     def get_optimal_config(item_count: int, item_type: str = "file") -> dict[str, Any]:  # noqa: ARG004

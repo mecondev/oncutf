@@ -53,19 +53,21 @@ class BackupManager(QObject):
         backup_count: int = DEFAULT_BACKUP_COUNT,
         backup_interval: int = DEFAULT_BACKUP_INTERVAL,
         periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED,
+        grouping_timeout: float = 10.0,
     ):
         """
         Initialize the backup manager.
 
         Args:
-            database_path: Path to the database file to backup
             backup_count: Number of backup files to keep (default from config)
             backup_interval: Interval between periodic backups in seconds
             periodic_enabled: Whether periodic backups are enabled
+            grouping_timeout: Time window (seconds) used for grouping operations
         """
         super().__init__()
 
         self.database_path = Path(database_path)
+        self.grouping_timeout = float(grouping_timeout)
         self.backup_count = backup_count
         self.backup_interval = backup_interval
         self.periodic_enabled = periodic_enabled
@@ -285,7 +287,14 @@ class BackupManager(QObject):
 _backup_manager: BackupManager | None = None
 
 
-def get_backup_manager(database_path: str, **kwargs: object) -> BackupManager:
+def get_backup_manager(
+    database_path: str,
+    *,
+    backup_count: int = DEFAULT_BACKUP_COUNT,
+    backup_interval: int = DEFAULT_BACKUP_INTERVAL,
+    periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED,
+    grouping_timeout: float = 10.0,
+) -> BackupManager:
     """
     Get or create the global backup manager instance.
 
@@ -299,7 +308,13 @@ def get_backup_manager(database_path: str, **kwargs: object) -> BackupManager:
     global _backup_manager
 
     if _backup_manager is None:
-        _backup_manager = BackupManager(database_path, **kwargs)
+        _backup_manager = BackupManager(
+            database_path,
+            backup_count=backup_count,
+            backup_interval=backup_interval,
+            periodic_enabled=periodic_enabled,
+            grouping_timeout=grouping_timeout,
+        )
         logger.info("Global backup manager created")
 
     return _backup_manager

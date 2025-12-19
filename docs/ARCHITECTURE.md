@@ -7,13 +7,12 @@
 
 ## Quick Navigation
 
-- **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture complete overview
-- **[Phase 7 Plan](PHASE7_EXECUTION_PLAN.md)** — Performance optimizations & polish
-- **[Performance Baseline](PERFORMANCE_BASELINE.md)** — Startup time & memory tracking
-- **[Roadmap](ROADMAP.md)** — Current progress & next phases
+- **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture overview
+- **[Phase 7 Plan](PHASE7_EXECUTION_PLAN.md)** — Final polish (docs-first scope)
+- **[Performance Baseline](PERFORMANCE_BASELINE.md)** — Startup and memory tracking
+- **[Roadmap](ROADMAP.md)** — Current progress and next phases
 - **[Arch Refactor Plan](ARCH_REFACTOR_PLAN.md)** — Strategic refactoring plan
-- **[Cache Strategy](architecture/cache_strategy.md)** — Caching layers & invalidation
-- **[Column Management Guide](architecture/column_management_mixin_guide.md)** — FileTableView columns
+- **[Progress Summary](PROGRESS_SUMMARY.md)** — High-level status and metrics
 
 ---
 

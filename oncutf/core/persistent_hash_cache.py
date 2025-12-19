@@ -33,7 +33,7 @@ class PersistentHashCache:
     - Easier to extend with new hash algorithms
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize persistent hash cache with database backend."""
         self._db_manager = get_database_manager()
         # Use OrderedDict for LRU behavior - limit cache size to prevent memory growth
@@ -209,7 +209,7 @@ class PersistentHashCache:
         self._memory_cache.clear()
         logger.debug("[PersistentHashCache] Memory cache cleared")
 
-    def get_cache_stats(self) -> dict:
+    def get_cache_stats(self) -> dict[str, int | float]:
         """Get cache performance statistics."""
         total_requests = self._cache_hits + self._cache_misses
         hit_rate = (self._cache_hits / total_requests * 100) if total_requests > 0 else 0
@@ -235,7 +235,7 @@ class PersistentHashCache:
 # Global Instance Management
 # =====================================
 
-_persistent_hash_cache_instance = None
+_persistent_hash_cache_instance: PersistentHashCache | None = None
 
 
 def get_persistent_hash_cache() -> PersistentHashCache:

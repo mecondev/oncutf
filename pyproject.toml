@@ -148,48 +148,7 @@ module = [
     "oncutf.core.file_store",
     "oncutf.core.selection_store",
     "oncutf.core.metadata_staging_manager",
-]
-ignore_errors = false
-disallow_untyped_defs = false
-
-# Phase 3: Modules with actual type errors (need fixing or ignore for now)
-[[tool.mypy.overrides]]
-module = [
-    # Original modules with many errors
-    "oncutf.core.drag_manager",           # 127 errors
-    "oncutf.core.parallel_hash_worker",   # 14 errors
-    # Additional modules with type errors (to be fixed gradually)
-    "oncutf.core.unified_metadata_manager",  # 72 errors
-    "oncutf.core.application_service",       # 56 errors
-    "oncutf.core.hash_operations_manager",   # 44 errors
-    "oncutf.core.thread_pool_manager",       # 43 errors
-    "oncutf.core.unified_rename_engine",     # 28 errors
-    "oncutf.core.metadata_operations_manager", # 28 errors
-    "oncutf.core.optimized_database_manager",  # 27 errors
-    "oncutf.core.window_config_manager",     # 26 errors
-    "oncutf.core.direct_metadata_loader",    # 24 errors
-    "oncutf.core.persistent_metadata_cache", # 22 errors
-    "oncutf.core.column_manager",            # 22 errors
-    "oncutf.core.unified_column_service",    # 21 errors
-    "oncutf.core.conflict_resolver",         # 17 errors
-    "oncutf.core.drag_visual_manager",       # 15 errors
-    "oncutf.core.database_manager",          # 14 errors
-    "oncutf.core.batch_operations_manager",  # 14 errors
-    "oncutf.core.rename_history_manager",    # 12 errors
-    "oncutf.core.performance_monitor",       # 11 errors
-    "oncutf.core.file_validation_manager",   # 11 errors
-    "oncutf.core.status_manager",            # 10 errors
-    "oncutf.core.shutdown_coordinator",      # 10 errors
-    "oncutf.core.parallel_metadata_loader",  # 10 errors
-    "oncutf.core.file_operations_manager",   # 10 errors
-    "oncutf.core.theme_manager",             # 9 errors
-    "oncutf.core.memory_manager",            # 8 errors
-    "oncutf.core.hash_worker",               # 8 errors
-    "oncutf.core.structured_metadata_manager", # 7 errors
-    "oncutf.core.hash_manager",              # 4 errors
-    "oncutf.core.advanced_cache_manager",    # 4 errors
-    "oncutf.core.persistent_hash_cache",     # Some errors
-    # Modules with minor issues (kwargs, type: ignore)
+    # Targeted core modules we already cleaned
     "oncutf.core.metadata_command_manager",
     "oncutf.core.batch_processor",
     "oncutf.core.metadata_commands",
@@ -197,6 +156,47 @@ module = [
     "oncutf.core.backup_manager",
     "oncutf.core.progress_protocol",
     "oncutf.core.pre_execution_validator",
+    "oncutf.core.persistent_hash_cache",
+]
+ignore_errors = false
+disallow_untyped_defs = false
+
+# Phase 3: Modules with actual type errors (keep ignored until fixed)
+[[tool.mypy.overrides]]
+module = [
+    # High-noise Qt or complex modules - temporarily ignored
+    "oncutf.core.drag_manager",
+    "oncutf.core.parallel_hash_worker",
+    "oncutf.core.unified_metadata_manager",
+    "oncutf.core.application_service",
+    "oncutf.core.hash_operations_manager",
+    "oncutf.core.thread_pool_manager",
+    "oncutf.core.unified_rename_engine",
+    "oncutf.core.metadata_operations_manager",
+    "oncutf.core.optimized_database_manager",
+    "oncutf.core.window_config_manager",
+    "oncutf.core.direct_metadata_loader",
+    "oncutf.core.persistent_metadata_cache",
+    "oncutf.core.column_manager",
+    "oncutf.core.unified_column_service",
+    "oncutf.core.conflict_resolver",
+    "oncutf.core.drag_visual_manager",
+    "oncutf.core.database_manager",
+    "oncutf.core.batch_operations_manager",
+    "oncutf.core.rename_history_manager",
+    "oncutf.core.performance_monitor",
+    "oncutf.core.file_validation_manager",
+    "oncutf.core.status_manager",
+    "oncutf.core.shutdown_coordinator",
+    "oncutf.core.parallel_metadata_loader",
+    "oncutf.core.file_operations_manager",
+    "oncutf.core.theme_manager",
+    "oncutf.core.memory_manager",
+    "oncutf.core.hash_worker",
+    "oncutf.core.structured_metadata_manager",
+    "oncutf.core.hash_manager",
+    "oncutf.core.advanced_cache_manager",
+    # Leave caches that were cleaned (persistent_hash_cache) in Phase 2
 ]
 ignore_errors = true
 
