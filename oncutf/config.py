@@ -776,10 +776,16 @@ COMMAND_TYPES = {
 }
 
 # =====================================
-# FILE TABLE SHORTCUTS
+# KEYBOARD SHORTCUTS CONFIGURATION
 # =====================================
+# All shortcuts are centralized here for easy customization.
+# Widget-specific shortcuts only work when that widget has focus.
+# Global shortcuts work regardless of which widget has focus.
 
-# Keyboard shortcuts for file table operations (selection-based, widget-specific)
+# Common refresh key used by multiple widgets (widget-dependent behavior)
+REFRESH_KEY = "F5"
+
+# File Table shortcuts (work when FileTableView has focus)
 FILE_TABLE_SHORTCUTS = {
     "SELECT_ALL": "Ctrl+A",
     "CLEAR_SELECTION": "Ctrl+Shift+A",
@@ -787,12 +793,27 @@ FILE_TABLE_SHORTCUTS = {
     "LOAD_METADATA": "Ctrl+M",
     "LOAD_EXTENDED_METADATA": "Ctrl+E",
     "CALCULATE_HASH": "Ctrl+H",
+    "REFRESH": REFRESH_KEY,  # Reload files from current folder
 }
 
-# Global shortcuts (not specific to file table)
+# File Tree shortcuts (work when FileTreeView has focus)
+FILE_TREE_SHORTCUTS = {
+    "REFRESH": REFRESH_KEY,  # Refresh file tree view
+}
+
+# Metadata Tree shortcuts (work when MetadataTreeView has focus)
+METADATA_TREE_SHORTCUTS = {
+    "REFRESH": REFRESH_KEY,  # Reload metadata from current selection
+}
+
+# Preview shortcuts (work when PreviewTablesView has focus)
+PREVIEW_SHORTCUTS = {
+    "REFRESH": REFRESH_KEY,  # Refresh preview tables
+}
+
+# Global shortcuts (work regardless of which widget has focus)
 GLOBAL_SHORTCUTS = {
     "BROWSE_FOLDER": "Ctrl+O",  # Browse dialog affects whole app
-    "RELOAD_FOLDER": "F5",  # Reload affects whole app state
     "SAVE_METADATA": "Ctrl+S",  # Standard Save convention
     "CANCEL_DRAG": "Escape",  # Cancel drag in any widget (file_table, file_tree, metadata_tree)
     "CLEAR_FILE_TABLE": "Shift+Escape",  # Clear all files

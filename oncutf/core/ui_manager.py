@@ -528,6 +528,11 @@ class UIManager:
             self.parent_window._update_status_from_preview
         )
 
+        # Connect F5 refresh request from preview view
+        self.parent_window.preview_tables_view.refresh_requested.connect(
+            self.parent_window.request_preview_update
+        )
+
         # Setup bottom controls
         controls_layout = QHBoxLayout()
         self.parent_window.status_label = QLabel("")
@@ -722,6 +727,7 @@ class UIManager:
             (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
             (FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"], self.parent_window.shortcut_load_extended_metadata),
             (FILE_TABLE_SHORTCUTS["CALCULATE_HASH"], self.parent_window.shortcut_calculate_hash_selected),
+            (FILE_TABLE_SHORTCUTS["REFRESH"], self.parent_window.force_reload),  # F5: Reload files
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
@@ -731,7 +737,6 @@ class UIManager:
         # Global shortcuts (attached to main window, work regardless of focus)
         global_shortcuts = [
             (GLOBAL_SHORTCUTS["BROWSE_FOLDER"], self.parent_window.handle_browse),  # Browse folder
-            (GLOBAL_SHORTCUTS["RELOAD_FOLDER"], self.parent_window.force_reload),  # Reload folder
             (GLOBAL_SHORTCUTS["SAVE_METADATA"], self.parent_window.shortcut_save_all_metadata),  # Save metadata
             (GLOBAL_SHORTCUTS["CANCEL_DRAG"], self.parent_window.force_drag_cleanup),  # Cancel drag (all widgets)
             (GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"], self.parent_window.clear_file_table_shortcut),  # Clear file table

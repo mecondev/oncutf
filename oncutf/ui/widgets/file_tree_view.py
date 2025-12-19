@@ -238,7 +238,7 @@ class FileTreeView(QTreeView):
 
         # Get current selected path before refresh
         current_path = self.get_selected_path()
-        
+
         # Get the old model's configuration
         root_path = old_model.rootPath() if hasattr(old_model, "rootPath") else ""
         name_filters = old_model.nameFilters() if hasattr(old_model, "nameFilters") else []
@@ -248,26 +248,26 @@ class FileTreeView(QTreeView):
             # The only reliable way to refresh drives in Windows is to recreate the model
             # QFileSystemModel caches drive information and doesn't detect removals properly
             from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-            
+
             # Create new model with same configuration
             new_model = CustomFileSystemModel()
             new_model.setRootPath("")
-            
+
             if file_filter is not None:
                 new_model.setFilter(file_filter)
-            
+
             if name_filters:
                 new_model.setNameFilters(name_filters)
                 new_model.setNameFilterDisables(False)
-            
+
             # Replace the model
             self.setModel(new_model)
-            
+
             # Set root index
             import platform
             root = "" if platform.system() == "Windows" else "/"
             self.setRootIndex(new_model.index(root))
-            
+
             # Update parent window reference if available
             parent = self.parent()
             while parent is not None:
@@ -283,7 +283,7 @@ class FileTreeView(QTreeView):
                     )
                     break
                 parent = parent.parent() if hasattr(parent, "parent") else None
-            
+
             logger.info("[FileTreeView] Model recreated successfully to reflect drive changes")
 
             # Try to restore selection
@@ -1026,6 +1026,12 @@ class FileTreeView(QTreeView):
         if self._is_dragging:
             self._update_drag_feedback()
 
+        # Handle F5 key to refresh tree view
+        if event.key() == Qt.Key_F5:
+            self._refresh_tree_view()
+            event.accept()
+            return
+
         # Handle Return/Enter key to emit folder_selected signal
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.folder_selected.emit()
@@ -1039,6 +1045,31 @@ class FileTreeView(QTreeView):
             self._update_drag_feedback()
 
         super().keyReleaseEvent(event)
+
+    def _refresh_tree_view(self) -> None:
+        """Refresh the tree view by refreshing the underlying model."""
+        logger.info("[FileTreeView] F5 pressed - refreshing tree view")
+
+        model = self.model()
+        if model and hasattr(model, "refresh"):
+            try:
+                # Get current selected path before refresh
+                current_path = self.get_selected_path()
+
+                model.refresh()
+
+                # Restore selection after refresh if path still exists
+                if current_path and os.path.exists(current_path):
+                    self.select_path(current_path)
+
+                logger.info("[FileTreeView] Tree view refreshed successfully")
+            except Exception as e:
+                logger.exception("[FileTreeView] Error refreshing tree view: %s", e)
+        else:
+            logger.debug(
+                "[FileTreeView] No model or model does not support refresh",
+                extra={"dev_only": True}
+            )
 
     # =====================================
     # SPLITTER INTEGRATION (unchanged)
@@ -1095,7 +1126,6 @@ class FileTreeView(QTreeView):
             "[FileTreeView] Built-in startDrag called but ignored - using custom drag system",
             extra={"dev_only": True},
         )
-        return
 
     def _on_item_expanded(self, _index):
         """Handle item expansion with wait cursor for better UX"""

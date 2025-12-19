@@ -98,12 +98,17 @@ class PreviewTablesView(QWidget):
 
     Signals:
         status_updated: Emitted when status message should be updated
+        refresh_requested: Emitted when F5 is pressed to request preview refresh
     """
 
     status_updated = pyqtSignal(str)  # Emitted with HTML status message
+    refresh_requested = pyqtSignal()  # Emitted when F5 refresh is requested
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Allow widget to receive keyboard focus for shortcuts
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # Constants
         self.PLACEHOLDER_SIZE = 120
@@ -112,6 +117,7 @@ class PreviewTablesView(QWidget):
         self._setup_ui()
         self._setup_placeholders()
         self._setup_signals()
+        self._setup_shortcuts()
 
         # Show placeholders immediately during initialization
         self._placeholders_ready = True
@@ -234,6 +240,23 @@ class PreviewTablesView(QWidget):
         self.old_names_table.verticalScrollBar().valueChanged.connect(
             self.icon_table.verticalScrollBar().setValue
         )
+
+    def _setup_shortcuts(self):
+        """Setup local keyboard shortcuts for preview tables."""
+        from oncutf.core.pyqt_imports import QKeySequence, QShortcut
+
+        # F5: Refresh preview (recalculate from current selection)
+        self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
+        self._refresh_shortcut.activated.connect(self._on_refresh_requested)
+        logger.debug(
+            "[PreviewTablesView] Local shortcuts setup: F5=refresh",
+            extra={"dev_only": True}
+        )
+
+    def _on_refresh_requested(self):
+        """Handle F5 refresh request by emitting signal to parent."""
+        logger.info("[PreviewTablesView] F5 pressed - requesting preview refresh")
+        self.refresh_requested.emit()
 
     def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
         """Show or hide preview table placeholders using the unified helper."""

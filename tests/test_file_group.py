@@ -132,15 +132,19 @@ class TestFileGroupRepresentation:
 
     def test_repr(self):
         """Test FileGroup __repr__ method."""
+        # Use Path for cross-platform compatibility
+        test_path = Path("test") / "folder"
+        test_file = test_path / "file1.txt"
         group = FileGroup(
-            source_path=Path("/test/folder"),
-            files=[FileItem.from_path("/test/folder/file1.txt")],
+            source_path=test_path,
+            files=[FileItem.from_path(str(test_file))],
             recursive=True
         )
 
         repr_str = repr(group)
 
         assert "FileGroup" in repr_str
-        assert "/test/folder" in repr_str
+        # Check path components exist (cross-platform)
+        assert "test" in repr_str and "folder" in repr_str
         assert "file_count=1" in repr_str
         assert "recursive=True" in repr_str

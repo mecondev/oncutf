@@ -8,8 +8,11 @@ Date: 2025-05-31
 test_filesize.py
 Test script to compare file size calculations between our application
 and system commands (ls, stat, du) on Linux.
+Note: Linux-specific tests are skipped on Windows.
 """
 
+import os
+import platform
 import warnings
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
@@ -21,11 +24,16 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from oncutf.models.file_item import FileItem
+
+# Check if we're on Windows
+IS_WINDOWS = platform.system() == "Windows"
 
 
 class TestFileSizeComparison(unittest.TestCase):
@@ -33,10 +41,10 @@ class TestFileSizeComparison(unittest.TestCase):
 
     def setUp(self):
         """Set up test files."""
-        self.test_files = ["oncutf.config.py", "main.py", "requirements.txt"]
+        self.test_files = ["oncutf/config.py", "main.py", "requirements.txt"]
 
     def get_system_file_sizes(self, filepath):
-        """Get file sizes using various system commands."""
+        """Get file sizes using various system commands (Linux only)."""
         results = {}
 
         try:
@@ -44,7 +52,7 @@ class TestFileSizeComparison(unittest.TestCase):
             ls_output = subprocess.check_output(["ls", "-l", filepath], text=True)
             ls_size = int(ls_output.split()[4])
             results["ls"] = ls_size
-        except (subprocess.CalledProcessError, ValueError, IndexError):
+        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
             results["ls"] = "Error"
 
         try:
@@ -52,7 +60,7 @@ class TestFileSizeComparison(unittest.TestCase):
             stat_output = subprocess.check_output(["stat", "-c", "%s", filepath], text=True)
             stat_size = int(stat_output.strip())
             results["stat"] = stat_size
-        except (subprocess.CalledProcessError, ValueError):
+        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
             results["stat"] = "Error"
 
         try:
@@ -60,7 +68,7 @@ class TestFileSizeComparison(unittest.TestCase):
             du_output = subprocess.check_output(["du", "-b", filepath], text=True)
             du_size = int(du_output.split()[0])
             results["du"] = du_size
-        except (subprocess.CalledProcessError, ValueError, IndexError):
+        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
             results["du"] = "Error"
 
         try:
@@ -68,11 +76,12 @@ class TestFileSizeComparison(unittest.TestCase):
             wc_output = subprocess.check_output(["wc", "-c", filepath], text=True)
             wc_size = int(wc_output.split()[0])
             results["wc"] = wc_size
-        except (subprocess.CalledProcessError, ValueError, IndexError):
+        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
             results["wc"] = "Error"
 
         return results
 
+    @pytest.mark.skipif(IS_WINDOWS, reason="Linux-specific test using ls/stat commands")
     def test_file_size_accuracy(self):
         """Test that our file size calculation matches system stat command."""
         for test_file in self.test_files:
@@ -93,6 +102,7 @@ class TestFileSizeComparison(unittest.TestCase):
                             f"Size mismatch for {test_file}: app={app_size}, stat={sys_sizes['stat']}",
                         )
 
+    @pytest.mark.skipif(IS_WINDOWS, reason="Linux-specific test using ls/stat commands")
     def test_file_size_comparison(self):
         """Print detailed comparison for manual verification."""
 
@@ -110,6 +120,25 @@ class TestFileSizeComparison(unittest.TestCase):
                 # Check for discrepancies
                 if isinstance(sys_sizes.get("stat"), int) and app_size != sys_sizes["stat"]:
                     pass
+
+    def test_file_size_cross_platform(self):
+        """Test file size calculation using Python's os.path.getsize (cross-platform)."""
+        for test_file in self.test_files:
+            file_path = project_root / test_file
+            if file_path.exists():
+                with self.subTest(file=test_file):
+                    # Our application's method
+                    file_item = FileItem.from_path(str(file_path))
+                    app_size = file_item.size
+
+                    # Python's os.path.getsize (cross-platform)
+                    python_size = os.path.getsize(str(file_path))
+
+                    self.assertEqual(
+                        app_size,
+                        python_size,
+                        f"Size mismatch for {test_file}: app={app_size}, os.path.getsize={python_size}",
+                    )
 
 
 def run_manual_test():

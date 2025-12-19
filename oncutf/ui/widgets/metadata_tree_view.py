@@ -243,11 +243,18 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
     def _setup_shortcuts(self) -> None:
         """Setup local keyboard shortcuts for metadata tree."""
-        # Local Ctrl+Z/Ctrl+R shortcuts removed - now handled by global shortcuts
-        # Global shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
-        # and will call the unified undo/redo system when implemented.
+        from oncutf.core.pyqt_imports import QKeySequence, QShortcut
+
+        # F5: Refresh metadata from current selection
+        self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
+        self._refresh_shortcut.activated.connect(self.refresh_metadata_from_selection)
+
+        # Note: Global undo/redo (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
         # Context menu still provides Undo/Redo actions for mouse-based access.
-        logger.debug("[MetadataTree] Local shortcuts setup skipped (using global shortcuts)", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataTree] Local shortcuts setup: F5=refresh",
+            extra={"dev_only": True}
+        )
 
     def wheelEvent(self, event) -> None:
         """Update hover state after scroll to track cursor position smoothly."""
@@ -1686,6 +1693,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Convenience method that triggers metadata update from parent selection.
         Can be called from parent window when selection changes.
         """
+        logger.info("[MetadataTree] F5 pressed - refreshing metadata from selection")
         self.update_from_parent_selection()
 
     def initialize_with_parent(self) -> None:

@@ -85,6 +85,7 @@ class UtilityManager:
         If Ctrl is held, metadata scan is skipped (like Select/Browse).
         Otherwise, full reload with scan.
         """
+        logger.info("[UtilityManager] F5 pressed - force_reload called")
         # Update current state of modifier keys
         self.main_window.modifier_state = QApplication.keyboardModifiers()
 

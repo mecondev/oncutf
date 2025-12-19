@@ -10,11 +10,10 @@ These shortcuts work throughout the application, regardless of which widget has 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+O` | Browse Files | Open file browser to select files/folders |
-| `F5` | Force Reload | Reload current folder and refresh file list |
 | `Escape` | Cancel Drag | Cancel current drag & drop operation |
 | `Shift+Escape` | Clear Table | Clear all files from file table |
 
-### Selection Management
+### Selection Management (File Table focus)
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+A` | Select All | Select all files in file table |
@@ -31,7 +30,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+S` | Save Selected Metadata | Save metadata changes for selected files (file table) |
 | `Ctrl+Shift+S` | Save All Metadata | Save metadata changes for all files (file table) |
 
-### Hash Operations
+### Hash Operations (File Table focus)
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+H` | Calculate Hash (Selected) | Calculate CRC32 checksums for selected files (file table) |
@@ -46,6 +45,30 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+Y` | Show History | Display command history dialog with all operations |
 
 **Note:** Undo/Redo are global shortcuts that work across all operations. Currently supports metadata edits; rename undo is planned.
+
+---
+
+## Widget-Specific Shortcuts
+
+These shortcuts work only when the respective widget has focus.
+
+### F5 - Refresh (Widget-Dependent)
+
+The `F5` key performs context-aware refresh based on which widget has focus:
+
+| Widget Focus | Action | Description |
+|--------------|--------|-------------|
+| **File Table** | Reload Files | Reload files from current folder |
+| **File Tree** | Refresh Tree | Refresh file tree view |
+| **Metadata Tree** | Refresh Metadata | Reload metadata from current selection |
+| **Preview Tables** | Refresh Preview | Recalculate preview from current selection |
+| **Rename Modules** | (none) | No action (planned) |
+
+### File Table Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+T` | Auto-fit columns to content |
+| `Ctrl+Shift+T` | Reset columns to default widths |
 
 ---
 
@@ -87,6 +110,7 @@ Planned shortcuts for upcoming features:
 
 Some shortcuts behave differently based on context:
 
+- **F5**: Widget-dependent refresh (see table above)
 - **Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y**: 
   - Global shortcuts that work throughout the application
   - Currently handle metadata edits through command manager
@@ -96,11 +120,9 @@ Some shortcuts behave differently based on context:
 ### Conflict Resolution
 
 The shortcut system uses this priority order:
-1. **Global shortcuts** (application-wide, attached to MainWindow)
-2. **Widget-specific shortcuts** (local to focused widget)
+1. **Widget-specific shortcuts** (local to focused widget, highest priority)
+2. **Global shortcuts** (application-wide, attached to MainWindow)
 3. **Qt default shortcuts** (built-in Qt behavior)
-
-Global shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y, etc.) work regardless of which widget has focus.
 
 ### Accessibility
 

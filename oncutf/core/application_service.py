@@ -207,6 +207,18 @@ class ApplicationService:
     # Selection Operations
     # =====================================
 
+    def select_all_rows(self) -> None:
+        """Select all rows via SelectionManager."""
+        self.main_window.selection_manager.select_all_rows()
+
+    def clear_all_selection(self) -> None:
+        """Clear all selection via SelectionManager."""
+        self.main_window.selection_manager.clear_all_selection()
+
+    def invert_selection(self) -> None:
+        """Invert selection via SelectionManager."""
+        self.main_window.selection_manager.invert_selection()
+
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """Update preview from selection via SelectionManager."""
         self.main_window.selection_manager.update_preview_from_selection(selected_rows)

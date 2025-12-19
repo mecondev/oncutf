@@ -129,15 +129,22 @@ python3.12 main.py
 ### Keyboard Shortcuts & Modifiers
 
 #### Global Shortcuts
-- **Ctrl+A**: Select all files
+- **Ctrl+A**: Select all files (file table)
 - **Ctrl+Shift+A**: Clear all selection
 - **Ctrl+I**: Invert selection
 - **Ctrl+O**: Browse for files
-- **F5**: Force reload current folder
 - **Ctrl+L**: Show results hash list dialog
-- **Ctrl+Shift+Z**: Show command history dialog
+- **Ctrl+Z**: Undo last operation
+- **Ctrl+Shift+Z**: Redo last operation
+- **Ctrl+Y**: Show command history dialog
 - **Escape**: Cancel drag operations
 - **Shift+Escape**: Clear file table
+
+#### Widget-Specific F5 (Refresh)
+- **F5 (File Table)**: Reload files from current folder
+- **F5 (File Tree)**: Refresh file tree view
+- **F5 (Metadata Tree)**: Reload metadata from selection
+- **F5 (Preview)**: Refresh preview tables
 
 #### File Table Shortcuts (when file table has focus)
 - **Ctrl+M**: Load basic metadata for selected files
@@ -148,10 +155,8 @@ python3.12 main.py
 - **Ctrl+Shift+H**: Calculate hash checksums for all files
 - **Ctrl+S**: Save selected metadata
 - **Ctrl+Shift+S**: Save all metadata
-
-#### Metadata Tree Shortcuts (when focused)
-- **Ctrl+Z**: Undo last metadata edit
-- **Ctrl+R**: Redo last undone metadata edit
+- **Ctrl+T**: Auto-fit columns
+- **Ctrl+Shift+T**: Reset columns to default
 
 **Drag & Drop Modifiers:**
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
