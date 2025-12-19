@@ -103,7 +103,6 @@ def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:  # noqa: A
 
     def fake_exec(self):
         captured["message"] = self.label.text()
-        return None
 
     monkeypatch.setattr(CustomMessageDialog, "exec_", fake_exec)
     CustomMessageDialog.information(QWidget(), "Notice", "Everything is OK.")

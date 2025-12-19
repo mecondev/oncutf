@@ -733,16 +733,15 @@ class ColumnManager:
                 column_index,
                 extra={"dev_only": True},
             )
-        else:
-            # Reset all preferences for this table type
-            if table_type in self.table_configs:
-                for column_index in self.table_configs[table_type]:
-                    self.state.clear_user_preference(column_index)
-                logger.debug(
-                    "[ColumnManager] Reset all user preferences for %s",
-                    table_type,
-                    extra={"dev_only": True},
-                )
+        # Reset all preferences for this table type
+        elif table_type in self.table_configs:
+            for column_index in self.table_configs[table_type]:
+                self.state.clear_user_preference(column_index)
+            logger.debug(
+                "[ColumnManager] Reset all user preferences for %s",
+                table_type,
+                extra={"dev_only": True},
+            )
 
     def save_column_state(self, table_type: str) -> dict[str, Any]:
         """

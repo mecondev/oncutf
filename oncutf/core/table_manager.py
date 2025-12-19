@@ -102,10 +102,9 @@ class TableManager:
             self.parent_window.file_table_view, "set_header_enabled"
         ):
             self.parent_window.file_table_view.set_header_enabled(False)
-        else:
-            # Fallback to previous behavior for compatibility
-            if hasattr(self.parent_window, "header") and self.parent_window.header is not None:
-                self.parent_window.header.setEnabled(False)  # disable header
+        # Fallback to previous behavior for compatibility
+        elif hasattr(self.parent_window, "header") and self.parent_window.header is not None:
+            self.parent_window.header.setEnabled(False)  # disable header
         self.parent_window.status_manager.clear_file_table_status(
             self.parent_window.files_label, message
         )
@@ -160,9 +159,8 @@ class TableManager:
             self.parent_window.file_table_view, "set_header_enabled"
         ):
             self.parent_window.file_table_view.set_header_enabled(True)
-        else:
-            if hasattr(self.parent_window, "header") and self.parent_window.header is not None:
-                self.parent_window.header.setEnabled(True)
+        elif hasattr(self.parent_window, "header") and self.parent_window.header is not None:
+            self.parent_window.header.setEnabled(True)
 
         self.parent_window.update_files_label()
         self.parent_window.update_preview_tables_from_pairs([])

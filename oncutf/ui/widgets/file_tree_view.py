@@ -240,7 +240,6 @@ class FileTreeView(QTreeView):
         current_path = self.get_selected_path()
 
         # Get the old model's configuration
-        root_path = old_model.rootPath() if hasattr(old_model, "rootPath") else ""
         name_filters = old_model.nameFilters() if hasattr(old_model, "nameFilters") else []
         file_filter = old_model.filter() if hasattr(old_model, "filter") else None
 

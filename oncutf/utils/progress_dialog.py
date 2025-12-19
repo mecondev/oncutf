@@ -333,10 +333,9 @@ class ProgressDialog(QDialog):
             self.waiting_widget.update_progress(
                 file_count, total_files, processed_bytes, total_bytes
             )
-        else:
-            # Fallback to standard progress update
-            if total_files > 0:
-                self.set_progress(file_count, total_files)
+        # Fallback to standard progress update
+        elif total_files > 0:
+            self.set_progress(file_count, total_files)
 
     def get_progress_summary(self) -> dict:
         """Get comprehensive progress summary (enhanced widget only)."""

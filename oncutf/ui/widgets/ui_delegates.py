@@ -66,33 +66,32 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
             option.font.setItalic(True)
             # Disabled items should not have hover/selected background
             option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
+        # Handle selected/hover colors for enabled items
+        elif option.state & QStyle.StateFlag.State_Selected:
+            option.palette.setBrush(
+                QPalette.ColorRole.Text,
+                QBrush(QColor(self.theme.get_color("input_selection_text"))),
+            )
+            option.palette.setBrush(
+                QPalette.ColorRole.Highlight,
+                QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
+            )
+        elif option.state & QStyle.StateFlag.State_MouseOver:
+            option.palette.setBrush(
+                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
+            )
+            option.palette.setBrush(
+                QPalette.ColorRole.Highlight,
+                QBrush(
+                    QColor(self.theme.get_color("table_hover_bg"))
+                ),  # Use same hover color as file table
+            )
         else:
-            # Handle selected/hover colors for enabled items
-            if option.state & QStyle.StateFlag.State_Selected:
-                option.palette.setBrush(
-                    QPalette.ColorRole.Text,
-                    QBrush(QColor(self.theme.get_color("input_selection_text"))),
-                )
-                option.palette.setBrush(
-                    QPalette.ColorRole.Highlight,
-                    QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
-                )
-            elif option.state & QStyle.StateFlag.State_MouseOver:
-                option.palette.setBrush(
-                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
-                )
-                option.palette.setBrush(
-                    QPalette.ColorRole.Highlight,
-                    QBrush(
-                        QColor(self.theme.get_color("table_hover_bg"))
-                    ),  # Use same hover color as file table
-                )
-            else:
-                # Normal state
-                option.palette.setBrush(
-                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
-                )
-                option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
+            # Normal state
+            option.palette.setBrush(
+                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
+            )
+            option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
 
 
 class FileTableHoverDelegate(QStyledItemDelegate):
@@ -422,14 +421,13 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                     text_color = custom_foreground
                 else:
                     text_color = get_qcolor("text")
+            elif is_selected and is_hovered:
+                text_color = get_qcolor("table_selection_text")
+            elif not is_selectable:
+                text_color = get_qcolor("text_secondary")
             else:
-                if is_selected and is_hovered:
-                    text_color = get_qcolor("table_selection_text")
-                elif not is_selectable:
-                    text_color = get_qcolor("text_secondary")
-                else:
-                    # Normal, hover, or selected-only: use light text
-                    text_color = get_qcolor("text")
+                # Normal, hover, or selected-only: use light text
+                text_color = get_qcolor("text")
 
             opt = QStyleOptionViewItem(option)
             self.initStyleOption(opt, index)

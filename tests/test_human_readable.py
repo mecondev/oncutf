@@ -11,7 +11,6 @@ between our application and system commands like ls -lh.
 Note: Linux-specific tests are skipped on Windows.
 """
 
-import os
 import platform
 import warnings
 

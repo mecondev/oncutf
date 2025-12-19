@@ -199,11 +199,10 @@ class MetadataEntry:
                 if key in self.data[group]:
                     del self.data[group][key]
                     removed = True
-        else:
-            # Top-level field
-            if field_key in self.data:
-                del self.data[field_key]
-                removed = True
+        # Top-level field
+        elif field_key in self.data:
+            del self.data[field_key]
+            removed = True
 
         if removed:
             self.modified = True

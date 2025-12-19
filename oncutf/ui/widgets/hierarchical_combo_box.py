@@ -194,12 +194,11 @@ class HierarchicalComboBox(QComboBox):
                 timer_type=TimerType.UI_UPDATE,
                 timer_id="hierarchical_combo_confirm",
             )
+        # For categories, toggle expansion
+        elif self.tree_view.isExpanded(index):
+            self.tree_view.collapse(index)
         else:
-            # For categories, toggle expansion
-            if self.tree_view.isExpanded(index):
-                self.tree_view.collapse(index)
-            else:
-                self.tree_view.expand(index)
+            self.tree_view.expand(index)
 
     def _on_item_double_clicked(self, index) -> None:
         """Handle item double click in the tree view."""
@@ -213,12 +212,11 @@ class HierarchicalComboBox(QComboBox):
         # Single click is enough for selection
         if item.flags() & Qt.ItemFlag.ItemIsSelectable:
             pass
+        # For categories, toggle expansion
+        elif self.tree_view.isExpanded(index):
+            self.tree_view.collapse(index)
         else:
-            # For categories, toggle expansion
-            if self.tree_view.isExpanded(index):
-                self.tree_view.collapse(index)
-            else:
-                self.tree_view.expand(index)
+            self.tree_view.expand(index)
 
     def clear(self) -> None:
         """Clear all items and categories."""

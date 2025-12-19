@@ -228,12 +228,12 @@ class CustomFileSystemModel(QFileSystemModel):
                 self.beginResetModel()
                 try:
                     # Clear the model completely
-                    temp_path = self.setRootPath("")
-                    
+                    self.setRootPath("")
+
                     # Force Qt to re-scan the filesystem by accessing the model
                     # This triggers internal cache invalidation
                     self.fetchMore(QModelIndex())
-                    
+
                     # If root path was empty (showing all drives), use "My Computer" or root
                     if not root_path or root_path == "":
                         # On Windows, empty path shows "My Computer" with all drives

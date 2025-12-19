@@ -69,12 +69,11 @@ class MetadataEditDialog(QDialog):
                 self.setFixedSize(450, 280)
             else:
                 self.setFixedSize(450, 220)
+        # Single file mode
+        elif self.is_multiline:
+            self.setFixedSize(420, 200)
         else:
-            # Single file mode
-            if self.is_multiline:
-                self.setFixedSize(420, 200)
-            else:
-                self.setFixedSize(380, 140)
+            self.setFixedSize(380, 140)
 
         self._setup_styles()
         self._setup_ui()
