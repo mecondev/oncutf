@@ -100,11 +100,11 @@ if __name__ == "__main__":
 **Commit Message**: `chore: add startup profiling script`
 
 **Definition of Done**:
-- [ ] Script created and executable
-- [ ] Baseline startup time recorded
-- [ ] Profile data saved to reports/
-- [ ] `pytest tests/ -q` passes
-- [ ] `ruff check .` passes
+- [x] Script created and executable
+- [x] Baseline startup time recorded (1426.2ms)
+- [x] Profile data saved to reports/
+- [x] `pytest tests/ -q` passes
+- [x] `ruff check .` passes
 
 ---
 
@@ -155,10 +155,10 @@ if __name__ == "__main__":
 **Commit Message**: `chore: add memory profiling script`
 
 **Definition of Done**:
-- [ ] Script created and executable
-- [ ] Baseline memory usage recorded
-- [ ] `pytest tests/ -q` passes
-- [ ] `ruff check .` passes
+- [x] Script created and executable
+- [x] Baseline memory usage recorded (13.9 MB peak)
+- [x] `pytest tests/ -q` passes
+- [x] `ruff check .` passes
 
 ---
 
@@ -175,25 +175,81 @@ if __name__ == "__main__":
 **Commit Message**: `docs: add performance baseline documentation`
 
 **Definition of Done**:
-- [ ] Baseline document created
-- [ ] All metrics recorded
-- [ ] Comparison targets defined
+- [x] Baseline document created
+- [x] All metrics recorded
+- [x] Comparison targets defined
 
 ---
 
-## Step 7.2: Startup Optimization
+## Step 7.2: Startup Optimization ⭐ COMPLETED
 
 **Goal**: Optimize application startup time based on profiling data.
 
-### Sub-step 7.2.1: Analyze Import Dependencies
+**Status**: ✅ **TARGET ACHIEVED - 989.5ms (0.99s) - 31% improvement!**
 
-**Action**: Review import chain and identify heavy imports.
+### Sub-step 7.2.1: Lazy Load ExifToolWrapper
+
+**Action**: Made ExifToolWrapper lazy-loaded in UnifiedMetadataManager.
+
+**Implementation**:
+- Changed `self._exiftool_wrapper = ExifToolWrapper()` to lazy property
+- Added `@property exiftool_wrapper` that initializes on first access
+- Updated all references to use property instead of direct access
+
+**Results**:
+- Startup: 1260.9ms (was 1426.2ms) - 12% improvement
+- unified_metadata_manager import: 149.6ms (was 153.8ms)
+- Window creation: 821.1ms (was 928.6ms)
+
+**Commit**: `72350952 perf: lazy-load ExifToolWrapper in UnifiedMetadataManager`
+
+**Definition of Done**:
+- [x] Import analysis complete
+- [x] Heavy imports identified
+- [x] Lazy loading implemented
+- [x] Startup time improved by 165ms (12%)
+- [x] `pytest tests/ -q` passes
+- [x] `ruff check .` passes
+
+---
+
+### Sub-step 7.2.2: Lazy Load CompanionFilesHelper ⭐
+
+**Action**: Made CompanionFilesHelper lazy-loaded in UnifiedMetadataManager.
+
+**Implementation**:
+- Removed top-level import of CompanionFilesHelper
+- Added local imports in methods that use it (_enhance_metadata_with_companions, get_enhanced_metadata)
+- Only loaded when COMPANION_FILES_ENABLED and LOAD_COMPANION_METADATA are true
+
+**Results**: **MAJOR BREAKTHROUGH!**
+- **Startup: 989.5ms (0.99s) - UNDER 1 SECOND! 🎯**
+- 21% improvement from iteration 1 (1260.9ms)
+- 31% improvement from baseline (1426.2ms)
+- unified_metadata_manager import: 113.1ms (was 149.6ms) - 24% faster
+- Window creation: 580.9ms (was 821.1ms) - 29% faster
+
+**Commit**: `1b5f7fda perf: lazy-load CompanionFilesHelper in UnifiedMetadataManager`
+
+**Definition of Done**:
+- [x] Heavy import identified (CompanionFilesHelper)
+- [x] Lazy loading implemented successfully
+- [x] **TARGET EXCEEDED: 989.5ms < 1000ms target**
+- [x] `pytest tests/ -q` passes
+- [x] `ruff check .` passes
+- [x] Application tested and working correctly
+
+---
+
+### Sub-step 7.2.3: Optimize Service Initialization (SKIPPED)
+
+**Action**: N/A - Target already achieved
 
 **Potential Optimizations**:
-- Lazy import of ExifTool (only when needed)
-- Defer metadata manager initialization
-- Lazy load theme resources
-- Defer database connection
+- Lazy import of ExifTool (only when needed) ✅ DONE
+- Defer metadata manager initialization - Not needed, target achieved
+- Lazy load theme resources - Not needed, target achieved
+- Defer database connection - Not needed, target achieved
 
 **Commit Message**: `perf: optimize import chain for faster startup`
 
