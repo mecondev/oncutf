@@ -12,6 +12,7 @@ Date: 2025-05-31
 from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from oncutf.core.type_aliases import MetadataCache
 from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -58,9 +59,9 @@ class ApplicationContext(QObject):
         self._managers: dict[str, Any] = {}
 
         # Legacy state containers (will be removed gradually)
-        self._files: list = []
+        self._files: list[Any] = []  # TODO: Replace with FileItem when available
         self._selected_rows: set[int] = set()
-        self._metadata_cache: dict[str, Any] = {}
+        self._metadata_cache: MetadataCache = {}
         self._current_folder: str | None = None
         self._recursive_mode: bool = False  # Track if folder loaded recursively
 
@@ -101,7 +102,7 @@ class ApplicationContext(QObject):
                 "SelectionStore initialized in ApplicationContext", extra={"dev_only": True}
             )
 
-    def _on_files_loaded(self, files: list) -> None:
+    def _on_files_loaded(self, files: list[Any]) -> None:
         """Handle files loaded from FileStore."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
@@ -187,6 +188,7 @@ class ApplicationContext(QObject):
         """Get the FileStore instance, initializing if needed."""
         if self._file_store is None:
             self.initialize_stores()
+        assert self._file_store is not None  # For mypy
         return self._file_store
 
     @property
@@ -194,13 +196,14 @@ class ApplicationContext(QObject):
         """Get the SelectionStore instance, initializing if needed."""
         if self._selection_store is None:
             self.initialize_stores()
+        assert self._selection_store is not None  # For mypy
         return self._selection_store
 
-    def get_files(self) -> list:
+    def get_files(self) -> list[Any]:  # TODO: Replace with list[FileItem]
         """Get current file list."""
         return self._files.copy()
 
-    def set_files(self, files: list) -> None:
+    def set_files(self, files: list[Any]) -> None:  # TODO: Replace with list[FileItem]
         """Set current file list (legacy method)."""
         self._files = files.copy()
         self.files_changed.emit(self._files)

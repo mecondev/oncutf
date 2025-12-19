@@ -64,9 +64,6 @@ class SelectionStore(QObject):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
-        # Loop protection
-        self._syncing_selection: bool = False
-
         # OPTIMIZED: Faster debouncing timer for better responsiveness
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)

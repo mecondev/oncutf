@@ -13,6 +13,7 @@ import os
 import time
 from typing import Any
 
+from oncutf.core.type_aliases import MetadataCache, NamePairsList
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
 from oncutf.utils.logger_factory import get_cached_logger
@@ -24,7 +25,7 @@ logger = get_cached_logger(__name__)
 class PreviewManager:
     """Manages preview name generation for rename operations."""
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize PreviewManager with reference to parent window."""
         self.parent_window = parent_window
         self.preview_map: dict[str, FileItem] = {}
@@ -41,9 +42,9 @@ class PreviewManager:
         self,
         selected_files: list[FileItem],
         rename_data: dict[str, Any],
-        metadata_cache: Any,
+        metadata_cache: MetadataCache | None,
         all_modules: list[Any],
-    ) -> tuple[list[tuple[str, str]], bool]:
+    ) -> tuple[NamePairsList, bool]:
         """Generate preview names for selected files with caching."""
         if not selected_files:
             return [], False
@@ -56,7 +57,10 @@ class PreviewManager:
         if entry:
             cached_result, cached_has_changes, cached_ts = entry
             if current_time - cached_ts < self._cache_validity_duration:
-                logger.debug("[PreviewManager] Using cached preview result (per-key)", extra={"dev_only": True})
+                logger.debug(
+                    "[PreviewManager] Using cached preview result (per-key)",
+                    extra={"dev_only": True},
+                )
                 return cached_result, cached_has_changes
 
         # Generate new preview
@@ -159,7 +163,8 @@ class PreviewManager:
         for idx, file in enumerate(selected_files):
             try:
                 basename, extension = os.path.splitext(file.filename)
-                new_fullname = apply_rename_modules(
+                # TODO: Add type hints to preview_engine.apply_rename_modules (Phase 3)
+                new_fullname = apply_rename_modules(  # type: ignore[no-untyped-call]
                     modules_data, idx, file, metadata_cache, all_files=selected_files
                 )
 
@@ -228,12 +233,12 @@ class PreviewManager:
         # Clear module cache
         from oncutf.utils.preview_engine import clear_module_cache
 
-        clear_module_cache()
+        clear_module_cache()  # type: ignore[no-untyped-call]  # TODO: Add type hints to preview_engine
 
         # Clear metadata cache
         from oncutf.modules.metadata_module import MetadataModule
 
-        MetadataModule.clear_cache()
+        MetadataModule.clear_cache()  # type: ignore[no-untyped-call]  # TODO: Add type hints to MetadataModule
 
         logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 
@@ -327,5 +332,7 @@ class PreviewManager:
         """
         # Clear short-lived cache and force regeneration
         self.clear_cache()
-        logger.debug("[PreviewManager] Forced preview generation requested", extra={"dev_only": True})
+        logger.debug(
+            "[PreviewManager] Forced preview generation requested", extra={"dev_only": True}
+        )
         return self.generate_preview_names(selected_files, rename_data, metadata_cache, all_modules)
