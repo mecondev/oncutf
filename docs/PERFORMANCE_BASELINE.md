@@ -3,7 +3,7 @@
 > **Date**: December 19, 2025  
 > **Environment**: Linux, Python 3.13, PyQt5  
 > **Author**: Michael Economou  
-> **Last Updated**: December 19, 2025 (Post optimization #1)
+> **Last Updated**: December 19, 2025 (Post optimization #2)
 
 ---
 
@@ -17,6 +17,18 @@ are applied to track progress.
 
 ## Performance History
 
+### Iteration 2: After Lazy CompanionFilesHelper Loading ⭐
+
+**Changes**: Lazy-loaded CompanionFilesHelper in UnifiedMetadataManager
+
+**Results**:
+- Total startup: **989.5ms (0.99s)** - **TARGET ACHIEVED! 🎯**
+- Was 1260.9ms - **21% improvement from iteration 1**
+- Was 1426.2ms baseline - **31% improvement overall**
+- unified_metadata_manager import: 113.1ms (was 149.6ms) - **24% faster**
+- Window creation: 580.9ms (was 821.1ms) - **29% faster**
+- Window show: 85.0ms (was 52.3ms)
+
 ### Iteration 1: After Lazy ExifTool Loading
 
 **Changes**: Lazy-loaded ExifToolWrapper in UnifiedMetadataManager
@@ -29,43 +41,43 @@ are applied to track progress.
 
 ---
 
-## 1. Current Startup Time Metrics (Latest)
+## 1. Current Startup Time Metrics (Latest - Iteration 2)
 
 ### Import Times (Current)
 
-| Module | Time (ms) | Change | Notes |
-|--------|-----------|--------|-------|
+| Module | Time (ms) | Change from Baseline | Notes |
+|--------|-----------|----------------------|-------|
 | PyQt5 | 6.6 | - | Qt bindings init |
-| PyQt5.QtWidgets | 116.7 | +5.7 | Main widget library |
+| PyQt5.QtWidgets | 98.6 | -12.4 | Main widget library |
 | oncutf | 0.5 | - | Package init |
 | oncutf.config | 3.4 | - | Configuration loading |
 | oncutf.core | 2.1 | - | Core package |
-| oncutf.core.application_context | 30.4 | -0.2 | App context setup |
-| oncutf.core.application_service | 40.9 | - | Service layer (not updated) |
-| oncutf.core.unified_rename_engine | 59.1 | +11.1 | Rename engine |
-| oncutf.core.unified_metadata_manager | 149.6 | **-4.2** | **Improved with lazy ExifTool** |
+| oncutf.core.application_context | 38.1 | +7.5 | App context setup |
+| oncutf.core.application_service | 10.9 | -30.0 | **Significantly improved** |
+| oncutf.core.unified_rename_engine | 41.6 | -6.4 | Rename engine |
+| oncutf.core.unified_metadata_manager | 113.1 | **-40.7** | **Major improvement with lazy loading** |
 | oncutf.ui.main_window | 4.1 | - | UI (already imported deps) |
 | oncutf.services | 6.8 | - | Service protocols |
 | oncutf.controllers | 10.2 | +3.0 | Controllers |
 
-**Total Import Time**: 387.5 ms (was 415.0ms) - **7% improvement**
+**Total Import Time**: 323.5 ms (was 415.0ms) - **22% improvement**
 
 ### Window Creation (Current)
 
-| Phase | Time (ms) | Change | Notes |
-|-------|-----------|--------|-------|
-| MainWindow.__init__ | 821.1 | **-107.5** | **Main improvement from lazy loading** |
-| MainWindow.show() | 52.3 | **-30.3** | **Significantly faster first paint** |
+| Phase | Time (ms) | Change from Baseline | Notes |
+|-------|-----------|----------------------|-------|
+| MainWindow.__init__ | 580.9 | **-347.7** | **Major improvement from lazy loading** |
+| MainWindow.show() | 85.0 | +2.4 | First paint |
 
-**Total Startup Time**: ~1.26 seconds (was ~1.43s) - **12% improvement**
+**Total Startup Time**: **~0.99 seconds (was ~1.43s) - 31% improvement ⭐**
 
 ### Top 5 Slowest Imports (Current)
 
-1. `oncutf.core.unified_metadata_manager`: 149.6ms (was 153.8ms)
-2. `PyQt5.QtWidgets`: 116.7ms (was 111.0ms)  
-3. `oncutf.core.unified_rename_engine`: 59.1ms (was 48.0ms)
-4. `oncutf.core.application_context`: 30.4ms (was 30.6ms)
-5. `oncutf.controllers`: 10.2ms (was 7.2ms)
+1. `oncutf.core.unified_metadata_manager`: 113.1ms (was 153.8ms) - **26% faster**
+2. `PyQt5.QtWidgets`: 98.6ms (was 111.0ms) - **11% faster**  
+3. `oncutf.core.unified_rename_engine`: 41.6ms (was 48.0ms) - **13% faster**
+4. `oncutf.core.application_context`: 38.1ms (was 30.6ms)
+5. `oncutf.core.application_service`: 10.9ms (was 40.9ms) - **73% faster**
 
 ---
 
