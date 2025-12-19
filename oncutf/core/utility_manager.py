@@ -121,7 +121,9 @@ class UtilityManager:
         from oncutf.utils.cursor_helper import wait_cursor
 
         with wait_cursor():
-            self.main_window.load_files_from_folder(self.main_window.current_folder_path, force=True)
+            self.main_window.load_files_from_folder(
+                self.main_window.current_folder_path, force=True
+            )
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """
@@ -372,6 +374,18 @@ class UtilityManager:
         setup_tooltip(self.main_window.rename_button, tooltip_msg, tooltip_type)
 
     def clear_preview_cache(self) -> None:
-        """Clear the preview generation cache to force next update."""
+        """Clear the preview generation cache to force next update.
+
+        This clears both the local hash cache and the PreviewManager's
+        internal cache to ensure the next preview generation runs fresh.
+        """
         self._last_selected_files_hash = None
         self._last_rename_data_hash = None
+
+        # Also clear PreviewManager cache for consistency
+        if hasattr(self.main_window, "preview_manager"):
+            self.main_window.preview_manager.clear_cache()
+            logger.debug(
+                "[UtilityManager] Preview caches cleared (local + PreviewManager)",
+                extra={"dev_only": True},
+            )
