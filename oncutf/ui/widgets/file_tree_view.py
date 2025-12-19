@@ -228,28 +228,70 @@ class FileTreeView(QTreeView):
         """
         logger.info("[FileTreeView] Drives changed, refreshing tree")
 
-        model = self.model()
-        if not model or not hasattr(model, "refresh"):
+        old_model = self.model()
+        if not old_model:
             logger.debug(
-                "[FileTreeView] Model doesn't support refresh",
+                "[FileTreeView] No model to refresh",
                 extra={"dev_only": True}
             )
             return
 
         # Get current selected path before refresh
         current_path = self.get_selected_path()
+        
+        # Get the old model's configuration
+        root_path = old_model.rootPath() if hasattr(old_model, "rootPath") else ""
+        name_filters = old_model.nameFilters() if hasattr(old_model, "nameFilters") else []
+        file_filter = old_model.filter() if hasattr(old_model, "filter") else None
 
         try:
-            # Refresh the model
-            model.refresh()
-            logger.debug("[FileTreeView] Model refreshed successfully", extra={"dev_only": True})
+            # The only reliable way to refresh drives in Windows is to recreate the model
+            # QFileSystemModel caches drive information and doesn't detect removals properly
+            from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
+            
+            # Create new model with same configuration
+            new_model = CustomFileSystemModel()
+            new_model.setRootPath("")
+            
+            if file_filter is not None:
+                new_model.setFilter(file_filter)
+            
+            if name_filters:
+                new_model.setNameFilters(name_filters)
+                new_model.setNameFilterDisables(False)
+            
+            # Replace the model
+            self.setModel(new_model)
+            
+            # Set root index
+            import platform
+            root = "" if platform.system() == "Windows" else "/"
+            self.setRootIndex(new_model.index(root))
+            
+            # Update parent window reference if available
+            parent = self.parent()
+            while parent is not None:
+                if hasattr(parent, "dir_model"):
+                    # Delete old model
+                    if old_model is not None:
+                        old_model.deleteLater()
+                    # Update reference
+                    parent.dir_model = new_model
+                    logger.debug(
+                        "[FileTreeView] Parent window dir_model reference updated",
+                        extra={"dev_only": True}
+                    )
+                    break
+                parent = parent.parent() if hasattr(parent, "parent") else None
+            
+            logger.info("[FileTreeView] Model recreated successfully to reflect drive changes")
 
             # Try to restore selection
             if current_path and os.path.exists(current_path):
                 self.select_path(current_path)
 
         except Exception as e:
-            logger.exception("[FileTreeView] Error refreshing model: %s", e)
+            logger.exception("[FileTreeView] Error recreating model: %s", e)
 
     def closeEvent(self, event) -> None:
         """Clean up resources before closing."""

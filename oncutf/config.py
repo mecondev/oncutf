@@ -159,6 +159,7 @@ ALLOWED_EXTENSIONS = {
     "mp4",
     "mov",
     "mts",
+    "mxf",
     "avi",
     "mkv",
     "wmv",

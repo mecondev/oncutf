@@ -223,16 +223,31 @@ class CustomFileSystemModel(QFileSystemModel):
                 # Get the current root path
                 root_path = self.rootPath()
 
-                # Clear the model
-                self.setRootPath("")
-
-                # Reload the root path
-                self.setRootPath(root_path)
+                # Force a complete model reset to refresh drive list
+                # This is necessary because QFileSystemModel caches drive information
+                self.beginResetModel()
+                try:
+                    # Clear the model completely
+                    temp_path = self.setRootPath("")
+                    
+                    # Force Qt to re-scan the filesystem by accessing the model
+                    # This triggers internal cache invalidation
+                    self.fetchMore(QModelIndex())
+                    
+                    # If root path was empty (showing all drives), use "My Computer" or root
+                    if not root_path or root_path == "":
+                        # On Windows, empty path shows "My Computer" with all drives
+                        # Reset to empty again to force re-scan
+                        self.setRootPath("")
+                    else:
+                        # Reload the specific root path
+                        self.setRootPath(root_path)
+                finally:
+                    self.endResetModel()
 
                 logger.info(
                     "[CustomFileSystemModel] Refreshed file system from: %s",
-                    root_path,
-                    extra={"dev_only": True},
+                    root_path if root_path else "My Computer",
                 )
             else:
                 # Refresh specific index
