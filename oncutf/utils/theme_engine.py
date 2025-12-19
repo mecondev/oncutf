@@ -4,11 +4,11 @@ Module: theme_engine.py
 Author: Michael Economou
 Date: 2025-06-20
 
-Simplified theme engine for OnCutF application.
-Delegates to ThemeManager for centralized theme management.
+Theme engine for OnCutF application.
 
-DEPRECATED: This module is a facade for backwards compatibility.
-Use ThemeManager (from oncutf.core.theme_manager) directly for new code.
+Provides centralized theming with color tokens, fonts, and layout constants.
+Integrates with ThemeManager for token-based theme management while providing
+a simplified API for widget styling.
 """
 
 import logging
@@ -25,18 +25,19 @@ logger = logging.getLogger(__name__)
 
 class ThemeEngine:
     """
-    Simplified theme engine that applies all styling globally.
+    Theme engine that applies all styling globally.
 
-    DEPRECATED: This is a facade for backwards compatibility.
-    Delegates to ThemeManager for actual theme management.
+    Provides color tokens, font configurations, and layout constants for
+    consistent widget styling throughout the application. Works in
+    conjunction with ThemeManager for token-based theming.
     """
 
     def __init__(self, theme_name: str = "dark"):
         """
-        Initialize ThemeEngine (facade).
+        Initialize ThemeEngine.
 
         Args:
-            theme_name: Theme name to use (passed to ThemeManager)
+            theme_name: Theme name to use (default: "dark")
         """
         self.theme_name = theme_name or oncutf.config.THEME_NAME
         self.is_windows = platform.system() == "Windows"
@@ -301,7 +302,9 @@ class ThemeEngine:
         # Set palette colors for alternating row backgrounds
         palette = app.palette()
         palette.setColor(QPalette.ColorRole.Base, QColor(self.get_color("table_background")))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate")))
+        palette.setColor(
+            QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate"))
+        )
         app.setPalette(palette)
 
         # Apply Windows-specific ComboBox fixes if on Windows
