@@ -12,6 +12,7 @@ Date: 2025-05-31
 from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from oncutf.core.type_aliases import MetadataCache
 from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -60,7 +61,7 @@ class ApplicationContext(QObject):
         # Legacy state containers (will be removed gradually)
         self._files: list = []
         self._selected_rows: set[int] = set()
-        self._metadata_cache: dict[str, Any] = {}
+        self._metadata_cache: MetadataCache = {}
         self._current_folder: str | None = None
         self._recursive_mode: bool = False  # Track if folder loaded recursively
 

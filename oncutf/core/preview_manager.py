@@ -13,6 +13,7 @@ import os
 import time
 from typing import Any
 
+from oncutf.core.type_aliases import MetadataCache, NamePairsList
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
 from oncutf.utils.logger_factory import get_cached_logger
@@ -41,9 +42,9 @@ class PreviewManager:
         self,
         selected_files: list[FileItem],
         rename_data: dict[str, Any],
-        metadata_cache: Any,
+        metadata_cache: MetadataCache | None,
         all_modules: list[Any],
-    ) -> tuple[list[tuple[str, str]], bool]:
+    ) -> tuple[NamePairsList, bool]:
         """Generate preview names for selected files with caching."""
         if not selected_files:
             return [], False
@@ -56,7 +57,10 @@ class PreviewManager:
         if entry:
             cached_result, cached_has_changes, cached_ts = entry
             if current_time - cached_ts < self._cache_validity_duration:
-                logger.debug("[PreviewManager] Using cached preview result (per-key)", extra={"dev_only": True})
+                logger.debug(
+                    "[PreviewManager] Using cached preview result (per-key)",
+                    extra={"dev_only": True},
+                )
                 return cached_result, cached_has_changes
 
         # Generate new preview
@@ -99,9 +103,9 @@ class PreviewManager:
         self,
         selected_files: list[FileItem],
         rename_data: dict[str, Any],
-        metadata_cache: Any,
+        metadata_cache: MetadataCache | None,
         all_modules: list[Any],
-    ) -> tuple[list[tuple[str, str]], bool]:
+    ) -> tuple[NamePairsList, bool]:
         """Internal preview generation method."""
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
@@ -148,8 +152,8 @@ class PreviewManager:
         selected_files: list[FileItem],
         modules_data: list[dict[str, Any]],
         post_transform: dict[str, Any],
-        metadata_cache: Any,
-    ) -> list[tuple[str, str]]:
+        metadata_cache: MetadataCache | None,
+    ) -> NamePairsList:
         """Generate name pairs by applying modules with performance optimizations."""
         name_pairs = []
 
@@ -318,14 +322,16 @@ class PreviewManager:
         self,
         selected_files: list[FileItem],
         rename_data: dict[str, Any],
-        metadata_cache: Any,
+        metadata_cache: MetadataCache | None,
         all_modules: list[Any],
-    ) -> tuple[list[tuple[str, str]], bool]:
+    ) -> tuple[NamePairsList, bool]:
         """
         Force generate preview names bypassing the short-lived cache.
         This clears the internal preview cache and calls generate_preview_names.
         """
         # Clear short-lived cache and force regeneration
         self.clear_cache()
-        logger.debug("[PreviewManager] Forced preview generation requested", extra={"dev_only": True})
+        logger.debug(
+            "[PreviewManager] Forced preview generation requested", extra={"dev_only": True}
+        )
         return self.generate_preview_names(selected_files, rename_data, metadata_cache, all_modules)
