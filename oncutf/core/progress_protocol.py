@@ -183,7 +183,7 @@ class ProgressSignals(QObject):
 
 
 def create_progress_callback(
-    progress_signal=None, size_signal=None
+    progress_signal=None, size_signal=None  # type: ignore[no-untyped-def]
 ) -> tuple[ProgressCallback | None, SizeProgressCallback | None]:
     """
     Create callback functions from Qt signals.
@@ -276,11 +276,12 @@ def format_size_progress(processed_bytes: int, total_bytes: int, include_percent
     """
     def format_bytes(size: int) -> str:
         """Format bytes as human-readable."""
+        size_float = float(size)
         for unit in ["B", "KB", "MB", "GB"]:
-            if size < 1024.0:
-                return f"{size:.2f} {unit}"
-            size /= 1024.0
-        return f"{size:.2f} TB"
+            if size_float < 1024.0:
+                return f"{size_float:.2f} {unit}"
+            size_float /= 1024.0
+        return f"{size_float:.2f} TB"
 
     processed_str = format_bytes(processed_bytes)
     total_str = format_bytes(total_bytes)

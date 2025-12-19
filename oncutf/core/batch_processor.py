@@ -134,10 +134,10 @@ class BatchProcessor:
 class SmartBatchProcessor(BatchProcessor):
     """Smart batch processor with dynamic optimization."""
 
-    def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs) -> None:  # noqa: ARG002
+    def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs: object) -> None:  # noqa: ARG002
         super().__init__(initial_batch_size, max_workers)
         self.initial_batch_size = initial_batch_size
-        self.performance_history = []
+        self.performance_history: list[tuple[int, float]] = []
         self.optimization_threshold = 0.5  # 500ms
 
     def process_batches_optimized(self, items: list[Any], processor_func: Any) -> list[Any]:
@@ -206,7 +206,7 @@ class BatchProcessorFactory:
     """Factory for creating batch processors."""
 
     @staticmethod
-    def create_processor(processor_type: str = "simple", **kwargs) -> BatchProcessor:
+    def create_processor(processor_type: str = "simple", **kwargs: object) -> BatchProcessor:
         """Create batch processor based on type."""
         if processor_type == "smart":
             return SmartBatchProcessor(**kwargs)

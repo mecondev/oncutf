@@ -206,7 +206,7 @@ class MetadataCommandManager(QObject):
             return f"Redo: {self._redo_stack[-1].get_description()}"
         return None
 
-    def get_command_history(self, limit: int | None = None) -> list[dict]:
+    def get_command_history(self, limit: int | None = None) -> list[dict[str, object]]:
         """
         Get command history for UI display.
 
@@ -281,7 +281,7 @@ class MetadataCommandManager(QObject):
 
         # Check time window
         time_diff = datetime.now() - self._last_command_time
-        if time_diff > timedelta(milliseconds=self.grouping_timeout):
+        if time_diff > timedelta(milliseconds=float(self.grouping_timeout)):
             return False
 
         # Check if there are pending commands or recent commands
@@ -337,7 +337,7 @@ class MetadataCommandManager(QObject):
         self._redo_stack.clear()
 
         # Limit stack size
-        if len(self._undo_stack) > self.max_history:
+        if len(self._undo_stack) > int(self.max_history):
             self._undo_stack.pop(0)
 
         logger.debug("[MetadataCommandManager] Added to undo stack: %s", command.get_description())

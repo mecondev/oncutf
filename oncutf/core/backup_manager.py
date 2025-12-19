@@ -261,7 +261,7 @@ class BackupManager(QObject):
             logger.error("Error getting backup files: %s", e)
             return []
 
-    def get_status(self) -> dict:
+    def get_status(self) -> dict[str, object]:
         """
         Get current backup manager status.
 
@@ -285,7 +285,7 @@ class BackupManager(QObject):
 _backup_manager: BackupManager | None = None
 
 
-def get_backup_manager(database_path: str, **kwargs) -> BackupManager:
+def get_backup_manager(database_path: str, **kwargs: object) -> BackupManager:
     """
     Get or create the global backup manager instance.
 
