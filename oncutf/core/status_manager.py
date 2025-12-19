@@ -539,14 +539,13 @@ class StatusManager:
 
         if total_files == 0:
             files_label.setText("Files (0)")
+        # Smart formatting based on selection
+        elif selected_files == 0:
+            files_label.setText(f"Files ({total_files} loaded)")
+        elif selected_files == total_files:
+            files_label.setText(f"Files ({total_files} all selected)")
         else:
-            # Smart formatting based on selection
-            if selected_files == 0:
-                files_label.setText(f"Files ({total_files} loaded)")
-            elif selected_files == total_files:
-                files_label.setText(f"Files ({total_files} all selected)")
-            else:
-                files_label.setText(f"Files ({total_files} loaded, {selected_files} selected)")
+            files_label.setText(f"Files ({total_files} loaded, {selected_files} selected)")
 
         # Also update status if significant selection change
         if selected_files > 0:

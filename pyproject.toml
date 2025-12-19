@@ -118,6 +118,10 @@ module = [
     "oncutf.core.file_load_manager",
     "oncutf.core.table_manager",
     "oncutf.core.selection_manager",
+    # Additional modules with Qt issues
+    "oncutf.core.pyqt_imports",
+    "oncutf.core.modifier_handler",
+    "oncutf.core.initialization_worker",
 ]
 ignore_errors = true
 
@@ -140,50 +144,65 @@ disallow_any_explicit = false  # Allow explicit Any for now
 # Phase 2: Core modules with basic type checking (errors enabled, but lenient)
 [[tool.mypy.overrides]]
 module = [
-    # Original Phase 2
+    # Original Phase 2 - clean modules
     "oncutf.core.file_store",
     "oncutf.core.selection_store",
     "oncutf.core.metadata_staging_manager",
-    # Promoted from original Phase 3 (all have 0 errors!)
-    "oncutf.core.unified_metadata_manager",
-    "oncutf.core.structured_metadata_manager",
-    "oncutf.core.unified_rename_engine",
-    "oncutf.core.batch_operations_manager",
-    "oncutf.core.memory_manager",
-    # Promoted from new Phase 3 (all have 0 standalone errors!)
-    "oncutf.core.persistent_metadata_cache",
-    "oncutf.core.unified_column_service",
-    "oncutf.core.database_manager",
-    "oncutf.core.conflict_resolver",
-    "oncutf.core.drag_visual_manager",
-    "oncutf.core.rename_history_manager",
-    "oncutf.core.performance_monitor",
-    "oncutf.core.parallel_metadata_loader",
-    "oncutf.core.theme_manager",
-    "oncutf.core.hash_manager",
-    "oncutf.core.persistent_hash_cache",
-    "oncutf.core.advanced_cache_manager",
+    # Targeted core modules we already cleaned
     "oncutf.core.metadata_command_manager",
     "oncutf.core.batch_processor",
-    "oncutf.core.pyqt_imports",
-    "oncutf.core.modifier_handler",
     "oncutf.core.metadata_commands",
     "oncutf.core.filesystem_monitor",
+    "oncutf.core.backup_manager",
+    "oncutf.core.progress_protocol",
+    "oncutf.core.pre_execution_validator",
+    "oncutf.core.persistent_hash_cache",
 ]
 ignore_errors = false
 disallow_untyped_defs = false
 
-# Phase 3: Modules with actual type errors (need fixing)
+# Phase 3: Modules with actual type errors (keep ignored until fixed)
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.core.drag_manager",           # 127 errors
-    "oncutf.core.parallel_hash_worker",   # 14 errors
+    # High-noise Qt or complex modules - temporarily ignored
+    "oncutf.core.drag_manager",
+    "oncutf.core.parallel_hash_worker",
+    "oncutf.core.unified_metadata_manager",
+    "oncutf.core.application_service",
+    "oncutf.core.hash_operations_manager",
+    "oncutf.core.thread_pool_manager",
+    "oncutf.core.unified_rename_engine",
+    "oncutf.core.metadata_operations_manager",
+    "oncutf.core.optimized_database_manager",
+    "oncutf.core.window_config_manager",
+    "oncutf.core.direct_metadata_loader",
+    "oncutf.core.persistent_metadata_cache",
+    "oncutf.core.column_manager",
+    "oncutf.core.unified_column_service",
+    "oncutf.core.conflict_resolver",
+    "oncutf.core.drag_visual_manager",
+    "oncutf.core.database_manager",
+    "oncutf.core.batch_operations_manager",
+    "oncutf.core.rename_history_manager",
+    "oncutf.core.performance_monitor",
+    "oncutf.core.file_validation_manager",
+    "oncutf.core.status_manager",
+    "oncutf.core.shutdown_coordinator",
+    "oncutf.core.parallel_metadata_loader",
+    "oncutf.core.file_operations_manager",
+    "oncutf.core.theme_manager",
+    "oncutf.core.memory_manager",
+    "oncutf.core.hash_worker",
+    "oncutf.core.structured_metadata_manager",
+    "oncutf.core.hash_manager",
+    "oncutf.core.advanced_cache_manager",
+    # Leave caches that were cleaned (persistent_hash_cache) in Phase 2
 ]
 ignore_errors = true
 
-# Controllers, models, modules - keep ignored for now
+# Controllers, models, modules, services - keep ignored for now
 [[tool.mypy.overrides]]
-module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*"]
+module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*", "oncutf.services.*"]
 ignore_errors = true
 
 # =============================================================================

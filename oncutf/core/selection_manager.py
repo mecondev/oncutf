@@ -206,10 +206,9 @@ class SelectionManager:
                 ranges = []
                 if hasattr(self.parent_window, "_find_consecutive_ranges"):
                     ranges = self.parent_window._find_consecutive_ranges(checked_rows)
-                else:
-                    # Fallback: simple range creation
-                    if checked_rows:
-                        ranges = [(checked_rows[0], checked_rows[-1])]
+                # Fallback: simple range creation
+                elif checked_rows:
+                    ranges = [(checked_rows[0], checked_rows[-1])]
 
                 if selection_model:
                     selection_model.clearSelection()
@@ -262,15 +261,14 @@ class SelectionManager:
                                 )
 
                         schedule_metadata_load(show_metadata_later, 20)
-                    else:
-                        # Multiple files or no files - show empty state
-                        if hasattr(metadata_tree_view, "handle_invert_selection"):
-                            metadata_tree_view.handle_invert_selection(None)
-                        elif hasattr(metadata_tree_view, "show_empty_state"):
-                            if checked_rows:
-                                metadata_tree_view.show_empty_state("Multiple files selected")
-                            else:
-                                metadata_tree_view.show_empty_state("No file selected")
+                    # Multiple files or no files - show empty state
+                    elif hasattr(metadata_tree_view, "handle_invert_selection"):
+                        metadata_tree_view.handle_invert_selection(None)
+                    elif hasattr(metadata_tree_view, "show_empty_state"):
+                        if checked_rows:
+                            metadata_tree_view.show_empty_state("Multiple files selected")
+                        else:
+                            metadata_tree_view.show_empty_state("No file selected")
 
             finally:
                 # Restore signals
@@ -357,10 +355,9 @@ class SelectionManager:
                     )
                 elif hasattr(metadata_tree_view, "display_metadata"):
                     metadata_tree_view.display_metadata(metadata, context="selection_update")
-            else:
-                # Multiple files - show empty state
-                if hasattr(metadata_tree_view, "show_empty_state"):
-                    metadata_tree_view.show_empty_state("Multiple files selected")
+            # Multiple files - show empty state
+            elif hasattr(metadata_tree_view, "show_empty_state"):
+                metadata_tree_view.show_empty_state("Multiple files selected")
 
     def _clear_metadata_display(self) -> None:
         """Clear metadata display and current file."""

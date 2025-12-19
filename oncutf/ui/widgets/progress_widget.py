@@ -491,14 +491,12 @@ class ProgressWidget(QWidget):
         if self.progress_mode == "size" and self.total_size > 0:
             # Size-based progress
             self.set_progress_by_size(self.processed_size, self.total_size)
-        else:
-            # Count-based progress (default)
-            if total_files > 0:
-                self.set_progress(file_count, total_files)
-            else:
-                # If no file count provided, try to calculate from size
-                if self.total_size > 0:
-                    self.set_progress_by_size(self.processed_size, self.total_size)
+        # Count-based progress (default)
+        elif total_files > 0:
+            self.set_progress(file_count, total_files)
+        # If no file count provided, try to calculate from size
+        elif self.total_size > 0:
+            self.set_progress_by_size(self.processed_size, self.total_size)
 
         # Update displays
         if self.show_size_info and hasattr(self, "size_label"):
@@ -720,10 +718,9 @@ class ProgressWidget(QWidget):
                 # Force update if progress changed by more than 1% OR more than 1MB
                 if progress_change_ratio > 0.01 or (processed_size - old_processed) > 1_000_000:
                     force_update = True
-            else:
-                # No total size known - update for any significant change (>1MB)
-                if (processed_size - old_processed) > 1_000_000:
-                    force_update = True
+            # No total size known - update for any significant change (>1MB)
+            elif (processed_size - old_processed) > 1_000_000:
+                force_update = True
 
         # Apply optimized throttling for better responsiveness
         current_time = time.time()

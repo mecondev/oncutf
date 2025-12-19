@@ -93,9 +93,8 @@ class InteractiveHeader(QHeaderView):
                 # Qt.Checked may not always exist as attribute
                 checked = getattr(Qt, "Checked", 2)
                 main_window.handle_header_toggle(checked)
-        else:
-            if main_window and hasattr(main_window, "sort_by_column"):
-                main_window.sort_by_column(released_index)
+        elif main_window and hasattr(main_window, "sort_by_column"):
+            main_window.sort_by_column(released_index)
 
         super().mouseReleaseEvent(event)
 

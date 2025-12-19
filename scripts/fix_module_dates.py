@@ -95,13 +95,11 @@ def get_file_creation_date(filepath: Path) -> str:
 
     # Clamp to project start date (2025-05-01)
     project_start = datetime(2025, 5, 1)
-    if file_date < project_start:
-        file_date = project_start
+    file_date = max(file_date, project_start)
 
     # Don't allow future dates
     today = datetime.now()
-    if file_date > today:
-        file_date = today
+    file_date = min(file_date, today)
 
     return file_date.strftime('%Y-%m-%d')
 

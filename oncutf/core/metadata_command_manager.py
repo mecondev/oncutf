@@ -16,6 +16,7 @@ Features:
 """
 
 from datetime import datetime, timedelta
+from typing import Any, cast
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -50,8 +51,11 @@ class MetadataCommandManager(QObject):
             max_history: Maximum number of commands to keep in history
         """
         super().__init__()
-        self.max_history = max_history or UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
-        self.grouping_timeout = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
+        config_max_history: Any = UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
+        config_grouping_timeout: Any = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
+
+        self.max_history = int(max_history) if max_history is not None else int(cast(int, config_max_history))
+        self.grouping_timeout = float(cast(float, config_grouping_timeout))
 
         # Command stacks
         self._undo_stack: list[MetadataCommand] = []
@@ -206,7 +210,7 @@ class MetadataCommandManager(QObject):
             return f"Redo: {self._redo_stack[-1].get_description()}"
         return None
 
-    def get_command_history(self, limit: int | None = None) -> list[dict]:
+    def get_command_history(self, limit: int | None = None) -> list[dict[str, object]]:
         """
         Get command history for UI display.
 
@@ -281,7 +285,7 @@ class MetadataCommandManager(QObject):
 
         # Check time window
         time_diff = datetime.now() - self._last_command_time
-        if time_diff > timedelta(milliseconds=self.grouping_timeout):
+        if time_diff > timedelta(milliseconds=float(self.grouping_timeout)):
             return False
 
         # Check if there are pending commands or recent commands
@@ -337,7 +341,7 @@ class MetadataCommandManager(QObject):
         self._redo_stack.clear()
 
         # Limit stack size
-        if len(self._undo_stack) > self.max_history:
+        if len(self._undo_stack) > int(self.max_history):
             self._undo_stack.pop(0)
 
         logger.debug("[MetadataCommandManager] Added to undo stack: %s", command.get_description())

@@ -165,12 +165,11 @@ class CompanionFilesWidget(QWidget):
         # Set display mode
         if SHOW_COMPANION_FILES_IN_TABLE:
             self.show_radio.setChecked(True)
+        # Check if using grouped mode (future feature)
+        elif CompanionFileMode["GROUPED"] == DEFAULT_COMPANION_FILE_MODE:
+            self.grouped_radio.setChecked(True)
         else:
-            # Check if using grouped mode (future feature)
-            if CompanionFileMode["GROUPED"] == DEFAULT_COMPANION_FILE_MODE:
-                self.grouped_radio.setChecked(True)
-            else:
-                self.hide_radio.setChecked(True)
+            self.hide_radio.setChecked(True)
 
         self._update_controls_state()
 

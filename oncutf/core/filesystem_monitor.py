@@ -347,7 +347,7 @@ class FilesystemMonitor(QObject):
             return
 
         # Get loaded files
-        loaded_files = self.file_store.get_all_files()
+        loaded_files = self.file_store.get_loaded_files()
         if not loaded_files:
             return
 

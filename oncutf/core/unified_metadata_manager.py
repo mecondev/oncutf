@@ -26,7 +26,6 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.file_status_helpers import (
     get_hash_for_file,
@@ -83,15 +82,31 @@ class UnifiedMetadataManager(QObject):
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
 
-        # Initialize ExifTool wrapper for single file operations
-        from oncutf.utils.exiftool_wrapper import ExifToolWrapper
-
-        self._exiftool_wrapper = ExifToolWrapper()
+        # ExifTool wrapper for single file operations (lazy-initialized)
+        self._exiftool_wrapper = None
 
         # Initialize parallel metadata loader (lazy-initialized on first use)
         self._parallel_loader = None
 
         logger.info("[UnifiedMetadataManager] Initialized - unified metadata management")
+
+    @property
+    def exiftool_wrapper(self):
+        """
+        Lazy-initialized ExifTool wrapper.
+
+        Returns:
+            ExifToolWrapper instance
+        """
+        if self._exiftool_wrapper is None:
+            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
+            self._exiftool_wrapper = ExifToolWrapper()
+            logger.debug(
+                "[UnifiedMetadataManager] ExifToolWrapper initialized",
+                extra={"dev_only": True},
+            )
+        return self._exiftool_wrapper
 
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
@@ -175,6 +190,9 @@ class UnifiedMetadataManager(QObject):
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return self.check_cached_metadata(file_item)
+
+        # Lazy import to avoid loading at module level
+        from oncutf.utils.companion_files_helper import CompanionFilesHelper
 
         try:
             # Get base metadata from cache
@@ -265,6 +283,9 @@ class UnifiedMetadataManager(QObject):
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return base_metadata
+
+        # Lazy import to avoid loading at module level
+        from oncutf.utils.companion_files_helper import CompanionFilesHelper
 
         try:
             # Get folder files for companion detection
@@ -777,7 +798,7 @@ class UnifiedMetadataManager(QObject):
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_item = {
                 executor.submit(
-                    self._exiftool_wrapper.get_metadata, item.full_path, use_extended
+                    self.exiftool_wrapper.get_metadata, item.full_path, use_extended
                 ): item
                 for item in items_to_load
             }
@@ -931,7 +952,7 @@ class UnifiedMetadataManager(QObject):
         with wait_cursor():
             try:
                 # Load metadata using ExifTool wrapper
-                metadata = self._exiftool_wrapper.get_metadata(item.full_path, use_extended)
+                metadata = self.exiftool_wrapper.get_metadata(item.full_path, use_extended)
 
                 if metadata:
                     # Mark metadata with loading mode
@@ -1780,7 +1801,7 @@ class UnifiedMetadataManager(QObject):
 
                     try:
                         # Save using ExifTool
-                        success = self._exiftool_wrapper.write_metadata(file_path, modifications)
+                        success = self.exiftool_wrapper.write_metadata(file_path, modifications)
 
                         if success:
                             success_count += 1

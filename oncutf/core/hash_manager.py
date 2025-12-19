@@ -107,10 +107,9 @@ class HashManager:
             if cached_hash:
                 logger.debug("[HashManager] Cache hit for: %s", file_path.name)
                 return cached_hash
-        else:
-            if cache_key in self._hash_cache:
-                logger.debug("[HashManager] Cache hit for: %s", file_path.name)
-                return self._hash_cache[cache_key]
+        elif cache_key in self._hash_cache:
+            logger.debug("[HashManager] Cache hit for: %s", file_path.name)
+            return self._hash_cache[cache_key]
 
         # Cache miss - need to calculate hash
         logger.debug("[HashManager] Cache miss, calculating hash for: %s", file_path.name)

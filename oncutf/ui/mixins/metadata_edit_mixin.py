@@ -386,10 +386,9 @@ class MetadataEditMixin:
             # Restore selection AFTER tree has been updated
             if saved_path:
                 schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
-        else:
-            # For cancelled edits, restore immediately
-            if saved_path:
-                self._restore_selection(saved_path)
+        # For cancelled edits, restore immediately
+        elif saved_path:
+            self._restore_selection(saved_path)
 
     def _fallback_edit_value(
         self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
@@ -809,15 +808,14 @@ class MetadataEditMixin:
                 new_str,
                 extra={"dev_only": True},
             )
-        else:
-            # Remove from modifications if values are the same
-            if hasattr(self, 'modified_items') and key_path in self.modified_items:
-                self.modified_items.remove(key_path)
-                logger.debug(
-                    "[MetadataEditMixin] Removed modification mark: %s (value restored to original)",
-                    key_path,
-                    extra={"dev_only": True},
-                )
+        # Remove from modifications if values are the same
+        elif hasattr(self, 'modified_items') and key_path in self.modified_items:
+            self.modified_items.remove(key_path)
+            logger.debug(
+                "[MetadataEditMixin] Removed modification mark: %s (value restored to original)",
+                key_path,
+                extra={"dev_only": True},
+            )
 
     # =====================================
     # Undo/Redo Operations

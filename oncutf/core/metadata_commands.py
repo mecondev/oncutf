@@ -112,7 +112,7 @@ class EditMetadataFieldCommand(MetadataCommand):
         field_path: str,
         new_value: Any,
         old_value: Any,
-        metadata_tree_view=None,
+        metadata_tree_view: Any | None = None,
     ):
         """
         Initialize edit metadata field command.
@@ -250,7 +250,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
         field_path: str,
         current_value: Any,
         original_value: Any,
-        metadata_tree_view=None,
+        metadata_tree_view: Any | None = None,
     ):
         """
         Initialize reset metadata field command.

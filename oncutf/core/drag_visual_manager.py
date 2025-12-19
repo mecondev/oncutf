@@ -237,53 +237,51 @@ class DragVisualManager:
         # Choose action icons based on context
         if is_metadata_drop:
             action_icons = ["x"] if self._drop_zone_state == DropZoneState.INVALID else ["info"]
-        else:
-            # Normal file/folder drops
-            if self._drop_zone_state == DropZoneState.INVALID:
-                action_icons = ["x"]
-            elif self._drop_zone_state == DropZoneState.VALID:
-                # For files, ignore recursive modifiers (no subdirectories)
-                if self._drag_type == DragType.FILE:
-                    if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        action_icons = (
-                            ["plus", "layers"]
-                            if self._modifier_state == ModifierState.CTRL_SHIFT
-                            else ["plus"]
-                        )
-                    else:
-                        action_icons = []  # Replace + Shallow (no icon)
-                else:
-                    # For folders and multiple items
-                    action_icons = (
-                        ["plus"]
-                        if self._modifier_state == ModifierState.SHIFT
-                        else ["layers"]
-                        if self._modifier_state == ModifierState.CTRL
-                        else ["plus", "layers"]
-                        if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else []
-                    )
-            else:  # NEUTRAL - show preview
-                if self._drag_type == DragType.FILE:
+        # Normal file/folder drops
+        elif self._drop_zone_state == DropZoneState.INVALID:
+            action_icons = ["x"]
+        elif self._drop_zone_state == DropZoneState.VALID:
+            # For files, ignore recursive modifiers (no subdirectories)
+            if self._drag_type == DragType.FILE:
+                if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
                     action_icons = (
                         ["plus", "layers"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else (
-                            ["plus"]
-                            if self._modifier_state == ModifierState.SHIFT
-                            else []
-                        )
+                        else ["plus"]
                     )
                 else:
-                    action_icons = (
-                        ["plus"]
-                        if self._modifier_state == ModifierState.SHIFT
-                        else ["layers"]
-                        if self._modifier_state == ModifierState.CTRL
-                        else ["plus", "layers"]
-                        if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else []
-                    )
+                    action_icons = []  # Replace + Shallow (no icon)
+            else:
+                # For folders and multiple items
+                action_icons = (
+                    ["plus"]
+                    if self._modifier_state == ModifierState.SHIFT
+                    else ["layers"]
+                    if self._modifier_state == ModifierState.CTRL
+                    else ["plus", "layers"]
+                    if self._modifier_state == ModifierState.CTRL_SHIFT
+                    else []
+                )
+        elif self._drag_type == DragType.FILE:
+            action_icons = (
+                ["plus", "layers"]
+                if self._modifier_state == ModifierState.CTRL_SHIFT
+                else (
+                    ["plus"]
+                    if self._modifier_state == ModifierState.SHIFT
+                    else []
+                )
+            )
+        else:
+            action_icons = (
+                ["plus"]
+                if self._modifier_state == ModifierState.SHIFT
+                else ["layers"]
+                if self._modifier_state == ModifierState.CTRL
+                else ["plus", "layers"]
+                if self._modifier_state == ModifierState.CTRL_SHIFT
+                else []
+            )
 
         return self._create_composite_cursor(base_icon, action_icons)
 

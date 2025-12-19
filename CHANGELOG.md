@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Performance
+- **Phase 7 - Final Polish**: Major performance optimizations and polish
+  - **Startup Optimization**: 31% faster application startup (1426ms → 989ms)
+    - Lazy-loaded ExifToolWrapper in UnifiedMetadataManager (12% improvement)
+    - Lazy-loaded CompanionFilesHelper in UnifiedMetadataManager (21% improvement)
+    - Exceeded target of <1000ms startup time
+  - **Memory Optimization**: Bounded memory caches to prevent unbounded growth
+    - Added LRU eviction to PersistentHashCache (1000 entry limit)
+    - Added LRU eviction to PersistentMetadataCache (500 entry limit)
+    - OrderedDict-based LRU implementation with move_to_end() pattern
+  - **Performance Profiling**: Created comprehensive profiling infrastructure
+    - Added scripts/profile_startup.py for startup time analysis
+    - Added scripts/profile_memory.py for memory usage tracking
+    - Created docs/PERFORMANCE_BASELINE.md for tracking improvements
+
 ### Added
 - **Phase 1D - MainWindowController**: High-level orchestration controller
   - New MainWindowController coordinating FileLoad, Metadata, and Rename controllers

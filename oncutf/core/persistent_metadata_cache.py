@@ -11,11 +11,15 @@ and separation of concerns.
 """
 
 import time
+from collections import OrderedDict
 
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
+
+# Maximum memory cache size to prevent unbounded growth
+MAX_MEMORY_CACHE_SIZE = 500  # Metadata is larger than hashes
 
 try:
     from oncutf.core.database_manager import get_database_manager
@@ -90,7 +94,8 @@ class PersistentMetadataCache:
         except Exception as e:
             logger.error("[DEBUG] [PersistentMetadataCache] Error getting database manager: %s", e)
             raise
-        self._memory_cache: dict[str, MetadataEntry] = {}  # Hot cache for performance
+        # Use OrderedDict for LRU behavior - limit cache size to prevent memory growth
+        self._memory_cache: OrderedDict[str, MetadataEntry] = OrderedDict()
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -109,8 +114,16 @@ class PersistentMetadataCache:
         # Create metadata entry
         entry = MetadataEntry(metadata, is_extended=is_extended, modified=modified)
 
-        # Store in memory cache for fast access
+        # Store in memory cache with LRU eviction
+        # If key exists, move to end (most recent)
+        if norm_path in self._memory_cache:
+            self._memory_cache.move_to_end(norm_path)
+
         self._memory_cache[norm_path] = entry
+
+        # Enforce cache size limit (LRU eviction)
+        while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+            self._memory_cache.popitem(last=False)  # Remove oldest
 
         # Persist to database
         try:
@@ -178,6 +191,8 @@ class PersistentMetadataCache:
                 norm_path,
                 extra={"dev_only": True}
             )
+            # Move to end (most recently used) for LRU
+            self._memory_cache.move_to_end(norm_path)
             return self._memory_cache[norm_path]
 
         # Load from database
@@ -185,12 +200,16 @@ class PersistentMetadataCache:
         try:
             metadata = self._db_manager.get_metadata(norm_path)
             if metadata:
-                # Create entry and cache it
+                # Create entry and cache it with LRU eviction
                 is_extended = metadata.pop("__extended__", False)
                 is_modified = metadata.pop("__modified__", False)
 
                 entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
                 self._memory_cache[norm_path] = entry
+
+                # Enforce cache size limit
+                while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+                    self._memory_cache.popitem(last=False)  # Remove oldest
 
                 return entry
 
@@ -225,6 +244,8 @@ class PersistentMetadataCache:
         for norm_path in norm_paths:
             if norm_path in self._memory_cache:
                 self._cache_hits += 1
+                # Move to end (most recently used) for LRU
+                self._memory_cache.move_to_end(norm_path)
                 result[norm_path] = self._memory_cache[norm_path]
             else:
                 paths_to_query.append(norm_path)
@@ -239,7 +260,7 @@ class PersistentMetadataCache:
                 for path in paths_to_query:
                     metadata = batch_metadata.get(path)
                     if metadata:
-                        # Create entry and cache it
+                        # Create entry and cache it with LRU eviction
                         is_extended = metadata.pop("__extended__", False)
                         is_modified = metadata.pop("__modified__", False)
 
@@ -247,6 +268,11 @@ class PersistentMetadataCache:
                             metadata, is_extended=is_extended, modified=is_modified
                         )
                         self._memory_cache[path] = entry
+
+                        # Enforce cache size limit
+                        while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+                            self._memory_cache.popitem(last=False)  # Remove oldest
+
                         result[path] = entry
                     else:
                         result[path] = None
