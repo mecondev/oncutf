@@ -10,12 +10,16 @@ Provides improved performance and separation of concerns.
 """
 
 import os
+from collections import OrderedDict
 
 from oncutf.core.database_manager import get_database_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
+
+# Maximum memory cache size to prevent unbounded growth
+MAX_MEMORY_CACHE_SIZE = 1000
 
 
 class PersistentHashCache:
@@ -32,7 +36,8 @@ class PersistentHashCache:
     def __init__(self):
         """Initialize persistent hash cache with database backend."""
         self._db_manager = get_database_manager()
-        self._memory_cache: dict[str, str] = {}  # Hot cache for performance
+        # Use OrderedDict for LRU behavior - limit cache size to prevent memory growth
+        self._memory_cache: OrderedDict[str, str] = OrderedDict()
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -46,9 +51,18 @@ class PersistentHashCache:
         """Store hash for a file with database persistence."""
         norm_path = self._normalize_path(file_path)
 
-        # Store in memory cache for fast access
+        # Store in memory cache for fast access with LRU eviction
         cache_key = f"{norm_path}:{algorithm}"
+
+        # If key exists, move to end (most recent)
+        if cache_key in self._memory_cache:
+            self._memory_cache.move_to_end(cache_key)
+
         self._memory_cache[cache_key] = hash_value
+
+        # Enforce cache size limit (LRU eviction)
+        while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+            self._memory_cache.popitem(last=False)  # Remove oldest
 
         # Persist to database
         try:
@@ -73,6 +87,8 @@ class PersistentHashCache:
         # Check memory cache first
         if cache_key in self._memory_cache:
             self._cache_hits += 1
+            # Move to end (most recently used) for LRU
+            self._memory_cache.move_to_end(cache_key)
             return self._memory_cache[cache_key]
 
         # Load from database
@@ -80,8 +96,13 @@ class PersistentHashCache:
         try:
             hash_value = self._db_manager.get_hash(norm_path, algorithm)
             if hash_value:
-                # Cache it for future access
+                # Cache it for future access with LRU eviction
                 self._memory_cache[cache_key] = hash_value
+
+                # Enforce cache size limit
+                while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+                    self._memory_cache.popitem(last=False)  # Remove oldest
+
                 return hash_value
 
         except Exception as e:
