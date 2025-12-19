@@ -198,19 +198,23 @@ QComboBox QAbstractItemView {
 /* ===== QScrollBar ===== */
 QScrollBar:vertical {
     background-color: {{scrollbar_bg}};
-    width: 12px;
+    width: 16px;
     margin: 0px;
 }
 
 QScrollBar::handle:vertical {
     background-color: {{scrollbar_handle}};
     min-height: 20px;
-    border-radius: 6px;
-    margin: 2px;
+    border-radius: 9px;
+    margin: 3px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: {{scrollbar_handle_hover}};
+    background-color: {{hover}};
+}
+
+QScrollBar::handle:vertical:pressed {
+    background-color: {{button_pressed_bg}};
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
@@ -223,19 +227,23 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 
 QScrollBar:horizontal {
     background-color: {{scrollbar_bg}};
-    height: 12px;
+    height: 16px;
     margin: 0px;
 }
 
 QScrollBar::handle:horizontal {
     background-color: {{scrollbar_handle}};
     min-width: 20px;
-    border-radius: 6px;
-    margin: 2px;
+    border-radius: 9px;
+    margin: 3px;
 }
 
 QScrollBar::handle:horizontal:hover {
-    background-color: {{scrollbar_handle_hover}};
+    background-color: {{hover}};
+}
+
+QScrollBar::handle:horizontal:pressed {
+    background-color: {{button_pressed_bg}};
 }
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {

@@ -112,6 +112,10 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Ensure scrollbar updates properly
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        # Enable smooth pixel-based scrolling instead of per-column jumps
+        self.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
 
         # Custom drag settings for existing implementation
         self.setDragEnabled(False)  # Disable Qt's built-in drag for custom implementation

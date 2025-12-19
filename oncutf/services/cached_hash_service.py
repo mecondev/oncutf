@@ -34,9 +34,9 @@ class CachedHashService:
     def _get_cache_manager(self):
         """Lazy load the hash cache manager."""
         if self._cache_manager is None:
-            from oncutf.core.persistent_hash_cache import get_hash_cache_manager
+            from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
 
-            self._cache_manager = get_hash_cache_manager()
+            self._cache_manager = get_persistent_hash_cache()
         return self._cache_manager
 
     def compute_hash(

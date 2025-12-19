@@ -29,7 +29,15 @@ from enum import Enum
 from typing import Any
 
 from oncutf.core.config_imports import FILE_TABLE_COLUMN_CONFIG, METADATA_TREE_COLUMN_WIDTHS
-from oncutf.core.pyqt_imports import QFontMetrics, QHeaderView, QTableView, QTreeView, QWidget
+from oncutf.core.pyqt_imports import (
+    QFontMetrics,
+    QHeaderView,
+    QTableView,
+    QTreeView,
+    QWidget,
+    QPropertyAnimation,
+    QEasingCurve,
+)
 from oncutf.utils.logger_helper import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -575,40 +583,50 @@ class ColumnManager:
             # Update viewport to refresh display
             table_view.viewport().update()
 
-            # Restore scrollbar position if it's still valid
+            # Restore scrollbar position if it's still valid, using smooth animation
             if hbar:
-                # If the stored position is still valid, restore it
+                target_value = 0
                 if hbar.maximum() > 0:
-                    # If the stored position is still valid, restore it
                     if current_scroll_position <= hbar.maximum():
-                        hbar.setValue(current_scroll_position)
+                        target_value = current_scroll_position
                         logger.debug(
-                            "[ColumnManager] Restored horizontal scrollbar to position: %d",
+                            "[ColumnManager] Will restore horizontal scrollbar to position: %d",
                             current_scroll_position,
                             extra={"dev_only": True},
                         )
                     else:
-                        # If the stored position is beyond the new range, go to the rightmost valid position
-                        hbar.setValue(hbar.maximum())
+                        target_value = hbar.maximum()
                         logger.debug(
-                            "[ColumnManager] Adjusted horizontal scrollbar to maximum: %d",
+                            "[ColumnManager] Will adjust horizontal scrollbar to maximum: %d",
                             hbar.maximum(),
                             extra={"dev_only": True},
                         )
-                else:
-                    # No scrolling needed, reset to 0
-                    hbar.setValue(0)
-                    logger.debug(
-                        "[ColumnManager] Reset horizontal scrollbar to 0 (no scrolling needed)",
-                        extra={"dev_only": True},
-                    )
 
-                logger.debug(
-                    "[ColumnManager] Updated horizontal scrollbar: max=%d, value=%d",
-                    hbar.maximum(),
-                    hbar.value(),
-                    extra={"dev_only": True},
-                )
+                # Only animate if the change is noticeable; otherwise set directly
+                try:
+                    current_val = hbar.value()
+                    if abs(current_val - target_value) > 8:
+                        # Create an animation and store it on the table_view to avoid GC
+                        anim = QPropertyAnimation(hbar, b"value", table_view)
+                        anim.setDuration(180)
+                        anim.setStartValue(current_val)
+                        anim.setEndValue(target_value)
+                        anim.setEasingCurve(QEasingCurve.OutCubic)
+                        # Keep a reference to prevent garbage collection until finished
+                        table_view._horizontal_scroll_anim = anim
+                        anim.finished.connect(lambda: setattr(table_view, "_horizontal_scroll_anim", None))
+                        anim.start()
+                        logger.debug(
+                            "[ColumnManager] Animating horizontal scrollbar from %d to %d",
+                            current_val,
+                            target_value,
+                            extra={"dev_only": True},
+                        )
+                    else:
+                        hbar.setValue(target_value)
+                except Exception:
+                    # Fallback to direct set if animation fails
+                    hbar.setValue(target_value)
 
         except Exception as e:
             logger.warning("[ColumnManager] Error updating horizontal scrollbar state: %s", e)
