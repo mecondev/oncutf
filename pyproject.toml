@@ -66,71 +66,104 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 [tool.mypy]
 python_version = "3.12"
-# Default to non-strict across the repo.
-# Enable strict only for specific packages via overrides below.
+# Gradual typing strategy: Start with basic checks, progressively enable stricter rules
 strict = false
 ignore_missing_imports = true
 warn_unused_configs = true
 warn_unused_ignores = true
-# Stricter defaults for all modules
+
+# Baseline type safety (enabled globally)
 warn_return_any = true
 check_untyped_defs = true
 warn_redundant_casts = true
+no_implicit_optional = true
+warn_unreachable = true
+
+# Disabled globally (enable per-module as code improves)
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
-no_implicit_optional = true
-# - Exclude scripts by path, because mypy per-module overrides operate on module
-#   names (and scripts are not a package by default).
-exclude = '.*(backups|\.cache|temp|reports|scripts|examples)/'  # Global exclude, only one allowed
 
+# Exclude non-package directories
+exclude = '.*(backups|\.cache|temp|reports|scripts|examples)/'
+
+# =============================================================================
+# Third-party libraries
+# =============================================================================
 [[tool.mypy.overrides]]
-module = ["PyQt5.*"]
+module = ["PyQt5.*", "PIL.*", "psutil.*"]
 ignore_missing_imports = true
 ignore_errors = true
 
+# =============================================================================
+# Legacy code with minimal type hints (ignore errors for now)
+# =============================================================================
 [[tool.mypy.overrides]]
-module = ["oncutf.ui.*"]
+module = ["oncutf.ui.*", "oncutf.utils.*", "tests.*", "main"]
 ignore_errors = true
 
-[[tool.mypy.overrides]]
-module = ["oncutf.utils.*"]
-ignore_errors = true
+# =============================================================================
+# Core modules - GRADUAL STRICTNESS
+# =============================================================================
 
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = ["main"]
-ignore_errors = true
-
+# Phase 1: Well-typed modules with strict checking
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.controllers.*",
-    "oncutf.core.*",
-    "oncutf.models.*",
-    "oncutf.modules.*",
+    "oncutf.core.type_aliases",
+    "oncutf.core.application_context",
+    "oncutf.core.preview_manager",
+]
+ignore_errors = false
+warn_return_any = true
+check_untyped_defs = true
+disallow_any_explicit = false  # Allow explicit Any for now
+
+# Phase 2: Core modules with basic type checking (errors enabled, but lenient)
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.core.file_store",
+    "oncutf.core.selection_store",
+    "oncutf.core.metadata_staging_manager",
+]
+ignore_errors = false
+disallow_untyped_defs = false
+
+# Phase 3: Remaining core modules (still ignored, to be migrated)
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.core.unified_metadata_manager",
+    "oncutf.core.structured_metadata_manager",
+    "oncutf.core.unified_rename_engine",
+    "oncutf.core.batch_operations_manager",
+    "oncutf.core.memory_manager",
 ]
 ignore_errors = true
 
+# Controllers, models, modules - keep ignored for now
+[[tool.mypy.overrides]]
+module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*"]
+ignore_errors = true
+
+# =============================================================================
+# Domain package - STRICT MODE (reference implementation)
+# =============================================================================
 [[tool.mypy.overrides]]
 module = ["oncutf.domain.*"]
 strict = true
 warn_return_any = true
 check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
 
-# NOTE: Strict type checking for core modules is disabled temporarily.
-# These modules need proper type annotations before enabling strict checks.
+# =============================================================================
+# Migration Plan:
 # 
-# Domain package (oncutf.domain) uses strict mode for better type safety.
+# 1. ✅ Phase 1 modules have proper type hints → strict checking enabled
+# 2. 🔄 Phase 2 modules being improved → basic checking enabled
+# 3. ⏳ Phase 3 modules need work → errors still ignored
 # 
-# TODO: Enable strict checks for these modules after adding type annotations:
-# - oncutf.core.unified_metadata_manager
-# - oncutf.core.structured_metadata_manager
-# - oncutf.core.unified_rename_engine
-# - oncutf.models.file_item, file_group, metadata_entry
-# - oncutf.modules.metadata_module
+# Goal: Gradually move modules from Phase 3 → Phase 2 → Phase 1
+# =============================================================================
 
 # --------------------------
 # Ruff configuration
