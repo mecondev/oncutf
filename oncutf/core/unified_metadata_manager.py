@@ -26,7 +26,6 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.file_status_helpers import (
     get_hash_for_file,
@@ -192,6 +191,9 @@ class UnifiedMetadataManager(QObject):
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return self.check_cached_metadata(file_item)
 
+        # Lazy import to avoid loading at module level
+        from oncutf.utils.companion_files_helper import CompanionFilesHelper
+
         try:
             # Get base metadata from cache
             base_metadata = self.check_cached_metadata(file_item)
@@ -281,6 +283,9 @@ class UnifiedMetadataManager(QObject):
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return base_metadata
+
+        # Lazy import to avoid loading at module level
+        from oncutf.utils.companion_files_helper import CompanionFilesHelper
 
         try:
             # Get folder files for companion detection
