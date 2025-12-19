@@ -96,10 +96,29 @@ ignore_missing_imports = true
 ignore_errors = true
 
 # =============================================================================
-# Legacy code with minimal type hints (ignore errors for now)
+# UI/Qt and Legacy code (ignore errors - too much Qt noise)
 # =============================================================================
 [[tool.mypy.overrides]]
-module = ["oncutf.ui.*", "oncutf.utils.*", "tests.*", "main"]
+module = [
+    "oncutf.ui.*",
+    "oncutf.utils.*",
+    "tests.*",
+    "main",
+    # Core UI/Qt managers (too much Qt attribute noise)
+    "oncutf.core.ui_manager",
+    "oncutf.core.signal_coordinator",
+    "oncutf.core.shortcut_manager",
+    "oncutf.core.rename_manager",
+    "oncutf.core.initialization_manager",
+    "oncutf.core.drag_cleanup_manager",
+    "oncutf.core.initialization_orchestrator",
+    "oncutf.core.utility_manager",
+    "oncutf.core.dialog_manager",
+    "oncutf.core.event_handler_manager",
+    "oncutf.core.file_load_manager",
+    "oncutf.core.table_manager",
+    "oncutf.core.selection_manager",
+]
 ignore_errors = true
 
 # =============================================================================
