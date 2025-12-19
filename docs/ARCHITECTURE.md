@@ -1,13 +1,15 @@
 # OnCutF Architecture Guide
 
-**Last Updated:** 2025-12-16  
-**Status:** Phase 1 Complete - Controllers Architecture ✅
+**Last Updated:** 2025-12-19  
+**Status:** Phase 7 (Final Polish) - Performance Optimizations ⚡
 
 ---
 
 ## Quick Navigation
 
 - **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture complete overview
+- **[Phase 7 Plan](PHASE7_EXECUTION_PLAN.md)** — Performance optimizations & polish
+- **[Performance Baseline](PERFORMANCE_BASELINE.md)** — Startup time & memory tracking
 - **[Roadmap](ROADMAP.md)** — Current progress & next phases
 - **[Arch Refactor Plan](ARCH_REFACTOR_PLAN.md)** — Strategic refactoring plan
 - **[Cache Strategy](architecture/cache_strategy.md)** — Caching layers & invalidation
@@ -78,7 +80,33 @@
 
 ## Recent Improvements (2025-12)
 
-### Phase 1: Controllers Architecture ✅ (NEW - Dec 2025)
+### Phase 7: Final Polish ⚡ (NEW - Dec 2025)
+**Goal:** Performance optimization, documentation, and final polish
+
+#### Performance Optimizations ✅
+- **Startup Time:** 31% faster (1426ms → 989ms)
+  - Lazy-loaded ExifToolWrapper: -12% (1426ms → 1261ms)
+  - Lazy-loaded CompanionFilesHelper: -21% (1261ms → 989ms)
+  - **Result:** Exceeded <1000ms target 🎯
+
+- **Memory Management:** Bounded caches with LRU eviction
+  - PersistentHashCache: 1000 entry limit with OrderedDict LRU
+  - PersistentMetadataCache: 500 entry limit with OrderedDict LRU
+  - **Result:** Prevents unbounded growth with large file sets
+
+- **Profiling Infrastructure:** Comprehensive performance tracking
+  - `scripts/profile_startup.py`: Startup time analysis
+  - `scripts/profile_memory.py`: Memory usage profiling
+  - `docs/PERFORMANCE_BASELINE.md`: Performance history tracking
+
+**Impact:**
+- Faster application launch (sub-second startup)
+- Memory-safe for large workloads (1000+ files)
+- Foundation for future performance work
+
+---
+
+### Phase 1: Controllers Architecture ✅ (Dec 2025)
 **Goal:** Separate UI from business logic with testable controller layer
 
 #### Phase 1A: FileLoadController ✅
