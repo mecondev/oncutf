@@ -124,18 +124,39 @@ module = [
     "oncutf.core.file_store",
     "oncutf.core.selection_store",
     "oncutf.core.metadata_staging_manager",
-]
-ignore_errors = false
-disallow_untyped_defs = false
-
-# Phase 3: Remaining core modules (still ignored, to be migrated)
-[[tool.mypy.overrides]]
-module = [
+    # Promoted from Phase 3 (all have 0 errors!)
     "oncutf.core.unified_metadata_manager",
     "oncutf.core.structured_metadata_manager",
     "oncutf.core.unified_rename_engine",
     "oncutf.core.batch_operations_manager",
     "oncutf.core.memory_manager",
+]
+ignore_errors = false
+disallow_untyped_defs = false
+
+# Phase 3: Remaining core modules with type issues (still ignored, to be migrated)
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.core.persistent_metadata_cache",
+    "oncutf.core.unified_column_service",
+    "oncutf.core.database_manager",
+    "oncutf.core.conflict_resolver",
+    "oncutf.core.drag_visual_manager",
+    "oncutf.core.rename_history_manager",
+    "oncutf.core.performance_monitor",
+    "oncutf.core.drag_manager",
+    "oncutf.core.parallel_metadata_loader",
+    "oncutf.core.parallel_hash_worker",
+    "oncutf.core.theme_manager",
+    "oncutf.core.hash_manager",
+    "oncutf.core.persistent_hash_cache",
+    "oncutf.core.advanced_cache_manager",
+    "oncutf.core.metadata_command_manager",
+    "oncutf.core.batch_processor",
+    "oncutf.core.pyqt_imports",
+    "oncutf.core.modifier_handler",
+    "oncutf.core.metadata_commands",
+    "oncutf.core.filesystem_monitor",
 ]
 ignore_errors = true
 
@@ -158,11 +179,24 @@ disallow_incomplete_defs = true
 # =============================================================================
 # Migration Plan:
 # 
-# 1. ✅ Phase 1 modules have proper type hints → strict checking enabled
-# 2. 🔄 Phase 2 modules being improved → basic checking enabled
-# 3. ⏳ Phase 3 modules need work → errors still ignored
+# 1. ✅ Phase 1 (3 modules): Strict checking enabled
+#    - type_aliases, application_context, preview_manager
 # 
-# Goal: Gradually move modules from Phase 3 → Phase 2 → Phase 1
+# 2. ✅ Phase 2 (8 modules): Basic checking enabled  
+#    - file_store, selection_store, metadata_staging_manager
+#    - unified_metadata_manager, structured_metadata_manager
+#    - unified_rename_engine, batch_operations_manager, memory_manager
+# 
+# 3. ⏳ Phase 3 (20 modules): Errors still ignored (206 errors to fix)
+#    - persistent_metadata_cache, unified_column_service, database_manager
+#    - conflict_resolver, drag_visual_manager, rename_history_manager
+#    - performance_monitor, drag_manager, parallel_metadata_loader
+#    - parallel_hash_worker, theme_manager, hash_manager
+#    - persistent_hash_cache, advanced_cache_manager
+#    - metadata_command_manager, batch_processor, pyqt_imports
+#    - modifier_handler, metadata_commands, filesystem_monitor
+# 
+# Progress: 11/31 core modules now have mypy checking enabled (35%)
 # =============================================================================
 
 # --------------------------
