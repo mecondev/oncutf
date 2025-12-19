@@ -17,6 +17,15 @@ are applied to track progress.
 
 ## Performance History
 
+### Iteration 3: Added LRU Eviction to Persistent Caches
+
+**Changes**: Added LRU eviction to PersistentHashCache (1000 entries) and PersistentMetadataCache (500 entries)
+
+**Results**:
+- Total startup: **989.5ms** - No change (expected - optimization helps at scale)
+- Peak memory: **13.9 MB** - Unchanged (bounded caches will prevent growth with large file sets)
+- Status: ✅ Memory safety improved for large workloads
+
 ### Iteration 2: After Lazy CompanionFilesHelper Loading ⭐
 
 **Changes**: Lazy-loaded CompanionFilesHelper in UnifiedMetadataManager
