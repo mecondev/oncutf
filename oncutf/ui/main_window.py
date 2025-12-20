@@ -55,7 +55,9 @@ class MainWindow(QMainWindow):
         self._preview_pending = False
 
         # Use InitializationOrchestrator for structured initialization (Phase 4)
-        from oncutf.core.initialization_orchestrator import InitializationOrchestrator
+        from oncutf.core.initialization.initialization_orchestrator import (
+            InitializationOrchestrator,
+        )
 
         orchestrator = InitializationOrchestrator(self)
         orchestrator.orchestrate_initialization(theme_callback)

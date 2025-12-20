@@ -249,7 +249,7 @@ def main() -> int:
             }
 
             # Start background initialization worker
-            from oncutf.core.initialization_worker import InitializationWorker
+            from oncutf.core.initialization.initialization_worker import InitializationWorker
             from oncutf.core.pyqt_imports import QThread
 
             worker = InitializationWorker()
