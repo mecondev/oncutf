@@ -88,8 +88,8 @@ class InitializationOrchestrator:
             set_metadata_staging_manager,
         )
         from oncutf.core.preview_manager import PreviewManager
-        from oncutf.core.rename_history_manager import get_rename_history_manager
-        from oncutf.core.unified_rename_engine import UnifiedRenameEngine
+        from oncutf.core.rename.rename_history_manager import get_rename_history_manager
+        from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
 
         # Core Application Context
         self.window.context = ApplicationContext.create_instance(parent=self.window)
@@ -186,7 +186,7 @@ class InitializationOrchestrator:
         from oncutf.core.file_load_manager import FileLoadManager
         from oncutf.core.file_validation_manager import get_file_validation_manager
         from oncutf.core.initialization.initialization_manager import InitializationManager
-        from oncutf.core.rename_manager import RenameManager
+        from oncutf.core.rename.rename_manager import RenameManager
         from oncutf.core.shortcut_manager import ShortcutManager
         from oncutf.core.splitter_manager import SplitterManager
         from oncutf.core.table_manager import TableManager

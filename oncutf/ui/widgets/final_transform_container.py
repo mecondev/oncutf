@@ -179,7 +179,7 @@ class FinalTransformContainer(QWidget):
     def _setup_rename_engine(self):
         """Setup UnifiedRenameEngine."""
         try:
-            from oncutf.core.unified_rename_engine import UnifiedRenameEngine
+            from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
 
             self.rename_engine = UnifiedRenameEngine()
             logger.debug("[FinalTransformContainer] UnifiedRenameEngine initialized")
