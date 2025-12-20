@@ -46,7 +46,7 @@ class ContextMenuHandlers:
         self.parent_window = parent_window
 
         # Delegate hash operations to specialized manager
-        from oncutf.core.hash_operations_manager import HashOperationsManager
+        from oncutf.core.hash.hash_operations_manager import HashOperationsManager
 
         self.hash_ops = HashOperationsManager(parent_window)  # type: ignore[no-untyped-call]
 

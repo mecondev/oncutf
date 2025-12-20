@@ -25,7 +25,7 @@ from typing import Any
 
 from oncutf.config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
 from oncutf.core.database.database_manager import get_database_manager
-from oncutf.core.hash_manager import HashManager
+from oncutf.core.hash.hash_manager import HashManager
 from oncutf.utils.file_size_calculator import calculate_files_total_size
 from oncutf.utils.logger_factory import get_cached_logger
 

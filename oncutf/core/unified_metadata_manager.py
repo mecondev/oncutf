@@ -1204,7 +1204,7 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Create parallel hash worker (inherits QThread, no separate thread needed)
-        from oncutf.core.parallel_hash_worker import ParallelHashWorker
+        from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
 
         # Extract file paths from FileItem objects
         file_paths = [f.full_path for f in files]
@@ -1311,7 +1311,7 @@ class UnifiedMetadataManager(QObject):
         # Store hash if provided (safe in main thread)
         if hash_value:
             try:
-                from oncutf.core.hash_manager import HashManager
+                from oncutf.core.hash.hash_manager import HashManager
 
                 hm = HashManager()
                 hm.store_hash(file_path, hash_value)

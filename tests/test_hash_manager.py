@@ -1,7 +1,7 @@
 import zlib
 from pathlib import Path
 
-from oncutf.core.hash_manager import HashManager, calculate_crc32
+from oncutf.core.hash.hash_manager import HashManager, calculate_crc32
 
 
 def write_file(path: Path, content: bytes):
@@ -53,7 +53,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from oncutf.core.hash_manager import compare_folders
+from oncutf.core.hash.hash_manager import compare_folders
 from tests.mocks import MockFileItem
 
 
@@ -387,7 +387,7 @@ class TestEventHandlerIntegration:
 
     def test_hash_manager_integration(self):
         """Test that HashManager can be imported and used."""
-        from oncutf.core.hash_manager import HashManager
+        from oncutf.core.hash.hash_manager import HashManager
 
         # This is a basic integration test
         manager = HashManager()

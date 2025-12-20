@@ -370,7 +370,7 @@ class DirectMetadataLoader(QObject):
 
     def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:  # noqa: ARG002
         """Start hash loading with progress tracking."""
-        from oncutf.core.hash_worker import HashWorker
+        from oncutf.core.hash.hash_worker import HashWorker
 
         # Create worker and thread
         self._hash_thread = QThread()
@@ -452,7 +452,7 @@ class DirectMetadataLoader(QObject):
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading in background thread."""
-        from oncutf.core.hash_worker import HashWorker
+        from oncutf.core.hash.hash_worker import HashWorker
 
         # Create worker and thread
         self._hash_thread = QThread()
@@ -499,7 +499,7 @@ class DirectMetadataLoader(QObject):
         # Store hash if provided (safe in main thread)
         if hash_value:
             try:
-                from oncutf.core.hash_manager import HashManager
+                from oncutf.core.hash.hash_manager import HashManager
                 hm = HashManager()
                 hm.store_hash(file_path, hash_value)
             except Exception as e:

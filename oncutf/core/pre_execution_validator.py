@@ -192,7 +192,7 @@ class PreExecutionValidator:
 
         try:
             # Import here to avoid circular dependency
-            from oncutf.core.hash_manager import HashManager
+            from oncutf.core.hash.hash_manager import HashManager
 
             hash_manager = HashManager()  # type: ignore[no-untyped-call]
             current_hash = hash_manager.calculate_hash(str(file_path))
