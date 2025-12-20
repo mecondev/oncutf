@@ -539,7 +539,7 @@ class UIManager:
         self.parent_window.status_label.setTextFormat(Qt.RichText)
 
         # Initialize StatusManager now that status_label exists
-        from oncutf.core.status_manager import StatusManager
+        from oncutf.core.ui_managers.status_manager import StatusManager
 
         self.parent_window.status_manager = StatusManager(
             status_label=self.parent_window.status_label
