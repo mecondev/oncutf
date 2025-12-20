@@ -1,18 +1,15 @@
 # OnCutF Architecture Guide
 
-**Last Updated:** 2025-12-19  
-**Status:** Phase 7 (Final Polish) - Performance Optimizations ⚡
+**Last Updated:** 2025-12-20  
+**Status:** Phase 7 (Final Polish) - Documentation Cleanup ⚡
 
 ---
 
 ## Quick Navigation
 
-- **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture overview
-- **[Phase 7 Plan](PHASE7_EXECUTION_PLAN.md)** — Final polish (docs-first scope)
-- **[Performance Baseline](PERFORMANCE_BASELINE.md)** — Startup and memory tracking
-- **[Roadmap](ROADMAP.md)** — Current progress and next phases
-- **[Arch Refactor Plan](ARCH_REFACTOR_PLAN.md)** — Strategic refactoring plan
-- **[Progress Summary](PROGRESS_SUMMARY.md)** — High-level status and metrics
+- **[Master Plan](2025_12_19.md)** — Current status and next steps
+- **[Roadmap](ROADMAP.md)** — Development phases and progress
+- **Archived docs** — See `_archive/refactor-runs/` for historical phase details
 
 ---
 

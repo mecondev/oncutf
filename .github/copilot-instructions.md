@@ -1,3 +1,4 @@
+
 <!-- GitHub Copilot / AI agent instructions for this repository -->
 
 # oncutf — AI assistant guidelines
@@ -22,21 +23,54 @@ When in doubt, prefer a **stable, extendable** solution over a “clever” one.
 
 - Always:
   - Add **module-level docstrings** when missing.
-  - Add Author/Date headers in new modules (Michael Economou, current date).
+  - Add **Author/Date** headers in new modules (Michael Economou, current date).
   - Use **clear, descriptive names** for variables, functions, classes, and modules.
   - Follow **PEP 8** style guidelines.
   - Use **f-strings** for string formatting.
   - Add **type hints** for function signatures.
-  - Use **__Future__ imports** for annotations when needed.
-  - Use If __typing.TYPE_CHECKING__ for imports needed only for type hints.
+  - Use **__future__ imports** for annotations when needed.
+  - Use `if TYPE_CHECKING:` for imports needed only for type hints.
   - Add **type annotations** to new functions and methods.
-  - Keep **existing loggers, docstrings and comments**; do not delete or drastically restructure code unless the user explicitly asks.
-  - **Use only ASCII characters** in code, comments, log messages, and docstrings. **Never use emoji or Unicode symbols** (✓, ✗, →, •, etc.) in logger output. This ensures Windows console compatibility with non-UTF8 encodings (e.g., cp1253 Greek locale).
-  - Don't use fstrings in log messages; use %-formatting instead (e.g., logger.info("Processing %d files", count)).
-  - Run all tests after code changes to ensure nothing is broken.
-  - Run linters (ruff, mypy) after code changes to ensure style compliance.
+  - Keep **existing loggers, docstrings and comments**; do not delete them unless the user explicitly asks.
+  - Use only **ASCII characters** in code, comments, log messages, and docstrings.
+    - Never use emoji or Unicode symbols (✓, ✗, →, •, etc.) in logger output.
+    - This ensures Windows console compatibility with non-UTF8 encodings (e.g., cp1253 Greek locale).
+  - Don't use f-strings in log messages; use %-formatting instead (e.g., `logger.info("Processing %d files", count)`).
 
-Do **not** fix linting issues (ruff/mypy) unless the user requests it. The repo is configured with strict mypy and ruff/black in `pyproject.toml`.
+### Refactoring permission clarifications
+
+- "Drastic restructure" means: changing external behavior, removing user-facing features, deleting large blocks of logic without replacement, or breaking public APIs without a migration plan.
+- Refactoring that **preserves external behavior** but changes **internal structure**, responsibilities, or file layout is **allowed** when the user approves it.
+
+---
+
+## Approved refactoring mode (execution mode)
+
+When the user explicitly approves a refactoring plan or says to proceed:
+
+- The refactoring decision is final and must not be reconsidered.
+- Do not suggest avoiding, postponing, or scaling back the refactor.
+- Do not re-ask for confirmation.
+- Assume version control is clean and rollback is available.
+
+In this mode:
+- Prefer architectural clarity over minimal diffs.
+- Temporary intermediate breakage is acceptable during a phase, as long as it is resolved by the end of that phase.
+- Large or multi-file changes are explicitly allowed.
+- Your role switches from advisor to executor.
+
+---
+
+## Ruff / mypy enforcement mode (when requested)
+
+By default: do **not** fix linting or typing issues unless the user asks.
+
+When the user explicitly asks to run/fix Ruff and/or mypy:
+- Fix **all** reported issues and warnings without hesitation.
+- Do not stop early.
+- If a rule is inapplicable or creates noise, propose an adjustment to configuration **only after** fixing issues where reasonable.
+- Prefer real fixes over ignores.
+- Preserve behavior.
 
 ---
 
@@ -46,7 +80,7 @@ Read these files in this order when understanding behavior:
 
 1. `main.py` — application entry point, Qt app + main window setup.
 2. `oncutf/ui/main_window.py` — primary UI view: delegates to controllers for business logic.
-3. `oncutf/controllers/` — **NEW (Phase 1)** orchestration layer separating UI from business logic.
+3. `oncutf/controllers/` — orchestration layer separating UI from business logic.
 4. `oncutf/config.py` — central configuration for UI defaults, filters, paths, debug flags.
 
 **Controllers (in `oncutf/controllers/`)** — Phase 1 refactoring (in progress):
@@ -65,7 +99,7 @@ Core services (in `oncutf/core/`):
 - `unified_column_service.py` — single source of truth for column configuration.
 - `backup_manager.py`, `persistent_hash_cache.py`, `metadata_command_manager.py` — database, caching, and command/undo system.
 - `thread_pool_manager.py`, `async_operations_manager.py` — async and threaded work scheduling.
-- `ui_manager.py`, `table_manager.py`, `status_manager.py`, `shortcut_manager.py`, `splitter_manager.py`, `window_config_manager.py` — overall UI layout, table behavior, status bar, shortcuts, splitters, and window layout persistence.
+- `ui_manager.py`, `table_manager.py`, `status_manager.py`, `shortcut_manager.py`, `splitter_manager.py`, `window_config_manager.py` — UI layout, table behavior, status bar, shortcuts, splitters, and window layout persistence.
 
 Rename modules (in `modules/`):
 
@@ -87,13 +121,13 @@ Utilities (in `utils/`):
 - `icon_cache.py`, `icons_loader.py`, `multiscreen_helper.py` — visual helpers and multi-screen support.
 - `metadata_exporter.py`, `timer_manager.py`, `logger_helper.py` — metadata export, timers, and logging helpers.
 
-For deeper architectural context, see `docs/` (workflow, metadata system, database, progress manager, safe rename workflow). :contentReference[oaicite:12]{index=12}
+For deeper architectural context, see `docs/` (workflow, metadata system, database, progress manager, safe rename workflow).
 
 ---
 
 ## Developer workflows
 
-Preferred commands (Python 3.12+): :contentReference[oaicite:13]{index=13}
+Preferred commands (Python 3.12+):
 
 - Install runtime deps:
   - `pip install -r requirements.txt`
@@ -139,6 +173,99 @@ When working with controllers (Phase 1 refactoring):
 
 ---
 
-- **During Phase 1 refactoring**: Follow the execution plan in `docs/PHASE1_EXECUTION_PLAN.md`. Each step is atomic and testable. Never skip validation steps (tests, ruff, app launch).
+## Large refactoring workflow (branch per phase + quality gates)
+
+For large refactorings, work in explicit phases. Each phase must be atomic and end in a clean, validated state.
+
+
+
+### Phase workflow
+
+For each phase:
+
+1. **Create a new branch for the phase**
+   - Branch name convention:
+     - `refactor/<topic>/<phase-N>-short-title`
+   - Example:
+     - `refactor/controllers/phase-1-extract-file-load`
+
+2. **Implement only what belongs to this phase**
+   - Keep changes focused.
+   - Preserve external behavior unless the user explicitly requests behavior changes.
+
+3. **At the end of the phase, run quality gates**
+   - `ruff check .`
+   - `mypy .`
+   - `pytest`
+
+4. **If any gate fails**
+   - Fix issues until all pass.
+   - Do not leave failing checks at phase completion.
+
+5. **Update the plan / tracking docs**
+   - Update the relevant plan file in `docs/` (e.g., `docs/PHASE1_EXECUTION_PLAN.md`)
+   - Mark the phase as completed, note key changes, and record follow-ups.
+
+6. **Commit**
+   - Use a clear commit message in English.
+   - Prefer conventional style:
+     - `refactor: <summary>`
+     - `fix: <summary>`
+     - `docs: <summary>`
+
+7. **Merge into main**
+   - Merge the phase branch into `main` after all gates pass.
+   - Use non-destructive merges unless the user requests otherwise.
+
+8. **Push**
+   - Push `main` and the branch (if desired) to the remote.
+
+### Branch naming and merge policy (mandatory)
+
+All refactoring work must follow these rules:
+
+#### Branch naming
+- Each refactoring phase must use a dedicated branch.
+- Branch names MUST start with an ISO date.
+
+Format:
+- `refactor/YYYY-MM-DD/<topic>-phase-N`
+
+Examples:
+- `refactor/2025-12-20/controllers-phase-1`
+- `refactor/2025-12-22/metadata-cache-phase-2`
+
+#### Merge policy
+- All refactoring branches MUST be merged using:
+  - `git merge --no-ff`
+- Fast-forward merges are NOT allowed for refactoring phases.
+- Squash merges are NOT allowed for refactoring phases.
+
+Rationale:
+- Each refactoring phase represents a conceptual and architectural milestone.
+- The merge commit marks the completion of a phase and must remain visible in history.
+
+### Agent output requirement
+
+If the agent cannot execute git commands directly, it must:
+- Provide the exact git commands to run (copy-paste ready).
+- Provide the exact commands for ruff/mypy/pytest.
+- Provide the expected order of operations.
+
+---
+
+## Phase 1 plan reference
+
+During Phase 1 refactoring:
+- Follow the execution plan in `docs/PHASE1_EXECUTION_PLAN.md`.
+- Each step is atomic and testable.
+- Never skip phase-end validation (ruff, mypy, pytest).
 
 If anything is ambiguous, ask the user in Greek which behavior they prefer before proceeding.
+
+**IMPORTANT - mypy limitations:**
+- Many modules have `ignore_errors=true` in pyproject.toml due to Qt attribute noise.
+- When asked to "fix all mypy errors", only fix errors in modules where `ignore_errors=false`.
+- Check pyproject.toml [[tool.mypy.overrides]] sections to see which modules are actively checked.
+- Use `ruff check .` (without --fix) to check; use `ruff check . --fix` only when explicitly asked to auto-fix.
+

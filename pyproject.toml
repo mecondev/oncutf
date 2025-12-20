@@ -52,7 +52,8 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["core*", "models*", "modules*", "utils*", "widgets*"]
+# IMPORTANT: Must match actual package layout (oncutf/core/, oncutf/ui/, etc.)
+include = ["oncutf*"]
 exclude = ["tests*", "docs*", "examples*", "scripts*", "temp*", "backups*", "reports*", "logs*", "assets*", "resources*"]
 
 [project.urls]
@@ -64,6 +65,9 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 # mypy configuration
 # --------------------------
+# NOTE: Many modules have ignore_errors=true due to Qt attribute noise.
+# When asking AI to "fix all mypy errors", only modules with ignore_errors=false
+# will actually be checked. See overrides below for which modules are strict.
 [tool.mypy]
 python_version = "3.12"
 # Gradual typing strategy: Start with basic checks, progressively enable stricter rules
@@ -241,7 +245,9 @@ disallow_incomplete_defs = true
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-fix = true
+# SAFETY: fix=false by default. Use 'ruff check . --fix' to auto-fix.
+# This prevents unexpected code changes during regular lint checks.
+fix = false
 exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc", "assets", "resources", "logs"]
 
 [tool.ruff.lint]
