@@ -108,24 +108,25 @@ module = [
     "oncutf.utils.*",
     "tests.*",
     "main",
-    # Core UI/Qt managers (too much Qt attribute noise)
-    "oncutf.core.ui_manager",
+    # Core subpackages with Qt noise (Phase 4 directory organization)
+    "oncutf.core.ui_managers.*",
+    "oncutf.core.initialization.*",
+    "oncutf.core.drag.*",
+    "oncutf.core.events.*",
+    "oncutf.core.hash.*",
+    "oncutf.core.rename.*",
+    "oncutf.core.selection.*",
+    "oncutf.core.database.*",
+    "oncutf.core.cache.*",
+    "oncutf.core.metadata.*",
+    # Legacy flat modules with Qt issues
     "oncutf.core.signal_coordinator",
-    "oncutf.core.shortcut_manager",
-    "oncutf.core.rename_manager",
-    "oncutf.core.initialization_manager",
-    "oncutf.core.drag_cleanup_manager",
-    "oncutf.core.initialization_orchestrator",
     "oncutf.core.utility_manager",
     "oncutf.core.dialog_manager",
     "oncutf.core.event_handler_manager",
     "oncutf.core.file_load_manager",
-    "oncutf.core.table_manager",
-    "oncutf.core.selection_manager",
-    # Additional modules with Qt issues
     "oncutf.core.pyqt_imports",
     "oncutf.core.modifier_handler",
-    "oncutf.core.initialization_worker",
 ]
 ignore_errors = true
 
@@ -165,42 +166,27 @@ module = [
 ignore_errors = false
 disallow_untyped_defs = false
 
-# Phase 3: Modules with actual type errors (keep ignored until fixed)
+# Phase 3: Flat core modules with actual type errors (keep ignored until fixed)
+# NOTE: Subpackage modules (ui_managers/*, hash/*, etc.) are covered by wildcards above
 [[tool.mypy.overrides]]
 module = [
-    # High-noise Qt or complex modules - temporarily ignored
-    "oncutf.core.drag_manager",
-    "oncutf.core.parallel_hash_worker",
+    # Complex flat modules with Qt dependencies or many type issues
     "oncutf.core.unified_metadata_manager",
     "oncutf.core.application_service",
-    "oncutf.core.hash_operations_manager",
     "oncutf.core.thread_pool_manager",
-    "oncutf.core.unified_rename_engine",
     "oncutf.core.metadata_operations_manager",
-    "oncutf.core.optimized_database_manager",
-    "oncutf.core.window_config_manager",
     "oncutf.core.direct_metadata_loader",
-    "oncutf.core.persistent_metadata_cache",
-    "oncutf.core.column_manager",
     "oncutf.core.unified_column_service",
     "oncutf.core.conflict_resolver",
-    "oncutf.core.drag_visual_manager",
-    "oncutf.core.database_manager",
     "oncutf.core.batch_operations_manager",
-    "oncutf.core.rename_history_manager",
     "oncutf.core.performance_monitor",
     "oncutf.core.file_validation_manager",
-    "oncutf.core.status_manager",
     "oncutf.core.shutdown_coordinator",
     "oncutf.core.parallel_metadata_loader",
     "oncutf.core.file_operations_manager",
     "oncutf.core.theme_manager",
     "oncutf.core.memory_manager",
-    "oncutf.core.hash_worker",
     "oncutf.core.structured_metadata_manager",
-    "oncutf.core.hash_manager",
-    "oncutf.core.advanced_cache_manager",
-    # Leave caches that were cleaned (persistent_hash_cache) in Phase 2
 ]
 ignore_errors = true
 
@@ -221,22 +207,20 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 # =============================================================================
-# Migration Plan:
+# Migration Plan (Updated after Phase 4 directory reorganization):
 # 
-# 1. ✅ Phase 1 (3 modules): Strict checking enabled
-#    - type_aliases, application_context, preview_manager
-# 
-# 2. ✅ Phase 2 (26 modules): Basic checking enabled - MASSIVE EXPANSION!
-#    Original: file_store, selection_store, metadata_staging_manager
-#    Round 1: +5 (unified_metadata_manager, structured_metadata_manager, etc.)
-#    Round 2: +18 (persistent_metadata_cache, unified_column_service, etc.)
-# 
-# 3. ⏳ Phase 3 (2 modules): Actual errors to fix
-#    - drag_manager (127 errors)
-#    - parallel_hash_worker (14 errors)
-# 
-# Progress: 29/31 core modules (94%) now have mypy checking enabled!
-# Only 141 errors remaining (127 + 14)
+# Phase 4 moved many modules into subdirectories under oncutf/core/:
+#   - cache/, database/, drag/, events/, hash/, initialization/,
+#   - metadata/, rename/, selection/, ui_managers/
+#
+# Strategy: Use wildcard patterns (oncutf.core.subpackage.*) to ignore
+# entire subpackages. This simplifies config and matches the new structure.
+#
+# Strict modules (Phase 1-2): type_aliases, application_context, preview_manager,
+#   file_store, selection_store, metadata_staging_manager, and other clean modules.
+#
+# Ignored: Most subpackages have Qt noise or complex legacy code.
+#   Enable gradually as code quality improves.
 # =============================================================================
 
 # --------------------------
@@ -298,7 +282,7 @@ ignore = [
 [tool.ruff.lint.isort]
 force-single-line = false
 combine-as-imports = true
-known-first-party = ["core", "models", "modules", "utils", "widgets"]
+known-first-party = ["oncutf"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -332,7 +316,7 @@ filterwarnings = [
 # Coverage
 # --------------------------
 [tool.coverage.run]
-source = [".", "core", "models", "modules", "utils", "widgets"]
+source = ["oncutf"]
 omit = [
     "tests/*",
     "venv/*",
