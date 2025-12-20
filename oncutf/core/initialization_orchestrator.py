@@ -78,6 +78,8 @@ class InitializationOrchestrator:
         """
         from oncutf.core.application_context import ApplicationContext
         from oncutf.core.backup_manager import get_backup_manager
+        from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+        from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.database.database_manager import initialize_database
         from oncutf.core.drag_manager import DragManager
         from oncutf.core.file_operations_manager import FileOperationsManager
@@ -85,8 +87,6 @@ class InitializationOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
-        from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
-        from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.preview_manager import PreviewManager
         from oncutf.core.rename_history_manager import get_rename_history_manager
         from oncutf.core.unified_rename_engine import UnifiedRenameEngine

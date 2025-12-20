@@ -30,8 +30,8 @@ def analyze_cache_configuration() -> dict[str, any]:
 
     # Check PersistentHashCache
     # Check PersistentMetadataCache
-    import oncutf.core.persistent_metadata_cache as pmc
-    from oncutf.core.persistent_hash_cache import (
+    import oncutf.core.cache.persistent_metadata_cache as pmc
+    from oncutf.core.cache.persistent_hash_cache import (
         MAX_MEMORY_CACHE_SIZE as HASH_MAX,
     )
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
@@ -62,8 +62,8 @@ def estimate_cache_memory() -> dict[str, float]:
     hash_entry_size = 100  # bytes (path + CRC32 hash)
     metadata_entry_size = 2048  # bytes (path + EXIF data)
 
-    import oncutf.core.persistent_metadata_cache as pmc
-    from oncutf.core.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
+    import oncutf.core.cache.persistent_metadata_cache as pmc
+    from oncutf.core.cache.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
 
     hash_memory_mb = (HASH_MAX * hash_entry_size) / (1024 * 1024)
@@ -90,7 +90,7 @@ def test_lru_behavior() -> dict[str, any]:
     print("TESTING: LRU Cache Behavior")
     print("=" * 80)
 
-    from oncutf.core.advanced_cache_manager import LRUCache
+    from oncutf.core.cache.advanced_cache_manager import LRUCache
 
     # Create small cache for testing
     cache = LRUCache(maxsize=5)
@@ -138,8 +138,8 @@ def recommend_optimizations() -> list[str]:
     print("RECOMMENDATIONS")
     print("=" * 80)
 
-    import oncutf.core.persistent_metadata_cache as pmc
-    from oncutf.core.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
+    import oncutf.core.cache.persistent_metadata_cache as pmc
+    from oncutf.core.cache.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
 
     recs = []

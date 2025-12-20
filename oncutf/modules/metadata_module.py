@@ -141,7 +141,7 @@ class MetadataModule:
         """
         if not metadata_cache:
             # Use persistent metadata cache
-            from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
+            from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
             if persistent_cache:

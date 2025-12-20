@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from oncutf.core.persistent_hash_cache import PersistentHashCache
-from oncutf.core.persistent_metadata_cache import PersistentMetadataCache
+from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
+from oncutf.core.cache.persistent_metadata_cache import PersistentMetadataCache
 
 # Skip stress tests by default to keep test suite fast
 pytestmark = pytest.mark.skip(reason="Skipping large file stress tests for now")
