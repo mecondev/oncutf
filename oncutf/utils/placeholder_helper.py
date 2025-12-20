@@ -6,6 +6,11 @@ Date: 2025-05-01
 
 Unified placeholder management system for all widgets.
 Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.
+
+Performance optimizations (2025-12-20):
+- Lazy icon loading: icons loaded only when placeholder is first shown
+- Cached scaled pixmaps: avoid re-scaling on every show
+- Fast transformation: use Qt.FastTransformation for better performance
 """
 
 from oncutf.core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
@@ -15,6 +20,9 @@ from oncutf.utils.theme import get_theme_color
 
 logger = get_cached_logger(__name__)
 
+# Global cache for scaled pixmaps (shared across all instances)
+_PIXMAP_CACHE: dict[tuple[str, int], QPixmap] = {}
+
 
 class PlaceholderHelper:
     """
@@ -22,7 +30,8 @@ class PlaceholderHelper:
 
     Features:
     - Consistent placeholder appearance across all widgets
-    - Automatic icon loading and scaling
+    - Lazy icon loading (only when first shown)
+    - Cached scaled pixmaps for performance
     - Theme-aware styling
     - Simple show/hide interface
     """
@@ -53,14 +62,14 @@ class PlaceholderHelper:
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setVisible(False)
 
+        # Icon will be loaded lazily on first show
+        self._icon_loaded = False
+
         logger.debug(
-            "[PlaceholderHelper] Created placeholder label for %s",
+            "[PlaceholderHelper] Created placeholder label for %s (lazy loading)",
             icon_name,
             extra={"dev_only": True},
         )
-
-        # Load and setup icon
-        self._setup_icon()
 
         # Apply theme-aware styling
         self._apply_styling()
@@ -72,18 +81,41 @@ class PlaceholderHelper:
         )
 
     def _setup_icon(self) -> None:
-        """Load and setup the placeholder icon."""
+        """Load and setup the placeholder icon (called lazily on first show)."""
+        if self._icon_loaded:
+            return
+        
         try:
-            icon_path = get_images_dir() / f"{self.icon_name}.png"
-            self.placeholder_icon = QPixmap(str(icon_path))
-
-            if not self.placeholder_icon.isNull():
-                scaled = self.placeholder_icon.scaled(
-                    self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
-                )
+            cache_key = (self.icon_name, self.icon_size)
+            
+            # Check cache first
+            if cache_key in _PIXMAP_CACHE:
+                scaled = _PIXMAP_CACHE[cache_key]
                 self.placeholder_label.setPixmap(scaled)
                 logger.debug(
-                    "[PlaceholderHelper] Icon loaded and set: %s (size: %s)",
+                    "[PlaceholderHelper] Icon loaded from cache: %s",
+                    self.icon_name,
+                    extra={"dev_only": True},
+                )
+                self._icon_loaded = True
+                return
+            
+            # Load from disk
+            icon_path = get_images_dir() / f"{self.icon_name}.png"
+            placeholder_icon = QPixmap(str(icon_path))
+
+            if not placeholder_icon.isNull():
+                # Use FastTransformation for better performance (visual quality difference is minimal)
+                scaled = placeholder_icon.scaled(
+                    self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.FastTransformation
+                )
+                
+                # Cache the scaled pixmap
+                _PIXMAP_CACHE[cache_key] = scaled
+                
+                self.placeholder_label.setPixmap(scaled)
+                logger.debug(
+                    "[PlaceholderHelper] Icon loaded and cached: %s (size: %s)",
                     icon_path,
                     scaled.size(),
                     extra={"dev_only": True},
@@ -93,7 +125,8 @@ class PlaceholderHelper:
 
         except Exception as e:
             logger.error("[PlaceholderHelper] Error loading icon: %s", e)
-            self.placeholder_icon = QPixmap()
+
+        self._icon_loaded = True
 
     def _apply_styling(self) -> None:
         """Apply theme-aware styling to the placeholder."""
@@ -126,8 +159,12 @@ class PlaceholderHelper:
             self.placeholder_label.setStyleSheet("background-color: #181818;")
 
     def show(self) -> None:
-        """Show the placeholder."""
+        """Show the placeholder (loads icon lazily on first show)."""
         if self.placeholder_label:
+            # Load icon on first show
+            if not self._icon_loaded:
+                self._setup_icon()
+            
             self.placeholder_label.raise_()
             self.placeholder_label.show()
             logger.debug(

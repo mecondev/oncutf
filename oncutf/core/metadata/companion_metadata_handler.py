@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 logger = get_cached_logger(__name__)
 
-
 class CompanionMetadataHandler:
     """
     Handler for companion file metadata operations.
