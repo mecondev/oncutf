@@ -1,5 +1,4 @@
 """
-from typing import Any
 Module: metadata_reader.py
 
 Author: Michael Economou (refactored)
@@ -11,9 +10,11 @@ Extracted from unified_metadata_manager.py for better separation of concerns.
 This is a simplified extraction focusing on core loading methods.
 Full implementation to be completed in subsequent commits.
 """
-from typing import Any
+from __future__ import annotations
 
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject
 
@@ -21,6 +22,10 @@ from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
+    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -41,13 +46,13 @@ class MetadataReader(QObject):
         """Initialize metadata reader with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
-        self._exiftool_wrapper = None
-        self._parallel_loader = None
+        self._exiftool_wrapper: ExifToolWrapper | None = None
+        self._parallel_loader: ParallelMetadataLoader | None = None
         self._currently_loading: set[str] = set()
         self._metadata_cancelled = False
 
     @property
-    def exiftool_wrapper(self):  # type: ignore[no-untyped-def]
+    def exiftool_wrapper(self) -> ExifToolWrapper:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -56,7 +61,7 @@ class MetadataReader(QObject):
         return self._exiftool_wrapper
 
     @property
-    def parallel_loader(self):  # type: ignore[no-untyped-def]
+    def parallel_loader(self) -> ParallelMetadataLoader:
         """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
             from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
@@ -88,7 +93,9 @@ class MetadataReader(QObject):
         else:
             return "multiple_files_dialog"
 
-    def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
+    def determine_metadata_mode(
+        self, modifier_state: Any = None
+    ) -> tuple[bool, bool]:
         """
         Determines whether to use extended mode based on modifier keys.
 
@@ -105,18 +112,20 @@ class MetadataReader(QObject):
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        if modifiers == Qt.NoModifier:  # type: ignore
+        if modifiers == Qt.NoModifier:  # type: ignore[attr-defined]
             modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
+        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore[attr-defined]
+        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore[attr-defined]
 
         skip_metadata = not ctrl
         use_extended = ctrl and shift
 
         return skip_metadata, use_extended
 
-    def should_use_extended_metadata(self, modifier_state=None) -> bool:
+    def should_use_extended_metadata(
+        self, modifier_state: Any = None
+    ) -> bool:
         """
         Returns True if Ctrl+Shift are both held.
 
@@ -130,11 +139,13 @@ class MetadataReader(QObject):
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
+        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore[attr-defined]
+        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore[attr-defined]
         return ctrl and shift
 
-    def load_metadata_streaming(self, items: list[FileItem], use_extended: bool = False):
+    def load_metadata_streaming(
+        self, items: list[FileItem], use_extended: bool = False
+    ) -> Iterator[tuple[FileItem, dict[str, Any]]]:
         """
         Yield metadata as soon as available using parallel loading.
 
@@ -159,9 +170,12 @@ class MetadataReader(QObject):
                 else None
             )
 
+            if cache_entry is None:
+                items_to_load.append(item)
+                continue
+
             has_valid_cache = (
-                cache_entry
-                and hasattr(cache_entry, "is_extended")
+                hasattr(cache_entry, "is_extended")
                 and hasattr(cache_entry, "data")
                 and cache_entry.data
             )
@@ -239,7 +253,7 @@ class MetadataReader(QObject):
         # Full implementation to be added in next phase
 
     def _load_single_file_metadata(
-        self, item: FileItem, use_extended: bool, metadata_tree_view
+        self, item: FileItem, use_extended: bool, metadata_tree_view: Any
     ) -> None:
         """
         Load metadata for a single file with wait_cursor.

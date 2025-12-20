@@ -1,5 +1,4 @@
 """
-from typing import Any
 Module: metadata_cache_service.py
 
 Author: Michael Economou (refactored)
@@ -8,6 +7,8 @@ Date: 2025-12-20
 Metadata cache service - handles all cache-related operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
+from __future__ import annotations
+
 from typing import Any
 
 from oncutf.models.file_item import FileItem
@@ -41,7 +42,7 @@ class MetadataCacheService:
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
         if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            self._cache_helper = MetadataCacheHelper(
+            self._cache_helper = MetadataCacheHelper(  # type: ignore[no-untyped-call]
                 self.parent_window.metadata_cache, self.parent_window
             )
             logger.debug(
@@ -54,7 +55,7 @@ class MetadataCacheService:
             self.initialize_cache_helper()
         return self._cache_helper
 
-    def check_cached_metadata(self, file_item: FileItem) -> dict | None:
+    def check_cached_metadata(self, file_item: FileItem) -> dict[str, Any] | None:
         """
         Check if metadata exists in cache without loading.
 
@@ -94,42 +95,26 @@ class MetadataCacheService:
             )
             return None
 
-    def has_cached_metadata(self, file_item: FileItem) -> bool:
+    def has_cached_metadata(self, file_path: str) -> bool:
         """
-        Check if metadata exists in cache (fast check).
+        Check if metadata exists in cache for a file path.
 
         Args:
-            file_item: The file to check
+            file_path: Path to check
 
         Returns:
-            True if metadata exists in cache, False otherwise
+            bool: True if metadata exists in cache
         """
-        try:
-            return has_metadata(file_item.full_path)
-        except Exception:
-            logger.warning(
-                "[MetadataCacheService] Error checking metadata existence for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return False
+        return has_metadata(file_path)
 
-    def has_cached_hash(self, file_item: FileItem) -> bool:
+    def has_cached_hash(self, file_path: str) -> bool:
         """
-        Check if hash exists in cache (fast check).
+        Check if hash exists in cache for a file path.
 
         Args:
-            file_item: The file to check
+            file_path: Path to check
 
         Returns:
-            True if hash exists in cache, False otherwise
+            bool: True if hash exists in cache
         """
-        try:
-            return has_hash(file_item.full_path)
-        except Exception:
-            logger.warning(
-                "[MetadataCacheService] Error checking hash existence for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return False
+        return has_hash(file_path)
