@@ -24,7 +24,7 @@ logger.debug("[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_on
 MAX_MEMORY_CACHE_SIZE = 1000  # Metadata is larger than hashes
 
 try:
-    from oncutf.core.database_manager import get_database_manager
+    from oncutf.core.database.database_manager import get_database_manager
 
     logger.debug(
         "[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager",

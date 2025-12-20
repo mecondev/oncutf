@@ -84,10 +84,10 @@ class PlaceholderHelper:
         """Load and setup the placeholder icon (called lazily on first show)."""
         if self._icon_loaded:
             return
-        
+
         try:
             cache_key = (self.icon_name, self.icon_size)
-            
+
             # Check cache first
             if cache_key in _PIXMAP_CACHE:
                 scaled = _PIXMAP_CACHE[cache_key]
@@ -99,7 +99,7 @@ class PlaceholderHelper:
                 )
                 self._icon_loaded = True
                 return
-            
+
             # Load from disk
             icon_path = get_images_dir() / f"{self.icon_name}.png"
             placeholder_icon = QPixmap(str(icon_path))
@@ -109,10 +109,10 @@ class PlaceholderHelper:
                 scaled = placeholder_icon.scaled(
                     self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.FastTransformation
                 )
-                
+
                 # Cache the scaled pixmap
                 _PIXMAP_CACHE[cache_key] = scaled
-                
+
                 self.placeholder_label.setPixmap(scaled)
                 logger.debug(
                     "[PlaceholderHelper] Icon loaded and cached: %s (size: %s)",
@@ -164,7 +164,7 @@ class PlaceholderHelper:
             # Load icon on first show
             if not self._icon_loaded:
                 self._setup_icon()
-            
+
             self.placeholder_label.raise_()
             self.placeholder_label.show()
             logger.debug(
