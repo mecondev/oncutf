@@ -17,7 +17,7 @@ from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.file_store import FileStore
-    from oncutf.core.selection_store import SelectionStore
+    from oncutf.core.selection.selection_store import SelectionStore
 
 logger = get_cached_logger(__name__)
 
