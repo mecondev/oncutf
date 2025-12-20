@@ -12,11 +12,8 @@ import os
 
 from PyQt5.QtCore import QObject
 
-from oncutf.models.file_item import FileItem
-from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
-from oncutf.utils.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
