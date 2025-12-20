@@ -1364,9 +1364,9 @@ class UnifiedMetadataManager(QObject):
         logger.info("[UnifiedMetadataManager] Loading operation cancelled")
 
     def request_save_cancel(self) -> None:
-        """Request cancellation of current save operation."""
-        self._save_cancelled = True
-        logger.info("[UnifiedMetadataManager] Save cancellation requested by user")
+        """Delegate to writer and sync flag."""
+        self._save_cancelled = True  # Keep for backward compatibility
+        return self._writer.request_save_cancel()
 
     # =====================================
     # Completion Handlers
@@ -1545,65 +1545,8 @@ class UnifiedMetadataManager(QObject):
         return self._writer.save_metadata_for_selected()
 
     def save_all_modified_metadata(self, is_exit_save: bool = False) -> None:
-        """Save all modified metadata across all files.
-
-        Args:
-            is_exit_save: If True, indicates this is a save-on-exit operation.
-                         ESC will be blocked to prevent incomplete saves.
-        """
-        if not self.parent_window:
-            return
-
-        # Get staging manager
-        try:
-            staging_manager = self.parent_window.context.get_manager("metadata_staging")
-        except KeyError:
-            logger.error("[UnifiedMetadataManager] MetadataStagingManager not found")
-            return
-
-        # Get all staged changes
-        all_staged_changes = staging_manager.get_all_staged_changes()
-
-        if not all_staged_changes:
-            logger.info("[UnifiedMetadataManager] No staged metadata changes to save")
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_file_operation_status(
-                    "No metadata changes to save", success=False, auto_reset=True
-                )
-            return
-
-        # Match staged changes to file items
-        files_to_save = []
-        file_model = getattr(self.parent_window, "file_model", None)
-
-        if file_model and hasattr(file_model, "files"):
-            from oncutf.utils.path_normalizer import normalize_path
-
-            # Create a map of normalized path -> file item for fast lookup
-            path_map = {normalize_path(f.full_path): f for f in file_model.files}
-
-            for staged_path in all_staged_changes:
-                if staged_path in path_map:
-                    files_to_save.append(path_map[staged_path])
-
-        if not files_to_save:
-            logger.info(
-                "[UnifiedMetadataManager] No files with staged metadata found in current view"
-            )
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_file_operation_status(
-                    "No metadata changes to save", success=False, auto_reset=True
-                )
-            return
-
-        logger.info(
-            "[UnifiedMetadataManager] Saving metadata for %d files with modifications (exit_save: %s)",
-            len(files_to_save),
-            is_exit_save,
-        )
-        # Reset cancellation flag before starting save
-        self._save_cancelled = False
-        self._save_metadata_files(files_to_save, all_staged_changes, is_exit_save=is_exit_save)
+        """Delegate to writer."""
+        return self._writer.save_all_modified_metadata(is_exit_save)
 
     def _save_metadata_files(
         self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False
