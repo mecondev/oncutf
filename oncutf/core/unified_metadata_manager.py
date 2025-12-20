@@ -1541,54 +1541,8 @@ class UnifiedMetadataManager(QObject):
         return self._writer.set_metadata_value(file_path, key_path, new_value)
 
     def save_metadata_for_selected(self) -> None:
-        """Save metadata for selected files."""
-        if not self.parent_window:
-            return
-
-        # Get selected files
-        selected_files = (
-            self.parent_window.get_selected_files_ordered() if self.parent_window else []
-        )
-
-        if not selected_files:
-            logger.info("[UnifiedMetadataManager] No files selected for metadata saving")
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_selection_status(
-                    "No files selected", selected_count=0, total_count=0, auto_reset=True
-                )
-            return
-
-        # Get staging manager
-        try:
-            staging_manager = self.parent_window.context.get_manager("metadata_staging")
-        except KeyError:
-            logger.error("[UnifiedMetadataManager] MetadataStagingManager not found")
-            return
-
-        # Collect staged changes for selected files
-        files_to_save = []
-        all_staged_changes = {}
-
-        for file_item in selected_files:
-            if staging_manager.has_staged_changes(file_item.full_path):
-                files_to_save.append(file_item)
-                all_staged_changes[file_item.full_path] = staging_manager.get_staged_changes(
-                    file_item.full_path
-                )
-
-        if not files_to_save:
-            logger.info("[UnifiedMetadataManager] No selected files have staged changes")
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_file_operation_status(
-                    "No changes in selected files", success=False, auto_reset=True
-                )
-            return
-
-        logger.info(
-            "[UnifiedMetadataManager] Saving metadata for %d selected files",
-            len(files_to_save),
-        )
-        self._save_metadata_files(files_to_save, all_staged_changes)
+        """Delegate to writer."""
+        return self._writer.save_metadata_for_selected()
 
     def save_all_modified_metadata(self, is_exit_save: bool = False) -> None:
         """Save all modified metadata across all files.
