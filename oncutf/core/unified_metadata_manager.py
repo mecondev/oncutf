@@ -180,96 +180,9 @@ class UnifiedMetadataManager(QObject):
     def get_enhanced_metadata(
         self, file_item: FileItem, folder_files: list[str] = None
     ) -> dict | None:
-        """
-        Get enhanced metadata that includes companion file metadata.
-
-        Args:
-            file_item: The main file item
-            folder_files: List of all files in the same folder (for companion detection)
-
-        Returns:
-            Enhanced metadata dict including companion file data, or None if not available
-        """
-        if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
-            return self.check_cached_metadata(file_item)
-
-        # Lazy import to avoid loading at module level
-        from oncutf.utils.companion_files_helper import CompanionFilesHelper
-
-        try:
-            # Get base metadata from cache
-            base_metadata = self.check_cached_metadata(file_item)
-            if not base_metadata:
-                return None
-
-            # If no folder files provided, get them from the file's directory
-            if folder_files is None:
-                folder_path = os.path.dirname(file_item.full_path)
-                try:
-                    folder_files = [
-                        os.path.join(folder_path, f)
-                        for f in os.listdir(folder_path)
-                        if os.path.isfile(os.path.join(folder_path, f))
-                    ]
-                except OSError:
-                    folder_files = []
-
-            # Find companion files
-            companions = CompanionFilesHelper.find_companion_files(
-                file_item.full_path, folder_files
-            )
-
-            if not companions:
-                # No companions found, return base metadata
-                return base_metadata
-
-            # Create enhanced metadata by copying base metadata
-            enhanced_metadata = base_metadata.copy()
-
-            # Add companion metadata
-            companion_metadata = {}
-            for companion_path in companions:
-                try:
-                    companion_data = CompanionFilesHelper.extract_companion_metadata(companion_path)
-                    if companion_data:
-                        # Prefix companion metadata to avoid conflicts
-                        companion_name = os.path.basename(companion_path)
-                        for key, value in companion_data.items():
-                            if key != "source":  # Skip the source indicator
-                                companion_key = f"Companion:{companion_name}:{key}"
-                                companion_metadata[companion_key] = value
-
-                        logger.debug(
-                            "[UnifiedMetadataManager] Added companion metadata from %s with %d fields",
-                            companion_name,
-                            len(companion_data),
-                        )
-                except Exception:
-                    logger.warning(
-                        "[UnifiedMetadataManager] Failed to extract metadata from companion %s",
-                        companion_path,
-                        exc_info=True,
-                    )
-
-            # Merge companion metadata into enhanced metadata
-            if companion_metadata:
-                enhanced_metadata.update(companion_metadata)
-                enhanced_metadata["__companion_files__"] = companions
-                logger.debug(
-                    "[UnifiedMetadataManager] Enhanced metadata for %s with %d companion fields",
-                    file_item.filename,
-                    len(companion_metadata),
-                )
-
-            return enhanced_metadata
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error getting enhanced metadata for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return self.check_cached_metadata(file_item)
+        """Delegate to companion_handler."""
+        base_metadata = self.check_cached_metadata(file_item)
+        return self._companion_handler.get_enhanced_metadata(file_item, base_metadata, folder_files)
 
     def _enhance_metadata_with_companions(
         self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
