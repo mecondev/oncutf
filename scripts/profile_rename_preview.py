@@ -33,21 +33,22 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
     print(f"\n{'=' * 80}")
     print(f"PROFILING: Rename Preview ({file_count} files)")
     print("=" * 80)
-    
+
     from PyQt5.QtWidgets import QApplication
+
     from oncutf.models.file_item import FileItem
-    
+
     # Create QApplication if needed
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
-    
+
     # Create test file items
     file_items = []
     for path in create_test_files(file_count):
         item = FileItem.from_path(path)
         file_items.append(item)
-    
+
     # Simple name transformation: add prefix (simulate module output)
     transform_start = time.perf_counter()
     new_names = {}
@@ -56,7 +57,7 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
         new_name = f"renamed_{item.filename}"
         new_names[item.full_path] = new_name
     transform_time = time.perf_counter() - transform_start
-    
+
     # Conflict detection (what UnifiedRenameEngine does)
     validate_start = time.perf_counter()
     conflicts = set()
@@ -68,9 +69,9 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
         else:
             seen[new_name] = path
     validate_time = time.perf_counter() - validate_start
-    
+
     total_time = transform_time + validate_time
-    
+
     results = {
         "file_count": file_count,
         "transform_time": transform_time * 1000,
@@ -79,8 +80,8 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
         "per_file": (total_time * 1000) / file_count,
         "conflicts": len(conflicts),
     }
-    
-    print(f"\n📊 Rename Preview Performance:")
+
+    print("\n📊 Rename Preview Performance:")
     print(f"  Files:           {file_count}")
     print(f"  Transform:       {results['transform_time']:>8.3f} ms")
     print(f"  Validation:      {results['validate_time']:>8.3f} ms")
@@ -88,7 +89,7 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
     print(f"  Per file:        {results['per_file']:>8.4f} ms")
     print(f"  Throughput:      {file_count / (results['total_time']/1000):>8.0f} files/sec")
     print(f"  Conflicts:       {results['conflicts']}")
-    
+
     return results
 
 
@@ -97,16 +98,16 @@ def profile_multiple_sizes() -> list[dict[str, float]]:
     print("\n" + "=" * 80)
     print("Rename Preview Scaling Test")
     print("=" * 80)
-    
+
     sizes = [10, 50, 100, 500, 1000]
     results = []
-    
+
     for size in sizes:
         result = profile_rename_preview(size)
         if result:
             results.append(result)
         time.sleep(0.5)  # Brief pause between tests
-    
+
     return results
 
 
@@ -115,7 +116,7 @@ def main() -> int:
     print("\n" + "=" * 80)
     print("🔬 Rename Preview Performance Profiling")
     print("=" * 80)
-    
+
     try:
         results = profile_multiple_sizes()
     except Exception as e:
@@ -123,12 +124,12 @@ def main() -> int:
         import traceback
         traceback.print_exc()
         return 1
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("📈 SCALING ANALYSIS")
     print("=" * 80)
-    
+
     if results:
         print("\n| Files | Total (ms) | Per File (μs) | Throughput (files/sec) |")
         print("|-------|------------|---------------|------------------------|")
@@ -137,27 +138,27 @@ def main() -> int:
             print(f"| {r['file_count']:>5} | {r['total_time']:>10.3f} | "
                   f"{per_file_us:>13.2f} | "
                   f"{r['file_count'] / (r['total_time']/1000):>22.0f} |")
-        
+
         # Check for linear scaling
         if len(results) >= 3:
             first = results[0]
             last = results[-1]
             file_ratio = last['file_count'] / first['file_count']
             time_ratio = last['total_time'] / first['total_time']
-            
-            print(f"\n📊 Scaling Factor:")
+
+            print("\n📊 Scaling Factor:")
             print(f"  Files increased by: {file_ratio:.1f}x")
             print(f"  Time increased by:  {time_ratio:.1f}x")
-            
+
             if abs(time_ratio - file_ratio) / file_ratio < 0.2:  # Within 20%
-                print(f"  ✅ Linear scaling (O(n))")
+                print("  ✅ Linear scaling (O(n))")
             elif time_ratio > file_ratio * 1.5:
-                print(f"  ⚠️  Worse than linear (possible O(n²) component)")
+                print("  ⚠️  Worse than linear (possible O(n²) component)")
             else:
-                print(f"  ✅ Sub-linear scaling (good caching or optimization)")
-    
+                print("  ✅ Sub-linear scaling (good caching or optimization)")
+
     print("\n" + "=" * 80)
-    
+
     return 0
 
 

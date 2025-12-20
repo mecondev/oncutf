@@ -78,7 +78,7 @@ class InitializationOrchestrator:
         """
         from oncutf.core.application_context import ApplicationContext
         from oncutf.core.backup_manager import get_backup_manager
-        from oncutf.core.database_manager import initialize_database
+        from oncutf.core.database.database_manager import initialize_database
         from oncutf.core.drag_manager import DragManager
         from oncutf.core.file_operations_manager import FileOperationsManager
         from oncutf.core.metadata_staging_manager import (

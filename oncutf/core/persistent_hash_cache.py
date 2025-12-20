@@ -12,7 +12,7 @@ Provides improved performance and separation of concerns.
 import os
 from collections import OrderedDict
 
-from oncutf.core.database_manager import get_database_manager
+from oncutf.core.database.database_manager import get_database_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
 
