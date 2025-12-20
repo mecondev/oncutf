@@ -1,5 +1,4 @@
 """
-from typing import Any
 Module: companion_metadata_handler.py
 
 Author: Michael Economou (refactored)
@@ -8,13 +7,17 @@ Date: 2025-12-20
 Companion file metadata handler.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
-from typing import Any
+from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.utils.companion_files_helper import CompanionFilesHelper
 
 logger = get_cached_logger(__name__)
 
@@ -31,10 +34,10 @@ class CompanionMetadataHandler:
 
     def __init__(self) -> None:
         """Initialize companion metadata handler."""
-        self._companion_helper = None
+        self._companion_helper: type[CompanionFilesHelper] | None = None
 
     @property
-    def companion_helper(self):  # type: ignore[no-untyped-def]
+    def companion_helper(self) -> type[CompanionFilesHelper]:
         """Lazy-initialized CompanionFilesHelper."""
         if self._companion_helper is None:
             from oncutf.utils.companion_files_helper import CompanionFilesHelper
@@ -43,8 +46,11 @@ class CompanionMetadataHandler:
         return self._companion_helper
 
     def get_enhanced_metadata(
-        self, file_item: FileItem, base_metadata: dict | None, folder_files: list[str] = None
-    ) -> dict | None:
+        self,
+        file_item: FileItem,
+        base_metadata: dict[str, Any] | None,
+        folder_files: list[str] | None = None,
+    ) -> dict[str, Any] | None:
         """
         Get enhanced metadata that includes companion file metadata.
 

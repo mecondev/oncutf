@@ -1,5 +1,4 @@
 """
-from typing import Any
 Module: metadata_writer.py
 
 Author: Michael Economou (refactored)
@@ -8,14 +7,18 @@ Date: 2025-12-20
 Metadata writer - handles all metadata save/write operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
-from typing import Any
+from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject
 
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
+
+if TYPE_CHECKING:
+    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -36,11 +39,11 @@ class MetadataWriter(QObject):
         """Initialize metadata writer with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
-        self._exiftool_wrapper = None
+        self._exiftool_wrapper: ExifToolWrapper | None = None
         self._save_cancelled = False
 
     @property
-    def exiftool_wrapper(self):  # type: ignore[no-untyped-def]
+    def exiftool_wrapper(self) -> ExifToolWrapper:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -248,14 +251,16 @@ class MetadataWriter(QObject):
         """Get modified metadata for a specific file with path normalization."""
         # Try direct lookup first
         if file_path in all_modified_metadata:
-            return all_modified_metadata[file_path]
+            result: dict[str, Any] = all_modified_metadata[file_path]
+            return result
 
         # Try normalized path lookup if direct fails (critical for cross-platform)
         normalized = normalize_path(file_path)
 
         for key, value in all_modified_metadata.items():
             if normalize_path(key) == normalized:
-                return value
+                result = value
+                return result
 
         # Not found
         return {}
