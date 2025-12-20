@@ -185,7 +185,7 @@ class InitializationOrchestrator:
         from oncutf.core.event_handler_manager import EventHandlerManager
         from oncutf.core.file_load_manager import FileLoadManager
         from oncutf.core.file_validation_manager import get_file_validation_manager
-        from oncutf.core.initialization_manager import InitializationManager
+        from oncutf.core.initialization.initialization_manager import InitializationManager
         from oncutf.core.rename_manager import RenameManager
         from oncutf.core.shortcut_manager import ShortcutManager
         from oncutf.core.splitter_manager import SplitterManager

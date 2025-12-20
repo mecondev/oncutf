@@ -519,6 +519,7 @@ STATUS_COLORS = {
 
 # Theme
 THEME_NAME = "dark"
+# THEME_NAME = "light"
 
 # Theme Colors (Dark Theme)
 THEME_COLORS = {
