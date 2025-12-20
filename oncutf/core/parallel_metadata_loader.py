@@ -18,7 +18,7 @@ Features:
 import threading
 import traceback
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -121,13 +121,17 @@ class ParallelMetadataLoader:
                     for item in items
                 }
 
-                # Process results as they complete (progressive updates)
-                for future in as_completed(future_to_item):
-                    # Always process events for maximum ESC responsiveness
-                    from PyQt5.QtWidgets import QApplication
+                # Use polling with timeout for responsive UI
+                # This prevents blocking until first result
+                from PyQt5.QtWidgets import QApplication
+
+                pending = set(future_to_item.keys())
+
+                while pending and not self._cancelled:
+                    # Process Qt events first for responsive UI
                     QApplication.processEvents()
 
-                    # Check for cancellation immediately after processing events
+                    # Check for cancellation
                     if cancellation_check and cancellation_check():
                         logger.info("[ParallelMetadataLoader] Cancellation detected - stopping immediately")
                         self._cancelled = True
@@ -148,7 +152,7 @@ class ParallelMetadataLoader:
 
                         # Cancel all pending futures
                         cancelled_count = 0
-                        for f in future_to_item:
+                        for f in pending:
                             if f.cancel():
                                 cancelled_count += 1
 
@@ -158,37 +162,43 @@ class ParallelMetadataLoader:
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
 
-                    item = future_to_item[future]
-                    completed += 1
+                    # Wait for any task to complete with short timeout
+                    # This allows processEvents() to run frequently
+                    done, pending = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
 
-                    try:
-                        metadata = future.result()
-                        results[item.full_path] = (item, metadata)
+                    # Process completed futures
+                    for future in done:
+                        item = future_to_item[future]
+                        completed += 1
 
-                        # Progressive callback for UI updates
-                        if progress_callback:
-                            progress_callback(completed, total_files, item, metadata)
+                        try:
+                            metadata = future.result()
+                            results[item.full_path] = (item, metadata)
 
-                        logger.debug(
-                            "[ParallelMetadataLoader] Loaded %d/%d: %s",
-                            completed,
-                            total_files,
-                            item.filename,
-                            extra={"dev_only": True}
-                        )
+                            # Progressive callback for UI updates
+                            if progress_callback:
+                                progress_callback(completed, total_files, item, metadata)
 
-                    except Exception as e:
-                        logger.exception(
-                            "[ParallelMetadataLoader] Failed to load %s: %s",
-                            item.filename,
-                            e,
-                        )
-                        # Store empty metadata on error
-                        results[item.full_path] = (item, {})
+                            logger.debug(
+                                "[ParallelMetadataLoader] Loaded %d/%d: %s",
+                                completed,
+                                total_files,
+                                item.filename,
+                                extra={"dev_only": True}
+                            )
 
-                        # Still call progress callback to update count
-                        if progress_callback:
-                            progress_callback(completed, total_files, item, {})
+                        except Exception as e:
+                            logger.exception(
+                                "[ParallelMetadataLoader] Failed to load %s: %s",
+                                item.filename,
+                                e,
+                            )
+                            # Store empty metadata on error
+                            results[item.full_path] = (item, {})
+
+                            # Still call progress callback to update count
+                            if progress_callback:
+                                progress_callback(completed, total_files, item, {})
 
             finally:
                 # Ensure executor is always shut down
