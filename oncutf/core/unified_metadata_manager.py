@@ -1705,7 +1705,9 @@ class UnifiedMetadataManager(QObject):
 
             # Step 2: Update persistent cache (CRITICAL for cross-session persistence)
             try:
-                from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
+                from oncutf.core.cache.persistent_metadata_cache import (
+                    get_persistent_metadata_cache,
+                )
 
                 persistent_cache = get_persistent_metadata_cache()
 

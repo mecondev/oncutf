@@ -13,7 +13,7 @@ logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [FileStatusHelpers] Module imported", extra={"dev_only": True})
 
 try:
-    from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
+    from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
     logger.debug(
         "[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache",
@@ -24,7 +24,7 @@ except Exception as e:
     raise
 
 try:
-    from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
+    from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
 
     logger.debug(
         "[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_hash_cache",

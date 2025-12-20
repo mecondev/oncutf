@@ -271,7 +271,7 @@ class MetadataWidget(QWidget):
             file_paths = [file_item.full_path for file_item in selected_files]
 
             # Get files that have hashes using batch query
-            from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
 
             hash_cache = get_persistent_hash_cache()
 
@@ -600,7 +600,7 @@ class MetadataWidget(QWidget):
         selected_files = self._get_selected_files()
 
         # Use the same persistent cache as batch_metadata_status
-        from oncutf.core.persistent_metadata_cache import get_persistent_metadata_cache
+        from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
         metadata_cache = get_persistent_metadata_cache()
 
@@ -1148,7 +1148,7 @@ class MetadataWidget(QWidget):
     def _check_hash_calculation_requirements(self, selected_files):
         """Check if hash calculation dialog is needed."""
         file_paths = [file_item.full_path for file_item in selected_files]
-        from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
+        from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
 
         hash_cache = get_persistent_hash_cache()
         files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")

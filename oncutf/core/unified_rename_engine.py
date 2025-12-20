@@ -17,8 +17,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from oncutf.config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
-from oncutf.core.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.batch_processor import BatchProcessorFactory
+from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
@@ -240,7 +240,7 @@ class BatchQueryManager:
             return {}
 
         try:
-            from oncutf.core.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
 
             hash_cache = get_persistent_hash_cache()
 
