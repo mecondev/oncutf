@@ -1,4 +1,5 @@
 """
+from typing import Any
 Module: metadata_reader.py
 
 Author: Michael Economou (refactored)
@@ -35,7 +36,7 @@ class MetadataReader(QObject):
     - Progress tracking and UI updates
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window=None) -> None:
         """Initialize metadata reader with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
@@ -45,7 +46,7 @@ class MetadataReader(QObject):
         self._metadata_cancelled = False
 
     @property
-    def exiftool_wrapper(self):
+    def exiftool_wrapper(self):  # type: ignore[no-untyped-def]
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -54,7 +55,7 @@ class MetadataReader(QObject):
         return self._exiftool_wrapper
 
     @property
-    def parallel_loader(self):
+    def parallel_loader(self):  # type: ignore[no-untyped-def]
         """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
             from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader

@@ -1,4 +1,5 @@
 """
+from typing import Any
 Module: metadata_cache_service.py
 
 Author: Michael Economou (refactored)
@@ -31,7 +32,7 @@ class MetadataCacheService:
     - Initialize cache helper
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window=None) -> None:
         """Initialize cache service with parent window reference."""
         self.parent_window = parent_window
         self._cache_helper: MetadataCacheHelper | None = None

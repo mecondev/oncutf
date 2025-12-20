@@ -9,6 +9,7 @@ Extracted from unified_metadata_manager.py for better separation of concerns.
 """
 
 import os
+from typing import Any
 
 from PyQt5.QtCore import QObject
 
@@ -30,7 +31,7 @@ class MetadataWriter(QObject):
     - Progress tracking and UI updates
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window=None) -> None:
         """Initialize metadata writer with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
@@ -38,7 +39,7 @@ class MetadataWriter(QObject):
         self._save_cancelled = False
 
     @property
-    def exiftool_wrapper(self):
+    def exiftool_wrapper(self):  # type: ignore[no-untyped-def]
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -218,8 +219,8 @@ class MetadataWriter(QObject):
 
     def _save_metadata_files(
         self,
-        files_to_save: list,
-        all_modifications: dict,  # noqa: ARG002 - stub implementation
+        files_to_save: list[Any],
+        all_modifications: dict[str, Any],  # noqa: ARG002 - stub implementation
         is_exit_save: bool = False,  # noqa: ARG002
     ) -> None:
         """Save metadata files using ExifTool.
@@ -240,7 +241,9 @@ class MetadataWriter(QObject):
         )
         # Full implementation to be added in next step
 
-    def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
+    def _get_modified_metadata_for_file(
+        self, file_path: str, all_modified_metadata: dict[str, Any]
+    ) -> dict[str, Any]:
         """Get modified metadata for a specific file with path normalization."""
         # Try direct lookup first
         if file_path in all_modified_metadata:

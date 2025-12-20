@@ -1,4 +1,5 @@
 """
+from typing import Any
 Module: companion_metadata_handler.py
 
 Author: Michael Economou (refactored)
@@ -9,6 +10,7 @@ Extracted from unified_metadata_manager.py for better separation of concerns.
 """
 
 import os
+from typing import Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.models.file_item import FileItem
@@ -27,12 +29,12 @@ class CompanionMetadataHandler:
     - Enhance base metadata with companion data
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize companion metadata handler."""
         self._companion_helper = None
 
     @property
-    def companion_helper(self):
+    def companion_helper(self):  # type: ignore[no-untyped-def]
         """Lazy-initialized CompanionFilesHelper."""
         if self._companion_helper is None:
             from oncutf.utils.companion_files_helper import CompanionFilesHelper
@@ -133,8 +135,8 @@ class CompanionMetadataHandler:
             return base_metadata
 
     def enhance_metadata_with_companions(
-        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
-    ) -> dict:
+        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+    ) -> dict[str, Any]:
         """
         Enhance metadata with companion file data during loading.
 
