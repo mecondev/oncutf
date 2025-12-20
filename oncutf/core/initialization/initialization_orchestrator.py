@@ -127,7 +127,7 @@ class InitializationOrchestrator:
         - Icon maps and utilities
         - State tracking attributes
         """
-        from oncutf.core.selection_manager import SelectionManager
+        from oncutf.core.selection.selection_manager import SelectionManager
         from oncutf.core.unified_metadata_manager import get_unified_metadata_manager
         from oncutf.models.file_table_model import FileTableModel
 

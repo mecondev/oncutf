@@ -91,7 +91,7 @@ class ApplicationContext(QObject):
 
         if self._selection_store is None:
             # Import here to avoid circular dependencies
-            from oncutf.core.selection_store import SelectionStore
+            from oncutf.core.selection.selection_store import SelectionStore
 
             self._selection_store = SelectionStore(parent=self)
             # Connect SelectionStore signals to ApplicationContext signals
