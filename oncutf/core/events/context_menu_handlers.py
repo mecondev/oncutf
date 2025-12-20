@@ -160,7 +160,7 @@ class ContextMenuHandlers:
             get_menu_icon("file"), "Load Fast Metadata", "Ctrl+M"
         )
         action_load_extended = create_action_with_shortcut(
-            get_menu_icon("file-plus"), "Load Extended Metadata", "Ctrl+E"
+            get_menu_icon("file-plus"), "Load Extended Metadata", "Ctrl+Shift+M"
         )
 
         menu.addAction(action_load_fast)

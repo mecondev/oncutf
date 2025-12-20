@@ -792,7 +792,7 @@ FILE_TABLE_SHORTCUTS = {
     "CLEAR_SELECTION": "Ctrl+Shift+A",
     "INVERT_SELECTION": "Ctrl+I",
     "LOAD_METADATA": "Ctrl+M",
-    "LOAD_EXTENDED_METADATA": "Ctrl+E",
+    "LOAD_EXTENDED_METADATA": "Ctrl+Shift+M",
     "CALCULATE_HASH": "Ctrl+H",
     "REFRESH": REFRESH_KEY,  # Reload files from current folder
 }

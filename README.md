@@ -147,7 +147,7 @@ python3.12 main.py
 
 #### File Table Shortcuts (when file table has focus)
 - **Ctrl+M**: Load basic metadata for selected files
-- **Ctrl+E**: Load extended metadata for selected files
+- **Ctrl+Shift+M**: Load extended metadata for selected files
 - **Ctrl+Shift+M**: Load basic metadata for all files
 - **Ctrl+Shift+E**: Load extended metadata for all files
 - **Ctrl+H**: Calculate hash checksums for selected files

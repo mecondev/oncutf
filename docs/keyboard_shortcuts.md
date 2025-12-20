@@ -24,7 +24,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+M` | Load Basic Metadata | Load basic metadata for selected files (file table) |
-| `Ctrl+E` | Load Extended Metadata | Load extended metadata for selected files (file table) |
+| `Ctrl+Shift+M` | Load Extended Metadata | Load extended metadata for selected files (file table) |
 | `Ctrl+Shift+M` | Load All Basic Metadata | Load basic metadata for all files (file table) |
 | `Ctrl+Shift+E` | Load All Extended Metadata | Load extended metadata for all files (file table) |
 | `Ctrl+S` | Save Selected Metadata | Save metadata changes for selected files (file table) |
