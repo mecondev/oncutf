@@ -1537,62 +1537,8 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def set_metadata_value(self, file_path: str, key_path: str, new_value: str) -> bool:
-        """
-        Set a metadata value for a file (updates cache only, doesn't write to disk).
-
-        Args:
-            file_path: Path to the file
-            key_path: Metadata key path (e.g., "Rotation", "EXIF/DateTimeOriginal")
-            new_value: New value to set
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            # Stage the change
-            try:
-                staging_manager = self.parent_window.context.get_manager("metadata_staging")
-                staging_manager.stage_change(file_path, key_path, new_value)
-            except KeyError:
-                logger.warning(
-                    "[UnifiedMetadataManager] MetadataStagingManager not found during set_metadata_value"
-                )
-
-            # Update UI cache
-            if hasattr(self.parent_window, "metadata_cache"):
-                cache = self.parent_window.metadata_cache
-                metadata_entry = cache.get_entry(file_path)
-
-                if metadata_entry and hasattr(metadata_entry, "data"):
-                    # Handle rotation as top-level key
-                    if key_path.lower() == "rotation":
-                        metadata_entry.data["Rotation"] = new_value
-                    # Handle nested keys
-                    elif "/" in key_path or ":" in key_path:
-                        parts = key_path.replace(":", "/").split("/", 1)
-                        if len(parts) == 2:
-                            group, key = parts
-                            if group not in metadata_entry.data:
-                                metadata_entry.data[group] = {}
-                            metadata_entry.data[group][key] = new_value
-                    # Handle top-level keys
-                    else:
-                        metadata_entry.data[key_path] = new_value
-
-                    metadata_entry.modified = True
-                    logger.debug(
-                        "[UnifiedMetadataManager] Set %s=%s for %s",
-                        key_path,
-                        new_value,
-                        os.path.basename(file_path),
-                    )
-                    return True
-
-            return False
-
-        except Exception:
-            logger.exception("[UnifiedMetadataManager] Error setting metadata value")
-            return False
+        """Delegate to writer."""
+        return self._writer.set_metadata_value(file_path, key_path, new_value)
 
     def save_metadata_for_selected(self) -> None:
         """Save metadata for selected files."""
