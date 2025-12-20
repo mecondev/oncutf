@@ -18,7 +18,7 @@ from oncutf.config import (
     COMPANION_FILES_ENABLED,
     SHOW_COMPANION_FILES_IN_TABLE,
 )
-from oncutf.core.drag_manager import force_cleanup_drag, is_dragging
+from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
 from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.companion_files_helper import CompanionFilesHelper
@@ -93,7 +93,7 @@ class FileLoadManager:
         force_restore_cursor()
 
         # Force stop any drag visual feedback
-        from oncutf.core.drag_visual_manager import end_drag_visual
+        from oncutf.core.drag.drag_visual_manager import end_drag_visual
 
         end_drag_visual()
 

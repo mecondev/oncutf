@@ -17,7 +17,7 @@ Custom QTableView with Windows Explorer-like behavior:
 from contextlib import suppress
 
 from oncutf.core.application_context import get_app_context
-from oncutf.core.drag_manager import DragManager
+from oncutf.core.drag.drag_manager import DragManager
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,

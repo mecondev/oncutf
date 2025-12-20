@@ -81,7 +81,7 @@ class InitializationOrchestrator:
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
         from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.database.database_manager import initialize_database
-        from oncutf.core.drag_manager import DragManager
+        from oncutf.core.drag.drag_manager import DragManager
         from oncutf.core.file_operations_manager import FileOperationsManager
         from oncutf.core.metadata_staging_manager import (
             MetadataStagingManager,
@@ -181,7 +181,7 @@ class InitializationOrchestrator:
         from oncutf.controllers.metadata_controller import MetadataController
         from oncutf.core.column_manager import ColumnManager
         from oncutf.core.dialog_manager import DialogManager
-        from oncutf.core.drag_cleanup_manager import DragCleanupManager
+        from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.core.event_handler_manager import EventHandlerManager
         from oncutf.core.file_load_manager import FileLoadManager
         from oncutf.core.file_validation_manager import get_file_validation_manager
