@@ -1,17 +1,20 @@
 # Roadmap — OnCutF Development
 
-**Last Updated:** 2025-12-19  
-**Current Phase:** Phase 6 ✅ COMPLETE  
-**Next Phase:** Phase 7 (Final Polish)  
+**Last Updated:** 2025-12-20  
+**Current Phase:** Phase 7 (Final Polish) 🔄 IN PROGRESS  
 **Repository Status:** 866 tests passing | 0 regressions
 
 ---
 
 ## Overview
 
-OnCutF is undergoing a structured 7-phase refactoring process to improve code organization, maintainability, and extensibility. All major architectural phases (0-6) are now complete.
+OnCutF has completed a comprehensive 7-phase refactoring process (Dec 15-20, 2025). All major architectural phases (0-6) are complete. Phase 7 focuses on documentation and final cleanup.
 
-**Current Status:** 866 tests passing (100%) | MyPy clean (Phase 1-6) | Ruff clean
+**Current Status:** 866 tests (100%) | MyPy clean | Ruff clean
+
+**Quick Links:**
+- [Master Plan](2025_12_19.md) — Current status and next steps
+- [Architecture](ARCHITECTURE.md) — System design overview
 
 ---
 
@@ -204,26 +207,20 @@ OnCutF is undergoing a structured 7-phase refactoring process to improve code or
 
 ## Documentation Structure
 
-### Phase Execution Plans
-- [PHASE2_EXECUTION_PLAN.md](PHASE2_EXECUTION_PLAN.md)
-- [PHASE3_EXECUTION_PLAN.md](PHASE3_EXECUTION_PLAN.md)
-
-### Phase Completion Reports
-- [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md)
-- [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md)
-- [PHASE5_COMPLETE.md](PHASE5_COMPLETE.md)
-- [PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)
-
-### Core Documentation
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
-- [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md) - Detailed refactoring specifications
+### Active Documentation
+- [2025_12_19.md](2025_12_19.md) — Master plan and current status
+- [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture overview
+- [README.md](README.md) — Documentation index
 
 ### System Documentation
-- [database_system.md](database_system.md) - Database architecture
-- [structured_metadata_system.md](structured_metadata_system.md) - Metadata handling
-- [progress_manager_system.md](progress_manager_system.md) - Progress tracking
-- [safe_rename_workflow.md](safe_rename_workflow.md) - Rename workflow
-- [application_workflow.md](application_workflow.md) - Application flow
+- [database_system.md](database_system.md) — Database architecture
+- [structured_metadata_system.md](structured_metadata_system.md) — Metadata handling
+- [progress_manager_system.md](progress_manager_system.md) — Progress tracking
+- [safe_rename_workflow.md](safe_rename_workflow.md) — Rename workflow
+- [application_workflow.md](application_workflow.md) — Application flow
+
+### Historical Documentation
+Phase execution plans and completion reports are archived in `_archive/refactor-runs/`.
 
 ### User Guides
 - [keyboard_shortcuts.md](keyboard_shortcuts.md) - Keyboard shortcuts reference

@@ -8,7 +8,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from PyQt5.QtWidgets import QApplication
-
 from widgets.results_table_dialog import ResultsTableDialog
 
 

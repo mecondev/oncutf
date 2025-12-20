@@ -10,10 +10,9 @@
 
 ## 🚀 Quick Links
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & current state
-- **[Phase 7 Plan](docs/PHASE7_EXECUTION_PLAN.md)** — Final polish and documentation scope
-- **[Progress Summary](docs/PROGRESS_SUMMARY.md)** — Latest status and metrics
-- **[Performance Baseline](docs/PERFORMANCE_BASELINE.md)** — Startup and memory measurements
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & layer structure
+- **[Master Plan](docs/2025_12_19.md)** — Current status and next steps
+- **[Development Roadmap](docs/ROADMAP.md)** — Phase progress and milestones
 
 ---
 
@@ -179,15 +178,22 @@ oncutf/
 │   ├── metadata_controller.py
 │   ├── rename_controller.py
 │   └── main_window_controller.py
-├── core/                    # Business logic and managers
-│   ├── application_context.py
-│   ├── unified_rename_engine.py
-│   ├── persistent_hash_cache.py
-│   ├── persistent_metadata_cache.py
-│   ├── backup_manager.py
-│   └── ... (managers, services, protocols)
+├── core/                    # Business logic (organized subdirectories)
+│   ├── cache/               # Cache management (3 modules)
+│   ├── database/            # Database operations (2 modules)
+│   ├── drag/                # Drag & drop handling (3 modules)
+│   ├── events/              # Event handlers (3 modules)
+│   ├── hash/                # Hash operations (4 modules)
+│   ├── initialization/      # Startup logic (3 modules)
+│   ├── metadata/            # Metadata operations (4 modules)
+│   ├── rename/              # Rename engine (3 modules)
+│   ├── selection/           # Selection state (2 modules)
+│   ├── ui_managers/         # UI managers (7 modules)
+│   └── ...                  # Other flat modules
+├── domain/                  # Pure domain models
+├── models/                  # Data models (FileItem, etc.)
 ├── modules/                 # Rename modules (composable steps)
-├── models/                  # Domain models
+├── services/                # Service protocols (DI support)
 ├── widgets/                 # Custom PyQt5 widgets
 ├── utils/                   # Helper utilities
 ├── docs/                    # Documentation (see docs/README.md)
@@ -198,25 +204,20 @@ oncutf/
 
 ---
 
----
-
 ## Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
 
-- **[Complete Documentation Index](docs/README.md)** - Overview and navigation
-- **[Keyboard Shortcuts Reference](docs/keyboard_shortcuts.md)** - Complete keyboard shortcuts guide
-- **[Application Workflow](docs/application_workflow.md)** - Complete application flow from startup to rename execution
-- **[Database Quick Start](docs/database_quick_start.md)** - Get started with persistent storage
-- **[Cache Strategy](docs/cache_strategy.md)** - Comprehensive cache system documentation (500x speedup)
-- **[Cache Quick Reference](docs/cache_quick_reference.md)** - One-page cache cheat sheet
-- **[Cache Index](docs/cache_index.md)** - Complete cache documentation index
-- **[Structured Metadata System](docs/structured_metadata_system.md)** - Advanced metadata organization and processing
-- **[Safe Rename Workflow](docs/safe_rename_workflow.md)** - Enhanced rename operations
-- **[Case-Sensitive Rename Guide](docs/case_sensitive_rename_guide.md)** - Cross-platform case renaming
-- **[Progress Manager System](docs/progress_manager_system.md)** - Unified progress tracking
-- **[JSON Config System](docs/json_config_system.md)** - Configuration management
-- **[Module Documentation](docs/oncutf_module_docstrings.md)** - Developer reference
+- **[Complete Documentation Index](docs/README.md)** — Overview and navigation
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design and layer structure
+- **[Keyboard Shortcuts Reference](docs/keyboard_shortcuts.md)** — Complete keyboard shortcuts guide
+- **[Application Workflow](docs/application_workflow.md)** — Complete application flow from startup to rename execution
+- **[Database Quick Start](docs/database_quick_start.md)** — Get started with persistent storage
+- **[Database System](docs/database_system.md)** — SQLite-based persistence architecture
+- **[Structured Metadata System](docs/structured_metadata_system.md)** — Advanced metadata organization and processing
+- **[Safe Rename Workflow](docs/safe_rename_workflow.md)** — Enhanced rename operations
+- **[Progress Manager System](docs/progress_manager_system.md)** — Unified progress tracking
+- **[JSON Config System](docs/json_config_system.md)** — Configuration management
 
 ---
 
@@ -237,22 +238,26 @@ pytest tests/test_rename_logic.py -v
 
 ### Code Quality
 
-The project uses `pyproject.toml` for configuration. **Linting is disabled for PyQt5 projects** in CI due to numerous false positives with type hints and Qt attribute resolution.
-
-For local development:
+The project uses `pyproject.toml` for all tool configuration.
 
 ```bash
 # Install development dependencies
 pip install -e .[dev]
 
-# Run pylint (configured to ignore PyQt5 false positives)
-pylint main_window.py --rcfile=.pylintrc
+# Run linting (ruff)
+ruff check .
 
-# Run mypy (configured in pyproject.toml)
-mypy main_window.py
+# Run type checking (mypy)
+mypy .
+
+# Run all tests
+pytest tests/ -v
 ```
 
-**Note**: PyQt5 generates many false positive warnings with static analysis tools. The configurations are specifically tuned to ignore these known issues while maintaining useful code quality checks.
+**Current Status:**
+- **Ruff:** All checks passing
+- **MyPy:** Clean (0 errors, 300 source files)
+- **Pytest:** 866 tests passing
 
 ---
 

@@ -9,7 +9,6 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 """
 
 from PyQt5.QtWidgets import QApplication, QTextEdit
-
 from utils.icon_utilities import create_colored_html_icon
 
 app = QApplication([])

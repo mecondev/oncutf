@@ -1,18 +1,15 @@
 # OnCutF Architecture Guide
 
-**Last Updated:** 2025-12-19  
-**Status:** Phase 7 (Final Polish) - Performance Optimizations ⚡
+**Last Updated:** 2025-12-20  
+**Status:** Phase 7 (Final Polish) - Documentation Cleanup ⚡
 
 ---
 
 ## Quick Navigation
 
-- **[Phase 1 Summary](PHASE1_SUMMARY.md)** — Controllers architecture overview
-- **[Phase 7 Plan](PHASE7_EXECUTION_PLAN.md)** — Final polish (docs-first scope)
-- **[Performance Baseline](PERFORMANCE_BASELINE.md)** — Startup and memory tracking
-- **[Roadmap](ROADMAP.md)** — Current progress and next phases
-- **[Arch Refactor Plan](ARCH_REFACTOR_PLAN.md)** — Strategic refactoring plan
-- **[Progress Summary](PROGRESS_SUMMARY.md)** — High-level status and metrics
+- **[Master Plan](2025_12_19.md)** — Current status and next steps
+- **[Roadmap](ROADMAP.md)** — Development phases and progress
+- **Archived docs** — See `_archive/refactor-runs/` for historical phase details
 
 ---
 
@@ -138,8 +135,6 @@
 - Zero regressions (all existing functionality preserved)
 - Foundation for future CLI/API interfaces
 
-**See:** [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md)
-
 ---
 
 ### Phase 0: Widget Decomposition ✅
@@ -231,19 +226,16 @@ oncutf/
 │   └── ... (utilities)
 │
 ├── tests/                           # Test suite
-│   ├── test_*.py                    # 592 tests, 100% passing
+│   ├── test_*.py                    # 866 tests, 100% passing
 │   ├── conftest.py
 │   └── mocks.py
 │
 └── docs/                            # Documentation
     ├── ARCHITECTURE.md              # (this file)
-    ├── ROADMAP.md                   # Current progress
-    ├── PHASE1_SUMMARY.md            # Phase 1 complete overview
-    ├── ARCH_REFACTOR_PLAN.md        # Detailed refactoring plan
-    └── architecture/                # Detailed docs
-        ├── cache_strategy.md
-        ├── column_management_mixin_guide.md
-        └── ... (planning docs)
+    ├── ROADMAP.md                   # Development roadmap
+    ├── 2025_12_19.md                # Master plan and status
+    └── _archive/                    # Historical phase docs
+        └── refactor-runs/           # Phase execution records
 ```
 
 ---
@@ -433,11 +425,11 @@ See [ROADMAP.md](ROADMAP.md) for detailed roadmap:
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [ROADMAP.md](ROADMAP.md) | Current progress & next phases | ✅ Active |
-| [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md) | Phase 1 complete overview | ✅ Latest |
-| [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md) | Strategic refactoring plan (Phases 2-6) | ✅ Active |
-| [Cache Strategy](architecture/cache_strategy.md) | Caching layers & patterns | ✅ Complete |
-| [Column Management Guide](architecture/column_management_mixin_guide.md) | FileTableView columns | ✅ Complete |
+| [2025_12_19.md](2025_12_19.md) | Master plan and current status | ✅ Active |
+| [ROADMAP.md](ROADMAP.md) | Development roadmap and phases | ✅ Active |
+| [README.md](README.md) | Documentation index | ✅ Active |
+
+Historical phase execution plans are archived in `_archive/refactor-runs/`.
 
 ---
 
@@ -454,5 +446,4 @@ When modifying architecture:
 
 ---
 
-*Generated: 2025-12-16*  
-*Last reviewed by: Architecture team after Phase 1 completion*
+*Last Updated: 2025-12-21*
