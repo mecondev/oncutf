@@ -13,8 +13,8 @@ Single item selection only - no multi-selection complexity.
 import os
 
 from oncutf.config import ALLOWED_EXTENSIONS
-from oncutf.core.drag_manager import DragManager
-from oncutf.core.drag_visual_manager import (
+from oncutf.core.drag.drag_manager import DragManager
+from oncutf.core.drag.drag_visual_manager import (
     DragVisualManager,
     end_drag_visual,
     start_drag_visual,
@@ -914,7 +914,7 @@ class FileTreeView(QTreeView):
             # Drag ended or path changed, skip update
             return
 
-        from oncutf.core.drag_visual_manager import update_source_info
+        from oncutf.core.drag.drag_visual_manager import update_source_info
         from oncutf.utils.folder_counter import count_folder_contents
 
         # Check if we're in recursive mode (Ctrl pressed)

@@ -14,8 +14,8 @@ Provides:
 - Integration with DragManager and DragVisualManager
 """
 
-from oncutf.core.drag_manager import DragManager
-from oncutf.core.drag_visual_manager import (
+from oncutf.core.drag.drag_manager import DragManager
+from oncutf.core.drag.drag_visual_manager import (
     DragType,
     DragVisualManager,
     end_drag_visual,
