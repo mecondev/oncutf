@@ -179,7 +179,6 @@ class InitializationOrchestrator:
         """
         from oncutf.controllers.file_load_controller import FileLoadController
         from oncutf.controllers.metadata_controller import MetadataController
-        from oncutf.core.column_manager import ColumnManager
         from oncutf.core.dialog_manager import DialogManager
         from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.core.event_handler_manager import EventHandlerManager
@@ -187,12 +186,13 @@ class InitializationOrchestrator:
         from oncutf.core.file_validation_manager import get_file_validation_manager
         from oncutf.core.initialization.initialization_manager import InitializationManager
         from oncutf.core.rename.rename_manager import RenameManager
-        from oncutf.core.shortcut_manager import ShortcutManager
-        from oncutf.core.splitter_manager import SplitterManager
-        from oncutf.core.table_manager import TableManager
-        from oncutf.core.ui_manager import UIManager
+        from oncutf.core.ui_managers.column_manager import ColumnManager
+        from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
+        from oncutf.core.ui_managers.splitter_manager import SplitterManager
+        from oncutf.core.ui_managers.table_manager import TableManager
+        from oncutf.core.ui_managers.ui_manager import UIManager
+        from oncutf.core.ui_managers.window_config_manager import WindowConfigManager
         from oncutf.core.utility_manager import UtilityManager
-        from oncutf.core.window_config_manager import WindowConfigManager
         from oncutf.utils.json_config_manager import get_app_config_manager
 
         # Initialize all managers
