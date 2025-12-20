@@ -180,14 +180,14 @@ class HashOperationsManager:
 
         # Create worker based on configuration
         if USE_PARALLEL_HASH_WORKER:
-            from oncutf.core.parallel_hash_worker import ParallelHashWorker
+            from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
 
             self.hash_worker = ParallelHashWorker(
                 parent=self.parent_window, max_workers=PARALLEL_HASH_MAX_WORKERS
             )
             logger.info("[HashOperationsManager] Using parallel hash worker")
         else:
-            from oncutf.core.hash_worker import HashWorker
+            from oncutf.core.hash.hash_worker import HashWorker
 
             self.hash_worker = HashWorker(parent=self.parent_window)
             logger.info("[HashOperationsManager] Using serial hash worker")
@@ -335,7 +335,7 @@ class HashOperationsManager:
             # Store hash in persistent cache if provided (safe in main thread)
             if hash_value:
                 try:
-                    from oncutf.core.hash_manager import HashManager
+                    from oncutf.core.hash.hash_manager import HashManager
                     hm = HashManager()
                     hm.store_hash(file_path, hash_value)
                 except Exception as e:
@@ -728,7 +728,7 @@ class HashOperationsManager:
         Args:
             file_item: FileItem object to calculate hash for
         """
-        from oncutf.core.hash_manager import HashManager
+        from oncutf.core.hash.hash_manager import HashManager
         from oncutf.utils.cursor_helper import wait_cursor
 
         try:

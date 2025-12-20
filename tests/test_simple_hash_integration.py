@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import os
 import tempfile
 
-from oncutf.core.hash_manager import HashManager
+from oncutf.core.hash.hash_manager import HashManager
 
 
 def test_hash_manager_basic_functionality():

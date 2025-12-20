@@ -124,7 +124,7 @@ class TestPreExecutionValidator:
 
         # Mock hash calculation to return matching hash
         with patch(
-            'oncutf.core.hash_manager.HashManager.calculate_hash',
+            'oncutf.core.hash.hash_manager.HashManager.calculate_hash',
             return_value=file_item.hash
         ):
             result = validator.validate([file_item])
@@ -138,7 +138,7 @@ class TestPreExecutionValidator:
 
         # Mock hash calculation to return different hash
         with patch(
-            'oncutf.core.hash_manager.HashManager.calculate_hash',
+            'oncutf.core.hash.hash_manager.HashManager.calculate_hash',
             return_value="different_hash_456"
         ):
             result = validator.validate([file_item])

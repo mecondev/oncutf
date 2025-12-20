@@ -69,7 +69,7 @@ class HashWorker(QThread):
         self.main_window = parent
 
         # Shared hash manager instance for better cache utilization
-        from oncutf.core.hash_manager import HashManager
+        from oncutf.core.hash.hash_manager import HashManager
 
         self._hash_manager = HashManager()
 

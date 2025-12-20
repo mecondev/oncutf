@@ -87,7 +87,7 @@ class ParallelHashWorker(QThread):
         logger.info("[ParallelHashWorker] Initialized with %d worker threads", self._max_workers)
 
         # Shared hash manager for cache access
-        from oncutf.core.hash_manager import HashManager
+        from oncutf.core.hash.hash_manager import HashManager
         self._hash_manager = HashManager()
 
         # Operation configuration
