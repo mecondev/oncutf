@@ -8,6 +8,7 @@ Date: 2025-12-20
 Metadata cache service - handles all cache-related operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.file_status_helpers import (
@@ -32,7 +33,7 @@ class MetadataCacheService:
     - Initialize cache helper
     """
 
-    def __init__(self, parent_window=None) -> None:
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize cache service with parent window reference."""
         self.parent_window = parent_window
         self._cache_helper: MetadataCacheHelper | None = None

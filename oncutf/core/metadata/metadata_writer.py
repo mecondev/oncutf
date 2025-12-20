@@ -1,4 +1,5 @@
 """
+from typing import Any
 Module: metadata_writer.py
 
 Author: Michael Economou (refactored)
@@ -7,9 +8,9 @@ Date: 2025-12-20
 Metadata writer - handles all metadata save/write operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
+from typing import Any
 
 import os
-from typing import Any
 
 from PyQt5.QtCore import QObject
 
@@ -31,7 +32,7 @@ class MetadataWriter(QObject):
     - Progress tracking and UI updates
     """
 
-    def __init__(self, parent_window=None) -> None:
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize metadata writer with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window

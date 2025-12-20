@@ -11,6 +11,7 @@ Extracted from unified_metadata_manager.py for better separation of concerns.
 This is a simplified extraction focusing on core loading methods.
 Full implementation to be completed in subsequent commits.
 """
+from typing import Any
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -36,7 +37,7 @@ class MetadataReader(QObject):
     - Progress tracking and UI updates
     """
 
-    def __init__(self, parent_window=None) -> None:
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize metadata reader with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window

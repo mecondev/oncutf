@@ -8,9 +8,9 @@ Date: 2025-12-20
 Companion file metadata handler.
 Extracted from unified_metadata_manager.py for better separation of concerns.
 """
+from typing import Any
 
 import os
-from typing import Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.models.file_item import FileItem
