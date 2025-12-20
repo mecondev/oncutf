@@ -207,26 +207,20 @@ OnCutF has completed a comprehensive 7-phase refactoring process (Dec 15-20, 202
 
 ## Documentation Structure
 
-### Phase Execution Plans
-- [PHASE2_EXECUTION_PLAN.md](PHASE2_EXECUTION_PLAN.md)
-- [PHASE3_EXECUTION_PLAN.md](PHASE3_EXECUTION_PLAN.md)
-
-### Phase Completion Reports
-- [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md)
-- [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md)
-- [PHASE5_COMPLETE.md](PHASE5_COMPLETE.md)
-- [PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)
-
-### Core Documentation
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
-- [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md) - Detailed refactoring specifications
+### Active Documentation
+- [2025_12_19.md](2025_12_19.md) — Master plan and current status
+- [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture overview
+- [README.md](README.md) — Documentation index
 
 ### System Documentation
-- [database_system.md](database_system.md) - Database architecture
-- [structured_metadata_system.md](structured_metadata_system.md) - Metadata handling
-- [progress_manager_system.md](progress_manager_system.md) - Progress tracking
-- [safe_rename_workflow.md](safe_rename_workflow.md) - Rename workflow
-- [application_workflow.md](application_workflow.md) - Application flow
+- [database_system.md](database_system.md) — Database architecture
+- [structured_metadata_system.md](structured_metadata_system.md) — Metadata handling
+- [progress_manager_system.md](progress_manager_system.md) — Progress tracking
+- [safe_rename_workflow.md](safe_rename_workflow.md) — Rename workflow
+- [application_workflow.md](application_workflow.md) — Application flow
+
+### Historical Documentation
+Phase execution plans and completion reports are archived in `_archive/refactor-runs/`.
 
 ### User Guides
 - [keyboard_shortcuts.md](keyboard_shortcuts.md) - Keyboard shortcuts reference

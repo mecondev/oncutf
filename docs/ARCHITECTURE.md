@@ -135,8 +135,6 @@
 - Zero regressions (all existing functionality preserved)
 - Foundation for future CLI/API interfaces
 
-**See:** [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md)
-
 ---
 
 ### Phase 0: Widget Decomposition ✅
@@ -228,19 +226,16 @@ oncutf/
 │   └── ... (utilities)
 │
 ├── tests/                           # Test suite
-│   ├── test_*.py                    # 592 tests, 100% passing
+│   ├── test_*.py                    # 866 tests, 100% passing
 │   ├── conftest.py
 │   └── mocks.py
 │
 └── docs/                            # Documentation
     ├── ARCHITECTURE.md              # (this file)
-    ├── ROADMAP.md                   # Current progress
-    ├── PHASE1_SUMMARY.md            # Phase 1 complete overview
-    ├── ARCH_REFACTOR_PLAN.md        # Detailed refactoring plan
-    └── architecture/                # Detailed docs
-        ├── cache_strategy.md
-        ├── column_management_mixin_guide.md
-        └── ... (planning docs)
+    ├── ROADMAP.md                   # Development roadmap
+    ├── 2025_12_19.md                # Master plan and status
+    └── _archive/                    # Historical phase docs
+        └── refactor-runs/           # Phase execution records
 ```
 
 ---
@@ -430,11 +425,11 @@ See [ROADMAP.md](ROADMAP.md) for detailed roadmap:
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [ROADMAP.md](ROADMAP.md) | Current progress & next phases | ✅ Active |
-| [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md) | Phase 1 complete overview | ✅ Latest |
-| [ARCH_REFACTOR_PLAN.md](ARCH_REFACTOR_PLAN.md) | Strategic refactoring plan (Phases 2-6) | ✅ Active |
-| [Cache Strategy](architecture/cache_strategy.md) | Caching layers & patterns | ✅ Complete |
-| [Column Management Guide](architecture/column_management_mixin_guide.md) | FileTableView columns | ✅ Complete |
+| [2025_12_19.md](2025_12_19.md) | Master plan and current status | ✅ Active |
+| [ROADMAP.md](ROADMAP.md) | Development roadmap and phases | ✅ Active |
+| [README.md](README.md) | Documentation index | ✅ Active |
+
+Historical phase execution plans are archived in `_archive/refactor-runs/`.
 
 ---
 
@@ -451,5 +446,4 @@ When modifying architecture:
 
 ---
 
-*Generated: 2025-12-16*  
-*Last reviewed by: Architecture team after Phase 1 completion*
+*Last Updated: 2025-12-21*
