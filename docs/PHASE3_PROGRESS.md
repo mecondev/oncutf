@@ -187,6 +187,37 @@ python scripts/profile_mainwindow.py | head -100
 
 ---
 
+## Runtime Performance Profiling
+
+### Metadata Loading Performance
+
+Measured with `scripts/profile_metadata_loading.py` on 10 test images:
+
+**ExifTool Overhead:**
+- Import: ~165ms
+- Init: ~2ms
+- First command: ~300ms
+- **Total overhead: ~467ms**
+
+**Loading Performance:**
+- Sequential (one-by-one): 268ms/file, 3.7 files/sec
+- Batch (all at once): 42ms/file, 24 files/sec
+- **Batch speedup: 6.4x faster** 🚀
+
+**Analysis:**
+- ExifTool has significant startup overhead (~467ms)
+- Batch loading is dramatically faster than sequential
+- Application already uses batch loading via `ParallelMetadataLoader`
+- Current implementation is near-optimal
+
+**Recommendations:**
+1. ✅ Keep using batch loading (already done)
+2. ✅ Keep lazy ExifTool initialization (already done)
+3. Consider progressive loading for very large file sets (100+ files)
+4. Cache metadata aggressively to avoid reloading
+
+---
+
 ## Recommendations
 
 1. **Accept current baseline:** 1697ms is the realistic current startup time
