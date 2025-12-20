@@ -159,7 +159,7 @@ class MetadataWriter(QObject):
         )
         self._save_metadata_files(files_to_save, all_staged_changes)
 
-    def save_all_modified_metadata(self, _is_exit_save: bool = False) -> None:
+    def save_all_modified_metadata(self, is_exit_save: bool = False) -> None:
         """Save all modified metadata across all files.
 
         Args:
@@ -217,7 +217,10 @@ class MetadataWriter(QObject):
         self._save_metadata_files(files_to_save, all_staged_changes, is_exit_save=is_exit_save)
 
     def _save_metadata_files(
-        self, files_to_save: list, _all_modifications: dict, _is_exit_save: bool = False
+        self,
+        files_to_save: list,
+        all_modifications: dict,  # noqa: ARG002 - stub implementation
+        is_exit_save: bool = False,  # noqa: ARG002
     ) -> None:
         """Save metadata files using ExifTool.
 
