@@ -246,8 +246,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         from oncutf.core.pyqt_imports import QKeySequence, QShortcut
 
         # F5: Refresh metadata from current selection
+        # F5 refresh shortcut for metadata tree
         self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
-        self._refresh_shortcut.activated.connect(self.refresh_metadata_from_selection)
+        self._refresh_shortcut.activated.connect(self._on_refresh_shortcut)
 
         # Note: Global undo/redo (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
         # Context menu still provides Undo/Redo actions for mouse-based access.
@@ -1693,8 +1694,27 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Convenience method that triggers metadata update from parent selection.
         Can be called from parent window when selection changes.
         """
-        logger.info("[MetadataTree] F5 pressed - refreshing metadata from selection")
+        logger.debug("[MetadataTree] Refreshing metadata from selection", extra={"dev_only": True})
         self.update_from_parent_selection()
+
+    def _on_refresh_shortcut(self) -> None:
+        """
+        Handle F5 shortcut press - refresh metadata with status message.
+        """
+        from oncutf.utils.cursor_helper import wait_cursor
+        
+        logger.info("[MetadataTree] F5 pressed - refreshing metadata")
+        
+        with wait_cursor():
+            self.refresh_metadata_from_selection()
+            
+            # Show status message if parent window has status manager
+            if hasattr(self, "parent") and callable(self.parent):
+                parent = self.parent()
+                if parent and hasattr(parent, "status_manager"):
+                    parent.status_manager.set_file_operation_status(
+                        "Metadata tree refreshed", success=True, auto_reset=True
+                    )
 
     def initialize_with_parent(self) -> None:
         """

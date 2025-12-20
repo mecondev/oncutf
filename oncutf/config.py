@@ -20,7 +20,7 @@ Contains:
 # =====================================
 
 # Database reset - if True, deletes database on startup
-DEBUG_RESET_DATABASE = False
+DEBUG_RESET_DATABASE = True
 
 # Config reset - if True, deletes config.json on startup
 DEBUG_RESET_CONFIG = False
@@ -76,8 +76,8 @@ ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 # =====================================
 
 # ExifTool operation timeouts (in seconds)
-EXIFTOOL_TIMEOUT_FAST = 10  # Fast metadata read (single file, no extended data)
-EXIFTOOL_TIMEOUT_EXTENDED = 120  # Extended metadata read with -ee flag (can be slow for large video files)
+EXIFTOOL_TIMEOUT_FAST = 60  # Fast metadata read (single file, no extended data)
+EXIFTOOL_TIMEOUT_EXTENDED = 240  # Extended metadata read with -ee flag (can be slow for large video files)
 EXIFTOOL_TIMEOUT_WRITE = 10  # Metadata write operations
 EXIFTOOL_TIMEOUT_BATCH_BASE = 60  # Base timeout for batch operations
 EXIFTOOL_TIMEOUT_BATCH_PER_FILE = 0.5  # Additional timeout per file in batch (seconds)
@@ -734,10 +734,10 @@ THEME_TOKENS = {
 
 # Tooltip Settings
 TOOLTIP_DURATION = 2000  # Duration in milliseconds (2 seconds)
-TOOLTIP_POSITION_OFFSET = (
-    25,
-    -35,
-)  # (x, y) offset from widget position - positioned above and to the right
+TOOLTIP_POSITION_OFFSET = (25, -35)  # (x, y) offset from widget position - positioned above and to the right
+
+# Status Bar Auto-Reset Settings
+STATUS_AUTO_RESET_DELAY = 3000  # Duration in milliseconds before status auto-resets (3 seconds)
 
 # =====================================
 # UNDO/REDO SYSTEM SETTINGS

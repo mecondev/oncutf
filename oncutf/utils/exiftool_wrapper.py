@@ -100,7 +100,8 @@ class ExifToolWrapper:
         # Use UTF-8 charset for filename encoding (critical for Windows)
         from oncutf.config import EXIFTOOL_TIMEOUT_FAST
 
-        cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
+        # Use -api largefilesupport=1 for files larger than 2GB
+        cmd = ["exiftool", "-api", "largefilesupport=1", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
             result = subprocess.run(

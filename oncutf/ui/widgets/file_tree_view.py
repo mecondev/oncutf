@@ -1047,28 +1047,120 @@ class FileTreeView(QTreeView):
 
     def _refresh_tree_view(self) -> None:
         """Refresh the tree view by refreshing the underlying model."""
+        from oncutf.utils.cursor_helper import wait_cursor
+        
         logger.info("[FileTreeView] F5 pressed - refreshing tree view")
 
+        with wait_cursor():
+            model = self.model()
+            if model and hasattr(model, "refresh"):
+                try:
+                    # Save current expanded state and selection
+                    current_path = self.get_selected_path()
+                    expanded_paths = self._save_expanded_state()
+
+                    model.refresh()
+
+                    # Restore expanded state first
+                    if expanded_paths:
+                        self._restore_expanded_state(expanded_paths)
+
+                    # Then restore selection if path still exists
+                    if current_path and os.path.exists(current_path):
+                        self.select_path(current_path)
+
+                    logger.info("[FileTreeView] Tree view refreshed successfully")
+                    
+                    # Show status message if parent window has status manager
+                    if hasattr(self, "parent") and callable(self.parent):
+                        parent = self.parent()
+                        if parent and hasattr(parent, "status_manager"):
+                            parent.status_manager.set_file_operation_status(
+                                "File tree refreshed", success=True, auto_reset=True
+                            )
+                            
+                except Exception as e:
+                    logger.exception("[FileTreeView] Error refreshing tree view: %s", e)
+            else:
+                logger.debug(
+                    "[FileTreeView] No model or model does not support refresh",
+                    extra={"dev_only": True}
+                )
+
+    def _save_expanded_state(self) -> list[str]:
+        """
+        Save the current expanded state of all nodes in the tree.
+
+        Returns:
+            List of file paths for all expanded nodes
+        """
+        expanded_paths = []
         model = self.model()
-        if model and hasattr(model, "refresh"):
-            try:
-                # Get current selected path before refresh
-                current_path = self.get_selected_path()
+        if not model:
+            return expanded_paths
 
-                model.refresh()
+        def collect_expanded(index):
+            """Recursively collect expanded node paths"""
+            if not index.isValid():
+                return
 
-                # Restore selection after refresh if path still exists
-                if current_path and os.path.exists(current_path):
-                    self.select_path(current_path)
+            if self.isExpanded(index):
+                path = model.filePath(index)
+                if path:
+                    expanded_paths.append(path)
 
-                logger.info("[FileTreeView] Tree view refreshed successfully")
-            except Exception as e:
-                logger.exception("[FileTreeView] Error refreshing tree view: %s", e)
+            # Check all children
+            row_count = model.rowCount(index)
+            for row in range(row_count):
+                child_index = model.index(row, 0, index)
+                collect_expanded(child_index)
+
+        # Start from root
+        root_index = self.rootIndex()
+        if root_index.isValid():
+            collect_expanded(root_index)
         else:
-            logger.debug(
-                "[FileTreeView] No model or model does not support refresh",
-                extra={"dev_only": True}
-            )
+            # If no root index, check all top-level items
+            row_count = model.rowCount()
+            for row in range(row_count):
+                top_index = model.index(row, 0)
+                collect_expanded(top_index)
+
+        logger.debug(
+            "[FileTreeView] Saved expanded state for %d nodes",
+            len(expanded_paths),
+            extra={"dev_only": True}
+        )
+        return expanded_paths
+
+    def _restore_expanded_state(self, expanded_paths: list[str]) -> None:
+        """
+        Restore the expanded state of nodes from saved paths.
+
+        Args:
+            expanded_paths: List of file paths that should be expanded
+        """
+        if not expanded_paths:
+            return
+
+        model = self.model()
+        if not model:
+            return
+
+        restored = 0
+        for path in expanded_paths:
+            if os.path.exists(path):
+                index = model.index(path)
+                if index.isValid():
+                    self.setExpanded(index, True)
+                    restored += 1
+
+        logger.debug(
+            "[FileTreeView] Restored expanded state for %d/%d nodes",
+            restored,
+            len(expanded_paths),
+            extra={"dev_only": True}
+        )
 
     # =====================================
     # SPLITTER INTEGRATION (unchanged)

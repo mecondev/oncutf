@@ -173,6 +173,69 @@ When working with controllers (Phase 1 refactoring):
 
 ---
 
+## Required helpers and utilities
+
+**IMPORTANT:** Use these project-specific helpers instead of raw Qt/Python equivalents.
+
+### Must-Use Helpers (mandatory)
+
+| Helper | Import | Use instead of |
+|--------|--------|----------------|
+| `wait_cursor()` | `from oncutf.utils.cursor_helper import wait_cursor` | `QApplication.setOverrideCursor()` |
+| `get_cached_logger()` | `from oncutf.utils.logger_factory import get_cached_logger` | `logging.getLogger()` |
+
+Example:
+```python
+from oncutf.utils.cursor_helper import wait_cursor
+
+with wait_cursor():
+    # blocking operation here
+    process_files()
+```
+
+### Dialogs & UI (use instead of Qt defaults)
+
+| Helper | Import | Use instead of |
+|--------|--------|----------------|
+| `CustomMessageDialog` | `from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog` | `QMessageBox` |
+| `ProgressDialog` | `from oncutf.utils.progress_dialog import ProgressDialog` | `QProgressDialog` |
+| `ResultsTableDialog` | `from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog` | Custom results display |
+| `TooltipHelper` | `from oncutf.utils.tooltip_helper import TooltipHelper` | `QToolTip` |
+
+### Timer & Scheduling
+
+| Helper | Import | Purpose |
+|--------|--------|---------|
+| `schedule_ui_update()` | `from oncutf.utils.timer_manager import schedule_ui_update` | Delayed/debounced UI updates |
+| `schedule_scroll_adjust()` | `from oncutf.utils.timer_manager import schedule_scroll_adjust` | Delayed scroll adjustments |
+| `ProgressEstimator` | `from oncutf.utils.time_formatter import ProgressEstimator` | ETA calculations for progress |
+
+### Files & Paths
+
+| Helper | Import | Purpose |
+|--------|--------|---------|
+| `normalize_path()` | `from oncutf.utils.path_normalizer import normalize_path` | Cross-platform path normalization |
+| `paths_equal()` | `from oncutf.utils.path_utils import paths_equal` | Safe path comparison |
+| `validate_filename()` | `from oncutf.utils.filename_validator import validate_filename` | Filename validation |
+
+### Status & Feedback
+
+| Helper | Access | Purpose |
+|--------|--------|---------|
+| `status_manager` | `self.main_window.status_manager` or `parent.status_manager` | Status bar messages with auto-reset |
+| `PlaceholderHelper` | `from oncutf.utils.placeholder_helper import PlaceholderHelper` | Empty state overlays on tables |
+
+### Config Constants (read from config, don't hardcode)
+
+| Constant | Import | Description |
+|----------|--------|-------------|
+| `STATUS_AUTO_RESET_DELAY` | `from oncutf.config import STATUS_AUTO_RESET_DELAY` | Status bar auto-reset delay (3000ms) |
+| `TOOLTIP_DURATION` | `from oncutf.config import TOOLTIP_DURATION` | Tooltip duration (2000ms) |
+| `EXIFTOOL_TIMEOUT_FAST` | `from oncutf.config import EXIFTOOL_TIMEOUT_FAST` | ExifTool fast timeout (60s) |
+| `EXIFTOOL_TIMEOUT_EXTENDED` | `from oncutf.config import EXIFTOOL_TIMEOUT_EXTENDED` | ExifTool extended timeout (240s) |
+
+---
+
 ## Large refactoring workflow (branch per phase + quality gates)
 
 For large refactorings, work in explicit phases. Each phase must be atomic and end in a clean, validated state.

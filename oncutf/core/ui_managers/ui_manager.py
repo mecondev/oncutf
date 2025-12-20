@@ -727,7 +727,7 @@ class UIManager:
             (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
             (FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"], self.parent_window.shortcut_load_extended_metadata),
             (FILE_TABLE_SHORTCUTS["CALCULATE_HASH"], self.parent_window.shortcut_calculate_hash_selected),
-            (FILE_TABLE_SHORTCUTS["REFRESH"], self.parent_window.force_reload),  # F5: Reload files
+            (FILE_TABLE_SHORTCUTS["REFRESH"], self._refresh_file_table),  # F5: Reload files with deselect
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
@@ -760,6 +760,28 @@ class UIManager:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
+
+    def _refresh_file_table(self) -> None:
+        """
+        Refresh file table (F5) - reloads files and clears selection for better UX.
+        Shows status message.
+        """
+        from oncutf.utils.cursor_helper import wait_cursor
+        
+        logger.info("[FileTable] F5 pressed - refreshing file table")
+        
+        with wait_cursor():
+            # Clear selection for better UX
+            self.parent_window.clear_all_selection()
+            
+            # Reload files from current folder
+            self.parent_window.force_reload()
+            
+            # Show status message
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_file_operation_status(
+                    "File table refreshed", success=True, auto_reset=True
+                )
 
     def _show_search_context_menu(self, position, line_edit: QLineEdit) -> None:
         """

@@ -246,8 +246,9 @@ class PreviewTablesView(QWidget):
         from oncutf.core.pyqt_imports import QKeySequence, QShortcut
 
         # F5: Refresh preview (recalculate from current selection)
+        # F5 refresh shortcut for preview tables
         self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
-        self._refresh_shortcut.activated.connect(self._on_refresh_requested)
+        self._refresh_shortcut.activated.connect(self._on_refresh_shortcut_pressed)
         logger.debug(
             "[PreviewTablesView] Local shortcuts setup: F5=refresh",
             extra={"dev_only": True}
@@ -257,6 +258,25 @@ class PreviewTablesView(QWidget):
         """Handle F5 refresh request by emitting signal to parent."""
         logger.info("[PreviewTablesView] F5 pressed - requesting preview refresh")
         self.refresh_requested.emit()
+
+    def _on_refresh_shortcut_pressed(self) -> None:
+        """
+        Handle F5 shortcut press - refresh preview with status message.
+        """
+        from oncutf.utils.cursor_helper import wait_cursor
+        
+        logger.info("[PreviewTables] F5 pressed - refreshing preview")
+        
+        with wait_cursor():
+            self._on_refresh_requested()
+            
+            # Show status message if parent window has status manager
+            if hasattr(self, "parent") and callable(self.parent):
+                parent = self.parent()
+                if parent and hasattr(parent, "status_manager"):
+                    parent.status_manager.set_file_operation_status(
+                        "Preview tables refreshed", success=True, auto_reset=True
+                    )
 
     def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
         """Show or hide preview table placeholders using the unified helper."""

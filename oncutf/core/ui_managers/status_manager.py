@@ -64,8 +64,14 @@ class StatusEntry:
     priority: StatusPriority
     timestamp: datetime = field(default_factory=datetime.now)
     auto_reset: bool = False
-    reset_delay: int = 3000
+    reset_delay: int = None  # Will be set from config if None
     operation_id: str | None = None  # For tracking related operations
+
+    def __post_init__(self):
+        """Initialize reset_delay from config if not provided."""
+        if self.reset_delay is None:
+            from oncutf.config import STATUS_AUTO_RESET_DELAY
+            self.reset_delay = STATUS_AUTO_RESET_DELAY
 
 
 class StatusManager:
@@ -92,7 +98,7 @@ class StatusManager:
         text: str,
         color: str = "",
         auto_reset: bool = False,
-        reset_delay: int = 3000,
+        reset_delay: int = None,
         category: StatusCategory = StatusCategory.GENERAL,
         priority: StatusPriority = StatusPriority.NORMAL,
         operation_id: str | None = None,
@@ -104,7 +110,7 @@ class StatusManager:
             text: Status text to display
             color: Optional color (CSS color string)
             auto_reset: Whether to auto-reset to "Ready" after delay
-            reset_delay: Delay in milliseconds before reset
+            reset_delay: Delay in milliseconds before reset (uses config default if None)
             category: Category of the status message
             priority: Priority level of the message
             operation_id: Optional operation identifier for tracking
