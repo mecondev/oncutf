@@ -21,7 +21,7 @@ Benefits:
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 

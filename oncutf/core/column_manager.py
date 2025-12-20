@@ -30,13 +30,13 @@ from typing import Any
 
 from oncutf.core.config_imports import FILE_TABLE_COLUMN_CONFIG, METADATA_TREE_COLUMN_WIDTHS
 from oncutf.core.pyqt_imports import (
+    QEasingCurve,
     QFontMetrics,
     QHeaderView,
+    QPropertyAnimation,
     QTableView,
     QTreeView,
     QWidget,
-    QPropertyAnimation,
-    QEasingCurve,
 )
 from oncutf.utils.logger_helper import get_cached_logger
 

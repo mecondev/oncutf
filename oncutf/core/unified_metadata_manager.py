@@ -88,7 +88,22 @@ class UnifiedMetadataManager(QObject):
         # Initialize parallel metadata loader (lazy-initialized on first use)
         self._parallel_loader = None
 
-        logger.info("[UnifiedMetadataManager] Initialized - unified metadata management")
+        # NEW: Initialize the 4 extracted modules for delegation
+        from oncutf.core.metadata import (
+            CompanionMetadataHandler,
+            MetadataCacheService,
+            MetadataReader,
+            MetadataWriter,
+        )
+
+        self._cache_service = MetadataCacheService(parent_window)
+        self._companion_handler = CompanionMetadataHandler()
+        self._reader = MetadataReader(parent_window)
+        self._writer = MetadataWriter(parent_window)
+
+        logger.info(
+            "[UnifiedMetadataManager] Initialized - unified metadata management with new modules"
+        )
 
     @property
     def exiftool_wrapper(self):
@@ -111,7 +126,9 @@ class UnifiedMetadataManager(QObject):
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
         if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache, self.parent_window)
+            self._cache_helper = MetadataCacheHelper(
+                self.parent_window.metadata_cache, self.parent_window
+            )
             logger.debug(
                 "[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True}
             )
@@ -157,27 +174,12 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def check_cached_metadata(self, file_item: FileItem) -> dict | None:
-        """
-        Check if metadata exists in cache without loading.
+        """Delegate to cache_service."""
+        return self._cache_service.check_cached_metadata(file_item)
 
-        Args:
-            file_item: The file to check
-
-        Returns:
-            Metadata dict if cached, None if not available
-        """
-        try:
-            return get_metadata_for_file(file_item.full_path)
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error checking cache for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return None
-
-    def get_enhanced_metadata(self, file_item: FileItem, folder_files: list[str] = None) -> dict | None:
+    def get_enhanced_metadata(
+        self, file_item: FileItem, folder_files: list[str] = None
+    ) -> dict | None:
         """
         Get enhanced metadata that includes companion file metadata.
 
@@ -213,7 +215,9 @@ class UnifiedMetadataManager(QObject):
                     folder_files = []
 
             # Find companion files
-            companions = CompanionFilesHelper.find_companion_files(file_item.full_path, folder_files)
+            companions = CompanionFilesHelper.find_companion_files(
+                file_item.full_path, folder_files
+            )
 
             if not companions:
                 # No companions found, return base metadata
@@ -294,7 +298,9 @@ class UnifiedMetadataManager(QObject):
 
             # First try to use the files being loaded (more efficient)
             if all_files:
-                folder_files = [f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path]
+                folder_files = [
+                    f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path
+                ]
 
             # If not enough context, scan the folder
             if len(folder_files) < 2:
@@ -308,7 +314,9 @@ class UnifiedMetadataManager(QObject):
                     return base_metadata
 
             # Find companion files
-            companions = CompanionFilesHelper.find_companion_files(file_item.full_path, folder_files)
+            companions = CompanionFilesHelper.find_companion_files(
+                file_item.full_path, folder_files
+            )
 
             if not companions:
                 return base_metadata
@@ -361,67 +369,16 @@ class UnifiedMetadataManager(QObject):
             return base_metadata
 
     def check_cached_hash(self, file_item: FileItem) -> str | None:
-        """
-        Check if hash exists in cache without loading.
-
-        Args:
-            file_item: The file to check
-
-        Returns:
-            Hash string if cached, None if not available
-        """
-        try:
-            return get_hash_for_file(file_item.full_path)
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error checking hash cache for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return None
+        """Delegate to cache_service."""
+        return self._cache_service.check_cached_hash(file_item)
 
     def has_cached_metadata(self, file_item: FileItem) -> bool:
-        """
-        Check if metadata exists in cache (fast check).
-
-        Args:
-            file_item: The file to check
-
-        Returns:
-            True if metadata exists in cache, False otherwise
-        """
-        try:
-            return has_metadata(file_item.full_path)
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error checking metadata existence for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return False
+        """Delegate to cache_service."""
+        return self._cache_service.has_cached_metadata(file_item)
 
     def has_cached_hash(self, file_item: FileItem) -> bool:
-        """
-        Check if hash exists in cache (fast check).
-
-        Args:
-            file_item: The file to check
-
-        Returns:
-            True if hash exists in cache, False otherwise
-        """
-        try:
-            return has_hash(file_item.full_path)
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error checking hash existence for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return False
+        """Delegate to cache_service."""
+        return self._cache_service.has_cached_hash(file_item)
 
     # =====================================
     # Loading State Management
@@ -667,7 +624,9 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Analyze metadata state to avoid loading if all files already have metadata
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(all_files)
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
+            all_files
+        )
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
@@ -714,7 +673,9 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Analyze metadata state to avoid loading if all files already have extended metadata
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(all_files)
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
+            all_files
+        )
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
@@ -741,9 +702,7 @@ class UnifiedMetadataManager(QObject):
     # Main Loading Methods
     # =====================================
 
-    def load_metadata_streaming(
-        self, items: list[FileItem], use_extended: bool = False
-    ):
+    def load_metadata_streaming(self, items: list[FileItem], use_extended: bool = False):
         """
         Yield metadata as soon as available using parallel loading.
 
@@ -776,7 +735,11 @@ class UnifiedMetadataManager(QObject):
             )
 
             if has_valid_cache:
-                if cache_entry.is_extended and not use_extended or cache_entry.is_extended == use_extended:
+                if (
+                    cache_entry.is_extended
+                    and not use_extended
+                    or cache_entry.is_extended == use_extended
+                ):
                     yield item, cache_entry.data
                     continue
 
@@ -876,7 +839,11 @@ class UnifiedMetadataManager(QObject):
 
             if has_valid_cache:
                 # Already has extended - never downgrade
-                if cache_entry.is_extended and not use_extended or cache_entry.is_extended == use_extended:
+                if (
+                    cache_entry.is_extended
+                    and not use_extended
+                    or cache_entry.is_extended == use_extended
+                ):
                     skipped_count += 1
                     continue
                 # else: Need upgrade from fast to extended - add to needs_loading
@@ -1147,7 +1114,7 @@ class UnifiedMetadataManager(QObject):
             use_extended=use_extended,
             progress_callback=on_progress,
             completion_callback=on_completion,
-            cancellation_check=check_cancellation
+            cancellation_check=check_cancellation,
         )
 
         # Emit signal
@@ -1240,10 +1207,14 @@ class UnifiedMetadataManager(QObject):
             # Connect signals from hash worker to dialog
             if self._hash_worker:
                 self._hash_worker.progress_updated.connect(
-                    lambda current, total, _filename: self._hash_progress_dialog.update_progress(current, total)
+                    lambda current, total, _filename: self._hash_progress_dialog.update_progress(
+                        current, total
+                    )
                 )
                 self._hash_worker.size_progress.connect(
-                    lambda processed, total: self._hash_progress_dialog.update_size_progress(processed, total)
+                    lambda processed, total: self._hash_progress_dialog.update_size_progress(
+                        processed, total
+                    )
                 )
 
             # Show dialog
@@ -1281,12 +1252,16 @@ class UnifiedMetadataManager(QObject):
         # Connect dialog signals if dialog exists
         if self._hash_progress_dialog and self._hash_worker:
             self._hash_worker.progress_updated.connect(
-                lambda current, total, _filename: self._hash_progress_dialog.update_progress(current, total),
-                Qt.QueuedConnection
+                lambda current, total, _filename: self._hash_progress_dialog.update_progress(
+                    current, total
+                ),
+                Qt.QueuedConnection,
             )
             self._hash_worker.size_progress.connect(
-                lambda processed, total: self._hash_progress_dialog.update_size_progress(processed, total),
-                Qt.QueuedConnection
+                lambda processed, total: self._hash_progress_dialog.update_size_progress(
+                    processed, total
+                ),
+                Qt.QueuedConnection,
             )
 
     def _start_metadata_loading(
@@ -1336,6 +1311,7 @@ class UnifiedMetadataManager(QObject):
         # Connect signals (ParallelHashWorker uses different signal names)
         # Use Qt.QueuedConnection to ensure UI updates happen in main thread
         from oncutf.core.pyqt_imports import Qt
+
         self._hash_worker.file_hash_calculated.connect(
             self._on_file_hash_calculated, Qt.QueuedConnection
         )
@@ -1346,11 +1322,9 @@ class UnifiedMetadataManager(QObject):
         # progress_updated emits (current, total, filename) but we only need (current, total)
         self._hash_worker.progress_updated.connect(
             lambda current, total, _filename: self._on_hash_progress(current, total),
-            Qt.QueuedConnection
+            Qt.QueuedConnection,
         )
-        self._hash_worker.size_progress.connect(
-            self._on_hash_size_progress, Qt.QueuedConnection
-        )
+        self._hash_worker.size_progress.connect(self._on_hash_size_progress, Qt.QueuedConnection)
 
         # Start worker thread
         self._hash_worker.start()
@@ -1431,6 +1405,7 @@ class UnifiedMetadataManager(QObject):
         if hash_value:
             try:
                 from oncutf.core.hash_manager import HashManager
+
                 hm = HashManager()
                 hm.store_hash(file_path, hash_value)
             except Exception:
@@ -1459,7 +1434,7 @@ class UnifiedMetadataManager(QObject):
                                 "[UnifiedMetadataManager] Emitting progressive dataChanged for hash: '%s' at row %d",
                                 file.filename,
                                 i,
-                                extra={"dev_only": True}
+                                extra={"dev_only": True},
                             )
                             self.parent_window.file_model.dataChanged.emit(
                                 top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
@@ -1532,7 +1507,9 @@ class UnifiedMetadataManager(QObject):
         if hasattr(self, "_metadata_thread") and self._metadata_thread:
             self._metadata_thread.quit()
             if not self._metadata_thread.wait(3000):  # Wait max 3 seconds
-                logger.warning("[UnifiedMetadataManager] Metadata thread did not stop, terminating...")
+                logger.warning(
+                    "[UnifiedMetadataManager] Metadata thread did not stop, terminating..."
+                )
                 self._metadata_thread.terminate()
                 if not self._metadata_thread.wait(1000):  # Wait another 1 second
                     logger.error("[UnifiedMetadataManager] Metadata thread did not terminate")
@@ -1545,7 +1522,9 @@ class UnifiedMetadataManager(QObject):
             # Wait for thread to finish (ParallelHashWorker inherits QThread)
             if self._hash_worker.isRunning():
                 if not self._hash_worker.wait(3000):  # Wait max 3 seconds
-                    logger.warning("[UnifiedMetadataManager] Hash worker did not stop, terminating...")
+                    logger.warning(
+                        "[UnifiedMetadataManager] Hash worker did not stop, terminating..."
+                    )
                     self._hash_worker.terminate()
                     if not self._hash_worker.wait(1000):  # Wait another 1 second
                         logger.error("[UnifiedMetadataManager] Hash worker did not terminate")
@@ -1572,10 +1551,12 @@ class UnifiedMetadataManager(QObject):
         try:
             # Stage the change
             try:
-                staging_manager = self.parent_window.context.get_manager('metadata_staging')
+                staging_manager = self.parent_window.context.get_manager("metadata_staging")
                 staging_manager.stage_change(file_path, key_path, new_value)
             except KeyError:
-                logger.warning("[UnifiedMetadataManager] MetadataStagingManager not found during set_metadata_value")
+                logger.warning(
+                    "[UnifiedMetadataManager] MetadataStagingManager not found during set_metadata_value"
+                )
 
             # Update UI cache
             if hasattr(self.parent_window, "metadata_cache"):
@@ -1633,7 +1614,7 @@ class UnifiedMetadataManager(QObject):
 
         # Get staging manager
         try:
-            staging_manager = self.parent_window.context.get_manager('metadata_staging')
+            staging_manager = self.parent_window.context.get_manager("metadata_staging")
         except KeyError:
             logger.error("[UnifiedMetadataManager] MetadataStagingManager not found")
             return
@@ -1645,7 +1626,9 @@ class UnifiedMetadataManager(QObject):
         for file_item in selected_files:
             if staging_manager.has_staged_changes(file_item.full_path):
                 files_to_save.append(file_item)
-                all_staged_changes[file_item.full_path] = staging_manager.get_staged_changes(file_item.full_path)
+                all_staged_changes[file_item.full_path] = staging_manager.get_staged_changes(
+                    file_item.full_path
+                )
 
         if not files_to_save:
             logger.info("[UnifiedMetadataManager] No selected files have staged changes")
@@ -1673,7 +1656,7 @@ class UnifiedMetadataManager(QObject):
 
         # Get staging manager
         try:
-            staging_manager = self.parent_window.context.get_manager('metadata_staging')
+            staging_manager = self.parent_window.context.get_manager("metadata_staging")
         except KeyError:
             logger.error("[UnifiedMetadataManager] MetadataStagingManager not found")
             return
@@ -1704,7 +1687,9 @@ class UnifiedMetadataManager(QObject):
                     files_to_save.append(path_map[staged_path])
 
         if not files_to_save:
-            logger.info("[UnifiedMetadataManager] No files with staged metadata found in current view")
+            logger.info(
+                "[UnifiedMetadataManager] No files with staged metadata found in current view"
+            )
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_file_operation_status(
                     "No metadata changes to save", success=False, auto_reset=True
@@ -1720,7 +1705,9 @@ class UnifiedMetadataManager(QObject):
         self._save_cancelled = False
         self._save_metadata_files(files_to_save, all_staged_changes, is_exit_save=is_exit_save)
 
-    def _save_metadata_files(self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False) -> None:
+    def _save_metadata_files(
+        self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False
+    ) -> None:
         """Save metadata files using ExifTool.
 
         Args:
@@ -1765,7 +1752,11 @@ class UnifiedMetadataManager(QObject):
                 QApplication.processEvents()
 
             # Use wait_cursor context manager for single file
-            cursor_context = wait_cursor() if save_mode == "single_file_wait_cursor" else contextlib.nullcontext()
+            cursor_context = (
+                wait_cursor()
+                if save_mode == "single_file_wait_cursor"
+                else contextlib.nullcontext()
+            )
 
             with cursor_context:
                 # Process each file
@@ -1885,6 +1876,7 @@ class UnifiedMetadataManager(QObject):
 
         # Try normalized path lookup if direct fails (critical for cross-platform)
         from oncutf.utils.path_normalizer import normalize_path
+
         normalized = normalize_path(file_path)
 
         for key, value in all_modified_metadata.items():
@@ -1904,10 +1896,12 @@ class UnifiedMetadataManager(QObject):
         """
         # Clear staged changes for this file
         try:
-            staging_manager = self.parent_window.context.get_manager('metadata_staging')
+            staging_manager = self.parent_window.context.get_manager("metadata_staging")
             staging_manager.clear_staged_changes(file_item.full_path)
         except KeyError:
-            logger.warning("[UnifiedMetadataManager] MetadataStagingManager not found during cleanup")
+            logger.warning(
+                "[UnifiedMetadataManager] MetadataStagingManager not found during cleanup"
+            )
 
         # CRITICAL: Update both UI cache and persistent cache with saved values
         if saved_metadata:
@@ -2108,9 +2102,7 @@ class UnifiedMetadataManager(QObject):
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
                 CustomMessageDialog.information(
-                    self.parent_window,
-                    "Save Cancelled",
-                    "\n".join(msg_parts)
+                    self.parent_window, "Save Cancelled", "\n".join(msg_parts)
                 )
             return
 
@@ -2206,9 +2198,7 @@ class UnifiedMetadataManager(QObject):
         """
         return self.structured.update_field_value(file_path, field_key, field_value)
 
-    def add_custom_field(
-        self, field_key: str, field_name: str, category: str, **kwargs
-    ) -> bool:
+    def add_custom_field(self, field_key: str, field_name: str, category: str, **kwargs) -> bool:
         """
         Add custom metadata field definition.
 
