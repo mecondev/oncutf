@@ -107,6 +107,32 @@ signal.signal(signal.SIGINT, signal_handler)
 atexit.register(cleanup_on_exit)
 
 
+def global_exception_handler(exc_type, exc_value, exc_tb) -> None:
+    """
+    Global exception handler for unhandled exceptions.
+
+    Logs the exception with full traceback and attempts graceful recovery.
+    This prevents silent crashes and ensures all errors are logged.
+    """
+    # Don't intercept KeyboardInterrupt
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+        return
+
+    # Log the exception with full traceback
+    logger.critical("Unhandled exception occurred", exc_info=(exc_type, exc_value, exc_tb))
+
+    # Attempt cleanup
+    try:
+        cleanup_on_exit()
+    except Exception as cleanup_error:
+        logger.error("Error during exception cleanup: %s", cleanup_error)
+
+
+# Install global exception handler
+sys.excepthook = global_exception_handler
+
+
 def main() -> int:
     """
     Entry point for the Batch File Renamer application.
@@ -143,6 +169,7 @@ def main() -> int:
         # Log locale information (important for date/time formatting)
         try:
             import locale
+
             current_locale = locale.getlocale()
             logger.debug("Current locale: %s", current_locale, extra={"dev_only": True})
         except Exception as e:
@@ -166,7 +193,9 @@ def main() -> int:
         # Set Fusion style for consistent cross-platform rendering
         # This ensures proper alternating row colors and theme consistency
         app.setStyle("Fusion")
-        logger.debug("Applied Fusion style for cross-platform consistency", extra={"dev_only": True})
+        logger.debug(
+            "Applied Fusion style for cross-platform consistency", extra={"dev_only": True}
+        )
 
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
@@ -177,7 +206,7 @@ def main() -> int:
         logger.debug(
             "ThemeManager initialized with theme: %s",
             theme_mgr.get_current_theme(),
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
         # Initialize theme engine
@@ -186,6 +215,7 @@ def main() -> int:
         # Configure default services for dependency injection (Phase 6)
         logger.debug("Configuring default services...", extra={"dev_only": True})
         from oncutf.services import configure_default_services
+
         configure_default_services()
         logger.info("Default services configured (Phase 6 DI)")
 
@@ -206,18 +236,16 @@ def main() -> int:
                 app.processEvents()
 
             logger.info(
-                "Splash screen displayed (size: %dx%d)",
-                splash.splash_width,
-                splash.splash_height
+                "Splash screen displayed (size: %dx%d)", splash.splash_width, splash.splash_height
             )
 
             # Initialize state for dual-flag synchronization
             init_state = {
-                'worker_ready': False,
-                'min_time_elapsed': False,
-                'worker_results': None,
-                'worker_error': None,
-                'window': None
+                "worker_ready": False,
+                "min_time_elapsed": False,
+                "worker_results": None,
+                "worker_error": None,
+                "window": None,
             }
 
             # Start background initialization worker
@@ -238,23 +266,23 @@ def main() -> int:
                 """Handle worker completion (runs in main thread via signal)."""
                 logger.info(
                     "[Init] Background initialization completed in %.0fms",
-                    results.get('duration_ms', 0)
+                    results.get("duration_ms", 0),
                 )
-                init_state['worker_ready'] = True
-                init_state['worker_results'] = results
+                init_state["worker_ready"] = True
+                init_state["worker_results"] = results
                 check_and_show_main()
 
             def on_worker_error(error_msg: str):
                 """Handle worker failure (runs in main thread via signal)."""
                 logger.error("[Init] Background initialization failed: %s", error_msg)
-                init_state['worker_ready'] = True
-                init_state['worker_error'] = error_msg
+                init_state["worker_ready"] = True
+                init_state["worker_error"] = error_msg
                 check_and_show_main()
 
             def on_min_time_elapsed():
                 """Handle minimum splash time expiration (runs in main thread via timer)."""
                 logger.debug("[Init] Minimum splash time elapsed", extra={"dev_only": True})
-                init_state['min_time_elapsed'] = True
+                init_state["min_time_elapsed"] = True
                 check_and_show_main()
 
             def _apply_theme_to_app(qapp, legacy_theme_manager, token_theme_manager, win):
@@ -272,12 +300,12 @@ def main() -> int:
                 logger.debug(
                     "[Theme] Applied theme (%d chars QSS)",
                     len(qss_content),
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
 
             def check_and_show_main():
                 """Show MainWindow when both worker and min time are ready."""
-                if not (init_state['worker_ready'] and init_state['min_time_elapsed']):
+                if not (init_state["worker_ready"] and init_state["min_time_elapsed"]):
                     return  # Wait for both conditions
 
                 logger.info("[Init] All initialization complete, showing main window")
@@ -285,9 +313,11 @@ def main() -> int:
                 try:
                     # Create MainWindow with theme callback (must be in main thread)
                     window = MainWindow(
-                        theme_callback=lambda w: _apply_theme_to_app(app, theme_manager, theme_mgr, w)
+                        theme_callback=lambda w: _apply_theme_to_app(
+                            app, theme_manager, theme_mgr, w
+                        )
                     )
-                    init_state['window'] = window
+                    init_state["window"] = window
 
                     # Show main window and close splash
                     splash.finish(window)
@@ -321,24 +351,22 @@ def main() -> int:
             from oncutf.utils.timer_manager import TimerType, get_timer_manager
 
             get_timer_manager().schedule(
-                on_min_time_elapsed,
-                delay=SPLASH_SCREEN_DURATION,
-                timer_type=TimerType.GENERIC
+                on_min_time_elapsed, delay=SPLASH_SCREEN_DURATION, timer_type=TimerType.GENERIC
             )
 
             # Add timeout safety fallback (10 seconds)
             def timeout_fallback():
                 """Emergency fallback if initialization hangs."""
-                if not init_state['window']:
+                if not init_state["window"]:
                     logger.error("[Init] Initialization timeout - forcing MainWindow creation")
-                    init_state['worker_ready'] = True
-                    init_state['min_time_elapsed'] = True
+                    init_state["worker_ready"] = True
+                    init_state["min_time_elapsed"] = True
                     check_and_show_main()
 
             get_timer_manager().schedule(
                 timeout_fallback,
                 delay=10000,  # 10 seconds
-                timer_type=TimerType.GENERIC
+                timer_type=TimerType.GENERIC,
             )
 
         except Exception as e:
@@ -371,10 +399,12 @@ def main() -> int:
         if platform.system() == "Windows":
             try:
                 import contextlib
+
                 with contextlib.suppress(RuntimeError):
                     app.processEvents()
                     # Short delay for Windows to clean up handles
                     import time as time_module
+
                     time_module.sleep(0.1)
             except Exception as win_cleanup_error:
                 logger.warning("Windows cleanup delay failed: %s", win_cleanup_error)
@@ -382,6 +412,7 @@ def main() -> int:
         # Extra defensive UI cleanup: close windows, run event loop cycles and force GC
         try:
             import gc
+
             # Ensure top-level windows are closed so Qt can release native resources
             with __import__("contextlib").suppress(Exception):
                 app.closeAllWindows()
@@ -414,6 +445,7 @@ def main() -> int:
         # Emergency cleanup on crash
         try:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
         except Exception:
             pass
