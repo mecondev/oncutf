@@ -19,7 +19,9 @@ logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
 
 # Maximum memory cache size to prevent unbounded growth
-MAX_MEMORY_CACHE_SIZE = 500  # Metadata is larger than hashes
+# Increased from 500 to 1000 for better hit rate (Phase 3 optimization)
+# Typical metadata entry ~2KB, so 1000 entries = ~2MB (acceptable overhead)
+MAX_MEMORY_CACHE_SIZE = 1000  # Metadata is larger than hashes
 
 try:
     from oncutf.core.database_manager import get_database_manager
