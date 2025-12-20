@@ -277,9 +277,11 @@ ignore = [
     "TC003", # typing imports should be in TYPE_CHECKING block
     # PLR ignores - keep useful rules, ignore overly strict ones
     "PLR2004", # magic-value-comparison (too noisy for constants like 0, 1, 2)
+    "PLR0911", # too-many-return-statements (common pattern in switch-like logic)
     "PLR0912", # too-many-branches (legacy code, will refactor gradually)
     "PLR0913", # too-many-arguments (common in PyQt signals/slots)
     "PLR0915", # too-many-statements (legacy __init__ methods)
+    "PLR1704", # redefining-argument-from-local (intentional shadowing in loops)
 ]
 
 # Per-file ignores for scripts and utilities

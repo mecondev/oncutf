@@ -8,8 +8,6 @@ Stress tests for large file sets (1000+ files).
 Tests memory usage, performance, and stability with large workloads.
 """
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -119,7 +117,7 @@ class TestLargeFileSetStress:
                 cache.store_hash(file_path, f"hash_{j}_{i}", "CRC32")
 
         # Rapid get operations
-        for i in range(10):  # 10 iterations
+        for _ in range(10):  # 10 iterations
             for file_path in files:
                 result = cache.get_hash(file_path, "CRC32")
                 assert result is not None

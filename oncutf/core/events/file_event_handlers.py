@@ -10,14 +10,11 @@ Extracted from event_handler_manager.py for better separation of concerns.
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
 from oncutf.core.pyqt_imports import QApplication
 from oncutf.utils.logger_factory import get_cached_logger
-
-if TYPE_CHECKING:
-    pass
 
 logger = get_cached_logger(__name__)
 

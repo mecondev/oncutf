@@ -228,7 +228,7 @@ def is_mount_point_or_root(path: str) -> bool:
         return True
 
     # Check for root directory
-    if path == os.path.sep or path == "/":
+    if path in (os.path.sep, "/"):
         return True
 
     # Windows: Check for drive roots (C:\\, D:\\, etc.)

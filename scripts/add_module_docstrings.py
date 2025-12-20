@@ -10,6 +10,7 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 
 import ast
 import os
+import sys
 
 PLACEHOLDER = '"""TODO: Add module-level docstring."""\n\n'
 
@@ -60,7 +61,7 @@ if __name__ == "__main__":
 
     if not os.path.isdir(args.project):
         print("Error: Invalid path.")
-        exit(1)
+        sys.exit(1)
 
     modified = process_project(args.project)
     print(f"Done. Added placeholder docstrings to {modified} file(s).")

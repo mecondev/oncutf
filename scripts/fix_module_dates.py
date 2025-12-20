@@ -16,6 +16,7 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -421,4 +422,4 @@ Examples:
 
 
 if __name__ == '__main__':
-    exit(main())
+    sys.exit(main())
