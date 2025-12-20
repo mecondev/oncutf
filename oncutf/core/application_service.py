@@ -109,6 +109,30 @@ class ApplicationService:
         """Load extended metadata for all files."""
         return self.main_window.metadata_manager.shortcut_load_extended_metadata_all()
 
+    def load_metadata_for_items(
+        self,
+        items: list[FileItem],
+        use_extended: bool = False,
+        source: str = "unknown",
+    ) -> None:
+        """Load metadata for specific FileItem objects.
+
+        Delegates to UnifiedMetadataManager which handles:
+        - Cache pre-check (skip already-loaded files)
+        - Single file: wait_cursor (fast and responsive)
+        - Multiple files: ProgressDialog with ESC cancel support
+
+        Args:
+            items: List of FileItem objects to load metadata for
+            use_extended: Whether to use extended metadata loading
+            source: Source of the request (for logging)
+        """
+        if not items:
+            return
+        self.main_window.metadata_manager.load_metadata_for_items(
+            items, use_extended=use_extended, source=source
+        )
+
     def calculate_hash_selected(self):
         """Calculate hash for selected files that don't already have hashes."""
         selected_files = self.main_window.get_selected_files_ordered()
