@@ -30,7 +30,7 @@ from oncutf.core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from oncutf.core.rename_history_manager import get_rename_history_manager
+from oncutf.core.rename.rename_history_manager import get_rename_history_manager
 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip

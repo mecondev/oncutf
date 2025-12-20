@@ -8,7 +8,7 @@ while ensuring proper UI state restoration after rename operations.
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from oncutf.core.rename_manager import RenameManager
+from oncutf.core.rename.rename_manager import RenameManager
 from oncutf.models.file_item import FileItem
 
 
