@@ -27,12 +27,6 @@ from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.cursor_helper import wait_cursor
-from oncutf.utils.file_status_helpers import (
-    get_hash_for_file,
-    get_metadata_for_file,
-    has_hash,
-    has_metadata,
-)
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import paths_equal
