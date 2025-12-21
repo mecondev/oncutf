@@ -9,6 +9,10 @@ __pycache__/
 *.pyd
 *.egg-info/
 
+# PyQt5 Resource Compiler generated files (fonts_rc.py is ~100K+ LOC)
+# These should be generated at build time, not tracked in git
+fonts_rc*.py
+
 # Backup or temp Python files
 *.bak
 *.backup
