@@ -149,6 +149,21 @@ ignore_errors = false
 warn_return_any = true
 check_untyped_defs = true
 
+# Services layer - STRICT MODE (Antigravity recommendation 2025-12-21)
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.services",
+    "oncutf.services.interfaces",
+    "oncutf.services.registry",
+    "oncutf.services.filesystem_service",
+    "oncutf.services.hash_service",
+    "oncutf.services.cached_hash_service",
+    "oncutf.services.exiftool_service",
+]
+ignore_errors = false
+warn_return_any = true
+check_untyped_defs = true
+
 # Phase 1: Well-typed modules with strict checking
 [[tool.mypy.overrides]]
 module = [
@@ -205,9 +220,9 @@ module = [
 ]
 ignore_errors = true
 
-# Controllers, models, modules, services - keep ignored for now
+# Controllers, models, modules - keep ignored for now (services moved to strict)
 [[tool.mypy.overrides]]
-module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*", "oncutf.services.*"]
+module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*"]
 ignore_errors = true
 
 # =============================================================================

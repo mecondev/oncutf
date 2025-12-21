@@ -10,9 +10,14 @@ Used by rename modules to avoid expensive hash computations during preview.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from oncutf.utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
 
 logger = get_cached_logger(__name__)
 
@@ -29,9 +34,9 @@ class CachedHashService:
 
     def __init__(self) -> None:
         """Initialize the cached hash service."""
-        self._cache_manager = None
+        self._cache_manager: PersistentHashCache | None = None
 
-    def _get_cache_manager(self):
+    def _get_cache_manager(self) -> PersistentHashCache:
         """Lazy load the hash cache manager."""
         if self._cache_manager is None:
             from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
@@ -43,7 +48,7 @@ class CachedHashService:
         self,
         path: Path,
         algorithm: str = "crc32",
-        progress_callback=None,  # noqa: ARG002
+        progress_callback: Callable[[int, int], None] | None = None,  # noqa: ARG002
     ) -> str:
         """Get cached hash (never computes).
 
@@ -79,7 +84,7 @@ class CachedHashService:
         self,
         paths: list[Path],
         algorithm: str = "crc32",
-        progress_callback=None,  # noqa: ARG002
+        progress_callback: Callable[[int, int], None] | None = None,  # noqa: ARG002
     ) -> dict[Path, str]:
         """Get cached hashes for multiple files (never computes).
 
