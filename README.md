@@ -104,6 +104,9 @@ cd oncutf
 # Install Python dependencies
 pip install -r requirements.txt
 
+# Generate font resources (required after first clone)
+python scripts/generate_fonts_rc.py
+
 # Run the application
 python main.py
 ```
@@ -113,6 +116,9 @@ python main.py
 ```bash
 # Install in development mode
 pip install -e .
+
+# Generate font resources (if not done)
+python scripts/generate_fonts_rc.py
 
 # Run with specific Python version
 python3.12 main.py

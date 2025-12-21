@@ -130,7 +130,8 @@ debug.log
 # GUI-related files (PyQt5, resources)
 # =======================================
 
-*.qrc
+# NOTE: *.qrc files ARE tracked (needed for build)
+# Only the generated _rc.py files are ignored
 *.ui.py
 resources_rc.py
 *.qmlc
