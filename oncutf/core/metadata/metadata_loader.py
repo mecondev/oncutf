@@ -29,6 +29,7 @@ from oncutf.utils.path_utils import paths_equal
 if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+    from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
     from oncutf.models.file_item import FileItem
     from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
@@ -73,7 +74,7 @@ class MetadataLoader:
         self._metadata_cancelled = False
 
         # Parallel loader (lazy-initialized)
-        self._parallel_loader = None
+        self._parallel_loader: ParallelMetadataLoader | None = None
 
     @property
     def parent_window(self) -> Any:
@@ -266,13 +267,13 @@ class MetadataLoader:
 
             # Check if we have valid metadata in cache
             has_valid_cache = (
-                cache_entry
+                cache_entry is not None
                 and hasattr(cache_entry, "is_extended")
                 and hasattr(cache_entry, "data")
                 and cache_entry.data
             )
 
-            if has_valid_cache:
+            if has_valid_cache and cache_entry is not None:
                 # Already has extended - never downgrade
                 if (
                     cache_entry.is_extended
@@ -430,7 +431,7 @@ class MetadataLoader:
         # Progress tracking
         processed_size = 0
 
-        def on_progress(current: int, total: int, item: FileItem, metadata: dict) -> None:
+        def on_progress(current: int, total: int, item: FileItem, metadata: dict[str, Any]) -> None:
             """Called for each completed file during parallel loading."""
             nonlocal processed_size
 
@@ -542,7 +543,7 @@ class MetadataLoader:
 
     def load_metadata_streaming(
         self, items: list[FileItem], use_extended: bool = False
-    ) -> Iterator[tuple[FileItem, dict]]:
+    ) -> Iterator[tuple[FileItem, dict[str, Any]]]:
         """
         Yield metadata as soon as available using parallel loading.
 
@@ -568,13 +569,13 @@ class MetadataLoader:
             )
 
             has_valid_cache = (
-                cache_entry
+                cache_entry is not None
                 and hasattr(cache_entry, "is_extended")
                 and hasattr(cache_entry, "data")
                 and cache_entry.data
             )
 
-            if has_valid_cache:
+            if has_valid_cache and cache_entry is not None:
                 if (
                     cache_entry.is_extended
                     and not use_extended
@@ -625,8 +626,8 @@ class MetadataLoader:
     # =========================================================================
 
     def _enhance_with_companions(
-        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
-    ) -> dict:
+        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+    ) -> dict[str, Any]:
         """
         Enhance metadata with companion file data.
 
@@ -653,8 +654,8 @@ class MetadataLoader:
         )
 
     def _enhance_metadata_with_companions_inline(
-        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
-    ) -> dict:
+        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+    ) -> dict[str, Any]:
         """
         Inline implementation of companion metadata enhancement.
 

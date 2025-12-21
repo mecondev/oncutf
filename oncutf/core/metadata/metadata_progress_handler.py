@@ -283,7 +283,7 @@ class MetadataProgressHandler:
         try:
             self._hash_progress_dialog.update_progress(current, total)
             if processed_bytes and total_bytes:
-                self._hash_progress_dialog.update_size_progress(processed_bytes, total_bytes)
+                self._hash_progress_dialog.set_size_info(processed_bytes, total_bytes)
         except Exception:
             logger.warning(
                 "[MetadataProgressHandler] Error updating hash progress",
