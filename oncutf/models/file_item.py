@@ -39,6 +39,7 @@ class FileItem:
         self.metadata = {}  # Will store file metadata
         self.metadata_status = "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
         self.checked = False  # Selection state for UI
+        self.color = "none"  # Color tag for file organization (hex color or "none")
 
     def __str__(self) -> str:
         return f"FileItem({self.filename})"

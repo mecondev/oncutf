@@ -347,6 +347,10 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self._configure_columns()
         logger.debug("prepare_table finished", extra={"dev_only": True})
         self._ensure_no_word_wrap()
+        
+        # Setup column-specific delegates
+        self._setup_column_delegates()
+        
         if hasattr(self, "hover_delegate"):
             self.setItemDelegate(self.hover_delegate)
             self.hover_delegate.hovered_row = -1
@@ -357,6 +361,33 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     # =====================================
     # Column Management & Scrollbar Optimization
     # =====================================
+
+    def _setup_column_delegates(self) -> None:
+        """Setup column-specific delegates (e.g., color column)."""
+        if not self.model():
+            return
+        
+        # Find color column index
+        visible_columns = self._visible_columns if hasattr(self, '_visible_columns') else []
+        
+        try:
+            color_column_logical_index = visible_columns.index("color")
+            # +1 because column 0 is status column
+            color_column_view_index = color_column_logical_index + 1
+            
+            # Set color column delegate
+            from oncutf.ui.delegates.color_column_delegate import ColorColumnDelegate
+            
+            color_delegate = ColorColumnDelegate(self)
+            self.setItemDelegateForColumn(color_column_view_index, color_delegate)
+            
+            logger.debug(
+                "[FileTableView] Set ColorColumnDelegate for column %d",
+                color_column_view_index
+            )
+        except (ValueError, AttributeError):
+            # Color column not visible or not in list
+            logger.debug("[FileTableView] Color column not visible, delegate not set")
 
     def _force_scrollbar_update(self) -> None:
         """Force immediate scrollbar and viewport update."""

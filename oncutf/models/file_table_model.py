@@ -454,6 +454,34 @@ class FileTableModel(QAbstractTableModel):
         painter.end()
         return QIcon(combined_pixmap)
 
+    def _create_color_icon(self, hex_color: str) -> QIcon:
+        """
+        Create a color swatch icon for the color column.
+        
+        Args:
+            hex_color: Hex color string (e.g., "#ff0000")
+            
+        Returns:
+            QIcon with colored square swatch
+        """
+        # Create 16x16 pixmap for color swatch
+        size = 16
+        pixmap = QPixmap(size, size)
+        pixmap.fill(QColor(0, 0, 0, 0))  # Transparent background
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Draw filled rounded rectangle
+        color = QColor(hex_color)
+        painter.setBrush(color)
+        painter.setPen(QColor("#555"))  # Border
+        painter.drawRoundedRect(2, 2, size - 4, size - 4, 2, 2)
+        
+        painter.end()
+        
+        return QIcon(pixmap)
+
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
         count = len(self.files)
         return count
@@ -463,6 +491,9 @@ class FileTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             if column_key == "filename":
                 return str(file.filename)
+            elif column_key == "color":
+                # Color column shows no text, only icon
+                return ""
             elif column_key == "file_size":
                 return str(file.get_human_readable_size())
             elif column_key == "type":
@@ -511,6 +542,15 @@ class FileTableModel(QAbstractTableModel):
                         )
 
                 return ""  # Empty string for missing metadata
+
+        elif role == Qt.DecorationRole:
+            # Show color swatch for color column
+            if column_key == "color":
+                color_value = getattr(file, "color", "none")
+                if color_value and color_value != "none":
+                    return self._create_color_icon(color_value)
+                return QVariant()
+            return QVariant()
 
         elif role == Qt.TextAlignmentRole:
             # Get alignment from UnifiedColumnService
