@@ -157,7 +157,6 @@ self.file_model.populate_from_items(items)
 ### 4.1 Metadata Loading Triggers
 
 #### A. Automatic Loading
-- Double-click on file
 - File selection changes
 - Drag & drop with metadata enabled
 

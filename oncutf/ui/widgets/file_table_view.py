@@ -620,21 +620,9 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         else:
             self.ensure_anchor_or_select(index, event.modifiers())
 
-        # Trigger metadata load
-        try:
-            get_app_context()
-            # Try to get main window through context for file double click handling
-            # This is a transitional approach until we fully migrate event handling
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, "handle_file_double_click"):
-                parent_window = parent_window.parent()
-
-            if parent_window:
-                parent_window.handle_file_double_click(index, event.modifiers())
-        except RuntimeError:
-            # ApplicationContext not ready yet, use legacy approach
-            if hasattr(self, "parent_window"):
-                self.parent_window.handle_file_double_click(index, event.modifiers())
+        # NOTE: Double-click metadata loading removed (2025-12-21)
+        # This event is now reserved for future functionality
+        # Metadata loading is available via keyboard shortcuts (Ctrl+M, etc.)
 
         self._sync_selection_safely()
 

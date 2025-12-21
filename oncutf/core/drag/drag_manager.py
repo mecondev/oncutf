@@ -208,9 +208,10 @@ class DragManager(QObject):
     def _safety_cleanup(self) -> None:
         """Safety cleanup triggered by timer (only for stuck drags)."""
         if self._drag_active:
-            logger.warning(
+            logger.debug(
                 "[DragManager] Safety cleanup after timeout (source: %s)",
                 self._drag_source,
+                extra={"dev_only": True},
             )
 
             # Force cursor restoration before general cleanup

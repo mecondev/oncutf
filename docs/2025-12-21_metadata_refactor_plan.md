@@ -233,7 +233,7 @@ class UnifiedMetadataManager(QObject):
 - [x] `mypy .` — passes (303 source files)
 - [x] `pytest` — all tests pass (6 skipped stress tests)
 - [x] `unified_metadata_manager.py` reduced from 2053 → 821 LOC (60% reduction)
-- [ ] All existing functionality works (manual smoke test)
+- [x] All existing functionality works (manual smoke test 2025-12-21)
 - [x] No external API changes
 
 ### Phase 1 Results Summary

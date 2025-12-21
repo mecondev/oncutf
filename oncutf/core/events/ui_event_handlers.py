@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from oncutf.core.pyqt_imports import QModelIndex, Qt
+from oncutf.core.pyqt_imports import QModelIndex
 from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -84,68 +84,11 @@ class UIEventHandlers:
         self, index: QModelIndex, modifiers: Any = None
     ) -> None:
         """
-        Loads metadata for the file (even if already loaded), on double-click.
-        Uses unified dialog-based loading for consistency.
+        Placeholder for future double-click functionality.
+
+        NOTE: Metadata loading on double-click was removed (2025-12-21).
+        This method is kept as a placeholder for future functionality.
+        Use keyboard shortcuts (Ctrl+M, Ctrl+Shift+M, etc.) for metadata loading.
         """
-        if modifiers is None:
-            modifiers = Qt.KeyboardModifiers()
-
-        row = index.row()
-        if 0 <= row < len(self.parent_window.file_model.files):
-            file = self.parent_window.file_model.files[row]
-            logger.info("[DoubleClick] Requested metadata reload for: %s", file.filename)
-
-            # Check for Ctrl modifier for extended metadata
-            ctrl_pressed = bool(modifiers & Qt.ControlModifier)  # type: ignore[attr-defined]
-            use_extended = ctrl_pressed
-
-            # Get selected files for context
-            selected_files = [f for f in self.parent_window.file_model.files if f.checked]
-            target_files = selected_files if len(selected_files) > 1 else [file]
-
-            # Analyze metadata state to show appropriate dialog
-            # Import here to avoid circular imports
-            from oncutf.core.events.context_menu_handlers import ContextMenuHandlers
-
-            # Create temporary handler instance for analysis
-            temp_handler = ContextMenuHandlers(self.parent_window)
-            metadata_analysis = temp_handler._analyze_metadata_state(target_files)
-
-            # Check if we should show a dialog instead of loading
-            if use_extended and not metadata_analysis["enable_extended_selected"]:
-                # Extended metadata requested but all files already have it
-                from oncutf.utils.dialog_utils import show_info_message
-
-                message = f"All {len(target_files)} file(s) already have extended metadata."
-                if metadata_analysis.get("extended_tooltip"):
-                    message += f"\n\n{metadata_analysis['extended_tooltip']}"
-
-                show_info_message(
-                    self.parent_window,
-                    "Extended Metadata",
-                    message,
-                )
-                return
-            elif not use_extended and not metadata_analysis["enable_fast_selected"]:
-                # Fast metadata requested but files have extended or already have fast
-                from oncutf.utils.dialog_utils import show_info_message
-
-                message = f"Cannot load fast metadata for {len(target_files)} file(s)."
-                if metadata_analysis.get("fast_tooltip"):
-                    message += f"\n\n{metadata_analysis['fast_tooltip']}"
-
-                show_info_message(
-                    self.parent_window,
-                    "Fast Metadata",
-                    message,
-                )
-                return
-
-            # Proceed with loading
-            source = "double_click_extended" if use_extended else "double_click"
-            if len(selected_files) > 1:
-                source += "_multi"
-
-            self.parent_window.load_metadata_for_items(
-                target_files, use_extended=use_extended, source=source
-            )
+        # Reserved for future functionality
+        _ = index, modifiers  # Silence unused warnings

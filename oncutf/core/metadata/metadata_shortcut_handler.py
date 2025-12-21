@@ -107,7 +107,7 @@ class MetadataShortcutHandler:
         """
         Returns True if Ctrl+Shift are both held.
 
-        Used in cases where metadata is always loaded (double click, drag & drop).
+        Used in cases where metadata is always loaded (drag & drop).
         This assumes that metadata will be loaded - we only decide if it's fast or extended.
 
         Args:
