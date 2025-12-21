@@ -264,12 +264,12 @@ class PreviewTablesView(QWidget):
         Handle F5 shortcut press - refresh preview with status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
-        
+
         logger.info("[PreviewTables] F5 pressed - refreshing preview")
-        
+
         with wait_cursor():
             self._on_refresh_requested()
-            
+
             # Show status message if parent window has status manager
             if hasattr(self, "parent") and callable(self.parent):
                 parent = self.parent()

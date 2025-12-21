@@ -767,16 +767,16 @@ class UIManager:
         Shows status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
-        
+
         logger.info("[FileTable] F5 pressed - refreshing file table")
-        
+
         with wait_cursor():
             # Clear selection for better UX
             self.parent_window.clear_all_selection()
-            
+
             # Reload files from current folder
             self.parent_window.force_reload()
-            
+
             # Show status message
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_file_operation_status(
