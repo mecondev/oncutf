@@ -1178,7 +1178,7 @@ COLOR_PALETTE = [
     # Row 3: Blues
     "#4caf50", "#81c784", "#66bb6a", "#43a047", "#388e3c", "#2e7d32", "#00bcd4", "#26c6da",
     # Row 4: Grays
-    "#ffffff81", "#64b5f6", "#42a5f5", "#1976d2", "#1565c0", "#0d47a1", "#9c27b0", "#ba68c8",
+    "#a0a0a0", "#64b5f6", "#42a5f5", "#1976d2", "#1565c0", "#0d47a1", "#9c27b0", "#ba68c8",
 ]
 
 # Color grid layout configuration

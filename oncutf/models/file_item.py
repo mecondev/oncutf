@@ -21,9 +21,6 @@ from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
-# Database access for loading saved color tags
-from oncutf.core.database.database_manager import get_database_manager
-
 
 class FileItem:
     """
@@ -44,8 +41,14 @@ class FileItem:
         self.checked = False  # Selection state for UI
 
         # Load saved color tag from database (hex color or "none")
-        db_manager = get_database_manager()
-        self.color = db_manager.get_color_tag(path)
+        # Import here to avoid circular imports and initialization issues
+        try:
+            from oncutf.core.database.database_manager import get_database_manager
+            db_manager = get_database_manager()
+            self.color = db_manager.get_color_tag(path)
+        except Exception as e:
+            logger.warning("[FileItem] Could not load color tag: %s", e)
+            self.color = "none"
 
     def __str__(self) -> str:
         return f"FileItem({self.filename})"
