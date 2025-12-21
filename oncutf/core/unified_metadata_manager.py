@@ -13,7 +13,7 @@ This module now serves as a thin facade that delegates to specialized handlers:
 - MetadataProgressHandler: Progress dialog management
 - MetadataCacheService: Cache operations
 - CompanionMetadataHandler: Companion file metadata
-- MetadataReader/MetadataWriter: ExifTool operations
+- MetadataWriter: Save operations (ExifTool write)
 
 The facade maintains backward compatibility while internal implementation
 is now cleanly separated into focused modules.
@@ -88,14 +88,12 @@ class UnifiedMetadataManager(QObject):
             MetadataCacheService,
             MetadataLoader,
             MetadataProgressHandler,
-            MetadataReader,
             MetadataShortcutHandler,
             MetadataWriter,
         )
 
         self._cache_service = MetadataCacheService(parent_window)
         self._companion_handler = CompanionMetadataHandler()
-        self._reader = MetadataReader(parent_window)
         self._writer = MetadataWriter(parent_window)
         self._shortcut_handler = MetadataShortcutHandler(self, parent_window)
         self._progress_handler = MetadataProgressHandler(parent_window)
