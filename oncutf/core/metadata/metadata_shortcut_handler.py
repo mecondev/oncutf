@@ -79,11 +79,11 @@ class MetadataShortcutHandler:
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        if modifiers == Qt.NoModifier:  # type: ignore[union-attr]
+        if modifiers == Qt.NoModifier:
             modifiers = QApplication.keyboardModifiers()  # fallback to current
 
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore[union-attr]
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore[union-attr]
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
 
         # - No modifiers: skip metadata
         # - With Ctrl: load basic metadata
@@ -125,8 +125,8 @@ class MetadataShortcutHandler:
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore[union-attr]
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore[union-attr]
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
         return ctrl and shift
 
     # =========================================================================
@@ -363,7 +363,8 @@ class MetadataShortcutHandler:
     def _get_selected_files(self) -> list[FileItem]:
         """Get currently selected files from parent window."""
         if self.parent_window and hasattr(self.parent_window, "get_selected_files_ordered"):
-            return self.parent_window.get_selected_files_ordered()
+            result = self.parent_window.get_selected_files_ordered()
+            return result if isinstance(result, list) else []
         return []
 
     def _get_all_files(self) -> list[FileItem]:
@@ -371,7 +372,7 @@ class MetadataShortcutHandler:
         from oncutf.core.application_context import ApplicationContext
 
         context = ApplicationContext()
-        return list(context.file_store)
+        return context.file_store.get_loaded_files()
 
     def _analyze_metadata_state(self, files: list[FileItem]) -> dict[str, Any]:
         """
@@ -388,7 +389,8 @@ class MetadataShortcutHandler:
             and hasattr(self.parent_window, "event_handler_manager")
             and hasattr(self.parent_window.event_handler_manager, "_analyze_metadata_state")
         ):
-            return self.parent_window.event_handler_manager._analyze_metadata_state(files)
+            result = self.parent_window.event_handler_manager._analyze_metadata_state(files)
+            return result if isinstance(result, dict) else {}
 
         # Fallback: return permissive defaults
         return {

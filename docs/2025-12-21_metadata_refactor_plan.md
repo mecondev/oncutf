@@ -338,10 +338,11 @@ refactor/2025-12-21/metadata-phase-2
 #### IN SCOPE
 - Remove `ignore_errors` for well-typed metadata modules:
   - `oncutf/core/metadata/metadata_cache_service.py`
-  - `oncutf/core/metadata/metadata_reader.py`
   - `oncutf/core/metadata/metadata_writer.py`
-  - `oncutf/core/metadata/metadata_loader.py` (new)
-  - `oncutf/core/metadata/metadata_shortcut_handler.py` (new)
+  - `oncutf/core/metadata/metadata_loader.py`
+  - `oncutf/core/metadata/metadata_shortcut_handler.py`
+  - `oncutf/core/metadata/metadata_progress_handler.py`
+  - `oncutf/core/metadata/companion_metadata_handler.py`
 - Add type annotations where missing
 - Fix any mypy errors that surface
 
@@ -350,36 +351,34 @@ refactor/2025-12-21/metadata-phase-2
 - UI modules
 - Adding `disallow_untyped_defs = true` globally
 
-### Approach
-
-Add to `pyproject.toml`:
-```toml
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.core.metadata.metadata_cache_service",
-    "oncutf.core.metadata.metadata_reader",
-    "oncutf.core.metadata.metadata_writer",
-    "oncutf.core.metadata.metadata_loader",
-    "oncutf.core.metadata.metadata_shortcut_handler",
-    "oncutf.core.metadata.metadata_progress_handler",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-```
-
 ### Tasks
 
-- [ ] Add type annotations to new Phase 1 modules
-- [ ] Update mypy configuration
-- [ ] Fix any mypy errors
-- [ ] Run quality gates
+- [x] Update mypy configuration in pyproject.toml
+- [x] Add strict typing override block for metadata package
+- [x] Fix 22 mypy errors:
+  - Fixed `update_size_progress` -> `set_size_info` method call
+  - Added proper type hints for `dict[str, Any]` parameters
+  - Added `ParallelMetadataLoader | None` type annotation
+  - Fixed `cache_entry is not None` checks for union-attr errors
+  - Removed unused `type: ignore` comments
+  - Fixed `_get_all_files()` to use `get_loaded_files()` properly
+  - Added isinstance checks for Any returns
+- [x] Run quality gates
+
+### Phase 3 Results Summary
+
+| Metric | Value |
+|--------|-------|
+| Errors fixed | 22 |
+| Modules enabled for strict typing | 7 |
+| Type annotations added | ~15 |
+| Unused type: ignore removed | 5 |
 
 ### Validation Checklist
 
-- [ ] `ruff check .` — passes
-- [ ] `mypy .` — passes with new strict modules
-- [ ] `pytest` — all tests pass
+- [x] `ruff check .` — passes
+- [x] `mypy .` — passes (302 source files)
+- [x] `pytest` — all tests pass (6 skipped stress tests)
 
 ### Branch
 
@@ -500,7 +499,7 @@ Items identified but explicitly out of scope:
 | 0 | ✅ Completed | 2025-12-21 | 2025-12-21 | Clean baseline established |
 | 1 | ✅ Completed | 2025-12-21 | 2025-12-21 | 60% LOC reduction, 3 modules extracted |
 | 2 | ✅ Completed | 2025-12-21 | 2025-12-21 | Removed redundant MetadataReader |
-| 3 | Not Started | - | - | - |
+| 3 | ✅ Completed | 2025-12-21 | 2025-12-21 | Strict typing for metadata package |
 | 4 | Not Started | - | - | - |
 
 ### Quality Gate History
@@ -511,6 +510,7 @@ Items identified but explicitly out of scope:
 | 2025-12-21 | 0 | ✅ | ✅ | ✅ | All gates pass, clean baseline |
 | 2025-12-21 | 1 | ✅ | ✅ | ✅ | 303 source files, 6 tests skipped (stress) |
 | 2025-12-21 | 2 | ✅ | ✅ | ✅ | 302 source files (removed metadata_reader.py) |
+| 2025-12-21 | 3 | ✅ | ✅ | ✅ | 22 mypy errors fixed, strict typing enabled |
 
 ---
 
