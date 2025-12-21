@@ -233,7 +233,9 @@ line-length = 100
 # SAFETY: fix=false by default. Use 'ruff check . --fix' to auto-fix.
 # This prevents unexpected code changes during regular lint checks.
 fix = false
-exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc", "assets", "resources", "logs"]
+# NOTE: fonts_rc*.py are PyQt5 Resource Compiler generated files (100K+ lines)
+# They should not be manually edited or linted.
+exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc", "assets", "resources", "logs", "**/fonts_rc*.py"]
 
 [tool.ruff.lint]
 select = [

@@ -1702,12 +1702,12 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Handle F5 shortcut press - refresh metadata with status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
-        
+
         logger.info("[MetadataTree] F5 pressed - refreshing metadata")
-        
+
         with wait_cursor():
             self.refresh_metadata_from_selection()
-            
+
             # Show status message if parent window has status manager
             if hasattr(self, "parent") and callable(self.parent):
                 parent = self.parent()

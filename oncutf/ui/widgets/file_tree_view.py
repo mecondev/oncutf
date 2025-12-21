@@ -1048,7 +1048,7 @@ class FileTreeView(QTreeView):
     def _refresh_tree_view(self) -> None:
         """Refresh the tree view by refreshing the underlying model."""
         from oncutf.utils.cursor_helper import wait_cursor
-        
+
         logger.info("[FileTreeView] F5 pressed - refreshing tree view")
 
         with wait_cursor():
@@ -1070,7 +1070,7 @@ class FileTreeView(QTreeView):
                         self.select_path(current_path)
 
                     logger.info("[FileTreeView] Tree view refreshed successfully")
-                    
+
                     # Show status message if parent window has status manager
                     if hasattr(self, "parent") and callable(self.parent):
                         parent = self.parent()
@@ -1078,7 +1078,7 @@ class FileTreeView(QTreeView):
                             parent.status_manager.set_file_operation_status(
                                 "File tree refreshed", success=True, auto_reset=True
                             )
-                            
+
                 except Exception as e:
                     logger.exception("[FileTreeView] Error refreshing tree view: %s", e)
             else:
