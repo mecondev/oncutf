@@ -677,8 +677,10 @@ class StatusManager:
     # =====================================
 
     def _start_auto_reset(self, delay: int) -> None:
-        """Enhanced auto-reset timer with better cleanup."""
-        # Stop existing timer if running
+        """Enhanced auto-reset timer with better cleanup."""        # If delay is None or invalid, don't start timer
+        if delay is None or delay <= 0:
+            return
+                    # Stop existing timer if running
         if self._status_timer:
             self._status_timer.stop()
             self._status_timer.deleteLater()
