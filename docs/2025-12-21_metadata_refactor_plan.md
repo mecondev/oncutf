@@ -46,9 +46,9 @@ This document is the **single source of truth** for the metadata subsystem refac
 |-------|------|------|-------------|--------|
 | 0 | Pre-clean & noise reduction | Clean codebase, handle generated files | 1-2 hours | ✅ DONE |
 | 1 | Decompose unified_metadata_manager | Extract responsibilities, keep facade | 4-8 hours | ✅ DONE |
-| 2 | Internal cleanup & alignment | Reduce coupling, improve APIs | 2-4 hours | Pending |
-| 3 | Typing & mypy expansion | Incremental strict typing | 2-4 hours | Pending |
-| 4 | Deferred design discussion | Analysis & documentation only | 1-2 hours | Pending |
+| 2 | Internal cleanup & alignment | Reduce coupling, improve APIs | 2-4 hours | ✅ DONE |
+| 3 | Typing & mypy expansion | Incremental strict typing | 2-4 hours | ✅ DONE |
+| 4 | Deferred design discussion | Analysis & documentation only | 1-2 hours | ✅ DONE |
 
 ---
 
@@ -224,7 +224,7 @@ class UnifiedMetadataManager(QObject):
 - [x] Refactor `unified_metadata_manager.py` to delegate (facade pattern)
 - [x] Update imports throughout codebase if needed
 - [x] Fix test patch target in `test_save_cancellation.py` (ProgressDialog import changed)
-- [ ] Add unit tests for new modules (deferred to Phase 2)
+- [x] Add unit tests for new modules (43 tests added)
 - [x] Run quality gates
 
 ### Validation Checklist
