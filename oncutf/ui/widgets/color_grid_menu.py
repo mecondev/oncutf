@@ -187,7 +187,7 @@ class ColorGridMenu(QWidget):
         Returns:
             Widget containing the color grid
         """
-        from oncutf.config import COLOR_GRID_COLS, COLOR_GRID_ROWS, COLOR_PALETTE
+        from oncutf.config import COLOR_GRID_COLS, COLOR_GRID_ROWS, FILE_TAG_COLOR_ARRAY
 
         grid_widget = QWidget()
         grid_layout = QGridLayout(grid_widget)
@@ -195,7 +195,7 @@ class ColorGridMenu(QWidget):
         grid_layout.setSpacing(0)
 
         # Populate grid with COLOR_GRID_ROWS x COLOR_GRID_COLS layout
-        for i, color in enumerate(COLOR_PALETTE[:COLOR_GRID_ROWS * COLOR_GRID_COLS]):
+        for i, color in enumerate(FILE_TAG_COLOR_ARRAY[:COLOR_GRID_ROWS * COLOR_GRID_COLS]):
             row = i // COLOR_GRID_COLS
             col = i % COLOR_GRID_COLS
 

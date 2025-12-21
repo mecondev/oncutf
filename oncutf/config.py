@@ -1168,22 +1168,22 @@ HASH_LIST_COLUMN_CONFIG = {
 # COLOR COLUMN CONFIGURATION
 # =====================================
 
-# Color column palette for file tagging/organization
-# 32 Material Design colors arranged in 4 rows x 8 columns
-COLOR_PALETTE = [
-    # Row 1: Reds
-    "#e91e63", "#f06292", "#ec407a", "#d81b60", "#c2185b", "#ad1457", "#880e4f", "#ff1744",
-    # Row 2: OGreens
-    "#ff9800", "#ffb74d", "#ffa726", "#ff6f00", "#f57c00", "#e65100", "#ffeb3b", "#fdd835",
-    # Row 3: Blues
-    "#4caf50", "#81c784", "#66bb6a", "#43a047", "#388e3c", "#2e7d32", "#00bcd4", "#26c6da",
-    # Row 4: Grays
-    "#a0a0a0", "#64b5f6", "#42a5f5", "#1976d2", "#1565c0", "#0d47a1", "#9c27b0", "#ba68c8",
+# File tag color array for file tagging/organization
+# 36 colors arranged in 4 rows x 9 columns
+FILE_TAG_COLOR_ARRAY = [
+    # Row 1 (Light colors)
+    "#ffb86a", "#ffdf20", "#7bf1a8", "#46ecd5", "#74d4ff", "#a3b3ff", "#dab2ff", "#fda5d5", "#cccccc",
+    # Row 2
+    "#ff6900", "#f0b100", "#00c950", "#00bba7", "#00a6f4", "#615fff", "#ad46ff", "#f6339a", "#888888",
+    # Row 3
+    "#ca3500", "#a65f00", "#008236", "#00786f", "#0069a8", "#432dd7", "#8200db", "#c6005c", "#444444",
+    # Row 4 (Dark colors)
+    "#7e2a0c", "#733e0a", "#0d542b", "#0b4f4a", "#024a70", "#312c85", "#59168b", "#861043", "#000000",
 ]
 
 # Color grid layout configuration
 COLOR_GRID_ROWS = 4
-COLOR_GRID_COLS = 8
+COLOR_GRID_COLS = 9
 COLOR_SWATCH_SIZE = 16  # Size of each color button in pixels
 COLOR_PICKER_IMAGE = "resources/images/color_range.jpg"
 

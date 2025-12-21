@@ -280,20 +280,9 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         """
         Set the color tag for a single file (legacy method for compatibility).
 
-                Args:
+        Args:
             model: Data model
             index: Model index
             color: Selected color (hex string or "none")
         """
         self._set_files_color(model, [index.row()], color)
-
-    def _save_color_to_database(self, file_path, color):
-        """
-        Save color tag to database (placeholder for future implementation).
-
-                Args:
-            file_path: Full path to file
-            color: Color hex string or "none"
-        """
-        # TODO: Implement database persistence
-        # This will be added when integrating with the database manager
