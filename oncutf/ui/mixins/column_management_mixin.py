@@ -148,7 +148,17 @@ class ColumnManagementMixin:
                     # Apply intelligent width validation for all columns
                     width = self._ensure_column_proper_width(column_key, width)
 
-                    header.setSectionResizeMode(actual_column_index, header.Interactive)
+                    # Check if column is resizable (default: True)
+                    from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+
+                    column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                    is_resizable = column_config.get("resizable", True)
+
+                    if is_resizable:
+                        header.setSectionResizeMode(actual_column_index, header.Interactive)
+                    else:
+                        header.setSectionResizeMode(actual_column_index, header.Fixed)
+
                     self.setColumnWidth(actual_column_index, width)
 
                 else:
