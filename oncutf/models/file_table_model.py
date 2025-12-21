@@ -547,6 +547,12 @@ class FileTableModel(QAbstractTableModel):
             # Show color swatch for color column
             if column_key == "color":
                 color_value = getattr(file, "color", "none")
+                logger.debug(
+                    "[FileTableModel] Rendering color for %s: %s",
+                    file.filename,
+                    color_value,
+                    extra={"dev_only": True}
+                )
                 if color_value and color_value != "none":
                     return self._create_color_icon(color_value)
                 return QVariant()
