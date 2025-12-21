@@ -494,7 +494,7 @@ Items identified but explicitly out of scope:
 | Phase | Status | Started | Completed | Notes |
 |-------|--------|---------|-----------|-------|
 | 0 | ✅ Completed | 2025-12-21 | 2025-12-21 | Clean baseline established |
-| 1 | Not Started | - | - | - |
+| 1 | ✅ Completed | 2025-12-21 | 2025-12-21 | 60% LOC reduction, 3 modules extracted |
 | 2 | Not Started | - | - | - |
 | 3 | Not Started | - | - | - |
 | 4 | Not Started | - | - | - |
@@ -505,10 +505,13 @@ Items identified but explicitly out of scope:
 |------|-------|------|------|--------|-------|
 | 2025-12-21 | Pre | ⚠️ W293 | ✅ | ✅ | Baseline before Phase 0 |
 | 2025-12-21 | 0 | ✅ | ✅ | ✅ | All gates pass, clean baseline |
+| 2025-12-21 | 1 | ✅ | ✅ | ✅ | 303 source files, 6 tests skipped (stress) |
 
 ---
 
-## Appendix A: Current Module Sizes
+## Appendix A: Module Sizes
+
+### Before Phase 1
 
 | Module | LOC | Methods |
 |--------|-----|---------|
@@ -519,14 +522,14 @@ Items identified but explicitly out of scope:
 | `metadata_reader.py` | 289 | ~12 |
 | `metadata_writer.py` | 266 | ~10 |
 
-### Target After Phase 1
+### After Phase 1 (Actual)
 
-| Module | Target LOC |
-|--------|------------|
-| `unified_metadata_manager.py` (facade) | <500 |
-| `metadata_shortcut_handler.py` (new) | ~200 |
-| `metadata_loader.py` (new) | ~400 |
-| `metadata_progress_handler.py` (new) | ~150 |
+| Module | LOC | Notes |
+|--------|-----|-------|
+| `unified_metadata_manager.py` (facade) | 821 | 60% reduction from 2053 |
+| `metadata_shortcut_handler.py` (new) | ~330 | Keyboard shortcuts |
+| `metadata_loader.py` (new) | ~530 | Loading orchestration |
+| `metadata_progress_handler.py` (new) | ~300 | Progress dialogs |
 
 ---
 
