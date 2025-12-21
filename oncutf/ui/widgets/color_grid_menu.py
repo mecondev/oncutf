@@ -97,13 +97,17 @@ class ColorGridMenu(QWidget):
         """
         super().__init__(parent)
         
+        logger.info("[ColorGridMenu] __init__ called with parent: %s", parent)
+        
         # Popup window flags
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_DeleteOnClose)
         
+        logger.info("[ColorGridMenu] Window flags set")
+        
         self._setup_ui()
         
-        logger.debug("[ColorGridMenu] Initialized")
+        logger.info("[ColorGridMenu] UI setup complete, widget initialized")
     
     def _setup_ui(self):
         """Setup the menu UI layout."""
@@ -241,9 +245,11 @@ class ColorGridMenu(QWidget):
         Args:
             color: Selected hex color or "none"
         """
-        logger.debug("[ColorGridMenu] Color selected: %s", color)
+        logger.info("[ColorGridMenu] Color selected: %s", color)
         self.color_selected.emit(color)
+        logger.info("[ColorGridMenu] Signal emitted, closing menu")
         self.close()
+        logger.info("[ColorGridMenu] Menu closed")
     
     def _open_color_picker(self):
         """Open the OS native color picker dialog."""
