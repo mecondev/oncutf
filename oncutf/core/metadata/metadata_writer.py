@@ -3,9 +3,17 @@ Module: metadata_writer.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
+Updated: 2025-12-21
 
 Metadata writer - handles all metadata save/write operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
+
+Responsibilities:
+- Set metadata values (update cache)
+- Save metadata for selected files
+- Save all modified metadata
+- Write metadata to disk using ExifTool
+- Progress tracking and UI updates for save operations
 """
 from __future__ import annotations
 

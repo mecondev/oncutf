@@ -3,9 +3,15 @@ Module: metadata_cache_service.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
+Updated: 2025-12-21
 
 Metadata cache service - handles all cache-related operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
+
+Responsibilities:
+- Check if metadata/hash exists in cache
+- Get metadata/hash from cache
+- Initialize and manage MetadataCacheHelper
 """
 from __future__ import annotations
 

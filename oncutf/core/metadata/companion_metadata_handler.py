@@ -3,9 +3,15 @@ Module: companion_metadata_handler.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
+Updated: 2025-12-21
 
 Companion file metadata handler.
 Extracted from unified_metadata_manager.py for better separation of concerns.
+
+Responsibilities:
+- Find companion files (XMP, sidecar) for a main file
+- Extract and merge companion file metadata
+- Enhance base metadata with companion data
 """
 from __future__ import annotations
 
