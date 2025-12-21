@@ -75,7 +75,9 @@ class WindowConfig(ConfigCategory):
             "metadata_tree_columns": {},  # Metadata tree column visibility by key
             "last_folder": "",
             "recursive_mode": False,
-            "sort_column": 1,
+            # TODO: When last_state restoration is implemented, remember actual sort column
+            # Default to filename column (2) instead of color (1)
+            "sort_column": 2,
             "sort_order": 0,
         }
         super().__init__("window", defaults)

@@ -46,6 +46,12 @@ class FileItem:
             from oncutf.core.database.database_manager import get_database_manager
             db_manager = get_database_manager()
             self.color = db_manager.get_color_tag(path)
+            if self.color != "none":
+                logger.debug(
+                    "[FileItem] Loaded color %s for %s",
+                    self.color, self.filename,
+                    extra={"dev_only": True}
+                )
         except Exception as e:
             logger.warning("[FileItem] Could not load color tag: %s", e)
             self.color = "none"

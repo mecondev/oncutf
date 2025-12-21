@@ -160,7 +160,9 @@ class InitializationOrchestrator:
 
         # Application state
         self.window.last_action = None
-        self.window.current_sort_column = 1
+        # TODO: When last_state restoration is implemented, restore saved sort column
+        # For now, default to filename column (index 2) instead of color (index 1)
+        self.window.current_sort_column = 2
         self.window.current_sort_order = Qt.AscendingOrder  # type: ignore
         self.window.preview_map = {}
         self.window._selection_sync_mode = "normal"
