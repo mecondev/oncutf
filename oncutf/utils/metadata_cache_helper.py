@@ -9,7 +9,12 @@ Unified metadata cache access helper to eliminate duplicate patterns.
 Provides consistent interface for metadata cache operations across the application.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QWidget
 
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
@@ -25,7 +30,11 @@ class MetadataCacheHelper:
     for getting/setting metadata across the application.
     """
 
-    def __init__(self, metadata_cache=None, parent_window=None):
+    def __init__(
+        self,
+        metadata_cache: dict | None = None,
+        parent_window: QWidget | None = None,
+    ) -> None:
         """
         Initialize with a metadata cache instance.
 

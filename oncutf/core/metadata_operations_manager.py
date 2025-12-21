@@ -15,6 +15,13 @@ Features:
 - Metadata field standard resolution (XMP, EXIF, IPTC)
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QWidget
+
 from oncutf.utils.file_status_helpers import has_metadata
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -32,7 +39,7 @@ class MetadataOperationsManager:
     - Determining file types and supported metadata standards
     """
 
-    def __init__(self, parent_window):
+    def __init__(self, parent_window: QWidget) -> None:
         """
         Initialize the metadata operations manager.
 

@@ -16,8 +16,14 @@ The function `apply_rename_modules()` is used by the main application
 to generate preview names and resolve rename plans for batch processing.
 """
 
+from __future__ import annotations
+
 import os
 import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
 
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.counter_module import CounterModule
@@ -165,7 +171,13 @@ def calculate_scope_aware_index(
     return global_index
 
 
-def apply_rename_modules(modules_data, index, file_item, metadata_cache=None, all_files=None):
+def apply_rename_modules(
+    modules_data: list[dict],
+    index: int,
+    file_item: FileItem,
+    metadata_cache: dict | None = None,
+    all_files: list | None = None,
+) -> str:
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
 
@@ -175,6 +187,9 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None, al
         file_item: FileItem being renamed
         metadata_cache: Optional metadata cache
         all_files: Optional full list of files (required for scope-aware counters)
+
+    Returns:
+        The new filename with extension.
     """
     logger.debug(
         "[DEBUG] [PreviewEngine] apply_rename_modules CALLED for %s",
@@ -308,7 +323,7 @@ def _generate_module_cache_key(modules_data, index, filename):
     return f"{modules_hash}_{index}_{filename}"
 
 
-def clear_module_cache():
+def clear_module_cache() -> None:
     """Clear the module cache."""
     global _module_cache, _cache_timestamp
     _module_cache.clear()

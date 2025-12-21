@@ -210,7 +210,7 @@ class MetadataModule:
         return metadata
 
     @staticmethod
-    def clear_cache():
+    def clear_cache() -> None:
         """
         Clear the metadata cache.
 

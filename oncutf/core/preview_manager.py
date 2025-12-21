@@ -163,8 +163,7 @@ class PreviewManager:
         for idx, file in enumerate(selected_files):
             try:
                 basename, extension = os.path.splitext(file.filename)
-                # TODO: Add type hints to preview_engine.apply_rename_modules (Phase 3)
-                new_fullname = apply_rename_modules(  # type: ignore[no-untyped-call]
+                new_fullname = apply_rename_modules(
                     modules_data, idx, file, metadata_cache, all_files=selected_files
                 )
 
@@ -233,12 +232,12 @@ class PreviewManager:
         # Clear module cache
         from oncutf.utils.preview_engine import clear_module_cache
 
-        clear_module_cache()  # type: ignore[no-untyped-call]  # TODO: Add type hints to preview_engine
+        clear_module_cache()
 
         # Clear metadata cache
         from oncutf.modules.metadata_module import MetadataModule
 
-        MetadataModule.clear_cache()  # type: ignore[no-untyped-call]  # TODO: Add type hints to MetadataModule
+        MetadataModule.clear_cache()
 
         logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 

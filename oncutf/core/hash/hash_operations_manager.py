@@ -15,6 +15,13 @@ Features:
 - Progress dialog coordination for long-running operations
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QWidget
+
 from oncutf.config import STATUS_COLORS
 from oncutf.utils.file_status_helpers import has_hash
 from oncutf.utils.logger_factory import get_cached_logger
@@ -34,7 +41,7 @@ class HashOperationsManager:
     - Coordinating cancellation of long-running operations
     """
 
-    def __init__(self, parent_window):
+    def __init__(self, parent_window: QWidget) -> None:
         """
         Initialize the hash operations manager.
 

@@ -8,7 +8,13 @@ bulk_rotation_dialog.py
 Dialog for bulk rotation operations.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
 
 from oncutf.config import QLABEL_MUTED_TEXT
 from oncutf.core.pyqt_imports import (
@@ -360,7 +366,12 @@ class BulkRotationDialog(QDialog):
         return selected
 
     @staticmethod
-    def get_bulk_rotation_choice(parent, selected_files, metadata_cache):
+    def get_bulk_rotation_choice(
+        parent: QWidget | None,
+        selected_files: list[FileItem],
+        metadata_cache: dict[str, Any],
+    ) -> list[FileItem]:
+        """Show dialog and return selected files for rotation."""
         dialog = BulkRotationDialog(parent, selected_files, metadata_cache)
 
         if dialog.exec_() == QDialog.Accepted:

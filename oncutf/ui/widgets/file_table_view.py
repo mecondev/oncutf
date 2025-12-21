@@ -886,8 +886,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 # Update both old and new rows
                 for r in (old_row, hovered_row):
                     if r >= 0:
-                        left = self.model().index(r, 0)  # type: ignore
-                        right = self.model().index(r, self.model().columnCount() - 1)  # type: ignore
+                        left = self.model().index(r, 0)  # type: ignore[union-attr]
+                        right = self.model().index(r, self.model().columnCount() - 1)  # type: ignore[union-attr]
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect)
 
@@ -903,8 +903,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             return
 
         # Allow minimal scrolling only if the selected item is completely out of view
-        viewport_rect = self.viewport().rect()  # type: ignore
-        item_rect = self.visualRect(index)  # type: ignore
+        viewport_rect = self.viewport().rect()  # type: ignore[union-attr]
+        item_rect = self.visualRect(index)  # type: ignore[arg-type]
 
         # Only scroll if item is completely outside the viewport
         if not viewport_rect.intersects(item_rect):
@@ -917,7 +917,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if selection_store:
             self._legacy_selection_mode = False
             # Sync current selection to SelectionStore
-            current_selection = {index.row() for index in self.selectionModel().selectedRows()}  # type: ignore
+            current_selection = {index.row() for index in self.selectionModel().selectedRows()}  # type: ignore[union-attr]
             selection_store.set_selected_rows(current_selection, emit_signal=False)
             if hasattr(self, "anchor_row") and self.anchor_row is not None:
                 selection_store.set_anchor_row(self.anchor_row, emit_signal=False)
@@ -930,7 +930,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     def disable_selection_store_mode(self):
         """Disable selection store synchronization mode."""
         if self._get_selection_store():
-            self._get_selection_store().set_active(False)  # type: ignore
+            self._get_selection_store().set_active(False)  # type: ignore[union-attr]
             logger.debug("[FileTable] Selection store mode disabled")
 
     def _force_cursor_cleanup(self):
@@ -968,7 +968,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Force viewport update
         if hasattr(self, "viewport"):
-            self.viewport().update()  # type: ignore
+            self.viewport().update()  # type: ignore[union-attr]
         QApplication.processEvents()
 
     # =====================================

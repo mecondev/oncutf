@@ -9,10 +9,13 @@ Author: Michael Economou
 Date: 2025-05-31
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.core.type_aliases import MetadataCache
+from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -41,7 +44,7 @@ class ApplicationContext(QObject):
     selection_changed = pyqtSignal(list)  # Emitted when selection changes
     metadata_changed = pyqtSignal(str, dict)  # Emitted when metadata updates (path, metadata)
 
-    _instance: "ApplicationContext | None" = None
+    _instance: ApplicationContext | None = None
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -59,7 +62,7 @@ class ApplicationContext(QObject):
         self._managers: dict[str, Any] = {}
 
         # Legacy state containers (will be removed gradually)
-        self._files: list[Any] = []  # TODO: Replace with FileItem when available
+        self._files: list[FileItem] = []
         self._selected_rows: set[int] = set()
         self._metadata_cache: MetadataCache = {}
         self._current_folder: str | None = None
@@ -148,7 +151,7 @@ class ApplicationContext(QObject):
         logger.debug("ApplicationContext: Checked state changed: %d rows", len(checked_rows))
 
     @classmethod
-    def get_instance(cls) -> "ApplicationContext":
+    def get_instance(cls) -> ApplicationContext:
         """
         Get the singleton instance of ApplicationContext.
 
@@ -163,7 +166,7 @@ class ApplicationContext(QObject):
         return cls._instance
 
     @classmethod
-    def create_instance(cls, parent: QObject | None = None) -> "ApplicationContext":
+    def create_instance(cls, parent: QObject | None = None) -> ApplicationContext:
         """
         Create the singleton instance of ApplicationContext.
 
@@ -184,7 +187,7 @@ class ApplicationContext(QObject):
     # =====================================
 
     @property
-    def file_store(self) -> "FileStore":
+    def file_store(self) -> FileStore:
         """Get the FileStore instance, initializing if needed."""
         if self._file_store is None:
             self.initialize_stores()
@@ -192,18 +195,18 @@ class ApplicationContext(QObject):
         return self._file_store
 
     @property
-    def selection_store(self) -> "SelectionStore":
+    def selection_store(self) -> SelectionStore:
         """Get the SelectionStore instance, initializing if needed."""
         if self._selection_store is None:
             self.initialize_stores()
         assert self._selection_store is not None  # For mypy
         return self._selection_store
 
-    def get_files(self) -> list[Any]:  # TODO: Replace with list[FileItem]
+    def get_files(self) -> list[FileItem]:
         """Get current file list."""
         return self._files.copy()
 
-    def set_files(self, files: list[Any]) -> None:  # TODO: Replace with list[FileItem]
+    def set_files(self, files: list[FileItem]) -> None:
         """Set current file list (legacy method)."""
         self._files = files.copy()
         self.files_changed.emit(self._files)

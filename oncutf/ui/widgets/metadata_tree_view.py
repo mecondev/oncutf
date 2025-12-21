@@ -546,7 +546,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 logger.warning("[MetadataTree] Could not show placeholder - missing helper")
 
             # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
 
             header = self.header()
             header.setSectionResizeMode(0, QHeaderView.Fixed)
@@ -591,7 +591,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
             self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
             # Also ensure vertical scrollbar is set properly
-            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore[arg-type]
 
             header = self.header()
 
@@ -885,7 +885,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         """
         if self._is_placeholder_mode:
             # In placeholder mode, use normal scrolling
-            super().scrollTo(index, hint)  # type: ignore
+            super().scrollTo(index, hint)  # type: ignore[arg-type]
             return
 
         # In normal mode, do nothing - scroll position is managed manually

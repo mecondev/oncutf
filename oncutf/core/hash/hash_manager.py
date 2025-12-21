@@ -10,6 +10,7 @@ Provides CRC32 hash calculations optimized for speed and efficiency.
 """
 
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 from oncutf.models.file_item import FileItem
@@ -30,7 +31,7 @@ class HashManager:
     - Hash caching for performance optimization
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize HashManager with persistent hash cache."""
         # Use persistent hash cache for better performance and persistence
         try:
@@ -85,7 +86,11 @@ class HashManager:
         else:
             return self._hash_cache.get(cache_key)
 
-    def calculate_hash(self, file_path: str | Path, progress_callback=None) -> str | None:
+    def calculate_hash(
+        self,
+        file_path: str | Path,
+        progress_callback: Callable[[int], None] | None = None,
+    ) -> str | None:
         """
         Calculate the CRC32 hash of a file with error handling and progress tracking.
         Checks cache first before calculating.

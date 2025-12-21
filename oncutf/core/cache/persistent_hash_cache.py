@@ -206,7 +206,7 @@ class PersistentHashCache:
             )
             return self.get_files_with_hash(file_paths, algorithm)
 
-    def clear_memory_cache(self):
+    def clear_memory_cache(self) -> None:
         """Clear memory cache (database remains intact)."""
         self._memory_cache.clear()
         logger.debug("[PersistentHashCache] Memory cache cleared")

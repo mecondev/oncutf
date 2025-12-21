@@ -48,7 +48,7 @@ class MetadataCacheService:
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
         if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            self._cache_helper = MetadataCacheHelper(  # type: ignore[no-untyped-call]
+            self._cache_helper = MetadataCacheHelper(
                 self.parent_window.metadata_cache, self.parent_window
             )
             logger.debug(

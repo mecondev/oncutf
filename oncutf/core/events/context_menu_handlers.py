@@ -48,12 +48,12 @@ class ContextMenuHandlers:
         # Delegate hash operations to specialized manager
         from oncutf.core.hash.hash_operations_manager import HashOperationsManager
 
-        self.hash_ops = HashOperationsManager(parent_window)  # type: ignore[no-untyped-call]
+        self.hash_ops = HashOperationsManager(parent_window)
 
         # Delegate metadata operations to specialized manager
         from oncutf.core.metadata_operations_manager import MetadataOperationsManager
 
-        self.metadata_ops = MetadataOperationsManager(parent_window)  # type: ignore[no-untyped-call]
+        self.metadata_ops = MetadataOperationsManager(parent_window)
 
         logger.debug("ContextMenuHandlers initialized", extra={"dev_only": True})
 
@@ -536,7 +536,7 @@ class ContextMenuHandlers:
         try:
             from oncutf.ui.widgets.bulk_rotation_dialog import BulkRotationDialog
 
-            final_files = BulkRotationDialog.get_bulk_rotation_choice(  # type: ignore[no-untyped-call]
+            final_files = BulkRotationDialog.get_bulk_rotation_choice(
                 self.parent_window, files_to_process, self.parent_window.metadata_cache
             )
 

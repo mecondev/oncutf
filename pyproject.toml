@@ -114,7 +114,10 @@ module = [
     "oncutf.core.initialization.*",
     "oncutf.core.drag.*",
     "oncutf.core.events.*",
-    "oncutf.core.hash.*",
+    # hash subpackage needs more type work (82 errors)
+    "oncutf.core.hash.hash_operations_manager",
+    "oncutf.core.hash.parallel_hash_worker",
+    "oncutf.core.hash.hash_worker",
     "oncutf.core.rename.*",
     "oncutf.core.selection.*",
     "oncutf.core.database.*",
@@ -127,6 +130,8 @@ module = [
     "oncutf.core.file_load_manager",
     "oncutf.core.pyqt_imports",
     "oncutf.core.modifier_handler",
+    # metadata_operations_manager needs type work (35+ errors)
+    "oncutf.core.metadata_operations_manager",
 ]
 ignore_errors = true
 
@@ -170,6 +175,8 @@ module = [
     "oncutf.core.type_aliases",
     "oncutf.core.application_context",
     "oncutf.core.preview_manager",
+    # pre_execution_validator was clean after type:ignore removal (2025-12-21)
+    "oncutf.core.pre_execution_validator",
 ]
 ignore_errors = false
 warn_return_any = true
@@ -190,8 +197,9 @@ module = [
     "oncutf.core.filesystem_monitor",
     "oncutf.core.backup_manager",
     "oncutf.core.progress_protocol",
-    "oncutf.core.pre_execution_validator",
     "oncutf.core.persistent_hash_cache",
+    # hash_manager has only 2 errors fixed (2025-12-21)
+    "oncutf.core.hash.hash_manager",
 ]
 ignore_errors = false
 disallow_untyped_defs = false
@@ -204,7 +212,6 @@ module = [
     "oncutf.core.unified_metadata_manager",
     "oncutf.core.application_service",
     "oncutf.core.thread_pool_manager",
-    "oncutf.core.metadata_operations_manager",
     "oncutf.core.direct_metadata_loader",
     "oncutf.core.unified_column_service",
     "oncutf.core.conflict_resolver",

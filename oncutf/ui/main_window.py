@@ -295,8 +295,8 @@ class MainWindow(QMainWindow):
     def load_files_from_dropped_items(
         self,
         paths: list[str],
-        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
-    ) -> None:  # type: ignore
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
+    ) -> None:
         """Load files from dropped items via FileLoadController."""
         result = self.file_load_controller.handle_drop(paths, modifiers)
         logger.debug(
@@ -312,8 +312,8 @@ class MainWindow(QMainWindow):
     def load_single_item_from_drop(
         self,
         path: str,
-        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
-    ) -> None:  # type: ignore
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
+    ) -> None:
         """Load single item from drop via Application Service."""
         self.app_service.load_single_item_from_drop(path, modifiers)
 
@@ -347,7 +347,7 @@ class MainWindow(QMainWindow):
         force_order: Qt.SortOrder | None = None,
     ) -> None:
         """Sort by column via Application Service."""
-        self.app_service.sort_by_column(column, order, force_order)  # type: ignore
+        self.app_service.sort_by_column(column, order, force_order)  # type: ignore[arg-type]
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """Prepare file table via Application Service."""
@@ -398,8 +398,8 @@ class MainWindow(QMainWindow):
     def handle_file_double_click(
         self,
         index: QModelIndex,
-        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
-    ) -> None:  # type: ignore
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
+    ) -> None:
         """Handle file double click via Application Service."""
         self.app_service.handle_file_double_click(index, modifiers)
 
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
 
     def find_fileitem_by_path(self, path: str) -> list[FileItem]:
         """Find FileItem by path via Application Service."""
-        return self.app_service.find_fileitem_by_path(path)  # type: ignore
+        return self.app_service.find_fileitem_by_path(path)  # type: ignore[return-value]
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
         """Get modifier flags via Application Service."""
@@ -633,7 +633,7 @@ class MainWindow(QMainWindow):
         """Set smart default window geometry based on screen size and aspect ratio."""
         # Legacy method - logic moved to WindowConfigManager
         if hasattr(self.window_config_manager, "set_smart_default_geometry"):
-            self.window_config_manager.set_smart_default_geometry()  # type: ignore
+            self.window_config_manager.set_smart_default_geometry()  # type: ignore[union-attr]
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""
@@ -732,7 +732,7 @@ class MainWindow(QMainWindow):
         """Handle window state changes (maximize, minimize, restore)."""
         super().changeEvent(event)
 
-        if event.type() == QEvent.WindowStateChange:  # type: ignore
+        if event.type() == QEvent.WindowStateChange:  # type: ignore[union-attr]
             self._handle_window_state_change()
 
     def resizeEvent(self, event) -> None:
@@ -919,7 +919,7 @@ class MainWindow(QMainWindow):
             # Create database backup
             if hasattr(self, "backup_manager") and self.backup_manager:
                 try:
-                    self.backup_manager.create_backup(reason="auto")  # type: ignore
+                    self.backup_manager.create_backup(reason="auto")  # type: ignore[union-attr]
                     logger.info("[CloseEvent] Database backup created")
                 except Exception as e:
                     logger.warning("[CloseEvent] Database backup failed: %s", e)
@@ -936,7 +936,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, "batch_manager") and self.batch_manager:
                 try:
                     if hasattr(self.batch_manager, "flush_operations"):
-                        self.batch_manager.flush_operations()  # type: ignore
+                        self.batch_manager.flush_operations()  # type: ignore[union-attr]
                         logger.info("[CloseEvent] Batch operations flushed")
                 except Exception as e:
                     logger.warning("[CloseEvent] Batch flush failed: %s", e)
@@ -944,7 +944,7 @@ class MainWindow(QMainWindow):
             # Cleanup drag operations
             if hasattr(self, "drag_manager") and self.drag_manager:
                 try:
-                    self.drag_manager.force_cleanup()  # type: ignore
+                    self.drag_manager.force_cleanup()  # type: ignore[union-attr]
                     logger.info("[CloseEvent] Drag manager cleaned up")
                 except Exception as e:
                     logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
@@ -952,7 +952,7 @@ class MainWindow(QMainWindow):
             # Close dialogs
             if hasattr(self, "dialog_manager") and self.dialog_manager:
                 try:
-                    self.dialog_manager.cleanup()  # type: ignore
+                    self.dialog_manager.cleanup()  # type: ignore[union-attr]
                     logger.info("[CloseEvent] All dialogs closed")
                 except Exception as e:
                     logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
@@ -994,7 +994,7 @@ class MainWindow(QMainWindow):
                 from oncutf.core.application_context import ApplicationContext
                 context = ApplicationContext.get_instance()
                 if context:
-                    context.cleanup()  # type: ignore
+                    context.cleanup()  # type: ignore[union-attr]
                     logger.info("[CloseEvent] Application context cleaned up")
             except Exception as ctx_error:
                 logger.warning("[CloseEvent] Context cleanup failed: %s", ctx_error)
@@ -1279,8 +1279,8 @@ class MainWindow(QMainWindow):
                 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
-                if ExifToolWrapper._instances:  # type: ignore
-                    exiftool = next(iter(ExifToolWrapper._instances))  # type: ignore
+                if ExifToolWrapper._instances:  # type: ignore[attr-defined]
+                    exiftool = next(iter(ExifToolWrapper._instances))  # type: ignore[attr-defined]
                     self.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
                 logger.debug("[MainWindow] ExifTool wrapper not available: %s", e)

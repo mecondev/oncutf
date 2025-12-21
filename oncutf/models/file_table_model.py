@@ -525,7 +525,7 @@ class FileTableModel(QAbstractTableModel):
 
         return QVariant()
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:  # type: ignore
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:  # type: ignore[override]
         if not index.isValid() or index.row() >= len(self.files):
             return QVariant()
         if index.column() == 0:
@@ -579,7 +579,7 @@ class FileTableModel(QAbstractTableModel):
         result = self._get_column_data(file, col_key, role)
         return result
 
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore
+    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore[override]
         if not index.isValid() or not self.files:
             return False
 
@@ -624,7 +624,7 @@ class FileTableModel(QAbstractTableModel):
 
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # type: ignore
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # type: ignore[override]
         if not index.isValid() or not self.files:
             return Qt.NoItemFlags
 
@@ -636,7 +636,7 @@ class FileTableModel(QAbstractTableModel):
 
         return base_flags
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore[override]
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
                 return ""  # Don't display title in status column
@@ -668,7 +668,7 @@ class FileTableModel(QAbstractTableModel):
                 return ""
         return super().headerData(section, orientation, role)
 
-    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore
+    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore[override]
         if not self.files:
             return
 
