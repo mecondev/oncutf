@@ -48,7 +48,7 @@ class DatabaseManager:
     """
 
     # Database schema version for migrations
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(self, db_path: str | None = None):
         """
@@ -190,6 +190,7 @@ class DatabaseManager:
                 filename TEXT NOT NULL,
                 file_size INTEGER,
                 modified_time TIMESTAMP,
+                color_tag TEXT DEFAULT 'none',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -362,6 +363,19 @@ class DatabaseManager:
             )
 
             logger.info("[DatabaseManager] Structured metadata tables added successfully")
+
+        # Migration from version 3 to 4: Add color_tag column
+        if from_version == 3 and self.SCHEMA_VERSION >= 4:
+            logger.info("[DatabaseManager] Adding color_tag column to file_paths...")
+
+            # Add color_tag column
+            cursor.execute(
+                """
+                ALTER TABLE file_paths ADD COLUMN color_tag TEXT DEFAULT 'none'
+                """
+            )
+
+            logger.info("[DatabaseManager] color_tag column added successfully")
 
     def _create_indexes(self, cursor: sqlite3.Cursor):
         """Create database indexes for performance."""
@@ -1429,6 +1443,149 @@ class DatabaseManager:
         except Exception as e:
             logger.error("[DatabaseManager] Error getting database stats: %s", e)
             return {}
+
+    # =====================================
+    # Color Tag Methods
+    # =====================================
+
+    def set_color_tag(self, file_path: str, color_hex: str) -> bool:
+        """
+        Set color tag for a file.
+
+        Args:
+            file_path: File path
+            color_hex: Hex color string (e.g., "#ff00aa") or "none"
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Validate and normalize color
+            if color_hex != "none":
+                color_hex = color_hex.lower()
+                if not color_hex.startswith("#") or len(color_hex) != 7:
+                    logger.warning("[DatabaseManager] Invalid color hex: %s", color_hex)
+                    return False
+
+            path_id = self.get_or_create_path_id(file_path)
+
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE file_paths
+                    SET color_tag = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (color_hex, path_id),
+                )
+                conn.commit()
+
+                logger.debug("[DatabaseManager] Set color_tag=%s for: %s", color_hex, file_path)
+                return True
+
+        except Exception as e:
+            logger.error("[DatabaseManager] Error setting color tag: %s", e)
+            return False
+
+    def get_color_tag(self, file_path: str) -> str:
+        """
+        Get color tag for a file.
+
+        Args:
+            file_path: File path
+
+        Returns:
+            Hex color string or "none" if not set
+        """
+        try:
+            path_id = self.get_path_id(file_path)
+            if not path_id:
+                return "none"
+
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT color_tag FROM file_paths WHERE id = ?
+                    """,
+                    (path_id,),
+                )
+                row = cursor.fetchone()
+
+                if row and row["color_tag"]:
+                    return row["color_tag"]
+                return "none"
+
+        except Exception as e:
+            logger.error("[DatabaseManager] Error getting color tag: %s", e)
+            return "none"
+
+    def update_file_path(self, old_path: str, new_path: str) -> bool:
+        """
+        Update file path in database (e.g., after rename operation).
+        This preserves all associated data (metadata, hashes, color_tag, etc.)
+        by keeping the same path_id.
+
+        Args:
+            old_path: Original file path
+            new_path: New file path
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            old_norm_path = self._normalize_path(old_path)
+            new_norm_path = self._normalize_path(new_path)
+            new_filename = os.path.basename(new_norm_path)
+
+            # Get file size and modified time for the new path
+            file_size = None
+            modified_time = None
+            try:
+                if os.path.exists(new_norm_path):
+                    stat = os.stat(new_norm_path)
+                    file_size = stat.st_size
+                    modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            except OSError:
+                pass
+
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Update the path while preserving all other data (including color_tag)
+                cursor.execute(
+                    """
+                    UPDATE file_paths
+                    SET file_path = ?, filename = ?, file_size = ?, modified_time = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE file_path = ?
+                    """,
+                    (new_norm_path, new_filename, file_size, modified_time, old_norm_path),
+                )
+                conn.commit()
+
+                if cursor.rowcount > 0:
+                    logger.debug(
+                        "[DatabaseManager] Updated file path: %s -> %s",
+                        os.path.basename(old_path),
+                        os.path.basename(new_path),
+                    )
+                    return True
+                else:
+                    logger.debug(
+                        "[DatabaseManager] No record found to update for: %s",
+                        old_path,
+                    )
+                    return False
+
+        except Exception as e:
+            logger.error(
+                "[DatabaseManager] Error updating file path from %s to %s: %s",
+                old_path,
+                new_path,
+                e,
+            )
+            return False
 
     def close(self):
         """Close database connections."""

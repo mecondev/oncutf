@@ -457,29 +457,29 @@ class FileTableModel(QAbstractTableModel):
     def _create_color_icon(self, hex_color: str) -> QIcon:
         """
         Create a color swatch icon for the color column.
-        
+
         Args:
             hex_color: Hex color string (e.g., "#ff0000")
-            
+
         Returns:
-            QIcon with colored square swatch
+            QIcon with colored rectangle swatch
         """
-        # Create 16x16 pixmap for color swatch
-        size = 16
-        pixmap = QPixmap(size, size)
+        # Create 22x30 pixmap for color swatch (fits 24px row height)
+        width = 18
+        height = 16
+        pixmap = QPixmap(width+2, height)
         pixmap.fill(QColor(0, 0, 0, 0))  # Transparent background
-        
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-        
+
         # Draw filled rounded rectangle
         color = QColor(hex_color)
         painter.setBrush(color)
-        painter.setPen(QColor("#555"))  # Border
-        painter.drawRoundedRect(2, 2, size - 4, size - 4, 2, 2)
-        
+        painter.setPen(QColor(0, 0, 0, 50))  # Light border for visibility
+        painter.drawRoundedRect(2, 2, width - 2, height - 2, 2, 2)
         painter.end()
-        
+
         return QIcon(pixmap)
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
@@ -748,6 +748,9 @@ class FileTableModel(QAbstractTableModel):
             self.files.sort(key=lambda f: f.modified, reverse=reverse)
         elif column_key == "file_hash":
             self.files.sort(key=lambda f: self._get_hash_value(f.full_path), reverse=reverse)
+        elif column_key == "color":
+            # Sort by color: "none" first, then alphabetically by hex value
+            self.files.sort(key=lambda f: (f.color != "none", f.color.lower()), reverse=reverse)
         else:
             # For metadata columns, sort by the metadata value
             def get_metadata_sort_key(file):

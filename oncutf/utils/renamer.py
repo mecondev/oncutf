@@ -235,6 +235,18 @@ class Renamer:
         except Exception as e:
             logger.error("[Renamer] Error updating metadata cache: %s", e)
 
+        # Update database file_paths table for renamed files
+        # This preserves all associated data (metadata, hashes, color_tag, etc.)
+        try:
+            from oncutf.core.database.database_manager import get_database_manager
+
+            db_manager = get_database_manager()
+            for result in results:
+                if result.success:
+                    db_manager.update_file_path(result.old_path, result.new_path)
+        except Exception as e:
+            logger.error("[Renamer] Error updating database paths: %s", e)
+
         return results
 
 

@@ -347,10 +347,10 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self._configure_columns()
         logger.debug("prepare_table finished", extra={"dev_only": True})
         self._ensure_no_word_wrap()
-        
+
         # Setup column-specific delegates
         self._setup_column_delegates()
-        
+
         if hasattr(self, "hover_delegate"):
             self.setItemDelegate(self.hover_delegate)
             self.hover_delegate.hovered_row = -1
@@ -365,39 +365,39 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     def _setup_column_delegates(self) -> None:
         """Setup column-specific delegates (e.g., color column)."""
         logger.info("[FileTableView] _setup_column_delegates() called")
-        
+
         if not self.model():
             logger.warning("[FileTableView] No model set, skipping delegates")
             return
-        
+
         # Get visible columns list from column service
         from oncutf.core.unified_column_service import get_column_service
         visible_columns_list = get_column_service().get_visible_columns()
         logger.info("[FileTableView] Visible columns list: %s", visible_columns_list)
         logger.info("[FileTableView] Model column count: %d", self.model().columnCount())
-        
+
         try:
             color_column_logical_index = visible_columns_list.index("color")
             logger.info("[FileTableView] Color column logical index: %d", color_column_logical_index)
-            
+
             # +1 because column 0 is status column
             color_column_view_index = color_column_logical_index + 1
             logger.info("[FileTableView] Color column view index (after +1): %d", color_column_view_index)
-            
+
             # Set color column delegate
             from oncutf.ui.delegates.color_column_delegate import ColorColumnDelegate
-            
+
             color_delegate = ColorColumnDelegate(self)
             logger.info("[FileTableView] ColorColumnDelegate created: %s", color_delegate)
-            
+
             self.setItemDelegateForColumn(color_column_view_index, color_delegate)
             logger.info("[FileTableView] setItemDelegateForColumn(%d) called", color_column_view_index)
-            
+
             # Verify installation
             installed_delegate = self.itemDelegateForColumn(color_column_view_index)
-            logger.info("[FileTableView] Verification - delegate for column %d: %s", 
+            logger.info("[FileTableView] Verification - delegate for column %d: %s",
                        color_column_view_index, installed_delegate)
-            
+
             logger.debug(
                 "[FileTableView] Set ColorColumnDelegate for column %d",
                 color_column_view_index

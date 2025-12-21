@@ -64,7 +64,7 @@ class ContextMenuHandlers:
         """
         if not self.parent_window.file_model.files:
             return
-        
+
         # Check if right-click was on color column - skip context menu for color column
         index = self.parent_window.file_table_view.indexAt(position)
         if index.isValid():

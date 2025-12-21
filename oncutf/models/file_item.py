@@ -21,6 +21,9 @@ from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+# Database access for loading saved color tags
+from oncutf.core.database.database_manager import get_database_manager
+
 
 class FileItem:
     """
@@ -39,7 +42,10 @@ class FileItem:
         self.metadata = {}  # Will store file metadata
         self.metadata_status = "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
         self.checked = False  # Selection state for UI
-        self.color = "none"  # Color tag for file organization (hex color or "none")
+
+        # Load saved color tag from database (hex color or "none")
+        db_manager = get_database_manager()
+        self.color = db_manager.get_color_tag(path)
 
     def __str__(self) -> str:
         return f"FileItem({self.filename})"
