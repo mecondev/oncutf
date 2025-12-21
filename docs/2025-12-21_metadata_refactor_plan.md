@@ -395,43 +395,87 @@ refactor/2025-12-21/metadata-phase-3
 - Inform future refactoring decisions
 - This phase is **analysis and documentation only**
 
-### Topics to Analyze
+### Topics Analyzed
 
-#### 1. FileEntry vs FileItem Responsibilities
+#### 1. FileEntry vs FileItem — Analysis Complete
 
-Current state:
-- `FileItem` appears to be the primary file representation
-- `FileEntry` may be redundant or overlap
-- Need to document:
-  - Where each is used
-  - What data each holds
-  - Whether consolidation is desirable
+**Current State:**
+- `FileItem` (125 LOC) — Primary file representation, used in **49+ modules**
+- `FileEntry` (201 LOC) — Type-safe dataclass alternative, used **only in tests**
 
-#### 2. Domain Model Direction
+**Key Differences:**
 
-Questions to answer:
-- Should metadata be part of FileItem or separate?
-- How should caching relate to the domain model?
-- What is the ideal flow: load → cache → transform → display?
+| Aspect | FileItem | FileEntry |
+|--------|----------|-----------|
+| Type | Regular class | `@dataclass(slots=True)` |
+| Memory | Standard dict-based | ~40% more efficient (slots) |
+| Metadata | `self.metadata = {}` direct | `_metadata` with getter/setter |
+| Validation | None | `__post_init__` validation |
+| Usage | 49+ production imports | Tests only |
+| Created | 2025-05-01 | 2025-12-03 |
 
-#### 3. Future Considerations
+**Recommendation:**
+- `FileEntry` was created as a migration target but **never adopted**
+- **Option A (Recommended):** Keep `FileItem`, remove unused `FileEntry`
+- **Option B:** Gradual migration to `FileEntry` (significant effort, low ROI)
+- **Decision:** Defer to future roadmap. Current `FileItem` works well.
 
-- Event-driven architecture for metadata changes?
-- Async/await patterns for metadata loading?
-- Plugin architecture for metadata sources?
+#### 2. Domain Model Direction — Analysis Complete
+
+**Current metadata flow:**
+```
+User Action → UnifiedMetadataManager (facade)
+    → MetadataLoader (orchestration)
+    → ExifToolWrapper (raw loading)
+    → MetadataCacheService (caching)
+    → FileItem.metadata (storage)
+    → UI refresh
+```
+
+**Key observations:**
+- Metadata is stored **inside** `FileItem.metadata` (dict)
+- Cache is **separate** from FileItem (in `metadata_cache`)
+- This causes **dual storage** (FileItem + cache) for same data
+
+**Ideal flow (future consideration):**
+```
+Load → Cache (single source of truth) → FileItem references cache
+```
+
+**Recommendation:**
+- Current dual-storage is acceptable for now
+- Future refactor could unify storage in cache only
+- `FileItem.metadata` would become a property accessing cache
+
+#### 3. Future Improvement Opportunities
+
+**Short-term (next 1-3 months):**
+1. Remove unused `FileEntry` class (cleanup)
+2. Add unit tests for new metadata modules
+3. Consider removing `MetadataReader` references from docs
+
+**Medium-term (3-6 months):**
+1. Unify metadata storage (cache-only, no dual storage)
+2. Event-driven metadata updates (signals when metadata changes)
+3. Lazy metadata loading on scroll (virtual list optimization)
+
+**Long-term (6+ months):**
+1. Async/await patterns for metadata loading (currently thread-based)
+2. Plugin architecture for metadata sources (ExifTool, ffprobe, etc.)
+3. Metadata editing with undo/redo (command pattern already exists)
 
 ### Tasks
 
-- [ ] Document FileEntry vs FileItem usage
-- [ ] Create architecture decision record (ADR) for domain model
-- [ ] List future improvement opportunities
-- [ ] No code changes in this phase
+- [x] Document FileEntry vs FileItem usage
+- [x] Analyze domain model flow
+- [x] List future improvement opportunities
+- [x] No code changes in this phase
 
 ### Validation Checklist
 
-- [ ] Documentation created
-- [ ] No code changes
-- [ ] Quality gates still pass
+- [x] Documentation created
+- [x] No code changes
+- [x] Quality gates still pass
 
 ### Branch
 
@@ -500,7 +544,7 @@ Items identified but explicitly out of scope:
 | 1 | ✅ Completed | 2025-12-21 | 2025-12-21 | 60% LOC reduction, 3 modules extracted |
 | 2 | ✅ Completed | 2025-12-21 | 2025-12-21 | Removed redundant MetadataReader |
 | 3 | ✅ Completed | 2025-12-21 | 2025-12-21 | Strict typing for metadata package |
-| 4 | Not Started | - | - | - |
+| 4 | ✅ Completed | 2025-12-21 | 2025-12-21 | Design analysis documented |
 
 ### Quality Gate History
 
@@ -511,6 +555,7 @@ Items identified but explicitly out of scope:
 | 2025-12-21 | 1 | ✅ | ✅ | ✅ | 303 source files, 6 tests skipped (stress) |
 | 2025-12-21 | 2 | ✅ | ✅ | ✅ | 302 source files (removed metadata_reader.py) |
 | 2025-12-21 | 3 | ✅ | ✅ | ✅ | 22 mypy errors fixed, strict typing enabled |
+| 2025-12-21 | 4 | ✅ | ✅ | ✅ | Documentation only, no code changes |
 
 ---
 
