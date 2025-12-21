@@ -3,53 +3,52 @@ Module: unified_metadata_manager.py
 
 Author: Michael Economou
 Date: 2025-07-06
+Refactored: 2025-12-21
 
-Unified metadata management system combining MetadataManager and DirectMetadataLoader.
-Provides centralized metadata operations with on-demand loading capabilities.
+Unified metadata management system - FACADE PATTERN.
 
-Features:
-- Centralized metadata management operations
-- On-demand metadata/hash loading
-- Thread-based loading with progress tracking
-- Immediate cache checking for instant icon display
-- Simple, clean architecture
-- Unified API for all metadata operations
+This module now serves as a thin facade that delegates to specialized handlers:
+- MetadataShortcutHandler: Keyboard shortcuts for metadata operations
+- MetadataLoader: Loading orchestration (single/batch/streaming)
+- MetadataProgressHandler: Progress dialog management
+- MetadataCacheService: Cache operations
+- CompanionMetadataHandler: Companion file metadata
+- MetadataReader/MetadataWriter: ExifTool operations
+
+The facade maintains backward compatibility while internal implementation
+is now cleanly separated into focused modules.
 """
 
 import contextlib
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import paths_equal
-from oncutf.utils.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
 
 class UnifiedMetadataManager(QObject):
     """
-    Unified metadata management system.
+    Unified metadata management system - Facade.
 
-    Combines the functionality of MetadataManager and DirectMetadataLoader
-    to provide a single, coherent interface for all metadata operations.
+    This class delegates to specialized handlers while maintaining
+    a unified API for all metadata operations.
 
-    Features:
-    - On-demand metadata/hash loading
-    - Thread-based loading with progress tracking
-    - Immediate cache checking for instant display
-    - Centralized metadata management operations
-    - Modifier-based metadata mode decisions
-    - Dialog management for progress indication
-    - Error handling and cleanup
+    Delegates to:
+    - MetadataShortcutHandler: Keyboard shortcuts
+    - MetadataLoader: Loading orchestration
+    - MetadataProgressHandler: Progress dialogs
+    - MetadataCacheService: Cache operations
+    - CompanionMetadataHandler: Companion files
+    - MetadataWriter: Save operations
     """
 
     # Signals
@@ -64,29 +63,33 @@ class UnifiedMetadataManager(QObject):
         self._cache_helper: MetadataCacheHelper | None = None
         self._currently_loading: set[str] = set()
 
-        # Progress dialogs (kept as instance variables to prevent garbage collection)
-        self._metadata_progress_dialog = None
-        self._hash_progress_dialog = None
-
         # State tracking
         self.force_extended_metadata = False
-        self._metadata_cancelled = False  # Cancellation flag for metadata loading
-        self._save_cancelled = False  # Cancellation flag for save operations
+        self._metadata_cancelled = False
+        self._save_cancelled = False
 
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
 
-        # ExifTool wrapper for single file operations (lazy-initialized)
+        # ExifTool wrapper (lazy-initialized)
         self._exiftool_wrapper = None
 
-        # Initialize parallel metadata loader (lazy-initialized on first use)
+        # Parallel loader (lazy-initialized)
         self._parallel_loader = None
 
-        # NEW: Initialize the 4 extracted modules for delegation
+        # Workers (for cleanup)
+        self._metadata_worker = None
+        self._metadata_thread = None
+        self._hash_worker = None
+
+        # Initialize extracted modules for delegation
         from oncutf.core.metadata import (
             CompanionMetadataHandler,
             MetadataCacheService,
+            MetadataLoader,
+            MetadataProgressHandler,
             MetadataReader,
+            MetadataShortcutHandler,
             MetadataWriter,
         )
 
@@ -94,19 +97,24 @@ class UnifiedMetadataManager(QObject):
         self._companion_handler = CompanionMetadataHandler()
         self._reader = MetadataReader(parent_window)
         self._writer = MetadataWriter(parent_window)
-
-        logger.info(
-            "[UnifiedMetadataManager] Initialized - unified metadata management with new modules"
+        self._shortcut_handler = MetadataShortcutHandler(self, parent_window)
+        self._progress_handler = MetadataProgressHandler(parent_window)
+        self._loader = MetadataLoader(
+            parent_window=parent_window,
+            exiftool_getter=lambda: self.exiftool_wrapper,
+            companion_handler=self._companion_handler,
+            progress_handler=self._progress_handler,
         )
+
+        logger.info("[UnifiedMetadataManager] Initialized with delegated modules")
+
+    # =========================================================================
+    # Properties
+    # =========================================================================
 
     @property
     def exiftool_wrapper(self):
-        """
-        Lazy-initialized ExifTool wrapper.
-
-        Returns:
-            ExifToolWrapper instance
-        """
+        """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
 
@@ -119,161 +127,37 @@ class UnifiedMetadataManager(QObject):
 
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
+        self._cache_service.initialize_cache_helper()
         if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
             self._cache_helper = MetadataCacheHelper(
                 self.parent_window.metadata_cache, self.parent_window
             )
-            logger.debug(
-                "[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True}
-            )
 
     @property
     def structured(self):
-        """
-        Lazy-initialized structured metadata manager.
-
-        Returns:
-            StructuredMetadataManager instance
-        """
+        """Lazy-initialized structured metadata manager."""
         if self._structured_manager is None:
             from oncutf.core.structured_metadata_manager import StructuredMetadataManager
 
             self._structured_manager = StructuredMetadataManager()
-            logger.debug(
-                "[UnifiedMetadataManager] StructuredMetadataManager initialized",
-                extra={"dev_only": True},
-            )
         return self._structured_manager
 
     @property
     def parallel_loader(self):
-        """
-        Lazy-initialized parallel metadata loader.
-
-        Returns:
-            ParallelMetadataLoader instance
-        """
+        """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
             from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
 
             self._parallel_loader = ParallelMetadataLoader()
-            logger.debug(
-                "[UnifiedMetadataManager] ParallelMetadataLoader initialized",
-                extra={"dev_only": True},
-            )
         return self._parallel_loader
 
-    # =====================================
-    # Cache Checking Methods
-    # =====================================
+    # =========================================================================
+    # Cache Methods - Delegate to MetadataCacheService
+    # =========================================================================
 
     def check_cached_metadata(self, file_item: FileItem) -> dict | None:
         """Delegate to cache_service."""
         return self._cache_service.check_cached_metadata(file_item)
-
-    def get_enhanced_metadata(
-        self, file_item: FileItem, folder_files: list[str] = None
-    ) -> dict | None:
-        """Delegate to companion_handler."""
-        base_metadata = self.check_cached_metadata(file_item)
-        return self._companion_handler.get_enhanced_metadata(file_item, base_metadata, folder_files)
-
-    def _enhance_metadata_with_companions(
-        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
-    ) -> dict:
-        """
-        Enhance metadata with companion file data during loading.
-
-        Args:
-            file_item: The main file being processed
-            base_metadata: Base metadata from ExifTool
-            all_files: All files being processed (for folder context)
-
-        Returns:
-            Enhanced metadata including companion data
-        """
-        if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
-            return base_metadata
-
-        # Lazy import to avoid loading at module level
-        from oncutf.utils.companion_files_helper import CompanionFilesHelper
-
-        try:
-            # Get folder files for companion detection
-            folder_path = os.path.dirname(file_item.full_path)
-            folder_files = []
-
-            # First try to use the files being loaded (more efficient)
-            if all_files:
-                folder_files = [
-                    f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path
-                ]
-
-            # If not enough context, scan the folder
-            if len(folder_files) < 2:
-                try:
-                    folder_files = [
-                        os.path.join(folder_path, f)
-                        for f in os.listdir(folder_path)
-                        if os.path.isfile(os.path.join(folder_path, f))
-                    ]
-                except OSError:
-                    return base_metadata
-
-            # Find companion files
-            companions = CompanionFilesHelper.find_companion_files(
-                file_item.full_path, folder_files
-            )
-
-            if not companions:
-                return base_metadata
-
-            # Create enhanced metadata
-            enhanced_metadata = base_metadata.copy()
-            companion_metadata = {}
-
-            # Extract metadata from companion files
-            for companion_path in companions:
-                try:
-                    companion_data = CompanionFilesHelper.extract_companion_metadata(companion_path)
-                    if companion_data:
-                        companion_name = os.path.basename(companion_path)
-                        for key, value in companion_data.items():
-                            if key != "source":
-                                companion_key = f"Companion:{companion_name}:{key}"
-                                companion_metadata[companion_key] = value
-
-                        logger.debug(
-                            "[UnifiedMetadataManager] Enhanced %s with companion %s",
-                            file_item.filename,
-                            companion_name,
-                        )
-                except Exception:
-                    logger.warning(
-                        "[UnifiedMetadataManager] Failed to extract companion metadata from %s",
-                        companion_path,
-                        exc_info=True,
-                    )
-
-            # Merge companion metadata
-            if companion_metadata:
-                enhanced_metadata.update(companion_metadata)
-                enhanced_metadata["__companion_files__"] = companions
-                logger.debug(
-                    "[UnifiedMetadataManager] Added %d companion fields to %s",
-                    len(companion_metadata),
-                    file_item.filename,
-                )
-
-            return enhanced_metadata
-
-        except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Error enhancing metadata with companions for %s",
-                file_item.filename,
-                exc_info=True,
-            )
-            return base_metadata
 
     def check_cached_hash(self, file_item: FileItem) -> str | None:
         """Delegate to cache_service."""
@@ -281,23 +165,39 @@ class UnifiedMetadataManager(QObject):
 
     def has_cached_metadata(self, file_item: FileItem) -> bool:
         """Delegate to cache_service."""
-        return self._cache_service.has_cached_metadata(file_item)
+        return self._cache_service.has_cached_metadata(file_item.full_path)
 
     def has_cached_hash(self, file_item: FileItem) -> bool:
         """Delegate to cache_service."""
-        return self._cache_service.has_cached_hash(file_item)
+        return self._cache_service.has_cached_hash(file_item.full_path)
 
-    # =====================================
+    # =========================================================================
+    # Enhanced Metadata - Delegate to CompanionMetadataHandler
+    # =========================================================================
+
+    def get_enhanced_metadata(
+        self, file_item: FileItem, folder_files: list[str] = None
+    ) -> dict | None:
+        """Delegate to companion_handler."""
+        base_metadata = self.check_cached_metadata(file_item)
+        return self._companion_handler.get_enhanced_metadata(
+            file_item, base_metadata, folder_files
+        )
+
+    def _enhance_metadata_with_companions(
+        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
+    ) -> dict:
+        """Delegate to companion_handler."""
+        return self._companion_handler.enhance_metadata_with_companions(
+            file_item, base_metadata, all_files
+        )
+
+    # =========================================================================
     # Loading State Management
-    # =====================================
+    # =========================================================================
 
     def is_running_metadata_task(self) -> bool:
-        """
-        Check if there's currently a metadata task running.
-
-        Returns:
-            bool: True if a metadata task is running, False otherwise
-        """
+        """Check if there's currently a metadata task running."""
         return len(self._currently_loading) > 0
 
     def is_loading(self) -> bool:
@@ -307,734 +207,69 @@ class UnifiedMetadataManager(QObject):
     def reset_cancellation_flag(self) -> None:
         """Reset the metadata cancellation flag."""
         self._metadata_cancelled = False
+        self._loader.reset_cancellation_flag()
 
-    # =====================================
-    # Mode Determination Methods
-    # =====================================
+    # =========================================================================
+    # Mode Determination - Delegate to MetadataShortcutHandler
+    # =========================================================================
 
     def determine_loading_mode(self, file_count: int, _use_extended: bool = False) -> str:
-        """
-        Determine the appropriate loading mode based on file count.
-
-        Args:
-            file_count: Number of files to process
-            _use_extended: Whether to use extended metadata (unused parameter kept for compatibility)
-
-        Returns:
-            str: Loading mode ("single_file_wait_cursor" or "multiple_files_dialog")
-        """
-        if file_count == 1:
-            return "single_file_wait_cursor"
-        else:
-            # Use progress dialog for 2+ files (parallel loading with progress)
-            return "multiple_files_dialog"
+        """Delegate to loader."""
+        return self._loader.determine_loading_mode(file_count)
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
-        """
-        Determines whether to use extended mode based on modifier keys.
-
-        Args:
-            modifier_state: Qt.KeyboardModifiers to use, or None for current state
-
-        Returns:
-            tuple: (skip_metadata, use_extended)
-
-            - skip_metadata = True  No metadata scan (no modifiers)
-            - skip_metadata = False & use_extended = False  Fast scan (Ctrl)
-            - skip_metadata = False & use_extended = True  Extended scan (Ctrl+Shift)
-        """
-        modifiers = modifier_state
-        if modifiers is None:
-            if self.parent_window and hasattr(self.parent_window, "modifier_state"):
-                modifiers = self.parent_window.modifier_state
-            else:
-                modifiers = QApplication.keyboardModifiers()
-
-        if modifiers == Qt.NoModifier:  # type: ignore
-            modifiers = QApplication.keyboardModifiers()  # fallback to current
-
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
-
-        # - No modifiers: skip metadata
-        # - With Ctrl: load basic metadata
-        # - With Ctrl+Shift: load extended metadata
-        skip_metadata = not ctrl
-        use_extended = ctrl and shift
-
-        logger.debug(
-            "[determine_metadata_mode] modifiers=%d, ctrl=%s, shift=%s, skip_metadata=%s, use_extended=%s",
-            int(modifiers),
-            ctrl,
-            shift,
-            skip_metadata,
-            use_extended,
-        )
-
-        return skip_metadata, use_extended
+        """Delegate to shortcut_handler."""
+        return self._shortcut_handler.determine_metadata_mode(modifier_state)
 
     def should_use_extended_metadata(self, modifier_state=None) -> bool:
-        """
-        Returns True if Ctrl+Shift are both held,
-        used in cases where metadata is always loaded (double click, drag & drop).
+        """Delegate to shortcut_handler."""
+        return self._shortcut_handler.should_use_extended_metadata(modifier_state)
 
-        This assumes that metadata will be loaded — we only decide if it's fast or extended.
-
-        Args:
-            modifier_state: Qt.KeyboardModifiers to use, or None for current state
-        """
-        modifiers = modifier_state
-        if modifiers is None:
-            if self.parent_window and hasattr(self.parent_window, "modifier_state"):
-                modifiers = self.parent_window.modifier_state
-            else:
-                modifiers = QApplication.keyboardModifiers()
-
-        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
-        return ctrl and shift
-
-    # =====================================
-    # Shortcut Methods
-    # =====================================
+    # =========================================================================
+    # Shortcut Methods - Delegate to MetadataShortcutHandler
+    # =========================================================================
 
     def shortcut_load_metadata(self) -> None:
-        """
-        Loads standard (non-extended) metadata for currently selected files.
-        """
-        if not self.parent_window:
-            return
-
-        # Use unified selection method
-        selected_files = (
-            self.parent_window.get_selected_files_ordered() if self.parent_window else []
-        )
-
-        if not selected_files:
-            logger.info("[Shortcut] No files selected for metadata loading")
-            return
-
-        # Analyze metadata state
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
-            selected_files
-        )
-
-        if not metadata_analysis["enable_fast_selected"]:
-            # All files already have fast metadata or better
-            from oncutf.utils.dialog_utils import show_info_message
-
-            message = (
-                f"All {len(selected_files)} selected file(s) already have fast metadata or better."
-            )
-            if metadata_analysis.get("fast_tooltip"):
-                message += f"\n\n{metadata_analysis['fast_tooltip']}"
-
-            show_info_message(
-                self.parent_window,
-                "Fast Metadata Loading",
-                message,
-            )
-            return
-
-        logger.info("[Shortcut] Loading basic metadata for %d files", len(selected_files))
-        # Use intelligent loading with cache checking and smart UX
-        self.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
+        """Delegate to shortcut_handler."""
+        self._shortcut_handler.shortcut_load_metadata()
 
     def shortcut_load_extended_metadata(self) -> None:
-        """
-        Loads extended metadata for selected files via custom selection system.
-        """
-        if not self.parent_window:
-            return
-
-        if self.is_running_metadata_task():
-            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
-            return
-
-        # Use unified selection method
-        selected_files = (
-            self.parent_window.get_selected_files_ordered() if self.parent_window else []
-        )
-
-        if not selected_files:
-            logger.info("[Shortcut] No files selected for extended metadata loading")
-            return
-
-        # Analyze metadata state
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
-            selected_files
-        )
-
-        if not metadata_analysis["enable_extended_selected"]:
-            # All files already have extended metadata
-            from oncutf.utils.dialog_utils import show_info_message
-
-            message = f"All {len(selected_files)} selected file(s) already have extended metadata."
-            if metadata_analysis.get("extended_tooltip"):
-                message += f"\n\n{metadata_analysis['extended_tooltip']}"
-
-            show_info_message(
-                self.parent_window,
-                "Extended Metadata Loading",
-                message,
-            )
-            return
-
-        # Check if we have files with fast metadata that can be upgraded
-        stats = metadata_analysis.get("stats", {})
-        fast_count = stats.get("fast_metadata", 0)
-
-        if fast_count > 0:
-            from oncutf.utils.dialog_utils import show_question_message
-
-            message = f"Found {fast_count} file(s) with fast metadata.\n\nDo you want to upgrade them to extended metadata?"
-            if metadata_analysis.get("extended_tooltip"):
-                message += f"\n\nDetails: {metadata_analysis['extended_tooltip']}"
-
-            result = show_question_message(
-                self.parent_window,
-                "Upgrade to Extended Metadata",
-                message,
-            )
-
-            if not result:
-                return
-
-        logger.info("[Shortcut] Loading extended metadata for %d files", len(selected_files))
-        # Use intelligent loading with cache checking and smart UX
-        self.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
+        """Delegate to shortcut_handler."""
+        self._shortcut_handler.shortcut_load_extended_metadata()
 
     def shortcut_load_metadata_all(self) -> None:
-        """
-        Load basic metadata for ALL files in current folder (keyboard shortcut).
-
-        This loads metadata for all files regardless of selection state.
-        """
-        if not self.parent_window:
-            return
-
-        if self.is_running_metadata_task():
-            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
-            return
-
-        from oncutf.core.application_context import ApplicationContext
-
-        context = ApplicationContext()
-        all_files = list(context.file_store)
-
-        if not all_files:
-            logger.info("[Shortcut] No files available for metadata loading")
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_selection_status(
-                    "No files available", selected_count=0, total_count=0, auto_reset=True
-                )
-            return
-
-        # Analyze metadata state to avoid loading if all files already have metadata
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
-            all_files
-        )
-
-        if not metadata_analysis["enable_fast_selected"]:
-            # All files already have fast metadata or better
-            from oncutf.utils.dialog_utils import show_info_message
-
-            message = f"All {len(all_files)} file(s) already have fast metadata or better."
-            if metadata_analysis.get("fast_tooltip"):
-                message += f"\n\n{metadata_analysis['fast_tooltip']}"
-
-            show_info_message(
-                self.parent_window,
-                "Fast Metadata Loading",
-                message,
-            )
-            return
-
-        logger.info("[Shortcut] Loading basic metadata for all %d files", len(all_files))
-        self.load_metadata_for_items(all_files, use_extended=False, source="shortcut_all")
+        """Delegate to shortcut_handler."""
+        self._shortcut_handler.shortcut_load_metadata_all()
 
     def shortcut_load_extended_metadata_all(self) -> None:
-        """
-        Load extended metadata for ALL files in current folder (keyboard shortcut).
+        """Delegate to shortcut_handler."""
+        self._shortcut_handler.shortcut_load_extended_metadata_all()
 
-        This loads extended metadata for all files regardless of selection state.
-        """
-        if not self.parent_window:
-            return
-
-        if self.is_running_metadata_task():
-            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
-            return
-
-        from oncutf.core.application_context import ApplicationContext
-
-        context = ApplicationContext()
-        all_files = list(context.file_store)
-
-        if not all_files:
-            logger.info("[Shortcut] No files available for extended metadata loading")
-            if hasattr(self.parent_window, "status_manager"):
-                self.parent_window.status_manager.set_selection_status(
-                    "No files available", selected_count=0, total_count=0, auto_reset=True
-                )
-            return
-
-        # Analyze metadata state to avoid loading if all files already have extended metadata
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
-            all_files
-        )
-
-        if not metadata_analysis["enable_extended_selected"]:
-            # All files already have extended metadata
-            from oncutf.utils.dialog_utils import show_info_message
-
-            message = f"All {len(all_files)} file(s) already have extended metadata."
-            if metadata_analysis.get("extended_tooltip"):
-                message += f"\n\n{metadata_analysis['extended_tooltip']}"
-
-            show_info_message(
-                self.parent_window,
-                "Extended Metadata Loading",
-                message,
-            )
-            return
-
-        logger.info(
-            "[Shortcut] Loading extended metadata for all %d files",
-            len(all_files),
-        )
-        self.load_metadata_for_items(all_files, use_extended=True, source="shortcut_all")
-
-    # =====================================
-    # Main Loading Methods
-    # =====================================
+    # =========================================================================
+    # Main Loading Methods - Delegate to MetadataLoader
+    # =========================================================================
 
     def load_metadata_streaming(self, items: list[FileItem], use_extended: bool = False):
-        """
-        Yield metadata as soon as available using parallel loading.
-
-        Args:
-            items: List of FileItem objects to load metadata for
-            use_extended: Whether to use extended metadata loading
-
-        Yields:
-            Tuple[FileItem, dict]: (item, metadata)
-        """
-        if not items:
-            return
-
-        # Separate cached vs non-cached
-        items_to_load = []
-
-        for item in items:
-            # Check cache
-            cache_entry = (
-                self.parent_window.metadata_cache.get_entry(item.full_path)
-                if self.parent_window and hasattr(self.parent_window, "metadata_cache")
-                else None
-            )
-
-            has_valid_cache = (
-                cache_entry
-                and hasattr(cache_entry, "is_extended")
-                and hasattr(cache_entry, "data")
-                and cache_entry.data
-            )
-
-            if has_valid_cache:
-                if (
-                    cache_entry.is_extended
-                    and not use_extended
-                    or cache_entry.is_extended == use_extended
-                ):
-                    yield item, cache_entry.data
-                    continue
-
-            items_to_load.append(item)
-
-        if not items_to_load:
-            return
-
-        # Use parallel loading for the rest
-        # We use a local executor to allow yielding
-        max_workers = 4  # Default safe value
-        if self._parallel_loader:
-            max_workers = self._parallel_loader.max_workers
-        else:
-            import multiprocessing
-
-            max_workers = min(multiprocessing.cpu_count() * 2, 16)
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_item = {
-                executor.submit(
-                    self.exiftool_wrapper.get_metadata, item.full_path, use_extended
-                ): item
-                for item in items_to_load
-            }
-
-            for future in as_completed(future_to_item):
-                item = future_to_item[future]
-                try:
-                    metadata = future.result()
-
-                    # Update cache
-                    if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                        self.parent_window.metadata_cache.set(
-                            item.full_path, metadata, is_extended=use_extended
-                        )
-
-                    # Update item metadata
-                    item.metadata = metadata
-
-                    yield item, metadata
-                except Exception:
-                    logger.exception("Failed to load metadata for %s", item.filename)
-                    yield item, {}
+        """Delegate to loader."""
+        return self._loader.load_metadata_streaming(items, use_extended)
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
-        """
-        Load metadata for the given FileItem objects.
+        """Delegate to loader with signal emission."""
+        def on_finished():
+            self.loading_finished.emit()
 
-        Loading modes (determined by file count AFTER cache check):
-        - Single file: Immediate loading with wait_cursor (fast and responsive)
-        - Multiple files (2+): ProgressDialog with ESC cancel support
-
-        Cache behavior:
-        - Files with extended metadata are never downgraded to fast
-        - Files with fast metadata can be upgraded to extended
-        - Files with matching metadata type are skipped
-
-        Args:
-            items: List of FileItem objects to load metadata for
-            use_extended: Whether to use extended metadata loading (Shift modifier)
-            source: Source of the request (for logging)
-        """
-        if not items:
-            logger.debug("[UnifiedMetadataManager] No items provided for metadata loading")
-            return
-
-        # Reset cancellation flag for new metadata loading operation
-        self.reset_cancellation_flag()
-
-        # ===== PHASE 1: Cache Pre-Check (fast, no UI blocking) =====
-        needs_loading = []
-        skipped_count = 0
-
-        # Use batch cache retrieval for performance
-        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            paths = [item.full_path for item in items]
-            cache_entries = self.parent_window.metadata_cache.get_entries_batch(paths)
-        else:
-            cache_entries = {}
-
-        from oncutf.utils.path_normalizer import normalize_path
-
-        for item in items:
-            norm_path = normalize_path(item.full_path)
-            cache_entry = cache_entries.get(norm_path)
-
-            # Check if we have valid metadata in cache
-            has_valid_cache = (
-                cache_entry
-                and hasattr(cache_entry, "is_extended")
-                and hasattr(cache_entry, "data")
-                and cache_entry.data
-            )
-
-            if has_valid_cache:
-                # Already has extended - never downgrade
-                if (
-                    cache_entry.is_extended
-                    and not use_extended
-                    or cache_entry.is_extended == use_extended
-                ):
-                    skipped_count += 1
-                    continue
-                # else: Need upgrade from fast to extended - add to needs_loading
-
-            needs_loading.append(item)
-
-        # Get metadata tree view reference
-        metadata_tree_view = (
-            self.parent_window.metadata_tree_view
-            if self.parent_window and hasattr(self.parent_window, "metadata_tree_view")
-            else None
+        self._loader.load_metadata_for_items(
+            items, use_extended, source, on_finished=on_finished
         )
 
-        # ===== PHASE 2: Handle "all cached" case =====
-        if not needs_loading:
-            logger.info(
-                "[%s] All %d files already cached (skipped %d)",
-                source,
-                len(items),
-                skipped_count,
-            )
-
-            # Update file table icons to show metadata icons
-            if self.parent_window and hasattr(self.parent_window, "file_model"):
-                self.parent_window.file_model.refresh_icons()
-
-            # Display metadata for the last item (or single item)
-            if metadata_tree_view and items:
-                display_file = items[0] if len(items) == 1 else items[-1]
-                metadata_tree_view.display_file_metadata(display_file)
-
-            return
-
-        # Log loading info
-        mode_str = "extended" if use_extended else "fast"
-        if skipped_count > 0:
-            logger.info(
-                "[%s] Loading %s metadata: %d files (skipped %d cached)",
-                source,
-                mode_str,
-                len(needs_loading),
-                skipped_count,
-            )
-        else:
-            logger.info(
-                "[%s] Loading %s metadata for %d files",
-                source,
-                mode_str,
-                len(needs_loading),
-            )
-
-        # ===== PHASE 3: Single file - use wait_cursor (immediate) =====
-        if len(needs_loading) == 1:
-            self._load_single_file_metadata(needs_loading[0], use_extended, metadata_tree_view)
-            return
-
-        # ===== PHASE 4: Multiple files - use ProgressDialog with parallel loading =====
-        self._load_multiple_files_metadata(needs_loading, use_extended, metadata_tree_view, source)
-
-    def _load_single_file_metadata(
-        self, item: FileItem, use_extended: bool, metadata_tree_view
-    ) -> None:
-        """
-        Load metadata for a single file with wait_cursor (immediate, no dialog).
-
-        Args:
-            item: The FileItem to load metadata for
-            use_extended: Whether to use extended metadata
-            metadata_tree_view: Reference to metadata tree view for display
-        """
-        from oncutf.utils.cursor_helper import wait_cursor
-
-        with wait_cursor():
-            try:
-                # Load metadata using ExifTool wrapper
-                metadata = self.exiftool_wrapper.get_metadata(item.full_path, use_extended)
-
-                if metadata:
-                    # Mark metadata with loading mode
-                    if use_extended:
-                        metadata["__extended__"] = True
-                    elif "__extended__" in metadata:
-                        del metadata["__extended__"]
-
-                    # Enhance with companion file data
-                    enhanced_metadata = self._enhance_metadata_with_companions(
-                        item, metadata, [item]
-                    )
-
-                    # Save to cache
-                    if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                        self.parent_window.metadata_cache.set(
-                            item.full_path, enhanced_metadata, is_extended=use_extended
-                        )
-
-                    # Update file item
-                    item.metadata = enhanced_metadata
-
-                    # Update UI
-                    if self.parent_window and hasattr(self.parent_window, "file_model"):
-                        self.parent_window.file_model.refresh_icons()
-
-                    # Display in metadata tree
-                    if metadata_tree_view:
-                        metadata_tree_view.display_file_metadata(item)
-
-                    logger.debug(
-                        "[UnifiedMetadataManager] Loaded %s metadata for %s",
-                        "extended" if use_extended else "fast",
-                        item.filename,
-                    )
-                else:
-                    logger.warning(
-                        "[UnifiedMetadataManager] No metadata returned for %s",
-                        item.filename,
-                    )
-
-            except Exception:
-                logger.exception(
-                    "[UnifiedMetadataManager] Failed to load metadata for %s",
-                    item.filename,
-                )
-
-        # Always emit signal
-        self.loading_finished.emit()
-
-    def _load_multiple_files_metadata(
-        self, needs_loading: list[FileItem], use_extended: bool, metadata_tree_view, source: str
-    ) -> None:
-        """
-        Load metadata for multiple files with ProgressDialog and parallel loading.
-
-        Args:
-            needs_loading: List of FileItem objects that need loading
-            use_extended: Whether to use extended metadata
-            metadata_tree_view: Reference to metadata tree view for display
-            source: Source of the request (for logging)
-        """
-        # Cancellation support
-        self._metadata_cancelled = False
-
-        def cancel_metadata_loading():
-            self._metadata_cancelled = True
-            logger.info("[UnifiedMetadataManager] Metadata loading cancelled by user")
-
-        # Create progress dialog
-        from oncutf.utils.dialog_utils import show_dialog_smooth
-        from oncutf.utils.file_size_calculator import calculate_files_total_size
-        from oncutf.utils.progress_dialog import ProgressDialog
-
-        _loading_dialog = ProgressDialog.create_metadata_dialog(
-            self.parent_window,
-            is_extended=use_extended,
-            cancel_callback=cancel_metadata_loading,
-        )
-        _loading_dialog.set_status(
-            "Loading extended metadata..." if use_extended else "Loading metadata..."
-        )
-
-        # Show dialog smoothly
-        show_dialog_smooth(_loading_dialog)
-        _loading_dialog.activateWindow()
-        _loading_dialog.setFocus()
-        _loading_dialog.raise_()
-
-        # Process events to ensure dialog is visible
-        for _ in range(3):
-            QApplication.processEvents()
-
-        # Calculate total size for progress tracking
-        total_size = calculate_files_total_size(needs_loading)
-        _loading_dialog.start_progress_tracking(total_size)
-
-        # Progress tracking
-        processed_size = 0
-
-        def on_progress(current: int, total: int, item: FileItem, metadata: dict):
-            """Called for each completed file during parallel loading."""
-            nonlocal processed_size
-
-            # Update processed size
-            try:
-                if hasattr(item, "size") and item.size is not None:
-                    current_file_size = item.size
-                elif hasattr(item, "full_path") and os.path.exists(item.full_path):
-                    current_file_size = os.path.getsize(item.full_path)
-                    item.size = current_file_size
-                else:
-                    current_file_size = 0
-                processed_size += current_file_size
-            except (OSError, AttributeError):
-                pass
-
-            # Update progress dialog
-            _loading_dialog.update_progress(
-                file_count=current,
-                total_files=total,
-                processed_bytes=processed_size,
-                total_bytes=total_size,
-            )
-            _loading_dialog.set_filename(item.filename)
-            _loading_dialog.set_count(current, total)
-
-            # Process metadata
-            if metadata:
-                # Mark metadata with loading mode
-                if use_extended:
-                    metadata["__extended__"] = True
-                elif "__extended__" in metadata:
-                    del metadata["__extended__"]
-
-                # Enhance with companion data
-                enhanced_metadata = self._enhance_metadata_with_companions(
-                    item, metadata, needs_loading
-                )
-
-                # Save to cache
-                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                    self.parent_window.metadata_cache.set(
-                        item.full_path, enhanced_metadata, is_extended=use_extended
-                    )
-
-                # Update file item
-                item.metadata = enhanced_metadata
-
-                # Emit dataChanged for progressive UI update
-                if self.parent_window and hasattr(self.parent_window, "file_model"):
-                    try:
-                        for j, file in enumerate(self.parent_window.file_model.files):
-                            if paths_equal(file.full_path, item.full_path):
-                                top_left = self.parent_window.file_model.index(j, 0)
-                                bottom_right = self.parent_window.file_model.index(
-                                    j, self.parent_window.file_model.columnCount() - 1
-                                )
-                                self.parent_window.file_model.dataChanged.emit(
-                                    top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
-                                )
-                                break
-                    except Exception:
-                        logger.warning(
-                            "[UnifiedMetadataManager] Failed to emit dataChanged for %s",
-                            item.filename,
-                            exc_info=True,
-                        )
-
-        def on_completion():
-            """Called when parallel loading completes."""
-            _loading_dialog.close()
-
-            # Display metadata for the last loaded file
-            if metadata_tree_view and needs_loading:
-                display_file = needs_loading[-1]
-                metadata_tree_view.display_file_metadata(display_file)
-
-            logger.info(
-                "[%s] Completed loading metadata for %d files",
-                source,
-                len(needs_loading),
-            )
-
-        def check_cancellation():
-            """Check if loading should be cancelled."""
-            return self._metadata_cancelled
-
-        # Start parallel loading
-        self.parallel_loader.load_metadata_parallel(
-            items=needs_loading,
-            use_extended=use_extended,
-            progress_callback=on_progress,
-            completion_callback=on_completion,
-            cancellation_check=check_cancellation,
-        )
-
-        # Emit signal
-        self.loading_finished.emit()
+    # =========================================================================
+    # Hash Loading
+    # =========================================================================
 
     def load_hashes_for_files(self, files: list[FileItem], source: str = "user_request") -> None:
-        """
-        Load hashes for files that don't have them cached.
-
-        Args:
-            files: List of files to load hashes for
-            source: Source of request for logging
-        """
+        """Load hashes for files that don't have them cached."""
         if not files:
             return
 
@@ -1064,57 +299,23 @@ class UnifiedMetadataManager(QObject):
         if len(files_to_load) > 1:
             self._show_hash_progress_dialog(files_to_load, source)
         else:
-            # Single file - load directly
             self._start_hash_loading(files_to_load, source)
-
-    # =====================================
-    # Progress Dialog Methods
-    # =====================================
-
-    def _show_metadata_progress_dialog(
-        self, files: list[FileItem], use_extended: bool, source: str
-    ) -> None:
-        """Show progress dialog for metadata loading."""
-        try:
-
-            def cancel_metadata_loading():
-                self._cancel_current_loading()
-
-            # Create progress dialog
-            from oncutf.utils.progress_dialog import ProgressDialog
-
-            _loading_dialog = ProgressDialog.create_metadata_dialog(
-                self.parent_window,
-                is_extended=use_extended,
-                cancel_callback=cancel_metadata_loading,
-            )
-
-            # Start loading with progress tracking
-            self._start_metadata_loading_with_progress(files, use_extended, source)
-
-        except Exception:
-            logger.exception("[UnifiedMetadataManager] Error showing metadata progress dialog")
-            # Fallback to direct loading
-            self._start_metadata_loading(files, use_extended, source)
 
     def _show_hash_progress_dialog(self, files: list[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
-
             def cancel_hash_loading():
                 self._cancel_current_loading()
 
-            # Create progress dialog
             from oncutf.utils.progress_dialog import ProgressDialog
 
             self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
                 self.parent_window, cancel_callback=cancel_hash_loading
             )
 
-            # Connect signals from hash worker to dialog
             if self._hash_worker:
                 self._hash_worker.progress_updated.connect(
-                    lambda current, total, _filename: self._hash_progress_dialog.update_progress(
+                    lambda current, total, _: self._hash_progress_dialog.update_progress(
                         current, total
                     )
                 )
@@ -1124,191 +325,48 @@ class UnifiedMetadataManager(QObject):
                     )
                 )
 
-            # Show dialog
             self._hash_progress_dialog.show()
-
-            # Start loading with progress tracking
-            self._start_hash_loading_with_progress(files, source)
+            self._start_hash_loading(files, source)
 
         except Exception:
             logger.exception("[UnifiedMetadataManager] Error showing hash progress dialog")
-            # Clean up dialog
-            if self._hash_progress_dialog:
+            if hasattr(self, "_hash_progress_dialog") and self._hash_progress_dialog:
                 self._hash_progress_dialog.close()
                 self._hash_progress_dialog = None
-            # Fallback to direct loading
             self._start_hash_loading(files, source)
-
-    # =====================================
-    # Worker Loading Methods
-    # =====================================
-
-    def _start_metadata_loading_with_progress(
-        self, files: list[FileItem], use_extended: bool, source: str
-    ) -> None:
-        """Start metadata loading with progress tracking."""
-        # This will be implemented to use the existing metadata worker
-        # For now, fallback to direct loading
-        self._start_metadata_loading(files, use_extended, source)
-
-    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:
-        """Start hash loading with progress tracking."""
-        # Create worker first so we can connect signals
-        self._start_hash_loading(files, source)
-
-        # Connect dialog signals if dialog exists
-        if self._hash_progress_dialog and self._hash_worker:
-            self._hash_worker.progress_updated.connect(
-                lambda current, total, _filename: self._hash_progress_dialog.update_progress(
-                    current, total
-                ),
-                Qt.QueuedConnection,
-            )
-            self._hash_worker.size_progress.connect(
-                lambda processed, total: self._hash_progress_dialog.update_size_progress(
-                    processed, total
-                ),
-                Qt.QueuedConnection,
-            )
-
-    def _start_metadata_loading(
-        self, files: list[FileItem], use_extended: bool, _source: str
-    ) -> None:
-        """Start metadata loading using existing metadata worker."""
-        if not files:
-            return
-
-        # Create metadata worker
-        from oncutf.core.pyqt_imports import QThread
-        from oncutf.ui.widgets.metadata_worker import MetadataWorker
-
-        self._metadata_worker = MetadataWorker()
-        self._metadata_thread = QThread()
-        self._metadata_worker.moveToThread(self._metadata_thread)
-
-        # Connect signals
-        self._metadata_worker.metadata_loaded.connect(self._on_file_metadata_loaded)
-        self._metadata_worker.finished.connect(self._on_metadata_finished)
-        self._metadata_worker.progress.connect(self._on_metadata_progress)
-        self._metadata_worker.size_progress.connect(self._on_metadata_size_progress)
-
-        # Start loading
-        self._metadata_thread.started.connect(
-            lambda: self._metadata_worker.load_metadata_for_files(files, use_extended)
-        )
-        self._metadata_thread.start()
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading using parallel hash worker."""
         if not files:
             return
 
-        # Create parallel hash worker (inherits QThread, no separate thread needed)
         from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
 
-        # Extract file paths from FileItem objects
         file_paths = [f.full_path for f in files]
-
-        # Create worker
         self._hash_worker = ParallelHashWorker(parent=self.parent_window)
-
-        # Setup operation
         self._hash_worker.setup_checksum_calculation(file_paths)
-
-        # Connect signals (ParallelHashWorker uses different signal names)
-        # Use Qt.QueuedConnection to ensure UI updates happen in main thread
-        from oncutf.core.pyqt_imports import Qt
 
         self._hash_worker.file_hash_calculated.connect(
             self._on_file_hash_calculated, Qt.QueuedConnection
         )
-        # finished_processing emits bool (success flag) but we don't use it
         self._hash_worker.finished_processing.connect(
-            lambda _success: self._on_hash_finished(), Qt.QueuedConnection
+            lambda _: self._on_hash_finished(), Qt.QueuedConnection
         )
-        # progress_updated emits (current, total, filename) but we only need (current, total)
         self._hash_worker.progress_updated.connect(
-            lambda current, total, _filename: self._on_hash_progress(current, total),
+            lambda current, total, _: self._on_hash_progress(current, total),
             Qt.QueuedConnection,
         )
-        self._hash_worker.size_progress.connect(self._on_hash_size_progress, Qt.QueuedConnection)
 
-        # Start worker thread
         self._hash_worker.start()
-
-    # =====================================
-    # Progress Tracking Methods
-    # =====================================
-
-    def _on_metadata_progress(self, current: int, total: int) -> None:
-        """Handle metadata loading progress updates."""
-        # This will be connected to progress dialog updates
-
-    def _on_metadata_size_progress(self, processed: int, total: int) -> None:
-        """Handle metadata size progress updates."""
-        # This will be connected to progress dialog updates
 
     def _on_hash_progress(self, current: int, total: int) -> None:
         """Handle hash loading progress updates."""
-        # This will be connected to progress dialog updates
-
-    def _on_hash_size_progress(self, processed: int, total: int) -> None:
-        """Handle hash size progress updates."""
-        # This will be connected to progress dialog updates
-
-    def _cancel_current_loading(self) -> None:
-        """Cancel current loading operation."""
-        self._metadata_cancelled = True
-
-        # Cancel metadata worker if running
-        if hasattr(self, "_metadata_worker") and self._metadata_worker:
-            self._metadata_worker.cancel()
-
-        # Cancel hash worker if running
-        if hasattr(self, "_hash_worker") and self._hash_worker:
-            self._hash_worker.cancel()
-
-        logger.info("[UnifiedMetadataManager] Loading operation cancelled")
-
-    def request_save_cancel(self) -> None:
-        """Delegate to writer and sync flag."""
-        self._save_cancelled = True  # Keep for backward compatibility
-        return self._writer.request_save_cancel()
-
-    # =====================================
-    # Completion Handlers
-    # =====================================
-
-    def _on_file_metadata_loaded(self, file_path: str) -> None:
-        """Handle individual file metadata loaded."""
-        # Remove from loading set
-        self._currently_loading.discard(file_path)
-
-        # Emit signal
-        self.loading_started.emit(file_path)
-
-        # Update UI if needed - use efficient single file icon refresh
-        if self.parent_window:
-            # Update file table model icons for this specific file
-            if hasattr(self.parent_window, "file_model"):
-                if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
-                    self.parent_window.file_model.refresh_icon_for_file(file_path)
-                else:
-                    # Fallback to full refresh if method not available
-                    self.parent_window.file_model.refresh_icons()
-
-        logger.debug(
-            "[UnifiedMetadataManager] Metadata loaded for %s",
-            file_path,
-            extra={"dev_only": True},
-        )
+        # Progress handler manages this via connected signals
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
-        """Handle individual file hash calculated with progressive UI update."""
-        # Remove from loading set
+        """Handle individual file hash calculated."""
         self._currently_loading.discard(file_path)
 
-        # Store hash if provided (safe in main thread)
         if hash_value:
             try:
                 from oncutf.core.hash.hash_manager import HashManager
@@ -1322,126 +380,63 @@ class UnifiedMetadataManager(QObject):
                     exc_info=True,
                 )
 
-        # Progressive UI update - emit dataChanged for this specific file
+        # Progressive UI update
         if self.parent_window and hasattr(self.parent_window, "file_model"):
             if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
                 self.parent_window.file_model.refresh_icon_for_file(file_path)
             else:
                 try:
-                    from oncutf.utils.path_utils import paths_equal
-
-                    # Find the file in the model and emit dataChanged
                     for i, file in enumerate(self.parent_window.file_model.files):
                         if paths_equal(file.full_path, file_path):
                             top_left = self.parent_window.file_model.index(i, 0)
                             bottom_right = self.parent_window.file_model.index(
                                 i, self.parent_window.file_model.columnCount() - 1
                             )
-                            logger.debug(
-                                "[UnifiedMetadataManager] Emitting progressive dataChanged for hash: '%s' at row %d",
-                                file.filename,
-                                i,
-                                extra={"dev_only": True},
-                            )
                             self.parent_window.file_model.dataChanged.emit(
                                 top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
                             )
                             break
                 except Exception:
-                    logger.warning(
-                        "[UnifiedMetadataManager] Failed to emit dataChanged for hash %s",
-                        file_path,
-                        exc_info=True,
-                    )
-
-        logger.debug(
-            "[UnifiedMetadataManager] Hash calculated for %s",
-            file_path,
-            extra={"dev_only": True},
-        )
-
-    def _on_metadata_finished(self) -> None:
-        """Handle metadata loading completion."""
-        # Clean up worker and thread
-        self._cleanup_metadata_worker_and_thread()
-
-        # Emit finished signal
-        self.loading_finished.emit()
-
-        # Update UI
-        if self.parent_window:
-            # Update file table model
-            if hasattr(self.parent_window, "file_model"):
-                self.parent_window.file_model.refresh_icons()
-
-            # Update metadata tree view
-            if hasattr(self.parent_window, "metadata_tree_view"):
-                self.parent_window.metadata_tree_view.handle_metadata_load_completion(
-                    None, "metadata_loading"
-                )
-
-        logger.info("[UnifiedMetadataManager] Metadata loading completed")
+                    pass
 
     def _on_hash_finished(self) -> None:
         """Handle hash loading completion."""
-        # Clean up worker and thread
         self._cleanup_hash_worker_and_thread()
-
-        # Emit finished signal
         self.loading_finished.emit()
 
-        # Update UI
         if self.parent_window:
-            # Update file table model
             if hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
-
-            # Notify preview manager about hash calculation completion
-            if (
-                hasattr(self.parent_window, "preview_manager")
-                and self.parent_window.preview_manager
-            ):
+            if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:
                 self.parent_window.preview_manager.on_hash_calculation_completed()
 
         logger.info("[UnifiedMetadataManager] Hash loading completed")
 
-    def _cleanup_metadata_worker_and_thread(self) -> None:
-        """Clean up metadata worker and thread."""
+    # =========================================================================
+    # Cancellation
+    # =========================================================================
+
+    def _cancel_current_loading(self) -> None:
+        """Cancel current loading operation."""
+        self._metadata_cancelled = True
+        self._loader.request_cancellation()
+
         if hasattr(self, "_metadata_worker") and self._metadata_worker:
-            self._metadata_worker.deleteLater()
-            self._metadata_worker = None
+            self._metadata_worker.cancel()
 
-        if hasattr(self, "_metadata_thread") and self._metadata_thread:
-            self._metadata_thread.quit()
-            if not self._metadata_thread.wait(3000):  # Wait max 3 seconds
-                logger.warning(
-                    "[UnifiedMetadataManager] Metadata thread did not stop, terminating..."
-                )
-                self._metadata_thread.terminate()
-                if not self._metadata_thread.wait(1000):  # Wait another 1 second
-                    logger.error("[UnifiedMetadataManager] Metadata thread did not terminate")
-            self._metadata_thread.deleteLater()
-            self._metadata_thread = None
-
-    def _cleanup_hash_worker_and_thread(self) -> None:
-        """Clean up hash worker (ParallelHashWorker is a QThread itself)."""
         if hasattr(self, "_hash_worker") and self._hash_worker:
-            # Wait for thread to finish (ParallelHashWorker inherits QThread)
-            if self._hash_worker.isRunning():
-                if not self._hash_worker.wait(3000):  # Wait max 3 seconds
-                    logger.warning(
-                        "[UnifiedMetadataManager] Hash worker did not stop, terminating..."
-                    )
-                    self._hash_worker.terminate()
-                    if not self._hash_worker.wait(1000):  # Wait another 1 second
-                        logger.error("[UnifiedMetadataManager] Hash worker did not terminate")
+            self._hash_worker.cancel()
 
-            self._hash_worker.deleteLater()
-            self._hash_worker = None
+        logger.info("[UnifiedMetadataManager] Loading operation cancelled")
 
-    # =====================================
-    # Metadata Saving Methods
-    # =====================================
+    def request_save_cancel(self) -> None:
+        """Delegate to writer and sync flag."""
+        self._save_cancelled = True
+        return self._writer.request_save_cancel()
+
+    # =========================================================================
+    # Metadata Saving - Delegate to MetadataWriter
+    # =========================================================================
 
     def set_metadata_value(self, file_path: str, key_path: str, new_value: str) -> bool:
         """Delegate to writer."""
@@ -1458,13 +453,7 @@ class UnifiedMetadataManager(QObject):
     def _save_metadata_files(
         self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False
     ) -> None:
-        """Save metadata files using ExifTool.
-
-        Args:
-            files_to_save: List of FileItem objects to save
-            all_modifications: Dictionary of all staged modifications
-            is_exit_save: If True, ESC will be blocked in progress dialog
-        """
+        """Save metadata files using ExifTool."""
         if not files_to_save:
             return
 
@@ -1472,7 +461,6 @@ class UnifiedMetadataManager(QObject):
         failed_files = []
         _loading_dialog = None
 
-        # Determine save mode based on file count
         file_count = len(files_to_save)
         save_mode = "single_file_wait_cursor" if file_count == 1 else "multiple_files_dialog"
 
@@ -1483,25 +471,21 @@ class UnifiedMetadataManager(QObject):
         )
 
         try:
-            # Setup progress dialog for multiple files
             if save_mode == "multiple_files_dialog":
-                # Only allow cancellation for normal saves when enabled in config
-                cancel_callback = self.request_save_cancel if not is_exit_save else None
+                from oncutf.utils.progress_dialog import ProgressDialog
 
+                cancel_callback = self.request_save_cancel if not is_exit_save else None
                 _loading_dialog = ProgressDialog(
                     parent=self.parent_window,
                     operation_type="metadata_save",
                     cancel_callback=cancel_callback,
                     show_enhanced_info=False,
-                    is_exit_save=is_exit_save,  # Pass exit save flag
+                    is_exit_save=is_exit_save,
                 )
                 _loading_dialog.set_status("Saving metadata...")
                 _loading_dialog.show()
-
-                # Process events to show dialog
                 QApplication.processEvents()
 
-            # Use wait_cursor context manager for single file
             cursor_context = (
                 wait_cursor()
                 if save_mode == "single_file_wait_cursor"
@@ -1509,13 +493,11 @@ class UnifiedMetadataManager(QObject):
             )
 
             with cursor_context:
-                # Process each file
                 current_file_index = 0
                 for file_item in files_to_save:
-                    # Check for cancellation before processing each file
                     if self._save_cancelled:
                         logger.info(
-                            "[UnifiedMetadataManager] Save operation cancelled by user after %d/%d files",
+                            "[UnifiedMetadataManager] Save cancelled after %d/%d files",
                             success_count,
                             file_count,
                         )
@@ -1523,7 +505,6 @@ class UnifiedMetadataManager(QObject):
 
                     current_file_index += 1
 
-                    # Update progress dialog if in batch mode
                     if _loading_dialog:
                         _loading_dialog.set_filename(file_item.filename)
                         _loading_dialog.set_count(current_file_index, file_count)
@@ -1531,8 +512,6 @@ class UnifiedMetadataManager(QObject):
                         QApplication.processEvents()
 
                     file_path = file_item.full_path
-
-                    # Get modifications for this file - use path matching with normalization
                     modifications = self._get_modified_metadata_for_file(
                         file_path, all_modifications
                     )
@@ -1541,24 +520,13 @@ class UnifiedMetadataManager(QObject):
                         continue
 
                     try:
-                        # Save using ExifTool
                         success = self.exiftool_wrapper.write_metadata(file_path, modifications)
 
                         if success:
                             success_count += 1
                             self._update_file_after_save(file_item, modifications)
-
-                            logger.debug(
-                                "[UnifiedMetadataManager] Successfully saved metadata for %s",
-                                file_item.filename,
-                                extra={"dev_only": True},
-                            )
                         else:
                             failed_files.append(file_item.filename)
-                            logger.warning(
-                                "[UnifiedMetadataManager] Failed to save metadata for %s",
-                                file_item.filename,
-                            )
 
                     except Exception:
                         failed_files.append(file_item.filename)
@@ -1570,319 +538,143 @@ class UnifiedMetadataManager(QObject):
         except Exception:
             logger.exception("[UnifiedMetadataManager] Error in metadata saving process")
         finally:
-            # Close progress dialog if it was created
             if _loading_dialog:
                 _loading_dialog.close()
 
-        # Show results
         was_cancelled = self._save_cancelled
         self._show_save_results(success_count, failed_files, files_to_save, was_cancelled)
 
-        # Record save operation in command system for undo/redo
+        # Record save command
         if success_count > 0:
-            try:
-                from oncutf.core.metadata_command_manager import get_metadata_command_manager
-                from oncutf.core.metadata_commands import SaveMetadataCommand
-
-                command_manager = get_metadata_command_manager()
-                if command_manager and SaveMetadataCommand:
-                    # Create save command with successful saves
-                    successful_files = []
-                    successful_metadata = {}
-
-                    for file_item in files_to_save:
-                        if file_item.filename not in failed_files:
-                            successful_files.append(file_item.full_path)
-                            modifications = self._get_modified_metadata_for_file(
-                                file_item.full_path, all_modifications
-                            )
-                            if modifications:
-                                successful_metadata[file_item.full_path] = modifications
-
-                    if successful_files:
-                        save_command = SaveMetadataCommand(
-                            file_paths=successful_files, saved_metadata=successful_metadata
-                        )
-
-                        # Execute command (this just records the save operation)
-                        command_manager.execute_command(save_command)
-                        logger.debug(
-                            "[UnifiedMetadataManager] Recorded save command for %d files",
-                            len(successful_files),
-                            extra={"dev_only": True},
-                        )
-
-            except Exception:
-                logger.warning(
-                    "[UnifiedMetadataManager] Error recording save command",
-                    exc_info=True,
-                )
+            self._record_save_command(files_to_save, failed_files, all_modifications)
 
     def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
-        """Get modified metadata for a specific file with path normalization."""
-        # Try direct lookup first
+        """Get modified metadata for a specific file."""
         if file_path in all_modified_metadata:
             return all_modified_metadata[file_path]
 
-        # Try normalized path lookup if direct fails (critical for cross-platform)
         from oncutf.utils.path_normalizer import normalize_path
 
         normalized = normalize_path(file_path)
-
         for key, value in all_modified_metadata.items():
             if normalize_path(key) == normalized:
                 return value
-
-        # Not found
         return {}
 
     def _update_file_after_save(self, file_item, saved_metadata: dict = None):
-        """
-        Update file item after successful metadata save.
-
-        Args:
-            file_item: The FileItem that was saved
-            saved_metadata: The metadata that was actually saved to the file
-        """
-        # Clear staged changes for this file
+        """Update file item after successful metadata save."""
+        # Clear staged changes
         try:
             staging_manager = self.parent_window.context.get_manager("metadata_staging")
             staging_manager.clear_staged_changes(file_item.full_path)
         except KeyError:
-            logger.warning(
-                "[UnifiedMetadataManager] MetadataStagingManager not found during cleanup"
-            )
+            pass
 
-        # CRITICAL: Update both UI cache and persistent cache with saved values
+        # Update caches
         if saved_metadata:
-            # Step 1: Update UI cache (metadata_cache)
-            if hasattr(self.parent_window, "metadata_cache"):
-                cache = self.parent_window.metadata_cache
-                metadata_entry = cache.get_entry(file_item.full_path)
-
-                if metadata_entry and hasattr(metadata_entry, "data"):
-                    logger.debug(
-                        "[UnifiedMetadataManager] Updating UI cache with saved metadata for: %s",
-                        file_item.filename,
-                        extra={"dev_only": True},
-                    )
-
-                    # Update the cache data with the values that were actually saved
-                    for key_path, new_value in saved_metadata.items():
-                        logger.debug(
-                            "[UnifiedMetadataManager] Updating UI cache: %s = %s",
-                            key_path,
-                            new_value,
-                            extra={"dev_only": True},
-                        )
-
-                        # Handle nested keys (e.g., "EXIF:Rotation")
-                        if "/" in key_path or ":" in key_path:
-                            # Split by either / or : to handle both formats
-                            if "/" in key_path:
-                                parts = key_path.split("/", 1)
-                            else:
-                                parts = key_path.split(":", 1)
-
-                            if len(parts) == 2:
-                                group, key = parts
-                                if group not in metadata_entry.data:
-                                    metadata_entry.data[group] = {}
-                                if isinstance(metadata_entry.data[group], dict):
-                                    metadata_entry.data[group][key] = new_value
-                                else:
-                                    # If group is not a dict, make it one
-                                    metadata_entry.data[group] = {key: new_value}
-                            else:
-                                # Fallback: treat as top-level key
-                                metadata_entry.data[key_path] = new_value
-                        else:
-                            # Top-level key (e.g., "Rotation")
-                            metadata_entry.data[key_path] = new_value
-
-                    # Mark cache as clean but keep the data
-                    metadata_entry.modified = False
-
-            # Step 2: Update persistent cache (CRITICAL for cross-session persistence)
-            try:
-                from oncutf.core.cache.persistent_metadata_cache import (
-                    get_persistent_metadata_cache,
-                )
-
-                persistent_cache = get_persistent_metadata_cache()
-
-                if persistent_cache:
-                    # Get current cached metadata
-                    current_metadata = persistent_cache.get(file_item.full_path)
-
-                    if current_metadata:
-                        # Update the current metadata with saved values
-                        updated_metadata = dict(current_metadata)
-
-                        for key_path, new_value in saved_metadata.items():
-                            logger.debug(
-                                "[UnifiedMetadataManager] Updating persistent cache: %s = %s",
-                                key_path,
-                                new_value,
-                                extra={"dev_only": True},
-                            )
-
-                            # Handle nested keys (e.g., "EXIF:Rotation")
-                            if "/" in key_path or ":" in key_path:
-                                # For persistent cache, convert colon-separated keys to forward slash
-                                key_path_normalized = key_path.replace(":", "/")
-
-                                if "/" in key_path_normalized:
-                                    parts = key_path_normalized.split("/", 1)
-                                    if len(parts) == 2:
-                                        group, key = parts
-                                        if group not in updated_metadata:
-                                            updated_metadata[group] = {}
-                                        if isinstance(updated_metadata[group], dict):
-                                            updated_metadata[group][key] = new_value
-                                        else:
-                                            # If group is not a dict, make it one
-                                            updated_metadata[group] = {key: new_value}
-                                    else:
-                                        # Fallback: treat as top-level key
-                                        updated_metadata[key_path] = new_value
-                                else:
-                                    # Top-level key
-                                    updated_metadata[key_path] = new_value
-                            else:
-                                # Top-level key (e.g., "Rotation")
-                                updated_metadata[key_path] = new_value
-
-                        # Save updated metadata back to persistent cache
-                        persistent_cache.set(
-                            file_item.full_path, updated_metadata, is_extended=False
-                        )
-                        logger.debug(
-                            "[UnifiedMetadataManager] Updated persistent cache for: %s",
-                            file_item.filename,
-                            extra={"dev_only": True},
-                        )
-                    else:
-                        logger.warning(
-                            "[UnifiedMetadataManager] No existing metadata in persistent cache for: %s",
-                            file_item.filename,
-                        )
-
-            except Exception:
-                logger.warning(
-                    "[UnifiedMetadataManager] Failed to update persistent cache",
-                    exc_info=True,
-                )
+            self._update_caches_after_save(file_item, saved_metadata)
 
         # Clear modifications in tree view
         if hasattr(self.parent_window, "metadata_tree_view"):
             self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
 
-        # Update file modification time
-        try:
+        # Update modification time
+        with contextlib.suppress(Exception):
             file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
+
+        # Refresh display if this file is shown
+        self._refresh_display_if_current(file_item)
+
+    def _update_caches_after_save(self, file_item, saved_metadata: dict):
+        """Update UI and persistent caches after save."""
+        # Update UI cache
+        if hasattr(self.parent_window, "metadata_cache"):
+            cache = self.parent_window.metadata_cache
+            entry = cache.get_entry(file_item.full_path)
+            if entry and hasattr(entry, "data"):
+                for key_path, new_value in saved_metadata.items():
+                    self._update_nested_metadata(entry.data, key_path, new_value)
+                entry.modified = False
+
+        # Update persistent cache
+        try:
+            from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+
+            persistent_cache = get_persistent_metadata_cache()
+            if persistent_cache:
+                current = persistent_cache.get(file_item.full_path)
+                if current:
+                    updated = dict(current)
+                    for key_path, new_value in saved_metadata.items():
+                        self._update_nested_metadata(updated, key_path, new_value)
+                    persistent_cache.set(file_item.full_path, updated, is_extended=False)
         except Exception:
-            logger.warning(
-                "[UnifiedMetadataManager] Could not update modification time for %s",
-                file_item.filename,
-                exc_info=True,
-            )
+            logger.warning("[UnifiedMetadataManager] Failed to update persistent cache", exc_info=True)
 
-        # Force refresh metadata view if this file is currently displayed
-        if (
-            hasattr(self.parent_window, "metadata_tree_view")
-            and hasattr(self.parent_window.metadata_tree_view, "_current_file_path")
-            and self.parent_window.metadata_tree_view._current_file_path == file_item.full_path
-        ):
-            logger.debug(
-                "[UnifiedMetadataManager] Refreshing metadata view for updated file: %s",
-                file_item.filename,
-                extra={"dev_only": True},
-            )
+    def _update_nested_metadata(self, data: dict, key_path: str, value: str):
+        """Update nested metadata structure."""
+        if "/" in key_path or ":" in key_path:
+            sep = "/" if "/" in key_path else ":"
+            parts = key_path.split(sep, 1)
+            if len(parts) == 2:
+                group, key = parts
+                if group not in data:
+                    data[group] = {}
+                if isinstance(data[group], dict):
+                    data[group][key] = value
+                else:
+                    data[group] = {key: value}
+            else:
+                data[key_path] = value
+        else:
+            data[key_path] = value
 
-            # Get updated cache data to refresh the display
+    def _refresh_display_if_current(self, file_item):
+        """Refresh metadata display if file is currently shown."""
+        if not hasattr(self.parent_window, "metadata_tree_view"):
+            return
+        tree = self.parent_window.metadata_tree_view
+        if hasattr(tree, "_current_file_path") and tree._current_file_path == file_item.full_path:
             if hasattr(self.parent_window, "metadata_cache"):
-                metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if metadata_entry and hasattr(metadata_entry, "data"):
-                    display_data = dict(metadata_entry.data)
+                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if entry and hasattr(entry, "data"):
+                    display_data = dict(entry.data)
                     display_data["FileName"] = file_item.filename
-                    self.parent_window.metadata_tree_view.display_metadata(
-                        display_data, context="after_save"
-                    )
+                    tree.display_metadata(display_data, context="after_save")
 
     def _show_save_results(self, success_count, failed_files, files_to_save, was_cancelled=False):
-        """Show results of metadata save operation.
-
-        Args:
-            success_count: Number of files successfully saved
-            failed_files: List of filenames that failed to save
-            files_to_save: Original list of files to save
-            was_cancelled: Whether the operation was cancelled by user
-        """
+        """Show results of metadata save operation."""
         total_files = len(files_to_save)
 
-        # Handle cancellation case
         if was_cancelled:
             skipped_count = total_files - success_count - len(failed_files)
+            message = f"Save cancelled after {success_count}/{total_files} files" if success_count else "Save cancelled"
+            logger.info("[UnifiedMetadataManager] %s", message)
 
-            if success_count > 0:
-                message = f"Save cancelled after {success_count}/{total_files} files"
-                logger.info("[UnifiedMetadataManager] %s", message)
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
+                self.parent_window.status_bar.showMessage(message, 5000 if success_count else 3000)
 
-                if self.parent_window and hasattr(self.parent_window, "status_bar"):
-                    self.parent_window.status_bar.showMessage(message, 5000)
-            else:
-                message = "Save operation cancelled"
-                logger.info("[UnifiedMetadataManager] %s", message)
-
-                if self.parent_window and hasattr(self.parent_window, "status_bar"):
-                    self.parent_window.status_bar.showMessage(message, 3000)
-
-            # Show info dialog about cancellation
             if self.parent_window:
                 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
                 msg_parts = ["Save operation cancelled by user."]
-
                 if success_count > 0:
                     msg_parts.append(f"\nSuccessfully saved: {success_count} files")
-
                 if failed_files:
                     msg_parts.append(f"Failed: {len(failed_files)} files")
-
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                CustomMessageDialog.information(
-                    self.parent_window, "Save Cancelled", "\n".join(msg_parts)
-                )
+                CustomMessageDialog.information(self.parent_window, "Save Cancelled", "\n".join(msg_parts))
             return
 
-        # Normal completion (not cancelled)
         if success_count > 0:
-            logger.info(
-                "[UnifiedMetadataManager] Successfully saved metadata for %d files",
-                success_count,
-            )
-
-            # Update status bar
+            logger.info("[UnifiedMetadataManager] Saved metadata for %d files", success_count)
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
-                self.parent_window.status_bar.showMessage(
-                    f"Metadata saved for {success_count} files", 3000
-                )
+                self.parent_window.status_bar.showMessage(f"Metadata saved for {success_count} files", 3000)
 
         if failed_files:
-            logger.warning(
-                "[UnifiedMetadataManager] Failed to save metadata for %d files",
-                len(failed_files),
-            )
-            for file_path in failed_files:
-                logger.warning(
-                    "[UnifiedMetadataManager] Failed to save metadata for: %s",
-                    file_path,
-                )
-
-            # Show error message
+            logger.warning("[UnifiedMetadataManager] Failed to save %d files", len(failed_files))
             if self.parent_window:
                 from oncutf.core.pyqt_imports import QMessageBox
 
@@ -1890,149 +682,123 @@ class UnifiedMetadataManager(QObject):
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"
-                    f"Files: {', '.join(failed_files[:5])}"
-                    f"{'...' if len(failed_files) > 5 else ''}",
+                    f"Files: {', '.join(failed_files[:5])}{'...' if len(failed_files) > 5 else ''}",
                 )
 
-    # =====================================
-    # Structured Metadata Integration
-    # =====================================
+    def _record_save_command(self, files_to_save, failed_files, all_modifications):
+        """Record save command for undo/redo."""
+        try:
+            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata_commands import SaveMetadataCommand
+
+            command_manager = get_metadata_command_manager()
+            if command_manager and SaveMetadataCommand:
+                successful_files = []
+                successful_metadata = {}
+
+                for file_item in files_to_save:
+                    if file_item.filename not in failed_files:
+                        successful_files.append(file_item.full_path)
+                        mods = self._get_modified_metadata_for_file(file_item.full_path, all_modifications)
+                        if mods:
+                            successful_metadata[file_item.full_path] = mods
+
+                if successful_files:
+                    save_command = SaveMetadataCommand(
+                        file_paths=successful_files, saved_metadata=successful_metadata
+                    )
+                    command_manager.execute_command(save_command)
+        except Exception:
+            logger.warning("[UnifiedMetadataManager] Error recording save command", exc_info=True)
+
+    # =========================================================================
+    # Structured Metadata Integration - Delegate to StructuredMetadataManager
+    # =========================================================================
 
     def get_structured_metadata(self, file_path: str) -> dict:
-        """
-        Get structured metadata for a file with categorization.
-
-        Args:
-            file_path: Path to the file
-
-        Returns:
-            Dictionary with categorized metadata
-        """
+        """Delegate to structured manager."""
         return self.structured.get_structured_metadata(file_path)
 
     def process_and_store_metadata(self, file_path: str, raw_metadata: dict) -> bool:
-        """
-        Process raw metadata and store it in structured format.
-
-        Args:
-            file_path: Path to the file
-            raw_metadata: Raw metadata dictionary from ExifTool
-
-        Returns:
-            True if successful, False otherwise
-        """
+        """Delegate to structured manager."""
         return self.structured.process_and_store_metadata(file_path, raw_metadata)
 
     def get_field_value(self, file_path: str, field_key: str) -> str | None:
-        """
-        Get specific metadata field value.
-
-        Args:
-            file_path: Path to the file
-            field_key: Metadata field key
-
-        Returns:
-            Field value or None if not found
-        """
+        """Delegate to structured manager."""
         return self.structured.get_field_value(file_path, field_key)
 
     def update_field_value(self, file_path: str, field_key: str, field_value: str) -> bool:
-        """
-        Update metadata field value.
-
-        Args:
-            file_path: Path to the file
-            field_key: Metadata field key
-            field_value: New field value
-
-        Returns:
-            True if successful, False otherwise
-        """
+        """Delegate to structured manager."""
         return self.structured.update_field_value(file_path, field_key, field_value)
 
     def add_custom_field(self, field_key: str, field_name: str, category: str, **kwargs) -> bool:
-        """
-        Add custom metadata field definition.
-
-        Args:
-            field_key: Unique field key
-            field_name: Human-readable field name
-            category: Category name
-            **kwargs: Additional field properties
-
-        Returns:
-            True if successful, False otherwise
-        """
+        """Delegate to structured manager."""
         return self.structured.add_custom_field(field_key, field_name, category, **kwargs)
 
     def get_available_categories(self) -> list[dict]:
-        """
-        Get available metadata categories.
-
-        Returns:
-            List of category dictionaries
-        """
+        """Delegate to structured manager."""
         return self.structured.get_available_categories()
 
     def get_available_fields(self, category: str | None = None) -> list[dict]:
-        """
-        Get available metadata fields, optionally filtered by category.
-
-        Args:
-            category: Optional category name to filter by
-
-        Returns:
-            List of field dictionaries
-        """
+        """Delegate to structured manager."""
         return self.structured.get_available_fields(category)
 
     def search_files_by_metadata(self, field_key: str, field_value: str) -> list[str]:
-        """
-        Search files by metadata field value.
-
-        Args:
-            field_key: Metadata field key
-            field_value: Value to search for
-
-        Returns:
-            List of file paths matching the criteria
-        """
+        """Delegate to structured manager."""
         return self.structured.search_files_by_metadata(field_key, field_value)
 
     def refresh_structured_caches(self) -> None:
-        """Refresh structured metadata caches."""
+        """Delegate to structured manager."""
         self.structured.refresh_caches()
 
-    # =====================================
-    # Cleanup Methods
-    # =====================================
+    # =========================================================================
+    # Cleanup
+    # =========================================================================
+
+    def _cleanup_metadata_worker_and_thread(self) -> None:
+        """Clean up metadata worker and thread."""
+        if hasattr(self, "_metadata_worker") and self._metadata_worker:
+            self._metadata_worker.deleteLater()
+            self._metadata_worker = None
+
+        if hasattr(self, "_metadata_thread") and self._metadata_thread:
+            self._metadata_thread.quit()
+            if not self._metadata_thread.wait(3000):
+                self._metadata_thread.terminate()
+                self._metadata_thread.wait(1000)
+            self._metadata_thread.deleteLater()
+            self._metadata_thread = None
+
+    def _cleanup_hash_worker_and_thread(self) -> None:
+        """Clean up hash worker."""
+        if hasattr(self, "_hash_worker") and self._hash_worker:
+            if self._hash_worker.isRunning():
+                if not self._hash_worker.wait(3000):
+                    self._hash_worker.terminate()
+                    self._hash_worker.wait(1000)
+            self._hash_worker.deleteLater()
+            self._hash_worker = None
 
     def cleanup(self) -> None:
         """Clean up resources."""
-        # Cancel any running operations
         self._cancel_current_loading()
-
-        # Clean up workers
         self._cleanup_metadata_worker_and_thread()
         self._cleanup_hash_worker_and_thread()
+        self._progress_handler.cleanup()
 
-        # Clean up ExifTool wrapper
         if hasattr(self, "_exiftool_wrapper") and self._exiftool_wrapper:
             self._exiftool_wrapper.close()
 
-        # Clean up structured manager
         if self._structured_manager is not None:
             self._structured_manager = None
 
-        # Clear loading state
         self._currently_loading.clear()
-
         logger.info("[UnifiedMetadataManager] Cleanup completed")
 
 
-# =====================================
+# =========================================================================
 # Factory Functions
-# =====================================
+# =========================================================================
 
 _unified_metadata_manager = None
 

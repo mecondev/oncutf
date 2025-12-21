@@ -214,8 +214,9 @@ class TestSaveCancellation:
         manager._exiftool_wrapper.write_metadata = mock_write_metadata
 
         # Mock progress dialog and other dependencies
+        # Note: ProgressDialog is imported inside the function, so we patch the source module
         with (
-            patch("oncutf.core.unified_metadata_manager.ProgressDialog") as mock_dialog_class,
+            patch("oncutf.utils.progress_dialog.ProgressDialog") as mock_dialog_class,
             patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"),
             patch("oncutf.core.pyqt_imports.QMessageBox"),
         ):
