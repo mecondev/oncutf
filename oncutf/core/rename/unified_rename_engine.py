@@ -44,7 +44,7 @@ class PreviewResult:
 
     name_pairs: list[tuple[str, str]]
     has_changes: bool
-    errors: list[str] = None # type: ignore
+    errors: list[str] | None = None
     timestamp: float = 0.0  # Unix timestamp
 
     def __post_init__(self):
@@ -195,9 +195,9 @@ class RenameState:
             change.
     """
 
-    files: list[FileItem] = None # type: ignore
-    modules_data: list[dict[str, Any]] = None # type: ignore
-    post_transform: dict[str, Any] = None
+    files: list[FileItem] | None = None
+    modules_data: list[dict[str, Any]] | None = None
+    post_transform: dict[str, Any] | None = None
     metadata_cache: Any = None
     preview_result: PreviewResult | None = None
     validation_result: ValidationResult | None = None

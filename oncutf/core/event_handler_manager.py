@@ -143,7 +143,7 @@ class EventHandlerManager:
 
     def check_files_status(
         self,
-        files: list = None,  # type: ignore[assignment]
+        files: list | None = None,
         check_type: str = "metadata",
         extended: bool = False,
         scope: str = "selected",
@@ -155,7 +155,7 @@ class EventHandlerManager:
 
     def get_files_without_metadata(
         self,
-        files: list = None,  # type: ignore[assignment]
+        files: list | None = None,
         extended: bool = False,
         scope: str = "selected",
     ) -> list:
@@ -165,7 +165,7 @@ class EventHandlerManager:
         )
 
     def get_files_without_hashes(
-        self, files: list = None, scope: str = "selected"  # type: ignore[assignment]
+        self, files: list | None = None, scope: str = "selected"
     ) -> list:
         """Delegate to ContextMenuHandlers."""
         return self.context_menu_handlers.get_files_without_hashes(files=files, scope=scope)

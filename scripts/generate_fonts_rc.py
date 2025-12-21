@@ -22,19 +22,19 @@ def main() -> int:
     # Get paths relative to script location
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    
+
     qrc_file = project_root / "resources" / "fonts.qrc"
     output_file = project_root / "oncutf" / "utils" / "fonts_rc.py"
-    
+
     if not qrc_file.exists():
         print(f"ERROR: Resource file not found: {qrc_file}")
         return 1
-    
+
     print(f"Generating {output_file.name} from {qrc_file.name}...")
-    
+
     # Try pyrcc5 first (PyQt5)
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["pyrcc5", str(qrc_file), "-o", str(output_file)],
             capture_output=True,
             text=True,
@@ -47,10 +47,10 @@ def main() -> int:
         print("pyrcc5 not found, trying pyside6-rcc...")
     except subprocess.CalledProcessError as e:
         print(f"pyrcc5 failed: {e.stderr}")
-    
+
     # Try pyside6-rcc as fallback
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["pyside6-rcc", str(qrc_file), "-o", str(output_file)],
             capture_output=True,
             text=True,
