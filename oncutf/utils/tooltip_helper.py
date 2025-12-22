@@ -222,11 +222,15 @@ class ItemTooltipFilter(QObject):
         self.hover_timer.setSingleShot(True)
         self.hover_timer.timeout.connect(self._show_tooltip)
         self.current_item = None
-        self.tooltip_data: dict = {}  # item -> (text, type)
+        self.tooltip_data: dict = {}  # id(item) -> (text, type)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Filter events on widget to detect item hover"""
-        if obj != self.widget.viewport():
+        try:
+            if obj != self.widget.viewport():
+                return False
+        except RuntimeError:
+            # Widget has been deleted
             return False
 
         if event.type() == QEvent.ToolTip:
@@ -245,7 +249,7 @@ class ItemTooltipFilter(QObject):
                 self._hide_tooltip()
                 self.current_item = item
 
-                if item and item in self.tooltip_data:
+                if item and id(item) in self.tooltip_data:
                     # Start timer to show tooltip after hover delay
                     self.hover_timer.start(600)  # 600ms delay
                 return False
@@ -258,10 +262,10 @@ class ItemTooltipFilter(QObject):
 
     def _show_tooltip(self) -> None:
         """Show tooltip for current item"""
-        if not self.current_item or self.current_item not in self.tooltip_data:
+        if not self.current_item or id(self.current_item) not in self.tooltip_data:
             return
 
-        text, tooltip_type = self.tooltip_data[self.current_item]
+        text, tooltip_type = self.tooltip_data[id(self.current_item)]
 
         # Hide any existing tooltip
         self._hide_tooltip()
@@ -292,8 +296,8 @@ class ItemTooltipFilter(QObject):
             self.current_tooltip = None
 
     def register_item(self, item, text: str, tooltip_type: str) -> None:
-        """Register an item with custom tooltip data"""
-        self.tooltip_data[item] = (text, tooltip_type)
+        """Register an item with custom tooltip data using item id as key"""
+        self.tooltip_data[id(item)] = (text, tooltip_type)
 
 
 class TooltipHelper:

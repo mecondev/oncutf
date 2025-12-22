@@ -244,6 +244,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             self.viewport(),
             tooltip_text,
             tooltip_type,
+            duration=0,  # No auto-hide
             persistent=True
         )
 
