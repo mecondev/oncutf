@@ -27,6 +27,49 @@ from oncutf.utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
+class WidgetTooltipFilter(QObject):
+    """Event filter for persistent tooltips on widgets"""
+
+    def __init__(self, widget: QWidget, tooltip: "CustomTooltip", parent: QObject | None = None):
+        super().__init__(parent)
+        self.widget = widget
+        self.tooltip = tooltip
+        self.hover_timer = QTimer()
+        self.hover_timer.setSingleShot(True)
+        self.hover_timer.timeout.connect(self._show_tooltip)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Filter events to show tooltip on hover"""
+        if obj != self.widget:
+            return False
+
+        try:
+            if event.type() == QEvent.Enter:
+                # Mouse entered widget - start timer
+                self.hover_timer.start(600)  # 600ms delay
+            elif event.type() == QEvent.Leave:
+                # Mouse left widget - hide tooltip
+                self.hover_timer.stop()
+                self.tooltip.hide()
+            elif event.type() == QEvent.ToolTip:
+                # Suppress default Qt tooltip
+                return True
+        except RuntimeError:
+            # Widget has been deleted
+            pass
+
+        return False
+
+    def _show_tooltip(self) -> None:
+        """Show the tooltip"""
+        try:
+            from oncutf.utils.tooltip_helper import TooltipHelper
+            TooltipHelper._show_persistent_tooltip(self.widget, self.tooltip)
+        except RuntimeError:
+            # Widget or tooltip has been deleted
+            pass
+
+
 class TooltipType:
     """Tooltip type constants"""
 
@@ -395,55 +438,15 @@ class TooltipHelper:
         tooltip = CustomTooltip(widget.window(), message, tooltip_type, persistent=True)
         cls._persistent_tooltips[widget_id] = tooltip
 
-        # Setup hover events
+        # Setup mouse tracking
         widget.setMouseTracking(True)
 
-        # Store original event handlers
-        original_enter = getattr(widget, "enterEvent", None)
-        original_leave = getattr(widget, "leaveEvent", None)
+        # Install event filter for hover detection
+        tooltip_filter = WidgetTooltipFilter(widget, tooltip, widget)
+        widget.installEventFilter(tooltip_filter)
 
-        # Store timer ID for cleanup
-        tooltip._timer_id = None
-
-        def enter_event(event: QEvent):
-            if original_enter:
-                original_enter(event)
-            # Schedule tooltip show with 600ms delay using global timer manager
-            from oncutf.utils.timer_manager import schedule_ui_update
-
-            tooltip._timer_id = schedule_ui_update(
-                lambda: cls._show_persistent_tooltip(widget, tooltip),
-                delay=600,
-                timer_id=f"tooltip_show_{id(widget)}",
-            )
-
-        def leave_event(event: QEvent):
-            try:
-                if original_leave:
-                    original_leave(event)
-                # Cancel the timer if still running
-                if hasattr(tooltip, "_timer_id") and tooltip._timer_id:
-                    from oncutf.utils.timer_manager import cancel_timer
-
-                    cancel_timer(tooltip._timer_id)
-                    tooltip._timer_id = None
-                # Check if tooltip still exists before trying to hide it
-                widget_id = id(widget)
-                if (
-                    widget_id in cls._persistent_tooltips
-                    and cls._persistent_tooltips[widget_id] == tooltip
-                ):
-                    tooltip.hide()
-            except RuntimeError as e:
-                # Qt object has been deleted - remove from tracking
-                logger.debug("[TooltipHelper] Tooltip object deleted, cleaning up: %s", e)
-                widget_id = id(widget)
-                if widget_id in cls._persistent_tooltips:
-                    del cls._persistent_tooltips[widget_id]
-
-        # Replace event handlers
-        widget.enterEvent = enter_event  # type: ignore
-        widget.leaveEvent = leave_event  # type: ignore
+        # Store filter reference to prevent garbage collection
+        widget._tooltip_filter = tooltip_filter
 
     @classmethod
     def _show_persistent_tooltip(cls, widget: QWidget, tooltip: CustomTooltip) -> None:
