@@ -22,6 +22,7 @@ from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QApplication,
     QCursor,
+    QEvent,
     QHeaderView,
     QItemSelectionModel,
     QKeySequence,
@@ -30,6 +31,7 @@ from oncutf.core.pyqt_imports import (
     QPoint,
     Qt,
     QTableView,
+    QTimer,
     pyqtSignal,
 )
 from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
@@ -38,6 +40,7 @@ from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.timer_manager import (
     schedule_ui_update,
 )
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -184,6 +187,65 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Protection against infinite loops in selectionChanged
         self._processing_selection_change = False
+
+        # Setup custom tooltip event filter
+        self._tooltip_timer = QTimer()
+        self._tooltip_timer.setSingleShot(True)
+        self._tooltip_timer.timeout.connect(self._show_custom_tooltip)
+        self._current_tooltip_index = QModelIndex()
+        self.viewport().installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        """Event filter for custom tooltips on table cells"""
+        if obj == self.viewport():
+            if event.type() == QEvent.ToolTip:
+                # Suppress default Qt tooltips
+                return True
+            elif event.type() == QEvent.MouseMove:
+                # Get index under mouse
+                index = self.indexAt(event.pos())
+                if index != self._current_tooltip_index:
+                    # Index changed, hide current tooltip and start timer for new one
+                    TooltipHelper.clear_all_tooltips()
+                    self._tooltip_timer.stop()
+                    self._current_tooltip_index = index
+                    if index.isValid():
+                        # Start timer to show tooltip after hover delay
+                        self._tooltip_timer.start(600)  # 600ms delay
+                return False
+            elif event.type() == QEvent.Leave:
+                # Mouse left viewport, hide tooltip
+                TooltipHelper.clear_all_tooltips()
+                self._tooltip_timer.stop()
+                self._current_tooltip_index = QModelIndex()
+        return super().eventFilter(obj, event)
+
+    def _show_custom_tooltip(self):
+        """Show custom tooltip for current cell"""
+        if not self._current_tooltip_index.isValid():
+            return
+
+        # Get tooltip text from model
+        tooltip_text = self.model().data(self._current_tooltip_index, Qt.ToolTipRole)
+        if not tooltip_text:
+            return
+
+        # Determine tooltip type based on content
+        tooltip_type = TooltipType.INFO
+        if "no metadata" in tooltip_text.lower() or "no hash" in tooltip_text.lower():
+            tooltip_type = TooltipType.WARNING
+        elif "error" in tooltip_text.lower() or "invalid" in tooltip_text.lower():
+            tooltip_type = TooltipType.ERROR
+        elif "metadata" in tooltip_text.lower() or "hash" in tooltip_text.lower():
+            tooltip_type = TooltipType.INFO
+
+        # Show custom tooltip
+        TooltipHelper.show_tooltip(
+            self.viewport(),
+            tooltip_text,
+            tooltip_type,
+            persistent=True
+        )
 
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
