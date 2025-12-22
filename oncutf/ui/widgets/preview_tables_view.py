@@ -549,7 +549,7 @@ class PreviewTablesView(QWidget):
             if status != "valid":
                 tooltip = self._get_status_tooltip(status, new_name)
                 tooltip_type = TooltipType.ERROR if status == "invalid" else TooltipType.WARNING
-                TooltipHelper.setup_item_tooltip(self.new_name_table, new_name_item, tooltip, tooltip_type)
+                TooltipHelper.setup_item_tooltip(self.new_names_table, new_name_item, tooltip, tooltip_type)
 
     def _get_status_tooltip(self, status: str, new_name: str) -> str:
         """Get tooltip text for a given status."""
