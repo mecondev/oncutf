@@ -128,7 +128,9 @@ class ValidationIssuesDialog(QDialog):
             item_text = f"{icon} {issue.message}"
 
             item = QListWidgetItem(item_text)
-            item.setToolTip(issue.technical_details)
+            TooltipHelper.setup_item_tooltip(
+                list_widget, item, issue.technical_details, TooltipType.WARNING
+            )
             list_widget.addItem(item)
 
     def _get_issue_icon(self, issue_type: ValidationIssueType) -> str:

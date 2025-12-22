@@ -33,6 +33,7 @@ from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.theme import get_theme_color
 from oncutf.utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -547,7 +548,8 @@ class PreviewTablesView(QWidget):
             # Set tooltip for new name
             if status != "valid":
                 tooltip = self._get_status_tooltip(status, new_name)
-                new_name_item.setToolTip(tooltip)
+                tooltip_type = TooltipType.ERROR if status == "invalid" else TooltipType.WARNING
+                TooltipHelper.setup_item_tooltip(self.new_name_table, new_name_item, tooltip, tooltip_type)
 
     def _get_status_tooltip(self, status: str, new_name: str) -> str:
         """Get tooltip text for a given status."""

@@ -14,11 +14,12 @@ Classes:
 - TooltipHelper: Central management class for tooltip operations
 - TooltipType: Constants for different tooltip types
 - ActionTooltipFilter: Event filter for QAction custom tooltips
+- ItemTooltipFilter: Event filter for QListWidget/QTableWidget item tooltips
 - Convenience functions for easy tooltip display
 """
 
 from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QLabel, QMenu, QWidget
+from PyQt5.QtWidgets import QApplication, QLabel, QListWidget, QMenu, QTableWidget, QWidget
 
 from oncutf.config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
 from oncutf.utils.logger_helper import get_logger
@@ -208,6 +209,91 @@ class ActionTooltipFilter(QObject):
     def register_action(self, action, text: str, tooltip_type: str) -> None:
         """Register an action with custom tooltip data"""
         self.tooltip_data[action] = (text, tooltip_type)
+
+
+class ItemTooltipFilter(QObject):
+    """Event filter for QListWidget/QTableWidget to show custom tooltips on item hover"""
+
+    def __init__(self, widget: QListWidget | QTableWidget, parent: QObject | None = None):
+        super().__init__(parent)
+        self.widget = widget
+        self.current_tooltip: CustomTooltip | None = None
+        self.hover_timer = QTimer()
+        self.hover_timer.setSingleShot(True)
+        self.hover_timer.timeout.connect(self._show_tooltip)
+        self.current_item = None
+        self.tooltip_data: dict = {}  # item -> (text, type)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Filter events on widget to detect item hover"""
+        if obj != self.widget.viewport():
+            return False
+
+        if event.type() == QEvent.ToolTip:
+            # Suppress default Qt tooltips
+            return True
+
+        elif event.type() == QEvent.MouseMove:
+            # Find item under mouse
+            if isinstance(self.widget, QListWidget):
+                item = self.widget.itemAt(event.pos())
+            else:  # QTableWidget
+                item = self.widget.itemAt(event.pos())
+
+            if item != self.current_item:
+                # Item changed, hide current tooltip and start timer for new one
+                self._hide_tooltip()
+                self.current_item = item
+
+                if item and item in self.tooltip_data:
+                    # Start timer to show tooltip after hover delay
+                    self.hover_timer.start(600)  # 600ms delay
+                return False
+
+        elif event.type() == QEvent.Leave:
+            # Mouse left widget, hide tooltip
+            self._hide_tooltip()
+
+        return False
+
+    def _show_tooltip(self) -> None:
+        """Show tooltip for current item"""
+        if not self.current_item or self.current_item not in self.tooltip_data:
+            return
+
+        text, tooltip_type = self.tooltip_data[self.current_item]
+
+        # Hide any existing tooltip
+        self._hide_tooltip()
+
+        # Create new tooltip
+        self.current_tooltip = CustomTooltip(
+            self.widget.window(), text, tooltip_type, persistent=True
+        )
+
+        # Position tooltip near cursor
+        from PyQt5.QtGui import QCursor
+
+        global_pos = QCursor.pos()
+        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
+        tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
+
+        # Show tooltip (persistent, no auto-hide)
+        self.current_tooltip.show_tooltip(tooltip_pos, duration=0)
+
+    def _hide_tooltip(self) -> None:
+        """Hide current tooltip"""
+        self.hover_timer.stop()
+        self.current_item = None
+
+        if self.current_tooltip:
+            self.current_tooltip.hide()
+            self.current_tooltip.deleteLater()
+            self.current_tooltip = None
+
+    def register_item(self, item, text: str, tooltip_type: str) -> None:
+        """Register an item with custom tooltip data"""
+        self.tooltip_data[item] = (text, tooltip_type)
 
 
 class TooltipHelper:
@@ -439,6 +525,31 @@ class TooltipHelper:
 
         # Register action with custom tooltip data
         menu._tooltip_filter.register_action(action, message, tooltip_type)
+
+    @classmethod
+    def setup_item_tooltip(
+        cls,
+        widget: QListWidget | QTableWidget,
+        item,
+        message: str,
+        tooltip_type: str = TooltipType.INFO,
+    ) -> None:
+        """
+        Setup a custom tooltip for a QListWidgetItem or QTableWidgetItem
+
+        Args:
+            widget: The QListWidget or QTableWidget containing the item
+            item: The item to add tooltip to
+            message: Tooltip text
+            tooltip_type: Type of tooltip styling
+        """
+        # Install event filter on widget viewport if not already installed
+        if not hasattr(widget, "_item_tooltip_filter"):
+            widget._item_tooltip_filter = ItemTooltipFilter(widget)
+            widget.viewport().installEventFilter(widget._item_tooltip_filter)
+
+        # Register item with custom tooltip data
+        widget._item_tooltip_filter.register_item(item, message, tooltip_type)
 
     @classmethod
     def show_error_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:
