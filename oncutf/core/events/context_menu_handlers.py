@@ -22,6 +22,7 @@ from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.file_status_helpers import has_hash, has_metadata
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
@@ -194,15 +195,15 @@ class ContextMenuHandlers:
             load_fast_tip = selected_analysis["fast_tooltip"]
             if sel_count < total_files:
                 load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            action_load_fast.setToolTip(load_fast_tip)
+            TooltipHelper.setup_action_tooltip(action_load_fast, load_fast_tip, TooltipType.INFO, menu)
 
             load_ext_tip = selected_analysis["extended_tooltip"]
             if sel_count < total_files:
                 load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            action_load_extended.setToolTip(load_ext_tip)
+            TooltipHelper.setup_action_tooltip(action_load_extended, load_ext_tip, TooltipType.INFO, menu)
         else:
-            action_load_fast.setToolTip("Select files first (Ctrl+A to select all)")
-            action_load_extended.setToolTip("Select files first (Ctrl+A to select all)")
+            TooltipHelper.setup_action_tooltip(action_load_fast, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(action_load_extended, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
 
         menu.addSeparator()
 
@@ -233,9 +234,6 @@ class ContextMenuHandlers:
 
         has_multiple_folders = len(folders) >= 2
         action_auto_color_folders.setEnabled(has_multiple_folders)
-
-        # Use TooltipHelper for custom styled tooltips
-        from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
         if has_multiple_folders:
             TooltipHelper.setup_action_tooltip(
@@ -275,9 +273,9 @@ class ContextMenuHandlers:
             hash_tip = selected_hash_analysis["selected_tooltip"]
             if sel_count < total_files:
                 hash_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            action_calculate_hashes.setToolTip(hash_tip)
+            TooltipHelper.setup_action_tooltip(action_calculate_hashes, hash_tip, TooltipType.INFO, menu)
         else:
-            action_calculate_hashes.setToolTip("Select files first (Ctrl+A to select all)")
+            TooltipHelper.setup_action_tooltip(action_calculate_hashes, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
 
         # Show results hash list action
         action_show_hash_results = create_action_with_shortcut(
@@ -287,10 +285,11 @@ class ContextMenuHandlers:
 
         # Enable only if there are selected files
         action_show_hash_results.setEnabled(has_selection)
-        action_show_hash_results.setToolTip(
-            "Display hashes for selected files that have been calculated"
-            if has_selection
-            else "Select files first to show their hashes"
+        TooltipHelper.setup_action_tooltip(
+            action_show_hash_results,
+            "Display hashes for selected files that have been calculated" if has_selection else "Select files first to show their hashes",
+            TooltipType.INFO if has_selection else TooltipType.WARNING,
+            menu
         )
 
         # Connect show hash results action
@@ -314,10 +313,12 @@ class ContextMenuHandlers:
 
         action_save_all_modified.setEnabled(has_modifications)
 
-        if has_modifications:
-            action_save_all_modified.setToolTip("Save all modified metadata (Ctrl+S)")
-        else:
-            action_save_all_modified.setToolTip("No modified metadata to save")
+        TooltipHelper.setup_action_tooltip(
+            action_save_all_modified,
+            "Save all modified metadata (Ctrl+S)" if has_modifications else "No modified metadata to save",
+            TooltipType.INFO if has_modifications else TooltipType.WARNING,
+            menu
+        )
 
         action_save_all_modified.triggered.connect(
             self.parent_window.shortcut_save_all_metadata
@@ -337,9 +338,9 @@ class ContextMenuHandlers:
             rotation_tip = f"Reset rotation to 0 for {sel_count} selected file(s)"
             if sel_count < total_files:
                 rotation_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            action_set_rotation.setToolTip(rotation_tip)
+            TooltipHelper.setup_action_tooltip(action_set_rotation, rotation_tip, TooltipType.INFO, menu)
         else:
-            action_set_rotation.setToolTip("Select files first (Ctrl+A to select all)")
+            TooltipHelper.setup_action_tooltip(action_set_rotation, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
 
         menu.addSeparator()
 
@@ -416,16 +417,19 @@ class ContextMenuHandlers:
             export_tip = f"Export metadata for {sel_count} selected file(s)"
             if sel_count < total_files:
                 export_tip += f" (Tip: Ctrl+A to export all {total_files} files)"
-            action_export_sel.setToolTip(export_tip)
+            TooltipHelper.setup_action_tooltip(action_export_sel, export_tip, TooltipType.INFO, menu)
         else:
-            action_export_sel.setToolTip("Select files first (Ctrl+A to select all)")
+            TooltipHelper.setup_action_tooltip(action_export_sel, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
 
         if total_files > 0:
-            action_export_all.setToolTip(
-                f"Export metadata for all {total_files} files in folder"
+            TooltipHelper.setup_action_tooltip(
+                action_export_all,
+                f"Export metadata for all {total_files} files in folder",
+                TooltipType.INFO,
+                menu
             )
         else:
-            action_export_all.setToolTip("No files have metadata to export")
+            TooltipHelper.setup_action_tooltip(action_export_all, "No files have metadata to export", TooltipType.WARNING, menu)
 
         # Enable/disable logic for non-operation actions
         action_invert.setEnabled(total_files > 0 and has_selection)
