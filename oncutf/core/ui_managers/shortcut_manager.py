@@ -331,6 +331,17 @@ class ShortcutManager:
                     "Failed to show results dialog", success=False, auto_reset=True
                 )
 
+    def auto_color_by_folder_shortcut(self) -> None:
+        """
+        Auto-color files by folder triggered by Ctrl+Shift+C shortcut.
+        """
+        logger.info("[MainWindow] AUTO_COLOR: Ctrl+Shift+C key pressed")
+
+        if hasattr(self.main_window, "auto_color_by_folder"):
+            self.main_window.auto_color_by_folder()
+        else:
+            logger.warning("[MainWindow] AUTO_COLOR: Method not found in main window")
+
     def get_shortcut_status(self) -> dict:
         """
         Get current shortcut and initialization status.

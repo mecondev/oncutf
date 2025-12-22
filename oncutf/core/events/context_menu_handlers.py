@@ -219,6 +219,30 @@ class ContextMenuHandlers:
 
         menu.addSeparator()
 
+        # === COLOR OPERATIONS ===
+        action_auto_color_folders = create_action_with_shortcut(
+            get_menu_icon("palette"), "Auto-Color by Folder", "Ctrl+Shift+C"
+        )
+        menu.addAction(action_auto_color_folders)
+
+        # Enable only if we have 2+ folders
+        from pathlib import Path
+        folders = set()
+        for file_item in self.parent_window.file_model.files:
+            folders.add(str(Path(file_item.path).parent))
+
+        has_multiple_folders = len(folders) >= 2
+        action_auto_color_folders.setEnabled(has_multiple_folders)
+
+        if has_multiple_folders:
+            action_auto_color_folders.setToolTip(
+                f"Assign unique colors to files grouped by folder ({len(folders)} folders)"
+            )
+        else:
+            action_auto_color_folders.setToolTip("Need 2+ folders to auto-color")
+
+        menu.addSeparator()
+
         # === HASH OPERATIONS (Selection-only) ===
         action_calculate_hashes = create_action_with_shortcut(
             get_menu_icon("hash"), "Calculate Checksums", "Ctrl+H"
@@ -434,6 +458,9 @@ class ContextMenuHandlers:
 
         elif action == action_clear_table:
             self.parent_window.clear_file_table_shortcut()
+
+        elif action == action_auto_color_folders:
+            self.parent_window.auto_color_by_folder()
 
         elif action == action_deselect_all:
             self.parent_window.clear_all_selection()

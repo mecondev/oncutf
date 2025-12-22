@@ -162,6 +162,110 @@ class MainWindow(QMainWindow):
             logger.error("[MainWindow] Error showing command history dialog: %s", e)
             logger.info("[MainWindow] Unified command history not yet fully implemented")
 
+    def auto_color_by_folder(self) -> None:
+        """
+        Auto-color files by their parent folder (Ctrl+Shift+C).
+
+        Groups all files by folder and assigns unique random colors to each folder's files.
+        Skips files that already have colors assigned (preserves user choices).
+        Only works when 2+ folders are present.
+        """
+        logger.info("[MainWindow] AUTO_COLOR: Auto-color by folder requested")
+
+        try:
+            # Check if we have files
+            if not self.file_model or not self.file_model.files:
+                logger.info("[MainWindow] AUTO_COLOR: No files loaded")
+                if hasattr(self, "status_manager"):
+                    self.status_manager.set_file_operation_status(
+                        "No files loaded", success=False, auto_reset=True
+                    )
+                return
+
+            # Check if we have 2+ folders
+            from pathlib import Path
+            folders = set()
+            for file_item in self.file_model.files:
+                folders.add(str(Path(file_item.path).parent))
+
+            if len(folders) < 2:
+                logger.info("[MainWindow] AUTO_COLOR: Need at least 2 folders, found %d", len(folders))
+                if hasattr(self, "status_manager"):
+                    self.status_manager.set_file_operation_status(
+                        f"Need 2+ folders (found {len(folders)})", success=False, auto_reset=True
+                    )
+                return
+
+            # Check for files with existing colors
+            from oncutf.core.folder_color_command import AutoColorByFolderCommand
+
+            command = AutoColorByFolderCommand(
+                file_items=self.file_model.files,
+                db_manager=self.db_manager
+            )
+
+            files_with_colors = command.get_files_with_existing_colors()
+
+            # Show warning dialog if files already have colors
+            if files_with_colors:
+                from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+
+                count = len(files_with_colors)
+                sample = files_with_colors[:5]
+                sample_text = "\n".join(f"  • {f}" for f in sample)
+                if count > 5:
+                    sample_text += f"\n  ... and {count - 5} more"
+
+                message = f"{count} file(s) already have colors assigned:\n\n{sample_text}\n\nThese will be skipped. Continue?"
+
+                dialog = CustomMessageDialog(
+                    parent=self,
+                    title="Files Already Colored",
+                    message=message,
+                    buttons=["Proceed", "Cancel"],
+                    default_button="Proceed"
+                )
+
+                dialog.exec_()
+                if dialog.clicked_button != "Proceed":
+                    logger.info("[MainWindow] AUTO_COLOR: User cancelled")
+                    return
+
+            # Execute command
+            if command.execute():
+                # Add to command manager for undo/redo
+                from oncutf.core.metadata_command_manager import get_metadata_command_manager
+
+                cmd_manager = get_metadata_command_manager()
+                cmd_manager._undo_stack.append(command)
+                cmd_manager._emit_state_signals()
+
+                # Refresh table to show colors
+                self.file_table_model.layoutChanged.emit()
+
+                logger.info("[MainWindow] AUTO_COLOR: Successfully colored %d files across %d folders",
+                           len(command.new_colors), len(command.folder_colors))
+
+                if hasattr(self, "status_manager"):
+                    self.status_manager.set_file_operation_status(
+                        f"Auto-colored {len(command.new_colors)} files from {len(folders)} folders",
+                        success=True,
+                        auto_reset=True
+                    )
+            else:
+                logger.warning("[MainWindow] AUTO_COLOR: Command execution failed")
+                if hasattr(self, "status_manager"):
+                    self.status_manager.set_file_operation_status(
+                        "Auto-color failed", success=False, auto_reset=True
+                    )
+
+        except Exception as e:
+            logger.exception("[MainWindow] AUTO_COLOR: Error during auto-color: %s", e)
+            if hasattr(self, "status_manager"):
+                self.status_manager.set_file_operation_status(
+                    "Auto-color error", success=False, auto_reset=True
+                )
+
     def request_preview_update(self) -> None:
         """Request preview update via Application Service."""
         self.app_service.request_preview_update()

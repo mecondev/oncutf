@@ -755,6 +755,10 @@ class UIManager:
                 UNDO_REDO_SETTINGS.get("RESULTS_HASH_LIST_SHORTCUT", "Ctrl+L"),
                 self.parent_window.shortcut_manager.show_results_hash_list,
             ),  # Show results hash list dialog
+            (
+                "Ctrl+Shift+C",
+                self.parent_window.shortcut_manager.auto_color_by_folder_shortcut,
+            ),  # Auto-color by folder
         ]
         for key, handler in other_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window

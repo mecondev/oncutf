@@ -532,7 +532,7 @@ class MetadataWriter(QObject):
             from oncutf.core.metadata_commands import SaveMetadataCommand
 
             command_manager = get_metadata_command_manager()
-            if command_manager and SaveMetadataCommand:
+            if command_manager:
                 successful_files = []
                 successful_metadata: dict[str, Any] = {}
 
