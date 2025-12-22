@@ -209,30 +209,65 @@ class MainWindow(QMainWindow):
             # Show warning dialog if files already have colors
             if files_with_colors:
                 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+                from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
-                count = len(files_with_colors)
-                sample = files_with_colors[:5]
-                sample_text = "\n".join(f"  • {f}" for f in sample)
-                if count > 5:
-                    sample_text += f"\n  ... and {count - 5} more"
+                total_selected = len(self.file_model.files)
+                count_with_colors = len(files_with_colors)
 
-                message = f"{count} file(s) already have colors assigned:\n\n{sample_text}\n\nThese will be skipped. Continue?"
+                message = f"{count_with_colors} files already have colors out of {total_selected} selected.\n\nWhat would you like to do?"
 
                 dialog = CustomMessageDialog(
                     parent=self,
                     title="Files Already Colored",
                     message=message,
-                    buttons=["Proceed", "Cancel"],
-                    default_button="Proceed"
+                    buttons=["Proceed", "Skip", "Cancel"]
                 )
 
+                # Add custom tooltips to buttons using TooltipHelper
+                if "Proceed" in dialog._buttons:
+                    TooltipHelper._setup_persistent_tooltip(
+                        dialog._buttons["Proceed"],
+                        "Recolor ALL files including those with existing colors",
+                        TooltipType.INFO
+                    )
+                if "Skip" in dialog._buttons:
+                    TooltipHelper._setup_persistent_tooltip(
+                        dialog._buttons["Skip"],
+                        "Color only files without existing colors",
+                        TooltipType.INFO
+                    )
+                if "Cancel" in dialog._buttons:
+                    TooltipHelper._setup_persistent_tooltip(
+                        dialog._buttons["Cancel"],
+                        "Cancel the auto-color operation",
+                        TooltipType.WARNING
+                    )
+
                 dialog.exec_()
-                if dialog.clicked_button != "Proceed":
+
+                if dialog.selected == "Cancel" or dialog.selected is None:
                     logger.info("[MainWindow] AUTO_COLOR: User cancelled")
                     return
 
-            # Execute command
-            if command.execute():
+                # Set skip_existing based on user choice
+                skip_existing = (dialog.selected == "Skip")
+                logger.info("[MainWindow] AUTO_COLOR: User chose '%s' (skip_existing=%s)",
+                           dialog.selected, skip_existing)
+
+                # Recreate command with skip_existing based on user choice
+                command = AutoColorByFolderCommand(
+                    file_items=self.file_model.files,
+                    db_manager=self.db_manager,
+                    skip_existing=skip_existing
+                )
+
+            # Execute command with wait cursor
+            from oncutf.utils.cursor_helper import wait_cursor
+
+            with wait_cursor():
+                success = command.execute()
+
+            if success:
                 # Add to command manager for undo/redo
                 from oncutf.core.metadata_command_manager import get_metadata_command_manager
 
@@ -241,7 +276,7 @@ class MainWindow(QMainWindow):
                 cmd_manager._emit_state_signals()
 
                 # Refresh table to show colors
-                self.file_table_model.layoutChanged.emit()
+                self.file_model.layoutChanged.emit()
 
                 logger.info("[MainWindow] AUTO_COLOR: Successfully colored %d files across %d folders",
                            len(command.new_colors), len(command.folder_colors))

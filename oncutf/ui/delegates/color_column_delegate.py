@@ -234,6 +234,8 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         if not hasattr(model, 'files'):
             logger.warning("[ColorColumnDelegate] Model has no files attribute")
+            from oncutf.core.pyqt_imports import QApplication
+            QApplication.restoreOverrideCursor()
             return
 
         # Get database manager for persistence
@@ -244,6 +246,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         first_index = None
         last_index = None
 
+        # Apply colors (wait cursor already active from ColorGridMenu)
         for row in rows:
             if 0 <= row < len(model.files):
                 file_item = model.files[row]
@@ -275,6 +278,11 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             model.dataChanged.emit(first_color_idx, last_color_idx, [Qt.DecorationRole])
 
         logger.info("[ColorColumnDelegate] Colored %d files with %s", colored_count, color)
+
+        # Restore cursor after all operations complete
+        from oncutf.core.pyqt_imports import QApplication
+        QApplication.restoreOverrideCursor()
+        logger.info("[ColorColumnDelegate] Cursor restored")
 
     def _set_file_color(self, model, index, color):
         """

@@ -21,6 +21,7 @@ from oncutf.core.pyqt_imports import (
     QVBoxLayout,
 )
 from oncutf.models.validation_result import ValidationIssueType
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.models.validation_result import ValidationResult
@@ -78,17 +79,17 @@ class ValidationIssuesDialog(QDialog):
         button_layout = QHBoxLayout()
 
         skip_button = QPushButton("Skip and Continue")
-        skip_button.setToolTip("Continue with valid files only")
+        TooltipHelper.setup_tooltip(skip_button, "Continue with valid files only", TooltipType.INFO)
         skip_button.clicked.connect(lambda: self.done(self.SKIP_AND_CONTINUE))
         button_layout.addWidget(skip_button)
 
         refresh_button = QPushButton("Refresh Preview")
-        refresh_button.setToolTip("Regenerate preview with current files")
+        TooltipHelper.setup_tooltip(refresh_button, "Regenerate preview with current files", TooltipType.INFO)
         refresh_button.clicked.connect(lambda: self.done(self.REFRESH_PREVIEW))
         button_layout.addWidget(refresh_button)
 
         cancel_button = QPushButton("Cancel")
-        cancel_button.setToolTip("Cancel rename operation")
+        TooltipHelper.setup_tooltip(cancel_button, "Cancel rename operation", TooltipType.WARNING)
         cancel_button.clicked.connect(lambda: self.done(self.CANCEL_OPERATION))
         button_layout.addWidget(cancel_button)
 

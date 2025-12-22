@@ -253,10 +253,20 @@ class ColorGridMenu(QWidget):
             color: Selected hex color or "none"
         """
         logger.info("[ColorGridMenu] Color selected: %s", color)
-        self.color_selected.emit(color)
-        logger.info("[ColorGridMenu] Signal emitted, closing menu")
+
+        # Start wait cursor before anything else
+        from oncutf.core.pyqt_imports import QApplication
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        logger.info("[ColorGridMenu] Wait cursor started")
+
+        # Close menu first
         self.close()
         logger.info("[ColorGridMenu] Menu closed")
+
+        # Emit signal - the handler will apply colors and restore cursor
+        self.color_selected.emit(color)
+        logger.info("[ColorGridMenu] Signal emitted")
 
     def _open_color_picker(self):
         """Open the Qt custom color picker dialog."""

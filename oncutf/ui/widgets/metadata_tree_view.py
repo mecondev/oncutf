@@ -56,6 +56,7 @@ from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
 from oncutf.utils.placeholder_helper import create_placeholder_helper
 from oncutf.utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 # ApplicationContext integration
 try:
@@ -1036,7 +1037,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         if enabled:
             search_field.setEnabled(True)
             search_field.setReadOnly(False)
-            search_field.setToolTip("Search metadata...")
+            TooltipHelper.setup_tooltip(search_field, "Search metadata...", TooltipType.INFO)
             # Enable action icons
             if hasattr(parent_window, "search_action"):
                 parent_window.search_action.setEnabled(True)
@@ -1081,7 +1082,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             # Properly disable the field to prevent hover/click reactions
             search_field.setEnabled(False)
             search_field.setReadOnly(True)
-            search_field.setToolTip("No metadata available")
+            TooltipHelper.setup_tooltip(search_field, "No metadata available", TooltipType.WARNING)
             # Disable action icons to make them appear dimmed
             if hasattr(parent_window, "search_action"):
                 parent_window.search_action.setEnabled(False)

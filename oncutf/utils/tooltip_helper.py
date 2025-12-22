@@ -13,11 +13,12 @@ Classes:
 - CustomTooltip: Enhanced tooltip widget with custom styling
 - TooltipHelper: Central management class for tooltip operations
 - TooltipType: Constants for different tooltip types
+- ActionTooltipFilter: Event filter for QAction custom tooltips
 - Convenience functions for easy tooltip display
 """
 
-from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget
+from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QLabel, QMenu, QWidget
 
 from oncutf.config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
 from oncutf.utils.logger_helper import get_logger
@@ -72,15 +73,40 @@ class CustomTooltip(QLabel):
         }.get(self.tooltip_type, "InfoTooltip")
 
         self.setProperty("class", style_classes)
-        self.setWordWrap(True)
-        self.setMargin(2)  # Reduced from 3 to 2 pixels
+        self.setWordWrap(False)  # Only break on explicit \n
 
-        # Set size constraints for better text layout
-        self.setMinimumWidth(180)  # Increased from 120 to 180 pixels for longer lines
-        self.setMaximumWidth(400)  # Maximum width to prevent too wide tooltips
+        # Calculate optimal width and height based on text content using QFontMetrics
+        from PyQt5.QtGui import QFontMetrics
 
-        # Make sure tooltip adjusts to content
-        self.adjustSize()
+        fm = QFontMetrics(self.font())
+        text = self.text()
+
+        # Calculate padding based on font metrics (make it scalable)
+        line_height = fm.height()
+        # Padding: 6px top + 6px bottom from stylesheet = 12px base
+        # Scale with font size: use ~0.7 * line_height for vertical padding
+        vertical_padding = int(line_height * 0.7)
+        # Horizontal padding: 8px left + 8px right from stylesheet = 16px base
+        # Scale with font size: use ~1.0 * line_height for horizontal padding
+        horizontal_padding = int(line_height * 1.0)
+
+        if '\n' in text:
+            # Multi-line: calculate width based on longest line
+            lines = text.split('\n')
+            max_line_width = max(fm.horizontalAdvance(line) for line in lines)
+            optimal_width = min(max_line_width + horizontal_padding, 400)
+            # Calculate height: (line height + leading) * number of lines + vertical padding
+            optimal_height = (line_height * len(lines)) + vertical_padding
+        else:
+            # Single line: fit to content
+            text_width = fm.horizontalAdvance(text)
+            optimal_width = min(text_width + horizontal_padding, 400)
+            # Single line height + vertical padding
+            optimal_height = line_height + vertical_padding
+
+        self.setFixedWidth(optimal_width)
+        self.setFixedHeight(optimal_height)
+        self.setMaximumWidth(400)  # Safety limit
 
     def show_tooltip(self, position: QPoint, duration: int | None = None):
         """Show tooltip at specific position for specified duration"""
@@ -95,6 +121,93 @@ class CustomTooltip(QLabel):
         """Hide the tooltip"""
         self._timer.stop()
         self.hide()
+
+
+class ActionTooltipFilter(QObject):
+    """Event filter for QMenu to show custom tooltips on QAction hover"""
+
+    def __init__(self, menu: QMenu, parent: QObject | None = None):
+        super().__init__(parent)
+        self.menu = menu
+        self.current_tooltip: CustomTooltip | None = None
+        self.hover_timer = QTimer()
+        self.hover_timer.setSingleShot(True)
+        self.hover_timer.timeout.connect(self._show_tooltip)
+        self.current_action = None
+        self.tooltip_data: dict = {}  # action -> (text, type)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Filter events on QMenu to detect action hover"""
+        if obj != self.menu:
+            return False
+
+        if event.type() == QEvent.ToolTip:
+            # Suppress default Qt tooltips
+            return True
+
+        elif event.type() == QEvent.MouseMove:
+            # Find action under mouse
+            action = self.menu.actionAt(event.pos())
+
+            if action and action != self.current_action:
+                # New action hovered
+                self.current_action = action
+
+                # Hide previous tooltip
+                if self.current_tooltip:
+                    self.current_tooltip.hide()
+                    self.current_tooltip = None
+
+                # Schedule new tooltip show
+                if action in self.tooltip_data:
+                    self.hover_timer.start(600)  # 600ms delay
+
+            elif not action and self.current_action:
+                # Mouse left action area
+                self._hide_tooltip()
+
+        elif event.type() == QEvent.Leave:
+            # Mouse left menu
+            self._hide_tooltip()
+
+        return False
+
+    def _show_tooltip(self) -> None:
+        """Show custom tooltip for current action"""
+        if not self.current_action or self.current_action not in self.tooltip_data:
+            return
+
+        text, tooltip_type = self.tooltip_data[self.current_action]
+
+        # Create custom tooltip
+        self.current_tooltip = CustomTooltip(
+            self.menu.window(),
+            text,
+            tooltip_type,
+            persistent=False
+        )
+
+        # Position tooltip near cursor
+        from PyQt5.QtGui import QCursor
+        cursor_pos = QCursor.pos()
+        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
+        tooltip_pos = QPoint(cursor_pos.x() + offset_x, cursor_pos.y() + offset_y)
+
+        # Show tooltip
+        self.current_tooltip.show_tooltip(tooltip_pos, duration=0)  # No auto-hide
+
+    def _hide_tooltip(self) -> None:
+        """Hide current tooltip"""
+        self.hover_timer.stop()
+        self.current_action = None
+
+        if self.current_tooltip:
+            self.current_tooltip.hide()
+            self.current_tooltip = None
+
+    def register_action(self, action, text: str, tooltip_type: str) -> None:
+        """Register an action with custom tooltip data"""
+        self.tooltip_data[action] = (text, tooltip_type)
 
 
 class TooltipHelper:
@@ -297,6 +410,35 @@ class TooltipHelper:
             tooltip_type: Type of tooltip styling
         """
         cls._setup_persistent_tooltip(widget, message, tooltip_type)
+
+    @classmethod
+    def setup_action_tooltip(
+        cls, action, message: str, tooltip_type: str = TooltipType.INFO, menu: QMenu | None = None
+    ) -> None:
+        """
+        Setup a custom tooltip for QAction in a QMenu
+
+        Args:
+            action: The QAction to add tooltip to
+            message: Tooltip text
+            tooltip_type: Type of tooltip styling
+            menu: The QMenu containing the action (required for custom tooltips)
+
+        Note:
+            If menu is not provided, falls back to standard setToolTip()
+        """
+        if menu is None:
+            # Fallback to standard tooltip
+            action.setToolTip(message)
+            return
+
+        # Install event filter on menu if not already installed
+        if not hasattr(menu, "_tooltip_filter"):
+            menu._tooltip_filter = ActionTooltipFilter(menu)
+            menu.installEventFilter(menu._tooltip_filter)
+
+        # Register action with custom tooltip data
+        menu._tooltip_filter.register_action(action, message, tooltip_type)
 
     @classmethod
     def show_error_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:

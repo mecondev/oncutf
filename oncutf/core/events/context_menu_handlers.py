@@ -234,12 +234,23 @@ class ContextMenuHandlers:
         has_multiple_folders = len(folders) >= 2
         action_auto_color_folders.setEnabled(has_multiple_folders)
 
+        # Use TooltipHelper for custom styled tooltips
+        from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+
         if has_multiple_folders:
-            action_auto_color_folders.setToolTip(
-                f"Assign unique colors to files grouped by folder ({len(folders)} folders)"
+            TooltipHelper.setup_action_tooltip(
+                action_auto_color_folders,
+                f"Assign unique colors to files grouped by folder ({len(folders)} folders)",
+                TooltipType.INFO,
+                menu
             )
         else:
-            action_auto_color_folders.setToolTip("Need 2+ folders to auto-color")
+            TooltipHelper.setup_action_tooltip(
+                action_auto_color_folders,
+                "Need 2+ folders to auto-color",
+                TooltipType.WARNING,
+                menu
+            )
 
         menu.addSeparator()
 

@@ -26,6 +26,7 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -177,7 +178,7 @@ class DateTimeEditDialog(QDialog):
         for file_path in self.selected_files:
             checkbox = QCheckBox(file_path.name)
             checkbox.setChecked(True)
-            checkbox.setToolTip(str(file_path))
+            TooltipHelper.setup_tooltip(checkbox, str(file_path), TooltipType.INFO)
             self.checkboxes[str(file_path)] = checkbox
             self.content_layout.addWidget(checkbox)
 

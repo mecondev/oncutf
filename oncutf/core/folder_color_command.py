@@ -36,6 +36,7 @@ class AutoColorByFolderCommand(MetadataCommand):
         self,
         file_items: list[FileItem],
         db_manager: DatabaseManager,
+        skip_existing: bool = True,
         color_generator: ColorGenerator | None = None,
         timestamp: datetime | None = None,
     ):
@@ -45,6 +46,7 @@ class AutoColorByFolderCommand(MetadataCommand):
         Args:
             file_items: List of all file items in the table
             db_manager: Database manager instance
+            skip_existing: If True, skip files with existing colors; if False, recolor all
             color_generator: Color generator instance (optional)
             timestamp: Command creation timestamp
         """
@@ -52,6 +54,7 @@ class AutoColorByFolderCommand(MetadataCommand):
         super().__init__("", timestamp)
         self.file_items = file_items
         self.db_manager = db_manager
+        self.skip_existing = skip_existing
         self.color_generator = color_generator or ColorGenerator()
 
         # Store previous colors for undo
@@ -77,16 +80,11 @@ class AutoColorByFolderCommand(MetadataCommand):
             # Get existing colors from all files
             existing_colors = self._get_existing_colors()
 
-            # Assign colors to folders (skip first folder)
+            # Assign colors to all folders
             folder_paths = sorted(folder_groups.keys())  # Sort for deterministic order
             logger.debug("[AutoColorByFolder] Found %d folders: %s", len(folder_paths), folder_paths)
 
-            for idx, folder_path in enumerate(folder_paths):
-                if idx == 0:
-                    # Skip first folder (leave as "none" or keep existing)
-                    logger.debug("[AutoColorByFolder] Skipping first folder: %s", folder_path)
-                    continue
-
+            for folder_path in folder_paths:
                 # Generate unique color for this folder
                 color = self.color_generator.generate_unique_color(existing_colors)
                 if color is None:
@@ -99,8 +97,8 @@ class AutoColorByFolderCommand(MetadataCommand):
 
                 # Apply color to all files in this folder
                 for file_item in folder_groups[folder_path]:
-                    # Skip if file already has a color
-                    if file_item.color != "none":
+                    # Skip if file already has a color (only if skip_existing=True)
+                    if self.skip_existing and file_item.color != "none":
                         logger.debug(
                             "[AutoColorByFolder] Skipping file with existing color: %s (%s)",
                             file_item.filename,

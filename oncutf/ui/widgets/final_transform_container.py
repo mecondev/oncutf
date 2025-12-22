@@ -236,8 +236,6 @@ class FinalTransformContainer(QWidget):
             from oncutf.utils.tooltip_helper import TooltipHelper
 
             TooltipHelper.clear_tooltips_for_widget(self.remove_button)
-            # Remove the tooltip completely by setting empty tooltip
-            self.remove_button.setToolTip("")
 
             # Create disabled icon with reduced opacity
             from PyQt5.QtCore import Qt

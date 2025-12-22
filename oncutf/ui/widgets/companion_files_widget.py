@@ -31,6 +31,7 @@ from oncutf.config import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -59,8 +60,10 @@ class CompanionFilesWidget(QWidget):
 
         # Main enable/disable
         self.enabled_checkbox = QCheckBox("Enable companion files detection")
-        self.enabled_checkbox.setToolTip(
-            "Automatically detect companion files (like Sony XML metadata files, XMP sidecar files, etc.)"
+        TooltipHelper.setup_tooltip(
+            self.enabled_checkbox,
+            "Automatically detect companion files (like Sony XML metadata files, XMP sidecar files, etc.)",
+            TooltipType.INFO
         )
         self.enabled_checkbox.toggled.connect(self._on_settings_changed)
         layout.addWidget(self.enabled_checkbox)
@@ -72,17 +75,29 @@ class CompanionFilesWidget(QWidget):
         self.display_button_group = QButtonGroup(self)
 
         self.hide_radio = QRadioButton("Hide companion files from file table")
-        self.hide_radio.setToolTip("Companion files are detected but not shown in the main file list")
+        TooltipHelper.setup_tooltip(
+            self.hide_radio,
+            "Companion files are detected but not shown in the main file list",
+            TooltipType.INFO
+        )
         self.display_button_group.addButton(self.hide_radio, 0)
         display_layout.addWidget(self.hide_radio)
 
         self.show_radio = QRadioButton("Show companion files in file table")
-        self.show_radio.setToolTip("Companion files are shown alongside main files")
+        TooltipHelper.setup_tooltip(
+            self.show_radio,
+            "Companion files are shown alongside main files",
+            TooltipType.INFO
+        )
         self.display_button_group.addButton(self.show_radio, 1)
         display_layout.addWidget(self.show_radio)
 
         self.grouped_radio = QRadioButton("Show companion files grouped with main files")
-        self.grouped_radio.setToolTip("Companion files are shown but grouped/indented under main files")
+        TooltipHelper.setup_tooltip(
+            self.grouped_radio,
+            "Companion files are shown but grouped/indented under main files",
+            TooltipType.INFO
+        )
         self.grouped_radio.setEnabled(False)  # Future feature
         self.display_button_group.addButton(self.grouped_radio, 2)
         display_layout.addWidget(self.grouped_radio)
@@ -101,15 +116,19 @@ class CompanionFilesWidget(QWidget):
         behavior_layout = QVBoxLayout(behavior_group)
 
         self.auto_rename_checkbox = QCheckBox("Automatically rename companion files when main file is renamed")
-        self.auto_rename_checkbox.setToolTip(
-            "When you rename a video file, its companion XML file will also be renamed to match"
+        TooltipHelper.setup_tooltip(
+            self.auto_rename_checkbox,
+            "When you rename a video file, its companion XML file will also be renamed to match",
+            TooltipType.INFO
         )
         self.auto_rename_checkbox.toggled.connect(self._on_settings_changed)
         behavior_layout.addWidget(self.auto_rename_checkbox)
 
         self.load_metadata_checkbox = QCheckBox("Load metadata from companion files")
-        self.load_metadata_checkbox.setToolTip(
-            "Extract and display metadata from companion files (like Sony XML files) in the metadata view"
+        TooltipHelper.setup_tooltip(
+            self.load_metadata_checkbox,
+            "Extract and display metadata from companion files (like Sony XML files) in the metadata view",
+            TooltipType.INFO
         )
         self.load_metadata_checkbox.toggled.connect(self._on_settings_changed)
         behavior_layout.addWidget(self.load_metadata_checkbox)
@@ -140,7 +159,11 @@ class CompanionFilesWidget(QWidget):
         buttons_layout = QHBoxLayout()
 
         self.detect_button = QPushButton("Detect Companion Files in Current Folder")
-        self.detect_button.setToolTip("Scan the current folder for companion files and show a report")
+        TooltipHelper.setup_tooltip(
+            self.detect_button,
+            "Scan the current folder for companion files and show a report",
+            TooltipType.INFO
+        )
         self.detect_button.clicked.connect(self._detect_companion_files)
         buttons_layout.addWidget(self.detect_button)
 

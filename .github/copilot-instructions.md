@@ -200,7 +200,7 @@ with wait_cursor():
 | `CustomMessageDialog` | `from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog` | `QMessageBox` |
 | `ProgressDialog` | `from oncutf.utils.progress_dialog import ProgressDialog` | `QProgressDialog` |
 | `ResultsTableDialog` | `from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog` | Custom results display |
-| `TooltipHelper` | `from oncutf.utils.tooltip_helper import TooltipHelper` | `QToolTip` |
+| `TooltipHelper` | `from oncutf.utils.tooltip_helper import TooltipHelper` |
 
 ### Timer & Scheduling
 

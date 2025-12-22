@@ -139,6 +139,7 @@ class ThemeEngine:
             "base_weight": "400",
             "interface_size": "9pt",
             "tree_size": "10pt",
+            "tooltip_size": "10pt",
             "medium_weight": "500",
             "semibold_weight": "600",
         }
@@ -1433,8 +1434,8 @@ class ThemeEngine:
                 color: {self.colors["tooltip_text"]};
                 border: 1px solid {self.colors["tooltip_border"]};
                 border-radius: 6px;
-                padding: 2px 4px;
-                font-size: {self.fonts["interface_size"]};
+                padding: 6px 4px;
+                font-size: {self.fonts["tooltip_size"]};
             }}
 
             /* Custom Error Tooltip */
@@ -1443,8 +1444,8 @@ class ThemeEngine:
                 color: {self.colors["tooltip_error_text"]};
                 border: 1px solid {self.colors["tooltip_error_border"]};
                 border-radius: 6px;
-                padding: 2px 4px;
-                font-size: {self.fonts["interface_size"]};
+                padding: 6px 8px;
+                font-size: {self.fonts["tooltip_size"]};
                 font-weight: normal;
             }}
 
@@ -1454,8 +1455,8 @@ class ThemeEngine:
                 color: {self.colors["tooltip_warning_text"]};
                 border: 1px solid {self.colors["tooltip_warning_border"]};
                 border-radius: 6px;
-                padding: 2px 4px;
-                font-size: {self.fonts["interface_size"]};
+                padding: 6px 8px;
+                font-size: {self.fonts["tooltip_size"]};
                 font-weight: normal;
             }}
 
@@ -1465,8 +1466,8 @@ class ThemeEngine:
                 color: {self.colors["tooltip_info_text"]};
                 border: 1px solid {self.colors["tooltip_info_border"]};
                 border-radius: 6px;
-                padding: 2px 4px;
-                font-size: {self.fonts["interface_size"]};
+                padding: 6px 8px;
+                font-size: {self.fonts["tooltip_size"]};
                 font-weight: normal;
             }}
 
@@ -1476,8 +1477,8 @@ class ThemeEngine:
                 color: {self.colors["tooltip_success_text"]};
                 border: 1px solid {self.colors["tooltip_success_border"]};
                 border-radius: 6px;
-                padding: 2px 4px;
-                font-size: {self.fonts["interface_size"]};
+                padding: 6px 8px;
+                font-size: {self.fonts["tooltip_size"]};
                 font-weight: normal;
             }}
 
