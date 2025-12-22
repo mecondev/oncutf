@@ -1188,6 +1188,16 @@ COLOR_SWATCH_SIZE = 16  # Size of each color button in pixels
 COLOR_PICKER_IMAGE = "resources/images/color_range.jpg"
 
 # =====================================
+# AUTO-COLOR FOLDERS CONFIGURATION
+# =====================================
+
+# Manual auto-color action for organizing files by folder
+AUTO_COLOR_FOLDERS_ENABLED = True  # Feature flag to enable/disable the action
+AUTO_COLOR_FOLDERS_SHORTCUT = "Ctrl+Shift+C"  # Keyboard shortcut for auto-color command
+AUTO_COLOR_MIN_BRIGHTNESS = 32  # Minimum value for each RGB component (0-255)
+AUTO_COLOR_MAX_RETRIES = 100  # Maximum attempts to find unique color
+
+# =====================================
 # METADATA STATUS ICON COLORS
 # =====================================
 
