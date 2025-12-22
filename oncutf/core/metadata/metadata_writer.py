@@ -232,26 +232,114 @@ class MetadataWriter(QObject):
     def _save_metadata_files(
         self,
         files_to_save: list[Any],
-        all_modifications: dict[str, Any],  # noqa: ARG002 - stub implementation
-        is_exit_save: bool = False,  # noqa: ARG002
+        all_modifications: dict[str, Any],
+        is_exit_save: bool = False,
     ) -> None:
         """Save metadata files using ExifTool.
-
-        NOTE: This is a stub implementation. Full save logic with progress dialogs
-        will be implemented in the next step to keep changes incremental.
 
         Args:
             files_to_save: List of FileItem objects to save
             all_modifications: Dictionary of all staged modifications
             is_exit_save: If True, ESC will be blocked in progress dialog
         """
+        import contextlib
+
+        from oncutf.core.pyqt_imports import QApplication
+        from oncutf.utils.cursor_helper import wait_cursor
+
         if not files_to_save:
             return
 
-        logger.debug(
-            "[MetadataWriter] _save_metadata_files stub called with %d files", len(files_to_save)
+        success_count = 0
+        failed_files: list[str] = []
+        _loading_dialog = None
+
+        file_count = len(files_to_save)
+        save_mode = "single_file_wait_cursor" if file_count == 1 else "multiple_files_dialog"
+
+        logger.info(
+            "[MetadataWriter] Saving metadata for %d file(s) using mode: %s",
+            file_count,
+            save_mode,
         )
-        # Full implementation to be added in next step
+
+        try:
+            if save_mode == "multiple_files_dialog":
+                from oncutf.utils.progress_dialog import ProgressDialog
+
+                cancel_callback = self.request_save_cancel if not is_exit_save else None
+                _loading_dialog = ProgressDialog(
+                    parent=self.parent_window,
+                    operation_type="metadata_save",
+                    cancel_callback=cancel_callback,
+                    show_enhanced_info=False,
+                    is_exit_save=is_exit_save,
+                )
+                _loading_dialog.set_status("Saving metadata...")
+                _loading_dialog.show()
+                QApplication.processEvents()
+
+            cursor_context = (
+                wait_cursor()
+                if save_mode == "single_file_wait_cursor"
+                else contextlib.nullcontext()
+            )
+
+            with cursor_context:
+                current_file_index = 0
+                for file_item in files_to_save:
+                    if self._save_cancelled:
+                        logger.info(
+                            "[MetadataWriter] Save cancelled after %d/%d files",
+                            success_count,
+                            file_count,
+                        )
+                        break
+
+                    current_file_index += 1
+
+                    if _loading_dialog:
+                        _loading_dialog.set_filename(file_item.filename)
+                        _loading_dialog.set_count(current_file_index, file_count)
+                        _loading_dialog.set_progress(current_file_index, file_count)
+                        QApplication.processEvents()
+
+                    file_path = file_item.full_path
+                    modifications = self._get_modified_metadata_for_file(
+                        file_path, all_modifications
+                    )
+
+                    if not modifications:
+                        continue
+
+                    try:
+                        success = self.exiftool_wrapper.write_metadata(file_path, modifications)
+
+                        if success:
+                            success_count += 1
+                            self._update_file_after_save(file_item, modifications)
+                        else:
+                            failed_files.append(file_item.filename)
+
+                    except Exception:
+                        failed_files.append(file_item.filename)
+                        logger.exception(
+                            "[MetadataWriter] Error saving metadata for %s",
+                            file_item.filename,
+                        )
+
+        except Exception:
+            logger.exception("[MetadataWriter] Error in metadata saving process")
+        finally:
+            if _loading_dialog:
+                _loading_dialog.close()
+
+        was_cancelled = self._save_cancelled
+        self._show_save_results(success_count, failed_files, files_to_save, was_cancelled)
+
+        # Record save command
+        if success_count > 0:
+            self._record_save_command(files_to_save, failed_files, all_modifications)
 
     def _get_modified_metadata_for_file(
         self, file_path: str, all_modified_metadata: dict[str, Any]
@@ -272,3 +360,197 @@ class MetadataWriter(QObject):
 
         # Not found
         return {}
+
+    def _update_file_after_save(
+        self, file_item: Any, saved_metadata: dict[str, Any] | None = None
+    ) -> None:
+        """Update file item after successful metadata save."""
+        import contextlib
+        from datetime import datetime
+
+        # Clear staged changes
+        try:
+            staging_manager = self.parent_window.context.get_manager("metadata_staging")
+            staging_manager.clear_staged_changes(file_item.full_path)
+        except KeyError:
+            pass
+
+        # Update caches
+        if saved_metadata:
+            self._update_caches_after_save(file_item, saved_metadata)
+
+        # Clear modifications in tree view
+        if hasattr(self.parent_window, "metadata_tree_view"):
+            self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+
+        # Update modification time
+        with contextlib.suppress(Exception):
+            file_item.date_modified = datetime.fromtimestamp(
+                os.path.getmtime(file_item.full_path)
+            )
+
+        # Refresh display if this file is shown
+        self._refresh_display_if_current(file_item)
+
+    def _update_caches_after_save(
+        self, file_item: Any, saved_metadata: dict[str, Any]
+    ) -> None:
+        """Update UI and persistent caches after save."""
+        # Update UI cache
+        if hasattr(self.parent_window, "metadata_cache"):
+            cache = self.parent_window.metadata_cache
+            entry = cache.get_entry(file_item.full_path)
+            if entry and hasattr(entry, "data"):
+                for key_path, new_value in saved_metadata.items():
+                    self._update_nested_metadata(entry.data, key_path, new_value)
+                entry.modified = False
+
+        # Update persistent cache
+        try:
+            from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+
+            persistent_cache = get_persistent_metadata_cache()
+            if persistent_cache:
+                current = persistent_cache.get(file_item.full_path)
+                if current:
+                    updated = dict(current)
+                    for key_path, new_value in saved_metadata.items():
+                        self._update_nested_metadata(updated, key_path, new_value)
+                    persistent_cache.set(file_item.full_path, updated, is_extended=False)
+        except Exception:
+            logger.warning(
+                "[MetadataWriter] Failed to update persistent cache", exc_info=True
+            )
+
+    def _update_nested_metadata(
+        self, data: dict[str, Any], key_path: str, value: str
+    ) -> None:
+        """Update nested metadata structure."""
+        if "/" in key_path or ":" in key_path:
+            sep = "/" if "/" in key_path else ":"
+            parts = key_path.split(sep, 1)
+            if len(parts) == 2:
+                group, key = parts
+                if group not in data:
+                    data[group] = {}
+                if isinstance(data[group], dict):
+                    data[group][key] = value
+                else:
+                    data[group] = {key: value}
+            else:
+                data[key_path] = value
+        else:
+            data[key_path] = value
+
+    def _refresh_display_if_current(self, file_item: Any) -> None:
+        """Refresh metadata display if file is currently shown."""
+        if not hasattr(self.parent_window, "metadata_tree_view"):
+            return
+        tree = self.parent_window.metadata_tree_view
+        if (
+            hasattr(tree, "_current_file_path")
+            and tree._current_file_path == file_item.full_path
+        ):
+            if hasattr(self.parent_window, "metadata_cache"):
+                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if entry and hasattr(entry, "data"):
+                    display_data = dict(entry.data)
+                    display_data["FileName"] = file_item.filename
+                    tree.display_metadata(display_data, context="after_save")
+
+    def _show_save_results(
+        self,
+        success_count: int,
+        failed_files: list[str],
+        files_to_save: list[Any],
+        was_cancelled: bool = False,
+    ) -> None:
+        """Show results of metadata save operation."""
+        total_files = len(files_to_save)
+
+        if was_cancelled:
+            skipped_count = total_files - success_count - len(failed_files)
+            message = (
+                f"Save cancelled after {success_count}/{total_files} files"
+                if success_count
+                else "Save cancelled"
+            )
+            logger.info("[MetadataWriter] %s", message)
+
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
+                self.parent_window.status_bar.showMessage(
+                    message, 5000 if success_count else 3000
+                )
+
+            if self.parent_window:
+                from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+
+                msg_parts = ["Save operation cancelled by user."]
+                if success_count > 0:
+                    msg_parts.append(f"\nSuccessfully saved: {success_count} files")
+                if failed_files:
+                    msg_parts.append(f"Failed: {len(failed_files)} files")
+                if skipped_count > 0:
+                    msg_parts.append(f"Skipped: {skipped_count} files")
+
+                CustomMessageDialog.information(
+                    self.parent_window, "Save Cancelled", "\n".join(msg_parts)
+                )
+            return
+
+        if success_count > 0:
+            logger.info("[MetadataWriter] Saved metadata for %d files", success_count)
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
+                self.parent_window.status_bar.showMessage(
+                    f"Metadata saved for {success_count} files", 3000
+                )
+
+        if failed_files:
+            logger.warning(
+                "[MetadataWriter] Failed to save %d files", len(failed_files)
+            )
+            if self.parent_window:
+                from oncutf.core.pyqt_imports import QMessageBox
+
+                QMessageBox.warning(
+                    self.parent_window,
+                    "Metadata Save Error",
+                    f"Failed to save metadata for {len(failed_files)} files.\n\n"
+                    f"Files: {', '.join(failed_files[:5])}"
+                    f"{'...' if len(failed_files) > 5 else ''}",
+                )
+
+    def _record_save_command(
+        self,
+        files_to_save: list[Any],
+        failed_files: list[str],
+        all_modifications: dict[str, Any],
+    ) -> None:
+        """Record save command for undo/redo."""
+        try:
+            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata_commands import SaveMetadataCommand
+
+            command_manager = get_metadata_command_manager()
+            if command_manager and SaveMetadataCommand:
+                successful_files = []
+                successful_metadata: dict[str, Any] = {}
+
+                for file_item in files_to_save:
+                    if file_item.filename not in failed_files:
+                        successful_files.append(file_item.full_path)
+                        mods = self._get_modified_metadata_for_file(
+                            file_item.full_path, all_modifications
+                        )
+                        if mods:
+                            successful_metadata[file_item.full_path] = mods
+
+                if successful_files:
+                    save_command = SaveMetadataCommand(
+                        file_paths=successful_files, saved_metadata=successful_metadata
+                    )
+                    command_manager.execute_command(save_command)
+        except Exception:
+            logger.warning(
+                "[MetadataWriter] Error recording save command", exc_info=True
+            )
