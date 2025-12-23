@@ -188,6 +188,7 @@ class MetadataDisplayState:
     expanded_groups: set[str] = field(default_factory=set)
     search_filter: str = ""
     is_placeholder: bool = True
+    is_extended_metadata: bool = False  # Whether metadata was loaded in extended mode
 
     @property
     def has_file(self) -> bool:

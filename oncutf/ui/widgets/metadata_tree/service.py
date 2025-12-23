@@ -503,15 +503,15 @@ class MetadataTreeService:
 
         Args:
             metadata: Raw metadata
-            display_state: Current state (may contain pre-detected extended keys)
+            display_state: Current state with is_extended_metadata flag
 
         Returns:
             Set of keys that are extended-only
         """
         extended_keys = set(display_state.extended_keys)
 
-        # If metadata is marked as extended
-        if metadata.get("__extended__"):
+        # If metadata was loaded in extended mode, detect extended-only keys
+        if display_state.is_extended_metadata or metadata.get("__extended__"):
             # Use heuristic based on key patterns
             for key in metadata:
                 key_lower = key.lower()

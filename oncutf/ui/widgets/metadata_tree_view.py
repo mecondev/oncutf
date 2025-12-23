@@ -1336,46 +1336,23 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             return
 
         try:
-            # Prepare display data
-            display_data = dict(metadata)
-            filename = metadata.get("FileName")
-            if filename:
-                display_data["FileName"] = filename
-
-            # Store display_data for later use
-            self._current_display_data = display_data
-
             # Try to determine file path for scroll position memory
             self._set_current_file_from_metadata(metadata)
 
             # Use controller for building tree model (Phase 4 refactoring)
+            # All business logic (display data prep, extended key detection)
+            # is handled by the service layer
             if self._controller is None:
                 self._lazy_init_controller()
 
-            # Prepare display state for controller
+            # Prepare minimal display state - service handles all the logic
             from oncutf.ui.widgets.metadata_tree.model import MetadataDisplayState
 
             display_state = MetadataDisplayState(file_path=self._current_file_path)
 
-            # Detect extended metadata
+            # Pass __extended__ flag to display state for service to handle
             if metadata.get("__extended__"):
-                # Mark extended keys using heuristic
-                for key in metadata:
-                    key_lower = key.lower()
-                    if any(
-                        pattern in key_lower
-                        for pattern in [
-                            "accelerometer",
-                            "gyro",
-                            "pitch",
-                            "roll",
-                            "yaw",
-                            "segment",
-                            "embedded",
-                            "extended",
-                        ]
-                    ):
-                        display_state.extended_keys.add(key)
+                display_state.is_extended_metadata = True
 
             # Set rebuild lock BEFORE model operations
             self._rebuild_in_progress = True
@@ -1385,8 +1362,14 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 extra={"dev_only": True},
             )
 
-            # Build tree model using controller
+            # Build tree model using controller - delegates ALL logic to service
             tree_model = self._controller.build_qt_model(metadata, display_state)
+
+            # Store display_data for later use (from metadata directly)
+            self._current_display_data = dict(metadata)
+
+            # Get filename for logging
+            filename = metadata.get("FileName", "unknown")
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
@@ -1450,7 +1433,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             self._update_header_visibility()
 
             # Update information label with metadata count
-            self._update_information_label(display_data)
+            self._update_information_label(self._current_display_data)
 
             # Update header visibility for content mode
             self._update_header_visibility()
