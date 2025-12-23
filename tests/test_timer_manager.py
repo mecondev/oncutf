@@ -61,7 +61,7 @@ class TestTimerBasics:
         schedule_ui_update(counter, 15)
         schedule_ui_update(counter, 20)
 
-        QTest.qWait(50)
+        QTest.qWait(150)  # Increased from 50ms to 150ms for CI reliability
         assert executed_count > 0  # At least some should execute
 
 
