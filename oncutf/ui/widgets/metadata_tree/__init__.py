@@ -22,6 +22,11 @@ For advanced usage:
 """
 
 # Phase 1: Data model only
+# Phase 3: Controller layer
+from oncutf.ui.widgets.metadata_tree.controller import (
+    MetadataTreeController,
+    create_metadata_tree_controller,
+)
 from oncutf.ui.widgets.metadata_tree.model import (
     EXTENDED_ONLY_PATTERNS,
     METADATA_GROUPS,
@@ -38,8 +43,6 @@ from oncutf.ui.widgets.metadata_tree.service import (
     create_metadata_tree_service,
 )
 
-# TODO Phase 3: Controller
-# from oncutf.ui.widgets.metadata_tree.controller import MetadataTreeController
 # TODO Phase 4: View (re-export from refactored location)
 # For now, import from legacy location for backwards compatibility
 from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
@@ -56,6 +59,9 @@ __all__ = [
     # Service layer
     "MetadataTreeService",
     "create_metadata_tree_service",
+    # Controller layer
+    "MetadataTreeController",
+    "create_metadata_tree_controller",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]
