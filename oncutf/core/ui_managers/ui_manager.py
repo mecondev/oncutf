@@ -16,7 +16,7 @@ from oncutf.core.pyqt_imports import *
 from oncutf.utils.icons_loader import get_app_icon, get_menu_icon
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_selection_update, schedule_ui_update
-from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 # Lazy imports: Heavy widget imports moved inside methods to speed up startup
 # These are only needed during UI setup, not module initialization
@@ -252,7 +252,7 @@ class UIManager:
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.parent_window.browse_folder_button.setFixedHeight(24)  # Thin button
         self.parent_window.browse_folder_button.setFixedWidth(90)
-        setup_tooltip(
+        TooltipHelper.setup_tooltip(
             self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO
         )
 
@@ -579,7 +579,7 @@ class UIManager:
         self.parent_window.menu_button = QPushButton()
         self.parent_window.menu_button.setIcon(get_menu_icon("menu"))
         self.parent_window.menu_button.setFixedSize(20, 20)  # Square button
-        setup_tooltip(self.parent_window.menu_button, "Menu", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(self.parent_window.menu_button, "Menu", TooltipType.INFO)
         self.parent_window.menu_button.setObjectName("menuButton")
 
         self.parent_window.version_label = QLabel()

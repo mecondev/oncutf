@@ -205,17 +205,24 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 # Get index under mouse
                 index = self.indexAt(event.pos())
                 if index != self._current_tooltip_index:
-                    # Index changed, hide current tooltip and start timer for new one
-                    TooltipHelper.clear_all_tooltips()
+                    # Index changed, hide current tooltip and start timer for new one (local only)
+                    TooltipHelper.clear_tooltips_for_widget(self.viewport())
                     self._tooltip_timer.stop()
                     self._current_tooltip_index = index
                     if index.isValid():
                         # Start timer to show tooltip after hover delay
                         self._tooltip_timer.start(600)  # 600ms delay
+                if not index.isValid():
+                    TooltipHelper.clear_tooltips_for_widget(self.viewport())
+                    self._tooltip_timer.stop()
                 return False
-            elif event.type() == QEvent.Leave:
-                # Mouse left viewport, hide tooltip
-                TooltipHelper.clear_all_tooltips()
+            elif event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+                # Mouse clicked - hide tooltip immediately
+                TooltipHelper.clear_tooltips_for_widget(self.viewport())
+                self._tooltip_timer.stop()
+            elif event.type() in (QEvent.Leave, QEvent.HoverLeave):
+                # Mouse left viewport, hide tooltip (local only)
+                TooltipHelper.clear_tooltips_for_widget(self.viewport())
                 self._tooltip_timer.stop()
                 self._current_tooltip_index = QModelIndex()
         return super().eventFilter(obj, event)
@@ -239,13 +246,15 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         elif "metadata" in tooltip_text.lower() or "hash" in tooltip_text.lower():
             tooltip_type = TooltipType.INFO
 
-        # Show custom tooltip
+        # Show custom tooltip as temporary (cell hover should not register persistent filters)
+        from oncutf.config import TOOLTIP_DURATION
+
         TooltipHelper.show_tooltip(
             self.viewport(),
             tooltip_text,
             tooltip_type,
-            duration=0,  # No auto-hide
-            persistent=True
+            duration=TOOLTIP_DURATION,  # Auto-hide after configured duration, hides immediately on mouse leave via eventFilter
+            persistent=False
         )
 
     def showEvent(self, event) -> None:
@@ -1131,7 +1140,4 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         except Exception as e:
             logger.warning("Error clearing preview/metadata displays: %s", e)
 
-    # =====================================
-    # Column Management Shortcuts
-    # =====================================
 

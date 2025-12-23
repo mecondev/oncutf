@@ -39,7 +39,7 @@ from oncutf.core.metadata_command_manager import get_metadata_command_manager
 from oncutf.core.rename.rename_history_manager import get_rename_history_manager
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -163,13 +163,13 @@ class MetadataHistoryDialog(QDialog):
         self.undo_button = QPushButton("Undo")
         self.undo_button.setEnabled(False)
         self.undo_button.clicked.connect(self._undo_selected)
-        setup_tooltip(self.undo_button, "Undo the selected operation from history", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(self.undo_button, "Undo the selected operation from history", TooltipType.INFO)
         button_layout.addWidget(self.undo_button)
 
         self.redo_button = QPushButton("Redo")
         self.redo_button.setEnabled(False)
         self.redo_button.clicked.connect(self._redo_selected)
-        setup_tooltip(
+        TooltipHelper.setup_tooltip(
             self.redo_button, "Redo the selected operation from history", TooltipType.INFO
         )
         button_layout.addWidget(self.redo_button)
@@ -211,13 +211,13 @@ class MetadataHistoryDialog(QDialog):
         # Refresh button
         refresh_button = QPushButton("Refresh")
         refresh_button.clicked.connect(self._load_history)
-        setup_tooltip(refresh_button, "Refresh the command history", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(refresh_button, "Refresh the command history", TooltipType.INFO)
         layout.addWidget(refresh_button)
 
         # Clear history button
         clear_button = QPushButton("Clear History")
         clear_button.clicked.connect(self._clear_history)
-        setup_tooltip(clear_button, "Clear all command history", TooltipType.WARNING)
+        TooltipHelper.setup_tooltip(clear_button, "Clear all command history", TooltipType.WARNING)
         layout.addWidget(clear_button)
 
         layout.addStretch()

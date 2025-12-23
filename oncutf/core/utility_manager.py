@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import QApplication, QEvent, Qt
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
@@ -340,7 +340,7 @@ class UtilityManager:
 
         if not has_changes:
             self.main_window.rename_button.setEnabled(False)
-            setup_tooltip(
+            TooltipHelper.setup_tooltip(
                 self.main_window.rename_button, "No changes to apply", TooltipType.WARNING
             )
             return
@@ -370,7 +370,7 @@ class UtilityManager:
             tooltip_msg = "No changes to apply"
             tooltip_type = TooltipType.WARNING
 
-        setup_tooltip(self.main_window.rename_button, tooltip_msg, tooltip_type)
+        TooltipHelper.setup_tooltip(self.main_window.rename_button, tooltip_msg, tooltip_type)
 
     def clear_preview_cache(self) -> None:
         """Clear the preview generation cache to force next update."""

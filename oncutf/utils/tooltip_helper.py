@@ -51,6 +51,10 @@ class WidgetTooltipFilter(QObject):
                 # Mouse left widget - hide tooltip
                 self.hover_timer.stop()
                 self.tooltip.hide()
+            elif event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+                # Mouse clicked - hide tooltip immediately
+                self.hover_timer.stop()
+                self.tooltip.hide()
             elif event.type() == QEvent.ToolTip:
                 # Suppress default Qt tooltip
                 return True
@@ -154,16 +158,22 @@ class CustomTooltip(QLabel):
 
     def show_tooltip(self, position: QPoint, duration: int | None = None):
         """Show tooltip at specific position for specified duration"""
-        if not self.persistent and duration is not None and duration > 0:
+        if duration is not None and duration > 0:
             self._timer.start(duration)
 
         self.move(position)
         self.show()
         self.raise_()
 
+    def mousePressEvent(self, event) -> None:
+        """Hide tooltip when clicked"""
+        self.hide_tooltip()
+        event.accept()
+
     def hide_tooltip(self) -> None:
         """Hide the tooltip"""
         self._timer.stop()
+        self.hide()
         self.hide()
 
 
@@ -210,6 +220,10 @@ class ActionTooltipFilter(QObject):
                 # Mouse left action area
                 self._hide_tooltip()
 
+        elif event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+            # Mouse clicked - hide tooltip immediately
+            self._hide_tooltip()
+
         elif event.type() == QEvent.Leave:
             # Mouse left menu
             self._hide_tooltip()
@@ -231,14 +245,9 @@ class ActionTooltipFilter(QObject):
             persistent=False
         )
 
-        # Position tooltip near cursor
-        from PyQt5.QtGui import QCursor
-        cursor_pos = QCursor.pos()
-        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
-        tooltip_pos = QPoint(cursor_pos.x() + offset_x, cursor_pos.y() + offset_y)
-
-        # Show tooltip
-        self.current_tooltip.show_tooltip(tooltip_pos, duration=0)  # No auto-hide
+        # Position and show tooltip
+        tooltip_pos = TooltipHelper._calculate_tooltip_position(self.menu)
+        self.current_tooltip.show_tooltip(tooltip_pos, duration=TOOLTIP_DURATION)
 
     def _hide_tooltip(self) -> None:
         """Hide current tooltip"""
@@ -297,6 +306,10 @@ class ItemTooltipFilter(QObject):
                     self.hover_timer.start(600)  # 600ms delay
                 return False
 
+        elif event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+            # Mouse clicked - hide tooltip immediately
+            self._hide_tooltip()
+
         elif event.type() == QEvent.Leave:
             # Mouse left widget, hide tooltip
             self._hide_tooltip()
@@ -315,18 +328,12 @@ class ItemTooltipFilter(QObject):
 
         # Create new tooltip
         self.current_tooltip = CustomTooltip(
-            self.widget.window(), text, tooltip_type, persistent=True
+            self.widget.window(), text, tooltip_type, persistent=False
         )
 
-        # Position tooltip near cursor
-        from PyQt5.QtGui import QCursor
-
-        global_pos = QCursor.pos()
-        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
-        tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
-
-        # Show tooltip (persistent, no auto-hide)
-        self.current_tooltip.show_tooltip(tooltip_pos, duration=0)
+        # Position and show tooltip
+        tooltip_pos = TooltipHelper._calculate_tooltip_position(self.widget)
+        self.current_tooltip.show_tooltip(tooltip_pos, duration=TOOLTIP_DURATION)
 
     def _hide_tooltip(self) -> None:
         """Hide current tooltip"""
@@ -349,6 +356,23 @@ class TooltipHelper:
     # Active tooltips tracking
     _active_tooltips: list = []
     _persistent_tooltips: dict = {}  # widget -> tooltip mapping for persistent tooltips
+
+    @classmethod
+    def _get_cursor_position(cls, widget: QWidget) -> QPoint:
+        """Get cursor position with fallback to widget center"""
+        from PyQt5.QtGui import QCursor
+        try:
+            return QCursor.pos()
+        except (AttributeError, RuntimeError):
+            # Fallback to widget position if cursor position not available
+            return widget.mapToGlobal(widget.rect().center())
+
+    @classmethod
+    def _calculate_tooltip_position(cls, widget: QWidget) -> QPoint:
+        """Calculate tooltip position relative to cursor with offset"""
+        global_pos = cls._get_cursor_position(widget)
+        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
+        return QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
 
     @classmethod
     def show_tooltip(
@@ -389,20 +413,8 @@ class TooltipHelper:
         # Create new tooltip
         tooltip = CustomTooltip(widget.window(), message, tooltip_type, persistent=False)
 
-        # Calculate position relative to cursor for better UX
-        from PyQt5.QtGui import QCursor
-
-        try:
-            # Get current cursor position
-            global_pos = QCursor.pos()
-        except (AttributeError, RuntimeError):
-            # Fallback to widget position if cursor position not available
-            global_pos = widget.mapToGlobal(widget.rect().center())
-
-        offset_x, offset_y = TOOLTIP_POSITION_OFFSET
-        tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
-
-        # Adjust position to stay on screen
+        # Calculate position and adjust to stay on screen
+        tooltip_pos = cls._calculate_tooltip_position(widget)
         adjusted_pos = cls._adjust_position_to_screen(tooltip_pos, tooltip.size())
 
         # Show tooltip
@@ -460,26 +472,12 @@ class TooltipHelper:
             ):
                 return
 
-            # Calculate position relative to cursor for better UX
-            from PyQt5.QtGui import QCursor
-
-            try:
-                # Get current cursor position
-                global_pos = QCursor.pos()
-            except (AttributeError, RuntimeError):
-                # Fallback to widget position if cursor position not available
-                global_pos = widget.mapToGlobal(widget.rect().center())
-
-            offset_x, offset_y = TOOLTIP_POSITION_OFFSET
-            tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
-
-            # Adjust position to stay on screen
+            # Calculate position and adjust to stay on screen
+            tooltip_pos = cls._calculate_tooltip_position(widget)
             adjusted_pos = cls._adjust_position_to_screen(tooltip_pos, tooltip.size())
 
             # Show tooltip
-            tooltip.move(adjusted_pos)
-            tooltip.show()
-            tooltip.raise_()
+            tooltip.show_tooltip(adjusted_pos, duration=TOOLTIP_DURATION)
 
         except RuntimeError as e:
             # Qt object has been deleted - remove from tracking
@@ -582,7 +580,17 @@ class TooltipHelper:
     def clear_tooltips_for_widget(cls, widget: QWidget) -> None:
         """Clear all active tooltips for a specific widget"""
         # Clear temporary tooltips
-        cls._active_tooltips = [(w, t) for w, t in cls._active_tooltips if w != widget]
+        remaining_tooltips = []
+        for w, t in cls._active_tooltips:
+            if w == widget:
+                try:
+                    t.hide_tooltip()
+                    t.deleteLater()
+                except RuntimeError:
+                    pass
+            else:
+                remaining_tooltips.append((w, t))
+        cls._active_tooltips = remaining_tooltips
 
         # Clear persistent tooltips
         widget_id = id(widget)
@@ -669,42 +677,3 @@ class TooltipHelper:
             logger.debug("[TooltipHelper] Could not adjust position to screen: %s", e)
             return position
 
-
-# =====================================
-# Global Convenience Functions
-# =====================================
-
-
-def show_tooltip(
-    widget: QWidget,
-    message: str,
-    tooltip_type: str = TooltipType.DEFAULT,
-    duration: int | None = None,
-) -> None:
-    """Global convenience function to show tooltip"""
-    TooltipHelper.show_tooltip(widget, message, tooltip_type, duration)
-
-
-def show_error_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
-    """Global convenience function to show error tooltip"""
-    TooltipHelper.show_error_tooltip(widget, message, duration)
-
-
-def show_warning_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
-    """Global convenience function to show warning tooltip"""
-    TooltipHelper.show_warning_tooltip(widget, message, duration)
-
-
-def show_info_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
-    """Global convenience function to show info tooltip"""
-    TooltipHelper.show_info_tooltip(widget, message, duration)
-
-
-def show_success_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
-    """Global convenience function to show success tooltip"""
-    TooltipHelper.show_success_tooltip(widget, message, duration)
-
-
-def setup_tooltip(widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT) -> None:
-    """Global convenience function to setup persistent tooltip (replacement for setToolTip)"""
-    TooltipHelper.setup_tooltip(widget, message, tooltip_type)

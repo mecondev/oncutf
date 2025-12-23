@@ -26,7 +26,7 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.utils.icons_loader import get_menu_icon
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -83,7 +83,7 @@ class FinalTransformContainer(QWidget):
         # Checkbox for Greek to Greeklish conversion
         self.greeklish_checkbox = GreeklishToggle()
         self.greeklish_checkbox.setChecked(False)
-        setup_tooltip(
+        TooltipHelper.setup_tooltip(
             self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO
         )
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
@@ -100,7 +100,7 @@ class FinalTransformContainer(QWidget):
         self.add_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.add_button.clicked.connect(self.add_module_requested.emit)
         self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore
-        setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
 
         # Remove button
         self.remove_button = QPushButton()
@@ -109,7 +109,7 @@ class FinalTransformContainer(QWidget):
         self.remove_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
         self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore
-        setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
 
         # Case row - HBoxLayout: [Label][Combo] --- STRETCH --- [Add Button]
         case_row_layout = QHBoxLayout()
@@ -228,7 +228,7 @@ class FinalTransformContainer(QWidget):
         # Handle tooltip based on enabled state
         if enabled:
             # Re-enable tooltip when button is enabled
-            setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
+            TooltipHelper.setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
             # Set normal icon
             self.remove_button.setIcon(get_menu_icon("minus"))
         else:

@@ -30,7 +30,7 @@ from oncutf.utils.icons_loader import get_menu_icon
 # initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme_engine import ThemeEngine
-from oncutf.utils.tooltip_helper import TooltipType, setup_tooltip
+from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -123,8 +123,8 @@ class CounterModule(BaseRenameModule):
         )  # Small icons for buttons
 
         # Setup custom tooltips for plus/minus buttons
-        setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)
-        setup_tooltip(btn_plus, "Increase value", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(btn_plus, "Increase value", TooltipType.INFO)
 
         # Adjust helper
         def adjust(delta: int) -> None:
@@ -184,7 +184,7 @@ class CounterModule(BaseRenameModule):
         self.scope_combo.setCurrentIndex(1)  # PER_FOLDER is index 1
 
         # Setup tooltip
-        setup_tooltip(
+        TooltipHelper.setup_tooltip(
             self.scope_combo,
             "Control when the counter resets:\n"
             "• Global: Single counter across all files\n"

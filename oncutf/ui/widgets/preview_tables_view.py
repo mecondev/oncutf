@@ -68,10 +68,10 @@ class PreviewTableWidget(QTableWidget):
                 # Check if this is a validation error case
                 if is_validation_error_marker(item.text()):
                     # Show enhanced error tooltip
-                    from oncutf.utils.tooltip_helper import show_error_tooltip
+                    from oncutf.utils.tooltip_helper import TooltipHelper
 
                     error_msg = "Invalid filename - contains validation errors"
-                    show_error_tooltip(self, error_msg)
+                    TooltipHelper.show_error_tooltip(self, error_msg)
                 else:
                     # Let Qt handle standard tooltips
                     super().mouseMoveEvent(event)

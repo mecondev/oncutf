@@ -480,8 +480,11 @@ TOP_BOTTOM_SPLIT_RATIO = [500, 400]
 LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
 
 # =====================================
-# STATUS LABEL COLORS
+# STATUS BAR SETTINGS
 # =====================================
+
+# Status Bar Auto-Reset Settings
+STATUS_AUTO_RESET_DELAY = 3000  # Duration in milliseconds before status auto-resets (3 seconds)
 
 # Status Label Colors
 STATUS_COLORS = {
@@ -733,11 +736,8 @@ THEME_TOKENS = {
 # =====================================
 
 # Tooltip Settings
-TOOLTIP_DURATION = 2000  # Duration in milliseconds (2 seconds)
+TOOLTIP_DURATION = 2500  # Duration in milliseconds (2.5 seconds)
 TOOLTIP_POSITION_OFFSET = (25, -35)  # (x, y) offset from widget position - positioned above and to the right
-
-# Status Bar Auto-Reset Settings
-STATUS_AUTO_RESET_DELAY = 3000  # Duration in milliseconds before status auto-resets (3 seconds)
 
 # =====================================
 # UNDO/REDO SYSTEM SETTINGS
