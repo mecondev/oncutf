@@ -23,12 +23,21 @@ For advanced usage:
 
 # Phase 1: Data model only
 from oncutf.ui.widgets.metadata_tree.model import (
+    EXTENDED_ONLY_PATTERNS,
+    METADATA_GROUPS,
+    READ_ONLY_FIELDS,
+    FieldStatus,
     MetadataDisplayState,
+    NodeType,
     TreeNodeData,
 )
 
-# TODO Phase 2: Service
-# from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
+# Phase 2: Service layer
+from oncutf.ui.widgets.metadata_tree.service import (
+    MetadataTreeService,
+    create_metadata_tree_service,
+)
+
 # TODO Phase 3: Controller
 # from oncutf.ui.widgets.metadata_tree.controller import MetadataTreeController
 # TODO Phase 4: View (re-export from refactored location)
@@ -39,6 +48,14 @@ __all__ = [
     # Data structures
     "TreeNodeData",
     "MetadataDisplayState",
+    "NodeType",
+    "FieldStatus",
+    "METADATA_GROUPS",
+    "READ_ONLY_FIELDS",
+    "EXTENDED_ONLY_PATTERNS",
+    # Service layer
+    "MetadataTreeService",
+    "create_metadata_tree_service",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]
