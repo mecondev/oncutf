@@ -31,7 +31,6 @@ from typing import Any
 from oncutf.config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
-    QApplication,
     QCursor,
     QDragEnterEvent,
     QDragMoveEvent,
@@ -51,11 +50,12 @@ from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
 from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
+from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
 from oncutf.utils.placeholder_helper import create_placeholder_helper
-from oncutf.utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
+from oncutf.utils.timer_manager import schedule_scroll_adjust
 from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 # ApplicationContext integration
@@ -168,6 +168,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         if self._controller is None:
             # Lazy initialization - create controller on first use
             self._lazy_init_controller()
+
+        # Drag handler for drag & drop operations (Phase 2 refactoring)
+        self._drag_handler = MetadataTreeDragHandler(self)
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -386,99 +389,23 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
         Accept drag only if it comes from our application's file table.
-        This is identified by the presence of our custom MIME type.
+        Delegates to drag handler.
         """
-        if event.mimeData().hasFormat("application/x-oncutf-filetable"):
-            event.acceptProposedAction()
-        else:
-            event.ignore()
+        self._drag_handler.handle_drag_enter(event)
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
         """
         Continue accepting drag move events only for items from our file table.
+        Delegates to drag handler.
         """
-        if event.mimeData().hasFormat("application/x-oncutf-filetable"):
-            event.acceptProposedAction()
-        else:
-            event.ignore()
+        self._drag_handler.handle_drag_move(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop events for file loading."""
-        _drag_cancel_filter = getattr(self, "_drag_cancel_filter", None)
-        if _drag_cancel_filter:
-            _drag_cancel_filter.deactivate()
-
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            files = [url.toLocalFile() for url in urls if url.isLocalFile()]
-            if files:
-                event.acceptProposedAction()
-
-                # Check for modifiers (Shift = Extended Metadata)
-                modifiers = event.keyboardModifiers()
-                use_extended = bool(modifiers & Qt.ShiftModifier)
-
-                # Trigger metadata load via parent window -> application service
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "load_metadata_for_items"):
-                    # We need to convert file paths to FileItems or let the service handle paths
-                    # The service expects FileItems. We need to find them in the model.
-                    if hasattr(parent_window, "file_model"):
-                        file_items = []
-                        for file_path in files:
-                            # Find item in model by path
-                            for item in parent_window.file_model.files:
-                                if item.path == file_path:
-                                    file_items.append(item)
-                                    break
-
-                        if file_items:
-                            # Ensure files are checked (selected) after drag & drop
-                            for item in file_items:
-                                if not item.checked:
-                                    item.checked = True
-
-                            # Update file table model to reflect changes
-                            if hasattr(parent_window, "file_table_model"):
-                                parent_window.file_table_model.layoutChanged.emit()
-
-                            parent_window.load_metadata_for_items(
-                                file_items,
-                                use_extended=use_extended,
-                                source="drag_drop"
-                            )
-
-                logger.debug(
-                    "[MetadataTreeView] Drop processed: %d files (extended=%s)",
-                    len(files),
-                    use_extended,
-                    extra={"dev_only": True},
-                )
-
-                # Don't call _perform_drag_cleanup for successful drops
-                # The wait_cursor will be managed by application_service
-                # Just update viewport
-                self.viewport().update()
-            else:
-                event.ignore()
-                self._perform_drag_cleanup(_drag_cancel_filter)
-        else:
-            event.ignore()
-            self._perform_drag_cleanup(_drag_cancel_filter)
-
-        # Schedule drag cleanup
-        schedule_drag_cleanup(self._complete_drag_cleanup, 0)
-
-    def _perform_drag_cleanup(self, _drag_cancel_filter: Any) -> None:
-        """Centralized drag cleanup logic."""
-        # Force cleanup of any drag state
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-        self.viewport().update()
-
-    def _complete_drag_cleanup(self) -> None:
-        """Complete cleanup after drag operation."""
-        self.viewport().update()
+        """
+        Handle drop events for file loading.
+        Delegates to drag handler.
+        """
+        self._drag_handler.handle_drop(event)
 
     # =====================================
     # Model & Column Management
