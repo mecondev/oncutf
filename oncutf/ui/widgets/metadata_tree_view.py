@@ -49,6 +49,7 @@ from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
+from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
@@ -175,6 +176,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Search handler (Phase 3 refactoring)
         self._search_handler = MetadataTreeSearchHandler(self)
+
+        # Selection handler (Phase 4 refactoring)
+        self._selection_handler = MetadataTreeSelectionHandler(self)
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -503,43 +507,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         return find_parent_with_attribute(self, "file_table_view")
 
     def _get_current_selection(self):
-        """Get current selection via parent traversal."""
-        parent_window = self._get_parent_with_file_table()
-
-        if not parent_window:
-            return []
-
-        # Try multiple methods to get selection
-        selected_files = []
-
-        # Method 1: Use selection model directly
-        try:
-            selection = parent_window.file_table_view.selectionModel()
-            if selection and selection.hasSelection():
-                selected_rows = selection.selectedRows()
-                if selected_rows and hasattr(parent_window, "file_model"):
-                    file_model = parent_window.file_model
-                    for index in selected_rows:
-                        row = index.row()
-                        if 0 <= row < len(file_model.files):
-                            selected_files.append(file_model.files[row])
-        except Exception as e:
-            logger.debug("[MetadataTree] Method 1 failed: %s", e, extra={"dev_only": True})
-
-        # Method 2: Use file table view's internal selection method
-        if not selected_files:
-            try:
-                if hasattr(parent_window.file_table_view, "_get_current_selection"):
-                    selected_rows = parent_window.file_table_view._get_current_selection()
-                    if selected_rows and hasattr(parent_window, "file_model"):
-                        file_model = parent_window.file_model
-                        for row in selected_rows:
-                            if 0 <= row < len(file_model.files):
-                                selected_files.append(file_model.files[row])
-            except Exception as e:
-                logger.debug("[MetadataTree] Method 2 failed: %s", e, extra={"dev_only": True})
-
-        return selected_files
+        """Get current selection via parent traversal. Delegates to selection handler."""
+        return self._selection_handler.get_current_selection()
 
 
 
@@ -1100,62 +1069,15 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # =====================================
 
     def update_from_parent_selection(self) -> None:
-        """Update metadata display based on parent selection."""
-        try:
-            # Get current selection from parent
-            selection = self._get_current_selection()
-            if not selection:
-                # Try alternative method to get selection if first method failed
-                parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "file_table_view"):
-                    file_table_view = parent_window.file_table_view
-                    if hasattr(file_table_view, "_get_current_selection"):
-                        selected_rows = file_table_view._get_current_selection()
-                        if selected_rows and hasattr(parent_window, "file_model"):
-                            file_model = parent_window.file_model
-                            selection = [
-                                file_model.files[row]
-                                for row in selected_rows
-                                if 0 <= row < len(file_model.files)
-                            ]
-
-                if not selection:
-                    self.show_empty_state("No file selected")
-                    return
-
-            # Handle single file selection
-            if len(selection) == 1:
-                file_item = selection[0]
-                metadata = self._try_lazy_metadata_loading(file_item, "parent_selection")
-                if metadata:
-                    self.display_metadata(metadata, "parent_selection")
-                    logger.debug(
-                        "[MetadataTree] Updated from parent selection: %s",
-                        file_item.filename,
-                        extra={"dev_only": True},
-                    )
-                else:
-                    self.show_empty_state("No metadata available")
-            else:
-                # Multiple files selected
-                self.show_empty_state(f"{len(selection)} files selected")
-                logger.debug(
-                    "[MetadataTree] Multiple files selected: %d",
-                    len(selection),
-                    extra={"dev_only": True},
-                )
-
-        except Exception as e:
-            logger.exception("[MetadataTree] Error updating from parent selection: %s", e)
-            self.show_empty_state("Error loading metadata")
+        """Update metadata display based on parent selection. Delegates to selection handler."""
+        self._selection_handler.update_from_parent_selection()
 
     def refresh_metadata_from_selection(self) -> None:
         """
         Convenience method that triggers metadata update from parent selection.
-        Can be called from parent window when selection changes.
+        Can be called from parent window when selection changes. Delegates to selection handler.
         """
-        logger.debug("[MetadataTree] Refreshing metadata from selection", extra={"dev_only": True})
-        self.update_from_parent_selection()
+        self._selection_handler.refresh_metadata_from_selection()
 
     def _on_refresh_shortcut(self) -> None:
         """
@@ -1260,23 +1182,19 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         """
         Handle selection changes from the parent file table.
         This is a convenience method that can be connected to selection signals.
+        Delegates to selection handler.
         """
-        self.refresh_metadata_from_selection()
+        self._selection_handler.handle_selection_change()
 
     def handle_invert_selection(self, metadata: dict[str, Any] | None) -> None:
         """
         Handle metadata display after selection inversion.
+        Delegates to selection handler.
 
         Args:
             metadata: The metadata to display, or None to clear
         """
-        if isinstance(metadata, dict) and metadata:
-            self.display_metadata(metadata, context="invert_selection")
-        else:
-            self.clear_view()
-
-        # Update header visibility after selection inversion
-        self._update_header_visibility()
+        self._selection_handler.handle_invert_selection(metadata)
 
     def handle_metadata_load_completion(self, metadata: dict[str, Any] | None, source: str) -> None:
         """
@@ -1310,6 +1228,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:
         """
         Central logic to determine if metadata should be displayed based on selection count.
+        Delegates to selection handler.
 
         Args:
             selected_files_count: Number of currently selected files
@@ -1317,76 +1236,23 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         Returns:
             bool: True if metadata should be displayed, False if empty state should be shown
         """
-        # Only display metadata for single file selection
-        return selected_files_count == 1
+        return self._selection_handler.should_display_metadata_for_selection(selected_files_count)
 
     def smart_display_metadata_or_empty_state(
         self, metadata: dict[str, Any] | None, selected_count: int, context: str = ""
     ) -> None:
-        """Smart display logic for metadata or empty state."""
-        try:
-            logger.debug(
-                "[MetadataTree] smart_display_metadata_or_empty_state called: metadata=%s, selected_count=%d, context=%s",
-                bool(metadata),
-                selected_count,
-                context,
-                extra={"dev_only": True},
-            )
-
-            if metadata and self.should_display_metadata_for_selection(selected_count):
-                logger.debug(
-                    "[MetadataTree] Displaying metadata for %d selected file(s)",
-                    selected_count,
-                    extra={"dev_only": True},
-                )
-                self.display_metadata(metadata, context)
-                logger.debug(
-                    "[MetadataTree] Smart display: showing metadata (context: %s)",
-                    context,
-                    extra={"dev_only": True},
-                )
-            else:
-                if selected_count == 0:
-                    self.show_empty_state("No file selected")
-                elif selected_count > 1:
-                    self.show_empty_state(f"{selected_count} files selected")
-                else:
-                    self.show_empty_state("No metadata available")
-
-                logger.debug(
-                    "[MetadataTree] Smart display: showing empty state (selected: %d)",
-                    selected_count,
-                    extra={"dev_only": True},
-                )
-
-        except Exception as e:
-            logger.exception("[MetadataTree] Error in smart display: %s", e)
-            self.show_empty_state("Error loading metadata")
-
-        # Update header visibility after smart display
-        self._update_header_visibility()
+        """Smart display logic for metadata or empty state. Delegates to selection handler."""
+        self._selection_handler.smart_display_metadata_or_empty_state(metadata, selected_count, context)
 
     def get_modified_metadata(self) -> dict[str, str]:
         """
         Collect all modified metadata items for the current file.
+        Delegates to selection handler.
 
         Returns:
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
         """
-        # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return {}
-
-        # Get current file
-        selected_files = self._get_current_selection()
-        if not selected_files or len(selected_files) != 1:
-            return {}
-
-        file_path = selected_files[0].full_path
-        return staging_manager.get_staged_changes(file_path)
+        return self._selection_handler.get_modified_metadata()
 
     def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
         """

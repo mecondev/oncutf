@@ -47,6 +47,9 @@ from oncutf.ui.widgets.metadata_tree.model import (
 # Search handler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 
+# Selection handler
+from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
+
 # Phase 2: Service layer
 from oncutf.ui.widgets.metadata_tree.service import (
     MetadataTreeService,
@@ -88,6 +91,7 @@ __all__ = [
     "MetadataTreeDragHandler",
     "MetadataTreeViewConfig",
     "MetadataTreeSearchHandler",
+    "MetadataTreeSelectionHandler",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]
