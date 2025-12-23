@@ -155,13 +155,19 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     # Signal for queued metadata tree rebuilds (thread-safe via Qt event queue)
     rebuild_requested = pyqtSignal(dict, str)  # metadata, context
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, controller=None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTextElideMode(Qt.TextElideMode.ElideRight)
+
+        # Controller for layered architecture (Phase 4 refactoring)
+        self._controller = controller
+        if self._controller is None:
+            # Lazy initialization - create controller on first use
+            self._lazy_init_controller()
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -257,6 +263,23 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             "[MetadataTree] Local shortcuts setup: F5=refresh",
             extra={"dev_only": True}
         )
+
+    def _lazy_init_controller(self) -> None:
+        """Lazy initialization of controller layer (Phase 4 refactoring)."""
+        try:
+            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
+
+            staging_manager = get_metadata_staging_manager()
+            self._controller = create_metadata_tree_controller(staging_manager=staging_manager)
+
+            logger.debug(
+                "[MetadataTree] Controller initialized (layered architecture)",
+                extra={"dev_only": True},
+            )
+        except Exception as e:
+            logger.exception("[MetadataTree] Failed to initialize controller: %s", e)
+            self._controller = None
 
     def wheelEvent(self, event) -> None:
         """Update hover state after scroll to track cursor position smoothly."""
@@ -1313,32 +1336,32 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
             return
 
         try:
-            # Import here to avoid circular imports
-            from oncutf.utils.build_metadata_tree_model import build_metadata_tree_model
-
+            # Prepare display data
             display_data = dict(metadata)
             filename = metadata.get("FileName")
             if filename:
                 display_data["FileName"] = filename
 
-            # Store display_data for later use in label updates
+            # Store display_data for later use
             self._current_display_data = display_data
-
-            # Apply any modified values that the user has changed in the UI
-            self._apply_modified_values_to_display_data(display_data)
 
             # Try to determine file path for scroll position memory
             self._set_current_file_from_metadata(metadata)
 
-            # Determine if we have extended metadata and which keys are extended-only
-            extended_keys = set()
+            # Use controller for building tree model (Phase 4 refactoring)
+            if self._controller is None:
+                self._lazy_init_controller()
+
+            # Prepare display state for controller
+            from oncutf.ui.widgets.metadata_tree.model import MetadataDisplayState
+
+            display_state = MetadataDisplayState(file_path=self._current_file_path)
+
+            # Detect extended metadata
             if metadata.get("__extended__"):
-                # This metadata came from extended loading
-                # For a proper implementation, we would need to compare with fast metadata
-                # For now, we'll use a heuristic based on key patterns that are typically extended-only
-                for key in display_data:
+                # Mark extended keys using heuristic
+                for key in metadata:
                     key_lower = key.lower()
-                    # Mark keys that are typically only available in extended metadata
                     if any(
                         pattern in key_lower
                         for pattern in [
@@ -1352,15 +1375,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                             "extended",
                         ]
                     ):
-                        extended_keys.add(key)
-
-            # Get modified keys from staging manager
-            modified_keys = set()
-            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-            staging_manager = get_metadata_staging_manager()
-            if staging_manager and self._current_file_path:
-                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
-                modified_keys = set(staged_changes.keys())
+                        display_state.extended_keys.add(key)
 
             # Set rebuild lock BEFORE model operations
             self._rebuild_in_progress = True
@@ -1370,9 +1385,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 extra={"dev_only": True},
             )
 
-            tree_model = build_metadata_tree_model(
-                display_data, modified_keys, extended_keys, "all"
-            )
+            # Build tree model using controller
+            tree_model = self._controller.build_qt_model(metadata, display_state)
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
