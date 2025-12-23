@@ -407,7 +407,7 @@ class TestMetadataValidatedWidgets:
         # Should preserve multiline text
         assert description_widget.text() == multiline_text
 
-    @patch("oncutf.ui.widgets.base_validated_input.show_error_tooltip")
+    @patch("oncutf.utils.tooltip_helper.TooltipHelper.show_tooltip")
     def test_character_blocking_tooltip(self, mock_tooltip, title_widget):
         """Test that blocked characters show error tooltip."""
         # Create a mock key event
@@ -418,7 +418,7 @@ class TestMetadataValidatedWidgets:
         should_process = title_widget.handle_key_press_validation(key_event)
         assert should_process is False
 
-        # Should have attempted to call show_error_tooltip
+        # Should have attempted to call show_tooltip
         # Note: This might not work perfectly due to widget type issues, but tests the logic
         from contextlib import suppress
 

@@ -72,6 +72,58 @@ SHOW_DEV_ONLY_IN_CONSOLE = False # Show dev-only logs in console
 ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 
 # =====================================
+# EXTERNAL TOOLS CONFIGURATION
+# =====================================
+
+# Tool availability and feature flags
+# Dynamically updated by external_tools.py at runtime
+class FeatureAvailability:
+    """
+    Runtime feature availability based on external tool detection.
+
+    This class tracks which external tools are available and enables/disables
+    features accordingly. It provides graceful degradation when tools are missing.
+
+    Updated automatically by oncutf.utils.external_tools module during initialization.
+
+    Attributes:
+        exiftool_available: Whether ExifTool is detected and usable
+        ffmpeg_available: Whether FFmpeg is detected and usable
+        metadata_features_enabled: Whether EXIF/metadata features are active
+        video_features_enabled: Whether video processing features are active
+    """
+
+    # Tool availability (updated at runtime)
+    exiftool_available: bool = False
+    ffmpeg_available: bool = False
+
+    # Feature flags (derived from tool availability)
+    @classmethod
+    def metadata_features_enabled(cls) -> bool:
+        """Whether metadata/EXIF features are enabled (requires ExifTool)."""
+        return cls.exiftool_available
+
+    @classmethod
+    def video_features_enabled(cls) -> bool:
+        """Whether video processing features are enabled (requires FFmpeg)."""
+        return cls.ffmpeg_available
+
+    @classmethod
+    def update_availability(cls, exiftool: bool = False, ffmpeg: bool = False) -> None:
+        """
+        Update tool availability flags.
+
+        Called by external_tools module during application initialization.
+
+        Args:
+            exiftool: Whether ExifTool is available
+            ffmpeg: Whether FFmpeg is available
+        """
+        cls.exiftool_available = exiftool
+        cls.ffmpeg_available = ffmpeg
+
+
+# =====================================
 # EXIFTOOL TIMEOUT SETTINGS
 # =====================================
 

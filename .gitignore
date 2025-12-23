@@ -60,6 +60,25 @@ backups/
 *.bak.tar.gz
 
 # =======================================
+# External Tools Binaries
+# =======================================
+
+# Bundled binaries for PyInstaller packaging
+# Keep directory structure but ignore actual binaries
+bin/**/*
+!bin/**/.gitkeep
+!bin/README.md
+
+# Platform-specific binaries
+*.exe
+*.dll
+*.dylib
+*.so
+
+# License files for bundled tools (keep these)
+!bin/LICENSE-*.txt
+
+# =======================================
 #  Test-related folders and outputs
 # =======================================
 

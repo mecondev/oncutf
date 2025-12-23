@@ -233,8 +233,6 @@ class FinalTransformContainer(QWidget):
             self.remove_button.setIcon(get_menu_icon("minus"))
         else:
             # Clear tooltip when button is disabled
-            from oncutf.utils.tooltip_helper import TooltipHelper
-
             TooltipHelper.clear_tooltips_for_widget(self.remove_button)
 
             # Create disabled icon with reduced opacity

@@ -21,11 +21,6 @@ from oncutf.utils.tooltip_helper import (
     CustomTooltip,
     TooltipHelper,
     TooltipType,
-    show_error_tooltip,
-    show_info_tooltip,
-    show_success_tooltip,
-    show_tooltip,
-    show_warning_tooltip,
 )
 
 
@@ -76,16 +71,16 @@ class TestTooltipHelper:
     def test_tooltip_helper_convenience_methods(self, qtbot):  # noqa: ARG002
         """Test convenience methods for different tooltip types"""
         # Error tooltip
-        TooltipHelper.show_error_tooltip(self.test_widget, "Error message", duration=100)
+        TooltipHelper.show_tooltip(self.test_widget, "Error message", TooltipType.ERROR, duration=100)
 
         # Warning tooltip
-        TooltipHelper.show_warning_tooltip(self.test_widget, "Warning message", duration=100)
+        TooltipHelper.show_tooltip(self.test_widget, "Warning message", TooltipType.WARNING, duration=100)
 
         # Info tooltip
-        TooltipHelper.show_info_tooltip(self.test_widget, "Info message", duration=100)
+        TooltipHelper.show_tooltip(self.test_widget, "Info message", TooltipType.INFO, duration=100)
 
         # Success tooltip
-        TooltipHelper.show_success_tooltip(self.test_widget, "Success message", duration=100)
+        TooltipHelper.show_tooltip(self.test_widget, "Success message", TooltipType.SUCCESS, duration=100)
 
         # Should have multiple tooltips tracked (they replace each other for same widget)
         assert len(TooltipHelper._active_tooltips) >= 1
@@ -121,32 +116,33 @@ class TestTooltipHelper:
         # Should have no active tooltips (or tolerate deletion)
         assert True
 
-    def test_global_convenience_functions(self, qtbot):  # noqa: ARG002
-        """Test global convenience functions"""
-        # Test global functions work without errors
-        show_tooltip(self.test_widget, "Global test")
-        show_error_tooltip(self.test_widget, "Global error")
-        show_warning_tooltip(self.test_widget, "Global warning")
-        show_info_tooltip(self.test_widget, "Global info")
-        show_success_tooltip(self.test_widget, "Global success")
+    def test_tooltip_helper_class_methods(self, qtbot):  # noqa: ARG002
+        """Test TooltipHelper class methods"""
+        # Test class methods work without errors
+        TooltipHelper.show_tooltip(self.test_widget, "Class test", TooltipType.DEFAULT)
+        TooltipHelper.show_tooltip(self.test_widget, "Class error", TooltipType.ERROR)
+        TooltipHelper.show_tooltip(self.test_widget, "Class warning", TooltipType.WARNING)
+        TooltipHelper.show_tooltip(self.test_widget, "Class info", TooltipType.INFO)
+        TooltipHelper.show_tooltip(self.test_widget, "Class success", TooltipType.SUCCESS)
 
         # Should not raise exceptions
         assert True
 
     def test_tooltip_position_adjustment(self, qtbot):  # noqa: ARG002
         """Test that tooltip position is calculated correctly"""
-        # This is more of a smoke test since position calculation
-        # depends on screen geometry
-        position = QPoint(100, 100)
-
+        # This is more of a smoke test - just verify tooltip shows without errors
+        # Position calculation is handled internally by _calculate_tooltip_position
         try:
-            # Should not raise exceptions when adjusting position
-            adjusted_pos = TooltipHelper._adjust_position_to_screen(
-                position, self.test_widget.size()
+            # Should not raise exceptions when showing tooltip
+            TooltipHelper.show_tooltip(
+                self.test_widget,
+                "Position test",
+                TooltipType.INFO,
+                duration=100
             )
-            assert isinstance(adjusted_pos, QPoint)
+            assert True
         except Exception as e:
-            pytest.fail(f"Position adjustment failed: {e}")
+            pytest.fail(f"Tooltip display failed: {e}")
 
     def test_tooltip_multiple_for_same_widget(self, qtbot):  # noqa: ARG002
         """Test that multiple tooltips for same widget are handled correctly"""
