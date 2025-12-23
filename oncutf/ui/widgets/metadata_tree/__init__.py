@@ -50,6 +50,9 @@ from oncutf.ui.widgets.metadata_tree.service import (
     create_metadata_tree_service,
 )
 
+# View configuration handler
+from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
+
 # MetadataTreeView is imported lazily to avoid circular imports
 # (metadata_tree_view.py imports from this package)
 if TYPE_CHECKING:
@@ -80,6 +83,7 @@ __all__ = [
     "create_metadata_tree_controller",
     # Handlers
     "MetadataTreeDragHandler",
+    "MetadataTreeViewConfig",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]

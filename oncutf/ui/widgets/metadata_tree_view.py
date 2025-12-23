@@ -23,19 +23,17 @@ Author: Michael Economou
 Date: 2025-05-21
 """
 
-import contextlib
 import os
 import traceback
 from typing import Any
 
-from oncutf.config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
+from oncutf.config import METADATA_TREE_USE_PROXY
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QCursor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
-    QHeaderView,
     QModelIndex,
     QPalette,
     QSortFilterProxyModel,
@@ -51,6 +49,7 @@ from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixi
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
+from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
@@ -171,6 +170,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Drag handler for drag & drop operations (Phase 2 refactoring)
         self._drag_handler = MetadataTreeDragHandler(self)
+
+        # View configuration handler (Phase 2 refactoring)
+        self._view_config = MetadataTreeViewConfig(self)
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -357,16 +359,8 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         return self._direct_loader
 
     def _setup_tree_view_properties(self) -> None:
-        """Configure standard tree view properties."""
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.setUniformRowHeights(True)
-        self.expandToDepth(1)
-        self.setRootIsDecorated(True)  # Show expand/collapse arrows for consistency
-        self.setItemsExpandable(True)  # Ensure items can be expanded/collapsed
-        self.setAcceptDrops(True)
-        self.viewport().setAcceptDrops(True)
-        self.setDragDropMode(QAbstractItemView.DropOnly)
-        self.setAlternatingRowColors(True)
+        """Configure standard tree view properties. Delegates to view config handler."""
+        self._view_config.setup_tree_view_properties()
 
     def _setup_icon_delegate(self) -> None:
         """Setup the icon delegate for selection-based icon changes."""
@@ -424,14 +418,14 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Then set column sizes if we have a header and model
         if model and self.header():
-            is_placeholder = self._detect_placeholder_mode(model)
+            is_placeholder = self._view_config.detect_placeholder_mode(model)
             self._is_placeholder_mode = is_placeholder
 
             if is_placeholder:
-                self._configure_placeholder_mode(model)
+                self._view_config.configure_placeholder_mode(model)
                 self._current_file_path = None  # No file selected
             else:
-                self._configure_normal_mode()
+                self._view_config.configure_normal_mode()
 
                 # For non-placeholder mode, immediately restore scroll position
                 # This prevents the "jump to 0 then scroll to final position" effect
@@ -445,216 +439,45 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                     )
 
             # Update header visibility after mode configuration
-            self._update_header_visibility()
+            self._view_config.update_header_visibility()
 
     # _apply_scroll_position_immediately (implemented in mixin)
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
-        """Detect if the model contains placeholder content."""
-        # Check if it's a proxy model and get the source model
-        source_model = model
-        if hasattr(model, "sourceModel") and callable(model.sourceModel):
-            source_model = model.sourceModel()
-            if not source_model:
-                return True  # No source model = placeholder
-
-        # Empty model (for PNG placeholder) is also placeholder mode
-        if source_model.rowCount() == 0:
-            return True
-
-        if source_model.rowCount() == 1:
-            root = source_model.invisibleRootItem()
-            if root and root.rowCount() == 1:
-                item = root.child(0, 0)
-                if item and "No file" in item.text():
-                    return True
-
-        return False
+        """Detect if the model contains placeholder content. Delegates to view config."""
+        return self._view_config.detect_placeholder_mode(model)
 
     def _configure_placeholder_mode(self, _model: Any) -> None:
-        """Configure view for placeholder mode with anti-flickering."""
-
-        # Protection against repeated calls to placeholder mode - but only if ALL conditions are already met
-        if (
-            getattr(self, "_is_placeholder_mode", False)
-            and self.placeholder_helper
-            and self.placeholder_helper.is_visible()
-        ):
-            return  # Already fully configured for placeholder mode, no need to reconfigure
-
-        # Only reset current file path when entering placeholder mode
-        # DO NOT clear scroll positions - we want to preserve them for other files
-        self._current_file_path = None
-
-        # Use batch updates to prevent flickering during placeholder setup
-        self.setUpdatesEnabled(False)
-
-        try:
-            # Show placeholder using unified helper
-            if self.placeholder_helper:
-                self.placeholder_helper.show()
-            else:
-                logger.warning("[MetadataTree] Could not show placeholder - missing helper")
-
-            # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
-
-            header = self.header()
-            header.setSectionResizeMode(0, QHeaderView.Fixed)
-            header.setSectionResizeMode(1, QHeaderView.Fixed)
-            # Use placeholder widths for placeholder mode
-            header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
-            header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
-
-            # Disable header interactions and hide header in placeholder mode
-            header.setEnabled(False)
-            header.setSectionsClickable(False)
-            header.setSortIndicatorShown(False)
-            header.hide()
-
-            # Disable tree interactions but keep drag & drop working
-            self.setSelectionMode(QAbstractItemView.NoSelection)
-            self.setItemsExpandable(False)
-            self.setRootIsDecorated(False)
-            self.setContextMenuPolicy(Qt.NoContextMenu)
-            self.setMouseTracking(False)
-
-            # Set placeholder property for styling
-            self.setProperty("placeholder", True)
-
-        finally:
-            # Re-enable updates and force a single refresh
-            self.setUpdatesEnabled(True)
-            if hasattr(self, "viewport") and callable(getattr(self.viewport(), "update", None)):
-                self.viewport().update()
+        """Configure view for placeholder mode. Delegates to view config handler."""
+        self._view_config.configure_placeholder_mode(_model)
 
     def _configure_normal_mode(self) -> None:
-        """Configure view for normal content mode with anti-flickering."""
-
-        # Use batch updates to prevent flickering during normal mode setup
-        self.setUpdatesEnabled(False)
-
-        try:
-            # Hide placeholder when showing normal content
-            if self.placeholder_helper:
-                self.placeholder_helper.hide()
-
-            # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
-            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
-            # Also ensure vertical scrollbar is set properly
-            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore[arg-type]
-
-            header = self.header()
-
-            # Re-enable header interactions
-            header.setEnabled(True)
-            header.setSectionsClickable(True)
-            header.setSortIndicatorShown(False)  # Keep sorting disabled
-
-            # Show header when there's content
-            header.show()
-
-            # Key column: min 80px, initial 180px, max 800px
-            header.setSectionResizeMode(0, QHeaderView.Interactive)
-            header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
-            header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
-
-            # Value column: min 250px, initial 500px, allows wide content without stretching
-            header.setSectionResizeMode(1, QHeaderView.Interactive)
-            header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
-
-            # Set specific min/max sizes per column
-            header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
-            header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
-
-            # Connect resize signals to immediately update display
-            self._connect_column_resize_signals()
-
-            # Re-enable tree interactions
-            self.setSelectionMode(QAbstractItemView.SingleSelection)
-            self.setItemsExpandable(True)
-            self.setRootIsDecorated(True)  # Show expand/collapse arrows for categories
-            self.setContextMenuPolicy(Qt.CustomContextMenu)
-            self.setMouseTracking(True)
-
-            # Clear placeholder property
-            self.setProperty("placeholder", False)
-            self.setAttribute(Qt.WA_NoMousePropagation, False)
-
-            # Force style update
-            self._force_style_update()
-
-        finally:
-            # Re-enable updates and force a single refresh
-            self.setUpdatesEnabled(True)
-            if hasattr(self, "viewport") and callable(getattr(self.viewport(), "update", None)):
-                self.viewport().update()
+        """Configure view for normal content mode. Delegates to view config handler."""
+        self._view_config.configure_normal_mode()
 
     def _update_header_visibility(self) -> None:
-        """Update header visibility based on whether there is content in the model."""
-        if not self.model():
-            logger.debug("[MetadataTree] No model - header hidden", extra={"dev_only": True})
-            return
-
-        header = self.header()
-        if not header:
-            logger.debug(
-                "[MetadataTree] No header - cannot update visibility", extra={"dev_only": True}
-            )
-            return
-
-        # Hide header when in placeholder mode, show when there's content
-        header.setVisible(not self._is_placeholder_mode)
-
-        logger.debug(
-            "[MetadataTree] Header visibility: %s (placeholder_mode: %s)",
-            "hidden" if self._is_placeholder_mode else "visible",
-            self._is_placeholder_mode,
-            extra={"dev_only": True},
-        )
+        """Update header visibility. Delegates to view config handler."""
+        self._view_config.update_header_visibility()
 
     def _connect_column_resize_signals(self) -> None:
-        """Connect column resize signals to update display immediately."""
-        header = self.header()
-        if header:
-            # Disconnect any existing connections
-            with contextlib.suppress(AttributeError, RuntimeError, TypeError):
-                header.sectionResized.disconnect()
-
-            # Connect to immediate update
-            header.sectionResized.connect(self._on_column_resized)
+        """Connect column resize signals. Delegates to view config handler."""
+        # This is called internally by _configure_normal_mode, so it's in the handler
 
     def _on_column_resized(self, _logical_index: int, _old_size: int, _new_size: int) -> None:
-        """Handle column resize events to update display immediately."""
-        # Force immediate viewport update
-        self.viewport().update()
-
-        # Update the view geometry
-        self.updateGeometry()
-
-        # Force a repaint to ensure changes are visible immediately
-        self.repaint()
+        """Handle column resize events. Delegates to view config handler."""
+        self._view_config._on_column_resized(_logical_index, _old_size, _new_size)
 
     def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
-        """Update scrollbar policy only if it differs from current to prevent unnecessary updates."""
-        current_policy = self.horizontalScrollBarPolicy()
-        if current_policy != target_policy:
-            self.setHorizontalScrollBarPolicy(target_policy)
+        """Update scrollbar policy. Delegates to view config handler."""
+        self._view_config._update_scrollbar_policy_intelligently(target_policy)
 
     def _make_placeholder_items_non_selectable(self, model: Any) -> None:
-        """Make placeholder items non-selectable."""
-        root = model.invisibleRootItem()
-        item = root.child(0, 0)
-        if item:
-            item.setSelectable(False)
-        value_item = root.child(0, 1)
-        if value_item:
-            value_item.setSelectable(False)
+        """Make placeholder items non-selectable. Delegates to view config handler."""
+        MetadataTreeViewConfig.make_placeholder_items_non_selectable(model)
 
     def _force_style_update(self) -> None:
-        """Force Qt style system to update."""
-        self.style().unpolish(self)
-        self.style().polish(self)
+        """Force Qt style system to update. Delegates to view config handler."""
+        self._view_config._force_style_update()
 
     # =====================================
     # Scroll Position Memory
