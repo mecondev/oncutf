@@ -14,7 +14,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
-from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QLabel
 
 from oncutf.utils.tooltip_helper import (

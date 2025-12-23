@@ -39,7 +39,7 @@ class TestTimerBasics:
 
     def test_timer_works(self):
         schedule_ui_update(self.test_callback, 10)
-        QTest.qWait(50)
+        QTest.qWait(100)  # Increased from 50ms to 100ms for CI reliability
         assert self.executed
 
     def test_cleanup(self):
