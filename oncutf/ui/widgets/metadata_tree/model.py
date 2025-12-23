@@ -102,6 +102,10 @@ class TreeNodeData:
         """Check if this node has children."""
         return len(self.children) > 0
 
+    def add_child(self, child: TreeNodeData) -> None:
+        """Add a child node to this node."""
+        self.children.append(child)
+
     def find_child(self, key: str) -> TreeNodeData | None:
         """Find a direct child by key."""
         for child in self.children:
