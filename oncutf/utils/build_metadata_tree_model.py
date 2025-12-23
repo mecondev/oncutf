@@ -22,7 +22,7 @@ logger = get_cached_logger(__name__)
 
 
 def format_key(key: str) -> str:
-    """Convert 'ImageSensorType' → 'Image Sensor Type'."""
+    """Convert 'ImageSensorType' -> 'Image Sensor Type'."""
     return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
 
 
