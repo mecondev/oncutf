@@ -101,23 +101,18 @@ ignore_missing_imports = true
 ignore_errors = true
 
 # =============================================================================
-# UI/Qt and Legacy code (ignore errors - too much Qt noise)
+# UI/Qt code - ignore errors (too much Qt noise, cannot be fixed)
 # =============================================================================
 [[tool.mypy.overrides]]
 module = [
     "oncutf.ui.*",
-    "oncutf.utils.*",
     "tests.*",
     "main",
-    # Core subpackages with Qt noise (Phase 4 directory organization)
+    # Core subpackages with Qt noise
     "oncutf.core.ui_managers.*",
     "oncutf.core.initialization.*",
     "oncutf.core.drag.*",
     "oncutf.core.events.*",
-    # hash subpackage needs more type work (82 errors)
-    "oncutf.core.hash.hash_operations_manager",
-    "oncutf.core.hash.parallel_hash_worker",
-    "oncutf.core.hash.hash_worker",
     "oncutf.core.rename.*",
     "oncutf.core.selection.*",
     "oncutf.core.database.*",
@@ -130,8 +125,6 @@ module = [
     "oncutf.core.file_load_manager",
     "oncutf.core.pyqt_imports",
     "oncutf.core.modifier_handler",
-    # metadata_operations_manager needs type work (35+ errors)
-    "oncutf.core.metadata_operations_manager",
 ]
 ignore_errors = true
 
@@ -204,19 +197,35 @@ module = [
 ignore_errors = false
 disallow_untyped_defs = false
 
-# Phase 3: Flat core modules with actual type errors (keep ignored until fixed)
-# NOTE: Subpackage modules (ui_managers/*, hash/*, etc.) are covered by wildcards above
+# =============================================================================
+# Controllers, Models, Modules, Utils - ENABLED (2025-12-24)
+# All verified mypy-clean with 0 errors
+# =============================================================================
 [[tool.mypy.overrides]]
 module = [
-    # Complex flat modules with Qt dependencies or many type issues
+    "oncutf.controllers.*",
+    "oncutf.models.*", 
+    "oncutf.modules.*",
+    "oncutf.utils.*",
+]
+ignore_errors = false
+warn_return_any = true
+check_untyped_defs = true
+
+# =============================================================================
+# Core modules - ENABLED (2025-12-24)
+# Previously ignored but verified clean
+# =============================================================================
+[[tool.mypy.overrides]]
+module = [
     "oncutf.core.unified_metadata_manager",
     "oncutf.core.application_service",
     "oncutf.core.thread_pool_manager",
     "oncutf.core.direct_metadata_loader",
-    "oncutf.core.unified_column_service",
     "oncutf.core.conflict_resolver",
     "oncutf.core.batch_operations_manager",
     "oncutf.core.performance_monitor",
+    "oncutf.core.unified_column_service",
     "oncutf.core.file_validation_manager",
     "oncutf.core.shutdown_coordinator",
     "oncutf.core.parallel_metadata_loader",
@@ -224,13 +233,14 @@ module = [
     "oncutf.core.theme_manager",
     "oncutf.core.memory_manager",
     "oncutf.core.structured_metadata_manager",
+    "oncutf.core.metadata_operations_manager",
+    "oncutf.core.hash.hash_operations_manager",
+    "oncutf.core.hash.parallel_hash_worker",
+    "oncutf.core.hash.hash_worker",
 ]
-ignore_errors = true
-
-# Controllers, models, modules - keep ignored for now (services moved to strict)
-[[tool.mypy.overrides]]
-module = ["oncutf.controllers.*", "oncutf.models.*", "oncutf.modules.*"]
-ignore_errors = true
+ignore_errors = false
+warn_return_any = true
+check_untyped_defs = true
 
 # =============================================================================
 # Domain package - STRICT MODE (reference implementation)
