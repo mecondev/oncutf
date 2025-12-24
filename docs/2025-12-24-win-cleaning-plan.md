@@ -601,6 +601,115 @@ not past refactorings.
 
 ---
 
+## 11. Summary & Statistics
+
+### Work Completed (Phases A-F)
+
+| Phase | Focus | Files | Impact | Commit |
+|-------|-------|-------|--------|--------|
+| **A** | Stale comments cleanup | 13 | Removed ~15 "Phase X" references | 9debcdc4 |
+| **B** | Duplicate code consolidation | 6 | Removed duplicate normalize_path(), created helper | 712ce382 |
+| **B+** | Legacy code cleanup | 6 | Fixed invalid method calls, manager registry | bd5dd269 |
+| **D** | ThemeEngine migration | 22 | Migrated to ThemeManager singleton | c48a6164 |
+| **E** | Deprecated helpers | 9 | Migrated theme.py, removed MetadataWaitingDialog | ff631b1a |
+| **F** | Stale docstrings | 7 | Removed phase references from modules | 6de339de |
+| **Total** | — | **57** | ~240 lines removed | 8 commits |
+
+### Quality Verification
+
+```bash
+# All phases passed:
+ruff check .    → All checks passed
+pytest          → 888 passed, 11 skipped
+mypy .          → No regressions (existing ignore_errors preserved)
+python main.py  → Application launches successfully
+```
+
+### Branch Status
+
+```
+Branch: refactor/2025-12-24/consolidate-phase-b
+Commits ahead of origin: 8 commits
+Status: Ready for review and merge to main
+```
+
+---
+
+## 12. Remaining Work (Optional)
+
+The following items from the original analysis are **low priority** or **outdated**:
+
+### 12.1 Dead Code Analysis (Sections 1.1-1.3)
+
+**Status:** ⚠️ **OUTDATED** — Most items in the dead code list no longer exist.
+
+**Recommendation:** Skip or re-analyze if dead code removal is critical. Many functions
+listed (FileSizeCalculator, multiscreen helpers, etc.) were already removed or are
+actively used.
+
+### 12.2 Remaining Stale Comments (Section 2)
+
+**Status:** ⚠️ **PARTIALLY OUTDATED**
+
+Items already completed in Phase F:
+- ✅ Module docstring phase references (7 files)
+- ✅ Inline phase reference comments
+
+Items **NOT done** (if they exist):
+- Sections 2.1-2.4 reference line numbers that may have changed
+- Would need fresh grep analysis to verify current state
+
+**Recommendation:** Skip unless specific comment clutter is observed.
+
+### 12.3 Code Consolidation (Section 4)
+
+**Status:** ℹ️ **Valid but low priority**
+
+Potential refactorings:
+- `validate_rotation()` consolidation (2 implementations)
+- `format_file_size()` consolidation (3 implementations)
+
+**Recommendation:** Defer to future refactoring when touching related code.
+No immediate value for the effort required.
+
+### 12.4 Deprecated Modules (Section 3)
+
+**Status:** ✅ **COMPLETE**
+
+- ~~theme_engine.py migration~~ → Done in Phase D
+- ~~theme.py migration~~ → Done in Phase E
+- ~~MetadataWaitingDialog removal~~ → Done in Phase E
+
+---
+
+## 13. Next Steps
+
+### Option 1: Merge Current Work (Recommended)
+
+The cleanup achieved substantial improvements:
+- 57 files cleaned
+- ~240 lines removed
+- 8 deprecated patterns eliminated
+- All tests passing
+
+**Action:**
+```bash
+git checkout main
+git merge --no-ff refactor/2025-12-24/consolidate-phase-b
+git push
+```
+
+### Option 2: Additional Cleanup Pass
+
+If desired, perform fresh analysis:
+1. Run `grep -r "Phase \d" oncutf/` to find remaining phase references
+2. Use IDE "Find Usages" to identify truly dead functions
+3. Profile code to find unused consolidation opportunities
+
+**Estimated effort:** 2-4 hours for marginal gains
+
+---
+
 ## 10. Quality Gates
 
 After each phase:
