@@ -3,7 +3,23 @@
 **Date:** 2025-12-23  
 **Author:** Michael Economou  
 **Branch:** `refactor/2025-12-23/metadata-tree-phase2`  
-**Target file:** `oncutf/ui/widgets/metadata_tree_view.py` (2043 lines → target ~600 lines)
+**Target file:** `oncutf/ui/widgets/metadata_tree_view.py` (2043 lines → target ~600 lines)  
+**Status:** ✅ **PHASES 1-6 COMPLETED**
+
+---
+
+## Progress Summary
+
+| Phase | Status | Lines Extracted | Commit |
+|-------|--------|-----------------|--------|
+| Phase 1: Drag Handler | ✅ Complete | ~208 | fb488bf4 |
+| Phase 2: View Config | ✅ Complete | ~340 | e347bfa0 |
+| Phase 3: Search Handler | ✅ Complete | ~330 | b8c4d394 |
+| Phase 4: Selection Handler | ✅ Complete | ~240 | cf0a0b2b |
+| Phase 5: Modifications Handler | ✅ Complete | ~140 | 7a1ee4eb |
+| Phase 6: Cache Handler | ✅ Complete | ~95 | 16b75c63 |
+| **TOTAL EXTRACTED** | | **~1353 lines** | |
+| **Current file size** | | **1359 lines** (from 2043) | |
 
 ---
 
