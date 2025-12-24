@@ -104,7 +104,3 @@ class OperationDialog(QDialog):
     def set_status(self, text: str) -> None:
         """Set the status text."""
         self.waiting_widget.set_status(text)
-
-
-# Backward compatibility alias
-MetadataWaitingDialog = OperationDialog

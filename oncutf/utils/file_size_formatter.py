@@ -188,19 +188,6 @@ def get_default_formatter() -> FileSizeFormatter:
     return _default_formatter
 
 
-def format_file_size(size_bytes: float) -> str:
-    """Format file size using the default formatter.
-
-    Args:
-        size_bytes: File size in bytes
-
-    Returns:
-        Formatted size string
-
-    """
-    return get_default_formatter().format_size(size_bytes)
-
-
 def format_file_size_system_compatible(size_bytes: float) -> str:
     """Format file size to match system file manager behavior.
 

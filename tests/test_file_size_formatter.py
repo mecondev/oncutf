@@ -1,6 +1,5 @@
 from oncutf.utils.file_size_formatter import (
     FileSizeFormatter,
-    format_file_size,
     format_file_size_system_compatible,
 )
 
@@ -30,8 +29,8 @@ def test_get_decimal_separator_locale():
 
 
 def test_format_file_size_uses_default():
-    # format_file_size uses a global default formatter
-    out = format_file_size(1234)
+    # format_file_size_system_compatible uses system-compatible formatter
+    out = format_file_size_system_compatible(1234)
     assert isinstance(out, str)
 
 
@@ -169,8 +168,8 @@ class TestFileSizeFormatter(unittest.TestCase):
 
     def test_global_functions(self):
         """Test global convenience functions."""
-        # Test format_file_size
-        result = format_file_size(1000)
+        # Test format_file_size_system_compatible (format_file_size was removed)
+        result = format_file_size_system_compatible(1000)
         self.assertIsInstance(result, str)
         self.assertGreater(len(result), 0)
 
