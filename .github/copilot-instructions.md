@@ -1,334 +1,88 @@
-
-<!-- GitHub Copilot / AI agent instructions for this repository -->
+<!-- GitHub Copilot / AI agent instructions for oncutf -->
 
 # oncutf — AI assistant guidelines
 
-These instructions help AI coding agents work productively and safely in this repository.
-
 ## Quick context
 
-- **Project:** oncutf — PyQt5 desktop app for advanced batch file renaming with EXIF/metadata support and a professional UI.
-- **Main focus:** metadata-aware rename engine (preview → validate → execute), safe operations, persistent caches, and responsive UI even with large file sets.
-
-When in doubt, prefer a **stable, extendable** solution over a “clever” one.
-
----
-
-## Communication & style conventions
-
-- **Human-facing explanations:** Greek. Keep the tone friendly and clear.
-- **Code, comments, docstrings, log messages, UI text:** English.
-- Communicate with the user in Greek.
-- All code-related output (commit messages, comments, docstrings, variables, filenames, documentation) must be in English.
-
-- Always:
-  - Add **module-level docstrings** when missing.
-  - Add **Author/Date** headers in new modules (Michael Economou, current date).
-  - Use **clear, descriptive names** for variables, functions, classes, and modules.
-  - Follow **PEP 8** style guidelines.
-  - Use **f-strings** for string formatting.
-  - Add **type hints** for function signatures.
-  - Use **__future__ imports** for annotations when needed.
-  - Use `if TYPE_CHECKING:` for imports needed only for type hints.
-  - Add **type annotations** to new functions and methods.
-  - Keep **existing loggers, docstrings and comments**; do not delete them unless the user explicitly asks.
-  - Use only **ASCII characters** in code, comments, log messages, and docstrings.
-    - Never use emoji or Unicode symbols (✓, ✗, →, •, etc.) in logger output.
-    - This ensures Windows console compatibility with non-UTF8 encodings (e.g., cp1253 Greek locale).
-  - Don't use f-strings in log messages; use %-formatting instead (e.g., `logger.info("Processing %d files", count)`).
-
-### Refactoring permission clarifications
-
-- "Drastic restructure" means: changing external behavior, removing user-facing features, deleting large blocks of logic without replacement, or breaking public APIs without a migration plan.
-- Refactoring that **preserves external behavior** but changes **internal structure**, responsibilities, or file layout is **allowed** when the user approves it.
+- **Project:** PyQt5 desktop app for batch file renaming with EXIF/metadata support.
+- **Architecture:** 4-tier MVC (UI → Controllers → Core Services → Data Layer).
+- **Status:** Phase 7 (Final Polish) — 592+ tests, controllers complete.
+- Prefer **stable, extendable** solutions over "clever" ones.
 
 ---
 
-## Approved refactoring mode (execution mode)
+## Communication & style
 
-When the user explicitly approves a refactoring plan or says to proceed:
-
-- The refactoring decision is final and must not be reconsidered.
-- Do not suggest avoiding, postponing, or scaling back the refactor.
-- Do not re-ask for confirmation.
-- Assume version control is clean and rollback is available.
-
-In this mode:
-- Prefer architectural clarity over minimal diffs.
-- Temporary intermediate breakage is acceptable during a phase, as long as it is resolved by the end of that phase.
-- Large or multi-file changes are explicitly allowed.
-- Your role switches from advisor to executor.
+- **User communication:** Greek. **Code/comments/logs:** English.
+- **Logging:** Use %-formatting: `logger.info("Processing %d files", count)`.
+- **Characters:** ASCII only in code/logs (Windows cp1253 compatibility).
+- **New modules:** Add Author/Date headers (Michael Economou, current date).
+- **Type hints:** Use `if TYPE_CHECKING:` for type-only imports.
 
 ---
 
-## Ruff / mypy enforcement mode (when requested)
+## Architecture (where to look first)
 
-By default: do **not** fix linting or typing issues unless the user asks.
-
-When the user explicitly asks to run/fix Ruff and/or mypy:
-- Fix **all** reported issues and warnings without hesitation.
-- Do not stop early.
-- If a rule is inapplicable or creates noise, propose an adjustment to configuration **only after** fixing issues where reasonable.
-- Prefer real fixes over ignores.
-- Preserve behavior.
-
----
-
-## Architecture map (where to look first)
-
-Read these files in this order when understanding behavior:
-
-1. `main.py` — application entry point, Qt app + main window setup.
-2. `oncutf/ui/main_window.py` — primary UI view: delegates to controllers for business logic.
-3. `oncutf/controllers/` — orchestration layer separating UI from business logic.
-4. `oncutf/config.py` — central configuration for UI defaults, filters, paths, debug flags.
-
-**Controllers (in `oncutf/controllers/`)** — Phase 1 refactoring (in progress):
-
-- `file_load_controller.py` — orchestrates file loading: drag & drop, directory scanning, companion files.
-- `metadata_controller.py` — coordinates metadata loading and EXIF operations (planned).
-- `rename_controller.py` — handles rename preview and execution workflows (planned).
-- `main_window_controller.py` — high-level orchestration between all controllers (planned).
-
-Core services (in `oncutf/core/`):
-
-- `application_context.py` — centralized application state.
-- `application_service.py` — high-level API to operations (reduces MainWindow complexity).
-- `unified_rename_engine.py` — main rename engine (preview, validation, conflict handling, execution).
-- `unified_metadata_manager.py` + `structured_metadata_manager.py` — metadata loading and structuring.
-- `unified_column_service.py` — single source of truth for column configuration.
-- `backup_manager.py`, `persistent_hash_cache.py`, `metadata_command_manager.py` — database, caching, and command/undo system.
-- `thread_pool_manager.py`, `async_operations_manager.py` — async and threaded work scheduling.
-- `ui_manager.py`, `table_manager.py`, `status_manager.py`, `shortcut_manager.py`, `splitter_manager.py`, `window_config_manager.py` — UI layout, table behavior, status bar, shortcuts, splitters, and window layout persistence.
-
-Rename modules (in `modules/`):
-
-- `base_module.py` — base class and contracts for all rename modules.
-- `specified_text_module.py`, `counter_module.py`, `metadata_module.py`, `name_transform_module.py`, `text_removal_module.py`, etc.
-- Each module produces **name fragments** and exposes configuration; the final name is built by composing active modules in order.
-
-UI widgets (in `widgets/`):
-
-- `file_table_view.py`, `file_tree_view.py`, `interactive_header.py` — custom views and header with advanced selection & drag behavior.
-- `rename_module_widget.py`, `final_transform_container.py` — visual management for rename modules and final transforms.
-- `custom_message_dialog.py`, `rename_conflict_resolver.py`, `custom_splash_screen.py` — dialogs, conflict resolution, splash screen.
-- `ui_delegates.py` — custom item delegates (hover, combobox, tree).
-
-Utilities (in `utils/`):
-
-- `file_drop_helper.py`, `drag_zone_validator.py` — drag & drop logic.
-- `filename_validator.py`, `path_utils.py`, `path_normalizer.py` — filename and path validation/normalization.
-- `icon_cache.py`, `icons_loader.py`, `multiscreen_helper.py` — visual helpers and multi-screen support.
-- `metadata_exporter.py`, `timer_manager.py`, `logger_helper.py` — metadata export, timers, and logging helpers.
-
-For deeper architectural context, see `docs/` (workflow, metadata system, database, progress manager, safe rename workflow).
-
----
-
-## Developer workflows
-
-Preferred commands (Python 3.12+):
-
-- Install runtime deps:
-  - `pip install -r requirements.txt`
-- Install dev deps:
-  - `pip install -e .[dev]`
-- Run the app:
-  - `python main.py`
-- Run tests:
-  - `pytest` or `pytest tests -q`
-  - Use markers from `pyproject.toml` (`unit`, `integration`, `gui`, `exiftool`, `slow`, etc.).
-
-Many tests and metadata features require `exiftool` to be installed and available in `PATH`.
-
----
-
-## Patterns to follow
-
-When modifying or adding rename-related logic:
-
-- Keep rename modules **pure and composable**:
-  - Input: file/metadata state + module settings.
-  - Output: string fragment (or empty when `is_effective()` is false).
-- Do not perform filesystem operations in modules; actual rename is handled by `unified_rename_engine` and related managers.
-- Respect the preview → validate → execute flow; do not bypass the unified engine.
-
-When working with metadata:
-
-- Always go through the metadata managers in `core/` and the caching layer.
-- Avoid storing large or recursive structures in metadata entries.
-
-When working on the UI:
-
-- Let `ui_manager.py`, `table_manager.py`, `status_manager.py` and the custom widgets handle layout, selection, and visual behavior.
-- Keep business logic out of widgets whenever possible, using managers/services instead.
-
-When working with controllers (Phase 1 refactoring):
-
-- Controllers orchestrate between UI and domain services (managers in `core/`).
-- Controllers are UI-agnostic: testable without Qt/GUI, no direct widget manipulation.
-- Follow the pattern: **write new controller code first, test it, wire to MainWindow with feature flag, then remove old code**.
-- Each controller handles one domain: FileLoad, Metadata, Rename, MainWindow orchestration.
-- All new controller files must include **author/date headers** (Michael Economou, current date) in module docstring.
-
----
-
-## Required helpers and utilities
-
-**IMPORTANT:** Use these project-specific helpers instead of raw Qt/Python equivalents.
-
-### Must-Use Helpers (mandatory)
-
-| Helper | Import | Use instead of |
-|--------|--------|----------------|
-| `wait_cursor()` | `from oncutf.utils.cursor_helper import wait_cursor` | `QApplication.setOverrideCursor()` |
-| `get_cached_logger()` | `from oncutf.utils.logger_factory import get_cached_logger` | `logging.getLogger()` |
-
-Example:
-```python
-from oncutf.utils.cursor_helper import wait_cursor
-
-with wait_cursor():
-    # blocking operation here
-    process_files()
+```
+main.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
 ```
 
-### Dialogs & UI (use instead of Qt defaults)
+**Controllers** (`oncutf/controllers/`): UI-agnostic orchestration layer:
+- `file_load_controller.py` — file loading, drag & drop, directory scanning
+- `metadata_controller.py` — metadata loading, EXIF operations
+- `rename_controller.py` — rename preview → validate → execute workflow
+- `main_window_controller.py` — high-level multi-service orchestration
 
-| Helper | Import | Use instead of |
-|--------|--------|----------------|
-| `CustomMessageDialog` | `from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog` | `QMessageBox` |
-| `ProgressDialog` | `from oncutf.utils.progress_dialog import ProgressDialog` | `QProgressDialog` |
-| `ResultsTableDialog` | `from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog` | Custom results display |
-| `TooltipHelper` | `from oncutf.utils.tooltip_helper import TooltipHelper` |
+**Core services** (`oncutf/core/`): Business logic:
+- `application_context.py` — singleton app state, manager registry
+- `unified_rename_engine.py` — rename orchestration (never bypass this)
+- `unified_metadata_manager.py` — metadata loading with caching
+- `persistent_hash_cache.py`, `backup_manager.py` — SQLite persistence
 
-### Timer & Scheduling
-
-| Helper | Import | Purpose |
-|--------|--------|---------|
-| `schedule_ui_update()` | `from oncutf.utils.timer_manager import schedule_ui_update` | Delayed/debounced UI updates |
-| `schedule_scroll_adjust()` | `from oncutf.utils.timer_manager import schedule_scroll_adjust` | Delayed scroll adjustments |
-| `ProgressEstimator` | `from oncutf.utils.time_formatter import ProgressEstimator` | ETA calculations for progress |
-
-### Files & Paths
-
-| Helper | Import | Purpose |
-|--------|--------|---------|
-| `normalize_path()` | `from oncutf.utils.path_normalizer import normalize_path` | Cross-platform path normalization |
-| `paths_equal()` | `from oncutf.utils.path_utils import paths_equal` | Safe path comparison |
-| `validate_filename()` | `from oncutf.utils.filename_validator import validate_filename` | Filename validation |
-
-### Status & Feedback
-
-| Helper | Access | Purpose |
-|--------|--------|---------|
-| `status_manager` | `self.main_window.status_manager` or `parent.status_manager` | Status bar messages with auto-reset |
-| `PlaceholderHelper` | `from oncutf.utils.placeholder_helper import PlaceholderHelper` | Empty state overlays on tables |
-
-### Config Constants (read from config, don't hardcode)
-
-| Constant | Import | Description |
-|----------|--------|-------------|
-| `STATUS_AUTO_RESET_DELAY` | `from oncutf.config import STATUS_AUTO_RESET_DELAY` | Status bar auto-reset delay (3000ms) |
-| `TOOLTIP_DURATION` | `from oncutf.config import TOOLTIP_DURATION` | Tooltip duration (2000ms) |
-| `EXIFTOOL_TIMEOUT_FAST` | `from oncutf.config import EXIFTOOL_TIMEOUT_FAST` | ExifTool fast timeout (60s) |
-| `EXIFTOOL_TIMEOUT_EXTENDED` | `from oncutf.config import EXIFTOOL_TIMEOUT_EXTENDED` | ExifTool extended timeout (240s) |
+**Rename modules** (`oncutf/modules/`): Pure composable name fragment generators.
 
 ---
 
-## Large refactoring workflow (branch per phase + quality gates)
+## Required helpers (use instead of raw Qt)
 
-For large refactorings, work in explicit phases. Each phase must be atomic and end in a clean, validated state.
-
-
-
-### Phase workflow
-
-For each phase:
-
-1. **Create a new branch for the phase**
-   - Branch name convention:
-     - `refactor/<topic>/<phase-N>-short-title`
-   - Example:
-     - `refactor/controllers/phase-1-extract-file-load`
-
-2. **Implement only what belongs to this phase**
-   - Keep changes focused.
-   - Preserve external behavior unless the user explicitly requests behavior changes.
-
-3. **At the end of the phase, run quality gates**
-   - `ruff check .`
-   - `mypy .`
-   - `pytest`
-
-4. **If any gate fails**
-   - Fix issues until all pass.
-   - Do not leave failing checks at phase completion.
-
-5. **Update the plan / tracking docs**
-   - Update the relevant plan file in `docs/` (e.g., `docs/PHASE1_EXECUTION_PLAN.md`)
-   - Mark the phase as completed, note key changes, and record follow-ups.
-
-6. **Commit**
-   - Use a clear commit message in English.
-   - Prefer conventional style:
-     - `refactor: <summary>`
-     - `fix: <summary>`
-     - `docs: <summary>`
-
-7. **Merge into main**
-   - Merge the phase branch into `main` after all gates pass.
-   - Use non-destructive merges unless the user requests otherwise.
-
-8. **Push**
-   - Push `main` and the branch (if desired) to the remote.
-
-### Branch naming and merge policy (mandatory)
-
-All refactoring work must follow these rules:
-
-#### Branch naming
-- Each refactoring phase must use a dedicated branch.
-- Branch names MUST start with an ISO date.
-
-Format:
-- `refactor/YYYY-MM-DD/<topic>-phase-N`
-
-Examples:
-- `refactor/2025-12-20/controllers-phase-1`
-- `refactor/2025-12-22/metadata-cache-phase-2`
-
-#### Merge policy
-- All refactoring branches MUST be merged using:
-  - `git merge --no-ff`
-- Fast-forward merges are NOT allowed for refactoring phases.
-- Squash merges are NOT allowed for refactoring phases.
-
-Rationale:
-- Each refactoring phase represents a conceptual and architectural milestone.
-- The merge commit marks the completion of a phase and must remain visible in history.
-
-### Agent output requirement
-
-If the agent cannot execute git commands directly, it must:
-- Provide the exact git commands to run (copy-paste ready).
-- Provide the exact commands for ruff/mypy/pytest.
-- Provide the expected order of operations.
+```python
+from oncutf.utils.cursor_helper import wait_cursor      # not QApplication.setOverrideCursor()
+from oncutf.utils.logger_factory import get_cached_logger  # not logging.getLogger()
+from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog  # not QMessageBox
+from oncutf.utils.path_normalizer import normalize_path  # cross-platform paths
+```
 
 ---
 
-## Phase 1 plan reference
+## Developer commands
 
-During Phase 1 refactoring:
-- Follow the execution plan in `docs/PHASE1_EXECUTION_PLAN.md`.
-- Each step is atomic and testable.
-- Never skip phase-end validation (ruff, mypy, pytest).
+```bash
+pip install -e .[dev]    # Install with dev dependencies
+python main.py           # Run application
+pytest                   # Run tests (requires exiftool in PATH)
+ruff check .             # Lint (no auto-fix)
+ruff check . --fix       # Lint with auto-fix (only when explicitly asked)
+mypy .                   # Type check (many modules have ignore_errors=true)
+```
 
-If anything is ambiguous, ask the user in Greek which behavior they prefer before proceeding.
+**Test markers:** `unit`, `integration`, `gui`, `exiftool`, `slow`.
 
-**IMPORTANT - mypy limitations:**
-- Many modules have `ignore_errors=true` in pyproject.toml due to Qt attribute noise.
-- When asked to "fix all mypy errors", only fix errors in modules where `ignore_errors=false`.
-- Check pyproject.toml [[tool.mypy.overrides]] sections to see which modules are actively checked.
-- Use `ruff check .` (without --fix) to check; use `ruff check . --fix` only when explicitly asked to auto-fix.
+---
 
+## Key patterns
+
+1. **Rename flow:** Always respect preview → validate → execute via `unified_rename_engine`.
+2. **Rename modules:** Pure functions returning name fragments; no filesystem operations.
+3. **Controllers:** UI-agnostic, testable without Qt, orchestrate between UI and services.
+4. **Metadata:** Always go through managers in `core/`; use caching layer.
+5. **mypy:** Check `pyproject.toml` overrides — many modules have `ignore_errors=true`.
+
+---
+
+## Refactoring workflow
+
+When user approves refactoring:
+- Execute without re-asking; prefer clarity over minimal diffs.
+- Run quality gates at phase end: `ruff check .` → `mypy .` → `pytest`.
+- Branch naming: `refactor/YYYY-MM-DD/<topic>-phase-N`.
+- Merge with `git merge --no-ff` (no fast-forward or squash).
