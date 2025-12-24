@@ -1,6 +1,6 @@
 # Codebase Cleaning Plan — 2025-12-24
 
-**Status:** In Progress (Phase A & B Complete)  
+**Status:** In Progress (Phase A, B, B+ Complete — Phase D Next)  
 **Author:** Michael Economou  
 **Goal:** Clean dead code, stale comments, duplicate patterns, and improve type safety
 
@@ -12,6 +12,7 @@ Full codebase analysis revealed:
 - ~~**~50 "Phase X" comments** referencing completed refactorings~~ ✅ **DONE (Phase A)**
 - ~~**Duplicate `normalize_path()` functions**~~ ✅ **DONE (Phase B)**
 - ~~**12 instances of duplicate row selection pattern**~~ ✅ **DONE (Phase B)**
+- ~~**4 legacy main_window access patterns**~~ ✅ **DONE (Phase B+)**
 - **~35 dead functions/classes** that are never called (many may not exist anymore)
 - **3 deprecated modules** still in active use (need migration)
 - **~50 modules** with `ignore_errors=true` in mypy (gradual strictness opportunity)
@@ -56,6 +57,37 @@ Full codebase analysis revealed:
 
 **Files changed:** 6 files  
 **Quality gates:** All passed (ruff 11 fixes ✓, mypy ✓, pytest 592+ ✓)
+
+---
+
+## ✅ Phase B+: Legacy Code Cleanup (COMPLETED)
+
+**Branch:** `refactor/2025-12-24/consolidate-phase-b`  
+**Commits:** `448ec69a`, `bd5dd269`  
+**Status:** Ready to merge
+
+### Completed Actions:
+1. ✅ **Removed invalid `store_hash()` calls (Critical Bug Fix)**
+   - HashManager has no store_hash() method — hash is auto-stored by calculate_hash()
+   - Removed 3 invalid calls causing "object has no attribute" warnings
+   - Files: hash_operations_manager.py, unified_metadata_manager.py, direct_metadata_loader.py
+
+2. ✅ **Fixed controller method calls**
+   - `get_all_files()` → `get_loaded_files()`
+   - `get_recursive_mode()` → `is_recursive_mode()`
+   - Fixed FileStore method calls in metadata_controller
+
+3. ✅ **Replaced legacy main_window access with manager registry**
+   - `main_window.table_manager` → `get_manager("table")`
+   - `main_window.metadata_cache` → `get_manager("metadata").metadata_cache`
+   - Proper dependency injection pattern (4 locations fixed)
+
+4. ✅ **Fixed export_metadata API call**
+   - `export_metadata_to_file()` (doesn't exist) → `MetadataExporter().export_files()`
+   - Added TODO for StructuredMetadataManager.get_common_fields() (not implemented yet)
+
+**Files changed:** 6 files  
+**Quality gates:** All passed (ruff ✓, pytest 888 ✓)
 
 ---
 
