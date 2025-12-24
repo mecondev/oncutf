@@ -1,25 +1,37 @@
 # Codebase Cleaning Plan — 2025-12-24
 
-**Status:** ✅ **COMPLETE** (All planned phases finished)  
+**Status:** ✅ **COMPLETE & MERGED** (All phases finished and in production)  
 **Author:** Michael Economou  
 **Goal:** Clean dead code, stale comments, duplicate patterns, and improve type safety
 
-**Completed:** 6 phases, 57 files changed, ~240 lines removed  
-**Result:** Cleaner, more maintainable codebase ready for merge
+**Completed:** 6 phases, 46 files changed, ~240 lines removed  
+**Result:** Cleaner, more maintainable codebase in production (main branch)
+
+**Merge Commits:**
+- Phase A: `6cb6d0f0` (merged Dec 24, 2025)
+- Phases B-F: `10820d54` (merged Dec 24, 2025)
 
 ---
 
 ## Executive Summary
 
-**Completed work:**
-- ~~**~50 "Phase X" comments** referencing completed refactorings~~ ✅ **Phase A** (13 files)
-- ~~**Duplicate `normalize_path()` functions**~~ ✅ **Phase B** (6 files)
-- ~~**12 instances of duplicate row selection pattern**~~ ✅ **Phase B** (6 files)
-- ~~**4 legacy main_window access patterns**~~ ✅ **Phase B+** (6 files)
-- ~~**20+ ThemeEngine imports to migrate**~~ ✅ **Phase D** (22 files)
-- ~~**8 imports from deprecated `theme.py`** module~~ ✅ **Phase E** (9 files)
-- ~~**MetadataWaitingDialog alias**~~ ✅ **Phase E** (3 files)
-- ~~**Stale phase reference comments** in docstrings~~ ✅ **Phase F** (7 files)
+**All planned work completed:**
+- ✅ **~50 "Phase X" comments** referencing completed refactorings → **Phase A** (13 files)
+- ✅ **Duplicate `normalize_path()` functions** → **Phase B** (6 files)
+- ✅ **12 instances of duplicate row selection pattern** → **Phase B** (6 files)
+- ✅ **4 legacy main_window access patterns** → **Phase B+** (6 files)
+- ✅ **22+ ThemeEngine imports to migrate** → **Phase D** (22 files)
+- ✅ **8 imports from deprecated `theme.py`** module → **Phase E** (9 files)
+- ✅ **MetadataWaitingDialog alias** → **Phase E** (3 files)
+- ✅ **Stale phase reference comments** in docstrings → **Phase F** (7 files)
+
+**Quality verification (post-merge):**
+```bash
+✓ ruff check .  → All checks passed
+✓ pytest        → 888 passed, 11 skipped
+✓ mypy .        → No regressions
+✓ python main.py → Application launches successfully
+```
 
 ---
 
@@ -684,29 +696,83 @@ No immediate value for the effort required.
 
 ## 13. Next Steps
 
-### Option 1: Merge Current Work (Recommended)
+---
 
-The cleanup achieved substantial improvements:
-- 57 files cleaned
-- ~240 lines removed
-- 8 deprecated patterns eliminated
-- All tests passing
+## 14. Post-Merge Status (Dec 24, 2025)
 
-**Action:**
+### ✅ Completed & Deployed
+
+All 6 phases have been successfully merged to `main` and pushed to production:
+
 ```bash
-git checkout main
-git merge --no-ff refactor/2025-12-24/consolidate-phase-b
-git push
+# Merge history
+6cb6d0f0  Merge Phase A cleanup
+10820d54  Merge phases B+ through F: Complete codebase cleanup
 ```
 
-### Option 2: Additional Cleanup Pass
+**Impact:**
+- 46 files changed across the codebase
+- ~240 lines of dead/duplicate code removed
+- 0 deprecated theme imports remaining
+- All backwards compatibility maintained via facade modules
 
-If desired, perform fresh analysis:
-1. Run `grep -r "Phase \d" oncutf/` to find remaining phase references
-2. Use IDE "Find Usages" to identify truly dead functions
-3. Profile code to find unused consolidation opportunities
+### 🎯 Current State Analysis
 
-**Estimated effort:** 2-4 hours for marginal gains
+**Deprecated modules still present (intentional):**
+- ✅ `oncutf/utils/theme_engine.py` — Backwards compatibility facade (0 active imports)
+- ✅ `oncutf/utils/theme.py` — Backwards compatibility facade (0 active imports)
+- ℹ️ Both modules delegate to `ThemeManager` — can be removed in future major version
+
+**Deprecated methods in metadata_widget.py:**
+- ℹ️ 15+ deprecated wrapper methods marked with docstrings
+- ℹ️ All delegate to new handler classes (CategoryManager, HashHandler, etc.)
+- 📌 **Recommendation:** Remove in next breaking change window
+
+**TODO markers found:**
+- 11 TODOs for future features (undo manager, database search, etc.)
+- All are for unimplemented functionality, not cleanup items
+
+---
+
+## 15. What's Next?
+
+### Option 1: Feature Development (Recommended)
+
+The codebase is now clean and ready for new features:
+- All deprecated patterns migrated
+- No technical debt from cleanup
+- Test suite stable (888 passing)
+
+**Suggested focus areas:**
+1. Implement undo manager (5 TODOs reference this)
+2. Complete last_state restoration (4 TODOs)
+3. Add database search functionality (1 TODO)
+
+### Option 2: Additional Cleanup (Low Priority)
+
+If desired, these optional improvements remain:
+
+**A. Remove deprecated facades (Breaking Change)**
+```bash
+# After verifying 0 external dependencies:
+rm oncutf/utils/theme_engine.py
+rm oncutf/utils/theme.py
+# Update: oncutf/utils/__init__.py exports
+```
+
+**B. Deprecated method removal in metadata_widget.py**
+- 15 wrapper methods can be removed
+- Requires verification that no external code uses them
+- Estimated effort: 1-2 hours
+
+**C. Code consolidation opportunities**
+- `validate_rotation()` — 2 implementations
+- `format_file_size()` — 3 implementations
+- Estimated effort: 2-3 hours for marginal benefit
+
+### Option 3: Archive This Plan
+
+Move to `docs/_archive/` as historical reference since all work is complete.
 
 ---
 
