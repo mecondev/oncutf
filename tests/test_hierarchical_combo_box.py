@@ -47,7 +47,7 @@ class TestHierarchicalComboBox:
             yield QApplication.instance()
 
     @pytest.fixture
-    def theme_engine(self):
+    def theme_manager(self):
         """Create a ThemeManager instance for testing."""
         return get_theme_manager()
 
@@ -75,7 +75,7 @@ class TestHierarchicalComboBox:
         }
 
     @pytest.fixture
-    def combo_box(self, qapp, theme_engine):  # noqa: ARG002
+    def combo_box(self, qapp, theme_manager):  # noqa: ARG002
         """Create a HierarchicalComboBox for testing."""
         combo = HierarchicalComboBox()
         # Apply theme to get consistent styling
@@ -83,8 +83,8 @@ class TestHierarchicalComboBox:
             combo.tree_view.setStyleSheet(
                 f"""
                 QTreeView {{
-                    background-color: {theme_engine.get_color("combo_dropdown_background")};
-                    color: {theme_engine.get_color("text")};
+                    background-color: {theme_manager.get_color("combo_dropdown_background")};
+                    color: {theme_manager.get_color("text")};
                 }}
             """
             )
@@ -178,20 +178,20 @@ class TestHierarchicalComboBox:
         # This test ensures the method doesn't crash
         assert isinstance(current_text, str)
 
-    def test_theme_consistency(self, combo_box, theme_engine):
+    def test_theme_consistency(self, combo_box, theme_manager):
         """Test theme consistency between tree view and combobox."""
         # Apply theme styling
         if hasattr(combo_box, "tree_view"):
             style_sheet = f"""
                 QTreeView {{
-                    background-color: {theme_engine.get_color("combo_dropdown_background")};
-                    color: {theme_engine.get_color("text")};
+                    background-color: {theme_manager.get_color("combo_dropdown_background")};
+                    color: {theme_manager.get_color("text")};
                 }}
                 QTreeView::item:hover {{
-                    background-color: {theme_engine.get_color("combo_item_background_hover")};
+                    background-color: {theme_manager.get_color("combo_item_background_hover")};
                 }}
                 QTreeView::item:selected {{
-                    background-color: {theme_engine.get_color("combo_item_background_selected")};
+                    background-color: {theme_manager.get_color("combo_item_background_selected")};
                 }}
             """
             combo_box.tree_view.setStyleSheet(style_sheet)

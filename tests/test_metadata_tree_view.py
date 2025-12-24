@@ -47,19 +47,19 @@ class TestMetadataTreeView:
             yield QApplication.instance()
 
     @pytest.fixture
-    def theme_engine(self):
+    def theme_manager(self):
         """Create a ThemeManager instance for testing."""
         return get_theme_manager()
 
     @pytest.fixture
-    def tree_view(self, qapp, theme_engine, qtbot):  # noqa: ARG002
+    def tree_view(self, qapp, theme_manager, qtbot):  # noqa: ARG002
         """Create a MetadataTreeView for testing."""
         tree = MetadataTreeView()
         tree.setStyleSheet(
             f"""
             QTreeView {{
-                background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("text")};
+                background-color: {theme_manager.get_color("table_background")};
+                color: {theme_manager.get_color("text")};
             }}
         """
         )
@@ -73,13 +73,13 @@ class TestMetadataTreeView:
         assert tree_view.alternatingRowColors() is True
         assert tree_view.selectionMode() == QTreeView.SingleSelection
 
-    def test_theme_application(self, tree_view, theme_engine):
+    def test_theme_application(self, tree_view, theme_manager):
         """Test that theme styles are properly applied."""
         # Apply stylesheet with branch styling
         style_sheet = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("text")};
+                background-color: {theme_manager.get_color("table_background")};
+                color: {theme_manager.get_color("text")};
             }}
             QTreeView::branch:has-children:closed {{
                 image: url(:/icons/chevron-right.svg);
@@ -115,24 +115,24 @@ class TestMetadataTreeView:
         )
         tree_view.mouseMoveEvent(mouse_event)
 
-    def test_styling_consistency(self, tree_view, theme_engine):
+    def test_styling_consistency(self, tree_view, theme_manager):
         """Test that styling remains consistent across states."""
         style_sheet = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("text")};
+                background-color: {theme_manager.get_color("table_background")};
+                color: {theme_manager.get_color("text")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color("table_selection_bg")};
-                color: {theme_engine.get_color("table_selection_text")};
+                background-color: {theme_manager.get_color("table_selection_bg")};
+                color: {theme_manager.get_color("table_selection_text")};
             }}
         """
         tree_view.setStyleSheet(style_sheet)
         style = tree_view.styleSheet()
 
         # Should have consistent theme colors
-        assert theme_engine.get_color("table_background") in style
-        assert theme_engine.get_color("text") in style
+        assert theme_manager.get_color("table_background") in style
+        assert theme_manager.get_color("text") in style
 
         # Note: This test checks for actual color values
         assert len(style) > 0, "Style sheet should not be empty"

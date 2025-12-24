@@ -222,8 +222,6 @@ class ThemeManager(QObject):
     def get_constant(self, key: str) -> int:
         """Get a layout/sizing constant from theme tokens.
 
-        Provides backwards compatibility with ThemeEngine.get_constant().
-
         Args:
             key: Constant name (e.g., 'table_row_height', 'button_height', 'combo_height')
 
@@ -245,8 +243,6 @@ class ThemeManager(QObject):
     def get_font_sizes(self) -> dict:
         """Get font size definitions for the current theme.
 
-        Provides backwards compatibility with ThemeEngine.fonts.
-
         Returns:
             Dictionary with font size configurations
 
@@ -263,7 +259,7 @@ class ThemeManager(QObject):
 
     @property
     def fonts(self) -> dict:
-        """Get fonts configuration (property for ThemeEngine compatibility).
+        """Get fonts configuration.
 
         Returns:
             Dictionary with font settings
@@ -273,7 +269,7 @@ class ThemeManager(QObject):
 
     @property
     def constants(self) -> dict:
-        """Get layout/sizing constants (property for ThemeEngine compatibility).
+        """Get layout/sizing constants.
 
         Returns:
             Dictionary with constant values
@@ -287,8 +283,6 @@ class ThemeManager(QObject):
 
     def apply_complete_theme(self, app, main_window=None) -> None:
         """Apply complete theming to the entire application.
-
-        Provides backwards compatibility with ThemeEngine.apply_complete_theme().
 
         Args:
             app: QApplication instance

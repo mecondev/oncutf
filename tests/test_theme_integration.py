@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 try:
     from PyQt5.QtWidgets import QApplication
 
-    from oncutf.utils.theme_engine import ThemeEngine
+    from oncutf.core.theme_manager import ThemeManager, get_theme_manager
 
     PYQT5_AVAILABLE = True
 except ImportError:
@@ -44,46 +44,46 @@ class TestThemeIntegration:
             yield QApplication.instance()
 
     @pytest.fixture
-    def theme_engine(self):
-        """Create a ThemeEngine instance for testing."""
-        return ThemeEngine()
+    def theme_manager(self):
+        """Create a ThemeManager instance for testing."""
+        return get_theme_manager()
 
-    def test_theme_engine_initialization(self, theme_engine):
-        """Test ThemeEngine initialization."""
-        assert isinstance(theme_engine, ThemeEngine)
-        assert hasattr(theme_engine, "get_color")
-        assert hasattr(theme_engine, "colors")
+    def test_theme_manager_initialization(self, theme_manager):
+        """Test ThemeManager initialization."""
+        assert isinstance(theme_manager, ThemeManager)
+        assert hasattr(theme_manager, "get_color")
+        assert hasattr(theme_manager, "colors")
 
-    def test_consistent_color_definitions(self, theme_engine):
+    def test_consistent_color_definitions(self, theme_manager):
         """Test that theme colors are consistently defined."""
-        # Test key color retrieval
+        # Test key color retrieval - use actual token names from config
         table_colors = [
-            "table_text",
+            "text",
             "table_background",
             "table_selection_text",
-            "table_selection_background",
-            "table_hover_background",
+            "table_selection_bg",
+            "table_hover_bg",
         ]
 
         for color_name in table_colors:
-            color = theme_engine.get_color(color_name)
+            color = theme_manager.get_color(color_name)
             assert color is not None, f"Color {color_name} should be defined"
             assert isinstance(color, str), f"Color {color_name} should be a string"
 
-    def test_tree_view_style_generation(self, theme_engine):
+    def test_tree_view_style_generation(self, theme_manager):
         """Test tree view style sheet generation."""
         # Generate a basic tree view style using theme colors
         style = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color("table_background")};
-                color: {theme_engine.get_color("text")};
+                background-color: {theme_manager.get_color("table_background")};
+                color: {theme_manager.get_color("text")};
             }}
             QTreeView::item:hover {{
-                background-color: {theme_engine.get_color("table_hover_bg")};
+                background-color: {theme_manager.get_color("table_hover_bg")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color("table_selection_bg")};
-                color: {theme_engine.get_color("table_selection_text")};
+                background-color: {theme_manager.get_color("table_selection_bg")};
+                color: {theme_manager.get_color("table_selection_text")};
             }}
         """
 
@@ -97,7 +97,7 @@ class TestThemeIntegration:
         assert "hover" in style.lower()
         assert "selected" in style.lower()
 
-    def test_chevron_icon_styling(self, theme_engine):  # noqa: ARG002
+    def test_chevron_icon_styling(self, theme_manager):  # noqa: ARG002
         """Test chevron/branch icon styling."""
         # Generate chevron styling using theme
         style = """
@@ -119,11 +119,11 @@ class TestThemeIntegration:
 
         assert has_branch_styling, "Style should include chevron/branch styling"
 
-    def test_color_consistency_across_states(self, theme_engine):
+    def test_color_consistency_across_states(self, theme_manager):
         """Test color consistency across different UI states."""
         # Get colors that should be consistent
-        normal_text = theme_engine.get_color("text")
-        selection_text = theme_engine.get_color("table_selection_text")
+        normal_text = theme_manager.get_color("text")
+        selection_text = theme_manager.get_color("table_selection_text")
 
         # Colors should be defined and different for contrast
         assert normal_text != selection_text, "Normal and selection text colors should differ"

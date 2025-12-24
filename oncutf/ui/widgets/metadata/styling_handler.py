@@ -36,7 +36,7 @@ class StylingHandler:
         """Ensure that child widgets inherit theme styles properly.
 
         Note: This method is currently a no-op as detailed styling is handled
-        by ComboBoxItemDelegate and the global theme engine.
+        by ComboBoxItemDelegate and the global ThemeManager.
         """
 
     def apply_disabled_combo_styling(self) -> None:
@@ -50,7 +50,7 @@ class StylingHandler:
     def apply_normal_combo_styling(self) -> None:
         """Apply normal styling to hierarchical combo box.
 
-        Note: This method is currently a no-op. Global ThemeEngine + delegates
+        Note: This method is currently a no-op. Global ThemeManager + delegates
         handle combo styling consistently, avoiding per-widget QSS interference.
         """
 
@@ -145,6 +145,6 @@ class StylingHandler:
     def apply_category_styling(self) -> None:
         """Apply normal styling to the category combo box.
 
-        Note: This method is currently a no-op. Global ThemeEngine + delegates
+        Note: This method is currently a no-op. Global ThemeManager + delegates
         handle combo styling consistently, avoiding per-widget QSS interference.
         """
