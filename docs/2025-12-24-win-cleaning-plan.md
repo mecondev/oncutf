@@ -1,11 +1,11 @@
 # Codebase Cleaning Plan — 2025-12-24
 
-**Status:** In Progress (Phases A, B, B+, D Complete — Phase E Next)  
+**Status:** In Progress (Phases A, B, B+, D, E Complete — Finalization Pending)  
 **Author:** Michael Economou  
 **Goal:** Clean dead code, stale comments, duplicate patterns, and improve type safety
 
-**Completed:** 4 phases, 41 files changed, ~200 lines removed  
-**Remaining:** Phase E (8 theme.py imports), Phase F (optional cleanup)
+**Completed:** 5 phases, 50 files changed, ~230 lines removed  
+**Remaining:** Phase F (optional cleanup), finalization and merge
 
 ---
 
@@ -17,13 +17,11 @@
 - ~~**12 instances of duplicate row selection pattern**~~ ✅ **Phase B** (6 files)
 - ~~**4 legacy main_window access patterns**~~ ✅ **Phase B+** (6 files)
 - ~~**20+ ThemeEngine imports to migrate**~~ ✅ **Phase D** (22 files)
+- ~~**8 imports from deprecated `theme.py`** module~~ ✅ **Phase E** (9 files)
+- ~~**MetadataWaitingDialog alias**~~ ✅ **Phase E** (3 files)
 
-**Remaining quick wins:**
-- **8 imports from deprecated `theme.py`** module (easy migration to ThemeManager)
-- **MetadataWaitingDialog alias** — can be removed (only 3 usages)
-
-**Lower priority / optional:**
-- **~35 dead functions/classes** that are never called
+**Optional cleanup:**
+- **~35 dead functions/classes** that are never called (Phase F)
 - **~50 modules** with `ignore_errors=true` in mypy (gradual strictness)
 
 ---
@@ -507,40 +505,69 @@ Deferred in favor of higher-value quick wins (Phase D completed instead).
 3. Enable `F403` in ruff, fix violations
 4. Add `-> None` to `__init__` methods in strict modules
 
-### ~~Phase D: ThemeEn30-45 minutes  
-**Impact:** High (final cleanup of deprecated imports)
+### ~~Phase D: ThemeEngine Migration~~ ✅ **DONE** (commit c48a6164)
 
-**E1. Migrate `theme.py` usages to ThemeManager (8 files)**
+**Target:** Deprecated `theme_engine.py` module  
+**Time:** 90 minutes  
+**Impact:** Critical (22 files, ~140 usages, 8 years of legacy)  
+**Files:** 22 files modified
 
-Files using deprecated `get_theme_color()` helper:
+Successfully migrated all `ThemeEngine` usages to `ThemeManager`:
+- 6 direct `ThemeEngine.get_color()` usages → `ThemeManager.get_color()`
+- 16 indirect usages via imports or get_instance() → `get_theme_manager()`
+- Added 3 backwards compatibility combo tokens to prevent breaking untouched code
+
+**Quality gates:** ✅ All passed
+- `ruff check .` → All checks passed  
+- `pytest` → 888 passed, 11 skipped
+
+---
+
+### ~~Phase E: Migrate Deprecated Helpers~~ ✅ **DONE** (commit ff631b1a)
+
+**Target:** `theme.py` module and `MetadataWaitingDialog` alias  
+**Time:** 45 minutes  
+**Impact:** High (final cleanup of deprecated imports)  
+**Files:** 9 files modified
+
+**E1. Migrate `theme.py` usages to ThemeManager (6 files)** ✅
+
+Successfully migrated all deprecated helper functions:
 - `oncutf/utils/placeholder_helper.py` (1 usage)
 - `oncutf/ui/widgets/metadata_edit_dialog.py` (1 usage)
-- `oncutf/ui/widgets/ui_delegates.py` (2 imports: `get_qcolor`, `get_theme_color`)
+- `oncutf/ui/widgets/ui_delegates.py` (13 total: 2 imports, multiple usages)
 - `oncutf/ui/widgets/preview_tables_view.py` (2 usages)
-- `oncutf/ui/widgets/color_grid_menu.py` (2 usages)
-- `oncutf/ui/delegates/color_column_delegate.py` (1 usage)
+- `oncutf/ui/widgets/color_grid_menu.py` (10 total: inline imports + multiple usages)
+- `oncutf/ui/delegates/color_column_delegate.py` (3 usages)
 
 **Migration pattern:**
 ```python
 # Before
-from oncutf.utils.theme import get_theme_color
+from oncutf.utils.theme import get_theme_color, get_qcolor
 color = get_theme_color("background")
+qcolor = get_qcolor("text")
 
 # After
 from oncutf.core.theme_manager import get_theme_manager
-color = get_theme_manager().get_color("background")
+theme = get_theme_manager()
+color = theme.get_color("background")
+qcolor = QColor(theme.get_color("text"))
 ```
 
-**E2. Remove MetadataWaitingDialog alias (3 usages)**
+**E2. Remove MetadataWaitingDialog alias (3 files)** ✅
 
-Current: `MetadataWaitingDialog` is just an alias for `OperationDialog`
-- `oncutf/ui/main_window.py` — 4 references (findChildren, isinstance checks)
-- `oncutf/core/drag/drag_manager.py` — 2 references (import, isinstance check)
-- `oncutf/ui/widgets/__init__.py` — export statement
+Replaced all backward compatibility alias usages:
+- `oncutf/ui/main_window.py` — replaced findChildren and isinstance references
+- `oncutf/core/drag/drag_manager.py` — replaced import and isinstance check
+- `oncutf/ui/widgets/__init__.py` — removed export statement
 
-Action: Replace with direct `OperationDialog` usage
+**Quality gates:** ✅ All passed
+- `ruff check .` → All checks passed
+- `pytest` → 888 passed, 11 skipped
 
-### Phase F: Optional Deep Cleanup (LOW PRIORITY
+---
+
+### Phase F: Optional Deep Cleanup (LOW PRIORITY)
 1. ~~Migrate `theme_engine.py` usages to `ThemeManager`~~ ✅ **DONE**
 2. Migrate `theme.py` usages (if any remain)
 3. Assess and remove `MetadataWaitingDialog` if no longer needed
