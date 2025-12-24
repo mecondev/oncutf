@@ -354,7 +354,7 @@ class WindowConfigManager:
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
-        # Phase 1D: Use MainWindowController for session restore orchestration
+        # Use MainWindowController for session restore orchestration
         if not hasattr(self.main_window, "main_window_controller"):
             logger.warning("[Config] MainWindowController not available for session restore")
             return

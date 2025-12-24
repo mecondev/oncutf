@@ -4,7 +4,6 @@ Author: Michael Economou
 Date: 2025-06-15
 
 Manages hash-related operations for file duplicate detection, comparison, and checksum calculations.
-Extracted from EventHandlerManager as part of Phase 3 refactoring.
 
 Features:
 - Duplicate file detection within selected or all files

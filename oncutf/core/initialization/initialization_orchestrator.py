@@ -5,8 +5,6 @@ Date: 2025-11-21
 
 Orchestrates MainWindow initialization in a structured, maintainable way.
 Separates initialization logic from MainWindow class to reduce complexity.
-
-Phase 4 of Application Context Migration: Complete Migration & Cleanup
 """
 
 from typing import TYPE_CHECKING
