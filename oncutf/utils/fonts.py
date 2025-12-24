@@ -165,7 +165,9 @@ class InterFonts:
                     else:
                         logger.error("Failed to load embedded font %s", font_key)
                 else:
-                    logger.error("No data found for embedded font %s at %s", font_key, resource_path)
+                    logger.error(
+                        "No data found for embedded font %s at %s", font_key, resource_path
+                    )
 
         except ImportError as e:
             logger.error("Could not import fonts_rc for embedded fonts: %s", e)

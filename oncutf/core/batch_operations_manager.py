@@ -551,7 +551,9 @@ class BatchOperationsManager:
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
-        logger.debug("[BatchOps] File write batch: %d/%d successful", success_count, len(operations))
+        logger.debug(
+            "[BatchOps] File write batch: %d/%d successful", success_count, len(operations)
+        )
 
     def _handle_cache_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch cache update operations."""

@@ -161,7 +161,9 @@ class ApplicationService:
             )
             return
 
-        return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(selected_files)
+        return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(
+            selected_files
+        )
 
     def calculate_hash_all(self):
         """Calculate hash for all files that don't already have hashes."""
@@ -291,7 +293,9 @@ class ApplicationService:
             skipped_count = result["skipped_count"]
 
             # Build status message
-            status_msg = f"Successfully renamed {renamed_count} file{'s' if renamed_count != 1 else ''}"
+            status_msg = (
+                f"Successfully renamed {renamed_count} file{'s' if renamed_count != 1 else ''}"
+            )
             if skipped_count > 0:
                 status_msg += f" ({skipped_count} skipped)"
             if failed_count > 0:
@@ -313,7 +317,9 @@ class ApplicationService:
                 f"Rename error: {str(e)}", validation_type="error", auto_reset=True
             )
 
-    def _update_file_items_after_rename(self, files: list[FileItem], new_names: list[str], execution_result) -> None:  # noqa: ARG002
+    def _update_file_items_after_rename(
+        self, files: list[FileItem], new_names: list[str], execution_result
+    ) -> None:  # noqa: ARG002
         """Update FileItem objects with new paths after successful rename.
 
         This prevents the issue where files are renamed but FileItem objects still

@@ -339,6 +339,7 @@ class JSONConfigManager:
             if self._auto_save_timer_id:
                 try:
                     from oncutf.utils.timer_manager import get_timer_manager
+
                     timer_mgr = get_timer_manager()
                     timer_mgr.cancel(self._auto_save_timer_id)
                     self._auto_save_timer_id = None
@@ -408,6 +409,7 @@ class JSONConfigManager:
 
         try:
             from oncutf.config import CONFIG_CACHE_FLUSH_ON_SAVE
+
             if not CONFIG_CACHE_FLUSH_ON_SAVE:
                 return
         except ImportError:
@@ -474,6 +476,7 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     # Enable cache if configured
     try:
         from oncutf.config import CONFIG_CACHE_ENABLED
+
         manager.enable_cache(CONFIG_CACHE_ENABLED)
     except ImportError:
         manager.enable_cache(True)  # Default to enabled

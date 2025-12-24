@@ -139,14 +139,14 @@ class FileTreeView(QTreeView):
                     file_store = parent.context.file_store
                     logger.debug(
                         "[FileTreeView] Found FileStore from parent.context",
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
                 # Try 2: parent._file_store (direct attribute)
                 elif hasattr(parent, "_file_store"):
                     file_store = parent._file_store
                     logger.debug(
                         "[FileTreeView] Found FileStore from parent._file_store",
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
                 # Try 3: Walk up parent chain looking for MainWindow
                 else:
@@ -156,7 +156,7 @@ class FileTreeView(QTreeView):
                             file_store = current.context.file_store
                             logger.debug(
                                 "[FileTreeView] Found FileStore from ancestor context",
-                                extra={"dev_only": True}
+                                extra={"dev_only": True},
                             )
                             break
                         current = current.parent() if hasattr(current, "parent") else None
@@ -202,11 +202,7 @@ class FileTreeView(QTreeView):
         Args:
             dir_path: Path of changed directory
         """
-        logger.debug(
-            "[FileTreeView] Directory changed: %s",
-            dir_path,
-            extra={"dev_only": True}
-        )
+        logger.debug("[FileTreeView] Directory changed: %s", dir_path, extra={"dev_only": True})
 
         # Refresh model if it supports refresh
         model = self.model()
@@ -215,7 +211,7 @@ class FileTreeView(QTreeView):
                 model.refresh()
                 logger.debug(
                     "[FileTreeView] Model refreshed after directory change",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
             except Exception as e:
                 logger.exception("[FileTreeView] Model refresh error: %s", e)
@@ -230,10 +226,7 @@ class FileTreeView(QTreeView):
 
         old_model = self.model()
         if not old_model:
-            logger.debug(
-                "[FileTreeView] No model to refresh",
-                extra={"dev_only": True}
-            )
+            logger.debug("[FileTreeView] No model to refresh", extra={"dev_only": True})
             return
 
         # Get current selected path before refresh
@@ -264,6 +257,7 @@ class FileTreeView(QTreeView):
 
             # Set root index
             import platform
+
             root = "" if platform.system() == "Windows" else "/"
             self.setRootIndex(new_model.index(root))
 
@@ -278,7 +272,7 @@ class FileTreeView(QTreeView):
                     parent.dir_model = new_model
                     logger.debug(
                         "[FileTreeView] Parent window dir_model reference updated",
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
                     break
                 parent = parent.parent() if hasattr(parent, "parent") else None
@@ -302,7 +296,9 @@ class FileTreeView(QTreeView):
                     self._filesystem_monitor.blockSignals(True)
                     self._filesystem_monitor.deleteLater()
                     self._filesystem_monitor = None
-                    logger.debug("[FileTreeView] Filesystem monitor stopped", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileTreeView] Filesystem monitor stopped", extra={"dev_only": True}
+                    )
                 except Exception as e:
                     logger.warning("[FileTreeView] Error stopping filesystem monitor: %s", e)
 
@@ -327,7 +323,7 @@ class FileTreeView(QTreeView):
                 # Icons not found, skip custom setup
                 logger.debug(
                     "[FileTreeView] Custom branch icons not found, using Qt defaults",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
                 return
 
@@ -344,9 +340,7 @@ class FileTreeView(QTreeView):
 
         except Exception as e:
             logger.debug(
-                "[FileTreeView] Branch icons setup skipped: %s",
-                e,
-                extra={"dev_only": True}
+                "[FileTreeView] Branch icons setup skipped: %s", e, extra={"dev_only": True}
             )
             # Fallback to default Qt icons
 
@@ -554,7 +548,9 @@ class FileTreeView(QTreeView):
             return
 
         # Check drag distance threshold to prevent accidental drags (e.g. when clicking chevrons)
-        if (event.pos() - self._drag_start_pos).manhattanLength() < QApplication.startDragDistance():
+        if (
+            event.pos() - self._drag_start_pos
+        ).manhattanLength() < QApplication.startDragDistance():
             return
 
         # Start our custom drag
@@ -923,7 +919,9 @@ class FileTreeView(QTreeView):
 
         # Count with appropriate mode
         count = count_folder_contents(
-            folder_path, recursive=is_recursive, timeout_ms=100.0  # 100ms max to keep drag responsive
+            folder_path,
+            recursive=is_recursive,
+            timeout_ms=100.0,  # 100ms max to keep drag responsive
         )
 
         # Format and update display
@@ -941,7 +939,7 @@ class FileTreeView(QTreeView):
             is_recursive,
             count.timed_out,
             count.elapsed_ms,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def _handle_drop_on_table(self):
@@ -1084,7 +1082,7 @@ class FileTreeView(QTreeView):
             else:
                 logger.debug(
                     "[FileTreeView] No model or model does not support refresh",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
 
     def _save_expanded_state(self) -> list[str]:
@@ -1129,7 +1127,7 @@ class FileTreeView(QTreeView):
         logger.debug(
             "[FileTreeView] Saved expanded state for %d nodes",
             len(expanded_paths),
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
         return expanded_paths
 
@@ -1159,7 +1157,7 @@ class FileTreeView(QTreeView):
             "[FileTreeView] Restored expanded state for %d/%d nodes",
             restored,
             len(expanded_paths),
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     # =====================================

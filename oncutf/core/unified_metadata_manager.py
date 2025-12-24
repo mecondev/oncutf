@@ -178,9 +178,7 @@ class UnifiedMetadataManager(QObject):
     ) -> dict | None:
         """Delegate to companion_handler."""
         base_metadata = self.check_cached_metadata(file_item)
-        return self._companion_handler.get_enhanced_metadata(
-            file_item, base_metadata, folder_files
-        )
+        return self._companion_handler.get_enhanced_metadata(file_item, base_metadata, folder_files)
 
     def _enhance_metadata_with_companions(
         self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
@@ -255,12 +253,11 @@ class UnifiedMetadataManager(QObject):
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
         """Delegate to loader with signal emission."""
+
         def on_finished():
             self.loading_finished.emit()
 
-        self._loader.load_metadata_for_items(
-            items, use_extended, source, on_finished=on_finished
-        )
+        self._loader.load_metadata_for_items(items, use_extended, source, on_finished=on_finished)
 
     # =========================================================================
     # Hash Loading
@@ -302,6 +299,7 @@ class UnifiedMetadataManager(QObject):
     def _show_hash_progress_dialog(self, files: list[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
+
             def cancel_hash_loading():
                 self._cancel_current_loading()
 
@@ -405,7 +403,10 @@ class UnifiedMetadataManager(QObject):
         if self.parent_window:
             if hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
-            if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:
+            if (
+                hasattr(self.parent_window, "preview_manager")
+                and self.parent_window.preview_manager
+            ):
                 self.parent_window.preview_manager.on_hash_calculation_completed()
 
         logger.info("[UnifiedMetadataManager] Hash loading completed")
@@ -607,7 +608,9 @@ class UnifiedMetadataManager(QObject):
                         self._update_nested_metadata(updated, key_path, new_value)
                     persistent_cache.set(file_item.full_path, updated, is_extended=False)
         except Exception:
-            logger.warning("[UnifiedMetadataManager] Failed to update persistent cache", exc_info=True)
+            logger.warning(
+                "[UnifiedMetadataManager] Failed to update persistent cache", exc_info=True
+            )
 
     def _update_nested_metadata(self, data: dict, key_path: str, value: str):
         """Update nested metadata structure."""
@@ -646,7 +649,11 @@ class UnifiedMetadataManager(QObject):
 
         if was_cancelled:
             skipped_count = total_files - success_count - len(failed_files)
-            message = f"Save cancelled after {success_count}/{total_files} files" if success_count else "Save cancelled"
+            message = (
+                f"Save cancelled after {success_count}/{total_files} files"
+                if success_count
+                else "Save cancelled"
+            )
             logger.info("[UnifiedMetadataManager] %s", message)
 
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
@@ -663,13 +670,17 @@ class UnifiedMetadataManager(QObject):
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                CustomMessageDialog.information(self.parent_window, "Save Cancelled", "\n".join(msg_parts))
+                CustomMessageDialog.information(
+                    self.parent_window, "Save Cancelled", "\n".join(msg_parts)
+                )
             return
 
         if success_count > 0:
             logger.info("[UnifiedMetadataManager] Saved metadata for %d files", success_count)
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
-                self.parent_window.status_bar.showMessage(f"Metadata saved for {success_count} files", 3000)
+                self.parent_window.status_bar.showMessage(
+                    f"Metadata saved for {success_count} files", 3000
+                )
 
         if failed_files:
             logger.warning("[UnifiedMetadataManager] Failed to save %d files", len(failed_files))
@@ -697,7 +708,9 @@ class UnifiedMetadataManager(QObject):
                 for file_item in files_to_save:
                     if file_item.filename not in failed_files:
                         successful_files.append(file_item.full_path)
-                        mods = self._get_modified_metadata_for_file(file_item.full_path, all_modifications)
+                        mods = self._get_modified_metadata_for_file(
+                            file_item.full_path, all_modifications
+                        )
                         if mods:
                             successful_metadata[file_item.full_path] = mods
 

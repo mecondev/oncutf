@@ -7,6 +7,7 @@ Date: 2025-12-20
 File-related event handlers - browse, folder import, file operations.
 Extracted from event_handler_manager.py for better separation of concerns.
 """
+
 from __future__ import annotations
 
 import os
@@ -60,9 +61,7 @@ class FileEventHandlers:
 
             # Use unified folder loading method
             if os.path.isdir(folder_path):
-                self.parent_window.file_load_manager.load_folder(
-                    folder_path, merge_mode, recursive
-                )
+                self.parent_window.file_load_manager.load_folder(folder_path, merge_mode, recursive)
 
             # Update folder tree selection if replace mode
             if (

@@ -24,8 +24,7 @@ from oncutf.services.registry import (
 class MockProtocol(Protocol):
     """Mock protocol for testing."""
 
-    def do_something(self) -> str:
-        ...
+    def do_something(self) -> str: ...
 
 
 class MockImplementation:

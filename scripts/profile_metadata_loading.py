@@ -55,6 +55,7 @@ def profile_exiftool_overhead() -> dict[str, float]:
     # Import time
     import_start = time.perf_counter()
     from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
     import_time = time.perf_counter() - import_start
 
     # Initialization time
@@ -104,6 +105,7 @@ def profile_sequential_loading() -> dict[str, float]:
     print(f"Testing with {len(test_images)} files")
 
     from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
     exiftool = ExifToolWrapper()
 
     # Measure individual file load times
@@ -152,6 +154,7 @@ def profile_batch_loading() -> dict[str, float]:
     print(f"Testing with {len(test_images)} files")
 
     from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
     exiftool = ExifToolWrapper()
 
     # Batch load
@@ -255,6 +258,7 @@ def main() -> int:
     except Exception as e:
         print(f"\n❌ Error during profiling: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -268,11 +272,15 @@ def main() -> int:
 
     if "sequential" in results and results["sequential"]:
         seq = results["sequential"]
-        print(f"\n✅ Sequential: {seq['avg_per_file']:.1f} ms/file ({seq['total_time']:.1f} ms for {int(seq['num_files'])} files)")
+        print(
+            f"\n✅ Sequential: {seq['avg_per_file']:.1f} ms/file ({seq['total_time']:.1f} ms for {int(seq['num_files'])} files)"
+        )
 
     if "batch" in results and results["batch"]:
         batch = results["batch"]
-        print(f"\n✅ Batch: {batch['avg_per_file']:.1f} ms/file ({batch['total_time']:.1f} ms for {int(batch['num_files'])} files)")
+        print(
+            f"\n✅ Batch: {batch['avg_per_file']:.1f} ms/file ({batch['total_time']:.1f} ms for {int(batch['num_files'])} files)"
+        )
 
     if "sequential" in results and "batch" in results:
         seq_total = results["sequential"]["total_time"]

@@ -40,9 +40,7 @@ def group_files_by_folder(files: list[FileItem]) -> list[FileGroup]:
 
         if folder_path not in folder_groups:
             folder_groups[folder_path] = FileGroup(
-                source_path=folder_path,
-                files=[],
-                recursive=False
+                source_path=folder_path, files=[], recursive=False
             )
 
         folder_groups[folder_path].add_file(file_item)
@@ -51,15 +49,14 @@ def group_files_by_folder(files: list[FileItem]) -> list[FileGroup]:
         "[FileGrouper] Grouped %d files into %d folder groups",
         len(files),
         len(folder_groups),
-        extra={"dev_only": True}
+        extra={"dev_only": True},
     )
 
     return list(folder_groups.values())
 
 
 def group_files_by_companion(
-    files: list[FileItem],
-    companion_patterns: dict[str, list[str]] | None = None
+    files: list[FileItem], companion_patterns: dict[str, list[str]] | None = None
 ) -> list[FileGroup]:
     """
     Group files by companion relationships (e.g., RAW+JPG pairs).
@@ -80,12 +77,12 @@ def group_files_by_companion(
     if companion_patterns is None:
         # Default companion patterns: RAW formats + JPG
         companion_patterns = {
-            '.cr2': ['.jpg', '.jpeg'],  # Canon RAW
-            '.nef': ['.jpg', '.jpeg'],  # Nikon RAW
-            '.arw': ['.jpg', '.jpeg'],  # Sony RAW
-            '.orf': ['.jpg', '.jpeg'],  # Olympus RAW
-            '.dng': ['.jpg', '.jpeg'],  # Adobe DNG
-            '.raw': ['.jpg', '.jpeg'],  # Generic RAW
+            ".cr2": [".jpg", ".jpeg"],  # Canon RAW
+            ".nef": [".jpg", ".jpeg"],  # Nikon RAW
+            ".arw": [".jpg", ".jpeg"],  # Sony RAW
+            ".orf": [".jpg", ".jpeg"],  # Olympus RAW
+            ".dng": [".jpg", ".jpeg"],  # Adobe DNG
+            ".raw": [".jpg", ".jpeg"],  # Generic RAW
         }
 
     # Build base name index: {(folder, basename): [files]}
@@ -126,14 +123,14 @@ def group_files_by_companion(
                     source_path=folder,
                     files=group_files,
                     recursive=False,
-                    metadata={'group_type': 'companion', 'basename': basename}
+                    metadata={"group_type": "companion", "basename": basename},
                 )
                 groups.append(group)
                 logger.debug(
                     "[FileGrouper] Created companion group: %s (%d files)",
                     basename,
                     len(group_files),
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
             else:
                 # Same basename but not companions - separate groups
@@ -142,7 +139,7 @@ def group_files_by_companion(
                         source_path=folder,
                         files=[file_item],
                         recursive=False,
-                        metadata={'group_type': 'standalone'}
+                        metadata={"group_type": "standalone"},
                     )
                     groups.append(group)
         else:
@@ -151,7 +148,7 @@ def group_files_by_companion(
                 source_path=folder,
                 files=group_files,
                 recursive=False,
-                metadata={'group_type': 'standalone'}
+                metadata={"group_type": "standalone"},
             )
             groups.append(group)
 
@@ -159,7 +156,7 @@ def group_files_by_companion(
         "[FileGrouper] Grouped %d files into %d companion/standalone groups",
         len(files),
         len(groups),
-        extra={"dev_only": True}
+        extra={"dev_only": True},
     )
 
     return groups
@@ -182,10 +179,7 @@ def get_file_group_index(file_item: FileItem, groups: list[FileGroup]) -> tuple[
             if f.full_path == file_item.full_path:
                 return (group_idx, file_idx)
 
-    logger.warning(
-        "[FileGrouper] File not found in any group: %s",
-        file_item.filename
-    )
+    logger.warning("[FileGrouper] File not found in any group: %s", file_item.filename)
     return (-1, -1)
 
 
@@ -193,7 +187,7 @@ def calculate_filegroup_counter_index(
     file_item: FileItem,
     all_files: list[FileItem],
     global_index: int,
-    groups: list[FileGroup] | None = None
+    groups: list[FileGroup] | None = None,
 ) -> int:
     """
     Calculate counter index for PER_FILEGROUP scope.
@@ -215,8 +209,7 @@ def calculate_filegroup_counter_index(
 
     if group_idx == -1:
         logger.warning(
-            "[FileGrouper] File not in any group, using global index: %s",
-            file_item.filename
+            "[FileGrouper] File not in any group, using global index: %s", file_item.filename
         )
         return global_index
 
@@ -225,7 +218,7 @@ def calculate_filegroup_counter_index(
         file_item.filename,
         group_idx,
         index_within_group,
-        extra={"dev_only": True}
+        extra={"dev_only": True},
     )
 
     return index_within_group

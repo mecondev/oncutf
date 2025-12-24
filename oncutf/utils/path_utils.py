@@ -38,7 +38,7 @@ def get_project_root() -> Path:
         Path: Absolute path to project root directory
     """
     # Handle PyInstaller frozen executables
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # Running as compiled exe - use _MEIPASS for bundled resources
         project_root = Path(sys._MEIPASS)  # type: ignore[attr-defined]
         logger.debug(

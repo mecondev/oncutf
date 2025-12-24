@@ -74,7 +74,7 @@ class UIManager:
         self.parent_window.resize(optimal_size.width(), optimal_size.height())
 
         self.parent_window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-        self.parent_window.context.get_manager('dialog').center_window(self.parent_window)
+        self.parent_window.context.get_manager("dialog").center_window(self.parent_window)
 
     def _calculate_optimal_window_size(self):
         """Calculate optimal window size based on screen resolution and aspect ratio."""
@@ -447,9 +447,7 @@ class UIManager:
             metadata_delegate.install_event_filter(self.parent_window.metadata_tree_view)
             logger.debug("MetadataTreeItemDelegate enabled", extra={"dev_only": True})
         else:
-            logger.debug(
-                "MetadataTreeItemDelegate disabled via config", extra={"dev_only": True}
-            )
+            logger.debug("MetadataTreeItemDelegate disabled via config", extra={"dev_only": True})
 
         # NOTE: files_dropped signal is no longer connected - FileTableView calls MetadataManager directly
         # Connect the proxy model to the tree view
@@ -725,9 +723,18 @@ class UIManager:
             (FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"], self.parent_window.clear_all_selection),
             (FILE_TABLE_SHORTCUTS["INVERT_SELECTION"], self.parent_window.invert_selection),
             (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
-            (FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"], self.parent_window.shortcut_load_extended_metadata),
-            (FILE_TABLE_SHORTCUTS["CALCULATE_HASH"], self.parent_window.shortcut_calculate_hash_selected),
-            (FILE_TABLE_SHORTCUTS["REFRESH"], self._refresh_file_table),  # F5: Reload files with deselect
+            (
+                FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"],
+                self.parent_window.shortcut_load_extended_metadata,
+            ),
+            (
+                FILE_TABLE_SHORTCUTS["CALCULATE_HASH"],
+                self.parent_window.shortcut_calculate_hash_selected,
+            ),
+            (
+                FILE_TABLE_SHORTCUTS["REFRESH"],
+                self._refresh_file_table,
+            ),  # F5: Reload files with deselect
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
@@ -737,12 +744,27 @@ class UIManager:
         # Global shortcuts (attached to main window, work regardless of focus)
         global_shortcuts = [
             (GLOBAL_SHORTCUTS["BROWSE_FOLDER"], self.parent_window.handle_browse),  # Browse folder
-            (GLOBAL_SHORTCUTS["SAVE_METADATA"], self.parent_window.shortcut_save_all_metadata),  # Save metadata
-            (GLOBAL_SHORTCUTS["CANCEL_DRAG"], self.parent_window.force_drag_cleanup),  # Cancel drag (all widgets)
-            (GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"], self.parent_window.clear_file_table_shortcut),  # Clear file table
+            (
+                GLOBAL_SHORTCUTS["SAVE_METADATA"],
+                self.parent_window.shortcut_save_all_metadata,
+            ),  # Save metadata
+            (
+                GLOBAL_SHORTCUTS["CANCEL_DRAG"],
+                self.parent_window.force_drag_cleanup,
+            ),  # Cancel drag (all widgets)
+            (
+                GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"],
+                self.parent_window.clear_file_table_shortcut,
+            ),  # Clear file table
             (GLOBAL_SHORTCUTS["UNDO"], self.parent_window.global_undo),  # Global undo (Ctrl+Z)
-            (GLOBAL_SHORTCUTS["REDO"], self.parent_window.global_redo),  # Global redo (Ctrl+Shift+Z)
-            (GLOBAL_SHORTCUTS["SHOW_HISTORY"], self.parent_window.show_command_history),  # Command history (Ctrl+Y)
+            (
+                GLOBAL_SHORTCUTS["REDO"],
+                self.parent_window.global_redo,
+            ),  # Global redo (Ctrl+Shift+Z)
+            (
+                GLOBAL_SHORTCUTS["SHOW_HISTORY"],
+                self.parent_window.show_command_history,
+            ),  # Command history (Ctrl+Y)
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window

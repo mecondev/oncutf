@@ -56,7 +56,7 @@ class TestValidationIssue:
             file=mock_file_item,
             issue_type=ValidationIssueType.MISSING,
             message="File not found",
-            technical_details="Path: /path/to/test.txt"
+            technical_details="Path: /path/to/test.txt",
         )
 
         assert issue.file == mock_file_item
@@ -67,9 +67,7 @@ class TestValidationIssue:
     def test_issue_creation_minimal(self, mock_file_item):
         """Test creating issue with minimal fields."""
         issue = ValidationIssue(
-            file=mock_file_item,
-            issue_type=ValidationIssueType.LOCKED,
-            message="File is locked"
+            file=mock_file_item, issue_type=ValidationIssueType.LOCKED, message="File is locked"
         )
 
         assert issue.file == mock_file_item
@@ -104,11 +102,7 @@ class TestValidationResult:
 
     def test_valid_result(self, mock_files):
         """Test result with only valid files."""
-        result = ValidationResult(
-            valid_files=mock_files,
-            issues=[],
-            total_files=len(mock_files)
-        )
+        result = ValidationResult(valid_files=mock_files, issues=[], total_files=len(mock_files))
 
         assert result.is_valid
         assert not result.has_critical_issues
@@ -119,21 +113,15 @@ class TestValidationResult:
         """Test result with missing files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0],
-                issue_type=ValidationIssueType.MISSING,
-                message="File missing"
+                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="File missing"
             ),
             ValidationIssue(
-                file=mock_files[1],
-                issue_type=ValidationIssueType.MISSING,
-                message="File missing"
-            )
+                file=mock_files[1], issue_type=ValidationIssueType.MISSING, message="File missing"
+            ),
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[2:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[2:], issues=issues, total_files=len(mock_files)
         )
 
         assert not result.is_valid
@@ -146,16 +134,12 @@ class TestValidationResult:
         """Test result with locked files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0],
-                issue_type=ValidationIssueType.LOCKED,
-                message="File locked"
+                file=mock_files[0], issue_type=ValidationIssueType.LOCKED, message="File locked"
             )
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[1:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[1:], issues=issues, total_files=len(mock_files)
         )
 
         assert not result.is_valid
@@ -168,14 +152,12 @@ class TestValidationResult:
             ValidationIssue(
                 file=mock_files[0],
                 issue_type=ValidationIssueType.PERMISSION_DENIED,
-                message="No write permission"
+                message="No write permission",
             )
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[1:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[1:], issues=issues, total_files=len(mock_files)
         )
 
         assert not result.is_valid
@@ -186,16 +168,12 @@ class TestValidationResult:
         """Test result with modified files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0],
-                issue_type=ValidationIssueType.MODIFIED,
-                message="File modified"
+                file=mock_files[0], issue_type=ValidationIssueType.MODIFIED, message="File modified"
             )
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[1:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[1:], issues=issues, total_files=len(mock_files)
         )
 
         assert not result.is_valid
@@ -206,26 +184,18 @@ class TestValidationResult:
         """Test result with multiple issue types."""
         issues = [
             ValidationIssue(
-                file=mock_files[0],
-                issue_type=ValidationIssueType.MISSING,
-                message="Missing"
+                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="Missing"
             ),
             ValidationIssue(
-                file=mock_files[1],
-                issue_type=ValidationIssueType.LOCKED,
-                message="Locked"
+                file=mock_files[1], issue_type=ValidationIssueType.LOCKED, message="Locked"
             ),
             ValidationIssue(
-                file=mock_files[2],
-                issue_type=ValidationIssueType.MODIFIED,
-                message="Modified"
-            )
+                file=mock_files[2], issue_type=ValidationIssueType.MODIFIED, message="Modified"
+            ),
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[3:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[3:], issues=issues, total_files=len(mock_files)
         )
 
         assert not result.is_valid
@@ -237,11 +207,7 @@ class TestValidationResult:
 
     def test_get_summary_valid(self, mock_files):
         """Test summary for valid result."""
-        result = ValidationResult(
-            valid_files=mock_files,
-            issues=[],
-            total_files=len(mock_files)
-        )
+        result = ValidationResult(valid_files=mock_files, issues=[], total_files=len(mock_files))
 
         summary = result.get_summary()
         assert "5 files passed validation" in summary.lower() or "all" in summary.lower()
@@ -250,21 +216,15 @@ class TestValidationResult:
         """Test summary with issues."""
         issues = [
             ValidationIssue(
-                file=mock_files[0],
-                issue_type=ValidationIssueType.MISSING,
-                message="Missing"
+                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="Missing"
             ),
             ValidationIssue(
-                file=mock_files[1],
-                issue_type=ValidationIssueType.LOCKED,
-                message="Locked"
-            )
+                file=mock_files[1], issue_type=ValidationIssueType.LOCKED, message="Locked"
+            ),
         ]
 
         result = ValidationResult(
-            valid_files=mock_files[2:],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=mock_files[2:], issues=issues, total_files=len(mock_files)
         )
 
         summary = result.get_summary()
@@ -282,9 +242,7 @@ class TestValidationResult:
         ]
 
         result = ValidationResult(
-            valid_files=[mock_files[4]],
-            issues=issues,
-            total_files=len(mock_files)
+            valid_files=[mock_files[4]], issues=issues, total_files=len(mock_files)
         )
 
         assert len(result.missing_files) == 1

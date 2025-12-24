@@ -105,6 +105,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self.setTextElideMode(Qt.ElideRight)  # Elide text with ... instead of wrapping
         # Row height from theme engine
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         self.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
@@ -254,7 +255,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             tooltip_text,
             tooltip_type,
             duration=TOOLTIP_DURATION,  # Auto-hide after configured duration, hides immediately on mouse leave via eventFilter
-            persistent=False
+            persistent=False,
         )
 
     def showEvent(self, event) -> None:
@@ -302,6 +303,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Set fixed row height to prevent expansion (from theme engine)
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         row_height = theme.get_constant("table_row_height")
         self.verticalHeader().setDefaultSectionSize(row_height)
@@ -444,17 +446,22 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Get visible columns list from column service
         from oncutf.core.unified_column_service import get_column_service
+
         visible_columns_list = get_column_service().get_visible_columns()
         logger.info("[FileTableView] Visible columns list: %s", visible_columns_list)
         logger.info("[FileTableView] Model column count: %d", self.model().columnCount())
 
         try:
             color_column_logical_index = visible_columns_list.index("color")
-            logger.info("[FileTableView] Color column logical index: %d", color_column_logical_index)
+            logger.info(
+                "[FileTableView] Color column logical index: %d", color_column_logical_index
+            )
 
             # +1 because column 0 is status column
             color_column_view_index = color_column_logical_index + 1
-            logger.info("[FileTableView] Color column view index (after +1): %d", color_column_view_index)
+            logger.info(
+                "[FileTableView] Color column view index (after +1): %d", color_column_view_index
+            )
 
             # Set color column delegate
             from oncutf.ui.delegates.color_column_delegate import ColorColumnDelegate
@@ -463,16 +470,20 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             logger.info("[FileTableView] ColorColumnDelegate created: %s", color_delegate)
 
             self.setItemDelegateForColumn(color_column_view_index, color_delegate)
-            logger.info("[FileTableView] setItemDelegateForColumn(%d) called", color_column_view_index)
+            logger.info(
+                "[FileTableView] setItemDelegateForColumn(%d) called", color_column_view_index
+            )
 
             # Verify installation
             installed_delegate = self.itemDelegateForColumn(color_column_view_index)
-            logger.info("[FileTableView] Verification - delegate for column %d: %s",
-                       color_column_view_index, installed_delegate)
+            logger.info(
+                "[FileTableView] Verification - delegate for column %d: %s",
+                color_column_view_index,
+                installed_delegate,
+            )
 
             logger.debug(
-                "[FileTableView] Set ColorColumnDelegate for column %d",
-                color_column_view_index
+                "[FileTableView] Set ColorColumnDelegate for column %d", color_column_view_index
             )
         except (ValueError, AttributeError) as e:
             # Color column not visible or not in list
@@ -868,7 +879,6 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     # Table State & Utility Methods
     # =====================================
 
-
     def is_empty(self) -> bool:
         """Check if the table is empty (no files or no model)."""
         if not self.model():
@@ -1139,5 +1149,3 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         except Exception as e:
             logger.warning("Error clearing preview/metadata displays: %s", e)
-
-

@@ -191,7 +191,7 @@ class CounterModule(BaseRenameModule):
             "• Per Folder: Reset at folder boundaries\n"
             "• Per Extension: Reset for each file type\n"
             "• Per File Group: Reset for each group (future)",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
 
         # Build row layout
@@ -262,8 +262,11 @@ class CounterModule(BaseRenameModule):
             result = f"{value:0{padding}d}"
             logger.debug(
                 "[CounterModule] index: %d, value: %d, padded: %s, scope: %s",
-                index, value, result, scope,
-                extra={"dev_only": True}
+                index,
+                value,
+                result,
+                scope,
+                extra={"dev_only": True},
             )
             return result
         except Exception as e:

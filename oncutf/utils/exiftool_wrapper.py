@@ -81,7 +81,9 @@ class ExifToolWrapper:
         if use_extended:
             result = self._get_metadata_extended(file_path)
         else:
-            result = self._get_metadata_fast(file_path)        # Convert None to empty dict for consistency
+            result = self._get_metadata_fast(
+                file_path
+            )  # Convert None to empty dict for consistency
         return result if result is not None else {}
 
     def _get_metadata_fast(self, file_path: str) -> dict | None:
@@ -101,7 +103,15 @@ class ExifToolWrapper:
         from oncutf.config import EXIFTOOL_TIMEOUT_FAST
 
         # Use -api largefilesupport=1 for files larger than 2GB
-        cmd = ["exiftool", "-api", "largefilesupport=1", "-json", "-charset", "filename=UTF8", file_path]
+        cmd = [
+            "exiftool",
+            "-api",
+            "largefilesupport=1",
+            "-json",
+            "-charset",
+            "filename=UTF8",
+            file_path,
+        ]
 
         try:
             result = subprocess.run(
@@ -188,8 +198,7 @@ class ExifToolWrapper:
             from oncutf.config import EXIFTOOL_TIMEOUT_BATCH_BASE, EXIFTOOL_TIMEOUT_BATCH_PER_FILE
 
             dynamic_timeout = max(
-                EXIFTOOL_TIMEOUT_BATCH_BASE,
-                len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+                EXIFTOOL_TIMEOUT_BATCH_BASE, len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE
             )
 
             result = subprocess.run(
@@ -262,7 +271,7 @@ class ExifToolWrapper:
 
             # Register process for potential cancellation
             # Check if we're running in a ParallelMetadataLoader context
-            if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
+            if hasattr(self, "_loader") and hasattr(self._loader, "_active_processes"):
                 with self._loader._process_lock:
                     self._loader._active_processes.append(process)
 
@@ -277,8 +286,9 @@ class ExifToolWrapper:
                 return None
             finally:
                 # Unregister process
-                if hasattr(self, '_loader') and hasattr(self._loader, '_active_processes'):
+                if hasattr(self, "_loader") and hasattr(self._loader, "_active_processes"):
                     import contextlib as _contextlib
+
                     with self._loader._process_lock, _contextlib.suppress(ValueError):
                         self._loader._active_processes.remove(process)
 
@@ -425,7 +435,12 @@ class ExifToolWrapper:
             from oncutf.config import EXIFTOOL_TIMEOUT_WRITE
 
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=EXIFTOOL_TIMEOUT_WRITE, encoding="utf-8", errors="replace"
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=EXIFTOOL_TIMEOUT_WRITE,
+                encoding="utf-8",
+                errors="replace",
             )
 
             if result.returncode == 0:
@@ -634,7 +649,9 @@ class ExifToolWrapper:
             if self.process is not None:
                 poll_result = self.process.poll()
                 is_process_alive = poll_result is None
-                process_status = "running" if is_process_alive else f"terminated (code: {poll_result})"
+                process_status = (
+                    "running" if is_process_alive else f"terminated (code: {poll_result})"
+                )
             else:
                 process_status = "not initialized"
         except Exception as e:
@@ -663,5 +680,6 @@ class ExifToolWrapper:
                     )
                 else:
                     logger.debug(
-                    "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}
-                )
+                        "[ExifToolWrapper] No ExifTool processes to clean up",
+                        extra={"dev_only": True},
+                    )

@@ -17,6 +17,7 @@ def main():
 
     # Apply theme - just set the stylesheet without window
     from utils.theme_engine import ThemeEngine
+
     theme = ThemeEngine()
     app.setStyleSheet(theme._get_complete_stylesheet())
 
@@ -36,7 +37,7 @@ def main():
         left_header="Filename",
         right_header="Checksum",
         data=test_data,
-        config_key="hash_list_test"
+        config_key="hash_list_test",
     )
 
     print("=" * 60)

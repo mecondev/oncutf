@@ -78,9 +78,7 @@ class ServiceRegistry:
             type(implementation).__name__,
         )
 
-    def register_factory(
-        self, protocol: type[T], factory: type[T] | Any
-    ) -> None:
+    def register_factory(self, protocol: type[T], factory: type[T] | Any) -> None:
         """Register a factory for lazy instantiation.
 
         The factory will be called to create the service on first access.

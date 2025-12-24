@@ -59,10 +59,19 @@ class MetadataEditMixin:
         """
         key_lower = key_path.lower()
         date_keywords = [
-            "date", "time", "datetime", "timestamp",
-            "created", "modified", "accessed",
-            "filemodifydate", "filecreatedate", "createdate", "modifydate",
-            "datetimeoriginal", "datetimedigitized"
+            "date",
+            "time",
+            "datetime",
+            "timestamp",
+            "created",
+            "modified",
+            "accessed",
+            "filemodifydate",
+            "filecreatedate",
+            "createdate",
+            "modifydate",
+            "datetimeoriginal",
+            "datetimedigitized",
         ]
         return any(keyword in key_lower for keyword in date_keywords)
 
@@ -368,7 +377,9 @@ class MetadataEditMixin:
                             )
                 else:
                     # Fallback if command system not available
-                    logger.warning("[MetadataEditMixin] Command system not available, using fallback")
+                    logger.warning(
+                        "[MetadataEditMixin] Command system not available, using fallback"
+                    )
                     self._fallback_edit_value(
                         normalized_key_path, new_value, str(current_value), files_to_modify
                     )
@@ -380,7 +391,7 @@ class MetadataEditMixin:
                 )
 
             # Emit signal for external listeners
-            if hasattr(self, 'value_edited'):
+            if hasattr(self, "value_edited"):
                 self.value_edited.emit(normalized_key_path, str(current_value), new_value)
 
             # Restore selection AFTER tree has been updated
@@ -403,6 +414,7 @@ class MetadataEditMixin:
             files_to_modify: List of file items to modify
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
         staging_manager = get_metadata_staging_manager()
 
         logger.info(
@@ -467,9 +479,7 @@ class MetadataEditMixin:
 
         # Open DateTimeEditDialog
         result_files, new_datetime = DateTimeEditDialog.get_datetime_edit_choice(
-            parent=self,
-            selected_files=file_paths,
-            date_type=date_type
+            parent=self, selected_files=file_paths, date_type=date_type
         )
 
         if result_files and new_datetime:
@@ -495,7 +505,9 @@ class MetadataEditMixin:
                     # Create command for each selected file
                     for file_path in result_files:
                         # Find the file item
-                        file_item = next((f for f in selected_files if f.full_path == file_path), None)
+                        file_item = next(
+                            (f for f in selected_files if f.full_path == file_path), None
+                        )
                         if not file_item:
                             continue
 
@@ -524,12 +536,14 @@ class MetadataEditMixin:
                                 file_item.filename,
                             )
                 else:
-                    logger.warning("[MetadataEditMixin] Command system not available for date editing")
+                    logger.warning(
+                        "[MetadataEditMixin] Command system not available for date editing"
+                    )
             except ImportError:
                 logger.warning("[MetadataEditMixin] Command system not available for date editing")
 
             # Emit signal for external listeners
-            if hasattr(self, 'value_edited'):
+            if hasattr(self, "value_edited"):
                 self.value_edited.emit(key_path, str(current_value), datetime_str)
 
             # Restore selection AFTER tree has been updated
@@ -576,7 +590,7 @@ class MetadataEditMixin:
                 return
 
         # Use unified metadata manager if available
-        if hasattr(self, '_direct_loader') and self._direct_loader:
+        if hasattr(self, "_direct_loader") and self._direct_loader:
             try:
                 # Set rotation to 0
                 self._direct_loader.set_metadata_value(file_item.full_path, key_path, "0")
@@ -594,8 +608,10 @@ class MetadataEditMixin:
                 )
 
                 # Emit signal
-                if hasattr(self, 'value_edited'):
-                    self.value_edited.emit(key_path, "0", str(current_value) if current_value else "")
+                if hasattr(self, "value_edited"):
+                    self.value_edited.emit(
+                        key_path, "0", str(current_value) if current_value else ""
+                    )
 
                 return
             except Exception as e:
@@ -619,6 +635,7 @@ class MetadataEditMixin:
             _current_value: Current value (unused in fallback)
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
         staging_manager = get_metadata_staging_manager()
 
         if not staging_manager:
@@ -663,7 +680,7 @@ class MetadataEditMixin:
             return
 
         # Use unified metadata manager if available
-        if hasattr(self, '_direct_loader') and self._direct_loader:
+        if hasattr(self, "_direct_loader") and self._direct_loader:
             try:
                 # Reset to original value
                 self._direct_loader.set_metadata_value(
@@ -675,8 +692,13 @@ class MetadataEditMixin:
 
                 # Remove from staging
                 from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
                 staging_manager = get_metadata_staging_manager()
-                if staging_manager and hasattr(self, '_current_file_path') and self._current_file_path:
+                if (
+                    staging_manager
+                    and hasattr(self, "_current_file_path")
+                    and self._current_file_path
+                ):
                     staging_manager.clear_staged_change(self._current_file_path, key_path)
 
                 logger.debug(
@@ -686,7 +708,7 @@ class MetadataEditMixin:
                 )
 
                 # Emit signal
-                if hasattr(self, 'value_reset'):
+                if hasattr(self, "value_reset"):
                     self.value_reset.emit(key_path)
 
                 return
@@ -708,9 +730,10 @@ class MetadataEditMixin:
             original_value: Original value to restore
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
         staging_manager = get_metadata_staging_manager()
 
-        if staging_manager and hasattr(self, '_current_file_path') and self._current_file_path:
+        if staging_manager and hasattr(self, "_current_file_path") and self._current_file_path:
             # Remove from staging
             staging_manager.clear_staged_change(self._current_file_path, key_path)
 
@@ -737,6 +760,7 @@ class MetadataEditMixin:
             _key_path: Metadata key path (unused, triggers full refresh)
             _new_value: New value (unused, triggers full refresh)
         """
+
         def _do_update():
             # Get current metadata and force refresh with modification context
             selected_files = self._get_current_selection()
@@ -769,7 +793,7 @@ class MetadataEditMixin:
         Args:
             key_path: Metadata key path to mark as modified
         """
-        if not hasattr(self, 'modified_items'):
+        if not hasattr(self, "modified_items"):
             self.modified_items = set()
 
         self.modified_items.add(key_path)
@@ -809,7 +833,7 @@ class MetadataEditMixin:
                 extra={"dev_only": True},
             )
         # Remove from modifications if values are the same
-        elif hasattr(self, 'modified_items') and key_path in self.modified_items:
+        elif hasattr(self, "modified_items") and key_path in self.modified_items:
             self.modified_items.remove(key_path)
             logger.debug(
                 "[MetadataEditMixin] Removed modification mark: %s (value restored to original)",
@@ -934,6 +958,5 @@ class MetadataEditMixin:
         clipboard = QApplication.clipboard()
         clipboard.setText(str(value))
 
-        if hasattr(self, 'value_copied'):
+        if hasattr(self, "value_copied"):
             self.value_copied.emit(str(value))
-

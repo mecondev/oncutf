@@ -102,7 +102,9 @@ class DragDropMixin:
         else:
             # Large selection: collect only first 3 paths for preview
             preview_rows = rows[:3]
-            preview_items = [self.model().files[r] for r in preview_rows if 0 <= r < len(self.model().files)]
+            preview_items = [
+                self.model().files[r] for r in preview_rows if 0 <= r < len(self.model().files)
+            ]
             file_paths = [f.full_path for f in preview_items if f.full_path]
             # Store row indices for lazy collection later if needed
             self._drag_pending_rows = rows
@@ -143,7 +145,7 @@ class DragDropMixin:
 
         # Determine drag type and info string based on selection
         # Use actual selection count, not just collected paths
-        actual_count = file_count if hasattr(self, '_drag_pending_rows') else len(file_paths)
+        actual_count = file_count if hasattr(self, "_drag_pending_rows") else len(file_paths)
 
         if actual_count == 1:
             drag_type = visual_manager.get_drag_type_from_path(file_paths[0])
@@ -168,7 +170,11 @@ class DragDropMixin:
 
             # Adaptive delay based on selection size for better performance
             # Large selections: slower updates (less CPU), small selections: faster updates (smoother)
-            selected_count = len(self._get_current_selection_safe()) if hasattr(self, '_get_current_selection_safe') else 1
+            selected_count = (
+                len(self._get_current_selection_safe())
+                if hasattr(self, "_get_current_selection_safe")
+                else 1
+            )
             if selected_count > 500:
                 delay = 200  # Very large: 200ms
             elif selected_count > 100:
@@ -218,6 +224,7 @@ class DragDropMixin:
 
             # Deactivate drag cancel filter
             from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
+
             if _drag_cancel_filter.is_active():
                 _drag_cancel_filter.deactivate()
 
@@ -416,4 +423,3 @@ class DragDropMixin:
         # Emit signal for processing
         self.files_dropped.emit(new_paths, modifiers)
         event.acceptProposedAction()
-

@@ -181,6 +181,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo.setMaximumWidth(140)
         # Use theme constant for combo height
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         self.type_combo.setFixedHeight(theme.get_constant("combo_height"))
         self.type_combo.currentTextChanged.connect(self.update_module_content)

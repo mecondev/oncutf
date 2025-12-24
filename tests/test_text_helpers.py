@@ -1,4 +1,3 @@
-
 from oncutf.utils import text_helpers
 
 
@@ -38,6 +37,8 @@ def test_format_file_size_stable_kb():
     s = text_helpers.format_file_size_stable(2048)
     assert s.strip().endswith("KB") or s.strip().endswith("MB")
     assert len(s) == 10
+
+
 """
 Module: test_text_helpers.py
 

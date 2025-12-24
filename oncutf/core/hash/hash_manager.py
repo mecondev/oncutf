@@ -265,9 +265,7 @@ class HashManager:
                     hash_to_files[file_hash].append(file_item)
                     processed_count += 1
             except Exception as e:
-                logger.error(
-                    "[HashManager] Error processing file %s: %s", file_item.filename, e
-                )
+                logger.error("[HashManager] Error processing file %s: %s", file_item.filename, e)
 
         # Filter to only return groups with duplicates
         duplicates = {
@@ -348,9 +346,7 @@ class HashManager:
         matches = actual_hash.lower() == expected_hash.lower()
 
         if not matches:
-            logger.warning(
-                "[HashManager] File integrity check failed: %s", Path(file_path).name
-            )
+            logger.warning("[HashManager] File integrity check failed: %s", Path(file_path).name)
 
         return matches
 

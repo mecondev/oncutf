@@ -27,6 +27,7 @@ class MockSelectionModel:
         class MockIndex:
             def __init__(self, row):
                 self._row = row
+
             def row(self):
                 return self._row
 
@@ -79,11 +80,7 @@ class MockParentWindow:
     def __init__(self):
         # Create test files
         self.files = [
-            FileItem(
-                path=f"/path/file{i}.txt",
-                extension="txt",
-                modified=datetime.now()
-            )
+            FileItem(path=f"/path/file{i}.txt", extension="txt", modified=datetime.now())
             for i in range(5)
         ]
 
@@ -410,6 +407,7 @@ class TestSelectionProviderFallback:
 
     def test_all_strategies_fail(self):
         """Test when all strategies fail."""
+
         # Create empty parent with no selection mechanisms
         class EmptyParent:
             pass

@@ -153,9 +153,7 @@ class TestFilesystemDateExtraction:
 
     def test_extract_filesystem_date_nonexistent_file(self, extractor):
         """Test extraction from nonexistent file."""
-        result = extractor.extract(
-            Path("/nonexistent/file.txt"), "last_modified_iso", "file_dates"
-        )
+        result = extractor.extract(Path("/nonexistent/file.txt"), "last_modified_iso", "file_dates")
 
         assert result.value == "invalid"
         assert result.source == "error"
@@ -206,9 +204,7 @@ class TestMetadataFieldExtraction:
         """Test direct metadata field access."""
         metadata = {"custom_field": "custom_value", "another_field": "another_value"}
 
-        result = extractor.extract(
-            temp_file, "custom_field", "metadata_keys", metadata=metadata
-        )
+        result = extractor.extract(temp_file, "custom_field", "metadata_keys", metadata=metadata)
 
         assert result.source == "exif"
         assert "custom_value" in result.value  # May be cleaned
@@ -218,9 +214,7 @@ class TestMetadataFieldExtraction:
         """Test legacy creation_date field."""
         metadata = {"creation_date": "2025-12-17"}
 
-        result = extractor.extract(
-            temp_file, "creation_date", "metadata_keys", metadata=metadata
-        )
+        result = extractor.extract(temp_file, "creation_date", "metadata_keys", metadata=metadata)
 
         assert result.source == "exif"
         assert "2025" in result.value
@@ -229,9 +223,7 @@ class TestMetadataFieldExtraction:
         """Test legacy date_created fallback."""
         metadata = {"date_created": "2025-12-17"}
 
-        result = extractor.extract(
-            temp_file, "creation_date", "metadata_keys", metadata=metadata
-        )
+        result = extractor.extract(temp_file, "creation_date", "metadata_keys", metadata=metadata)
 
         assert result.source == "exif"
         assert "2025" in result.value
@@ -249,9 +241,7 @@ class TestMetadataFieldExtraction:
         """Test extraction of missing metadata field."""
         metadata = {"existing_field": "value"}
 
-        result = extractor.extract(
-            temp_file, "missing_field", "metadata_keys", metadata=metadata
-        )
+        result = extractor.extract(temp_file, "missing_field", "metadata_keys", metadata=metadata)
 
         # Should fallback to filename
         assert result.source == "fallback"
@@ -403,9 +393,7 @@ class TestInputValidation:
 
     def test_extract_with_nonexistent_file(self, extractor):
         """Test extraction with nonexistent file."""
-        result = extractor.extract(
-            Path("/does/not/exist.txt"), "last_modified_iso", "file_dates"
-        )
+        result = extractor.extract(Path("/does/not/exist.txt"), "last_modified_iso", "file_dates")
 
         assert result.value == "invalid"
         assert result.source == "error"
@@ -453,6 +441,7 @@ class TestMetadataExtractorDependencyInjection:
 
     def test_init_with_services(self):
         """Test initialization with injected services."""
+
         # Create mock services
         class MockMetadataService:
             def load_metadata(self, path):  # noqa: ARG002
@@ -509,4 +498,3 @@ class TestMetadataExtractorDependencyInjection:
 
         # Should still return a hash (from internal implementation)
         assert result.source in ("hash", "fallback")
-

@@ -390,6 +390,7 @@ class ShutdownCoordinator(QObject):
 
             # Additional cleanup for SQLite on Windows
             import platform
+
             if platform.system() == "Windows":
                 # Force commit any pending transactions
                 with contextlib.suppress(Exception):
@@ -398,6 +399,7 @@ class ShutdownCoordinator(QObject):
 
                 # Give Windows time to release file handles
                 import time
+
                 time.sleep(0.1)  # 100ms grace period
 
             return True, None
@@ -414,6 +416,7 @@ class ShutdownCoordinator(QObject):
             # Still do force cleanup even if no wrapper registered
             try:
                 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
                 ExifToolWrapper.force_cleanup_all_exiftool_processes()
             except Exception:
                 pass
@@ -428,11 +431,13 @@ class ShutdownCoordinator(QObject):
             # Force cleanup all ExifTool processes
             # This is critical on Windows to prevent zombie processes
             from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
 
             # On Windows, add extra wait time for process termination
             if platform.system() == "Windows":
                 import time
+
                 time.sleep(0.2)  # 200ms grace period for Windows process cleanup
 
             return True, None
@@ -441,6 +446,7 @@ class ShutdownCoordinator(QObject):
             # Even on error, try force cleanup one more time
             try:
                 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+
                 ExifToolWrapper.force_cleanup_all_exiftool_processes()
             except Exception:
                 pass

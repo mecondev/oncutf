@@ -109,7 +109,12 @@ class TestSaveCancelBehavior:
 
     def test_non_save_operations_allow_esc(self, _qt_app, qtbot):  # noqa: ARG002
         """Test that non-save operations (metadata load, hash) allow ESC."""
-        for operation_type in ["metadata_basic", "metadata_extended", "hash_calculation", "file_loading"]:
+        for operation_type in [
+            "metadata_basic",
+            "metadata_extended",
+            "hash_calculation",
+            "file_loading",
+        ]:
             cancel_callback = Mock()
             dialog = ProgressDialog(
                 parent=None,
@@ -120,7 +125,9 @@ class TestSaveCancelBehavior:
             qtbot.addWidget(dialog)
 
             # Verify ESC should be allowed
-            assert dialog._should_block_esc() is False, f"ESC should be allowed for {operation_type}"
+            assert (
+                dialog._should_block_esc() is False
+            ), f"ESC should be allowed for {operation_type}"
 
             # Press ESC
             QTest.keyPress(dialog, Qt.Key_Escape)

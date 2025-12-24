@@ -13,6 +13,6 @@ from .selection_manager import SelectionManager
 from .selection_store import SelectionStore
 
 __all__ = [
-    'SelectionManager',
-    'SelectionStore',
+    "SelectionManager",
+    "SelectionStore",
 ]

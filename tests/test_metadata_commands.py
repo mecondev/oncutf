@@ -81,7 +81,9 @@ class TestEditMetadataFieldCommand:
         self.mock_tree_view._update_tree_item_value.assert_called_once_with(
             self.field_path, self.new_value
         )
-        self.mock_tree_view.smart_mark_modified.assert_called_once_with(self.field_path, self.new_value)
+        self.mock_tree_view.smart_mark_modified.assert_called_once_with(
+            self.field_path, self.new_value
+        )
         self.mock_tree_view._update_file_icon_status.assert_called_once()
 
     def test_execute_already_executed(self):

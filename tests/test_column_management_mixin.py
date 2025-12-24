@@ -517,9 +517,7 @@ class TestPerformanceIntegration:
             table_view.setColumnWidth(col_idx, 100 + i)
 
         # Should complete without hanging
-        widths = [
-            table_view.columnWidth(i) for i in range(table_view.model().columnCount())
-        ]
+        widths = [table_view.columnWidth(i) for i in range(table_view.model().columnCount())]
         assert all(w > 0 for w in widths)
 
     def test_toggle_visibility_all_columns(self, table_view):

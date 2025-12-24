@@ -499,6 +499,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
             from PyQt5.QtGui import QColor, QPalette
 
             from oncutf.core.theme_manager import ThemeManager
+
             theme = ThemeManager()
             group_color = theme.get_color("metadata_group_text")
             option.palette.setColor(QPalette.ColorRole.Text, QColor(group_color))

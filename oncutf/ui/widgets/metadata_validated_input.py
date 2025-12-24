@@ -303,6 +303,7 @@ class MetadataRotationComboBox(QComboBox):
 
         # Set fixed height to match other input widgets
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         self.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
 

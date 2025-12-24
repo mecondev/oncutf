@@ -70,18 +70,14 @@ class ValidationResult:
     def missing_files(self) -> list[FileItem]:
         """Get list of missing files."""
         return [
-            issue.file
-            for issue in self.issues
-            if issue.issue_type == ValidationIssueType.MISSING
+            issue.file for issue in self.issues if issue.issue_type == ValidationIssueType.MISSING
         ]
 
     @property
     def locked_files(self) -> list[FileItem]:
         """Get list of locked files."""
         return [
-            issue.file
-            for issue in self.issues
-            if issue.issue_type == ValidationIssueType.LOCKED
+            issue.file for issue in self.issues if issue.issue_type == ValidationIssueType.LOCKED
         ]
 
     @property
@@ -97,9 +93,7 @@ class ValidationResult:
     def modified_files(self) -> list[FileItem]:
         """Get list of modified files."""
         return [
-            issue.file
-            for issue in self.issues
-            if issue.issue_type == ValidationIssueType.MODIFIED
+            issue.file for issue in self.issues if issue.issue_type == ValidationIssueType.MODIFIED
         ]
 
     def get_summary(self) -> str:

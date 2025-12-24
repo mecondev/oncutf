@@ -54,8 +54,7 @@ class HashService:
         """
         if default_algorithm not in SUPPORTED_ALGORITHMS:
             raise ValueError(
-                f"Unsupported algorithm: {default_algorithm}. "
-                f"Supported: {SUPPORTED_ALGORITHMS}"
+                f"Unsupported algorithm: {default_algorithm}. " f"Supported: {SUPPORTED_ALGORITHMS}"
             )
         self._default_algorithm = default_algorithm
         self._use_cache = use_cache

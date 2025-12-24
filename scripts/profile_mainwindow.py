@@ -29,12 +29,14 @@ def profile_mainwindow_init() -> None:
 
     # Setup
     from PyQt5.QtWidgets import QApplication
+
     app = QApplication(sys.argv)
 
     # Profile the MainWindow creation
     profiler.enable()
 
     from oncutf.ui.main_window import MainWindow
+
     window = MainWindow()
 
     profiler.disable()

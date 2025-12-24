@@ -45,8 +45,7 @@ def format_size(size: int) -> str:
     return f"{size:.1f} TB"
 
 
-def display_top_allocations(snapshot: tracemalloc.Snapshot,
-                            limit: int = 20) -> list[str]:
+def display_top_allocations(snapshot: tracemalloc.Snapshot, limit: int = 20) -> list[str]:
     """Display top memory allocations.
 
     Args:
@@ -76,8 +75,7 @@ def display_top_allocations(snapshot: tracemalloc.Snapshot,
     return lines
 
 
-def display_top_by_file(snapshot: tracemalloc.Snapshot,
-                        limit: int = 15) -> list[str]:
+def display_top_by_file(snapshot: tracemalloc.Snapshot, limit: int = 15) -> list[str]:
     """Display memory usage grouped by file.
 
     Args:
@@ -191,18 +189,10 @@ def main() -> int:
     Returns:
         Exit code (0 for success).
     """
-    parser = argparse.ArgumentParser(
-        description="Profile oncutf memory usage"
-    )
+    parser = argparse.ArgumentParser(description="Profile oncutf memory usage")
+    parser.add_argument("--detailed", action="store_true", help="Show detailed memory breakdown")
     parser.add_argument(
-        "--detailed",
-        action="store_true",
-        help="Show detailed memory breakdown"
-    )
-    parser.add_argument(
-        "--save",
-        action="store_true",
-        help="Save report to reports/memory_snapshot.txt"
+        "--save", action="store_true", help="Save report to reports/memory_snapshot.txt"
     )
     args = parser.parse_args()
 

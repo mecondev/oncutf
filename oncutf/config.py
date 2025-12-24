@@ -68,12 +68,13 @@ LOG_DEBUG_FILE_MAX_BYTES = 20_000_000  # 20MB per debug file
 LOG_DEBUG_FILE_BACKUP_COUNT = 3  # Keep 3 debug backups (total: 80MB max)
 
 # Development logging settings
-SHOW_DEV_ONLY_IN_CONSOLE = False # Show dev-only logs in console
+SHOW_DEV_ONLY_IN_CONSOLE = False  # Show dev-only logs in console
 ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 
 # =====================================
 # EXTERNAL TOOLS CONFIGURATION
 # =====================================
+
 
 # Tool availability and feature flags
 # Dynamically updated by external_tools.py at runtime
@@ -129,7 +130,9 @@ class FeatureAvailability:
 
 # ExifTool operation timeouts (in seconds)
 EXIFTOOL_TIMEOUT_FAST = 60  # Fast metadata read (single file, no extended data)
-EXIFTOOL_TIMEOUT_EXTENDED = 240  # Extended metadata read with -ee flag (can be slow for large video files)
+EXIFTOOL_TIMEOUT_EXTENDED = (
+    240  # Extended metadata read with -ee flag (can be slow for large video files)
+)
 EXIFTOOL_TIMEOUT_WRITE = 10  # Metadata write operations
 EXIFTOOL_TIMEOUT_BATCH_BASE = 60  # Base timeout for batch operations
 EXIFTOOL_TIMEOUT_BATCH_PER_FILE = 0.5  # Additional timeout per file in batch (seconds)
@@ -291,9 +294,9 @@ LOAD_COMPANION_METADATA = True
 
 # How to handle companion files during operations
 CompanionFileMode = {
-    "HIDE": "hide",           # Hide companion files from user (default)
-    "SHOW": "show",           # Show companion files in table
-    "SHOW_GROUPED": "grouped" # Show but grouped with main file
+    "HIDE": "hide",  # Hide companion files from user (default)
+    "SHOW": "show",  # Show companion files in table
+    "SHOW_GROUPED": "grouped",  # Show but grouped with main file
 }
 
 # Default companion file handling mode
@@ -645,27 +648,23 @@ THEME_TOKENS = {
         "text_disabled": "#555555",
         "text_muted": "#888888",  # Muted UI text (companion files, etc.)
         "metadata_group_text": "#ddd6ba",  # Metadata tree root group headers (dimmed for hierarchy)
-
         # ===== Interactive States =====
         "hover": "#3e5c76",
         "selected": "#748cab",
         "selected_text": "#0d1321",
         "selected_hover": "#8a9bb4",  # Slightly lighter than selected
         "pressed": "#5a7fa0",
-
         # ===== Borders & Separators =====
         "border": "#3a3b40",
         "border_light": "#4a4b50",
         "separator": "#5a5a5a",
         "outline": "#748cab",
-
         # ===== Semantic/Status Colors =====
         "success": "#4ade80",
         "warning": "#fbbf24",
         "error": "#ff6b6b",
         "info": "#60a5fa",
         "neutral": "#94a3b8",
-
         # ===== Component-Specific: Menus =====
         "menu_background": "#232323",
         "menu_text": "#f0ebd8",
@@ -673,7 +672,6 @@ THEME_TOKENS = {
         "menu_selected_text": "#0d1321",
         "menu_disabled_text": "#888888",
         "menu_separator": "#5a5a5a",
-
         # ===== Component-Specific: Tables =====
         "table_background": "#181818",
         "table_alternate": "#232323",
@@ -683,12 +681,10 @@ THEME_TOKENS = {
         "table_selection_text": "#0d1321",
         "table_hover_bg": "#3e5c76",
         "table_grid": "#3a3b40",
-
         # ===== Component-Specific: Dialogs =====
         "dialog_background": "#1e1e1e",
         "dialog_title_bg": "#252525",
         "dialog_border": "#3a3b40",
-
         # ===== Component-Specific: Buttons =====
         "button_bg": "#2a2a2a",
         "button_text": "#f0ebd8",
@@ -698,7 +694,6 @@ THEME_TOKENS = {
         "button_pressed_text": "#0d1321",  # Match ThemeEngine button_text_pressed
         "button_disabled_bg": "#1a1a1a",
         "button_disabled_text": "#555555",
-
         # ===== Component-Specific: Inputs =====
         "input_bg": "#2a2a2a",
         "input_text": "#f0ebd8",
@@ -710,43 +705,34 @@ THEME_TOKENS = {
         "border_hover": "#555555",
         "border_muted": "#808080",
         "accent": "#748cab",
-
         # ===== Component-Specific: Scrollbars =====
         "scrollbar_bg": "#1e1e1e",
         "scrollbar_handle": "#4a4a4a",
         "scrollbar_handle_hover": "#5a5a5a",
-
         # ===== Component-Specific: TreeView =====
         "tree_branch": "#3a3b40",
         "tree_indicator": "#748cab",
-
         # ===== Component-Specific: Results & Hash List =====
         "results_header_bg": "#2d2d2d",
         "results_row_hover": "#3a3a3a",
         "results_footer_bg": "#2a2a2a",
-
         # ===== Component-Specific: Preview =====
         "preview_bg": "#232323",
         "preview_border": "#3a3b40",
-
         # ===== Component-Specific: Rename Modules =====
         "module_plate_bg": "#2a2a2a",
         "module_plate_border": "#3a3b40",
         "module_drag_handle": "#4a4a4a",
         "module_drag_hover": "#748cab",
-
         # ===== Component-Specific: Companion Files =====
         "companion_info_text": "#888888",
         "companion_note_text": "#888888",
-
         # ===== Component-Specific: Metadata Edit =====
         "edit_info_text": "#888888",
         "edit_error_text": "#ff6b6b",
-
         # ===== Component-Specific: History Dialog =====
         "history_title_text": "#f0ebd8",
         "history_info_text": "#888888",
-
         # ===== Component-Specific: Tooltips =====
         "tooltip_bg": "#2b2b2b",
         "tooltip_text": "#f0ebd8",
@@ -763,7 +749,6 @@ THEME_TOKENS = {
         "tooltip_success_bg": "#1e3d1e",
         "tooltip_success_text": "#aaffaa",
         "tooltip_success_border": "#44cc44",
-
         # ===== Layout & Spacing Constants (numeric) =====
         # These are stored as strings for now, will be accessed via get_constant()
         "table_row_height": "22",
@@ -789,7 +774,10 @@ THEME_TOKENS = {
 
 # Tooltip Settings
 TOOLTIP_DURATION = 2500  # Duration in milliseconds (2.5 seconds)
-TOOLTIP_POSITION_OFFSET = (25, -35)  # (x, y) offset from widget position - positioned above and to the right
+TOOLTIP_POSITION_OFFSET = (
+    25,
+    -35,
+)  # (x, y) offset from widget position - positioned above and to the right
 
 # =====================================
 # UNDO/REDO SYSTEM SETTINGS
@@ -1224,13 +1212,45 @@ HASH_LIST_COLUMN_CONFIG = {
 # 36 colors arranged in 4 rows x 9 columns
 FILE_TAG_COLOR_ARRAY = [
     # Row 1 (Light colors)
-    "#ffb86a", "#ffdf20", "#7bf1a8", "#46ecd5", "#74d4ff", "#a3b3ff", "#dab2ff", "#fda5d5", "#cccccc",
+    "#ffb86a",
+    "#ffdf20",
+    "#7bf1a8",
+    "#46ecd5",
+    "#74d4ff",
+    "#a3b3ff",
+    "#dab2ff",
+    "#fda5d5",
+    "#cccccc",
     # Row 2
-    "#ff6900", "#f0b100", "#00c950", "#00bba7", "#00a6f4", "#615fff", "#ad46ff", "#f6339a", "#888888",
+    "#ff6900",
+    "#f0b100",
+    "#00c950",
+    "#00bba7",
+    "#00a6f4",
+    "#615fff",
+    "#ad46ff",
+    "#f6339a",
+    "#888888",
     # Row 3
-    "#ca3500", "#a65f00", "#008236", "#00786f", "#0069a8", "#432dd7", "#8200db", "#c6005c", "#444444",
+    "#ca3500",
+    "#a65f00",
+    "#008236",
+    "#00786f",
+    "#0069a8",
+    "#432dd7",
+    "#8200db",
+    "#c6005c",
+    "#444444",
     # Row 4 (Dark colors)
-    "#7e2a0c", "#733e0a", "#0d542b", "#0b4f4a", "#024a70", "#312c85", "#59168b", "#861043", "#000000",
+    "#7e2a0c",
+    "#733e0a",
+    "#0d542b",
+    "#0b4f4a",
+    "#024a70",
+    "#312c85",
+    "#59168b",
+    "#861043",
+    "#000000",
 ]
 
 # Color grid layout configuration

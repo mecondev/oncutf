@@ -140,7 +140,9 @@ def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> in
                         continue
 
     except (OSError, PermissionError) as e:
-        logger.debug("[FileSizeCalculator] Error calculating folder size for %s: %s", folder_path, e)
+        logger.debug(
+            "[FileSizeCalculator] Error calculating folder size for %s: %s", folder_path, e
+        )
 
     logger.debug(
         "[FileSizeCalculator] Folder size calculated: %d bytes for %s",

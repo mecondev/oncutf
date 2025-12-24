@@ -72,8 +72,10 @@ def __getattr__(name: str):
     """Lazy import for MetadataTreeView to avoid circular imports."""
     if name == "MetadataTreeView":
         from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+
         return MetadataTreeView
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     # Data structures

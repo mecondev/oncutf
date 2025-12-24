@@ -364,7 +364,7 @@ class MetadataEditDialog(QDialog):
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
                     theme = get_theme_manager()
-                    self._apply_info_label_style(theme.get_color('error'))
+                    self._apply_info_label_style(theme.get_color("error"))
                     return
 
         # Reset to normal validation info if valid
@@ -398,7 +398,7 @@ class MetadataEditDialog(QDialog):
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
                     theme = get_theme_manager()
-                    self._apply_info_label_style(theme.get_color('error'))
+                    self._apply_info_label_style(theme.get_color("error"))
                     return
 
         # Additional validation using MetadataFieldValidator
@@ -408,7 +408,7 @@ class MetadataEditDialog(QDialog):
             # Show error in info label
             self.info_label.setText(f"Error: {error_message}")
             theme = get_theme_manager()
-            self._apply_info_label_style(theme.get_color('error'))
+            self._apply_info_label_style(theme.get_color("error"))
             return
 
         # Store the validated value

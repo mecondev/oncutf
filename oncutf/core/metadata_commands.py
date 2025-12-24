@@ -202,13 +202,20 @@ class EditMetadataFieldCommand(MetadataCommand):
 
             # Stage the change using MetadataStagingManager
             from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
             staging_manager = get_metadata_staging_manager()
 
             if staging_manager:
                 staging_manager.stage_change(self.file_path, field_path, str(value))
-                logger.info("[EditMetadataFieldCommand] Staged change via command: %s = %s", field_path, value)
+                logger.info(
+                    "[EditMetadataFieldCommand] Staged change via command: %s = %s",
+                    field_path,
+                    value,
+                )
             else:
-                logger.warning("[EditMetadataFieldCommand] No staging manager available, using fallback")
+                logger.warning(
+                    "[EditMetadataFieldCommand] No staging manager available, using fallback"
+                )
                 # Fallback to old cache method
                 self.metadata_tree_view._update_metadata_in_cache(field_path, str(value))
 
@@ -216,9 +223,9 @@ class EditMetadataFieldCommand(MetadataCommand):
             self.metadata_tree_view._update_tree_item_value(field_path, str(value))
 
             # Smart mark: checks if value differs from original
-            if hasattr(self.metadata_tree_view, 'smart_mark_modified'):
+            if hasattr(self.metadata_tree_view, "smart_mark_modified"):
                 self.metadata_tree_view.smart_mark_modified(field_path, value)
-            elif hasattr(self.metadata_tree_view, 'mark_as_modified'):
+            elif hasattr(self.metadata_tree_view, "mark_as_modified"):
                 self.metadata_tree_view.mark_as_modified(field_path)  # Fallback
 
             # Update file icon status

@@ -5,7 +5,6 @@ Author: Michael Economou
 Date: 2025-12-16
 """
 
-
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.counter_module import CounterModule
 
@@ -79,7 +78,7 @@ class TestCounterModuleScope:
             "start": 1,
             "padding": 3,
             "step": 1,
-            "scope": CounterScope.GLOBAL.value
+            "scope": CounterScope.GLOBAL.value,
         }
 
         # Simulate 3 files with global index
@@ -98,7 +97,7 @@ class TestCounterModuleScope:
             "start": 1,
             "padding": 3,
             "step": 1,
-            "scope": CounterScope.PER_FOLDER.value
+            "scope": CounterScope.PER_FOLDER.value,
         }
 
         # Folder 1: indices 0, 1, 2
@@ -123,7 +122,7 @@ class TestCounterModuleScope:
             "start": 10,
             "padding": 4,
             "step": 5,
-            "scope": CounterScope.PER_FOLDER.value
+            "scope": CounterScope.PER_FOLDER.value,
         }
 
         result1 = CounterModule.apply_from_data(data, None, index=0)
@@ -140,7 +139,7 @@ class TestCounterModuleScope:
             "type": "counter",
             "start": 1,
             "padding": 3,
-            "step": 1
+            "step": 1,
             # No scope provided - should default to PER_FOLDER
         }
 

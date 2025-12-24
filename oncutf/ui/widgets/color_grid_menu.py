@@ -58,7 +58,7 @@ class ColorButton(QToolButton):
         from oncutf.config import COLOR_SWATCH_SIZE
         from oncutf.utils.theme import get_theme_color
 
-        self.setFixedSize(COLOR_SWATCH_SIZE+2, COLOR_SWATCH_SIZE)
+        self.setFixedSize(COLOR_SWATCH_SIZE + 2, COLOR_SWATCH_SIZE)
         TooltipHelper.setup_tooltip(self, color.upper())
 
         # Get theme colors for borders
@@ -67,7 +67,8 @@ class ColorButton(QToolButton):
         border_pressed = get_theme_color("border_hover")
 
         # Style with solid color background and theme-aware borders
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             QToolButton {{
                 background-color: {color};
                 border: 1px solid {border_normal};
@@ -79,7 +80,8 @@ class ColorButton(QToolButton):
             QToolButton:pressed {{
                 border: 2px solid {border_pressed};
             }}
-        """)
+        """
+        )
 
         self.clicked.connect(lambda: self.clicked_with_color.emit(self.color))
 
@@ -153,7 +155,8 @@ class ColorGridMenu(QWidget):
         button_pressed = get_theme_color("button_pressed_bg")
         text_color = get_theme_color("text")
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             ColorGridMenu {{
                 background-color: {bg_color};
                 border: 2px solid {border_color};
@@ -178,7 +181,8 @@ class ColorGridMenu(QWidget):
             QPushButton:pressed, #pickerButton:pressed {{
                 background-color: {button_pressed};
             }}
-        """)
+        """
+        )
 
     def _create_color_grid(self) -> QWidget:
         """
@@ -195,7 +199,7 @@ class ColorGridMenu(QWidget):
         grid_layout.setSpacing(0)
 
         # Populate grid with COLOR_GRID_ROWS x COLOR_GRID_COLS layout
-        for i, color in enumerate(FILE_TAG_COLOR_ARRAY[:COLOR_GRID_ROWS * COLOR_GRID_COLS]):
+        for i, color in enumerate(FILE_TAG_COLOR_ARRAY[: COLOR_GRID_ROWS * COLOR_GRID_COLS]):
             row = i // COLOR_GRID_COLS
             col = i % COLOR_GRID_COLS
 
@@ -226,11 +230,7 @@ class ColorGridMenu(QWidget):
 
             if not pixmap.isNull():
                 # Scale to button size with smooth transformation
-                scaled_pixmap = pixmap.scaled(
-                    64, 24,
-                    Qt.IgnoreAspectRatio,
-                    Qt.SmoothTransformation
-                )
+                scaled_pixmap = pixmap.scaled(64, 24, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
                 picker_btn.setIcon(QIcon(scaled_pixmap))
                 picker_btn.setIconSize(QSize(64, 24))
             else:

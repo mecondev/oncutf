@@ -29,11 +29,7 @@ class TestFileGroupCreation:
         file1 = FileItem.from_path("/test/folder/file1.txt")
         file2 = FileItem.from_path("/test/folder/file2.txt")
 
-        group = FileGroup(
-            source_path=Path("/test/folder"),
-            files=[file1, file2],
-            recursive=True
-        )
+        group = FileGroup(source_path=Path("/test/folder"), files=[file1, file2], recursive=True)
 
         assert group.file_count == 2
         assert group.is_empty is False
@@ -110,10 +106,7 @@ class TestFileGroupMetadata:
     def test_metadata_initialization(self):
         """Test that metadata can be provided during creation."""
         metadata = {"timestamp": "2025-12-16", "user": "test"}
-        group = FileGroup(
-            source_path=Path("/test/folder"),
-            metadata=metadata
-        )
+        group = FileGroup(source_path=Path("/test/folder"), metadata=metadata)
 
         assert group.metadata == metadata
 
@@ -136,9 +129,7 @@ class TestFileGroupRepresentation:
         test_path = Path("test") / "folder"
         test_file = test_path / "file1.txt"
         group = FileGroup(
-            source_path=test_path,
-            files=[FileItem.from_path(str(test_file))],
-            recursive=True
+            source_path=test_path, files=[FileItem.from_path(str(test_file))], recursive=True
         )
 
         repr_str = repr(group)

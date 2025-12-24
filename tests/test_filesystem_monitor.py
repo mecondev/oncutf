@@ -62,7 +62,10 @@ class TestFilesystemMonitor:
         """Test adding folder to monitoring."""
         success = monitor.add_folder(temp_dir)
         assert success
-        assert temp_dir in monitor._monitored_folders or str(Path(temp_dir).resolve()) in monitor._monitored_folders
+        assert (
+            temp_dir in monitor._monitored_folders
+            or str(Path(temp_dir).resolve()) in monitor._monitored_folders
+        )
 
     def test_add_nonexistent_folder(self, monitor):
         """Test adding non-existent folder fails."""
@@ -115,10 +118,7 @@ class TestFilesystemMonitor:
             assert len(drives) >= 1
         # On Linux/macOS, drives may be empty in CI
 
-    @pytest.mark.skipif(
-        platform.system() != "Linux",
-        reason="Linux-specific test"
-    )
+    @pytest.mark.skipif(platform.system() != "Linux", reason="Linux-specific test")
     def test_get_drives_linux(self, monitor):
         """Test drive detection on Linux."""
         drives = monitor._get_available_drives()
@@ -135,7 +135,7 @@ class TestFilesystemMonitor:
             monitor._current_drives = {"/existing/drive"}
             new_drives = {"/existing/drive", "/new/drive"}
 
-            with patch.object(monitor, '_get_available_drives', return_value=new_drives):
+            with patch.object(monitor, "_get_available_drives", return_value=new_drives):
                 monitor._poll_drives()
 
         assert blocker.args[0] == "/new/drive"
@@ -149,7 +149,7 @@ class TestFilesystemMonitor:
             # Simulate drive removal
             new_drives = {"/drive1"}
 
-            with patch.object(monitor, '_get_available_drives', return_value=new_drives):
+            with patch.object(monitor, "_get_available_drives", return_value=new_drives):
                 monitor._poll_drives()
 
         assert blocker.args[0] == "/drive2"
@@ -167,6 +167,7 @@ class TestFilesystemMonitor:
 
             # Process events to allow watcher to trigger
             import time
+
             time.sleep(0.1)
             qtbot.wait(100)
 

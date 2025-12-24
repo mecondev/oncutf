@@ -91,6 +91,7 @@ class RenameModulesArea(QWidget):
         # Use centralized timer manager for debouncing
         # This replaces the local QTimer with a managed timer that handles cleanup
         from oncutf.utils.timer_manager import schedule_preview_update
+
         self._schedule_preview_update = schedule_preview_update
         self._preview_timer_id = f"preview_debounce_{id(self)}"
 
@@ -212,9 +213,7 @@ class RenameModulesArea(QWidget):
         Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
-        logger.debug(
-            "[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True}
-        )
+        logger.debug("[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True})
         logger.debug(
             "[Preview] Effective check: %s",
             [m.is_effective() for m in self.module_widgets],
@@ -232,9 +231,7 @@ class RenameModulesArea(QWidget):
         """
         self.current_theme = theme
         # Theme styling is now handled by the global theme engine
-        logger.debug(
-            "[RenameModulesArea] Theme changed to: %s", theme, extra={"dev_only": True}
-        )
+        logger.debug("[RenameModulesArea] Theme changed to: %s", theme, extra={"dev_only": True})
 
     def _setup_rename_engine(self):
         """Setup UnifiedRenameEngine."""
@@ -285,9 +282,7 @@ class RenameModulesArea(QWidget):
 
     def module_drag_ended(self, module):
         """Handle when a module drag ends."""
-        logger.debug(
-            "[RenameModulesArea] Module drag ended: %s", module, extra={"dev_only": True}
-        )
+        logger.debug("[RenameModulesArea] Module drag ended: %s", module, extra={"dev_only": True})
 
         # Stop auto-scrolling
         self.auto_scroll_timer.stop()
@@ -344,6 +339,7 @@ class RenameModulesArea(QWidget):
 
         # Get hover color from theme and convert to rgba for alpha channel
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         hover_color = theme.colors.get("button_background_hover", "#3e5c76")
 
@@ -485,6 +481,7 @@ class RenameModulesArea(QWidget):
 
         # Get pressed color from theme for placeholder (lighter appearance)
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         pressed_color = theme.colors.get("button_background_pressed", "#748cab")
 

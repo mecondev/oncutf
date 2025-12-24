@@ -137,10 +137,7 @@ class TestCounterScopeIntegration:
         """Test calculate_scope_aware_index with GLOBAL scope."""
         for i in range(len(sample_files)):
             index = calculate_scope_aware_index(
-                CounterScope.GLOBAL.value,
-                i,
-                sample_files[i],
-                sample_files
+                CounterScope.GLOBAL.value, i, sample_files[i], sample_files
             )
             assert index == i  # Should return unchanged
 
@@ -150,23 +147,38 @@ class TestCounterScopeIntegration:
         # folder_b has 2 files (indices 3, 4)
 
         # Folder A files
-        assert calculate_scope_aware_index(
-            CounterScope.PER_FOLDER.value, 0, sample_files[0], sample_files
-        ) == 0
-        assert calculate_scope_aware_index(
-            CounterScope.PER_FOLDER.value, 1, sample_files[1], sample_files
-        ) == 1
-        assert calculate_scope_aware_index(
-            CounterScope.PER_FOLDER.value, 2, sample_files[2], sample_files
-        ) == 2
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_FOLDER.value, 0, sample_files[0], sample_files
+            )
+            == 0
+        )
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_FOLDER.value, 1, sample_files[1], sample_files
+            )
+            == 1
+        )
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_FOLDER.value, 2, sample_files[2], sample_files
+            )
+            == 2
+        )
 
         # Folder B files (should reset)
-        assert calculate_scope_aware_index(
-            CounterScope.PER_FOLDER.value, 3, sample_files[3], sample_files
-        ) == 0  # Reset!
-        assert calculate_scope_aware_index(
-            CounterScope.PER_FOLDER.value, 4, sample_files[4], sample_files
-        ) == 1
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_FOLDER.value, 3, sample_files[3], sample_files
+            )
+            == 0
+        )  # Reset!
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_FOLDER.value, 4, sample_files[4], sample_files
+            )
+            == 1
+        )
 
     def test_scope_aware_index_calculation_per_extension(self, sample_files):
         """Test calculate_scope_aware_index with PER_EXTENSION scope."""
@@ -174,21 +186,36 @@ class TestCounterScopeIntegration:
         # .png: index 2 (file3)
         # .txt: index 4 (file5)
 
-        assert calculate_scope_aware_index(
-            CounterScope.PER_EXTENSION.value, 0, sample_files[0], sample_files
-        ) == 0  # First .jpg
-        assert calculate_scope_aware_index(
-            CounterScope.PER_EXTENSION.value, 1, sample_files[1], sample_files
-        ) == 1  # Second .jpg
-        assert calculate_scope_aware_index(
-            CounterScope.PER_EXTENSION.value, 2, sample_files[2], sample_files
-        ) == 0  # First .png
-        assert calculate_scope_aware_index(
-            CounterScope.PER_EXTENSION.value, 3, sample_files[3], sample_files
-        ) == 2  # Third .jpg
-        assert calculate_scope_aware_index(
-            CounterScope.PER_EXTENSION.value, 4, sample_files[4], sample_files
-        ) == 0  # First .txt
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_EXTENSION.value, 0, sample_files[0], sample_files
+            )
+            == 0
+        )  # First .jpg
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_EXTENSION.value, 1, sample_files[1], sample_files
+            )
+            == 1
+        )  # Second .jpg
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_EXTENSION.value, 2, sample_files[2], sample_files
+            )
+            == 0
+        )  # First .png
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_EXTENSION.value, 3, sample_files[3], sample_files
+            )
+            == 2
+        )  # Third .jpg
+        assert (
+            calculate_scope_aware_index(
+                CounterScope.PER_EXTENSION.value, 4, sample_files[4], sample_files
+            )
+            == 0
+        )  # First .txt
 
     def test_counter_with_start_and_step_per_folder(self, sample_files):
         """Test counter with custom start/step values in PER_FOLDER scope."""
@@ -217,7 +244,13 @@ class TestCounterScopeIntegration:
         """Test counter scope works with other modules."""
         modules_data = [
             {"type": "specified_text", "text": "photo"},
-            {"type": "counter", "start": 1, "step": 1, "padding": 2, "scope": CounterScope.PER_FOLDER.value},
+            {
+                "type": "counter",
+                "start": 1,
+                "step": 1,
+                "padding": 2,
+                "scope": CounterScope.PER_FOLDER.value,
+            },
         ]
 
         results = []
@@ -235,6 +268,7 @@ class TestCounterScopeIntegration:
         """Test that counter without all_files parameter falls back to global index."""
         # Clear module cache to avoid interference from previous tests
         from oncutf.utils import preview_engine
+
         preview_engine._module_cache.clear()
 
         modules_data = [

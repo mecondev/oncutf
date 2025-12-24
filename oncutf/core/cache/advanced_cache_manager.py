@@ -242,9 +242,7 @@ class AdvancedCacheManager:
                 invalidated_count += 1
 
         if invalidated_count > 0:
-            logger.debug(
-                "[AdvancedCacheManager] Invalidated %d cache entries", invalidated_count
-            )
+            logger.debug("[AdvancedCacheManager] Invalidated %d cache entries", invalidated_count)
 
     def optimize_cache_size(self) -> None:
         """Optimize cache size."""
@@ -260,6 +258,4 @@ class AdvancedCacheManager:
             for key, value in list(old_cache.items())[-new_size:]:
                 self.memory_cache.set(key, value)
 
-            logger.debug(
-                "[AdvancedCacheManager] Optimized memory cache size to %d", new_size
-            )
+            logger.debug("[AdvancedCacheManager] Optimized memory cache size to %d", new_size)

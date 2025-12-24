@@ -212,15 +212,15 @@ def execute_rename_plan(plan: list[dict]) -> int:
             if entry.get("is_case_only", False):
                 if safe_case_rename(entry["src_path"], entry["dst_path"]):
                     success_count += 1
-                    logger.info("Case-only rename successful: %s -> %s", entry['src'], entry['dst'])
+                    logger.info("Case-only rename successful: %s -> %s", entry["src"], entry["dst"])
                 else:
-                    logger.warning("Case-only rename failed: %s -> %s", entry['src'], entry['dst'])
+                    logger.warning("Case-only rename failed: %s -> %s", entry["src"], entry["dst"])
             else:
                 # Regular rename
                 os.rename(entry["src_path"], entry["dst_path"])
                 success_count += 1
         except Exception as e:
-            logger.error("Failed to rename %s -> %s: %s", entry['src'], entry['dst'], e)
+            logger.error("Failed to rename %s -> %s: %s", entry["src"], entry["dst"], e)
 
     return success_count
 

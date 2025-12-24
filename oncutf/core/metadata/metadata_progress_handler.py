@@ -13,6 +13,7 @@ Responsibilities:
 - Handle progress callbacks and updates
 - Handle cancellation requests
 """
+
 from __future__ import annotations
 
 import contextlib

@@ -32,6 +32,8 @@ def test_find_duplicates_in_paths_and_clear_cache(tmp_path):
 
     # clear cache should not raise
     mgr.clear_cache()
+
+
 #!/usr/bin/env python3
 """
 Module: test_hash_manager.py
@@ -123,9 +125,11 @@ class TestHashManager:
         """Test handling of permission errors."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.is_file", return_value=True):
+        with (
+            patch("pathlib.Path.open", side_effect=PermissionError("Access denied")),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+        ):
             # noqa: SIM117
             result = manager.calculate_hash("/mock/path/file.txt")
             assert result is None
@@ -403,9 +407,11 @@ class TestErrorHandling:
         """Test HashManager handles exceptions gracefully."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.is_file", return_value=True):
+        with (
+            patch("pathlib.Path.open", side_effect=Exception("Unexpected error")),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+        ):
             result = manager.calculate_hash("/mock/path")
             assert result is None
 
@@ -503,15 +509,15 @@ class TestPerformance:
 
             # Verify progress values make sense
             assert progress_calls[0] > 0, "First progress call should be > 0"
-            assert progress_calls[-1] == len(test_data), (
-                f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
-            )
+            assert progress_calls[-1] == len(
+                test_data
+            ), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
 
             # Verify progress is monotonically increasing
             for i in range(1, len(progress_calls)):
-                assert progress_calls[i] >= progress_calls[i - 1], (
-                    "Progress should be monotonically increasing"
-                )
+                assert (
+                    progress_calls[i] >= progress_calls[i - 1]
+                ), "Progress should be monotonically increasing"
 
         finally:
             Path(temp_path).unlink()

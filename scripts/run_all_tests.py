@@ -58,27 +58,30 @@ class ComprehensiveTestRunner:
 
         try:
             # Run pytest on tests directory
-            result = subprocess.run([
-                sys.executable, "-m", "pytest",
-                "tests/",
-                "-v",
-                "--tb=short",
-                f"--junit-xml={self.output_dir}/unit_tests.xml"
-            ],
-            capture_output=True,
-            text=True,
-            cwd=project_root
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "tests/",
+                    "-v",
+                    "--tb=short",
+                    f"--junit-xml={self.output_dir}/unit_tests.xml",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=project_root,
             )
 
             unit_results = {
-                'success': result.returncode == 0,
-                'returncode': result.returncode,
-                'stdout': result.stdout,
-                'stderr': result.stderr,
-                'duration': time.time() - self.start_time
+                "success": result.returncode == 0,
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "duration": time.time() - self.start_time,
             }
 
-            if unit_results['success']:
+            if unit_results["success"]:
                 logger.info("[ComprehensiveTestRunner] Unit tests passed")
             else:
                 logger.error("[ComprehensiveTestRunner] Unit tests failed: %s", result.stderr)
@@ -87,11 +90,7 @@ class ComprehensiveTestRunner:
 
         except Exception as e:
             logger.error("[ComprehensiveTestRunner] Error running unit tests: %s", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'duration': time.time() - self.start_time
-            }
+            return {"success": False, "error": str(e), "duration": time.time() - self.start_time}
 
     def run_performance_benchmarks(self, quick: bool = False) -> dict[str, Any]:
         """Run performance benchmarks."""
@@ -106,13 +105,16 @@ class ComprehensiveTestRunner:
             benchmark_duration = time.time() - benchmark_start
 
             benchmark_results = {
-                'success': success,
-                'duration': benchmark_duration,
-                'config': 'quick' if quick else 'full'
+                "success": success,
+                "duration": benchmark_duration,
+                "config": "quick" if quick else "full",
             }
 
             if success:
-                logger.info("[ComprehensiveTestRunner] Performance benchmarks completed in %.1fs", benchmark_duration)
+                logger.info(
+                    "[ComprehensiveTestRunner] Performance benchmarks completed in %.1fs",
+                    benchmark_duration,
+                )
             else:
                 logger.error("[ComprehensiveTestRunner] Performance benchmarks failed")
 
@@ -120,11 +122,7 @@ class ComprehensiveTestRunner:
 
         except Exception as e:
             logger.error("[ComprehensiveTestRunner] Error running performance benchmarks: %s", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'duration': time.time() - self.start_time
-            }
+            return {"success": False, "error": str(e), "duration": time.time() - self.start_time}
 
     def run_memory_profiling(self) -> dict[str, Any]:
         """Run memory profiling tests."""
@@ -138,13 +136,12 @@ class ComprehensiveTestRunner:
             success = run_memory_profiling_tests()
             memory_duration = time.time() - memory_start
 
-            memory_results = {
-                'success': success,
-                'duration': memory_duration
-            }
+            memory_results = {"success": success, "duration": memory_duration}
 
             if success:
-                logger.info("[ComprehensiveTestRunner] Memory profiling completed in %.1fs", memory_duration)
+                logger.info(
+                    "[ComprehensiveTestRunner] Memory profiling completed in %.1fs", memory_duration
+                )
             else:
                 logger.error("[ComprehensiveTestRunner] Memory profiling failed")
 
@@ -152,11 +149,7 @@ class ComprehensiveTestRunner:
 
         except Exception as e:
             logger.error("[ComprehensiveTestRunner] Error running memory profiling: %s", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'duration': time.time() - self.start_time
-            }
+            return {"success": False, "error": str(e), "duration": time.time() - self.start_time}
 
     def run_integration_tests(self) -> dict[str, Any]:
         """Run integration tests using the optimization example."""
@@ -164,66 +157,54 @@ class ComprehensiveTestRunner:
 
         try:
             # Run the optimization integration example
-            result = subprocess.run([
-                sys.executable,
-                "examples/optimization_integration_example.py"
-            ],
-            capture_output=True,
-            text=True,
-            cwd=project_root,
-            timeout=60  # 60 second timeout
+            result = subprocess.run(
+                [sys.executable, "examples/optimization_integration_example.py"],
+                capture_output=True,
+                text=True,
+                cwd=project_root,
+                timeout=60,  # 60 second timeout
             )
 
             integration_results = {
-                'success': result.returncode == 0,
-                'returncode': result.returncode,
-                'stdout': result.stdout,
-                'stderr': result.stderr,
-                'duration': time.time() - self.start_time
+                "success": result.returncode == 0,
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "duration": time.time() - self.start_time,
             }
 
-            if integration_results['success']:
+            if integration_results["success"]:
                 logger.info("[ComprehensiveTestRunner] Integration tests passed")
             else:
-                logger.error("[ComprehensiveTestRunner] Integration tests failed: %s", result.stderr)
+                logger.error(
+                    "[ComprehensiveTestRunner] Integration tests failed: %s", result.stderr
+                )
 
             return integration_results
 
         except subprocess.TimeoutExpired:
             logger.error("[ComprehensiveTestRunner] Integration tests timed out")
-            return {
-                'success': False,
-                'error': 'Test timed out after 60 seconds',
-                'duration': 60.0
-            }
+            return {"success": False, "error": "Test timed out after 60 seconds", "duration": 60.0}
         except Exception as e:
             logger.error("[ComprehensiveTestRunner] Error running integration tests: %s", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'duration': time.time() - self.start_time
-            }
+            return {"success": False, "error": str(e), "duration": time.time() - self.start_time}
 
     def run_system_validation(self) -> dict[str, Any]:
         """Run system validation tests."""
         logger.info("[ComprehensiveTestRunner] Running system validation...")
 
-        validation_results = {
-            'success': True,
-            'checks': {},
-            'duration': 0.0
-        }
+        validation_results = {"success": True, "checks": {}, "duration": 0.0}
 
         validation_start = time.time()
 
         try:
             # Check if all optimization systems can be imported
             imports_to_check = [
-                ('core.memory_manager', 'MemoryManager'),
-                ('utils.smart_icon_cache', 'SmartIconCache'),
-                ('core.optimized_database_manager', 'OptimizedDatabaseManager'),
-                ('core.async_operations_manager', 'AsyncOperationsManager'),
-                ('core.thread_pool_manager', 'ThreadPoolManager')
+                ("core.memory_manager", "MemoryManager"),
+                ("utils.smart_icon_cache", "SmartIconCache"),
+                ("core.optimized_database_manager", "OptimizedDatabaseManager"),
+                ("core.async_operations_manager", "AsyncOperationsManager"),
+                ("core.thread_pool_manager", "ThreadPoolManager"),
             ]
 
             for module_name, class_name in imports_to_check:
@@ -232,58 +213,54 @@ class ComprehensiveTestRunner:
                     cls = getattr(module, class_name)
 
                     # Try to instantiate (basic validation)
-                    if class_name == 'MemoryManager':
+                    if class_name == "MemoryManager":
                         instance = cls()
                         instance.shutdown()
-                    elif class_name == 'SmartIconCache':
+                    elif class_name == "SmartIconCache":
                         instance = cls(max_entries=10, max_memory_mb=1.0)
                         instance.shutdown()
-                    elif class_name == 'OptimizedDatabaseManager':
+                    elif class_name == "OptimizedDatabaseManager":
                         # Skip instantiation for database (requires file)
                         pass
-                    elif class_name == 'AsyncOperationsManager':
+                    elif class_name == "AsyncOperationsManager":
                         instance = cls(max_workers=2)
                         instance.shutdown()
-                    elif class_name == 'ThreadPoolManager':
+                    elif class_name == "ThreadPoolManager":
                         instance = cls(min_threads=1, max_threads=2)
                         instance.shutdown()
 
-                    validation_results['checks'][f'{module_name}.{class_name}'] = {
-                        'success': True,
-                        'message': 'Import and instantiation successful'
+                    validation_results["checks"][f"{module_name}.{class_name}"] = {
+                        "success": True,
+                        "message": "Import and instantiation successful",
                     }
 
                 except Exception as e:
-                    validation_results['success'] = False
-                    validation_results['checks'][f'{module_name}.{class_name}'] = {
-                        'success': False,
-                        'error': str(e)
+                    validation_results["success"] = False
+                    validation_results["checks"][f"{module_name}.{class_name}"] = {
+                        "success": False,
+                        "error": str(e),
                     }
 
             # Check required dependencies
-            dependencies_to_check = [
-                'psutil',
-                'aiofiles',
-                'asyncio'
-            ]
+            dependencies_to_check = ["psutil", "aiofiles", "asyncio"]
 
             for dep in dependencies_to_check:
                 try:
                     __import__(dep)
-                    validation_results['checks'][f'dependency_{dep}'] = {
-                        'success': True,
-                        'message': 'Dependency available'
+                    validation_results["checks"][f"dependency_{dep}"] = {
+                        "success": True,
+                        "message": "Dependency available",
                     }
                 except ImportError as e:
-                    validation_results['success'] = False
-                    validation_results['checks'][f'dependency_{dep}'] = {
-                        'success': False,
-                        'error': str(e)
+                    validation_results["success"] = False
+                    validation_results["checks"][f"dependency_{dep}"] = {
+                        "success": False,
+                        "error": str(e),
                     }
 
-            validation_results['duration'] = time.time() - validation_start
+            validation_results["duration"] = time.time() - validation_start
 
-            if validation_results['success']:
+            if validation_results["success"]:
                 logger.info("[ComprehensiveTestRunner] System validation passed")
             else:
                 logger.error("[ComprehensiveTestRunner] System validation failed")
@@ -292,43 +269,43 @@ class ComprehensiveTestRunner:
 
         except Exception as e:
             logger.error("[ComprehensiveTestRunner] Error in system validation: %s", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'duration': time.time() - validation_start
-            }
+            return {"success": False, "error": str(e), "duration": time.time() - validation_start}
 
     def generate_comprehensive_report(self) -> dict[str, Any]:
         """Generate comprehensive test report."""
         total_duration = time.time() - self.start_time
 
         # Calculate overall success
-        all_success = all(
-            result.get('success', False)
-            for result in self.test_results.values()
-        )
+        all_success = all(result.get("success", False) for result in self.test_results.values())
 
         # Count successful tests
         successful_tests = sum(
-            1 for result in self.test_results.values()
-            if result.get('success', False)
+            1 for result in self.test_results.values() if result.get("success", False)
         )
 
         report = {
-            'timestamp': time.time(),
-            'total_duration': total_duration,
-            'overall_success': all_success,
-            'successful_tests': successful_tests,
-            'total_tests': len(self.test_results),
-            'test_results': self.test_results,
-            'summary': {
-                'unit_tests': self.test_results.get('unit_tests', {}).get('success', False),
-                'performance_benchmarks': self.test_results.get('performance_benchmarks', {}).get('success', False),
-                'memory_profiling': self.test_results.get('memory_profiling', {}).get('success', False),
-                'integration_tests': self.test_results.get('integration_tests', {}).get('success', False),
-                'system_validation': self.test_results.get('system_validation', {}).get('success', False)
+            "timestamp": time.time(),
+            "total_duration": total_duration,
+            "overall_success": all_success,
+            "successful_tests": successful_tests,
+            "total_tests": len(self.test_results),
+            "test_results": self.test_results,
+            "summary": {
+                "unit_tests": self.test_results.get("unit_tests", {}).get("success", False),
+                "performance_benchmarks": self.test_results.get("performance_benchmarks", {}).get(
+                    "success", False
+                ),
+                "memory_profiling": self.test_results.get("memory_profiling", {}).get(
+                    "success", False
+                ),
+                "integration_tests": self.test_results.get("integration_tests", {}).get(
+                    "success", False
+                ),
+                "system_validation": self.test_results.get("system_validation", {}).get(
+                    "success", False
+                ),
             },
-            'recommendations': self._generate_recommendations()
+            "recommendations": self._generate_recommendations(),
         }
 
         return report
@@ -339,35 +316,35 @@ class ComprehensiveTestRunner:
 
         # Check each test result and generate recommendations
         for test_name, result in self.test_results.items():
-            if not result.get('success', False):
-                if test_name == 'unit_tests':
+            if not result.get("success", False):
+                if test_name == "unit_tests":
                     recommendations.append(
                         "Unit tests failed - Check existing functionality for regressions"
                     )
-                elif test_name == 'performance_benchmarks':
+                elif test_name == "performance_benchmarks":
                     recommendations.append(
                         "Performance benchmarks failed - Review optimization implementations"
                     )
-                elif test_name == 'memory_profiling':
+                elif test_name == "memory_profiling":
                     recommendations.append(
                         "Memory profiling failed - Check for memory leaks or excessive usage"
                     )
-                elif test_name == 'integration_tests':
+                elif test_name == "integration_tests":
                     recommendations.append(
                         "Integration tests failed - Verify system components work together"
                     )
-                elif test_name == 'system_validation':
+                elif test_name == "system_validation":
                     recommendations.append(
                         "System validation failed - Check dependencies and imports"
                     )
 
         # Performance-specific recommendations
-        if self.test_results.get('performance_benchmarks', {}).get('success', False):
+        if self.test_results.get("performance_benchmarks", {}).get("success", False):
             recommendations.append(
                 "Performance benchmarks passed - Consider deploying optimizations"
             )
 
-        if self.test_results.get('memory_profiling', {}).get('success', False):
+        if self.test_results.get("memory_profiling", {}).get("success", False):
             recommendations.append(
                 "Memory profiling passed - Memory optimizations are working effectively"
             )
@@ -378,7 +355,7 @@ class ComprehensiveTestRunner:
         """Save comprehensive report to file."""
         report = self.generate_comprehensive_report()
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             json.dump(report, f, indent=2)
 
         logger.info("[ComprehensiveTestRunner] Report saved to %s", filename)
@@ -387,32 +364,33 @@ class ComprehensiveTestRunner:
         """Print test summary to console."""
         report = self.generate_comprehensive_report()
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("ONCUTF OPTIMIZATION SYSTEMS - COMPREHENSIVE TEST RESULTS")
-        print("="*70)
+        print("=" * 70)
         print(f"Overall Success: {' PASS' if report['overall_success'] else ' FAIL'}")
         print(f"Total Duration: {report['total_duration']:.1f} seconds")
         print(f"Tests Passed: {report['successful_tests']}/{report['total_tests']}")
         print()
 
         print("Test Results:")
-        for test_name, result in report['test_results'].items():
-            status = " PASS" if result.get('success', False) else " FAIL"
-            duration = result.get('duration', 0)
+        for test_name, result in report["test_results"].items():
+            status = " PASS" if result.get("success", False) else " FAIL"
+            duration = result.get("duration", 0)
             print(f"  {test_name.replace('_', ' ').title()}: {status} ({duration:.1f}s)")
 
-            if not result.get('success', False) and 'error' in result:
+            if not result.get("success", False) and "error" in result:
                 print(f"    Error: {result['error']}")
 
         print()
         print("Recommendations:")
-        for rec in report['recommendations']:
+        for rec in report["recommendations"]:
             print(f"  • {rec}")
 
-        print("="*70)
+        print("=" * 70)
 
-    def run_all_tests(self, quick_benchmarks: bool = False,
-                     skip_unit_tests: bool = False) -> dict[str, Any]:
+    def run_all_tests(
+        self, quick_benchmarks: bool = False, skip_unit_tests: bool = False
+    ) -> dict[str, Any]:
         """
         Run all tests and generate comprehensive report.
 
@@ -426,20 +404,22 @@ class ComprehensiveTestRunner:
         logger.info("[ComprehensiveTestRunner] Starting comprehensive test suite...")
 
         # Run system validation first
-        self.test_results['system_validation'] = self.run_system_validation()
+        self.test_results["system_validation"] = self.run_system_validation()
 
         # Run unit tests (if not skipped)
         if not skip_unit_tests:
-            self.test_results['unit_tests'] = self.run_unit_tests()
+            self.test_results["unit_tests"] = self.run_unit_tests()
 
         # Run performance benchmarks
-        self.test_results['performance_benchmarks'] = self.run_performance_benchmarks(quick_benchmarks)
+        self.test_results["performance_benchmarks"] = self.run_performance_benchmarks(
+            quick_benchmarks
+        )
 
         # Run memory profiling
-        self.test_results['memory_profiling'] = self.run_memory_profiling()
+        self.test_results["memory_profiling"] = self.run_memory_profiling()
 
         # Run integration tests
-        self.test_results['integration_tests'] = self.run_integration_tests()
+        self.test_results["integration_tests"] = self.run_integration_tests()
 
         # Generate and save report
         timestamp = int(time.time())
@@ -465,15 +445,18 @@ Examples:
     python run_all_tests.py
     python run_all_tests.py --quick
     python run_all_tests.py --skip-unit-tests --output-dir results/
-        """
+        """,
     )
 
-    parser.add_argument('--quick', action='store_true',
-                       help='Use quick benchmark configuration')
-    parser.add_argument('--skip-unit-tests', action='store_true',
-                       help='Skip unit tests for faster execution')
-    parser.add_argument('--output-dir', default='test_results',
-                       help='Directory for test results (default: test_results/)')
+    parser.add_argument("--quick", action="store_true", help="Use quick benchmark configuration")
+    parser.add_argument(
+        "--skip-unit-tests", action="store_true", help="Skip unit tests for faster execution"
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="test_results",
+        help="Directory for test results (default: test_results/)",
+    )
 
     args = parser.parse_args()
 
@@ -483,12 +466,11 @@ Examples:
     try:
         # Run all tests
         results = runner.run_all_tests(
-            quick_benchmarks=args.quick,
-            skip_unit_tests=args.skip_unit_tests
+            quick_benchmarks=args.quick, skip_unit_tests=args.skip_unit_tests
         )
 
         # Return success status
-        return 0 if results['overall_success'] else 1
+        return 0 if results["overall_success"] else 1
 
     except KeyboardInterrupt:
         logger.info("[ComprehensiveTestRunner] Test execution interrupted by user")

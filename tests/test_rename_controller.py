@@ -245,7 +245,9 @@ class TestGeneratePreview:
         # Verify engine was called
         rename_controller._unified_rename_engine.generate_preview.assert_called_once()
 
-    def test_generate_preview_no_files(self, rename_controller, sample_modules_data, sample_post_transform):
+    def test_generate_preview_no_files(
+        self, rename_controller, sample_modules_data, sample_post_transform
+    ):
         """Test preview generation with no files."""
         result = rename_controller.generate_preview(
             file_items=[],
@@ -440,12 +442,12 @@ class TestExecuteRename:
         rename_controller._unified_rename_engine.execute_rename.return_value = mock_execution
 
         # Mock validator to always pass validation
-        with patch('oncutf.core.pre_execution_validator.PreExecutionValidator') as mock_validator_class:
+        with patch(
+            "oncutf.core.pre_execution_validator.PreExecutionValidator"
+        ) as mock_validator_class:
             mock_validator = MagicMock()
             mock_validator.validate.return_value = MagicMock(
-                is_valid=True,
-                issues=[],
-                valid_files=sample_file_items
+                is_valid=True, issues=[], valid_files=sample_file_items
             )
             mock_validator_class.return_value = mock_validator
 
@@ -560,12 +562,12 @@ class TestExecuteRename:
         rename_controller._unified_rename_engine.execute_rename.return_value = mock_execution
 
         # Mock validator to always pass validation
-        with patch('oncutf.core.pre_execution_validator.PreExecutionValidator') as mock_validator_class:
+        with patch(
+            "oncutf.core.pre_execution_validator.PreExecutionValidator"
+        ) as mock_validator_class:
             mock_validator = MagicMock()
             mock_validator.validate.return_value = MagicMock(
-                is_valid=True,
-                issues=[],
-                valid_files=sample_file_items
+                is_valid=True, issues=[], valid_files=sample_file_items
             )
             mock_validator_class.return_value = mock_validator
 

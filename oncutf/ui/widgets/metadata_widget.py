@@ -259,7 +259,9 @@ class MetadataWidget(QWidget):
                 logger.debug("No files selected, populating disabled hash options")
 
                 # For hash options we avoid auto-select to prevent unintended preview refreshes
-                self.options_combo.populate_from_metadata_groups(hierarchical_data, auto_select_first=False)
+                self.options_combo.populate_from_metadata_groups(
+                    hierarchical_data, auto_select_first=False
+                )
 
                 # Disable the combo box
                 self.options_combo.setEnabled(False)
@@ -450,9 +452,7 @@ class MetadataWidget(QWidget):
         # Apply normal styling
         self._apply_normal_combo_styling()
 
-        logger.debug(
-            "Populated metadata keys with %d categories", len(hierarchical_data)
-        )
+        logger.debug("Populated metadata keys with %d categories", len(hierarchical_data))
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization."""
@@ -999,10 +999,10 @@ class MetadataWidget(QWidget):
             metadata_item = self.category_model.item(2)
 
             hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            hash_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
+            hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
             metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            metadata_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
+            metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
             self._apply_category_styling()
@@ -1036,7 +1036,7 @@ class MetadataWidget(QWidget):
                 hash_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
                 hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
+                hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
                 # If current category is hash and is disabled, apply disabled styling
                 if self.category_combo.currentData() == "hash":
@@ -1062,7 +1062,7 @@ class MetadataWidget(QWidget):
                 metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
                 metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
+                metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
             # Apply styling to category combo based on state
             self._apply_category_styling()
@@ -1504,16 +1504,22 @@ class MetadataWidget(QWidget):
             # Clear preview cache and request immediate refresh via parent window if possible
             preview_manager.clear_cache()
             logger.debug(
-                "[MetadataWidget] Preview cache cleared on confirmed selection", extra={"dev_only": True}
+                "[MetadataWidget] Preview cache cleared on confirmed selection",
+                extra={"dev_only": True},
             )
         else:
-            logger.debug("[MetadataWidget] No preview_manager found to clear cache", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] No preview_manager found to clear cache", extra={"dev_only": True}
+            )
 
         # Ask parent window to refresh preview immediately (no debounce)
         if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
             try:
                 self.parent_window.request_preview_update()
-                logger.debug("[MetadataWidget] Requested preview update from parent_window", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataWidget] Requested preview update from parent_window",
+                    extra={"dev_only": True},
+                )
             except Exception as e:
                 logger.debug(
                     "[MetadataWidget] request_preview_update failed: %s",
@@ -1538,7 +1544,10 @@ class MetadataWidget(QWidget):
                     getattr(self.parent_window, "metadata_cache", None),
                     getattr(self.parent_window, "all_modules", []),
                 )
-                logger.debug("[MetadataWidget] Called preview_manager.generate_preview_names_forced (with full rename_data)", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataWidget] Called preview_manager.generate_preview_names_forced (with full rename_data)",
+                    extra={"dev_only": True},
+                )
             except Exception as e:
                 logger.debug(
                     "[MetadataWidget] Forced preview generation failed: %s",
@@ -1550,7 +1559,9 @@ class MetadataWidget(QWidget):
         # We avoid relying on _last_data hack; just emit current state
         self.emit_if_changed()
         self.updated.emit(self)
-        logger.debug("[MetadataWidget] Emitted updated after confirmed selection", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataWidget] Emitted updated after confirmed selection", extra={"dev_only": True}
+        )
 
     def _on_selection_changed(self):
         self.update_options()

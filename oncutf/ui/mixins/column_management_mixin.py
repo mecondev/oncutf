@@ -1084,7 +1084,11 @@ class ColumnManagementMixin:
 
         if hasattr(self, "_get_selection_store"):
             selection_store = self._get_selection_store()
-            if selection_store and hasattr(self, "_legacy_selection_mode") and not self._legacy_selection_mode:
+            if (
+                selection_store
+                and hasattr(self, "_legacy_selection_mode")
+                and not self._legacy_selection_mode
+            ):
                 selection_store.set_selected_rows(set(), emit_signal=force_emit_signal)
 
     def _handle_column_update_lifecycle(self, update_function: callable) -> None:

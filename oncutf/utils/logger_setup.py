@@ -145,6 +145,7 @@ class ConfigureLogger:
 
         # Add DevOnlyFilter to console handler to hide dev-only messages
         from oncutf.utils.logger_helper import DevOnlyFilter
+
         console_handler.addFilter(DevOnlyFilter())
 
         formatter = logging.Formatter("[%(levelname)s] %(message)s")

@@ -102,7 +102,9 @@ class FileOperationsManager:
                     item.filename = os.path.basename(result.new_path)
                     item.full_path = result.new_path
             elif result.skip_reason:
-                logger.info("[Rename] Skipped: %s — Reason: %s", result.old_path, result.skip_reason)
+                logger.info(
+                    "[Rename] Skipped: %s — Reason: %s", result.old_path, result.skip_reason
+                )
             elif result.error:
                 logger.error("[Rename] Error: %s — %s", result.old_path, result.error)
 

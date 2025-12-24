@@ -20,15 +20,25 @@ from pathlib import Path
 from typing import Any
 
 # Directories to exclude from analysis
-EXCLUDED_DIRS = {'.venv', '.git', '.idea', '.vscode', '__pycache__', 'htmlcov', 'build', 'dist', 'temp'}
+EXCLUDED_DIRS = {
+    ".venv",
+    ".git",
+    ".idea",
+    ".vscode",
+    "__pycache__",
+    "htmlcov",
+    "build",
+    "dist",
+    "temp",
+}
 
 # Common emoji / pictograph ranges (keeps maintenance-light, not exhaustive but covers most emoji)
 EMOJI_RANGES = [
     (0x1F600, 0x1F64F),  # Emoticons
     (0x1F300, 0x1F5FF),  # Misc Symbols and Pictographs
     (0x1F680, 0x1F6FF),  # Transport & Map
-    (0x2600, 0x26FF),    # Misc symbols
-    (0x2700, 0x27BF),    # Dingbats
+    (0x2600, 0x26FF),  # Misc symbols
+    (0x2700, 0x27BF),  # Dingbats
     (0x1F900, 0x1F9FF),  # Supplemental Symbols and Pictographs
     (0x1FA70, 0x1FAFF),  # Symbols & Pictographs Extended-A
     (0x1F1E6, 0x1F1FF),  # Regional indicator symbols (flags)
@@ -37,6 +47,7 @@ EMOJI_RANGES = [
 
 def is_emoji_codepoint(code: int) -> bool:
     return any(a <= code <= b for a, b in EMOJI_RANGES)
+
 
 class LoggerVisitor(ast.NodeVisitor):
     def __init__(self, source_lines: list[str]):
@@ -63,17 +74,23 @@ class LoggerVisitor(ast.NodeVisitor):
 
         # Check for 'logger' variable or 'self.logger' attribute
         is_logger_call = False
-        if isinstance(node.func.value, ast.Name) and node.func.value.id == 'logger' or (isinstance(node.func.value, ast.Attribute) and
-              isinstance(node.func.value.value, ast.Name) and
-              node.func.value.value.id == 'self' and
-              node.func.value.attr == 'logger'):
+        if (
+            isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "logger"
+            or (
+                isinstance(node.func.value, ast.Attribute)
+                and isinstance(node.func.value.value, ast.Name)
+                and node.func.value.value.id == "self"
+                and node.func.value.attr == "logger"
+            )
+        ):
             is_logger_call = True
 
         if not is_logger_call:
             return
 
         method_name = node.func.attr
-        if method_name not in {'debug', 'info', 'warning', 'error', 'critical', 'exception'}:
+        if method_name not in {"debug", "info", "warning", "error", "critical", "exception"}:
             return
 
         # Check arguments: must have at least (msg, arg1) for %-formatting
@@ -88,7 +105,7 @@ class LoggerVisitor(ast.NodeVisitor):
         msg_str = msg_node.value
 
         # Check if it contains % format specifiers
-        if '%' not in msg_str:
+        if "%" not in msg_str:
             return
 
         # Arguments to be formatted
@@ -110,7 +127,7 @@ class LoggerVisitor(ast.NodeVisitor):
 
         # Regex for printf style specifiers
         # Matches %s, %d, %.2f, %r, etc.
-        specifier_pattern = re.compile(r'%[-+ 0#]*[0-9]*\.?[0-9]*[hlL]?[diouxXeEfFgGcrs]')
+        specifier_pattern = re.compile(r"%[-+ 0#]*[0-9]*\.?[0-9]*[hlL]?[diouxXeEfFgGcrs]")
 
         for arg_src in arg_sources:
             match = specifier_pattern.search(f_string_content)
@@ -142,32 +159,37 @@ class LoggerVisitor(ast.NodeVisitor):
 
         # Construct new call
         if isinstance(node.func, ast.Attribute):
-             caller = f"{ast.unparse(node.func.value)}.{node.func.attr}"
+            caller = f"{ast.unparse(node.func.value)}.{node.func.attr}"
         else:
-             caller = "logger.unknown"
+            caller = "logger.unknown"
 
         suggested_call = f'{caller}(f"{f_string_content}"{kwargs_str})'
 
         # Get original text
         start_line = node.lineno - 1
         end_line = node.end_lineno - 1
-        original_text = "\n".join(self.source_lines[start_line:end_line+1]).strip()
+        original_text = "\n".join(self.source_lines[start_line : end_line + 1]).strip()
 
-        self.suggestions.append({
-            "Line": node.lineno,
-            "Function": self.current_function,
-            "Original": original_text,
-            "Suggested": suggested_call
-        })
+        self.suggestions.append(
+            {
+                "Line": node.lineno,
+                "Function": self.current_function,
+                "Original": original_text,
+                "Suggested": suggested_call,
+            }
+        )
 
-def analyze_file(file_path: Path, *, strip_emojis: bool = True, aggressive: bool = False, quiet: bool = False) -> tuple[list[dict[str, Any]], int, dict[str, int]]:
+
+def analyze_file(
+    file_path: Path, *, strip_emojis: bool = True, aggressive: bool = False, quiet: bool = False
+) -> tuple[list[dict[str, Any]], int, dict[str, int]]:
     try:
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             # Fallback: decode with replacement characters so we can sanitize them later
             raw = file_path.read_bytes()
-            content = raw.decode('utf-8', errors='replace')
+            content = raw.decode("utf-8", errors="replace")
 
         # Sanitize content: remove control/surrogate/non-character code points
         def sanitize_content(text: str) -> tuple[str, int, dict[str, int]]:
@@ -192,18 +214,18 @@ def analyze_file(file_path: Path, *, strip_emojis: bool = True, aggressive: bool
                     continue
 
                 # Remove control characters except common whitespace (tab/newline/carriage)
-                if unicodedata.category(ch) == 'Cc' and ch not in '\r\n\t':
+                if unicodedata.category(ch) == "Cc" and ch not in "\r\n\t":
                     removed += 1
                     try:
                         name = unicodedata.name(ch)
                     except ValueError:
-                        name = 'CONTROL'
+                        name = "CONTROL"
                     label = f"U+{code:04X} ({name})"
                     removed_map[label] = removed_map.get(label, 0) + 1
                     continue
 
                 # Replacement char (from decoding errors)
-                if ch == '\ufffd':
+                if ch == "\ufffd":
                     removed += 1
                     label = f"U+{code:04X} (REPLACEMENT)"
                     removed_map[label] = removed_map.get(label, 0) + 1
@@ -215,7 +237,7 @@ def analyze_file(file_path: Path, *, strip_emojis: bool = True, aggressive: bool
                     try:
                         name = unicodedata.name(ch)
                     except ValueError:
-                        name = 'EMOJI'
+                        name = "EMOJI"
                     label = f"U+{code:04X} ({name})"
                     removed_map[label] = removed_map.get(label, 0) + 1
                     continue
@@ -224,37 +246,43 @@ def analyze_file(file_path: Path, *, strip_emojis: bool = True, aggressive: bool
                 if aggressive:
                     cat = unicodedata.category(ch)
                     if not (
-                        cat.startswith(('L', 'N', 'P')) or  # Letter/Number/Punctuation
-                        cat == 'Zs' or ch in '\t\r\n'
+                        cat.startswith(("L", "N", "P"))  # Letter/Number/Punctuation
+                        or cat == "Zs"
+                        or ch in "\t\r\n"
                     ):
                         removed += 1
                         try:
                             name = unicodedata.name(ch)
                         except ValueError:
-                            name = 'OTHER'
+                            name = "OTHER"
                         label = f"U+{code:04X} ({name})"
                         removed_map[label] = removed_map.get(label, 0) + 1
                         continue
 
                 parts.append(ch)
-            return ''.join(parts), removed, removed_map
+            return "".join(parts), removed, removed_map
+
         cleaned, removed_count, removed_map = sanitize_content(content)
         if removed_count > 0:
             try:
-                file_path.write_text(cleaned, encoding='utf-8')
+                file_path.write_text(cleaned, encoding="utf-8")
                 if not quiet:
                     # Print detailed list of removed character labels and counts
                     removed_items = ", ".join(f"{k}: {v}" for k, v in removed_map.items())
-                    print(f"[CLEANUP] Removed {removed_count} characters from {file_path}: {removed_items}")
+                    print(
+                        f"[CLEANUP] Removed {removed_count} characters from {file_path}: {removed_items}"
+                    )
                 else:
                     print(f"[CLEANUP] Removed {removed_count} characters from {file_path}")
             except Exception as write_err:
-                print(f"[CLEANUP][ERROR] Failed writing cleaned content to {file_path}: {write_err}")
+                print(
+                    f"[CLEANUP][ERROR] Failed writing cleaned content to {file_path}: {write_err}"
+                )
 
         # Use cleaned content for parsing. For non-.py files we only sanitize, no AST analysis.
         content = cleaned
         suggestions: list[dict[str, Any]] = []
-        if file_path.suffix == '.py':
+        if file_path.suffix == ".py":
             try:
                 lines = content.splitlines()
                 tree = ast.parse(content)
@@ -273,9 +301,17 @@ def analyze_file(file_path: Path, *, strip_emojis: bool = True, aggressive: bool
         print(f"[ERROR] Parsing {file_path}: {e}")
         return [], 0, {}
 
-def scan_directory(root_path: Path, *, strip_emojis: bool = True, aggressive: bool = False,
-                   recursive: bool = True, include_hidden: bool = False, quiet: bool = False,
-                   extensions: set[str] | None = None) -> tuple[list[dict[str, Any]], int, int, int]:
+
+def scan_directory(
+    root_path: Path,
+    *,
+    strip_emojis: bool = True,
+    aggressive: bool = False,
+    recursive: bool = True,
+    include_hidden: bool = False,
+    quiet: bool = False,
+    extensions: set[str] | None = None,
+) -> tuple[list[dict[str, Any]], int, int, int]:
     """Scan directory for .py files and analyze them.
 
     Returns: (suggestions, files_scanned, files_modified, total_removed_chars)
@@ -286,7 +322,7 @@ def scan_directory(root_path: Path, *, strip_emojis: bool = True, aggressive: bo
     total_removed = 0
 
     if extensions is None:
-        extensions = {'.py'}
+        extensions = {".py"}
 
     if recursive:
         for root, dirs, files in os.walk(root_path):
@@ -294,7 +330,7 @@ def scan_directory(root_path: Path, *, strip_emojis: bool = True, aggressive: bo
             if include_hidden:
                 dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
             else:
-                dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith('.')]
+                dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith(".")]
 
             for file in files:
                 file_path = Path(root) / file
@@ -323,6 +359,7 @@ def scan_directory(root_path: Path, *, strip_emojis: bool = True, aggressive: bo
 
     return all_suggestions, files_scanned, files_modified, total_removed
 
+
 def write_markdown(results: list[dict[str, Any]], out_path: Path):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with out_path.open("w", encoding="utf-8") as f:
@@ -338,32 +375,60 @@ def write_markdown(results: list[dict[str, Any]], out_path: Path):
             f.write(f"# NEW:\n{entry['Suggested']}\n")
             f.write("```\n\n")
 
+
 def write_csv(results: list[dict[str, Any]], out_path: Path):
     if not results:
         return
-    with out_path.open("w", newline='', encoding="utf-8") as f:
+    with out_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert format-style logger calls to f-strings using AST.")
+    parser = argparse.ArgumentParser(
+        description="Convert format-style logger calls to f-strings using AST."
+    )
     parser.add_argument("--file", type=str, help="Optional: single file to analyze")
-    parser.add_argument('--ext', nargs='+', default=['.py'],
-                        help='File extensions to scan (space separated), e.g. .py .log (default: .py)')
+    parser.add_argument(
+        "--ext",
+        nargs="+",
+        default=[".py"],
+        help="File extensions to scan (space separated), e.g. .py .log (default: .py)",
+    )
     default_out = ".cache/logger_suggestions.md"
     parser.add_argument("--out", type=str, default=default_out, help="Output file (.md or .csv)")
-    parser.add_argument('--no-strip-emojis', dest='strip_emojis', action='store_false',
-                        help='Do not strip emojis from files (default: strip)')
+    parser.add_argument(
+        "--no-strip-emojis",
+        dest="strip_emojis",
+        action="store_false",
+        help="Do not strip emojis from files (default: strip)",
+    )
     parser.set_defaults(strip_emojis=True)
-    parser.add_argument('--aggressive', action='store_true',
-                        help='Aggressively remove non-letter/number/punctuation characters')
-    parser.add_argument('--no-recursive', dest='no_recursive', action='store_true',
-                        help='Do not recurse into subdirectories (only top-level)')
-    parser.add_argument('--include-hidden', dest='include_hidden', action='store_true',
-                        help='Include hidden directories (starting with .) when scanning')
-    parser.add_argument('-q', '--quiet', dest='quiet', action='store_true',
-                        help='Suppress verbose per-file cleanup output')
+    parser.add_argument(
+        "--aggressive",
+        action="store_true",
+        help="Aggressively remove non-letter/number/punctuation characters",
+    )
+    parser.add_argument(
+        "--no-recursive",
+        dest="no_recursive",
+        action="store_true",
+        help="Do not recurse into subdirectories (only top-level)",
+    )
+    parser.add_argument(
+        "--include-hidden",
+        dest="include_hidden",
+        action="store_true",
+        help="Include hidden directories (starting with .) when scanning",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+        help="Suppress verbose per-file cleanup output",
+    )
     args = parser.parse_args()
 
     base_dir = Path(".")
@@ -375,15 +440,20 @@ if __name__ == "__main__":
     out_path = out_path_orig.with_name(f"{new_stem}{out_path_orig.suffix}")
 
     print("[INFO] Scanning for logger statements (AST-based)...")
-    ext_set = {e if e.startswith('.') else f'.{e}' for e in args.ext}
-    print(f"[INFO] Sanitization: strip_emojis={args.strip_emojis}, aggressive={args.aggressive}, extensions={sorted(ext_set)}")
+    ext_set = {e if e.startswith(".") else f".{e}" for e in args.ext}
+    print(
+        f"[INFO] Sanitization: strip_emojis={args.strip_emojis}, aggressive={args.aggressive}, extensions={sorted(ext_set)}"
+    )
 
     results: list[dict[str, Any]] = []
     files_scanned = files_modified = total_removed = 0
 
     if args.file:
         suggestions, removed, removed_map = analyze_file(
-            Path(args.file), strip_emojis=args.strip_emojis, aggressive=args.aggressive, quiet=args.quiet
+            Path(args.file),
+            strip_emojis=args.strip_emojis,
+            aggressive=args.aggressive,
+            quiet=args.quiet,
         )
         results = suggestions
         files_scanned = 1
@@ -394,15 +464,17 @@ if __name__ == "__main__":
             base_dir,
             strip_emojis=args.strip_emojis,
             aggressive=args.aggressive,
-            recursive=not getattr(args, 'no_recursive', False),
-            include_hidden=getattr(args, 'include_hidden', False),
+            recursive=not getattr(args, "no_recursive", False),
+            include_hidden=getattr(args, "include_hidden", False),
             quiet=args.quiet,
             extensions=ext_set,
         )
         results = suggestions
 
     # Always print summary
-    print(f"[SUMMARY] Files scanned: {files_scanned}, Files modified: {files_modified}, Total removed chars: {total_removed}")
+    print(
+        f"[SUMMARY] Files scanned: {files_scanned}, Files modified: {files_modified}, Total removed chars: {total_removed}"
+    )
 
     if not results:
         print("[INFO] No format-style loggers found.")

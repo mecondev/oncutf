@@ -52,6 +52,7 @@ class PreviewResult:
             self.errors = []
         if self.timestamp == 0.0:
             import time
+
             self.timestamp = time.time()
 
     def is_stale(self, max_age_seconds: float = 300.0) -> bool:
@@ -64,6 +65,7 @@ class PreviewResult:
             bool: True if preview is older than max_age_seconds
         """
         import time
+
         age = time.time() - self.timestamp
         return age > max_age_seconds
 
@@ -74,6 +76,7 @@ class PreviewResult:
             float: Age in seconds
         """
         import time
+
         return time.time() - self.timestamp
 
 
@@ -167,10 +170,10 @@ class ExecutionResult:
     conflicts_count: int = 0
 
     def __post_init__(self):
-        self.success_count = sum(1 for item in self.items if item.success) # type: ignore
-        self.error_count = sum(1 for item in self.items if not item.success and item.error_message) # type: ignore
-        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason) # type: ignore
-        self.conflicts_count = sum(1 for item in self.items if item.is_conflict) # type: ignore
+        self.success_count = sum(1 for item in self.items if item.success)  # type: ignore
+        self.error_count = sum(1 for item in self.items if not item.success and item.error_message)  # type: ignore
+        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)  # type: ignore
+        self.conflicts_count = sum(1 for item in self.items if item.is_conflict)  # type: ignore
 
 
 @dataclass
@@ -361,8 +364,7 @@ class SmartCacheManager:
         return None
 
     def cache_preview(self, key: str, result: PreviewResult) -> None:
-        """Store a preview result in the cache under `key`.
-        """
+        """Store a preview result in the cache under `key`."""
         self._preview_cache[key] = (result, time.time())
 
     def get_cached_validation(self, key: str) -> ValidationResult | None:
@@ -395,7 +397,9 @@ class SmartCacheManager:
             "validation_cache_size": len(self._validation_cache),
             "execution_cache_size": len(self._execution_cache),
             "cache_ttl": self._cache_ttl,
-            "total_cached_items": len(self._preview_cache) + len(self._validation_cache) + len(self._execution_cache),
+            "total_cached_items": len(self._preview_cache)
+            + len(self._validation_cache)
+            + len(self._execution_cache),
         }
 
 
@@ -933,9 +937,7 @@ class UnifiedExecutionManager:
                     # Create execution items for companions
                     for old_companion_path, new_companion_path in companion_renames:
                         companion_item = ExecutionItem(
-                            old_path=old_companion_path,
-                            new_path=new_companion_path,
-                            success=False
+                            old_path=old_companion_path, new_path=new_companion_path, success=False
                         )
                         companion_items.append(companion_item)
                         logger.debug(
@@ -1022,8 +1024,7 @@ class RenameStateManager:
         self._previous_state = None
 
     def update_state(self, new_state: RenameState) -> None:
-        """Replace the current state with `new_state` and compute change flags.
-        """
+        """Replace the current state with `new_state` and compute change flags."""
         self._previous_state = self.current_state
         self.current_state = new_state
 
@@ -1224,7 +1225,7 @@ class UnifiedRenameEngine(QObject):
         results = []
 
         for i in range(0, len(files), batch_size):
-            batch = files[i:i + batch_size]
+            batch = files[i : i + batch_size]
             batch_result = processor_func(batch)
             results.append(batch_result)
 

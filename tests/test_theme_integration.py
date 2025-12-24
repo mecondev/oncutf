@@ -130,12 +130,14 @@ class TestThemeIntegration:
         assert normal_text != selection_text, "Normal and selection text colors should differ"
 
         # Both should be valid color strings (basic validation)
-        assert normal_text.startswith("#") or normal_text in ["white", "black"], (
-            f"Invalid color format: {normal_text}"
-        )
-        assert selection_text.startswith("#") or selection_text in ["white", "black"], (
-            f"Invalid color format: {selection_text}"
-        )
+        assert normal_text.startswith("#") or normal_text in [
+            "white",
+            "black",
+        ], f"Invalid color format: {normal_text}"
+        assert selection_text.startswith("#") or selection_text in [
+            "white",
+            "black",
+        ], f"Invalid color format: {selection_text}"
 
 
 # Non-GUI tests for theme logic
@@ -227,9 +229,7 @@ class TestThemeLogic:
             "table_selection_text": "#ffffff",
         }
 
-        overrides = {
-            "table_text": "#333333"  # Override just one color
-        }
+        overrides = {"table_text": "#333333"}  # Override just one color
 
         result = apply_theme_inheritance(base, overrides)
 

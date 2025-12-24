@@ -50,11 +50,27 @@ EXTENSIONS = {".py", ".txt", ".md", ".json"}
 
 # Directories to exclude (from .gitignore + repo structure)
 EXCLUDED_DIRS = {
-    ".venv", "venv", "env",
-    "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
-    "build", "dist", "*.egg-info", ".eggs",
-    "backups", "htmlcov", "logs", "temp", "output", "dump",
-    ".git", ".vscode", ".idea", ".cursor",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".eggs",
+    "backups",
+    "htmlcov",
+    "logs",
+    "temp",
+    "output",
+    "dump",
+    ".git",
+    ".vscode",
+    ".idea",
+    ".cursor",
     "node_modules",
     "reports",  # Auto-generated reports
 }
@@ -71,16 +87,17 @@ ARCHIVE_DIRS = {
 }
 
 # Greek character detection regex
-GREEK_PATTERN = re.compile(r'[\u0370-\u03FF\u1F00-\u1FFF]+')
+GREEK_PATTERN = re.compile(r"[\u0370-\u03FF\u1F00-\u1FFF]+")
 
 # Token pricing for gpt-4o-mini (as of Dec 2024)
-COST_PER_1K_INPUT_TOKENS = 0.00015   # $0.15 per 1M tokens
-COST_PER_1K_OUTPUT_TOKENS = 0.0006   # $0.60 per 1M tokens
+COST_PER_1K_INPUT_TOKENS = 0.00015  # $0.15 per 1M tokens
+COST_PER_1K_OUTPUT_TOKENS = 0.0006  # $0.60 per 1M tokens
 
 
 # ============================================================================
 # Greek Text Detection
 # ============================================================================
+
 
 def contains_greek(text: str) -> bool:
     """Check if text contains Greek characters."""
@@ -94,7 +111,7 @@ def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]
     Returns list of (line_number, context_type, greek_text).
     """
     results = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     in_docstring = False
     docstring_delimiter = None
@@ -122,7 +139,7 @@ def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]
             else:
                 # Ending docstring
                 docstring_lines.append(line)
-                full_docstring = '\n'.join(docstring_lines)
+                full_docstring = "\n".join(docstring_lines)
                 if contains_greek(full_docstring):
                     results.append((docstring_start, "docstring", full_docstring))
                 in_docstring = False
@@ -131,8 +148,8 @@ def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]
             docstring_lines.append(line)
         else:
             # Check for inline comments
-            if '#' in line:
-                comment_match = re.search(r'#\s*(.+)$', line)
+            if "#" in line:
+                comment_match = re.search(r"#\s*(.+)$", line)
                 if comment_match:
                     comment_text = comment_match.group(0)
                     if contains_greek(comment_text):
@@ -150,7 +167,7 @@ def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]
             for match in string_matches:
                 if contains_greek(match.group(0)):
                     # Avoid duplicates (already caught by logger check)
-                    if 'logger' not in line:
+                    if "logger" not in line:
                         results.append((i, "string", match.group(0)))
 
     return results
@@ -159,14 +176,14 @@ def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]
 def extract_greek_from_markdown(content: str) -> list[tuple[int, str, str]]:
     """Extract Greek text from Markdown files."""
     results = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for i, line in enumerate(lines, 1):
         if contains_greek(line):
             # Determine context
-            if line.strip().startswith('#'):
+            if line.strip().startswith("#"):
                 context = "heading"
-            elif line.strip().startswith('- ') or line.strip().startswith('* '):
+            elif line.strip().startswith("- ") or line.strip().startswith("* "):
                 context = "list_item"
             else:
                 context = "paragraph"
@@ -204,7 +221,7 @@ def extract_greek_from_json(content: str) -> list[tuple[str, str]]:
 def extract_greek_from_text(content: str) -> list[tuple[int, str]]:
     """Extract Greek lines from plain text files."""
     results = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for i, line in enumerate(lines, 1):
         if contains_greek(line):
@@ -216,6 +233,7 @@ def extract_greek_from_text(content: str) -> list[tuple[int, str]]:
 # ============================================================================
 # Translation via OpenAI
 # ============================================================================
+
 
 class TranslationClient:
     """OpenAI client for translating Greek to English."""
@@ -242,15 +260,18 @@ Original Greek text:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a technical translator specializing in developer documentation."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are a technical translator specializing in developer documentation.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=1000
+                max_tokens=1000,
             )
 
             # Track token usage
-            if hasattr(response, 'usage'):
+            if hasattr(response, "usage"):
                 self.total_input_tokens += response.usage.prompt_tokens
                 self.total_output_tokens += response.usage.completion_tokens
 
@@ -290,7 +311,10 @@ Estimated cost:
 # File Processing
 # ============================================================================
 
-def should_process_file(filepath: Path, root: Path, include_archives: bool = False, custom_excludes: list[str] = None) -> bool:
+
+def should_process_file(
+    filepath: Path, root: Path, include_archives: bool = False, custom_excludes: list[str] = None
+) -> bool:
     """Check if file should be processed based on exclusions."""
     # Check extension
     if filepath.suffix not in EXTENSIONS:
@@ -311,7 +335,7 @@ def should_process_file(filepath: Path, root: Path, include_archives: bool = Fal
 
     # Check if in excluded directory
     for part in relative_path.parts:
-        if part in EXCLUDED_DIRS or part.startswith('.'):
+        if part in EXCLUDED_DIRS or part.startswith("."):
             return False
 
     # Check if in archive directory (unless explicitly included)
@@ -325,7 +349,7 @@ def should_process_file(filepath: Path, root: Path, include_archives: bool = Fal
 
 def process_python_file(filepath: Path, translator: TranslationClient, dry_run: bool) -> dict:
     """Process a Python file for Greek text."""
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     greek_items = extract_greek_strings_from_python(content)
@@ -346,7 +370,7 @@ def process_python_file(filepath: Path, translator: TranslationClient, dry_run: 
             # Handle both single-line: """text""" and multi-line: """\ntext\n"""
             if greek_text.startswith(delimiter) and greek_text.endswith(delimiter):
                 # Extract content between delimiters
-                content_only = greek_text[len(delimiter):-len(delimiter)]
+                content_only = greek_text[len(delimiter) : -len(delimiter)]
 
                 # Translate only the content
                 translated_content = translator.translate(content_only)
@@ -361,12 +385,9 @@ def process_python_file(filepath: Path, translator: TranslationClient, dry_run: 
             english_text = translator.translate(greek_text)
 
         # Store change info
-        changes.append({
-            "line": line_num,
-            "context": context,
-            "old": greek_text,
-            "new": english_text
-        })
+        changes.append(
+            {"line": line_num, "context": context, "old": greek_text, "new": english_text}
+        )
 
         # Apply replacement
         if not dry_run:
@@ -374,7 +395,7 @@ def process_python_file(filepath: Path, translator: TranslationClient, dry_run: 
 
     # Write back if not dry-run
     if not dry_run and changes:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(new_content)
 
     return {"changed": len(changes) > 0, "changes": changes}
@@ -382,7 +403,7 @@ def process_python_file(filepath: Path, translator: TranslationClient, dry_run: 
 
 def process_markdown_file(filepath: Path, translator: TranslationClient, dry_run: bool) -> dict:
     """Process a Markdown file for Greek text."""
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     greek_items = extract_greek_from_markdown(content)
@@ -391,31 +412,28 @@ def process_markdown_file(filepath: Path, translator: TranslationClient, dry_run
         return {"changed": False, "changes": []}
 
     changes = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for line_num, context, greek_line in greek_items:
         english_line = translator.translate(greek_line)
 
-        changes.append({
-            "line": line_num,
-            "context": context,
-            "old": greek_line,
-            "new": english_line
-        })
+        changes.append(
+            {"line": line_num, "context": context, "old": greek_line, "new": english_line}
+        )
 
         if not dry_run:
             lines[line_num - 1] = english_line
 
     if not dry_run and changes:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
 
     return {"changed": len(changes) > 0, "changes": changes}
 
 
 def process_json_file(filepath: Path, translator: TranslationClient, dry_run: bool) -> dict:
     """Process a JSON file for Greek values."""
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     greek_items = extract_greek_from_json(content)
@@ -429,18 +447,14 @@ def process_json_file(filepath: Path, translator: TranslationClient, dry_run: bo
     for path, greek_value in greek_items:
         english_value = translator.translate(greek_value)
 
-        changes.append({
-            "path": path,
-            "old": greek_value,
-            "new": english_value
-        })
+        changes.append({"path": path, "old": greek_value, "new": english_value})
 
         if not dry_run:
             # Simple string replacement (works for most cases)
             new_content = new_content.replace(f'"{greek_value}"', f'"{english_value}"', 1)
 
     if not dry_run and changes:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(new_content)
 
     return {"changed": len(changes) > 0, "changes": changes}
@@ -448,7 +462,7 @@ def process_json_file(filepath: Path, translator: TranslationClient, dry_run: bo
 
 def process_text_file(filepath: Path, translator: TranslationClient, dry_run: bool) -> dict:
     """Process a plain text file for Greek content."""
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     greek_items = extract_greek_from_text(content)
@@ -457,23 +471,19 @@ def process_text_file(filepath: Path, translator: TranslationClient, dry_run: bo
         return {"changed": False, "changes": []}
 
     changes = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for line_num, greek_line in greek_items:
         english_line = translator.translate(greek_line)
 
-        changes.append({
-            "line": line_num,
-            "old": greek_line,
-            "new": english_line
-        })
+        changes.append({"line": line_num, "old": greek_line, "new": english_line})
 
         if not dry_run:
             lines[line_num - 1] = english_line
 
     if not dry_run and changes:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
 
     return {"changed": len(changes) > 0, "changes": changes}
 
@@ -482,16 +492,27 @@ def process_text_file(filepath: Path, translator: TranslationClient, dry_run: bo
 # Main Scanner
 # ============================================================================
 
-def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, include_archives: bool = False, custom_excludes: list[str] = None):
+
+def scan_repository(
+    root: Path,
+    translator: TranslationClient,
+    dry_run: bool,
+    include_archives: bool = False,
+    custom_excludes: list[str] = None,
+):
     """Scan repository for Greek text and translate to English."""
     print(f"Scanning repository: {root}")
-    print(f"Mode: {'DRY-RUN (no changes will be made)' if dry_run else 'FIX MODE (applying changes)'}")
+    print(
+        f"Mode: {'DRY-RUN (no changes will be made)' if dry_run else 'FIX MODE (applying changes)'}"
+    )
     print(f"Extensions: {', '.join(EXTENSIONS)}")
 
     # Show exclusions
     print("\nExcluding:")
     print(f"  - Files: {', '.join(EXCLUDED_FILES)}")
-    print("  - Directories: reports/, docs/archive/" + (" (overridden)" if include_archives else ""))
+    print(
+        "  - Directories: reports/, docs/archive/" + (" (overridden)" if include_archives else "")
+    )
     if custom_excludes:
         print(f"  - Custom: {', '.join(custom_excludes)}")
 
@@ -499,8 +520,10 @@ def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, in
 
     # First pass: collect all files to process
     files_to_process = []
-    for filepath in root.rglob('*'):
-        if filepath.is_file() and should_process_file(filepath, root, include_archives, custom_excludes):
+    for filepath in root.rglob("*"):
+        if filepath.is_file() and should_process_file(
+            filepath, root, include_archives, custom_excludes
+        ):
             files_to_process.append(filepath)
 
     print(f"Found {len(files_to_process)} files to scan\n")
@@ -517,13 +540,13 @@ def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, in
 
         # Process based on extension
         try:
-            if filepath.suffix == '.py':
+            if filepath.suffix == ".py":
                 result = process_python_file(filepath, translator, dry_run)
-            elif filepath.suffix == '.md':
+            elif filepath.suffix == ".md":
                 result = process_markdown_file(filepath, translator, dry_run)
-            elif filepath.suffix == '.json':
+            elif filepath.suffix == ".json":
                 result = process_json_file(filepath, translator, dry_run)
-            elif filepath.suffix == '.txt':
+            elif filepath.suffix == ".txt":
                 result = process_text_file(filepath, translator, dry_run)
             else:
                 continue
@@ -535,14 +558,18 @@ def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, in
                 # Use tqdm.write to avoid interfering with progress bar
                 tqdm.write(f"\nFile: {relative_path}")
                 for change in result["changes"]:
-                    if 'line' in change:
+                    if "line" in change:
                         tqdm.write(f"  Line {change['line']} ({change.get('context', 'text')}):")
-                    elif 'path' in change:
+                    elif "path" in change:
                         tqdm.write(f"  JSON path: {change['path']}")
 
                     # Truncate long strings for display
-                    old_display = change['old'][:100] + '...' if len(change['old']) > 100 else change['old']
-                    new_display = change['new'][:100] + '...' if len(change['new']) > 100 else change['new']
+                    old_display = (
+                        change["old"][:100] + "..." if len(change["old"]) > 100 else change["old"]
+                    )
+                    new_display = (
+                        change["new"][:100] + "..." if len(change["new"]) > 100 else change["new"]
+                    )
 
                     tqdm.write(f"    OLD: {old_display}")
                     tqdm.write(f"    NEW: {new_display}")
@@ -565,6 +592,7 @@ def scan_repository(root: Path, translator: TranslationClient, dry_run: bool, in
 # Main Entry Point
 # ============================================================================
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Translate Greek text to English in Python codebase",
@@ -574,39 +602,34 @@ Examples:
   %(prog)s              # Dry-run mode (default)
   %(prog)s -f           # Apply changes to files
   %(prog)s --root ../   # Scan different directory
-        """
+        """,
     )
 
     parser.add_argument(
-        '-f', '--fix',
-        action='store_true',
-        help='Apply changes to files (default: dry-run mode)'
+        "-f", "--fix", action="store_true", help="Apply changes to files (default: dry-run mode)"
     )
 
     parser.add_argument(
-        '--root',
+        "--root", type=str, default=".", help="Root directory to scan (default: current directory)"
+    )
+
+    parser.add_argument(
+        "--include-archives",
+        action="store_true",
+        help="Include docs/archive/ directory (excluded by default)",
+    )
+
+    parser.add_argument(
+        "--exclude",
         type=str,
-        default='.',
-        help='Root directory to scan (default: current directory)'
-    )
-
-    parser.add_argument(
-        '--include-archives',
-        action='store_true',
-        help='Include docs/archive/ directory (excluded by default)'
-    )
-
-    parser.add_argument(
-        '--exclude',
-        type=str,
-        action='append',
-        help='Additional file patterns to exclude (can be used multiple times)'
+        action="append",
+        help="Additional file patterns to exclude (can be used multiple times)",
     )
 
     args = parser.parse_args()
 
     # Load API key from .env file one level up
-    env_path = Path(__file__).parent.parent.parent / '.env'
+    env_path = Path(__file__).parent.parent.parent / ".env"
     if env_path.exists():
         load_dotenv(env_path)
     else:
@@ -614,7 +637,7 @@ Examples:
         print("Trying to load from current directory...")
         load_dotenv()
 
-    api_key = os.getenv('OPENAI_API_KEY')
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("ERROR: OPENAI_API_KEY not found in environment")
         print(f"Expected location: {env_path}")
@@ -634,10 +657,9 @@ Examples:
         translator,
         dry_run=not args.fix,
         include_archives=args.include_archives,
-        custom_excludes=args.exclude
+        custom_excludes=args.exclude,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

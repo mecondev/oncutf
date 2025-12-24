@@ -89,7 +89,7 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
         return None
 
     # Get project root (works with PyInstaller frozen executables)
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # Running as compiled exe - use _MEIPASS for bundled resources
         base_path = Path(sys._MEIPASS)  # type: ignore[attr-defined]
     else:
@@ -137,16 +137,11 @@ def get_system_tool_path(tool_name: ToolName) -> str | None:
         # Use 'where' on Windows, 'which' on Unix-like
         cmd = "where" if platform.system() == "Windows" else "which"
 
-        result = subprocess.run(
-            [cmd, tool_name.value],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        result = subprocess.run([cmd, tool_name.value], capture_output=True, text=True, timeout=5)
 
         if result.returncode == 0:
             # Get first match (where can return multiple paths)
-            system_path = result.stdout.strip().split('\n')[0]
+            system_path = result.stdout.strip().split("\n")[0]
             logger.debug("[ExternalTools] Found system %s at: %s", tool_name.value, system_path)
             return system_path
 
@@ -259,12 +254,12 @@ def get_tool_version(tool_name: ToolName) -> str | None:
             [tool_path, "-ver" if tool_name == ToolName.EXIFTOOL else "-version"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
 
         if result.returncode == 0:
             # Extract version from output (first line typically contains version)
-            version_line = result.stdout.strip().split('\n')[0]
+            version_line = result.stdout.strip().split("\n")[0]
             logger.debug("[ExternalTools] %s version: %s", tool_name.value, version_line)
             return version_line
 

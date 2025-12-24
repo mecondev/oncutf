@@ -256,31 +256,35 @@ class DragVisualManager:
                 action_icons = (
                     ["plus"]
                     if self._modifier_state == ModifierState.SHIFT
-                    else ["layers"]
-                    if self._modifier_state == ModifierState.CTRL
-                    else ["plus", "layers"]
-                    if self._modifier_state == ModifierState.CTRL_SHIFT
-                    else []
+                    else (
+                        ["layers"]
+                        if self._modifier_state == ModifierState.CTRL
+                        else (
+                            ["plus", "layers"]
+                            if self._modifier_state == ModifierState.CTRL_SHIFT
+                            else []
+                        )
+                    )
                 )
         elif self._drag_type == DragType.FILE:
             action_icons = (
                 ["plus", "layers"]
                 if self._modifier_state == ModifierState.CTRL_SHIFT
-                else (
-                    ["plus"]
-                    if self._modifier_state == ModifierState.SHIFT
-                    else []
-                )
+                else (["plus"] if self._modifier_state == ModifierState.SHIFT else [])
             )
         else:
             action_icons = (
                 ["plus"]
                 if self._modifier_state == ModifierState.SHIFT
-                else ["layers"]
-                if self._modifier_state == ModifierState.CTRL
-                else ["plus", "layers"]
-                if self._modifier_state == ModifierState.CTRL_SHIFT
-                else []
+                else (
+                    ["layers"]
+                    if self._modifier_state == ModifierState.CTRL
+                    else (
+                        ["plus", "layers"]
+                        if self._modifier_state == ModifierState.CTRL_SHIFT
+                        else []
+                    )
+                )
             )
 
         return self._create_composite_cursor(base_icon, action_icons)
@@ -335,7 +339,9 @@ class DragVisualManager:
             # Draw background for text
             text_rect = QRect(40, 10, text_width, text_height)
             path = QPainterPath()
-            path.addRoundedRect(text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4)
+            path.addRoundedRect(
+                text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4
+            )
 
             painter.fillPath(path, QColor(40, 40, 40, 200))
             painter.setPen(QColor(255, 255, 255))
@@ -413,15 +419,14 @@ class DragVisualManager:
 
         return QCursor(pixmap, 4, 4)
 
-    def update_drag_feedback_for_widget(
-        self, source_widget: QWidget, drag_source: str
-    ) -> bool:
+    def update_drag_feedback_for_widget(self, source_widget: QWidget, drag_source: str) -> bool:
         """Update drag feedback based on current cursor position."""
         # Update modifier state immediately (no debounce) for responsiveness
         self.update_modifier_state()
 
         # Debounce check (50ms) for heavy widget lookup
         import time
+
         current_time = time.time()
         if current_time - self._last_feedback_time < 0.05:
             return True

@@ -177,9 +177,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception(
-                "[RenameController] Error generating preview: %s", str(e)
-            )
+            logger.exception("[RenameController] Error generating preview: %s", str(e))
             return {
                 "success": False,
                 "name_pairs": [],
@@ -187,9 +185,7 @@ class RenameController:
                 "errors": [f"Preview generation failed: {str(e)}"],
             }
 
-    def validate_preview(
-        self, preview_pairs: list[tuple[str, str]]
-    ) -> dict[str, Any]:
+    def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> dict[str, Any]:
         """
         Validate preview name pairs.
 
@@ -234,9 +230,7 @@ class RenameController:
 
         try:
             # Validate using unified engine
-            validation_result = self._unified_rename_engine.validate_preview(
-                preview_pairs
-            )
+            validation_result = self._unified_rename_engine.validate_preview(preview_pairs)
 
             logger.debug(
                 "[RenameController] Validation complete: has_errors=%s, "
@@ -261,9 +255,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception(
-                "[RenameController] Error validating preview: %s", str(e)
-            )
+            logger.exception("[RenameController] Error validating preview: %s", str(e))
             return {
                 "success": False,
                 "has_errors": True,
@@ -365,8 +357,7 @@ class RenameController:
 
             if validation_result.has_errors:
                 logger.warning(
-                    "[RenameController] Validation errors detected: "
-                    "invalid=%d, duplicates=%d",
+                    "[RenameController] Validation errors detected: " "invalid=%d, duplicates=%d",
                     validation_result.invalid_count,
                     validation_result.duplicate_count,
                 )
@@ -391,7 +382,7 @@ class RenameController:
             if not validation_result.is_valid:
                 logger.warning(
                     "[RenameController] Pre-execution validation found %d issue(s)",
-                    len(validation_result.issues)
+                    len(validation_result.issues),
                 )
 
                 # Show validation dialog (if UI available)
@@ -419,14 +410,13 @@ class RenameController:
                 elif user_decision == "skip":
                     logger.info(
                         "[RenameController] User chose to skip %d problematic files",
-                        len(validation_result.issues)
+                        len(validation_result.issues),
                     )
                     # Continue with only valid files
                     file_items = validation_result.valid_files
                     # Rebuild preview for valid files only
                     preview_result = self._unified_rename_engine.generate_preview(
-                        file_items,
-                        current_folder
+                        file_items, current_folder
                     )
 
             # Step 4: Execute rename
@@ -482,9 +472,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception(
-                "[RenameController] Error executing rename: %s", str(e)
-            )
+            logger.exception("[RenameController] Error executing rename: %s", str(e))
             return {
                 "success": False,
                 "renamed_count": 0,
@@ -512,15 +500,10 @@ class RenameController:
             return (
                 state.preview_result is not None
                 and state.preview_result.has_changes
-                and not (
-                    state.validation_result
-                    and state.validation_result.has_errors
-                )
+                and not (state.validation_result and state.validation_result.has_errors)
             )
         except Exception as e:
-            logger.warning(
-                "[RenameController] Error checking pending changes: %s", str(e)
-            )
+            logger.warning("[RenameController] Error checking pending changes: %s", str(e))
             return False
 
     def get_current_state(self) -> Any | None:
@@ -536,9 +519,7 @@ class RenameController:
         try:
             return self._unified_rename_engine.state_manager.get_state()
         except Exception as e:
-            logger.warning(
-                "[RenameController] Error getting current state: %s", str(e)
-            )
+            logger.warning("[RenameController] Error getting current state: %s", str(e))
             return None
 
     def clear_state(self) -> None:
@@ -554,9 +535,8 @@ class RenameController:
             )
         except Exception as e:
             logger.warning("[RenameController] Error clearing state: %s", str(e))
-    def _handle_validation_issues(
-        self, validation_result
-    ) -> str:
+
+    def _handle_validation_issues(self, validation_result) -> str:
         """Handle validation issues by showing dialog.
 
         Args:
@@ -581,8 +561,6 @@ class RenameController:
                 return "cancel"
 
         except Exception as e:
-            logger.error(
-                "[RenameController] Error showing validation dialog: %s", str(e)
-            )
+            logger.error("[RenameController] Error showing validation dialog: %s", str(e))
             # Fallback: cancel on error
             return "cancel"

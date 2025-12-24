@@ -14,6 +14,7 @@ Responsibilities:
 - Coordinate parallel loading operations
 - Manage streaming metadata loading
 """
+
 from __future__ import annotations
 
 import os
@@ -221,9 +222,7 @@ class MetadataLoader:
 
         # ===== PHASE 3: Single file - use wait_cursor (immediate) =====
         if len(needs_loading) == 1:
-            self._load_single_file_metadata(
-                needs_loading[0], use_extended, metadata_tree_view
-            )
+            self._load_single_file_metadata(needs_loading[0], use_extended, metadata_tree_view)
             if on_finished:
                 on_finished()
             return
@@ -467,9 +466,7 @@ class MetadataLoader:
                     del metadata["__extended__"]
 
                 # Enhance with companion data
-                enhanced_metadata = self._enhance_with_companions(
-                    item, metadata, needs_loading
-                )
+                enhanced_metadata = self._enhance_with_companions(item, metadata, needs_loading)
 
                 # Save to cache
                 if self._parent_window and hasattr(self._parent_window, "metadata_cache"):
@@ -649,9 +646,7 @@ class MetadataLoader:
             )
 
         # Fallback: inline implementation (for backward compatibility)
-        return self._enhance_metadata_with_companions_inline(
-            file_item, base_metadata, all_files
-        )
+        return self._enhance_metadata_with_companions_inline(file_item, base_metadata, all_files)
 
     def _enhance_metadata_with_companions_inline(
         self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
@@ -671,9 +666,7 @@ class MetadataLoader:
             # First try to use the files being loaded (more efficient)
             if all_files:
                 folder_files = [
-                    f.full_path
-                    for f in all_files
-                    if os.path.dirname(f.full_path) == folder_path
+                    f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path
                 ]
 
             # If not enough context, scan the folder
@@ -702,9 +695,7 @@ class MetadataLoader:
             # Extract metadata from companion files
             for companion_path in companions:
                 try:
-                    companion_data = CompanionFilesHelper.extract_companion_metadata(
-                        companion_path
-                    )
+                    companion_data = CompanionFilesHelper.extract_companion_metadata(companion_path)
                     if companion_data:
                         companion_name = os.path.basename(companion_path)
                         for key, value in companion_data.items():

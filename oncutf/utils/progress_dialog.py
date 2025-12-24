@@ -194,7 +194,9 @@ class ProgressDialog(QDialog):
                 return
 
             # Handle cancellation
-            logger.info("[ProgressDialog] ESC pressed - initiating cancellation for %s", self.operation_type)
+            logger.info(
+                "[ProgressDialog] ESC pressed - initiating cancellation for %s", self.operation_type
+            )
             self._handle_cancellation()
             event.accept()
         else:
@@ -379,7 +381,7 @@ class ProgressDialog(QDialog):
             logger.debug(
                 "[ProgressDialog] Metadata dialog configured with size-based progress (extended: %s)",
                 is_extended,
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
         return dialog

@@ -263,29 +263,33 @@ METADATA_GROUPS = {
 }
 
 # Fields that are typically read-only
-READ_ONLY_FIELDS = frozenset({
-    "FileSize",
-    "FileModifyDate",
-    "FileAccessDate",
-    "FileInodeChangeDate",
-    "FilePermissions",
-    "FileType",
-    "FileTypeExtension",
-    "MIMEType",
-    "ImageWidth",
-    "ImageHeight",
-    "BitDepth",
-    "ColorType",
-})
+READ_ONLY_FIELDS = frozenset(
+    {
+        "FileSize",
+        "FileModifyDate",
+        "FileAccessDate",
+        "FileInodeChangeDate",
+        "FilePermissions",
+        "FileType",
+        "FileTypeExtension",
+        "MIMEType",
+        "ImageWidth",
+        "ImageHeight",
+        "BitDepth",
+        "ColorType",
+    }
+)
 
 # Fields that support extended metadata only
-EXTENDED_ONLY_PATTERNS = frozenset({
-    "accelerometer",
-    "gyro",
-    "pitch",
-    "roll",
-    "yaw",
-    "segment",
-    "embedded",
-    "extended",
-})
+EXTENDED_ONLY_PATTERNS = frozenset(
+    {
+        "accelerometer",
+        "gyro",
+        "pitch",
+        "roll",
+        "yaw",
+        "segment",
+        "embedded",
+        "extended",
+    }
+)

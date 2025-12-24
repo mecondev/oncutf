@@ -302,7 +302,9 @@ class ThemeEngine:
         # Set palette colors for alternating row backgrounds
         palette = app.palette()
         palette.setColor(QPalette.ColorRole.Base, QColor(self.get_color("table_background")))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate")))
+        palette.setColor(
+            QPalette.ColorRole.AlternateBase, QColor(self.get_color("table_alternate"))
+        )
         app.setPalette(palette)
 
         # Apply Windows-specific ComboBox fixes if on Windows

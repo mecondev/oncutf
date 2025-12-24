@@ -85,9 +85,7 @@ class TestFilesystemServiceGetFileInfo:
         assert "mtime" in info
         assert "ctime" in info
 
-    def test_get_file_info_returns_empty_for_nonexistent(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_file_info_returns_empty_for_nonexistent(self, tmp_path: Path) -> None:
         """Test that get_file_info returns empty dict for non-existent."""
         service = FilesystemService()
         nonexistent = tmp_path / "nonexistent.txt"
@@ -96,9 +94,7 @@ class TestFilesystemServiceGetFileInfo:
 
         assert info == {}
 
-    def test_get_file_info_returns_empty_for_directory(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_file_info_returns_empty_for_directory(self, tmp_path: Path) -> None:
         """Test that get_file_info returns empty dict for directory."""
         service = FilesystemService()
 

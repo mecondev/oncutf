@@ -78,7 +78,7 @@ class InitializationManager:
                 context.files_changed.connect(self._on_files_changed)
                 logger.debug(
                     "[MainWindow] Connected ApplicationContext files_changed signal",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
 
             logger.debug(
@@ -98,8 +98,7 @@ class InitializationManager:
         from oncutf.utils.cursor_helper import wait_cursor
 
         logger.info(
-            "[MainWindow] Files changed from context - updating UI with %d files",
-            len(files)
+            "[MainWindow] Files changed from context - updating UI with %d files", len(files)
         )
 
         # Show wait cursor during UI update (runs in main thread - visible to user)
@@ -107,6 +106,7 @@ class InitializationManager:
             # 1. Clear stale selections (files may no longer exist)
             try:
                 from oncutf.core.application_context import get_app_context
+
                 context = get_app_context()
                 if context and context.selection_store:
                     context.selection_store.clear_selection(emit_signal=False)

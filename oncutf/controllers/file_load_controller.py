@@ -61,7 +61,7 @@ class FileLoadController:
         file_load_manager: Optional["FileLoadManager"] = None,
         file_store: Optional["FileStore"] = None,
         table_manager: Optional["TableManager"] = None,
-        context: Optional["ApplicationContext"] = None
+        context: Optional["ApplicationContext"] = None,
     ) -> None:
         """
         Initialize FileLoadController.
@@ -86,7 +86,7 @@ class FileLoadController:
             file_store is not None,
             table_manager is not None,
             context is not None,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def load_files(self, paths: list[str], clear: bool = True) -> dict[str, Any]:
@@ -110,11 +110,7 @@ class FileLoadController:
                 - errors (List[str]): Any error messages encountered
                 - skipped (List[str]): Files skipped (wrong extension, etc.)
         """
-        logger.info(
-            "[FileLoadController] load_files: %d paths (clear=%s)",
-            len(paths),
-            clear
-        )
+        logger.info("[FileLoadController] load_files: %d paths (clear=%s)", len(paths), clear)
 
         if not self._file_load_manager:
             logger.error("[FileLoadController] FileLoadManager not available")
@@ -122,7 +118,7 @@ class FileLoadController:
                 "success": False,
                 "loaded_count": 0,
                 "errors": ["FileLoadManager not initialized"],
-                "skipped": []
+                "skipped": [],
             }
 
         # Validate paths exist and separate files from directories
@@ -144,7 +140,7 @@ class FileLoadController:
                 logger.debug(
                     "[FileLoadController] Directory in paths, skipping (use load_folder): %s",
                     path_str,
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
                 skipped.append(f"Directory (use load_folder): {path_str}")
                 continue
@@ -154,7 +150,7 @@ class FileLoadController:
                 logger.debug(
                     "[FileLoadController] File extension not allowed: %s",
                     path_str,
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
                 skipped.append(f"Extension not allowed: {path_str}")
                 continue
@@ -174,7 +170,7 @@ class FileLoadController:
                 "success": len(errors) == 0,
                 "loaded_count": 0,
                 "errors": errors,
-                "skipped": skipped
+                "skipped": skipped,
             }
 
         # Delegate to FileLoadManager for actual loading
@@ -182,43 +178,29 @@ class FileLoadController:
             logger.debug(
                 "[FileLoadController] Delegating %d valid files to FileLoadManager",
                 len(valid_files),
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             self._file_load_manager.load_files_from_paths(valid_files, clear=clear)
 
             # Get loaded count from file store
             loaded_count = len(valid_files)  # Assume all loaded successfully
 
-            logger.info(
-                "[FileLoadController] Successfully loaded %d files",
-                loaded_count
-            )
+            logger.info("[FileLoadController] Successfully loaded %d files", loaded_count)
 
             return {
                 "success": True,
                 "loaded_count": loaded_count,
                 "errors": errors,
-                "skipped": skipped
+                "skipped": skipped,
             }
 
         except Exception as e:
-            logger.exception(
-                "[FileLoadController] Error during file loading: %s",
-                str(e)
-            )
+            logger.exception("[FileLoadController] Error during file loading: %s", str(e))
             errors.append(f"Loading error: {str(e)}")
-            return {
-                "success": False,
-                "loaded_count": 0,
-                "errors": errors,
-                "skipped": skipped
-            }
+            return {"success": False, "loaded_count": 0, "errors": errors, "skipped": skipped}
 
     def load_folder(
-        self,
-        folder_path: str,
-        merge_mode: bool = False,
-        recursive: bool = False
+        self, folder_path: str, merge_mode: bool = False, recursive: bool = False
     ) -> dict[str, Any]:
         """
         Load all files from a folder with optional recursion.
@@ -235,7 +217,7 @@ class FileLoadController:
             "[FileLoadController] load_folder: %s (merge=%s, recursive=%s)",
             folder_path,
             merge_mode,
-            recursive
+            recursive,
         )
 
         if not self._file_load_manager:
@@ -260,7 +242,7 @@ class FileLoadController:
             logger.debug(
                 "[FileLoadController] Stored recursive state: %s",
                 recursive,
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
         # Delegate to FileLoadManager
@@ -278,9 +260,7 @@ class FileLoadController:
             return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
     def handle_drop(
-        self,
-        paths: list[str],
-        modifiers: "Qt.KeyboardModifiers" = Qt.NoModifier  # type: ignore
+        self, paths: list[str], modifiers: "Qt.KeyboardModifiers" = Qt.NoModifier  # type: ignore
     ) -> dict[str, Any]:
         """
         Handle file/folder drop with keyboard modifiers.
@@ -293,9 +273,7 @@ class FileLoadController:
             Dictionary with success status
         """
         logger.info(
-            "[FileLoadController] handle_drop: %d paths (modifiers=%s)",
-            len(paths),
-            modifiers
+            "[FileLoadController] handle_drop: %d paths (modifiers=%s)", len(paths), modifiers
         )
 
         if not self._file_load_manager:
@@ -355,23 +333,18 @@ class FileLoadController:
         if self._file_store is None:
             logger.debug(
                 "[FileLoadController] FileStore not available, returning 0",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return 0
 
         try:
             count = len(self._file_store.get_all_files())
             logger.debug(
-                "[FileLoadController] Current file count: %d",
-                count,
-                extra={"dev_only": True}
+                "[FileLoadController] Current file count: %d", count, extra={"dev_only": True}
             )
             return count
         except Exception as e:
-            logger.error(
-                "[FileLoadController] Error getting file count: %s",
-                str(e)
-            )
+            logger.error("[FileLoadController] Error getting file count: %s", str(e))
             return 0
 
     def is_recursive_mode(self) -> bool:
@@ -401,6 +374,4 @@ class FileLoadController:
         if self._context:
             self._context.set_recursive_mode(recursive)
         else:
-            logger.warning(
-                "[FileLoadController] Cannot set recursive mode: context not available"
-            )
+            logger.warning("[FileLoadController] Cannot set recursive mode: context not available")

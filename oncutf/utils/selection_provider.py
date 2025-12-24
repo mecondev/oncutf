@@ -92,7 +92,7 @@ class SelectionProvider:
                     "[SelectionProvider] Strategy %s failed: %s",
                     strategy.__name__,
                     e,
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
 
         # Fallback: empty list
@@ -112,7 +112,9 @@ class SelectionProvider:
         return None
 
     @classmethod
-    def _via_application_service(cls, parent_window: Any, *, ordered: bool) -> list[FileItem] | None:
+    def _via_application_service(
+        cls, parent_window: Any, *, ordered: bool
+    ) -> list[FileItem] | None:
         """Get selected files via ApplicationService."""
         if hasattr(parent_window, "application_service"):
             app_service = parent_window.application_service
@@ -125,7 +127,9 @@ class SelectionProvider:
     @classmethod
     def _via_selection_model(cls, parent_window: Any, *, ordered: bool) -> list[FileItem] | None:
         """Get selected files via Qt selection model."""
-        if not hasattr(parent_window, "file_table_view") or not hasattr(parent_window, "file_model"):
+        if not hasattr(parent_window, "file_table_view") or not hasattr(
+            parent_window, "file_model"
+        ):
             return None
 
         file_table_view = parent_window.file_table_view
@@ -191,7 +195,9 @@ class SelectionProvider:
                 cls._cached_selected_rows = result
                 return result
             except Exception as e:
-                logger.debug("[SelectionProvider] SelectionStore failed: %s", e, extra={"dev_only": True})
+                logger.debug(
+                    "[SelectionProvider] SelectionStore failed: %s", e, extra={"dev_only": True}
+                )
 
         # Fallback: use selection model
         if hasattr(parent_window, "file_table_view"):
@@ -271,6 +277,7 @@ class SelectionProvider:
 
 
 # Convenience functions for backward compatibility
+
 
 def get_selected_files(parent_window: Any, *, ordered: bool = True) -> list[FileItem]:
     """Get currently selected files.

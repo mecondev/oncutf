@@ -110,9 +110,7 @@ class RenameConflictResolver(QObject):
 
     def _skip_conflict(self, original_path: str, target_path: str) -> str:
         """Skip the conflicting rename operation."""
-        logger.info(
-            "Skipping rename due to conflict: %s -> %s", original_path, target_path
-        )
+        logger.info("Skipping rename due to conflict: %s -> %s", original_path, target_path)
         self.conflict_resolved.emit(original_path, target_path, "skipped")
         return ""
 
@@ -136,9 +134,7 @@ class RenameConflictResolver(QObject):
 
             if not new_path.exists():
                 new_target = str(new_path)
-                logger.info(
-                    "Resolving conflict with suffix: %s -> %s", original_path, new_target
-                )
+                logger.info("Resolving conflict with suffix: %s -> %s", original_path, new_target)
                 self.conflict_resolved.emit(original_path, target_path, f"renamed_to_{new_target}")
                 return new_target
 

@@ -33,9 +33,10 @@ def get_docstring_snippet(file_path):
                     doc_lines.append(line)
             elif in_doc:
                 doc_lines.append(line)
-        return " ".join(doc_lines).replace('"""', '').replace("'''", '').strip()
+        return " ".join(doc_lines).replace('"""', "").replace("'''", "").strip()
     except Exception:
         return ""
+
 
 def build_structure(path, prefix="", docstats=None, missing=None):
     lines = []
@@ -58,11 +59,22 @@ def build_structure(path, prefix="", docstats=None, missing=None):
             lines.append(f"{prefix} {item.name}")
     return lines
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Extract full project structure with docstring snippets.")
+    parser = argparse.ArgumentParser(
+        description="Extract full project structure with docstring snippets."
+    )
     parser.add_argument("-p", "--path", type=str, default=".", help="Project root path")
-    parser.add_argument("-o", "--output", type=str, default="reports/project_structure.md", help="Output Markdown file")
-    parser.add_argument("--markdown", action="store_true", help="Enable Markdown output (default: on)")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="reports/project_structure.md",
+        help="Output Markdown file",
+    )
+    parser.add_argument(
+        "--markdown", action="store_true", help="Enable Markdown output (default: on)"
+    )
     args = parser.parse_args()
 
     project_path = Path(args.path).resolve()
@@ -74,11 +86,15 @@ def main():
     missing = []
     structure = build_structure(project_path, docstats=docstats, missing=missing)
 
-    coverage_percent = (docstats["documented"] / docstats["total"] * 100) if docstats["total"] else 0
+    coverage_percent = (
+        (docstats["documented"] / docstats["total"] * 100) if docstats["total"] else 0
+    )
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("# Project Structure with Docstring Snippets\n\n")
-        f.write(f"**Docstring Coverage:** {docstats['documented']} / {docstats['total']} files documented ({coverage_percent:.1f}%)\n\n")
+        f.write(
+            f"**Docstring Coverage:** {docstats['documented']} / {docstats['total']} files documented ({coverage_percent:.1f}%)\n\n"
+        )
         f.write("\n".join(structure))
         if missing:
             f.write("\n\n---\n\n")
@@ -87,11 +103,14 @@ def main():
                 f.write(f"- {m}\n")
 
     print(f"\n Structure written to: {output_path}")
-    print(f" Docstring Coverage: {docstats['documented']} / {docstats['total']} files ({coverage_percent:.1f}%)")
+    print(
+        f" Docstring Coverage: {docstats['documented']} / {docstats['total']} files ({coverage_percent:.1f}%)"
+    )
     if missing:
         print("\n️ Missing docstrings:")
         for m in missing:
             print(f" - {m}")
+
 
 if __name__ == "__main__":
     main()

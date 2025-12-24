@@ -122,9 +122,7 @@ class ExifToolService:
             logger.error("Error loading metadata for %s: %s", path, e)
             return {}
 
-    def load_metadata_batch(
-        self, paths: list[Path]
-    ) -> dict[Path, dict[str, Any]]:
+    def load_metadata_batch(self, paths: list[Path]) -> dict[Path, dict[str, Any]]:
         """Load metadata from multiple files efficiently.
 
         Args:

@@ -13,6 +13,7 @@ Responsibilities:
 - Extract and merge companion file metadata
 - Enhance base metadata with companion data
 """
+
 from __future__ import annotations
 
 import os
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from oncutf.utils.companion_files_helper import CompanionFilesHelper
 
 logger = get_cached_logger(__name__)
+
 
 class CompanionMetadataHandler:
     """

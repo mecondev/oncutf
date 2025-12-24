@@ -82,8 +82,7 @@ class FilesystemMonitor(QObject):
         # Initialize current drives
         self._current_drives = self._get_available_drives()
         logger.info(
-            "[FilesystemMonitor] Initial drives: %s",
-            ", ".join(sorted(self._current_drives))
+            "[FilesystemMonitor] Initial drives: %s", ", ".join(sorted(self._current_drives))
         )
 
         # Start drive polling
@@ -119,9 +118,7 @@ class FilesystemMonitor(QObject):
             self._watcher.addPath(normalized_path)
             self._monitored_folders.add(normalized_path)
             logger.debug(
-                "[FilesystemMonitor] Now watching: %s",
-                normalized_path,
-                extra={"dev_only": True}
+                "[FilesystemMonitor] Now watching: %s", normalized_path, extra={"dev_only": True}
             )
             return True
 
@@ -148,7 +145,7 @@ class FilesystemMonitor(QObject):
             logger.debug(
                 "[FilesystemMonitor] Stopped watching: %s",
                 normalized_path,
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return True
 
@@ -188,6 +185,7 @@ class FilesystemMonitor(QObject):
         if self._system == "Windows":
             # Windows: Check A-Z drives
             import string
+
             for letter in string.ascii_uppercase:
                 drive_path = f"{letter}:\\"
                 if os.path.exists(drive_path):
@@ -250,27 +248,32 @@ class FilesystemMonitor(QObject):
             self.drive_removed.emit(drive)
 
             # Remove from monitored folders if it was being watched
-            to_remove = [
-                folder for folder in self._monitored_folders
-                if folder.startswith(drive)
-            ]
+            to_remove = [folder for folder in self._monitored_folders if folder.startswith(drive)]
             for folder in to_remove:
                 self.remove_folder(folder)
 
             # Trigger FileStore refresh - files on unmounted drive will be automatically removed
             if self.file_store:
                 try:
-                    logger.info("[FilesystemMonitor] Refreshing FileStore after drive unmount: %s", drive)
+                    logger.info(
+                        "[FilesystemMonitor] Refreshing FileStore after drive unmount: %s", drive
+                    )
                     # Use refresh_loaded_folders() which will check if files still exist
                     # and automatically update the UI through the normal reload flow
                     if self.file_store.refresh_loaded_folders():
                         logger.info("[FilesystemMonitor] FileStore refreshed after drive unmount")
                     else:
-                        logger.info("[FilesystemMonitor] FileStore refresh returned False (no files loaded)")
+                        logger.info(
+                            "[FilesystemMonitor] FileStore refresh returned False (no files loaded)"
+                        )
                 except Exception as e:
-                    logger.exception("[FilesystemMonitor] Error refreshing FileStore after unmount: %s", e)
+                    logger.exception(
+                        "[FilesystemMonitor] Error refreshing FileStore after unmount: %s", e
+                    )
             else:
-                logger.warning("[FilesystemMonitor] FileStore not available - cannot auto-refresh on unmount")
+                logger.warning(
+                    "[FilesystemMonitor] FileStore not available - cannot auto-refresh on unmount"
+                )
 
         # Update state
         if added or removed:
@@ -289,11 +292,7 @@ class FilesystemMonitor(QObject):
         Args:
             path: Changed directory path
         """
-        logger.debug(
-            "[FilesystemMonitor] Directory changed: %s",
-            path,
-            extra={"dev_only": True}
-        )
+        logger.debug("[FilesystemMonitor] Directory changed: %s", path, extra={"dev_only": True})
 
         # Add to pending changes
         self._pending_changes.add(path)
@@ -308,11 +307,7 @@ class FilesystemMonitor(QObject):
         Args:
             path: Changed file path
         """
-        logger.debug(
-            "[FilesystemMonitor] File changed: %s",
-            path,
-            extra={"dev_only": True}
-        )
+        logger.debug("[FilesystemMonitor] File changed: %s", path, extra={"dev_only": True})
         self.file_changed.emit(path)
 
     def _process_pending_changes(self) -> None:
@@ -354,14 +349,12 @@ class FilesystemMonitor(QObject):
         # Check if any loaded file is in the changed directory
         changed_path_obj = Path(changed_path)
         has_files_in_folder = any(
-            Path(file_item.full_path).parent == changed_path_obj
-            for file_item in loaded_files
+            Path(file_item.full_path).parent == changed_path_obj for file_item in loaded_files
         )
 
         if has_files_in_folder:
             logger.info(
-                "[FilesystemMonitor] Refreshing FileStore for changed folder: %s",
-                changed_path
+                "[FilesystemMonitor] Refreshing FileStore for changed folder: %s", changed_path
             )
             # Refresh files from affected folder
             self.file_store.refresh_loaded_folders(changed_path)

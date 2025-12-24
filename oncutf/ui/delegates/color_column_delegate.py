@@ -76,7 +76,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         # Get hovered_row from main hover_delegate (not our own)
         hovered_row = -1
-        if hasattr(table, 'hover_delegate') and table.hover_delegate:
+        if hasattr(table, "hover_delegate") and table.hover_delegate:
             hovered_row = table.hover_delegate.hovered_row
         is_hovered = row == hovered_row
 
@@ -127,7 +127,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
                 "[ColorColumnDelegate] MouseButtonPress detected - button: %s, row: %d, col: %d",
                 event.button(),
                 index.row(),
-                index.column()
+                index.column(),
             )
             if event.button() == Qt.RightButton:
                 table = self.parent()
@@ -148,13 +148,13 @@ class ColorColumnDelegate(FileTableHoverDelegate):
                     logger.info(
                         "[ColorColumnDelegate] RIGHT-CLICK on SELECTED row %d - will color %d rows",
                         clicked_row,
-                        len(selected_rows)
+                        len(selected_rows),
                     )
                 else:
                     # Clicked on non-selected row - change selection first
                     logger.info(
                         "[ColorColumnDelegate] RIGHT-CLICK on NON-SELECTED row %d - changing selection",
-                        clicked_row
+                        clicked_row,
                     )
                     table.clearSelection()
                     table.selectRow(clicked_row)
@@ -193,7 +193,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         logger.info(
             "[ColorColumnDelegate] Creating ColorGridMenu at position: %s (rows to color: %s)",
             pos,
-            selected_rows
+            selected_rows,
         )
 
         try:
@@ -226,20 +226,19 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             color: Selected color (hex string or "none")
         """
         logger.info(
-            "[ColorColumnDelegate] Setting color %s for %d rows: %s",
-            color,
-            len(rows),
-            rows
+            "[ColorColumnDelegate] Setting color %s for %d rows: %s", color, len(rows), rows
         )
 
-        if not hasattr(model, 'files'):
+        if not hasattr(model, "files"):
             logger.warning("[ColorColumnDelegate] Model has no files attribute")
             from oncutf.core.pyqt_imports import QApplication
+
             QApplication.restoreOverrideCursor()
             return
 
         # Get database manager for persistence
         from oncutf.core.database.database_manager import get_database_manager
+
         db_manager = get_database_manager()
 
         colored_count = 0
@@ -264,9 +263,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
                 last_index = idx
 
                 logger.debug(
-                    "[ColorColumnDelegate] Set color %s for file: %s",
-                    color,
-                    file_item.filename
+                    "[ColorColumnDelegate] Set color %s for file: %s", color, file_item.filename
                 )
 
         # Emit dataChanged for entire range to refresh all colored cells
@@ -281,6 +278,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         # Restore cursor after all operations complete
         from oncutf.core.pyqt_imports import QApplication
+
         QApplication.restoreOverrideCursor()
         logger.info("[ColorColumnDelegate] Cursor restored")
 

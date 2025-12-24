@@ -55,9 +55,7 @@ class MetadataServiceProtocol(Protocol):
         """
         ...
 
-    def load_metadata_batch(
-        self, paths: list[Path]
-    ) -> dict[Path, dict[str, Any]]:
+    def load_metadata_batch(self, paths: list[Path]) -> dict[Path, dict[str, Any]]:
         """Load metadata from multiple files efficiently.
 
         Args:
@@ -89,9 +87,7 @@ class HashServiceProtocol(Protocol):
         """
         ...
 
-    def compute_hashes_batch(
-        self, paths: list[Path], algorithm: str = "crc32"
-    ) -> dict[Path, str]:
+    def compute_hashes_batch(self, paths: list[Path], algorithm: str = "crc32") -> dict[Path, str]:
         """Compute hashes for multiple files.
 
         Args:
@@ -155,9 +151,7 @@ class DatabaseServiceProtocol(Protocol):
     metadata caching, and application state.
     """
 
-    def store_rename(
-        self, source: str, target: str, timestamp: float
-    ) -> None:
+    def store_rename(self, source: str, target: str, timestamp: float) -> None:
         """Store a rename operation in history.
 
         Args:

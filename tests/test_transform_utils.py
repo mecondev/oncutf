@@ -27,16 +27,13 @@ def test_safe_upper_basic():
         to_greeklish,
     )
 
-
     def test_strip_accents_no_combining_marks():
         s = "Άά Έέ Ήή"
         out = strip_accents(s)
         assert all(unicodedata.category(c) != "Mn" for c in out)
 
-
     def test_strip_accents_specific():
         assert strip_accents("Άέή") == "Αεη"
-
 
     def test_safe_upper_behavior():
         assert safe_upper("test") == "TEST"
@@ -44,13 +41,11 @@ def test_safe_upper_basic():
         assert safe_upper("άλφα")[0] == "Ά"
         assert safe_upper("beta") == "BETA"
 
-
     def test_to_greeklish_mappings():
         assert to_greeklish("μπαμπά") == "baba"
         assert to_greeklish("μπ") == "b"
         assert "th" in to_greeklish("θήτα")
         assert to_greeklish("αβγ") == "avg"
-
 
     @pytest.mark.parametrize(
         "input_str, transform, expected",
@@ -71,7 +66,6 @@ def test_safe_upper_basic():
     def test_apply_transform_parametrized(input_str, transform, expected):
         assert apply_transform(input_str, transform) == expected
 
-
     def test_snake_and_kebab_and_space_special_cases():
         s = "  a   b__c--d  "
         # preserves leading/trailing converted separators and collapses duplicates
@@ -79,7 +73,6 @@ def test_safe_upper_basic():
         assert apply_transform(s, "kebab-case") == "-a-b_c-d-"
         res = apply_transform("__a-b__c--", "space")
         assert " " in res and res.strip().startswith("a")
-
 
     def test_greeklish_ascii_and_passthrough():
         greek = "Καλημέρα Ελλάδα"

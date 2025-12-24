@@ -33,9 +33,7 @@ class TestMetadataServiceProtocol:
                 _ = path  # Used to satisfy protocol
                 return {"test": "value"}
 
-            def load_metadata_batch(
-                self, paths: list[Path]
-            ) -> dict[Path, dict[str, Any]]:
+            def load_metadata_batch(self, paths: list[Path]) -> dict[Path, dict[str, Any]]:
                 return {p: {"test": "value"} for p in paths}
 
         mock = MockMetadataService()
@@ -48,6 +46,7 @@ class TestMetadataServiceProtocol:
             def load_metadata(self, path: Path) -> dict[str, Any]:
                 _ = path  # Used to satisfy protocol
                 return {}
+
             # Missing load_metadata_batch
 
         incomplete = IncompleteService()
@@ -105,9 +104,7 @@ class TestDatabaseServiceProtocol:
         """Test that a mock class implementing the protocol is recognized."""
 
         class MockDatabaseService:
-            def store_rename(
-                self, source: str, target: str, timestamp: float
-            ) -> None:
+            def store_rename(self, source: str, target: str, timestamp: float) -> None:
                 _ = (source, target, timestamp)  # Used to satisfy protocol
 
             def get_rename_history(self, path: str) -> list[dict[str, Any]]:

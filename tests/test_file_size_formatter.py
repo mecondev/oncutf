@@ -1,4 +1,3 @@
-
 from oncutf.utils.file_size_formatter import (
     FileSizeFormatter,
     format_file_size,
@@ -34,6 +33,8 @@ def test_format_file_size_uses_default():
     # format_file_size uses a global default formatter
     out = format_file_size(1234)
     assert isinstance(out, str)
+
+
 #!/usr/bin/env python3
 """
 Module: test_file_size_formatter.py
@@ -59,7 +60,6 @@ from pathlib import Path
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
-
 
 
 class TestFileSizeFormatter(unittest.TestCase):

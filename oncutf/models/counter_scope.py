@@ -38,7 +38,7 @@ class CounterScope(str, Enum):
             CounterScope.GLOBAL: "Global (all files)",
             CounterScope.PER_FOLDER: "Per Folder",
             CounterScope.PER_EXTENSION: "Per Extension",
-            CounterScope.PER_FILEGROUP: "Per File Group"
+            CounterScope.PER_FILEGROUP: "Per File Group",
         }[self]
 
     @property
@@ -48,5 +48,5 @@ class CounterScope(str, Enum):
             CounterScope.GLOBAL: "Single counter across all files",
             CounterScope.PER_FOLDER: "Reset counter at folder boundaries",
             CounterScope.PER_EXTENSION: "Reset counter for each extension type",
-            CounterScope.PER_FILEGROUP: "Reset counter for each file group"
+            CounterScope.PER_FILEGROUP: "Reset counter for each file group",
         }[self]

@@ -122,6 +122,7 @@ def main() -> int:
     except Exception as e:
         print(f"\n❌ Error during profiling: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -134,17 +135,19 @@ def main() -> int:
         print("\n| Files | Total (ms) | Per File (μs) | Throughput (files/sec) |")
         print("|-------|------------|---------------|------------------------|")
         for r in results:
-            per_file_us = r['per_file'] * 1000  # Convert ms to microseconds
-            print(f"| {r['file_count']:>5} | {r['total_time']:>10.3f} | "
-                  f"{per_file_us:>13.2f} | "
-                  f"{r['file_count'] / (r['total_time']/1000):>22.0f} |")
+            per_file_us = r["per_file"] * 1000  # Convert ms to microseconds
+            print(
+                f"| {r['file_count']:>5} | {r['total_time']:>10.3f} | "
+                f"{per_file_us:>13.2f} | "
+                f"{r['file_count'] / (r['total_time']/1000):>22.0f} |"
+            )
 
         # Check for linear scaling
         if len(results) >= 3:
             first = results[0]
             last = results[-1]
-            file_ratio = last['file_count'] / first['file_count']
-            time_ratio = last['total_time'] / first['total_time']
+            file_ratio = last["file_count"] / first["file_count"]
+            time_ratio = last["total_time"] / first["total_time"]
 
             print("\n📊 Scaling Factor:")
             print(f"  Files increased by: {file_ratio:.1f}x")

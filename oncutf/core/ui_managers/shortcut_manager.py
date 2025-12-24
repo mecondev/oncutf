@@ -236,13 +236,20 @@ class ShortcutManager:
                 return
 
             # Get selected files (not all files)
-            selected_files = self.main_window.get_selected_files_ordered() if hasattr(self.main_window, 'get_selected_files_ordered') else []
+            selected_files = (
+                self.main_window.get_selected_files_ordered()
+                if hasattr(self.main_window, "get_selected_files_ordered")
+                else []
+            )
 
             if not selected_files:
                 logger.info("[MainWindow] RESULTS_HASH_LIST: No files selected")
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_selection_status(
-                        "No files selected", selected_count=0, total_count=len(self.main_window.file_model.files), auto_reset=True
+                        "No files selected",
+                        selected_count=0,
+                        total_count=len(self.main_window.file_model.files),
+                        auto_reset=True,
                     )
                 return
 
@@ -258,13 +265,20 @@ class ShortcutManager:
 
             # Check which selected files have hashes
             selected_file_paths = [f.full_path for f in selected_files]
-            files_with_hash_paths = hash_cache.get_files_with_hash_batch(selected_file_paths, "CRC32")
+            files_with_hash_paths = hash_cache.get_files_with_hash_batch(
+                selected_file_paths, "CRC32"
+            )
 
             if not files_with_hash_paths:
-                logger.info("[MainWindow] RESULTS_HASH_LIST: No hashes found for any of %d selected files", len(selected_files))
+                logger.info(
+                    "[MainWindow] RESULTS_HASH_LIST: No hashes found for any of %d selected files",
+                    len(selected_files),
+                )
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_file_operation_status(
-                        f"No hashes in {len(selected_files)} selected file(s)", success=False, auto_reset=True
+                        f"No hashes in {len(selected_files)} selected file(s)",
+                        success=False,
+                        auto_reset=True,
                     )
                 return
 
@@ -294,25 +308,32 @@ class ShortcutManager:
                 dialog_title = f"Hash Results - {files_with_hash_count} file(s)"
             else:
                 # Only some selected files have hashes
-                dialog_title = f"Hash Results - {files_with_hash_count} of {total_selected} selected file(s)"
+                dialog_title = (
+                    f"Hash Results - {files_with_hash_count} of {total_selected} selected file(s)"
+                )
 
             # Get or create the results table dialog with hash data
             from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog
 
-            if not hasattr(self.main_window, "results_dialog") or self.main_window.results_dialog is None:
+            if (
+                not hasattr(self.main_window, "results_dialog")
+                or self.main_window.results_dialog is None
+            ):
                 self.main_window.results_dialog = ResultsTableDialog(
                     self.main_window,
                     title=dialog_title,
                     left_header="Filename",
                     right_header="CRC32 Hash",
                     data=hash_results,
-                    config_key="results_hash_list"
+                    config_key="results_hash_list",
                 )
             else:
                 # Update existing dialog with new data
                 self.main_window.results_dialog.data = hash_results
                 self.main_window.results_dialog.model.set_data(hash_results)
-                self.main_window.results_dialog.title_label.setText(f"{files_with_hash_count} items")
+                self.main_window.results_dialog.title_label.setText(
+                    f"{files_with_hash_count} items"
+                )
                 self.main_window.results_dialog.setWindowTitle(dialog_title)
 
             # Show the dialog
@@ -320,7 +341,11 @@ class ShortcutManager:
             self.main_window.results_dialog.raise_()
             self.main_window.results_dialog.activateWindow()
 
-            logger.info("[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully with %d hashes from %d selected files", len(hash_results), len(selected_files))
+            logger.info(
+                "[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully with %d hashes from %d selected files",
+                len(hash_results),
+                len(selected_files),
+            )
 
         except Exception as e:
             logger.error("[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: %s", e)

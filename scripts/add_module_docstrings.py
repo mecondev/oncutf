@@ -1,4 +1,3 @@
-
 """
 Module: .cache/add_module_docstrings.py
 
@@ -14,16 +13,18 @@ import sys
 
 PLACEHOLDER = '"""TODO: Add module-level docstring."""\n\n'
 
+
 def has_module_docstring(filepath):
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         try:
             tree = ast.parse(f.read())
             return ast.get_docstring(tree) is not None
         except Exception:
             return False  # If it's not readable, we leave it out
 
+
 def add_placeholder_docstring(filepath):
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     insert_at = 0
@@ -37,8 +38,9 @@ def add_placeholder_docstring(filepath):
 
     lines.insert(insert_at, PLACEHOLDER)
 
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(lines)
+
 
 def process_project(project_path):
     count_modified = 0
@@ -51,10 +53,13 @@ def process_project(project_path):
                     count_modified += 1
     return count_modified
 
+
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Add placeholder module-level docstrings to .py files.")
+    parser = argparse.ArgumentParser(
+        description="Add placeholder module-level docstrings to .py files."
+    )
     parser.add_argument("-p", "--project", required=True, help="Path to project folder")
 
     args = parser.parse_args()

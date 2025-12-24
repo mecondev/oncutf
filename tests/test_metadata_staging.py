@@ -1,4 +1,3 @@
-
 from unittest.mock import MagicMock
 
 from oncutf.core.metadata_staging_manager import MetadataStagingManager
@@ -90,7 +89,7 @@ class TestMetadataStagingManager:
         # consistently for the same logical path
 
         path1 = "/path/to/file.jpg"
-        path2 = "/path/to/file.jpg" # Same path
+        path2 = "/path/to/file.jpg"  # Same path
 
         manager.stage_change(path1, "Key", "Value")
         assert manager.has_staged_changes(path2)

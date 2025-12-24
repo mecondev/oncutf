@@ -9,7 +9,6 @@ Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
 
-
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
 from oncutf.utils.json_config_manager import get_app_config_manager
 from oncutf.utils.logger_factory import get_cached_logger
@@ -150,9 +149,7 @@ class WindowConfigManager:
             # Mark dirty for debounced save
             self.config_manager.mark_dirty()
 
-            logger.info(
-                "[Config] Window configuration marked for save", extra={"dev_only": True}
-            )
+            logger.info("[Config] Window configuration marked for save", extra={"dev_only": True})
 
         except Exception as e:
             logger.error("[Config] Failed to save window configuration: %s", e)
@@ -238,14 +235,16 @@ class WindowConfigManager:
             if "horizontal" in splitter_states and hasattr(self.main_window, "horizontal_splitter"):
                 self.main_window.horizontal_splitter.setSizes(splitter_states["horizontal"])
                 logger.debug(
-                    "[Config] Applied horizontal splitter: %s", splitter_states['horizontal'],
+                    "[Config] Applied horizontal splitter: %s",
+                    splitter_states["horizontal"],
                     extra={"dev_only": True},
                 )
 
             if "vertical" in splitter_states and hasattr(self.main_window, "vertical_splitter"):
                 self.main_window.vertical_splitter.setSizes(splitter_states["vertical"])
                 logger.debug(
-                    "[Config] Applied vertical splitter: %s", splitter_states['vertical'],
+                    "[Config] Applied vertical splitter: %s",
+                    splitter_states["vertical"],
                     extra={"dev_only": True},
                 )
 
@@ -383,25 +382,19 @@ class WindowConfigManager:
 
         # Apply sort configuration if needed
         if (
-            result.get('success')
-            and result.get('sort_column') is not None
+            result.get("success")
+            and result.get("sort_column") is not None
             and hasattr(self.main_window, "sort_by_column")
         ):
             from oncutf.core.pyqt_imports import Qt
 
-            qt_sort_order = (
-                Qt.AscendingOrder
-                if result['sort_order'] == 0
-                else Qt.DescendingOrder
-            )
-            self.main_window.sort_by_column(
-                result['sort_column'], qt_sort_order
-            )
+            qt_sort_order = Qt.AscendingOrder if result["sort_order"] == 0 else Qt.DescendingOrder
+            self.main_window.sort_by_column(result["sort_column"], qt_sort_order)
 
             logger.info(
                 "[Config] Applied sort: column=%d, order=%s",
-                result['sort_column'],
-                "ASC" if result['sort_order'] == 0 else "DESC"
+                result["sort_column"],
+                "ASC" if result["sort_order"] == 0 else "DESC",
             )
 
     def ensure_initial_column_sizing(self) -> None:

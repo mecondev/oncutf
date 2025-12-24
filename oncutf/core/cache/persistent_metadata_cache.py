@@ -182,16 +182,14 @@ class PersistentMetadataCache:
             path,
             norm_path,
             in_memory,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
         # Check memory cache first
         if norm_path in self._memory_cache:
             self._cache_hits += 1
             logger.debug(
-                "[PersistentMetadataCache] Cache HIT for: %s",
-                norm_path,
-                extra={"dev_only": True}
+                "[PersistentMetadataCache] Cache HIT for: %s", norm_path, extra={"dev_only": True}
             )
             # Move to end (most recently used) for LRU
             self._memory_cache.move_to_end(norm_path)
@@ -445,4 +443,3 @@ class DummyMetadataCache:
 
     def set(self, _file_path: str, _metadata: dict, **kwargs) -> None:
         pass
-

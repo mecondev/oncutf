@@ -95,7 +95,7 @@ class MetadataCacheMixin:
 
         # Get original metadata entry (not staged version)
         metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-        if not metadata_entry or not hasattr(metadata_entry, 'data'):
+        if not metadata_entry or not hasattr(metadata_entry, "data"):
             return None
 
         # Extract value from original metadata dict
@@ -260,7 +260,7 @@ class MetadataCacheMixin:
                 del cache_entry.data[key_path]
 
         # Update file icon status based on remaining modified items
-        if not hasattr(self, 'modified_items') or not self.modified_items:
+        if not hasattr(self, "modified_items") or not self.modified_items:
             file_item.metadata_status = "loaded"
             cache_entry = cache_helper.get_cache_entry_for_file(file_item)
             if cache_entry:
@@ -351,6 +351,7 @@ class MetadataCacheMixin:
 
         # Get staging manager
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
         staging_manager = get_metadata_staging_manager()
 
         # For each selected file, update its icon
@@ -418,7 +419,7 @@ class MetadataCacheMixin:
             dict | None: Metadata dictionary if found, None otherwise
         """
         try:
-            if hasattr(self, '_cache_helper') and self._cache_helper:
+            if hasattr(self, "_cache_helper") and self._cache_helper:
                 metadata = self._cache_helper.get_metadata_for_file(file_item)
                 if metadata:
                     logger.debug(

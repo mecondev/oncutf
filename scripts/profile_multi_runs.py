@@ -29,6 +29,7 @@ def measure_startup() -> tuple[float, float, float, float]:
     from PyQt5.QtWidgets import QApplication
 
     from oncutf.ui.main_window import MainWindow
+
     import_time = time.perf_counter() - import_start
 
     # Application creation
@@ -65,12 +66,14 @@ def main() -> int:
         print(f"Run {i+1}/{num_runs}...", end=" ", flush=True)
         try:
             total, import_t, app_t, window_t = measure_startup()
-            results.append({
-                "total": total * 1000,
-                "import": import_t * 1000,
-                "app": app_t * 1000,
-                "window": window_t * 1000,
-            })
+            results.append(
+                {
+                    "total": total * 1000,
+                    "import": import_t * 1000,
+                    "app": app_t * 1000,
+                    "window": window_t * 1000,
+                }
+            )
             print(f"{total*1000:.1f}ms")
         except Exception as e:
             print(f"FAILED: {e}")

@@ -101,9 +101,7 @@ class MetadataModule:
 
         # Normalize path for Windows compatibility
         path = normalize_path(path)
-        logger.debug(
-            "[DEBUG] [MetadataModule] Normalized path: %s", path, extra={"dev_only": True}
-        )
+        logger.debug("[DEBUG] [MetadataModule] Normalized path: %s", path, extra={"dev_only": True})
 
         # Get metadata dict
         metadata_dict = MetadataModule._get_metadata_dict(path, metadata_cache)

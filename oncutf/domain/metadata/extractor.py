@@ -155,15 +155,11 @@ class MetadataExtractor:
 
         # Validate inputs
         if not field:
-            return ExtractionResult(
-                value="invalid", source="error", field=field, category=category
-            )
+            return ExtractionResult(value="invalid", source="error", field=field, category=category)
 
         # Skip file existence check if metadata is provided (for testing)
         if metadata is None and not file_path.exists():
-            return ExtractionResult(
-                value="invalid", source="error", field=field, category=category
-            )
+            return ExtractionResult(value="invalid", source="error", field=field, category=category)
 
         # Extract based on category
         result: ExtractionResult
@@ -232,9 +228,7 @@ class MetadataExtractor:
         Requires hash_service to be available (via injection or ServiceRegistry).
         """
         if not field.startswith("hash_"):
-            return ExtractionResult(
-                value="invalid", source="error", field=field, category="hash"
-            )
+            return ExtractionResult(value="invalid", source="error", field=field, category="hash")
 
         if self._hash_service is None:
             logger.warning("No hash_service available for hash extraction")

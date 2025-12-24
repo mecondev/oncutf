@@ -11,6 +11,7 @@ Tests cover:
 - Shortcut method delegation
 - Edge cases for modifier combinations
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -36,9 +37,7 @@ class TestModifierDetection:
         handler = MetadataShortcutHandler(mock_manager, parent_window=None)
 
         # Pass modifier_state directly - no patching needed
-        skip_metadata, use_extended = handler.determine_metadata_mode(
-            modifier_state=QT_NO_MODIFIER
-        )
+        skip_metadata, use_extended = handler.determine_metadata_mode(modifier_state=QT_NO_MODIFIER)
 
         assert skip_metadata is True
         assert use_extended is False
@@ -68,9 +67,7 @@ class TestModifierDetection:
 
         handler = MetadataShortcutHandler(mock_manager, parent_window=None)
 
-        skip_metadata, use_extended = handler.determine_metadata_mode(
-            modifier_state=QT_CTRL_SHIFT
-        )
+        skip_metadata, use_extended = handler.determine_metadata_mode(modifier_state=QT_CTRL_SHIFT)
 
         assert skip_metadata is False
         assert use_extended is True

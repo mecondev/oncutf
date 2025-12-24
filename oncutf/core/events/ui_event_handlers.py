@@ -7,6 +7,7 @@ Date: 2025-12-20
 UI-related event handlers - table interactions, header toggles, row clicks.
 Extracted from event_handler_manager.py for better separation of concerns.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -80,9 +81,7 @@ class UIEventHandlers:
             # NOTE: Metadata updates are handled by the selection system automatically
             # Removed redundant refresh_metadata_from_selection() call that was causing conflicts
 
-    def handle_file_double_click(
-        self, index: QModelIndex, modifiers: Any = None
-    ) -> None:
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Any = None) -> None:
         """
         Placeholder for future double-click functionality.
 

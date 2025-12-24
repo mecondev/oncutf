@@ -95,9 +95,7 @@ class ThemeManager(QObject):
         """
         if theme_name not in self._theme_tokens:
             available = ", ".join(self._theme_tokens.keys())
-            raise ValueError(
-                f"Invalid theme '{theme_name}'. Available themes: {available}"
-            )
+            raise ValueError(f"Invalid theme '{theme_name}'. Available themes: {available}")
 
         if theme_name != self._current_theme:
             old_theme = self._current_theme
@@ -309,7 +307,9 @@ class ThemeManager(QObject):
         qss = self.get_qss()
         if qss:
             app.setStyleSheet(qss)
-            logger.info("[ThemeManager] Applied complete theme '%s' to application", self._current_theme)
+            logger.info(
+                "[ThemeManager] Applied complete theme '%s' to application", self._current_theme
+            )
         else:
             logger.warning("[ThemeManager] No QSS available for complete theme")
 

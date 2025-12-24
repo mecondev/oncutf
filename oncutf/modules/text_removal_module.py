@@ -97,6 +97,7 @@ class TextRemovalModule(BaseRenameModule):
         # Apply theme styling
         from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         self.position_combo.setFixedHeight(theme.get_constant("combo_height"))
         self.position_combo.setItemDelegate(ComboBoxItemDelegate(self.position_combo, theme))
@@ -125,7 +126,9 @@ class TextRemovalModule(BaseRenameModule):
         self.preview_label = QLabel("")
         self.preview_label.setWordWrap(True)
         self.preview_label.setTextFormat(Qt.RichText)
-        self.preview_label.setStyleSheet("padding: 4px; background-color: #f5f5f5; border-radius: 3px;")
+        self.preview_label.setStyleSheet(
+            "padding: 4px; background-color: #f5f5f5; border-radius: 3px;"
+        )
 
         preview_row.addWidget(preview_label_text)
         preview_row.addWidget(self.preview_label, 1)
@@ -187,11 +190,13 @@ class TextRemovalModule(BaseRenameModule):
 
         for match in sorted(matches, key=lambda m: m.start):
             if match.start > last_end:
-                parts.append(f'<span style="color: #333;">{self._html_escape(text[last_end:match.start])}</span>')
+                parts.append(
+                    f'<span style="color: #333;">{self._html_escape(text[last_end:match.start])}</span>'
+                )
 
             parts.append(
                 f'<span style="color: #d32f2f; text-decoration: line-through;">'
-                f'{self._html_escape(match.matched_text)}</span>'
+                f"{self._html_escape(match.matched_text)}</span>"
             )
             last_end = match.end
 
@@ -211,7 +216,12 @@ class TextRemovalModule(BaseRenameModule):
         Returns:
             HTML-safe text
         """
-        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+        )
 
     def on_text_changed(self):
         """Handle text input changes (legacy method for compatibility)."""
@@ -286,13 +296,15 @@ class TextRemovalModule(BaseRenameModule):
 
         elif position == "Start of name":
             if target_text.startswith(search_text):
-                matches.append(TextRemovalMatch(0, len(pattern), text[0:len(pattern)]))
+                matches.append(TextRemovalMatch(0, len(pattern), text[0 : len(pattern)]))
 
         elif position == "Anywhere (first)":
             if case_sensitive:
                 idx = text.find(pattern)
                 if idx != -1:
-                    matches.append(TextRemovalMatch(idx, idx + len(pattern), text[idx:idx + len(pattern)]))
+                    matches.append(
+                        TextRemovalMatch(idx, idx + len(pattern), text[idx : idx + len(pattern)])
+                    )
             else:
                 regex_pattern = re.escape(pattern)
                 match = re.search(regex_pattern, text, flags=re.IGNORECASE)
@@ -306,7 +318,9 @@ class TextRemovalModule(BaseRenameModule):
                     idx = text.find(pattern, start)
                     if idx == -1:
                         break
-                    matches.append(TextRemovalMatch(idx, idx + len(pattern), text[idx:idx + len(pattern)]))
+                    matches.append(
+                        TextRemovalMatch(idx, idx + len(pattern), text[idx : idx + len(pattern)])
+                    )
                     start = idx + len(pattern)
             else:
                 regex_pattern = re.escape(pattern)
@@ -334,7 +348,7 @@ class TextRemovalModule(BaseRenameModule):
         last_end = 0
 
         for match in sorted(matches, key=lambda m: m.start):
-            result_parts.append(text[last_end:match.start])
+            result_parts.append(text[last_end : match.start])
             last_end = match.end
 
         result_parts.append(text[last_end:])

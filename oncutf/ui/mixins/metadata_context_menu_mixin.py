@@ -47,7 +47,9 @@ class MetadataContextMenuMixin:
         Args:
             position: Position where the context menu should appear
         """
-        if (hasattr(self, '_is_placeholder_mode') and self._is_placeholder_mode) or self.property("placeholder"):
+        if (hasattr(self, "_is_placeholder_mode") and self._is_placeholder_mode) or self.property(
+            "placeholder"
+        ):
             return
 
         index = self.indexAt(position)
@@ -55,7 +57,7 @@ class MetadataContextMenuMixin:
             return
 
         # Close any existing menu
-        if hasattr(self, '_current_menu') and self._current_menu:
+        if hasattr(self, "_current_menu") and self._current_menu:
             self._current_menu.close()
             self._current_menu = None
 
@@ -70,12 +72,13 @@ class MetadataContextMenuMixin:
         # Check if current file has modifications for this field
         has_modifications = False
         current_field_value = None
-        if hasattr(self, '_current_file_path') and self._current_file_path:
+        if hasattr(self, "_current_file_path") and self._current_file_path:
             # Normalize key path for standard metadata fields
             normalized_key_path = self._normalize_metadata_field_name(key_path)
 
             # Check staging manager
             from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
             staging_manager = get_metadata_staging_manager()
             if staging_manager:
                 staged_changes = staging_manager.get_staged_changes(self._current_file_path)
@@ -107,11 +110,12 @@ class MetadataContextMenuMixin:
 
         # Create menu
         menu = QMenu(self)
-        if hasattr(self, '_current_menu'):
+        if hasattr(self, "_current_menu"):
             self._current_menu = menu
 
         # Apply theme styling
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
 
@@ -242,7 +246,7 @@ class MetadataContextMenuMixin:
 
     def _cleanup_menu(self) -> None:
         """Clean up the current menu reference."""
-        if hasattr(self, '_current_menu'):
+        if hasattr(self, "_current_menu"):
             self._current_menu = None
 
     def _get_menu_icon(self, icon_name: str):
@@ -511,4 +515,3 @@ class MetadataContextMenuMixin:
             logger.warning("Error mapping metadata key to column key: %s", e)
 
         return None
-

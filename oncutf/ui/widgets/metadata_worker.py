@@ -279,7 +279,9 @@ class MetadataWorker(QObject):
                     )
 
                 except Exception as e:
-                    logger.exception("[Worker] Exception while reading metadata for %s: %s", path, e)
+                    logger.exception(
+                        "[Worker] Exception while reading metadata for %s: %s", path, e
+                    )
                     metadata = {}
 
                 # Update processed size and emit size progress

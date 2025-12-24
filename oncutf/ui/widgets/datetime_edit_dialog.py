@@ -51,7 +51,9 @@ class DateTimeEditDialog(QDialog):
 
         title = "Edit Creation Date" if date_type == "created" else "Edit Modification Date"
         self.setWindowTitle(title)
-        self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        self.setWindowFlags(
+            Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
+        )
         self.setModal(True)
         self.setMinimumSize(500, 400)
 
@@ -262,8 +264,7 @@ class DateTimeEditDialog(QDialog):
     def _apply_info_label_style(self, label: QLabel, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
         label.setStyleSheet(
-            f"color: {color}; opacity: {opacity}; "
-            f"font-size: 9pt; font-weight: 400;"
+            f"color: {color}; opacity: {opacity}; " f"font-size: 9pt; font-weight: 400;"
         )
 
     def _select_all(self):
@@ -306,12 +307,7 @@ class DateTimeEditDialog(QDialog):
         super().accept()
 
     @classmethod
-    def get_datetime_edit_choice(
-        cls,
-        parent,
-        selected_files,
-        date_type="modified"
-    ):
+    def get_datetime_edit_choice(cls, parent, selected_files, date_type="modified"):
         """
         Factory method to show dialog and return selected files + datetime.
 

@@ -1,4 +1,3 @@
-
 """
 Module: .cache/test_html_icon.py
 

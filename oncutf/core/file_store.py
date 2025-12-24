@@ -106,7 +106,9 @@ class FileStore(QObject):
             self._file_cache[folder_path] = file_items.copy()
 
         elapsed = self._load_timer.elapsed()
-        logger.info("[FileStore] Scanned %s: %d files in %dms", folder_path, len(file_items), elapsed)
+        logger.info(
+            "[FileStore] Scanned %s: %d files in %dms", folder_path, len(file_items), elapsed
+        )
 
         return file_items
 
@@ -230,7 +232,9 @@ class FileStore(QObject):
         """Filter loaded files by extension."""
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
-        logger.debug("[FileStore] Filtered files: %d match extensions %s", len(filtered), extensions)
+        logger.debug(
+            "[FileStore] Filtered files: %d match extensions %s", len(filtered), extensions
+        )
         return filtered
 
     # =====================================
@@ -261,6 +265,7 @@ class FileStore(QObject):
             "last_load_time_ms": self._load_timer.elapsed() if self._load_timer.isValid() else 0,
             **cache_stats,
         }
+
     # =====================================
     # Filesystem Change Handling
     # =====================================
@@ -288,10 +293,7 @@ class FileStore(QObject):
         if changed_folder:
             changed_folder_norm = os.path.normpath(changed_folder)
             if changed_folder_norm not in loaded_folders:
-                logger.debug(
-                    "[FileStore] Changed folder not in loaded files: %s",
-                    changed_folder
-                )
+                logger.debug("[FileStore] Changed folder not in loaded files: %s", changed_folder)
                 return False
 
             folders_to_refresh = {changed_folder_norm}
@@ -299,8 +301,7 @@ class FileStore(QObject):
             folders_to_refresh = loaded_folders
 
         logger.info(
-            "[FileStore] Refreshing %d folder(s) after filesystem change",
-            len(folders_to_refresh)
+            "[FileStore] Refreshing %d folder(s) after filesystem change", len(folders_to_refresh)
         )
 
         # Invalidate cache for affected folders
@@ -312,10 +313,7 @@ class FileStore(QObject):
         for folder in loaded_folders:
             # Skip folders that no longer exist (e.g., unmounted USB drives)
             if not os.path.exists(folder):
-                logger.info(
-                    "[FileStore] Folder no longer exists, removing its files: %s",
-                    folder
-                )
+                logger.info("[FileStore] Folder no longer exists, removing its files: %s", folder)
                 continue
 
             try:

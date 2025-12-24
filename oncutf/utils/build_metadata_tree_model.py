@@ -542,9 +542,7 @@ def build_metadata_tree_model(
             key_path = f"{group_name}/{key}"
 
             direct_match = key_path in modified_keys or key in modified_keys
-            suffix_match = any(
-                mk.endswith(f"/{key}") or mk == key for mk in modified_keys
-            )
+            suffix_match = any(mk.endswith(f"/{key}") or mk == key for mk in modified_keys)
 
             is_modified = direct_match or suffix_match
             is_extended = key in extended_keys

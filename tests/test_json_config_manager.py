@@ -1,4 +1,3 @@
-
 from oncutf.utils.json_config_manager import FileHashConfig, JSONConfigManager, WindowConfig
 
 

@@ -203,6 +203,7 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
     try:
         from PyQt5.QtWidgets import QApplication
+
         app = QApplication.instance()
         if app:
             with contextlib.suppress(RuntimeError):

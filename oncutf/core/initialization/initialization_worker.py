@@ -67,18 +67,18 @@ class InitializationWorker(QObject):
 
     # Signals for thread-safe communication
     progress = pyqtSignal(int, str)  # percentage, status_text
-    finished = pyqtSignal(dict)      # results dictionary
-    error = pyqtSignal(str)          # error_message
+    finished = pyqtSignal(dict)  # results dictionary
+    error = pyqtSignal(str)  # error_message
 
     def __init__(self):
         """Initialize the worker (runs in main thread before moveToThread)."""
         super().__init__()
         self._results = {
-            'fonts_loaded': False,
-            'theme_prepared': False,
-            'database_validated': False,
-            'cache_warmed': False,
-            'duration_ms': 0.0
+            "fonts_loaded": False,
+            "theme_prepared": False,
+            "database_validated": False,
+            "cache_warmed": False,
+            "duration_ms": 0.0,
         }
 
     def run(self) -> None:
@@ -92,6 +92,7 @@ class InitializationWorker(QObject):
         """
         try:
             import time
+
             start_time = time.perf_counter()
 
             logger.info("[InitWorker] Background initialization started")
@@ -99,31 +100,31 @@ class InitializationWorker(QObject):
             # Step 1: Load fonts (25% progress)
             self.progress.emit(10, "Loading fonts...")
             self._load_fonts()
-            self._results['fonts_loaded'] = True
+            self._results["fonts_loaded"] = True
             self.progress.emit(25, "Fonts loaded")
 
             # Step 2: Prepare theme data (50% progress)
             self.progress.emit(30, "Preparing theme...")
             self._prepare_theme()
-            self._results['theme_prepared'] = True
+            self._results["theme_prepared"] = True
             self.progress.emit(50, "Theme prepared")
 
             # Step 3: Validate database (75% progress)
             self.progress.emit(55, "Validating database...")
             self._validate_database()
-            self._results['database_validated'] = True
+            self._results["database_validated"] = True
             self.progress.emit(75, "Database validated")
 
             # Step 4: Warmup caches (100% progress)
             self.progress.emit(80, "Warming up caches...")
             self._warmup_caches()
-            self._results['cache_warmed'] = True
+            self._results["cache_warmed"] = True
             self.progress.emit(100, "Initialization complete")
 
             # Calculate duration
             end_time = time.perf_counter()
             duration_ms = (end_time - start_time) * 1000
-            self._results['duration_ms'] = duration_ms
+            self._results["duration_ms"] = duration_ms
 
             logger.info(
                 "[InitWorker] Background initialization completed in %.0fms",
@@ -196,7 +197,7 @@ class InitializationWorker(QObject):
 
             # Future enhancement: could parse theme CSS files here to validate syntax
             # For now, just verify theme name is valid
-            valid_themes = ['light', 'dark', 'auto']
+            valid_themes = ["light", "dark", "auto"]
             if THEME_NAME.lower() not in valid_themes:
                 logger.warning(
                     "[InitWorker] Invalid theme '%s', will fallback to 'light'",
@@ -246,9 +247,9 @@ class InitializationWorker(QObject):
 
             # For now, just simulate some work
             import time
+
             time.sleep(0.05)  # 50ms simulated work
 
         except Exception as e:
             logger.warning("[InitWorker] Cache warmup failed (non-critical): %s", e)
             # Don't fail initialization if cache warmup fails
-

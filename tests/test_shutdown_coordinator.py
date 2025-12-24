@@ -173,9 +173,7 @@ class TestShutdownCoordinator:
 
     @patch("oncutf.utils.exiftool_wrapper.ExifToolWrapper")
     @patch("platform.system")
-    def test_shutdown_exiftool_windows_delay(
-        self, mock_platform, mock_exiftool_class, coordinator
-    ):
+    def test_shutdown_exiftool_windows_delay(self, mock_platform, mock_exiftool_class, coordinator):
         """Test ExifTool shutdown includes delay on Windows."""
         mock_platform.return_value = "Windows"
         mock_wrapper = Mock()
@@ -196,13 +194,17 @@ class TestShutdownCoordinator:
     def test_shutdown_exiftool_exception_recovery(self, mock_exiftool_class, coordinator):
         """Test ExifTool shutdown attempts cleanup even on error."""
         mock_wrapper = Mock()
+
         # Make stop() raise an error that will propagate
         def stop_with_error():
             raise RuntimeError("Stop failed")
+
         mock_wrapper.stop.side_effect = stop_with_error
 
         # Make force_cleanup also fail to trigger the exception path
-        mock_exiftool_class.force_cleanup_all_exiftool_processes.side_effect = RuntimeError("Cleanup failed")
+        mock_exiftool_class.force_cleanup_all_exiftool_processes.side_effect = RuntimeError(
+            "Cleanup failed"
+        )
 
         coordinator.register_exiftool_wrapper(mock_wrapper)
 
@@ -354,9 +356,7 @@ class TestShutdownCoordinator:
         phase_started_signals = []
         phase_completed_signals = []
 
-        coordinator.phase_started.connect(
-            lambda phase: phase_started_signals.append(phase)
-        )
+        coordinator.phase_started.connect(lambda phase: phase_started_signals.append(phase))
         coordinator.phase_completed.connect(
             lambda phase, success: phase_completed_signals.append((phase, success))
         )

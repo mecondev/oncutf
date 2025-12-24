@@ -238,6 +238,7 @@ class DragManager(QObject):
 
         # First, end all visual feedback immediately
         from oncutf.core.drag.drag_visual_manager import end_drag_visual
+
         end_drag_visual()
 
         # Then perform standard cleanup (cursors, state)

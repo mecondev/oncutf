@@ -133,6 +133,7 @@ class TestDateTimeEditDialog:
     def test_factory_method_returns_none_on_cancel(self, qapp, sample_files, monkeypatch):
         """Test factory method returns None when dialog is cancelled."""
         _ = qapp
+
         # Mock dialog.exec_() to return Rejected
         def mock_exec(_self):
             return DateTimeEditDialog.Rejected
@@ -140,9 +141,7 @@ class TestDateTimeEditDialog:
         monkeypatch.setattr(DateTimeEditDialog, "exec_", mock_exec)
 
         result_files, result_datetime = DateTimeEditDialog.get_datetime_edit_choice(
-            parent=None,
-            selected_files=sample_files,
-            date_type="modified"
+            parent=None, selected_files=sample_files, date_type="modified"
         )
 
         assert result_files is None
@@ -162,9 +161,7 @@ class TestDateTimeEditDialog:
         monkeypatch.setattr(DateTimeEditDialog, "exec_", mock_exec)
 
         result_files, result_datetime = DateTimeEditDialog.get_datetime_edit_choice(
-            parent=None,
-            selected_files=sample_files,
-            date_type="created"
+            parent=None, selected_files=sample_files, date_type="created"
         )
 
         assert result_files == sample_files[:2]

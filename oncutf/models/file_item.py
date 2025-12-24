@@ -37,20 +37,24 @@ class FileItem:
         self.name = self.filename  # Keep for compatibility
         self.size = 0  # Will be updated later if needed
         self.metadata = {}  # Will store file metadata
-        self.metadata_status = "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
+        self.metadata_status = (
+            "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
+        )
         self.checked = False  # Selection state for UI
 
         # Load saved color tag from database (hex color or "none")
         # Import here to avoid circular imports and initialization issues
         try:
             from oncutf.core.database.database_manager import get_database_manager
+
             db_manager = get_database_manager()
             self.color = db_manager.get_color_tag(path)
             if self.color != "none":
                 logger.debug(
                     "[FileItem] Loaded color %s for %s",
-                    self.color, self.filename,
-                    extra={"dev_only": True}
+                    self.color,
+                    self.filename,
+                    extra={"dev_only": True},
                 )
         except Exception as e:
             logger.warning("[FileItem] Could not load color tag: %s", e)

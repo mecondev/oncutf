@@ -94,7 +94,7 @@ def profile_metadata_loading(files):
 
     # Simulate metadata extraction (simplified)
     metadata_results = []
-    for file_path in files[:min(100, len(files))]:  # Profile first 100
+    for file_path in files[: min(100, len(files))]:  # Profile first 100
         metadata = {
             "path": str(file_path),
             "size": file_path.stat().st_size,
@@ -227,19 +227,13 @@ def main():
         # Estimate metadata load time (profile 100 files)
         metadata_results = profile_metadata_loading(files)
         estimated_metadata_time = 0.012  # From profiling results above
-        metadata_time = (
-            (len(files) / 100) * estimated_metadata_time
-            if metadata_results
-            else 0
-        )
+        metadata_time = (len(files) / 100) * estimated_metadata_time if metadata_results else 0
 
         render_time = profile_table_rendering(file_count)
         preview_time = profile_preview_generation(file_count)
 
         # Generate report
-        report = generate_report(
-            file_count, load_time, metadata_time, render_time, preview_time
-        )
+        report = generate_report(file_count, load_time, metadata_time, render_time, preview_time)
 
         # Save report
         report_file = Path("docs/performance_baseline_2025-12-09.txt")

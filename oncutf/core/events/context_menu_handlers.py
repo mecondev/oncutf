@@ -11,6 +11,7 @@ This module handles the complex context menu logic which was ~400+ lines in the
 original event_handler_manager.py. It includes metadata state analysis and
 bulk rotation operations.
 """
+
 from __future__ import annotations
 
 import time
@@ -70,13 +71,13 @@ class ContextMenuHandlers:
         index = self.parent_window.file_table_view.indexAt(position)
         if index.isValid():
             # Get column key from model
-            if hasattr(self.parent_window.file_model, '_column_mapping'):
+            if hasattr(self.parent_window.file_model, "_column_mapping"):
                 column_key = self.parent_window.file_model._column_mapping.get(index.column())
                 if column_key == "color":
                     # Color column handles its own right-click menu via ColorColumnDelegate
                     logger.debug(
                         "[ContextMenu] Skipping context menu for color column",
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
                     return
 
@@ -182,9 +183,7 @@ class ContextMenuHandlers:
         menu.addAction(action_load_extended)
 
         # Smart enable/disable logic based on analysis
-        action_load_fast.setEnabled(
-            has_selection and selected_analysis["enable_fast_selected"]
-        )
+        action_load_fast.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
         action_load_extended.setEnabled(
             has_selection and selected_analysis["enable_extended_selected"]
         )
@@ -195,15 +194,29 @@ class ContextMenuHandlers:
             load_fast_tip = selected_analysis["fast_tooltip"]
             if sel_count < total_files:
                 load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(action_load_fast, load_fast_tip, TooltipType.INFO, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_load_fast, load_fast_tip, TooltipType.INFO, menu
+            )
 
             load_ext_tip = selected_analysis["extended_tooltip"]
             if sel_count < total_files:
                 load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(action_load_extended, load_ext_tip, TooltipType.INFO, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_load_extended, load_ext_tip, TooltipType.INFO, menu
+            )
         else:
-            TooltipHelper.setup_action_tooltip(action_load_fast, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
-            TooltipHelper.setup_action_tooltip(action_load_extended, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_load_fast,
+                "Select files first (Ctrl+A to select all)",
+                TooltipType.WARNING,
+                menu,
+            )
+            TooltipHelper.setup_action_tooltip(
+                action_load_extended,
+                "Select files first (Ctrl+A to select all)",
+                TooltipType.WARNING,
+                menu,
+            )
 
         menu.addSeparator()
 
@@ -228,6 +241,7 @@ class ContextMenuHandlers:
 
         # Enable only if we have 2+ folders
         from pathlib import Path
+
         folders = set()
         for file_item in self.parent_window.file_model.files:
             folders.add(str(Path(file_item.path).parent))
@@ -240,14 +254,14 @@ class ContextMenuHandlers:
                 action_auto_color_folders,
                 f"Assign unique colors to files grouped by folder ({len(folders)} folders)",
                 TooltipType.INFO,
-                menu
+                menu,
             )
         else:
             TooltipHelper.setup_action_tooltip(
                 action_auto_color_folders,
                 "Need 2+ folders to auto-color",
                 TooltipType.WARNING,
-                menu
+                menu,
             )
 
         menu.addSeparator()
@@ -273,9 +287,16 @@ class ContextMenuHandlers:
             hash_tip = selected_hash_analysis["selected_tooltip"]
             if sel_count < total_files:
                 hash_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(action_calculate_hashes, hash_tip, TooltipType.INFO, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_calculate_hashes, hash_tip, TooltipType.INFO, menu
+            )
         else:
-            TooltipHelper.setup_action_tooltip(action_calculate_hashes, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_calculate_hashes,
+                "Select files first (Ctrl+A to select all)",
+                TooltipType.WARNING,
+                menu,
+            )
 
         # Show results hash list action
         action_show_hash_results = create_action_with_shortcut(
@@ -287,9 +308,13 @@ class ContextMenuHandlers:
         action_show_hash_results.setEnabled(has_selection)
         TooltipHelper.setup_action_tooltip(
             action_show_hash_results,
-            "Display hashes for selected files that have been calculated" if has_selection else "Select files first to show their hashes",
+            (
+                "Display hashes for selected files that have been calculated"
+                if has_selection
+                else "Select files first to show their hashes"
+            ),
             TooltipType.INFO if has_selection else TooltipType.WARNING,
-            menu
+            menu,
         )
 
         # Connect show hash results action
@@ -315,14 +340,16 @@ class ContextMenuHandlers:
 
         TooltipHelper.setup_action_tooltip(
             action_save_all_modified,
-            "Save all modified metadata (Ctrl+S)" if has_modifications else "No modified metadata to save",
+            (
+                "Save all modified metadata (Ctrl+S)"
+                if has_modifications
+                else "No modified metadata to save"
+            ),
             TooltipType.INFO if has_modifications else TooltipType.WARNING,
-            menu
+            menu,
         )
 
-        action_save_all_modified.triggered.connect(
-            self.parent_window.shortcut_save_all_metadata
-        )
+        action_save_all_modified.triggered.connect(self.parent_window.shortcut_save_all_metadata)
 
         menu.addSeparator()
 
@@ -338,9 +365,16 @@ class ContextMenuHandlers:
             rotation_tip = f"Reset rotation to 0 for {sel_count} selected file(s)"
             if sel_count < total_files:
                 rotation_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(action_set_rotation, rotation_tip, TooltipType.INFO, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_set_rotation, rotation_tip, TooltipType.INFO, menu
+            )
         else:
-            TooltipHelper.setup_action_tooltip(action_set_rotation, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_set_rotation,
+                "Select files first (Ctrl+A to select all)",
+                TooltipType.WARNING,
+                menu,
+            )
 
         menu.addSeparator()
 
@@ -362,9 +396,7 @@ class ContextMenuHandlers:
         menu.addSeparator()
 
         # === UNDO/REDO/HISTORY ACTIONS (Global) ===
-        action_undo = create_action_with_shortcut(
-            get_menu_icon("rotate-ccw"), "Undo\tCtrl+Z", None
-        )
+        action_undo = create_action_with_shortcut(get_menu_icon("rotate-ccw"), "Undo\tCtrl+Z", None)
         action_redo = create_action_with_shortcut(
             get_menu_icon("rotate-cw"), "Redo\tCtrl+Shift+Z", None
         )
@@ -417,19 +449,28 @@ class ContextMenuHandlers:
             export_tip = f"Export metadata for {sel_count} selected file(s)"
             if sel_count < total_files:
                 export_tip += f" (Tip: Ctrl+A to export all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(action_export_sel, export_tip, TooltipType.INFO, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_export_sel, export_tip, TooltipType.INFO, menu
+            )
         else:
-            TooltipHelper.setup_action_tooltip(action_export_sel, "Select files first (Ctrl+A to select all)", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_export_sel,
+                "Select files first (Ctrl+A to select all)",
+                TooltipType.WARNING,
+                menu,
+            )
 
         if total_files > 0:
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
                 f"Export metadata for all {total_files} files in folder",
                 TooltipType.INFO,
-                menu
+                menu,
             )
         else:
-            TooltipHelper.setup_action_tooltip(action_export_all, "No files have metadata to export", TooltipType.WARNING, menu)
+            TooltipHelper.setup_action_tooltip(
+                action_export_all, "No files have metadata to export", TooltipType.WARNING, menu
+            )
 
         # Enable/disable logic for non-operation actions
         action_invert.setEnabled(total_files > 0 and has_selection)
@@ -445,9 +486,7 @@ class ContextMenuHandlers:
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
 
         # Show menu and get chosen action
-        action = menu.exec_(
-            self.parent_window.file_table_view.viewport().mapToGlobal(position)
-        )
+        action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
 
         self.parent_window.file_table_view.context_focused_row = None
 
@@ -584,9 +623,7 @@ class ContextMenuHandlers:
                     len(files_without_metadata),
                 )
             else:  # cancel
-                logger.debug(
-                    "[BulkRotation] User cancelled operation", extra={"dev_only": True}
-                )
+                logger.debug("[BulkRotation] User cancelled operation", extra={"dev_only": True})
                 return
 
         try:
@@ -797,9 +834,7 @@ class ContextMenuHandlers:
                                 self.parent_window.metadata_tree_view._current_file_path,
                                 file_item.full_path,
                             ):
-                                self.parent_window.metadata_tree_view.modified_items.add(
-                                    "Rotation"
-                                )
+                                self.parent_window.metadata_tree_view.modified_items.add("Rotation")
 
                     self.parent_window.metadata_tree_view.update_from_parent_selection()
 

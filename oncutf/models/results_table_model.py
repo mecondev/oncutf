@@ -85,4 +85,3 @@ class ResultsTableModel(QAbstractTableModel):
         self.beginResetModel()
         self._model_data = list(data.items())
         self.endResetModel()
-

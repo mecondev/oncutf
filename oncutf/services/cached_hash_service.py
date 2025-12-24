@@ -73,7 +73,7 @@ class CachedHashService:
                 "Cache miss for %s (%s) - returning empty",
                 path.name,
                 algorithm,
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return ""
         except Exception as e:

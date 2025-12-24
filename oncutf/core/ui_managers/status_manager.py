@@ -71,6 +71,7 @@ class StatusEntry:
         """Initialize reset_delay from config if not provided."""
         if self.reset_delay is None:
             from oncutf.config import STATUS_AUTO_RESET_DELAY
+
             self.reset_delay = STATUS_AUTO_RESET_DELAY
 
 
@@ -677,10 +678,10 @@ class StatusManager:
     # =====================================
 
     def _start_auto_reset(self, delay: int) -> None:
-        """Enhanced auto-reset timer with better cleanup."""        # If delay is None or invalid, don't start timer
+        """Enhanced auto-reset timer with better cleanup."""  # If delay is None or invalid, don't start timer
         if delay is None or delay <= 0:
             return
-                    # Stop existing timer if running
+            # Stop existing timer if running
         if self._status_timer:
             self._status_timer.stop()
             self._status_timer.deleteLater()

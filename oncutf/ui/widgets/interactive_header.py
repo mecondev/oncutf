@@ -107,6 +107,7 @@ class InteractiveHeader(QHeaderView):
         menu = QMenu(self)
         # Apply theme styling
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
 

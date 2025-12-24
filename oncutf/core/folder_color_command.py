@@ -82,13 +82,18 @@ class AutoColorByFolderCommand(MetadataCommand):
 
             # Assign colors to all folders
             folder_paths = sorted(folder_groups.keys())  # Sort for deterministic order
-            logger.debug("[AutoColorByFolder] Found %d folders: %s", len(folder_paths), folder_paths)
+            logger.debug(
+                "[AutoColorByFolder] Found %d folders: %s", len(folder_paths), folder_paths
+            )
 
             for folder_path in folder_paths:
                 # Generate unique color for this folder
                 color = self.color_generator.generate_unique_color(existing_colors)
                 if color is None:
-                    logger.warning("[AutoColorByFolder] Failed to generate unique color for folder: %s", folder_path)
+                    logger.warning(
+                        "[AutoColorByFolder] Failed to generate unique color for folder: %s",
+                        folder_path,
+                    )
                     continue
 
                 # Store folder color mapping
@@ -150,7 +155,9 @@ class AutoColorByFolderCommand(MetadataCommand):
                     self.db_manager.set_color_tag(file_item.path, old_color)
 
             self.undone = True
-            logger.info("[AutoColorByFolder] Undone auto-color for %d files", len(self.previous_colors))
+            logger.info(
+                "[AutoColorByFolder] Undone auto-color for %d files", len(self.previous_colors)
+            )
             return True
 
         except Exception:

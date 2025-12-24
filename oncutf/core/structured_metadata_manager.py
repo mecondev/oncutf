@@ -172,7 +172,9 @@ class StructuredMetadataManager:
                 return str(field_value)
 
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error formatting field '%s': %s", field_key, e)
+            logger.error(
+                "[StructuredMetadataManager] Error formatting field '%s': %s", field_key, e
+            )
             return str(field_value)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, dict[str, Any]]:

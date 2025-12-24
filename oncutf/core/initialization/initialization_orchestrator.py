@@ -209,12 +209,9 @@ class InitializationOrchestrator:
             file_load_manager=self.window.file_load_manager,
             file_store=self.window.file_model,  # FileTableModel acts as FileStore
             table_manager=self.window.table_manager,
-            context=self.window.context
+            context=self.window.context,
         )
-        logger.info(
-            "[Phase1A] FileLoadController initialized",
-            extra={"dev_only": True}
-        )
+        logger.info("[Phase1A] FileLoadController initialized", extra={"dev_only": True})
 
         # Phase 1B: Initialize MetadataController (orchestration layer)
         # Get StructuredMetadataManager from UnifiedMetadataManager
@@ -224,16 +221,14 @@ class InitializationOrchestrator:
             structured_metadata_manager=structured_metadata_mgr,
             app_context=self.window.context,
         )
-        logger.info(
-            "[Phase1B] MetadataController initialized",
-            extra={"dev_only": True}
-        )
+        logger.info("[Phase1B] MetadataController initialized", extra={"dev_only": True})
 
         self.window.utility_manager = UtilityManager(self.window)
         self.window.rename_manager = RenameManager(self.window)
 
         # Phase 1C: Initialize RenameController (orchestration layer)
         from oncutf.controllers.rename_controller import RenameController
+
         self.window.rename_controller = RenameController(
             unified_rename_engine=self.window.unified_rename_engine,
             preview_manager=self.window.preview_manager,
@@ -241,23 +236,18 @@ class InitializationOrchestrator:
             file_store=self.window.file_model,  # FileTableModel acts as FileStore
             context=self.window.context,
         )
-        logger.info(
-            "[Phase1C] RenameController initialized",
-            extra={"dev_only": True}
-        )
+        logger.info("[Phase1C] RenameController initialized", extra={"dev_only": True})
 
         # Phase 1D: Initialize MainWindowController (orchestration layer)
         from oncutf.controllers.main_window_controller import MainWindowController
+
         self.window.main_window_controller = MainWindowController(
             app_context=self.window.context,
             file_load_controller=self.window.file_load_controller,
             metadata_controller=self.window.metadata_controller,
             rename_controller=self.window.rename_controller,
         )
-        logger.info(
-            "[Phase1D] MainWindowController initialized",
-            extra={"dev_only": True}
-        )
+        logger.info("[Phase1D] MainWindowController initialized", extra={"dev_only": True})
 
         self.window.rename_manager = RenameManager(self.window)
         self.window.drag_cleanup_manager = DragCleanupManager(self.window)
@@ -342,6 +332,7 @@ class InitializationOrchestrator:
         # Enable updates and finalize layout before show()
         self.window.setUpdatesEnabled(True)
         from oncutf.core.pyqt_imports import QApplication
+
         QApplication.processEvents()
 
         logger.info("Phase 4: Configuration and finalization complete", extra={"dev_only": True})
@@ -353,21 +344,23 @@ class InitializationOrchestrator:
         These managers are created before UI setup and must be available
         to the context before setup_all_ui() is called.
         """
-        self.window.context.register_manager('dialog', self.window.dialog_manager)
-        self.window.context.register_manager('event_handler', self.window.event_handler_manager)
-        self.window.context.register_manager('file_load', self.window.file_load_manager)
-        self.window.context.register_manager('file_validation', self.window.file_validation_manager)
-        self.window.context.register_manager('metadata_staging', self.window.metadata_staging_manager)
-        self.window.context.register_manager('table', self.window.table_manager)
-        self.window.context.register_manager('utility', self.window.utility_manager)
-        self.window.context.register_manager('rename', self.window.rename_manager)
-        self.window.context.register_manager('drag_cleanup', self.window.drag_cleanup_manager)
-        self.window.context.register_manager('shortcut', self.window.shortcut_manager)
-        self.window.context.register_manager('splitter', self.window.splitter_manager)
-        self.window.context.register_manager('initialization', self.window.initialization_manager)
-        self.window.context.register_manager('column', self.window.column_manager)
-        self.window.context.register_manager('config', self.window.config_manager)
-        self.window.context.register_manager('window_config', self.window.window_config_manager)
+        self.window.context.register_manager("dialog", self.window.dialog_manager)
+        self.window.context.register_manager("event_handler", self.window.event_handler_manager)
+        self.window.context.register_manager("file_load", self.window.file_load_manager)
+        self.window.context.register_manager("file_validation", self.window.file_validation_manager)
+        self.window.context.register_manager(
+            "metadata_staging", self.window.metadata_staging_manager
+        )
+        self.window.context.register_manager("table", self.window.table_manager)
+        self.window.context.register_manager("utility", self.window.utility_manager)
+        self.window.context.register_manager("rename", self.window.rename_manager)
+        self.window.context.register_manager("drag_cleanup", self.window.drag_cleanup_manager)
+        self.window.context.register_manager("shortcut", self.window.shortcut_manager)
+        self.window.context.register_manager("splitter", self.window.splitter_manager)
+        self.window.context.register_manager("initialization", self.window.initialization_manager)
+        self.window.context.register_manager("column", self.window.column_manager)
+        self.window.context.register_manager("config", self.window.config_manager)
+        self.window.context.register_manager("window_config", self.window.window_config_manager)
 
         logger.debug("UI managers registered in context", extra={"dev_only": True})
 
@@ -377,9 +370,11 @@ class InitializationOrchestrator:
 
         These managers depend on app_service and other Phase 4 components.
         """
-        self.window.context.register_manager('app_service', self.window.app_service)
-        self.window.context.register_manager('batch', self.window.batch_manager)
-        self.window.context.register_manager('signal_coordinator', self.window.signal_coordinator)
-        self.window.context.register_manager('shutdown_coordinator', self.window.shutdown_coordinator)
+        self.window.context.register_manager("app_service", self.window.app_service)
+        self.window.context.register_manager("batch", self.window.batch_manager)
+        self.window.context.register_manager("signal_coordinator", self.window.signal_coordinator)
+        self.window.context.register_manager(
+            "shutdown_coordinator", self.window.shutdown_coordinator
+        )
 
         logger.debug("Remaining managers registered in context", extra={"dev_only": True})

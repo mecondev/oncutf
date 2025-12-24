@@ -11,6 +11,7 @@ Tests cover:
 - Dialog lifecycle management
 - Parent window property behavior
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -26,9 +27,7 @@ class TestProgressDialogCreation:
 
         handler = MetadataProgressHandler(parent_window=None)
 
-        result = handler.create_metadata_progress_dialog(
-            is_extended=False, cancel_callback=None
-        )
+        result = handler.create_metadata_progress_dialog(is_extended=False, cancel_callback=None)
 
         assert isinstance(result, ProgressDialog)
 
@@ -39,9 +38,7 @@ class TestProgressDialogCreation:
         handler = MetadataProgressHandler(parent_window=None)
         assert handler._metadata_progress_dialog is None
 
-        result = handler.create_metadata_progress_dialog(
-            is_extended=False, cancel_callback=None
-        )
+        result = handler.create_metadata_progress_dialog(is_extended=False, cancel_callback=None)
 
         assert handler._metadata_progress_dialog is result
 

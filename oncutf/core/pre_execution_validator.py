@@ -67,7 +67,7 @@ class PreExecutionValidator:
         logger.info(
             "Pre-execution validation: %d valid, %d issues",
             len(result.valid_files),
-            len(result.issues)
+            len(result.issues),
         )
 
         return result
@@ -91,7 +91,7 @@ class PreExecutionValidator:
                     file=file_item,
                     issue_type=ValidationIssueType.MISSING,
                     message=f"File no longer exists: {file_item.name}",
-                    technical_details=f"Path: {file_path}"
+                    technical_details=f"Path: {file_path}",
                 )
             )
             return issues  # No point in further checks
@@ -103,7 +103,7 @@ class PreExecutionValidator:
                     file=file_item,
                     issue_type=ValidationIssueType.PERMISSION_DENIED,
                     message=f"No write permission: {file_item.name}",
-                    technical_details=f"Path: {file_path}"
+                    technical_details=f"Path: {file_path}",
                 )
             )
 
@@ -120,9 +120,7 @@ class PreExecutionValidator:
 
         return issues
 
-    def _check_file_lock(
-        self, file_path: Path, file_item: FileItem
-    ) -> ValidationIssue | None:
+    def _check_file_lock(self, file_path: Path, file_item: FileItem) -> ValidationIssue | None:
         """Check if file is locked by another process.
 
         Args:
@@ -136,7 +134,7 @@ class PreExecutionValidator:
             # Try opening file for writing (non-destructive)
             # Use 'r+' mode which requires write permission but doesn't truncate
             if file_path.is_file():
-                with file_path.open('r+b'):
+                with file_path.open("r+b"):
                     pass  # Successfully opened for writing
             return None
 
@@ -148,7 +146,7 @@ class PreExecutionValidator:
                     file=file_item,
                     issue_type=ValidationIssueType.LOCKED,
                     message=f"File is locked (open in another program): {file_item.name}",
-                    technical_details=str(e)
+                    technical_details=str(e),
                 )
             else:
                 # On Unix, permission error was already caught
@@ -161,7 +159,7 @@ class PreExecutionValidator:
                 file=file_item,
                 issue_type=ValidationIssueType.INACCESSIBLE,
                 message=f"Cannot access file: {file_item.name}",
-                technical_details=str(e)
+                technical_details=str(e),
             )
 
         except Exception as e:
@@ -171,12 +169,10 @@ class PreExecutionValidator:
                 file=file_item,
                 issue_type=ValidationIssueType.INACCESSIBLE,
                 message=f"Error accessing file: {file_item.name}",
-                technical_details=str(e)
+                technical_details=str(e),
             )
 
-    def _check_file_hash(
-        self, file_path: Path, file_item: FileItem
-    ) -> ValidationIssue | None:
+    def _check_file_hash(self, file_path: Path, file_item: FileItem) -> ValidationIssue | None:
         """Check if file hash matches cached value.
 
         Args:
@@ -186,7 +182,7 @@ class PreExecutionValidator:
         Returns:
             ValidationIssue if hash changed, None otherwise
         """
-        if not hasattr(file_item, 'hash') or not file_item.hash:
+        if not hasattr(file_item, "hash") or not file_item.hash:
             # No cached hash available
             return None
 
@@ -202,7 +198,7 @@ class PreExecutionValidator:
                     file=file_item,
                     issue_type=ValidationIssueType.MODIFIED,
                     message=f"File modified since preview: {file_item.name}",
-                    technical_details=f"Expected: {file_item.hash[:8]}..., Got: {current_hash[:8]}..."
+                    technical_details=f"Expected: {file_item.hash[:8]}..., Got: {current_hash[:8]}...",
                 )
 
         except Exception as e:

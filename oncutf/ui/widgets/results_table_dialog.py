@@ -228,6 +228,7 @@ class ResultsTableDialog(QDialog):
 
         # Runtime overrides from config
         from contextlib import suppress
+
         with suppress(Exception):
             if HASH_LIST_LABEL_BACKGROUND == "":
                 self.title_label.setStyleSheet("background-color: transparent;")
@@ -325,6 +326,7 @@ class ResultsTableDialog(QDialog):
 
         self.resize(width, height)
         from contextlib import suppress
+
         with suppress(Exception):
             self.setMinimumSize(min_w, min_h)
 

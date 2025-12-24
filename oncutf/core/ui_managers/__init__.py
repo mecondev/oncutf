@@ -19,11 +19,11 @@ from .ui_manager import UIManager
 from .window_config_manager import WindowConfigManager
 
 __all__ = [
-    'ColumnManager',
-    'ShortcutManager',
-    'SplitterManager',
-    'StatusManager',
-    'TableManager',
-    'UIManager',
-    'WindowConfigManager',
+    "ColumnManager",
+    "ShortcutManager",
+    "SplitterManager",
+    "StatusManager",
+    "TableManager",
+    "UIManager",
+    "WindowConfigManager",
 ]

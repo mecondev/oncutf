@@ -336,7 +336,9 @@ class UnifiedColumnService:
                     window_config.set(key, value)
 
                 config_manager.mark_dirty()
-                logger.debug("[UnifiedColumnService] Marked settings dirty via window config manager")
+                logger.debug(
+                    "[UnifiedColumnService] Marked settings dirty via window config manager"
+                )
             else:
                 # Fallback to direct JSON saving
                 from oncutf.utils.json_config_manager import load_config, save_config

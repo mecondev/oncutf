@@ -146,14 +146,14 @@ def _count_shallow(folder_path: str, include_hidden: bool) -> FolderCount:
                     logger.debug(
                         "[FolderCounter] Skipped file (extension filter): %s",
                         file,
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
 
     except PermissionError:
         logger.debug(
             "[FolderCounter] Permission denied in shallow scan: %s",
             folder_path,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
     except Exception as e:
         logger.warning("[FolderCounter] Error in shallow scan: %s", e)

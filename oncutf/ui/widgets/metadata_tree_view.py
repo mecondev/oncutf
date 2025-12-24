@@ -134,7 +134,9 @@ class MetadataProxyModel(QSortFilterProxyModel):
         return False
 
 
-class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView):
+class MetadataTreeView(
+    MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView
+):
     """
     Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -255,10 +257,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Connect rebuild signal with QueuedConnection for thread-safe model operations
         # This ensures all rebuilds go through Qt event queue and execute in main thread
-        self.rebuild_requested.connect(
-            self._render_metadata_view_impl,
-            Qt.QueuedConnection
-        )
+        self.rebuild_requested.connect(self._render_metadata_view_impl, Qt.QueuedConnection)
         logger.debug(
             "[MetadataTree] QueuedConnection established for rebuild_requested signal",
             extra={"dev_only": True},
@@ -278,10 +277,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Note: Global undo/redo (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
         # Context menu still provides Undo/Redo actions for mouse-based access.
-        logger.debug(
-            "[MetadataTree] Local shortcuts setup: F5=refresh",
-            extra={"dev_only": True}
-        )
+        logger.debug("[MetadataTree] Local shortcuts setup: F5=refresh", extra={"dev_only": True})
 
     def _lazy_init_controller(self) -> None:
         """Lazy initialization of controller layer (Phase 4 refactoring)."""
@@ -481,8 +477,6 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     def _get_current_selection(self):
         """Get current selection via parent traversal. Delegates to selection handler."""
         return self._selection_handler.get_current_selection()
-
-
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
@@ -865,7 +859,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 )
                 # Clear delegate hover state when model changes to prevent stale index references
                 delegate = self.itemDelegate()
-                if delegate and hasattr(delegate, 'hovered_index'):
+                if delegate and hasattr(delegate, "hovered_index"):
                     delegate.hovered_index = None
                 self.setModel(None)  # Temporarily disconnect view from proxy model
                 self._current_tree_model = None
@@ -899,7 +893,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                 )
                 # Clear delegate hover state when model changes to prevent stale index references
                 delegate = self.itemDelegate()
-                if delegate and hasattr(delegate, 'hovered_index'):
+                if delegate and hasattr(delegate, "hovered_index"):
                     delegate.hovered_index = None
                 self.setModel(None)
                 self.setModel(tree_model)
@@ -959,6 +953,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
             # Get staging manager for modified count
             from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
             staging_manager = get_metadata_staging_manager()
 
             # Count total fields
@@ -1092,6 +1087,7 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Clear all staged changes
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
         staging_manager = get_metadata_staging_manager()
         if staging_manager:
             staging_manager.clear_all()
@@ -1214,7 +1210,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         self, metadata: dict[str, Any] | None, selected_count: int, context: str = ""
     ) -> None:
         """Smart display logic for metadata or empty state. Delegates to selection handler."""
-        self._selection_handler.smart_display_metadata_or_empty_state(metadata, selected_count, context)
+        self._selection_handler.smart_display_metadata_or_empty_state(
+            metadata, selected_count, context
+        )
 
     def get_modified_metadata(self) -> dict[str, str]:
         """

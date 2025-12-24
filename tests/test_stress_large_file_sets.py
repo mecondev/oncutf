@@ -156,9 +156,7 @@ class TestLargeFileSetStress:
             for j in range(50):
                 large_metadata[f"Custom:Field{j}"] = f"Value_{i}_{j}"
 
-            cache.set(
-                file_path=file_path, metadata=large_metadata, is_extended=True
-            )
+            cache.set(file_path=file_path, metadata=large_metadata, is_extended=True)
 
         # Retrieve and verify metadata
         for i, file_path in enumerate(files):

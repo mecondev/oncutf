@@ -12,6 +12,7 @@ Tests cover:
 - Cache filtering logic
 - Single vs multiple file loading paths
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

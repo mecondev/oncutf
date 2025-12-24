@@ -614,7 +614,9 @@ class ColumnManager:
                         anim.setEasingCurve(QEasingCurve.OutCubic)
                         # Keep a reference to prevent garbage collection until finished
                         table_view._horizontal_scroll_anim = anim
-                        anim.finished.connect(lambda: setattr(table_view, "_horizontal_scroll_anim", None))
+                        anim.finished.connect(
+                            lambda: setattr(table_view, "_horizontal_scroll_anim", None)
+                        )
                         anim.start()
                         logger.debug(
                             "[ColumnManager] Animating horizontal scrollbar from %d to %d",

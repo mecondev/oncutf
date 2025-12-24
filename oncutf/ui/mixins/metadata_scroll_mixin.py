@@ -269,4 +269,3 @@ class MetadataScrollMixin:
                 self._pending_restore_timer_id = schedule_ui_update(
                     self._restore_scroll_position_for_current_file, delay=25
                 )
-

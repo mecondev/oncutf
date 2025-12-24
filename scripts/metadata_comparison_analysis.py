@@ -44,7 +44,8 @@ class MetadataComparisonAnalyzer:
             cursor = conn.cursor()
 
             # Create analysis tables
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS file_analysis (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     file_path TEXT NOT NULL,
@@ -52,9 +53,11 @@ class MetadataComparisonAnalyzer:
                     file_size INTEGER,
                     analysis_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metadata_fast (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     file_id INTEGER NOT NULL,
@@ -62,9 +65,11 @@ class MetadataComparisonAnalyzer:
                     key_count INTEGER NOT NULL,
                     FOREIGN KEY (file_id) REFERENCES file_analysis (id)
                 )
-            """)
+            """
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metadata_extended (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     file_id INTEGER NOT NULL,
@@ -72,9 +77,11 @@ class MetadataComparisonAnalyzer:
                     key_count INTEGER NOT NULL,
                     FOREIGN KEY (file_id) REFERENCES file_analysis (id)
                 )
-            """)
+            """
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metadata_comparison (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     file_id INTEGER NOT NULL,
@@ -85,7 +92,8 @@ class MetadataComparisonAnalyzer:
                     analysis_summary TEXT,  -- JSON object
                     FOREIGN KEY (file_id) REFERENCES file_analysis (id)
                 )
-            """)
+            """
+            )
 
             conn.commit()
             logger.info("Analysis database initialized: %s", self.db_path)
@@ -93,20 +101,9 @@ class MetadataComparisonAnalyzer:
     def run_exiftool_fast(self, file_path: str) -> dict[str, Any]:
         """Run exiftool in fast mode (standard extraction)."""
         try:
-            cmd = [
-                'exiftool',
-                '-json',
-                '-charset', 'filename=UTF8',
-                str(file_path)
-            ]
+            cmd = ["exiftool", "-json", "-charset", "filename=UTF8", str(file_path)]
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=30
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=30)
 
             if result.returncode != 0:
                 logger.warning("ExifTool fast mode failed for %s: %s", file_path, result.stderr)
@@ -123,11 +120,12 @@ class MetadataComparisonAnalyzer:
         """Run exiftool in extended mode (-ee flag for embedded metadata)."""
         try:
             cmd = [
-                'exiftool',
-                '-json',
-                '-ee',  # Extract embedded data
-                '-charset', 'filename=UTF8',
-                str(file_path)
+                "exiftool",
+                "-json",
+                "-ee",  # Extract embedded data
+                "-charset",
+                "filename=UTF8",
+                str(file_path),
             ]
 
             result = subprocess.run(
@@ -135,7 +133,7 @@ class MetadataComparisonAnalyzer:
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=60  # Extended mode takes longer
+                timeout=60,  # Extended mode takes longer
             )
 
             if result.returncode != 0:
@@ -179,10 +177,13 @@ class MetadataComparisonAnalyzer:
         # Store file info
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO file_analysis (file_path, file_extension, file_size)
                 VALUES (?, ?, ?)
-            """, (str(file_path), file_extension, file_size))
+            """,
+                (str(file_path), file_extension, file_size),
+            )
             file_id = cursor.lastrowid
             conn.commit()
 
@@ -196,17 +197,23 @@ class MetadataComparisonAnalyzer:
 
             # Store fast metadata
             if fast_metadata:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO metadata_fast (file_id, metadata_json, key_count)
                     VALUES (?, ?, ?)
-                """, (file_id, json.dumps(fast_metadata), len(fast_metadata)))
+                """,
+                    (file_id, json.dumps(fast_metadata), len(fast_metadata)),
+                )
 
             # Store extended metadata
             if extended_metadata:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO metadata_extended (file_id, metadata_json, key_count)
                     VALUES (?, ?, ?)
-                """, (file_id, json.dumps(extended_metadata), len(extended_metadata)))
+                """,
+                    (file_id, json.dumps(extended_metadata), len(extended_metadata)),
+                )
 
             conn.commit()
 
@@ -215,12 +222,14 @@ class MetadataComparisonAnalyzer:
 
         return file_id
 
-    def _compare_metadata(self, file_id: int, fast_data: dict[str, Any], extended_data: dict[str, Any]) -> None:
+    def _compare_metadata(
+        self, file_id: int, fast_data: dict[str, Any], extended_data: dict[str, Any]
+    ) -> None:
         """Compare fast and extended metadata and store analysis."""
 
         # Clean internal markers for comparison
-        fast_clean = {k: v for k, v in fast_data.items() if not k.startswith('__')}
-        extended_clean = {k: v for k, v in extended_data.items() if not k.startswith('__')}
+        fast_clean = {k: v for k, v in fast_data.items() if not k.startswith("__")}
+        extended_clean = {k: v for k, v in extended_data.items() if not k.startswith("__")}
 
         fast_keys = set(fast_clean.keys())
         extended_keys = set(extended_clean.keys())
@@ -237,37 +246,37 @@ class MetadataComparisonAnalyzer:
             extended_val = extended_clean[key]
 
             if fast_val != extended_val:
-                value_differences[key] = {
-                    'fast': fast_val,
-                    'extended': extended_val
-                }
+                value_differences[key] = {"fast": fast_val, "extended": extended_val}
 
         # Create analysis summary
         analysis_summary = {
-            'fast_key_count': len(fast_keys),
-            'extended_key_count': len(extended_keys),
-            'common_key_count': len(common_keys),
-            'fast_only_count': len(fast_only),
-            'extended_only_count': len(extended_only),
-            'value_differences_count': len(value_differences),
-            'identical_keys': len(common_keys) - len(value_differences)
+            "fast_key_count": len(fast_keys),
+            "extended_key_count": len(extended_keys),
+            "common_key_count": len(common_keys),
+            "fast_only_count": len(fast_only),
+            "extended_only_count": len(extended_only),
+            "value_differences_count": len(value_differences),
+            "identical_keys": len(common_keys) - len(value_differences),
         }
 
         # Store comparison results
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO metadata_comparison
                 (file_id, fast_only_keys, extended_only_keys, common_keys, value_differences, analysis_summary)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                file_id,
-                json.dumps(fast_only),
-                json.dumps(extended_only),
-                json.dumps(common_keys),
-                json.dumps(value_differences),
-                json.dumps(analysis_summary)
-            ))
+            """,
+                (
+                    file_id,
+                    json.dumps(fast_only),
+                    json.dumps(extended_only),
+                    json.dumps(common_keys),
+                    json.dumps(value_differences),
+                    json.dumps(analysis_summary),
+                ),
+            )
             conn.commit()
 
     def analyze_all_files(self):
@@ -279,8 +288,7 @@ class MetadataComparisonAnalyzer:
             return
 
         # Get all files (excluding .THM which are thumbnails)
-        files = [f for f in self.test_dir.iterdir()
-                if f.is_file() and f.suffix.lower() != '.thm']
+        files = [f for f in self.test_dir.iterdir() if f.is_file() and f.suffix.lower() != ".thm"]
 
         logger.info("Found %d files to analyze", len(files))
 
@@ -302,7 +310,8 @@ class MetadataComparisonAnalyzer:
             cursor = conn.cursor()
 
             # Get summary statistics
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     fa.file_extension,
                     COUNT(*) as file_count,
@@ -313,22 +322,28 @@ class MetadataComparisonAnalyzer:
                 JOIN metadata_comparison mc ON fa.id = mc.file_id
                 GROUP BY fa.file_extension
                 ORDER BY fa.file_extension
-            """)
+            """
+            )
 
-            print("\n" + "="*80)
+            print("\n" + "=" * 80)
             print("METADATA COMPARISON ANALYSIS REPORT")
-            print("="*80)
+            print("=" * 80)
 
             print("\n SUMMARY BY FILE TYPE:")
-            print(f"{'Extension':<10} {'Files':<6} {'Avg Fast':<10} {'Avg Extended':<12} {'Avg Diff':<10}")
+            print(
+                f"{'Extension':<10} {'Files':<6} {'Avg Fast':<10} {'Avg Extended':<12} {'Avg Diff':<10}"
+            )
             print("-" * 60)
 
             for row in cursor.fetchall():
-                ext = row['file_extension'] or 'none'
-                print(f"{ext:<10} {row['file_count']:<6} {row['avg_fast_keys']:<10.1f} {row['avg_extended_keys']:<12.1f} {row['avg_differences']:<10.1f}")
+                ext = row["file_extension"] or "none"
+                print(
+                    f"{ext:<10} {row['file_count']:<6} {row['avg_fast_keys']:<10.1f} {row['avg_extended_keys']:<12.1f} {row['avg_differences']:<10.1f}"
+                )
 
             # Get detailed analysis for files with significant differences
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     fa.file_path,
                     fa.file_extension,
@@ -339,19 +354,24 @@ class MetadataComparisonAnalyzer:
                 WHERE json_extract(mc.analysis_summary, '$.value_differences_count') > 0
                    OR json_extract(mc.analysis_summary, '$.extended_only_count') > 10
                 ORDER BY json_extract(mc.analysis_summary, '$.value_differences_count') DESC
-            """)
+            """
+            )
 
             print("\n FILES WITH SIGNIFICANT DIFFERENCES:")
 
             for row in cursor.fetchall():
-                filename = Path(row['file_path']).name
-                analysis = json.loads(row['analysis_summary'])
+                filename = Path(row["file_path"]).name
+                analysis = json.loads(row["analysis_summary"])
                 print(f"\n {filename} ({row['file_extension']})")
-                print(f"   Fast: {analysis['fast_key_count']} keys | Extended: {analysis['extended_key_count']} keys")
-                print(f"   Extended-only: {analysis['extended_only_count']} | Value differences: {analysis['value_differences_count']}")
+                print(
+                    f"   Fast: {analysis['fast_key_count']} keys | Extended: {analysis['extended_key_count']} keys"
+                )
+                print(
+                    f"   Extended-only: {analysis['extended_only_count']} | Value differences: {analysis['value_differences_count']}"
+                )
 
-                if analysis['value_differences_count'] > 0:
-                    value_diffs = json.loads(row['value_differences'])
+                if analysis["value_differences_count"] > 0:
+                    value_diffs = json.loads(row["value_differences"])
                     print("   Key differences:")
                     for key, diff in list(value_diffs.items())[:5]:  # Show first 5
                         print(f"     {key}: '{diff['fast']}' vs '{diff['extended']}'")
@@ -359,7 +379,7 @@ class MetadataComparisonAnalyzer:
                         print(f"     ... and {len(value_diffs) - 5} more")
 
         print(f"\n Analysis database saved to: {self.db_path}")
-        print("="*80)
+        print("=" * 80)
 
 
 def main():

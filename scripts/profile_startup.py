@@ -106,6 +106,7 @@ def measure_window_creation() -> tuple[float, float]:
     # Import and create MainWindow
     start_import = time.perf_counter()
     from oncutf.ui.main_window import MainWindow
+
     import_time = time.perf_counter() - start_import
     print(f"  MainWindow import: {import_time*1000:.1f}ms")
 
@@ -140,11 +141,13 @@ def run_full_profile(save_path: Path | None = None) -> None:
 
     # Profile the full startup
     from PyQt5.QtWidgets import QApplication
+
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
 
     from oncutf.ui.main_window import MainWindow
+
     window = MainWindow()
     window.show()
     app.processEvents()
@@ -167,9 +170,7 @@ def run_full_profile(save_path: Path | None = None) -> None:
         print(f"\nProfile data saved to: {save_path}")
 
 
-def print_summary(import_times: dict[str, float],
-                  creation_time: float,
-                  show_time: float) -> None:
+def print_summary(import_times: dict[str, float], creation_time: float, show_time: float) -> None:
     """Print a summary of profiling results."""
     print("\n" + "=" * 50)
     print("STARTUP PROFILING SUMMARY")
@@ -188,9 +189,7 @@ def print_summary(import_times: dict[str, float],
     # Identify slowest imports
     print("\nSlowest imports:")
     sorted_imports = sorted(
-        [(k, v) for k, v in import_times.items() if v > 0],
-        key=lambda x: x[1],
-        reverse=True
+        [(k, v) for k, v in import_times.items() if v > 0], key=lambda x: x[1], reverse=True
     )
     for name, t in sorted_imports[:5]:
         print(f"  {name}: {t*1000:.1f}ms")
@@ -202,18 +201,10 @@ def main() -> int:
     Returns:
         Exit code (0 for success).
     """
-    parser = argparse.ArgumentParser(
-        description="Profile oncutf startup performance"
-    )
+    parser = argparse.ArgumentParser(description="Profile oncutf startup performance")
+    parser.add_argument("--full", action="store_true", help="Run full cProfile analysis")
     parser.add_argument(
-        "--full",
-        action="store_true",
-        help="Run full cProfile analysis"
-    )
-    parser.add_argument(
-        "--save",
-        action="store_true",
-        help="Save profile data to reports/startup_profile.prof"
+        "--save", action="store_true", help="Save profile data to reports/startup_profile.prof"
     )
     args = parser.parse_args()
 

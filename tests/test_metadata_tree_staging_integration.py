@@ -9,9 +9,11 @@ try:
     from oncutf.core.file_store import FileItem
     from oncutf.core.metadata_staging_manager import MetadataStagingManager
     from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+
     PYQT5_AVAILABLE = True
 except ImportError:
     PYQT5_AVAILABLE = False
+
 
 @pytest.mark.skipif(not PYQT5_AVAILABLE, reason="PyQt5 not available")
 @pytest.mark.skipif("CI" in os.environ, reason="GUI tests don't work on CI")
@@ -38,7 +40,10 @@ class TestMetadataTreeStagingIntegration:
 
     def test_staging_integration(self, tree_view, staging_manager):
         # Mock get_metadata_staging_manager to return our instance
-        with patch("oncutf.core.metadata_staging_manager.get_metadata_staging_manager", return_value=staging_manager):
+        with patch(
+            "oncutf.core.metadata_staging_manager.get_metadata_staging_manager",
+            return_value=staging_manager,
+        ):
 
             # Setup file item
             file_item = MagicMock(spec=FileItem)

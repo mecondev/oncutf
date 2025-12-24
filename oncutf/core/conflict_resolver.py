@@ -270,7 +270,9 @@ class ConflictResolver:
 
             # Log conflict resolution
             if result.success:
-                logger.debug("[ConflictResolver] Resolved: %s -> %s", old_path, result.resolved_path)
+                logger.debug(
+                    "[ConflictResolver] Resolved: %s -> %s", old_path, result.resolved_path
+                )
             else:
                 logger.error("[ConflictResolver] Failed: %s -> %s", old_path, result.error_message)
 

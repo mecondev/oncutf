@@ -263,9 +263,9 @@ class MetadataCacheHelper:
         """
         try:
             # Stage change if possible
-            if self.parent_window and hasattr(self.parent_window, 'context'):
+            if self.parent_window and hasattr(self.parent_window, "context"):
                 try:
-                    staging_manager = self.parent_window.context.get_manager('metadata_staging')
+                    staging_manager = self.parent_window.context.get_manager("metadata_staging")
                     staging_manager.stage_change(file_item.full_path, key_path, str(new_value))
                 except KeyError:
                     pass

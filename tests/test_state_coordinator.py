@@ -5,7 +5,6 @@ Author: Michael Economou
 Date: 2025-12-16
 """
 
-
 from oncutf.controllers.state_coordinator import StateCoordinator
 from oncutf.core.file_store import FileStore
 from oncutf.models.file_item import FileItem
@@ -20,6 +19,7 @@ class TestStateCoordinatorCreation:
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
         assert coordinator.get_file_store() is file_store
+
 
 class TestStateCoordinatorFilesChanged:
     """Test StateCoordinator files_changed signal."""
@@ -48,7 +48,6 @@ class TestStateCoordinatorFilesChanged:
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
 
-
         file1 = FileItem.from_path("/test/file1.txt")
         files = [file1]
 
@@ -64,6 +63,7 @@ class TestStateCoordinatorFilesChanged:
 
         assert received_files == files
 
+
 class TestStateCoordinatorSelectionChanged:
     """Test StateCoordinator selection_changed signal."""
 
@@ -71,7 +71,6 @@ class TestStateCoordinatorSelectionChanged:
         """Test that notify_selection_changed emits signal."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
 
         selected = {0, 1, 2}
 
@@ -82,7 +81,6 @@ class TestStateCoordinatorSelectionChanged:
         """Test that selection_changed signal carries correct payload."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
 
         selected = {0, 1, 2}
         received_selection = None
@@ -98,6 +96,7 @@ class TestStateCoordinatorSelectionChanged:
 
         assert received_selection == selected
 
+
 class TestStateCoordinatorPreviewInvalidated:
     """Test StateCoordinator preview_invalidated signal."""
 
@@ -105,7 +104,6 @@ class TestStateCoordinatorPreviewInvalidated:
         """Test that notify_preview_invalidated emits signal."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
 
         with qtbot.waitSignal(coordinator.preview_invalidated, timeout=1000):
             coordinator.notify_preview_invalidated()
@@ -115,13 +113,11 @@ class TestStateCoordinatorPreviewInvalidated:
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
 
-
         file1 = FileItem.from_path("/test/file1.txt")
 
         # Both signals should be emitted
         with qtbot.waitSignals(
-            [coordinator.files_changed, coordinator.preview_invalidated],
-            timeout=1000
+            [coordinator.files_changed, coordinator.preview_invalidated], timeout=1000
         ):
             coordinator.notify_files_changed([file1])
 
@@ -130,13 +126,12 @@ class TestStateCoordinatorPreviewInvalidated:
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
 
-
         # Both metadata_changed and preview_invalidated should emit
         with qtbot.waitSignals(
-            [coordinator.metadata_changed, coordinator.preview_invalidated],
-            timeout=1000
+            [coordinator.metadata_changed, coordinator.preview_invalidated], timeout=1000
         ):
             coordinator.notify_metadata_changed("/test/file1.txt")
+
 
 class TestStateCoordinatorMetadataChanged:
     """Test StateCoordinator metadata_changed signal."""
@@ -146,7 +141,6 @@ class TestStateCoordinatorMetadataChanged:
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
 
-
         with qtbot.waitSignal(coordinator.metadata_changed, timeout=1000):
             coordinator.notify_metadata_changed("/test/file1.txt")
 
@@ -154,7 +148,6 @@ class TestStateCoordinatorMetadataChanged:
         """Test that metadata_changed signal carries correct payload."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
 
         file_path = "/test/file1.txt"
         received_path = None
@@ -170,6 +163,7 @@ class TestStateCoordinatorMetadataChanged:
 
         assert received_path == file_path
 
+
 class TestStateCoordinatorIntegration:
     """Test StateCoordinator integration scenarios."""
 
@@ -177,7 +171,6 @@ class TestStateCoordinatorIntegration:
         """Test that multiple state changes can be coordinated."""
         file_store = FileStore()
         coordinator = StateCoordinator(file_store)
-
 
         file1 = FileItem.from_path("/test/file1.txt")
         files = [file1]

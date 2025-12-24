@@ -140,9 +140,7 @@ class SmartIconCache(QObject):
         self._cleanup_timer.start(300000)  # 5 minutes
 
         logger.info(
-            "[SmartIconCache] Initialized with %d entries, %dMB limit",
-            max_entries,
-            max_memory_mb
+            "[SmartIconCache] Initialized with %d entries, %dMB limit", max_entries, max_memory_mb
         )
 
     def get_icon(self, name: str, size: QSize = None, theme: str = None) -> QIcon:
@@ -206,7 +204,7 @@ class SmartIconCache(QObject):
                         "[SmartIconCache] Loaded icon: %s (%dx%d)",
                         name,
                         size.width(),
-                        size.height()
+                        size.height(),
                     )
                     return icon
 

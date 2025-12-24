@@ -287,9 +287,7 @@ class MetadataOperationsManager:
                 "Metadata editing dialog is not available. Please check the installation.",
             )
         except Exception as e:
-            logger.exception(
-                "[MetadataEdit] Unexpected error during %s editing: %s", field_name, e
-            )
+            logger.exception("[MetadataEdit] Unexpected error during %s editing: %s", field_name, e)
             from oncutf.utils.dialog_utils import show_error_message
 
             show_error_message(
@@ -334,9 +332,7 @@ class MetadataOperationsManager:
             return ""
 
         except Exception as e:
-            logger.debug(
-                "[MetadataEdit] Error getting current %s value: %s", field_name, e
-            )
+            logger.debug("[MetadataEdit] Error getting current %s value: %s", field_name, e)
             return ""
 
     def _get_field_standards_for_reading(self, field_name: str) -> list:
@@ -428,10 +424,10 @@ class MetadataOperationsManager:
                 ],
                 "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
                 "Rotation": [
-                    "EXIF:Orientation",     # Images priority
-                    "QuickTime:Rotation",   # Videos priority
-                    "Rotation",             # Generic fallback
-                    "CameraOrientation",    # Alternative
+                    "EXIF:Orientation",  # Images priority
+                    "QuickTime:Rotation",  # Videos priority
+                    "Rotation",  # Generic fallback
+                    "CameraOrientation",  # Alternative
                 ],
             }
 
@@ -568,10 +564,10 @@ class MetadataOperationsManager:
                 ],
                 "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
                 "Rotation": [
-                    "EXIF:Orientation",     # Images (JPEG, TIFF, etc)
-                    "QuickTime:Rotation",   # Videos (MP4, MOV, etc)
-                    "Rotation",             # Generic/Composite field
-                    "CameraOrientation",    # Alternative field
+                    "EXIF:Orientation",  # Images (JPEG, TIFF, etc)
+                    "QuickTime:Rotation",  # Videos (MP4, MOV, etc)
+                    "Rotation",  # Generic/Composite field
+                    "CameraOrientation",  # Alternative field
                 ],  # Images/Videos with comprehensive format support
             }
 

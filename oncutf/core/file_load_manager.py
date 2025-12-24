@@ -65,7 +65,9 @@ class FileLoadManager:
         """
         logger.info(
             "[FileLoadManager] load_folder: %s (merge=%s, recursive=%s)",
-            folder_path, merge_mode, recursive,
+            folder_path,
+            merge_mode,
+            recursive,
             extra={"dev_only": True},
         )
 
@@ -113,7 +115,9 @@ class FileLoadManager:
         Now uses same fast approach as drag operations for consistency.
         """
         logger.info(
-            "[FileLoadManager] load_files_from_paths: %d paths", len(paths), extra={"dev_only": True}
+            "[FileLoadManager] load_files_from_paths: %d paths",
+            len(paths),
+            extra={"dev_only": True},
         )
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
@@ -160,7 +164,10 @@ class FileLoadManager:
 
         logger.debug(
             "[Drop] Modifiers: ctrl=%s, shift=%s -> recursive=%s, merge=%s",
-            ctrl, shift, recursive, merge_mode,
+            ctrl,
+            shift,
+            recursive,
+            merge_mode,
             extra={"dev_only": True},
         )
 
@@ -227,7 +234,8 @@ class FileLoadManager:
         """Load folder with wait cursor only (fast approach for all operations)."""
         logger.debug(
             "[FileLoadManager] Loading folder with wait cursor: %s (recursive=%s)",
-            folder_path, recursive,
+            folder_path,
+            recursive,
             extra={"dev_only": True},
         )
 
@@ -292,9 +300,9 @@ class FileLoadManager:
 
             if companion_count > 0:
                 logger.info(
-                    "[FileLoadManager] Filtered out %d companion files. "
-                    "Showing %d main files.",
-                    companion_count, len(filtered_files)
+                    "[FileLoadManager] Filtered out %d companion files. " "Showing %d main files.",
+                    companion_count,
+                    len(filtered_files),
                 )
 
             return filtered_files
@@ -317,7 +325,8 @@ class FileLoadManager:
 
         logger.info(
             "[FileLoadManager] Updating UI with %d files (clear=%s)",
-            len(filtered_paths), clear,
+            len(filtered_paths),
+            clear,
             extra={"dev_only": True},
         )
 
@@ -359,7 +368,9 @@ class FileLoadManager:
                     )
 
                     # Set folder path and recursive mode in ApplicationContext (centralized state)
-                    self.parent_window.context.set_current_folder(folder_path, has_subdirectory_files)
+                    self.parent_window.context.set_current_folder(
+                        folder_path, has_subdirectory_files
+                    )
                     logger.info(
                         "[FileLoadManager] Set current_folder_path to: %s",
                         folder_path,
@@ -400,7 +411,9 @@ class FileLoadManager:
             try:
                 self._refresh_ui_after_file_load()
             except Exception:
-                logger.debug("[FileLoadManager] _refresh_ui_after_file_load failed", extra={"dev_only": True})
+                logger.debug(
+                    "[FileLoadManager] _refresh_ui_after_file_load failed", extra={"dev_only": True}
+                )
         else:
             # Add to existing files with duplicate detection
             existing_files = self.parent_window.file_model.files
@@ -430,9 +443,9 @@ class FileLoadManager:
             # Log the results
             if duplicate_count > 0:
                 logger.info(
-                    "[FileLoadManager] Added %d new items, "
-                    "skipped %d duplicates",
-                    len(new_items), duplicate_count
+                    "[FileLoadManager] Added %d new items, " "skipped %d duplicates",
+                    len(new_items),
+                    duplicate_count,
                 )
 
     def _load_files_streaming(self, items: list[FileItem], clear: bool = True) -> None:
@@ -441,9 +454,9 @@ class FileLoadManager:
         Used for large file sets (> 200 files) to prevent UI freeze.
         """
         logger.info(
-            "[FileLoadManager] Starting streaming load for %d files "
-            "(batch_size=%d)",
-            len(items), self._batch_size
+            "[FileLoadManager] Starting streaming load for %d files " "(batch_size=%d)",
+            len(items),
+            self._batch_size,
         )
 
         # Clear existing files if requested
@@ -474,7 +487,10 @@ class FileLoadManager:
             try:
                 self._refresh_ui_after_file_load()
             except Exception:
-                logger.debug("[FileLoadManager] _refresh_ui_after_file_load (stream end) failed", extra={"dev_only": True})
+                logger.debug(
+                    "[FileLoadManager] _refresh_ui_after_file_load (stream end) failed",
+                    extra={"dev_only": True},
+                )
             return
 
         # Take next batch
@@ -492,7 +508,8 @@ class FileLoadManager:
         total_count = loaded_count + len(self._pending_files)
         logger.debug(
             "[FileLoadManager] Streaming progress: %d/%d files",
-            loaded_count, total_count,
+            loaded_count,
+            total_count,
             extra={"dev_only": True},
         )
 
@@ -551,7 +568,10 @@ class FileLoadManager:
                         extra={"dev_only": True},
                     )
                 except Exception:
-                    logger.debug("[FileLoadManager] Failed to set header enabled state", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Failed to set header enabled state",
+                        extra={"dev_only": True},
+                    )
 
             # Hide placeholders in preview tables (if files are loaded)
             if hasattr(self.parent_window, "preview_tables_view"):
@@ -585,7 +605,8 @@ class FileLoadManager:
                     sort_order = self.parent_window.current_sort_order
                     logger.debug(
                         "[FileLoadManager] Restoring sort state: column=%s, order=%s",
-                        sort_column, sort_order,
+                        sort_column,
+                        sort_order,
                         extra={"dev_only": True},
                     )
 

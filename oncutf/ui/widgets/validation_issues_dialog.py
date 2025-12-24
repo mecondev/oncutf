@@ -41,11 +41,7 @@ class ValidationIssuesDialog(QDialog):
     CANCEL_OPERATION = 0
     REFRESH_PREVIEW = 2
 
-    def __init__(
-        self,
-        validation_result: ValidationResult,
-        parent=None
-    ) -> None:
+    def __init__(self, validation_result: ValidationResult, parent=None) -> None:
         """Initialize dialog.
 
         Args:
@@ -84,7 +80,9 @@ class ValidationIssuesDialog(QDialog):
         button_layout.addWidget(skip_button)
 
         refresh_button = QPushButton("Refresh Preview")
-        TooltipHelper.setup_tooltip(refresh_button, "Regenerate preview with current files", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(
+            refresh_button, "Regenerate preview with current files", TooltipType.INFO
+        )
         refresh_button.clicked.connect(lambda: self.done(self.REFRESH_PREVIEW))
         button_layout.addWidget(refresh_button)
 

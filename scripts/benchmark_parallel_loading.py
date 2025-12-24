@@ -18,10 +18,12 @@ from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
 
 
-def create_file_items(directory: str, extensions: list[str] = None, max_files: int = 50) -> list[FileItem]:
+def create_file_items(
+    directory: str, extensions: list[str] = None, max_files: int = 50
+) -> list[FileItem]:
     """Create FileItem objects from files in directory."""
     if extensions is None:
-        extensions = ['.jpg', '.jpeg', '.mp4', '.mov', '.png', '.tif', '.tiff']
+        extensions = [".jpg", ".jpeg", ".mp4", ".mov", ".png", ".tif", ".tiff"]
 
     dir_path = Path(directory)
     if not dir_path.exists():
@@ -30,7 +32,7 @@ def create_file_items(directory: str, extensions: list[str] = None, max_files: i
 
     files = []
     for ext in extensions:
-        files.extend(list(dir_path.rglob(f'*{ext}'))[:max_files // len(extensions)])
+        files.extend(list(dir_path.rglob(f"*{ext}"))[: max_files // len(extensions)])
 
     # Create FileItem objects
     items = []
@@ -71,20 +73,20 @@ def benchmark_parallel(items: list[FileItem], use_extended: bool = False) -> flo
 
     completed = [0]  # Use list to modify in closure
 
-    def on_progress(current: int, total: int, item: FileItem, metadata: dict): # noqa: ARG001
+    def on_progress(current: int, total: int, item: FileItem, metadata: dict):  # noqa: ARG001
         completed[0] = current
         if current % 10 == 0:
             elapsed = time.perf_counter() - start_time
             rate = current / elapsed
             print(f"   Progress: {current}/{total} files ({rate:.1f} files/sec)")
 
-    print(f"\n Parallel Loading ({len(items)} files, extended={use_extended}, workers={loader.max_workers}):")
+    print(
+        f"\n Parallel Loading ({len(items)} files, extended={use_extended}, workers={loader.max_workers}):"
+    )
     start_time = time.perf_counter()
 
     results = loader.load_metadata_parallel(
-        items=items,
-        use_extended=use_extended,
-        progress_callback=on_progress
+        items=items, use_extended=use_extended, progress_callback=on_progress
     )
 
     elapsed = time.perf_counter() - start_time
@@ -102,7 +104,9 @@ def benchmark_parallel(items: list[FileItem], use_extended: bool = False) -> flo
 def main():
     """Main benchmark function."""
     if len(sys.argv) < 2:
-        print("Usage: python scripts/benchmark_parallel_loading.py <directory> [max_files] [extended]")
+        print(
+            "Usage: python scripts/benchmark_parallel_loading.py <directory> [max_files] [extended]"
+        )
         print("\nExamples:")
         print("  python scripts/benchmark_parallel_loading.py /mnt/data_1/C/ExifTest")
         print("  python scripts/benchmark_parallel_loading.py /mnt/data_1/C/ExifTest 30")
@@ -111,7 +115,7 @@ def main():
 
     directory = sys.argv[1]
     max_files = int(sys.argv[2]) if len(sys.argv) > 2 else 50
-    use_extended = len(sys.argv) > 3 and sys.argv[3].lower() == 'extended'
+    use_extended = len(sys.argv) > 3 and sys.argv[3].lower() == "extended"
 
     print(f"\n{'='*80}")
     print(" Parallel Metadata Loading Benchmark")
@@ -143,7 +147,9 @@ def main():
 
     # Summary
     speedup = sequential_time / parallel_time if parallel_time > 0 else 0
-    improvement = ((sequential_time - parallel_time) / sequential_time * 100) if sequential_time > 0 else 0
+    improvement = (
+        ((sequential_time - parallel_time) / sequential_time * 100) if sequential_time > 0 else 0
+    )
 
     print(f"\n{'='*80}")
     print(" SUMMARY")
@@ -167,5 +173,5 @@ def main():
         print("️  Limited improvement (consider file size/network factors)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

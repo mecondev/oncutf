@@ -70,16 +70,22 @@ class TestTooltipHelper:
     def test_tooltip_helper_convenience_methods(self, qtbot):  # noqa: ARG002
         """Test convenience methods for different tooltip types"""
         # Error tooltip
-        TooltipHelper.show_tooltip(self.test_widget, "Error message", TooltipType.ERROR, duration=100)
+        TooltipHelper.show_tooltip(
+            self.test_widget, "Error message", TooltipType.ERROR, duration=100
+        )
 
         # Warning tooltip
-        TooltipHelper.show_tooltip(self.test_widget, "Warning message", TooltipType.WARNING, duration=100)
+        TooltipHelper.show_tooltip(
+            self.test_widget, "Warning message", TooltipType.WARNING, duration=100
+        )
 
         # Info tooltip
         TooltipHelper.show_tooltip(self.test_widget, "Info message", TooltipType.INFO, duration=100)
 
         # Success tooltip
-        TooltipHelper.show_tooltip(self.test_widget, "Success message", TooltipType.SUCCESS, duration=100)
+        TooltipHelper.show_tooltip(
+            self.test_widget, "Success message", TooltipType.SUCCESS, duration=100
+        )
 
         # Should have multiple tooltips tracked (they replace each other for same widget)
         assert len(TooltipHelper._active_tooltips) >= 1
@@ -134,10 +140,7 @@ class TestTooltipHelper:
         try:
             # Should not raise exceptions when showing tooltip
             TooltipHelper.show_tooltip(
-                self.test_widget,
-                "Position test",
-                TooltipType.INFO,
-                duration=100
+                self.test_widget, "Position test", TooltipType.INFO, duration=100
             )
             assert True
         except Exception as e:

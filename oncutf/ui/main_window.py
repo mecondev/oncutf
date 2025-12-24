@@ -140,7 +140,9 @@ class MainWindow(QMainWindow):
 
         For now, this is a stub that logs the action.
         """
-        logger.info("[MainWindow] Global Ctrl+Shift+Z pressed - Unified redo system not yet implemented")
+        logger.info(
+            "[MainWindow] Global Ctrl+Shift+Z pressed - Unified redo system not yet implemented"
+        )
         # TODO: Call unified undo manager when implemented
 
     def show_command_history(self) -> None:
@@ -184,12 +186,15 @@ class MainWindow(QMainWindow):
 
             # Check if we have 2+ folders
             from pathlib import Path
+
             folders = set()
             for file_item in self.file_model.files:
                 folders.add(str(Path(file_item.path).parent))
 
             if len(folders) < 2:
-                logger.info("[MainWindow] AUTO_COLOR: Need at least 2 folders, found %d", len(folders))
+                logger.info(
+                    "[MainWindow] AUTO_COLOR: Need at least 2 folders, found %d", len(folders)
+                )
                 if hasattr(self, "status_manager"):
                     self.status_manager.set_file_operation_status(
                         f"Need 2+ folders (found {len(folders)})", success=False, auto_reset=True
@@ -200,8 +205,7 @@ class MainWindow(QMainWindow):
             from oncutf.core.folder_color_command import AutoColorByFolderCommand
 
             command = AutoColorByFolderCommand(
-                file_items=self.file_model.files,
-                db_manager=self.db_manager
+                file_items=self.file_model.files, db_manager=self.db_manager
             )
 
             files_with_colors = command.get_files_with_existing_colors()
@@ -220,7 +224,7 @@ class MainWindow(QMainWindow):
                     parent=self,
                     title="Files Already Colored",
                     message=message,
-                    buttons=["Proceed", "Skip", "Cancel"]
+                    buttons=["Proceed", "Skip", "Cancel"],
                 )
 
                 # Add custom tooltips to buttons using TooltipHelper
@@ -228,19 +232,19 @@ class MainWindow(QMainWindow):
                     TooltipHelper._setup_persistent_tooltip(
                         dialog._buttons["Proceed"],
                         "Recolor ALL files including those with existing colors",
-                        TooltipType.INFO
+                        TooltipType.INFO,
                     )
                 if "Skip" in dialog._buttons:
                     TooltipHelper._setup_persistent_tooltip(
                         dialog._buttons["Skip"],
                         "Color only files without existing colors",
-                        TooltipType.INFO
+                        TooltipType.INFO,
                     )
                 if "Cancel" in dialog._buttons:
                     TooltipHelper._setup_persistent_tooltip(
                         dialog._buttons["Cancel"],
                         "Cancel the auto-color operation",
-                        TooltipType.WARNING
+                        TooltipType.WARNING,
                     )
 
                 dialog.exec_()
@@ -250,15 +254,18 @@ class MainWindow(QMainWindow):
                     return
 
                 # Set skip_existing based on user choice
-                skip_existing = (dialog.selected == "Skip")
-                logger.info("[MainWindow] AUTO_COLOR: User chose '%s' (skip_existing=%s)",
-                           dialog.selected, skip_existing)
+                skip_existing = dialog.selected == "Skip"
+                logger.info(
+                    "[MainWindow] AUTO_COLOR: User chose '%s' (skip_existing=%s)",
+                    dialog.selected,
+                    skip_existing,
+                )
 
                 # Recreate command with skip_existing based on user choice
                 command = AutoColorByFolderCommand(
                     file_items=self.file_model.files,
                     db_manager=self.db_manager,
-                    skip_existing=skip_existing
+                    skip_existing=skip_existing,
                 )
 
             # Execute command with wait cursor
@@ -278,14 +285,17 @@ class MainWindow(QMainWindow):
                 # Refresh table to show colors
                 self.file_model.layoutChanged.emit()
 
-                logger.info("[MainWindow] AUTO_COLOR: Successfully colored %d files across %d folders",
-                           len(command.new_colors), len(command.folder_colors))
+                logger.info(
+                    "[MainWindow] AUTO_COLOR: Successfully colored %d files across %d folders",
+                    len(command.new_colors),
+                    len(command.folder_colors),
+                )
 
                 if hasattr(self, "status_manager"):
                     self.status_manager.set_file_operation_status(
                         f"Auto-colored {len(command.new_colors)} files from {len(folders)} folders",
                         success=True,
-                        auto_reset=True
+                        auto_reset=True,
                     )
             else:
                 logger.warning("[MainWindow] AUTO_COLOR: Command execution failed")
@@ -425,11 +435,7 @@ class MainWindow(QMainWindow):
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """Load files from paths via FileLoadController."""
         result = self.file_load_controller.load_files(file_paths, clear=clear)
-        logger.debug(
-            "[FileLoadController] load_files result: %s",
-            result,
-            extra={"dev_only": True}
-        )
+        logger.debug("[FileLoadController] load_files result: %s", result, extra={"dev_only": True})
 
     def load_files_from_dropped_items(
         self,
@@ -439,9 +445,7 @@ class MainWindow(QMainWindow):
         """Load files from dropped items via FileLoadController."""
         result = self.file_load_controller.handle_drop(paths, modifiers)
         logger.debug(
-            "[FileLoadController] handle_drop result: %s",
-            result,
-            extra={"dev_only": True}
+            "[FileLoadController] handle_drop result: %s", result, extra={"dev_only": True}
         )
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
@@ -471,8 +475,8 @@ class MainWindow(QMainWindow):
         result = self.metadata_controller.load_metadata(items, use_extended, source)
         logger.debug(
             "[MetadataController] load_metadata result: %s",
-            result.get('success'),
-            extra={"dev_only": True}
+            result.get("success"),
+            extra={"dev_only": True},
         )
 
     # =====================================
@@ -497,17 +501,15 @@ class MainWindow(QMainWindow):
         result = self.metadata_controller.restore_metadata_from_cache()
         logger.debug(
             "[MetadataController] restore_metadata_from_cache result: %s",
-            result.get('success'),
-            extra={"dev_only": True}
+            result.get("success"),
+            extra={"dev_only": True},
         )
 
     def clear_file_table(self, message: str = "No folder selected") -> None:  # noqa: ARG002
         """Clear file table via FileLoadController."""
         success = self.file_load_controller.clear_files()
         logger.debug(
-            "[FileLoadController] clear_files result: %s",
-            success,
-            extra={"dev_only": True}
+            "[FileLoadController] clear_files result: %s", success, extra={"dev_only": True}
         )
 
     def get_common_metadata_fields(self) -> list[str]:
@@ -707,7 +709,9 @@ class MainWindow(QMainWindow):
             old_value: The previous value
             new_value: The new value
         """
-        logger.info("[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value)
+        logger.info(
+            "[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value
+        )
 
         # Use specialized metadata status method if status manager is available
         if hasattr(self, "status_manager") and self.status_manager:
@@ -1008,6 +1012,7 @@ class MainWindow(QMainWindow):
         # Save configuration immediately before shutdown
         try:
             from oncutf.utils.json_config_manager import get_app_config_manager
+
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
         except Exception as e:
@@ -1131,6 +1136,7 @@ class MainWindow(QMainWindow):
             # Additional cleanup
             try:
                 from oncutf.core.application_context import ApplicationContext
+
                 context = ApplicationContext.get_instance()
                 if context:
                     context.cleanup()  # type: ignore[union-attr]
@@ -1198,7 +1204,9 @@ class MainWindow(QMainWindow):
             has_modifications = any(modifications for modifications in all_modifications.values())
 
             if has_modifications:
-                logger.info("[CloseEvent] Found unsaved changes in %d files", len(all_modifications))
+                logger.info(
+                    "[CloseEvent] Found unsaved changes in %d files", len(all_modifications)
+                )
                 for file_path, modifications in all_modifications.items():
                     if modifications:
                         logger.debug("[CloseEvent] - %s: %s", file_path, list(modifications.keys()))

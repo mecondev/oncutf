@@ -51,12 +51,10 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
 
     calls = {"count": 0}
 
-
     class FakeExif:
         @staticmethod
         def force_cleanup_all_exiftool_processes():
             calls["count"] += 1
-
 
     fake_mod.ExifToolWrapper = FakeExif
 

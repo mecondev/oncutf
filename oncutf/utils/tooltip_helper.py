@@ -68,6 +68,7 @@ class WidgetTooltipFilter(QObject):
         """Show the tooltip"""
         try:
             from oncutf.utils.tooltip_helper import TooltipHelper
+
             TooltipHelper._show_persistent_tooltip(self.widget, self.tooltip)
         except RuntimeError:
             # Widget or tooltip has been deleted
@@ -138,9 +139,9 @@ class CustomTooltip(QLabel):
         # Scale with font size: use ~1.0 * line_height for horizontal padding
         horizontal_padding = int(line_height * 1.0)
 
-        if '\n' in text:
+        if "\n" in text:
             # Multi-line: calculate width based on longest line
-            lines = text.split('\n')
+            lines = text.split("\n")
             max_line_width = max(fm.horizontalAdvance(line) for line in lines)
             optimal_width = min(max_line_width + horizontal_padding, 400)
             # Calculate height: (line height + leading) * number of lines + vertical padding
@@ -239,10 +240,7 @@ class ActionTooltipFilter(QObject):
 
         # Create custom tooltip
         self.current_tooltip = CustomTooltip(
-            self.menu.window(),
-            text,
-            tooltip_type,
-            persistent=False
+            self.menu.window(), text, tooltip_type, persistent=False
         )
 
         # Position and show tooltip
@@ -361,6 +359,7 @@ class TooltipHelper:
     def _get_cursor_position(cls, widget: QWidget) -> QPoint:
         """Get cursor position with fallback to widget center"""
         from PyQt5.QtGui import QCursor
+
         try:
             return QCursor.pos()
         except (AttributeError, RuntimeError):
@@ -676,4 +675,3 @@ class TooltipHelper:
         except Exception as e:
             logger.debug("[TooltipHelper] Could not adjust position to screen: %s", e)
             return position
-

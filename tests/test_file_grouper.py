@@ -7,7 +7,6 @@ Date: 2025-12-17
 Tests for file_grouper utility functions.
 """
 
-
 import pytest
 
 from oncutf.models.file_item import FileItem
@@ -99,8 +98,8 @@ class TestFileGrouper:
         assert len(groups) == 3
 
         # Check group types
-        companion_groups = [g for g in groups if g.metadata.get('group_type') == 'companion']
-        standalone_groups = [g for g in groups if g.metadata.get('group_type') == 'standalone']
+        companion_groups = [g for g in groups if g.metadata.get("group_type") == "companion"]
+        standalone_groups = [g for g in groups if g.metadata.get("group_type") == "standalone"]
 
         assert len(companion_groups) == 2  # photo1 pair, photo2 pair
         assert len(standalone_groups) == 1  # photo3.jpg
@@ -177,7 +176,7 @@ class TestFileGrouper:
         groups = group_files_by_companion(sample_companion_files)
 
         # Each companion pair should have indices 0, 1
-        companion_groups = [g for g in groups if g.metadata.get('group_type') == 'companion']
+        companion_groups = [g for g in groups if g.metadata.get("group_type") == "companion"]
 
         for group in companion_groups:
             for file_idx, file_item in enumerate(group.files):
@@ -208,7 +207,7 @@ class TestFileGrouper:
         groups = group_files_by_companion([file_item])
         assert len(groups) == 1
         assert groups[0].file_count == 1
-        assert groups[0].metadata.get('group_type') == 'standalone'
+        assert groups[0].metadata.get("group_type") == "standalone"
 
     def test_companion_patterns_custom(self, tmp_path):
         """Test companion grouping with custom patterns."""
@@ -221,10 +220,7 @@ class TestFileGrouper:
         raw.touch()
         png.touch()
 
-        files = [
-            FileItem.from_path(str(raw)),
-            FileItem.from_path(str(png))
-        ]
+        files = [FileItem.from_path(str(raw)), FileItem.from_path(str(png))]
 
         # Default patterns (RAW + JPG only)
         groups = group_files_by_companion(files)
@@ -232,9 +228,9 @@ class TestFileGrouper:
         assert len(groups) == 2
 
         # Custom patterns (RAW + PNG)
-        custom_patterns = {'.raw': ['.png']}
+        custom_patterns = {".raw": [".png"]}
         groups = group_files_by_companion(files, companion_patterns=custom_patterns)
         # Should be 1 companion group
         assert len(groups) == 1
-        assert groups[0].metadata.get('group_type') == 'companion'
+        assert groups[0].metadata.get("group_type") == "companion"
         assert groups[0].file_count == 2

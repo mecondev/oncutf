@@ -81,12 +81,14 @@ class TestHierarchicalComboBox:
         combo = HierarchicalComboBox()
         # Apply theme to get consistent styling
         if hasattr(combo, "tree_view"):
-            combo.tree_view.setStyleSheet(f"""
+            combo.tree_view.setStyleSheet(
+                f"""
                 QTreeView {{
                     background-color: {theme_engine.get_color("combo_dropdown_background")};
                     color: {theme_engine.get_color("text")};
                 }}
-            """)
+            """
+            )
         return combo
 
     def test_widget_initialization(self, combo_box):

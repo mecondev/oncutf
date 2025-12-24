@@ -12,6 +12,7 @@ Responsibilities:
 - Determine metadata loading mode based on modifier keys
 - Coordinate with metadata loader for actual loading
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -170,13 +171,9 @@ class MetadataShortcutHandler:
             )
             return
 
-        logger.info(
-            "[MetadataShortcut] Loading basic metadata for %d files", len(selected_files)
-        )
+        logger.info("[MetadataShortcut] Loading basic metadata for %d files", len(selected_files))
         # Delegate to manager for actual loading
-        self._manager.load_metadata_for_items(
-            selected_files, use_extended=False, source="shortcut"
-        )
+        self._manager.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
 
     def shortcut_load_extended_metadata(self) -> None:
         """
@@ -188,9 +185,7 @@ class MetadataShortcutHandler:
             return
 
         if self._manager.is_running_metadata_task():
-            logger.warning(
-                "[MetadataShortcut] Metadata scan already running - shortcut ignored."
-            )
+            logger.warning("[MetadataShortcut] Metadata scan already running - shortcut ignored.")
             return
 
         # Use unified selection method
@@ -207,9 +202,7 @@ class MetadataShortcutHandler:
             # All files already have extended metadata
             from oncutf.utils.dialog_utils import show_info_message
 
-            message = (
-                f"All {len(selected_files)} selected file(s) already have extended metadata."
-            )
+            message = f"All {len(selected_files)} selected file(s) already have extended metadata."
             if metadata_analysis.get("extended_tooltip"):
                 message += f"\n\n{metadata_analysis['extended_tooltip']}"
 
@@ -247,9 +240,7 @@ class MetadataShortcutHandler:
             "[MetadataShortcut] Loading extended metadata for %d files", len(selected_files)
         )
         # Delegate to manager for actual loading
-        self._manager.load_metadata_for_items(
-            selected_files, use_extended=True, source="shortcut"
-        )
+        self._manager.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
 
     # =========================================================================
     # Shortcut Methods - All Files
@@ -265,9 +256,7 @@ class MetadataShortcutHandler:
             return
 
         if self._manager.is_running_metadata_task():
-            logger.warning(
-                "[MetadataShortcut] Metadata scan already running - shortcut ignored."
-            )
+            logger.warning("[MetadataShortcut] Metadata scan already running - shortcut ignored.")
             return
 
         all_files = self._get_all_files()
@@ -298,12 +287,8 @@ class MetadataShortcutHandler:
             )
             return
 
-        logger.info(
-            "[MetadataShortcut] Loading basic metadata for all %d files", len(all_files)
-        )
-        self._manager.load_metadata_for_items(
-            all_files, use_extended=False, source="shortcut_all"
-        )
+        logger.info("[MetadataShortcut] Loading basic metadata for all %d files", len(all_files))
+        self._manager.load_metadata_for_items(all_files, use_extended=False, source="shortcut_all")
 
     def shortcut_load_extended_metadata_all(self) -> None:
         """
@@ -315,9 +300,7 @@ class MetadataShortcutHandler:
             return
 
         if self._manager.is_running_metadata_task():
-            logger.warning(
-                "[MetadataShortcut] Metadata scan already running - shortcut ignored."
-            )
+            logger.warning("[MetadataShortcut] Metadata scan already running - shortcut ignored.")
             return
 
         all_files = self._get_all_files()
@@ -352,9 +335,7 @@ class MetadataShortcutHandler:
             "[MetadataShortcut] Loading extended metadata for all %d files",
             len(all_files),
         )
-        self._manager.load_metadata_for_items(
-            all_files, use_extended=True, source="shortcut_all"
-        )
+        self._manager.load_metadata_for_items(all_files, use_extended=True, source="shortcut_all")
 
     # =========================================================================
     # Helper Methods

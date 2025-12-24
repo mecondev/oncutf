@@ -57,6 +57,7 @@ class ParallelMetadataLoader:
         if max_workers is None:
             # ExifTool is I/O-bound, so we can use more workers than CPU count
             import multiprocessing
+
             cpu_count = multiprocessing.cpu_count()
             max_workers = min(cpu_count * 2, 16)  # Cap at 16 to avoid overwhelming system
 
@@ -113,11 +114,7 @@ class ParallelMetadataLoader:
             try:
                 # Submit all tasks
                 future_to_item = {
-                    executor.submit(
-                        self._load_single_file_safe,
-                        item,
-                        use_extended
-                    ): item
+                    executor.submit(self._load_single_file_safe, item, use_extended): item
                     for item in items
                 }
 
@@ -133,7 +130,9 @@ class ParallelMetadataLoader:
 
                     # Check for cancellation
                     if cancellation_check and cancellation_check():
-                        logger.info("[ParallelMetadataLoader] Cancellation detected - stopping immediately")
+                        logger.info(
+                            "[ParallelMetadataLoader] Cancellation detected - stopping immediately"
+                        )
                         self._cancelled = True
 
                         # Terminate all active ExifTool processes
@@ -145,9 +144,14 @@ class ParallelMetadataLoader:
                                         proc.terminate()
                                         terminated_count += 1
                                 except Exception as e:
-                                    logger.debug("[ParallelMetadataLoader] Error terminating process: %s", e)
+                                    logger.debug(
+                                        "[ParallelMetadataLoader] Error terminating process: %s", e
+                                    )
                             if terminated_count > 0:
-                                logger.info("[ParallelMetadataLoader] Terminated %d active processes", terminated_count)
+                                logger.info(
+                                    "[ParallelMetadataLoader] Terminated %d active processes",
+                                    terminated_count,
+                                )
                             self._active_processes.clear()
 
                         # Cancel all pending futures
@@ -156,7 +160,9 @@ class ParallelMetadataLoader:
                             if f.cancel():
                                 cancelled_count += 1
 
-                        logger.info("[ParallelMetadataLoader] Cancelled %d pending tasks", cancelled_count)
+                        logger.info(
+                            "[ParallelMetadataLoader] Cancelled %d pending tasks", cancelled_count
+                        )
 
                         # Shutdown executor without waiting
                         executor.shutdown(wait=False, cancel_futures=True)
@@ -184,7 +190,7 @@ class ParallelMetadataLoader:
                                 completed,
                                 total_files,
                                 item.filename,
-                                extra={"dev_only": True}
+                                extra={"dev_only": True},
                             )
 
                         except Exception as e:
@@ -254,8 +260,7 @@ class ParallelMetadataLoader:
             )
 
             metadata = self._exiftool_wrapper.get_metadata(
-                item.full_path,
-                use_extended=use_extended
+                item.full_path, use_extended=use_extended
             )
 
             if metadata:
@@ -314,11 +319,7 @@ class ParallelMetadataLoader:
 
 
 def update_file_item_metadata(
-    item: FileItem,
-    metadata: dict,
-    parent_window,
-    metadata_cache,
-    use_extended: bool
+    item: FileItem, metadata: dict, parent_window, metadata_cache, use_extended: bool
 ) -> None:
     """
     Update FileItem with metadata and emit UI signals.

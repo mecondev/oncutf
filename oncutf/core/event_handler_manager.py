@@ -12,6 +12,7 @@ This module now delegates to specialized handlers in oncutf/core/events/:
 - UIEventHandlers: header toggle, row clicks, double clicks
 - ContextMenuHandlers: right-click context menu, bulk rotation, analysis
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -115,9 +116,7 @@ class EventHandlerManager:
         """Delegate to UIEventHandlers."""
         self.ui_handlers.on_table_row_clicked(index)
 
-    def handle_file_double_click(
-        self, index: QModelIndex, modifiers: Any = None
-    ) -> None:
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Any = None) -> None:
         """Delegate to UIEventHandlers."""
         self.ui_handlers.handle_file_double_click(index, modifiers)
 
@@ -164,8 +163,6 @@ class EventHandlerManager:
             files=files, extended=extended, scope=scope
         )
 
-    def get_files_without_hashes(
-        self, files: list | None = None, scope: str = "selected"
-    ) -> list:
+    def get_files_without_hashes(self, files: list | None = None, scope: str = "selected") -> list:
         """Delegate to ContextMenuHandlers."""
         return self.context_menu_handlers.get_files_without_hashes(files=files, scope=scope)

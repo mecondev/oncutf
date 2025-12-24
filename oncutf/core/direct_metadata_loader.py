@@ -314,7 +314,9 @@ class DirectMetadataLoader(QObject):
                     self._currently_loading.add(hash_key)
 
         if not files_to_load:
-            logger.info("[DirectMetadataLoader] All %d files already have cached hashes", len(files))
+            logger.info(
+                "[DirectMetadataLoader] All %d files already have cached hashes", len(files)
+            )
             return
 
         logger.info(
@@ -368,7 +370,9 @@ class DirectMetadataLoader(QObject):
             # Fallback to loading without progress dialog
             self._start_hash_loading(files, source)
 
-    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:  # noqa: ARG002
+    def _start_hash_loading_with_progress(
+        self, files: list[FileItem], source: str
+    ) -> None:  # noqa: ARG002
         """Start hash loading with progress tracking."""
         from oncutf.core.hash.hash_worker import HashWorker
 
@@ -500,10 +504,13 @@ class DirectMetadataLoader(QObject):
         if hash_value:
             try:
                 from oncutf.core.hash.hash_manager import HashManager
+
                 hm = HashManager()
                 hm.store_hash(file_path, hash_value)
             except Exception as e:
-                logger.warning("[DirectMetadataLoader] Failed to store hash for %s: %s", file_path, e)
+                logger.warning(
+                    "[DirectMetadataLoader] Failed to store hash for %s: %s", file_path, e
+                )
 
         # Update file table icons
         if self.parent_window and hasattr(self.parent_window, "file_model"):
@@ -588,7 +595,9 @@ class DirectMetadataLoader(QObject):
                 if self._metadata_thread.isRunning():
                     self._metadata_thread.quit()
                     if not self._metadata_thread.wait(3000):  # Wait max 3 seconds
-                        logger.warning("[DirectMetadataLoader] Metadata thread did not stop, terminating...")
+                        logger.warning(
+                            "[DirectMetadataLoader] Metadata thread did not stop, terminating..."
+                        )
                         self._metadata_thread.terminate()
                         if not self._metadata_thread.wait(1000):  # Wait another 1 second
                             logger.error("[DirectMetadataLoader] Metadata thread did not terminate")
@@ -599,7 +608,9 @@ class DirectMetadataLoader(QObject):
                 if self._hash_thread.isRunning():
                     self._hash_thread.quit()
                     if not self._hash_thread.wait(3000):  # Wait max 3 seconds
-                        logger.warning("[DirectMetadataLoader] Hash thread did not stop, terminating...")
+                        logger.warning(
+                            "[DirectMetadataLoader] Hash thread did not stop, terminating..."
+                        )
                         self._hash_thread.terminate()
                         if not self._hash_thread.wait(1000):  # Wait another 1 second
                             logger.error("[DirectMetadataLoader] Hash thread did not terminate")

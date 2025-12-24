@@ -185,9 +185,7 @@ class MetadataTreeDragHandler:
 
         # Trigger metadata loading
         parent_window.load_metadata_for_items(
-            file_items,
-            use_extended=use_extended,
-            source="drag_drop"
+            file_items, use_extended=use_extended, source="drag_drop"
         )
 
     def _perform_drag_cleanup(self, _drag_cancel_filter: Any) -> None:

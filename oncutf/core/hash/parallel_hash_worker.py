@@ -77,6 +77,7 @@ class ParallelHashWorker(QThread):
         # Determine optimal worker count
         if max_workers is None:
             import multiprocessing
+
             cpu_count = multiprocessing.cpu_count()
             # For I/O bound operations (hash calculation), use 2x CPU cores
             # but cap at 8 to avoid excessive overhead
@@ -88,6 +89,7 @@ class ParallelHashWorker(QThread):
 
         # Shared hash manager for cache access
         from oncutf.core.hash.hash_manager import HashManager
+
         self._hash_manager = HashManager()
 
         # Operation configuration
@@ -320,6 +322,7 @@ class ParallelHashWorker(QThread):
             if self._enable_batching:
                 try:
                     from oncutf.core.batch_operations_manager import get_batch_manager
+
                     self._batch_manager = get_batch_manager(self.main_window)
                     logger.debug("[ParallelHashWorker] Batch manager initialized")
                 except Exception as e:
@@ -385,8 +388,7 @@ class ParallelHashWorker(QThread):
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             # Submit all tasks
             future_to_path = {
-                executor.submit(self._process_single_file, path): path
-                for path in file_paths
+                executor.submit(self._process_single_file, path): path for path in file_paths
             }
 
             # Process completed tasks as they finish
@@ -431,9 +433,7 @@ class ParallelHashWorker(QThread):
             else 0
         )
 
-        batch_info = (
-            f", batch ops: {len(self._batch_operations)}" if self._batch_operations else ""
-        )
+        batch_info = f", batch ops: {len(self._batch_operations)}" if self._batch_operations else ""
 
         self.status_updated.emit(
             f"CRC32 checksums calculated for {len(hash_results)} files! "
@@ -461,8 +461,7 @@ class ParallelHashWorker(QThread):
         # Calculate all hashes in parallel
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             future_to_path = {
-                executor.submit(self._process_single_file, path): path
-                for path in file_paths
+                executor.submit(self._process_single_file, path): path for path in file_paths
             }
 
             for future in as_completed(future_to_path):
@@ -521,18 +520,20 @@ class ParallelHashWorker(QThread):
             source_hash = self._hash_manager.calculate_hash(source_path)
             external_hash = self._hash_manager.calculate_hash(external_path)
 
-            return (source_path, {
-                "exists_in_external": True,
-                "source_hash": source_hash,
-                "external_hash": external_hash,
-                "is_same": source_hash == external_hash if source_hash and external_hash else False
-            })
+            return (
+                source_path,
+                {
+                    "exists_in_external": True,
+                    "source_hash": source_hash,
+                    "external_hash": external_hash,
+                    "is_same": (
+                        source_hash == external_hash if source_hash and external_hash else False
+                    ),
+                },
+            )
 
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            future_to_pair = {
-                executor.submit(process_pair, pair): pair
-                for pair in file_pairs
-            }
+            future_to_pair = {executor.submit(process_pair, pair): pair for pair in file_pairs}
 
             for future in as_completed(future_to_pair):
                 if self.is_cancelled():

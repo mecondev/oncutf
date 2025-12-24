@@ -109,9 +109,7 @@ class TestMetadataEntryFieldOperations:
 
     def test_has_field_nested(self):
         """Test has_field with nested field."""
-        entry = MetadataEntry(
-            data={"EXIF": {"DateTimeOriginal": "2024:01:01", "Model": "Camera"}}
-        )
+        entry = MetadataEntry(data={"EXIF": {"DateTimeOriginal": "2024:01:01", "Model": "Camera"}})
 
         assert entry.has_field("EXIF/DateTimeOriginal")
         assert entry.has_field("EXIF/Model")
@@ -128,9 +126,7 @@ class TestMetadataEntryFieldOperations:
 
     def test_get_field_nested(self):
         """Test get_field with nested field."""
-        entry = MetadataEntry(
-            data={"EXIF": {"DateTimeOriginal": "2024:01:01", "Model": "Camera"}}
-        )
+        entry = MetadataEntry(data={"EXIF": {"DateTimeOriginal": "2024:01:01", "Model": "Camera"}})
 
         assert entry.get_field("EXIF/DateTimeOriginal") == "2024:01:01"
         assert entry.get_field("EXIF/Model") == "Camera"
@@ -317,4 +313,3 @@ class TestMetadataEntryEdgeCases:
 
         entry.remove_field("Artist")
         assert entry.modified
-

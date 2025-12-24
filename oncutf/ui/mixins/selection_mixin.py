@@ -484,4 +484,3 @@ class SelectionMixin:
         if hasattr(parent, "sync_selection_to_checked"):
             selection = self.selectionModel().selection()
             parent.sync_selection_to_checked(selection, QItemSelection())
-

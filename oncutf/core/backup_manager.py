@@ -149,9 +149,7 @@ class BackupManager(QObject):
                         old_backup.unlink()
                         logger.info("Removed old backup: %s", old_backup)
                     except Exception as e:
-                        logger.error(
-                            "Failed to remove old backup %s: %s", old_backup, e
-                        )
+                        logger.error("Failed to remove old backup %s: %s", old_backup, e)
 
         except Exception as e:
             logger.error("Error during backup cleanup: %s", e)
@@ -160,9 +158,7 @@ class BackupManager(QObject):
         """Start the periodic backup timer."""
         if self.backup_interval > 0:
             self.backup_timer.start(self.backup_interval * 1000)  # Convert to milliseconds
-            logger.info(
-                "Periodic backups started (every %d seconds)", self.backup_interval
-            )
+            logger.info("Periodic backups started (every %d seconds)", self.backup_interval)
 
     def stop_periodic_backups(self) -> None:
         """Stop the periodic backup timer."""
@@ -215,9 +211,7 @@ class BackupManager(QObject):
 
         old_interval = self.backup_interval
         self.backup_interval = interval
-        logger.info(
-            "Backup interval changed from %ds to %ds", old_interval, interval
-        )
+        logger.info("Backup interval changed from %ds to %ds", old_interval, interval)
 
         # Restart timer with new interval
         if self.periodic_enabled:

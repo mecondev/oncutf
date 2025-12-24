@@ -63,7 +63,7 @@ class CompanionFilesWidget(QWidget):
         TooltipHelper.setup_tooltip(
             self.enabled_checkbox,
             "Automatically detect companion files (like Sony XML metadata files, XMP sidecar files, etc.)",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.enabled_checkbox.toggled.connect(self._on_settings_changed)
         layout.addWidget(self.enabled_checkbox)
@@ -78,16 +78,14 @@ class CompanionFilesWidget(QWidget):
         TooltipHelper.setup_tooltip(
             self.hide_radio,
             "Companion files are detected but not shown in the main file list",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.display_button_group.addButton(self.hide_radio, 0)
         display_layout.addWidget(self.hide_radio)
 
         self.show_radio = QRadioButton("Show companion files in file table")
         TooltipHelper.setup_tooltip(
-            self.show_radio,
-            "Companion files are shown alongside main files",
-            TooltipType.INFO
+            self.show_radio, "Companion files are shown alongside main files", TooltipType.INFO
         )
         self.display_button_group.addButton(self.show_radio, 1)
         display_layout.addWidget(self.show_radio)
@@ -96,7 +94,7 @@ class CompanionFilesWidget(QWidget):
         TooltipHelper.setup_tooltip(
             self.grouped_radio,
             "Companion files are shown but grouped/indented under main files",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.grouped_radio.setEnabled(False)  # Future feature
         self.display_button_group.addButton(self.grouped_radio, 2)
@@ -105,7 +103,9 @@ class CompanionFilesWidget(QWidget):
         # Add note about grouped mode
         grouped_note = QLabel("(Grouped display is planned for a future version)")
         theme = get_theme_manager()
-        grouped_note.setStyleSheet(f"color: {theme.get_color('text_muted')}; font-style: italic; font-size: 10px;")
+        grouped_note.setStyleSheet(
+            f"color: {theme.get_color('text_muted')}; font-style: italic; font-size: 10px;"
+        )
         display_layout.addWidget(grouped_note)
 
         self.display_button_group.buttonToggled.connect(self._on_settings_changed)
@@ -115,11 +115,13 @@ class CompanionFilesWidget(QWidget):
         behavior_group = QGroupBox("Behavior Options")
         behavior_layout = QVBoxLayout(behavior_group)
 
-        self.auto_rename_checkbox = QCheckBox("Automatically rename companion files when main file is renamed")
+        self.auto_rename_checkbox = QCheckBox(
+            "Automatically rename companion files when main file is renamed"
+        )
         TooltipHelper.setup_tooltip(
             self.auto_rename_checkbox,
             "When you rename a video file, its companion XML file will also be renamed to match",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.auto_rename_checkbox.toggled.connect(self._on_settings_changed)
         behavior_layout.addWidget(self.auto_rename_checkbox)
@@ -128,7 +130,7 @@ class CompanionFilesWidget(QWidget):
         TooltipHelper.setup_tooltip(
             self.load_metadata_checkbox,
             "Extract and display metadata from companion files (like Sony XML files) in the metadata view",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.load_metadata_checkbox.toggled.connect(self._on_settings_changed)
         behavior_layout.addWidget(self.load_metadata_checkbox)
@@ -150,7 +152,9 @@ class CompanionFilesWidget(QWidget):
         )
         info_text.setWordWrap(True)
         theme = get_theme_manager()
-        info_text.setStyleSheet(f"color: {theme.get_color('text_muted')}; font-size: 11px; padding: 8px;")
+        info_text.setStyleSheet(
+            f"color: {theme.get_color('text_muted')}; font-size: 11px; padding: 8px;"
+        )
         info_layout.addWidget(info_text)
 
         layout.addWidget(info_group)
@@ -162,7 +166,7 @@ class CompanionFilesWidget(QWidget):
         TooltipHelper.setup_tooltip(
             self.detect_button,
             "Scan the current folder for companion files and show a report",
-            TooltipType.INFO
+            TooltipType.INFO,
         )
         self.detect_button.clicked.connect(self._detect_companion_files)
         buttons_layout.addWidget(self.detect_button)
@@ -206,11 +210,11 @@ class CompanionFilesWidget(QWidget):
             display_mode = CompanionFileMode["GROUPED"]
 
         return {
-            'enabled': self.enabled_checkbox.isChecked(),
-            'show_in_table': self.show_radio.isChecked(),
-            'auto_rename': self.auto_rename_checkbox.isChecked(),
-            'load_metadata': self.load_metadata_checkbox.isChecked(),
-            'display_mode': display_mode
+            "enabled": self.enabled_checkbox.isChecked(),
+            "show_in_table": self.show_radio.isChecked(),
+            "auto_rename": self.auto_rename_checkbox.isChecked(),
+            "load_metadata": self.load_metadata_checkbox.isChecked(),
+            "display_mode": display_mode,
         }
 
     def _update_controls_state(self):
@@ -243,7 +247,7 @@ class CompanionFilesWidget(QWidget):
                 "Companion Files Detection",
                 "This feature will scan the current folder for companion files.\n\n"
                 "To implement this, connect this widget to your main application "
-                "to access the current folder path and file list."
+                "to access the current folder path and file list.",
             )
 
         except Exception as e:
@@ -261,20 +265,20 @@ class CompanionFilesWidget(QWidget):
 
     def apply_settings(self, settings: dict):
         """Apply settings from external source."""
-        if 'enabled' in settings:
-            self.enabled_checkbox.setChecked(settings['enabled'])
+        if "enabled" in settings:
+            self.enabled_checkbox.setChecked(settings["enabled"])
 
-        if 'show_in_table' in settings:
-            if settings['show_in_table']:
+        if "show_in_table" in settings:
+            if settings["show_in_table"]:
                 self.show_radio.setChecked(True)
             else:
                 self.hide_radio.setChecked(True)
 
-        if 'auto_rename' in settings:
-            self.auto_rename_checkbox.setChecked(settings['auto_rename'])
+        if "auto_rename" in settings:
+            self.auto_rename_checkbox.setChecked(settings["auto_rename"])
 
-        if 'load_metadata' in settings:
-            self.load_metadata_checkbox.setChecked(settings['load_metadata'])
+        if "load_metadata" in settings:
+            self.load_metadata_checkbox.setChecked(settings["load_metadata"])
 
         self._update_controls_state()
         logger.debug("[CompanionFilesWidget] Applied settings: %s", settings)

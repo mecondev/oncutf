@@ -256,7 +256,9 @@ def format_progress_message(
     return f"{operation} {current}/{total}"
 
 
-def format_size_progress(processed_bytes: int, total_bytes: int, include_percent: bool = True) -> str:
+def format_size_progress(
+    processed_bytes: int, total_bytes: int, include_percent: bool = True
+) -> str:
     """
     Format size-based progress as human-readable string.
 
@@ -274,6 +276,7 @@ def format_size_progress(processed_bytes: int, total_bytes: int, include_percent
         >>> format_size_progress(1024, 2048, include_percent=False)
         '1.00 KB / 2.00 KB'
     """
+
     def format_bytes(size: int) -> str:
         """Format bytes as human-readable."""
         size_float = float(size)
@@ -296,4 +299,3 @@ def format_size_progress(processed_bytes: int, total_bytes: int, include_percent
 # Type aliases for convenience
 ProgressCallbackType = ProgressCallback
 SizeProgressCallbackType = SizeProgressCallback
-

@@ -53,6 +53,7 @@ OUTPUT_PATH = Path("reports") / "project_context.md"
 
 # --- Helpers ---------------------------------------------------------------
 
+
 def is_ignored_dir(path: Path) -> bool:
     """Return True if this directory should be skipped."""
     return path.name in IGNORED_DIRS
@@ -147,7 +148,10 @@ def group_by_top_level_dir(root: Path, files: list[Path]) -> dict[str, list[Path
 
 # --- Main logic ------------------------------------------------------------
 
-def find_python_files(root: Path, recursive: bool = True, extra_ignored: set[str] | None = None) -> list[Path]:
+
+def find_python_files(
+    root: Path, recursive: bool = True, extra_ignored: set[str] | None = None
+) -> list[Path]:
     """Find Python files under root.
 
     Args:
@@ -223,7 +227,9 @@ def main() -> None:
             f.write(f"_Generated automatically on {now}_\n\n")
             f.write("This file provides a high-level overview of the Python codebase:\n")
             f.write("- per top-level directory\n")
-            f.write("- listing modules, line counts, brief docstrings, and main classes/functions.\n")
+            f.write(
+                "- listing modules, line counts, brief docstrings, and main classes/functions.\n"
+            )
             f.write("Use it as context for AI assistants (VS Code Copilot, etc.).\n\n")
 
             # Overview
@@ -268,7 +274,7 @@ def main() -> None:
                         f.write("- [WARNING] Syntax error while parsing (skipped AST details)\n")
 
                     if module_doc:
-                        f.write(f"- Docstring: _\"{module_doc}\"_\n")
+                        f.write(f'- Docstring: _"{module_doc}"_\n')
 
                     if classes:
                         f.write(f"- Classes: {', '.join(classes)}\n")
@@ -282,6 +288,7 @@ def main() -> None:
     except Exception as e:
         print(f"[generate_project_context] Error writing output file: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -351,7 +358,9 @@ if __name__ == "__main__":
 
     # By default recurse; allow user to disable recursion with --no-recursive
     recursive_flag = not args.no_recursive
-    py_files = find_python_files(project_root, recursive=recursive_flag, extra_ignored=set(args.exclude))
+    py_files = find_python_files(
+        project_root, recursive=recursive_flag, extra_ignored=set(args.exclude)
+    )
     if not py_files:
         print("No Python files found. Are you in the correct project root?")
         sys.exit(0)
@@ -370,7 +379,9 @@ if __name__ == "__main__":
             f.write(f"_Generated automatically on {now}_\n\n")
             f.write("This file provides a high-level overview of the Python codebase:\n")
             f.write("- per top-level directory\n")
-            f.write("- listing modules, line counts, brief docstrings, and main classes/functions.\n")
+            f.write(
+                "- listing modules, line counts, brief docstrings, and main classes/functions.\n"
+            )
             f.write("Use it as context for AI assistants (VS Code Copilot, etc.).\n\n")
 
             for p in py_files:
@@ -411,7 +422,7 @@ if __name__ == "__main__":
                         f.write("- [WARNING] Syntax error while parsing (skipped AST details)\n")
 
                     if module_doc:
-                        f.write(f"- Docstring: _\"{module_doc}\"_\n")
+                        f.write(f'- Docstring: _"{module_doc}"_\n')
 
                     if classes:
                         f.write(f"- Classes: {', '.join(classes)}\n")
@@ -425,4 +436,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[generate_project_context] Error writing output file: {e}")
         import traceback
+
         traceback.print_exc()

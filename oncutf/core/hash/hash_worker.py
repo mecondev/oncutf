@@ -98,7 +98,7 @@ class HashWorker(QThread):
     def enable_batch_operations(self, enabled: bool = True) -> None:
         """Enable or disable batch operations optimization."""
         self._enable_batching = enabled
-        logger.debug("[HashWorker] Batch operations %s", 'enabled' if enabled else 'disabled')
+        logger.debug("[HashWorker] Batch operations %s", "enabled" if enabled else "disabled")
 
     def setup_duplicate_scan(self, file_paths: list[str]) -> None:
         """Configure worker for duplicate detection."""
@@ -459,9 +459,7 @@ class HashWorker(QThread):
             cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(
-                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
-            )
+            logger.info("[HashWorker] Batch operations queued: %d", len(self._batch_operations))
         self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
 
@@ -534,9 +532,7 @@ class HashWorker(QThread):
             cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(
-                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
-            )
+            logger.info("[HashWorker] Batch operations queued: %d", len(self._batch_operations))
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
 
@@ -614,8 +610,6 @@ class HashWorker(QThread):
             cache_hit_rate,
         )
         if self._batch_operations:
-            logger.info(
-                "[HashWorker] Batch operations queued: %d", len(self._batch_operations)
-            )
+            logger.info("[HashWorker] Batch operations queued: %d", len(self._batch_operations))
         self.comparison_result.emit(comparison_results)
         self.finished_processing.emit(True)

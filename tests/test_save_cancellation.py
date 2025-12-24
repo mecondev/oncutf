@@ -79,7 +79,9 @@ class TestSaveCancellation:
         manager.parent_window.status_bar = MagicMock()
 
         # Mock CustomMessageDialog from widgets
-        with patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog") as mock_dialog_class:
+        with patch(
+            "oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"
+        ) as mock_dialog_class:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
             manager._show_save_results(
@@ -104,7 +106,9 @@ class TestSaveCancellation:
 
         # Mock both CustomMessageDialog and QMessageBox
         with (
-            patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog") as mock_custom_dialog,
+            patch(
+                "oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"
+            ) as mock_custom_dialog,
             patch("oncutf.core.pyqt_imports.QMessageBox") as mock_msgbox,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
@@ -158,9 +162,7 @@ class TestSaveCancellation:
         assert manager._save_cancelled is True
 
         # Now test with actual changes to reach reset point
-        mock_staging.get_all_staged_changes.return_value = {
-            "/path/to/file.jpg": {"key": "value"}
-        }
+        mock_staging.get_all_staged_changes.return_value = {"/path/to/file.jpg": {"key": "value"}}
         manager.parent_window.file_model = MagicMock()
         manager.parent_window.file_model.files = []
 

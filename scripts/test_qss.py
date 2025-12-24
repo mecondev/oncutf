@@ -1,4 +1,3 @@
-
 """
 Module: .cache/test_qss.py
 
@@ -29,9 +28,13 @@ class HoverDelegate(QStyledItemDelegate):
         self.hovered_row = row
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
-        if index.row() == self.hovered_row and not option.state & QStyleOptionViewItem.State_Selected:
+        if (
+            index.row() == self.hovered_row
+            and not option.state & QStyleOptionViewItem.State_Selected
+        ):
             painter.fillRect(option.rect, QColor("#2e3b4e"))  # custom hover color
         super().paint(painter, option, index)
+
 
 class HoverTableView(QTableView):
     def __init__(self, parent=None):
@@ -47,6 +50,7 @@ class HoverTableView(QTableView):
             self.hover_delegate.update_hover_row(row)
             self.viewport().update()
         super().mouseMoveEvent(event)
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -68,8 +72,10 @@ class MainWindow(QMainWindow):
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.resize(400, 300)
 
+
 if __name__ == "__main__":
     import sys
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

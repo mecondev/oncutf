@@ -135,9 +135,7 @@ class MetadataTreeController:
 
         return model
 
-    def _create_group_items(
-        self, group_node: TreeNodeData
-    ) -> tuple[QStandardItem, QStandardItem]:
+    def _create_group_items(self, group_node: TreeNodeData) -> tuple[QStandardItem, QStandardItem]:
         """
         Create QStandardItem pair for a group node.
 
@@ -148,9 +146,7 @@ class MetadataTreeController:
             Tuple of (key_item, value_item)
         """
         # Check if group has extended metadata
-        has_extended = any(
-            child.status == FieldStatus.EXTENDED for child in group_node.children
-        )
+        has_extended = any(child.status == FieldStatus.EXTENDED for child in group_node.children)
 
         # Format display name
         if has_extended:
@@ -182,9 +178,7 @@ class MetadataTreeController:
 
         return group_item, value_item
 
-    def _create_field_items(
-        self, field_node: TreeNodeData
-    ) -> tuple[QStandardItem, QStandardItem]:
+    def _create_field_items(self, field_node: TreeNodeData) -> tuple[QStandardItem, QStandardItem]:
         """
         Create QStandardItem pair for a field node.
 

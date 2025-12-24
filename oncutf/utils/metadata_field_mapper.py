@@ -63,7 +63,12 @@ class MetadataFieldMapper:
         # Descriptive metadata (cross-format support)
         "title": ["Title", "ImageDescription", "XMP:Title", "EXIF:ImageDescription"],
         "artist": ["Artist", "Creator", "EXIF:Artist", "XMP:Creator"],
-        "description": ["Description", "ImageDescription", "XMP:Description", "EXIF:ImageDescription"],
+        "description": [
+            "Description",
+            "ImageDescription",
+            "XMP:Description",
+            "EXIF:ImageDescription",
+        ],
         "keywords": ["Keywords", "IPTC:Keywords", "XMP:Keywords"],
         "copyright": ["Copyright", "EXIF:Copyright", "XMP:Rights"],
         # Unique identifiers

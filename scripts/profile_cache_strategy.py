@@ -34,6 +34,7 @@ def analyze_cache_configuration() -> dict[str, any]:
     from oncutf.core.cache.persistent_hash_cache import (
         MAX_MEMORY_CACHE_SIZE as HASH_MAX,
     )
+
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
 
     # Check AdvancedCacheManager
@@ -64,6 +65,7 @@ def estimate_cache_memory() -> dict[str, float]:
 
     import oncutf.core.cache.persistent_metadata_cache as pmc
     from oncutf.core.cache.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
+
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
 
     hash_memory_mb = (HASH_MAX * hash_entry_size) / (1024 * 1024)
@@ -78,7 +80,9 @@ def estimate_cache_memory() -> dict[str, float]:
 
     print("\n💾 Estimated Memory Usage:")
     print(f"  Hash cache:     {hash_memory_mb:>8.2f} MB ({HASH_MAX} × {hash_entry_size}B)")
-    print(f"  Metadata cache: {metadata_memory_mb:>8.2f} MB ({metadata_max} × {metadata_entry_size}B)")
+    print(
+        f"  Metadata cache: {metadata_memory_mb:>8.2f} MB ({metadata_max} × {metadata_entry_size}B)"
+    )
     print(f"  Total:          {total_memory_mb:>8.2f} MB")
 
     return results
@@ -140,6 +144,7 @@ def recommend_optimizations() -> list[str]:
 
     import oncutf.core.cache.persistent_metadata_cache as pmc
     from oncutf.core.cache.persistent_hash_cache import MAX_MEMORY_CACHE_SIZE as HASH_MAX
+
     metadata_max = pmc.MAX_MEMORY_CACHE_SIZE
 
     recs = []
@@ -152,9 +157,7 @@ def recommend_optimizations() -> list[str]:
             f"   Impact: Better hit rate for hash checks, minimal memory increase"
         )
     else:
-        recs.append(
-            f"✅ PersistentHashCache size is optimal ({HASH_MAX} entries)"
-        )
+        recs.append(f"✅ PersistentHashCache size is optimal ({HASH_MAX} entries)")
 
     # Check metadata cache size
     if metadata_max < 1000:
@@ -164,9 +167,7 @@ def recommend_optimizations() -> list[str]:
             f"   Impact: ~1MB additional memory for 2x cache size"
         )
     else:
-        recs.append(
-            f"✅ PersistentMetadataCache size is reasonable ({metadata_max} entries)"
-        )
+        recs.append(f"✅ PersistentMetadataCache size is reasonable ({metadata_max} entries)")
 
     # Cache preloading
     recs.append(
@@ -215,6 +216,7 @@ def main() -> int:
     except Exception as e:
         print(f"\n❌ Error during analysis: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

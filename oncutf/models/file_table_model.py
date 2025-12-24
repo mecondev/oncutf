@@ -308,8 +308,6 @@ class FileTableModel(QAbstractTableModel):
             logger.exception("[FileTableModel] Error in _handle_single_column_removal")
             raise  # Re-raise to trigger fallback
 
-
-
     def get_visible_columns(self) -> list:
         return self._visible_columns.copy()
 
@@ -467,7 +465,7 @@ class FileTableModel(QAbstractTableModel):
         # Create 22x30 pixmap for color swatch (fits 24px row height)
         width = 18
         height = 16
-        pixmap = QPixmap(width+2, height)
+        pixmap = QPixmap(width + 2, height)
         pixmap.fill(QColor(0, 0, 0, 0))  # Transparent background
 
         painter = QPainter(pixmap)
@@ -581,6 +579,7 @@ class FileTableModel(QAbstractTableModel):
                 is_modified = False
                 try:
                     from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+
                     staging_manager = get_metadata_staging_manager()
                     if staging_manager and staging_manager.has_staged_changes(file.full_path):
                         is_modified = True

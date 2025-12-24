@@ -25,7 +25,7 @@ class TestPreExecutionValidator:
     @pytest.fixture
     def temp_file(self):
         """Create a temporary test file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("test content")
             path = f.name
         yield path
@@ -85,8 +85,7 @@ class TestPreExecutionValidator:
         assert result.total_files == 2
 
     @pytest.mark.skipif(
-        platform.system() == "Windows",
-        reason="Permission tests unreliable on Windows"
+        platform.system() == "Windows", reason="Permission tests unreliable on Windows"
     )
     def test_validate_permission_denied(self, validator, temp_file):
         """Test validation detects permission issues."""
@@ -103,14 +102,13 @@ class TestPreExecutionValidator:
         if not result.is_valid:
             assert result.has_critical_issues
             assert any(
-                issue.issue_type == ValidationIssueType.PERMISSION_DENIED
-                for issue in result.issues
+                issue.issue_type == ValidationIssueType.PERMISSION_DENIED for issue in result.issues
             )
 
     def test_validate_locked_file_windows_simulation(self, validator, file_item):
         """Test locked file detection (simulated)."""
         # Mock file opening to simulate lock
-        with patch('pathlib.Path.open', side_effect=PermissionError("File locked")):
+        with patch("pathlib.Path.open", side_effect=PermissionError("File locked")):
             result = validator.validate([file_item])
 
             if platform.system() == "Windows":
@@ -124,8 +122,7 @@ class TestPreExecutionValidator:
 
         # Mock hash calculation to return matching hash
         with patch(
-            'oncutf.core.hash.hash_manager.HashManager.calculate_hash',
-            return_value=file_item.hash
+            "oncutf.core.hash.hash_manager.HashManager.calculate_hash", return_value=file_item.hash
         ):
             result = validator.validate([file_item])
 
@@ -138,8 +135,8 @@ class TestPreExecutionValidator:
 
         # Mock hash calculation to return different hash
         with patch(
-            'oncutf.core.hash.hash_manager.HashManager.calculate_hash',
-            return_value="different_hash_456"
+            "oncutf.core.hash.hash_manager.HashManager.calculate_hash",
+            return_value="different_hash_456",
         ):
             result = validator.validate([file_item])
 
@@ -160,8 +157,12 @@ class TestPreExecutionValidator:
 
         # Mock validation to return mixed results
         with patch.object(
-            validator, '_validate_single_file',
-            side_effect=[[], [MagicMock(issue_type=ValidationIssueType.MISSING, file=missing_item)]]
+            validator,
+            "_validate_single_file",
+            side_effect=[
+                [],
+                [MagicMock(issue_type=ValidationIssueType.MISSING, file=missing_item)],
+            ],
         ):
             result = validator.validate([valid_item, missing_item])
 
@@ -190,7 +191,7 @@ class TestPreExecutionValidator:
     def test_check_file_lock_os_error(self, validator, file_item):
         """Test handling of OS errors during lock check."""
         # Mock to simulate OS error
-        with patch('pathlib.Path.open', side_effect=OSError("Device error")):
+        with patch("pathlib.Path.open", side_effect=OSError("Device error")):
             result = validator.validate([file_item])
 
             assert not result.is_valid

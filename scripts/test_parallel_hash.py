@@ -107,7 +107,9 @@ def test_serial_worker(file_paths: list[str]) -> tuple[float, dict]:
     return elapsed, results
 
 
-def test_parallel_worker(file_paths: list[str], max_workers: int | None = None) -> tuple[float, dict]:
+def test_parallel_worker(
+    file_paths: list[str], max_workers: int | None = None
+) -> tuple[float, dict]:
     """Test parallel hash worker."""
     from core.parallel_hash_worker import ParallelHashWorker
     from core.pyqt_imports import QApplication
@@ -156,9 +158,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Test parallel hash worker performance")
-    parser.add_argument(
-        "--count", type=int, default=50, help="Number of test files (default: 50)"
-    )
+    parser.add_argument("--count", type=int, default=50, help="Number of test files (default: 50)")
     parser.add_argument(
         "--size", type=float, default=2.0, help="Size of each file in MB (default: 2.0)"
     )
@@ -168,9 +168,7 @@ def main():
         default=None,
         help="Number of parallel workers (default: auto-detect)",
     )
-    parser.add_argument(
-        "--skip-serial", action="store_true", help="Skip serial worker test"
-    )
+    parser.add_argument("--skip-serial", action="store_true", help="Skip serial worker test")
 
     args = parser.parse_args()
 
@@ -207,7 +205,9 @@ def main():
             print(f"Serial time:   {serial_time:.2f}s")
             print(f"Parallel time: {parallel_time:.2f}s")
             print(f"Speedup:       {speedup:.2f}x")
-            print(f"Time saved:    {serial_time - parallel_time:.2f}s ({(1 - parallel_time/serial_time) * 100:.1f}%)")
+            print(
+                f"Time saved:    {serial_time - parallel_time:.2f}s ({(1 - parallel_time/serial_time) * 100:.1f}%)"
+            )
 
             # Verify results match
             if serial_results and parallel_results:

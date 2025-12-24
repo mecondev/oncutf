@@ -562,9 +562,7 @@ class DatabaseManager:
                         path_id = self.get_or_create_path_id(file_path)
 
                         # Remove existing metadata
-                        cursor.execute(
-                            "DELETE FROM file_metadata WHERE path_id = ?", (path_id,)
-                        )
+                        cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
 
                         # Store new metadata
                         metadata_type = "extended" if is_extended else "fast"
@@ -1246,7 +1244,16 @@ class DatabaseManager:
                 ("EXIF:ImageWidth", "Image Width", "image", "number", False, True, "pixels", 0),
                 ("EXIF:ImageHeight", "Image Height", "image", "number", False, True, "pixels", 1),
                 ("EXIF:Orientation", "Orientation", "image", "text", True, True, None, 2),
-                ("QuickTime:Rotation", "Rotation (Video)", "video", "text", True, True, "degrees", 2),
+                (
+                    "QuickTime:Rotation",
+                    "Rotation (Video)",
+                    "video",
+                    "text",
+                    True,
+                    True,
+                    "degrees",
+                    2,
+                ),
                 ("EXIF:ColorSpace", "Color Space", "image", "text", False, True, None, 3),
                 (
                     "EXIF:BitsPerSample",

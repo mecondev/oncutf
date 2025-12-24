@@ -293,7 +293,7 @@ select = [
     "PLR", # pylint refactors (complexity, design patterns)
 ]
 ignore = [
-    "E501",   # line too long (handled by black)
+    "E501",   # line too long - mostly comments/docstrings that black can't fix
     "N802",   # function name should be lowercase
     "F403",   # wildcard import
     "F405",   # name may be undefined

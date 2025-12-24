@@ -138,9 +138,7 @@ class HashOperationsManager:
             files_to_check = self.parent_window.file_table_model.get_all_file_items()
 
         if not files_to_check:
-            logger.warning(
-                "[HashManager] No files to check for duplicates (scope: %s)", scope
-            )
+            logger.warning("[HashManager] No files to check for duplicates (scope: %s)", scope)
             return
 
         logger.info(
@@ -210,24 +208,35 @@ class HashOperationsManager:
         # Connect signals for progress updates
         # Use QueuedConnection to ensure UI updates happen in main thread
         from oncutf.core.pyqt_imports import Qt
-        self.hash_worker.progress_updated.connect(self._on_hash_progress_updated, Qt.QueuedConnection)
+
+        self.hash_worker.progress_updated.connect(
+            self._on_hash_progress_updated, Qt.QueuedConnection
+        )
         self.hash_worker.size_progress.connect(self._on_size_progress_updated, Qt.QueuedConnection)
-        self.hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated, Qt.QueuedConnection)
+        self.hash_worker.file_hash_calculated.connect(
+            self._on_file_hash_calculated, Qt.QueuedConnection
+        )
 
         # Connect signals for results
         self.hash_worker.duplicates_found.connect(self._on_duplicates_found, Qt.QueuedConnection)
         self.hash_worker.comparison_result.connect(self._on_comparison_result, Qt.QueuedConnection)
-        self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated, Qt.QueuedConnection)
+        self.hash_worker.checksums_calculated.connect(
+            self._on_checksums_calculated, Qt.QueuedConnection
+        )
 
         # Connect signals for completion/error
         # Use the worker's `finished_processing` (bool) signal so the handler
         # receives the success flag. Do not connect QThread.finished here
         # because it emits no arguments and would cause a TypeError.
         if hasattr(self.hash_worker, "finished_processing"):
-            self.hash_worker.finished_processing.connect(self._on_hash_operation_finished, Qt.QueuedConnection)
+            self.hash_worker.finished_processing.connect(
+                self._on_hash_operation_finished, Qt.QueuedConnection
+            )
         else:
             # Fallback: connect QThread.finished with a wrapper that passes True
-            self.hash_worker.finished.connect(lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection)
+            self.hash_worker.finished.connect(
+                lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection
+            )
 
         self.hash_worker.error_occurred.connect(self._on_hash_operation_error, Qt.QueuedConnection)
 
@@ -255,7 +264,9 @@ class HashOperationsManager:
 
         # Create dialog using the unified ProgressDialog for hash operations
         self.hash_dialog = ProgressDialog.create_hash_dialog(
-            self.parent_window, cancel_callback=self._cancel_hash_operation, use_size_based_progress=True
+            self.parent_window,
+            cancel_callback=self._cancel_hash_operation,
+            use_size_based_progress=True,
         )
         # Initialize count and show
         self.hash_dialog.set_count(0, file_count)
@@ -290,6 +301,7 @@ class HashOperationsManager:
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             self.hash_dialog.set_count(current, total)
             self.hash_dialog.set_status(message)
+
     def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
         """
         Handle file size progress updates (for large files).
@@ -343,22 +355,20 @@ class HashOperationsManager:
             if hash_value:
                 try:
                     from oncutf.core.hash.hash_manager import HashManager
+
                     hm = HashManager()
                     hm.store_hash(file_path, hash_value)
                 except Exception as e:
-                    logger.warning(
-                        "[HashManager] Failed to store hash for %s: %s", file_path, e
-                    )
+                    logger.warning("[HashManager] Failed to store hash for %s: %s", file_path, e)
 
             # Find FileItem in model
-            if (
-                not hasattr(self.parent_window, "file_model")
-                or not self.parent_window.file_model
-            ):
+            if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
                 return
 
             # Update icon using the correct method in FileTableModel
-            if hasattr(self.parent_window, "file_model") and hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
+            if hasattr(self.parent_window, "file_model") and hasattr(
+                self.parent_window.file_model, "refresh_icon_for_file"
+            ):
                 self.parent_window.file_model.refresh_icon_for_file(file_path)
 
                 # Log update
@@ -369,7 +379,9 @@ class HashOperationsManager:
                 )
             else:
                 # Fallback for older model versions or missing attribute
-                logger.warning("[HashManager] FileTableModel (file_model) missing or refresh_icon_for_file method missing")
+                logger.warning(
+                    "[HashManager] FileTableModel (file_model) missing or refresh_icon_for_file method missing"
+                )
 
         except Exception as e:
             logger.warning("[HashWorker] Error updating icon for %s: %s", file_path, e)
@@ -622,9 +634,7 @@ class HashOperationsManager:
         from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog
 
         ResultsTableDialog.show_hash_results(
-            parent=self.parent_window,
-            hash_results=hash_results,
-            was_cancelled=was_cancelled
+            parent=self.parent_window, hash_results=hash_results, was_cancelled=was_cancelled
         )
 
         # Update status
@@ -714,9 +724,7 @@ class HashOperationsManager:
             logger.warning("[HashManager] No files selected for checksum calculation")
             return
 
-        logger.info(
-            "[HashManager] Calculating checksums for %d files", len(selected_files)
-        )
+        logger.info("[HashManager] Calculating checksums for %d files", len(selected_files))
 
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in selected_files]

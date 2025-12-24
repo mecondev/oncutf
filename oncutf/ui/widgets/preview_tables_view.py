@@ -179,6 +179,7 @@ class PreviewTablesView(QWidget):
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set row height from theme engine
             from oncutf.utils.theme_engine import ThemeEngine
+
             theme = ThemeEngine()
             table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore
             # Set minimum height for proper placeholder centering
@@ -207,8 +208,11 @@ class PreviewTablesView(QWidget):
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         # Use same row height from theme engine
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
-        self.icon_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
+        self.icon_table.verticalHeader().setDefaultSectionSize(
+            theme.get_constant("table_row_height")
+        )
 
         tables_layout.addWidget(self.old_names_table)
         tables_layout.addWidget(self.new_names_table)
@@ -251,8 +255,7 @@ class PreviewTablesView(QWidget):
         self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
         self._refresh_shortcut.activated.connect(self._on_refresh_shortcut_pressed)
         logger.debug(
-            "[PreviewTablesView] Local shortcuts setup: F5=refresh",
-            extra={"dev_only": True}
+            "[PreviewTablesView] Local shortcuts setup: F5=refresh", extra={"dev_only": True}
         )
 
     def _on_refresh_requested(self):
@@ -549,7 +552,9 @@ class PreviewTablesView(QWidget):
             if status != "valid":
                 tooltip = self._get_status_tooltip(status, new_name)
                 tooltip_type = TooltipType.ERROR if status == "invalid" else TooltipType.WARNING
-                TooltipHelper.setup_item_tooltip(self.new_names_table, new_name_item, tooltip, tooltip_type)
+                TooltipHelper.setup_item_tooltip(
+                    self.new_names_table, new_name_item, tooltip, tooltip_type
+                )
 
     def _get_status_tooltip(self, status: str, new_name: str) -> str:
         """Get tooltip text for a given status."""
@@ -594,7 +599,8 @@ class PreviewTablesView(QWidget):
 
         # Get muted text color from theme
         from oncutf.utils.theme import get_theme_color
-        muted_color = get_theme_color('text_muted')
+
+        muted_color = get_theme_color("text_muted")
 
         status_msg = (
             f"<img src='{icon_paths['valid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"

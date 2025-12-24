@@ -9,7 +9,6 @@ Acts as the single source of truth for pending modifications, decoupling
 the UI from the save logic.
 """
 
-
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_normalizer import normalize_path
@@ -124,9 +123,7 @@ class MetadataStagingManager(QObject):
         norm_path = normalize_path(file_path)
         if norm_path in self._staged_changes:
             del self._staged_changes[norm_path]
-            logger.debug(
-                "[Staging] Cleared changes for %s", file_path, extra={"dev_only": True}
-            )
+            logger.debug("[Staging] Cleared changes for %s", file_path, extra={"dev_only": True})
             self.file_cleared.emit(file_path)
 
     def clear_all(self) -> None:

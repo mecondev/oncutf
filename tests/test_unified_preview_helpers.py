@@ -237,4 +237,3 @@ class TestIntegrationNamePairGeneration:
 
         final_name = preview_manager._build_final_filename(basename, extension)
         assert final_name == "readme"
-

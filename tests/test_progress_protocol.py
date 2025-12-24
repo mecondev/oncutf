@@ -146,7 +146,7 @@ class TestCreateProgressCallback:
 
         worker = TestWorker()
         # Add worker to qtbot for proper cleanup
-        qtbot.addWidget(worker) if hasattr(worker, 'show') else None
+        qtbot.addWidget(worker) if hasattr(worker, "show") else None
 
         # Track signal emissions
         progress_calls = []
@@ -155,9 +155,7 @@ class TestCreateProgressCallback:
         worker.progress.connect(
             lambda current, total, msg: progress_calls.append((current, total, msg))
         )
-        worker.size_progress.connect(
-            lambda proc, tot, file: size_calls.append((proc, tot, file))
-        )
+        worker.size_progress.connect(lambda proc, tot, file: size_calls.append((proc, tot, file)))
 
         # Create callbacks
         progress_cb, size_cb = create_progress_callback(

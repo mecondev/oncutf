@@ -15,6 +15,7 @@ Responsibilities:
 - Write metadata to disk using ExifTool
 - Progress tracking and UI updates for save operations
 """
+
 from __future__ import annotations
 
 import os
@@ -385,16 +386,12 @@ class MetadataWriter(QObject):
 
         # Update modification time
         with contextlib.suppress(Exception):
-            file_item.date_modified = datetime.fromtimestamp(
-                os.path.getmtime(file_item.full_path)
-            )
+            file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)
 
-    def _update_caches_after_save(
-        self, file_item: Any, saved_metadata: dict[str, Any]
-    ) -> None:
+    def _update_caches_after_save(self, file_item: Any, saved_metadata: dict[str, Any]) -> None:
         """Update UI and persistent caches after save."""
         # Update UI cache
         if hasattr(self.parent_window, "metadata_cache"):
@@ -418,13 +415,9 @@ class MetadataWriter(QObject):
                         self._update_nested_metadata(updated, key_path, new_value)
                     persistent_cache.set(file_item.full_path, updated, is_extended=False)
         except Exception:
-            logger.warning(
-                "[MetadataWriter] Failed to update persistent cache", exc_info=True
-            )
+            logger.warning("[MetadataWriter] Failed to update persistent cache", exc_info=True)
 
-    def _update_nested_metadata(
-        self, data: dict[str, Any], key_path: str, value: str
-    ) -> None:
+    def _update_nested_metadata(self, data: dict[str, Any], key_path: str, value: str) -> None:
         """Update nested metadata structure."""
         if "/" in key_path or ":" in key_path:
             sep = "/" if "/" in key_path else ":"
@@ -447,10 +440,7 @@ class MetadataWriter(QObject):
         if not hasattr(self.parent_window, "metadata_tree_view"):
             return
         tree = self.parent_window.metadata_tree_view
-        if (
-            hasattr(tree, "_current_file_path")
-            and tree._current_file_path == file_item.full_path
-        ):
+        if hasattr(tree, "_current_file_path") and tree._current_file_path == file_item.full_path:
             if hasattr(self.parent_window, "metadata_cache"):
                 entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
                 if entry and hasattr(entry, "data"):
@@ -478,9 +468,7 @@ class MetadataWriter(QObject):
             logger.info("[MetadataWriter] %s", message)
 
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
-                self.parent_window.status_bar.showMessage(
-                    message, 5000 if success_count else 3000
-                )
+                self.parent_window.status_bar.showMessage(message, 5000 if success_count else 3000)
 
             if self.parent_window:
                 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
@@ -506,9 +494,7 @@ class MetadataWriter(QObject):
                 )
 
         if failed_files:
-            logger.warning(
-                "[MetadataWriter] Failed to save %d files", len(failed_files)
-            )
+            logger.warning("[MetadataWriter] Failed to save %d files", len(failed_files))
             if self.parent_window:
                 from oncutf.core.pyqt_imports import QMessageBox
 
@@ -551,6 +537,4 @@ class MetadataWriter(QObject):
                     )
                     command_manager.execute_command(save_command)
         except Exception:
-            logger.warning(
-                "[MetadataWriter] Error recording save command", exc_info=True
-            )
+            logger.warning("[MetadataWriter] Error recording save command", exc_info=True)

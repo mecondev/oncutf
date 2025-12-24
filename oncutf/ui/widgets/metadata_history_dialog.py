@@ -149,8 +149,11 @@ class MetadataHistoryDialog(QDialog):
 
         # Set row height from theme engine
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
-        self.operations_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
+        self.operations_table.verticalHeader().setDefaultSectionSize(
+            theme.get_constant("table_row_height")
+        )
 
         # Connect selection change
         self.operations_table.selectionModel().selectionChanged.connect(self._on_selection_changed)
@@ -163,7 +166,9 @@ class MetadataHistoryDialog(QDialog):
         self.undo_button = QPushButton("Undo")
         self.undo_button.setEnabled(False)
         self.undo_button.clicked.connect(self._undo_selected)
-        TooltipHelper.setup_tooltip(self.undo_button, "Undo the selected operation from history", TooltipType.INFO)
+        TooltipHelper.setup_tooltip(
+            self.undo_button, "Undo the selected operation from history", TooltipType.INFO
+        )
         button_layout.addWidget(self.undo_button)
 
         self.redo_button = QPushButton("Redo")
@@ -268,9 +273,7 @@ class MetadataHistoryDialog(QDialog):
                         "status": (
                             "Can Undo"
                             if cmd["can_undo"]
-                            else "Can Redo"
-                            if cmd["can_redo"]
-                            else "Done"
+                            else "Can Redo" if cmd["can_redo"] else "Done"
                         ),
                         "type": "metadata",
                         "data": cmd,
@@ -334,9 +337,7 @@ class MetadataHistoryDialog(QDialog):
             # Update button states
             self._update_button_states()
 
-            logger.debug(
-                "[MetadataHistoryDialog] Loaded %d operations", len(all_operations)
-            )
+            logger.debug("[MetadataHistoryDialog] Loaded %d operations", len(all_operations))
 
         except Exception as e:
             logger.error("[MetadataHistoryDialog] Error loading history: %s", e)

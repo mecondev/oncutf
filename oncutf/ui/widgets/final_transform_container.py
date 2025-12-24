@@ -125,6 +125,7 @@ class FinalTransformContainer(QWidget):
         self.case_combo.setFixedWidth(116)  # Reduced by 10px
         # Use theme constant for combo height
         from oncutf.utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
         self.case_combo.setFixedHeight(theme.get_constant("combo_height"))
         # Ensure combo box drops down instead of popping up
@@ -150,7 +151,9 @@ class FinalTransformContainer(QWidget):
         self.separator_combo = QComboBox()
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.separator_combo.setFixedWidth(116)  # Reduced by 10px
-        self.separator_combo.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
+        self.separator_combo.setFixedHeight(
+            theme.get_constant("combo_height")
+        )  # Use theme constant
         # Ensure combo box drops down instead of popping up
         self.separator_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)

@@ -52,10 +52,7 @@ _cache_validity_duration = 0.05  # 50ms cache validity
 
 
 def calculate_scope_aware_index(
-    scope: str,
-    global_index: int,
-    file_item,
-    all_files: list | None = None
+    scope: str, global_index: int, file_item, all_files: list | None = None
 ) -> int:
     """
     Calculate the appropriate counter index based on scope.
@@ -91,7 +88,7 @@ def calculate_scope_aware_index(
         if not all_files or not file_item:
             logger.debug(
                 "[PreviewEngine] PER_FOLDER scope but no files list, using global index",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return global_index
 
@@ -108,7 +105,7 @@ def calculate_scope_aware_index(
             "[PreviewEngine] PER_FOLDER scope: folder=%s, folder_index=%d",
             current_folder,
             folder_index,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
         return folder_index
 
@@ -117,7 +114,7 @@ def calculate_scope_aware_index(
         if not all_files or not file_item:
             logger.debug(
                 "[PreviewEngine] PER_EXTENSION scope but no files list, using global index",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return global_index
 
@@ -134,7 +131,7 @@ def calculate_scope_aware_index(
             "[PreviewEngine] PER_EXTENSION scope: ext=%s, ext_index=%d",
             current_ext,
             ext_index,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
         return ext_index
 
@@ -143,7 +140,7 @@ def calculate_scope_aware_index(
         if not all_files or not file_item:
             logger.debug(
                 "[PreviewEngine] PER_FILEGROUP scope but no files list, using global index",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return global_index
 
@@ -157,14 +154,11 @@ def calculate_scope_aware_index(
             logger.debug(
                 "[PreviewEngine] PER_FILEGROUP scope: filegroup_index=%d",
                 filegroup_index,
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             return filegroup_index
         except Exception as e:
-            logger.warning(
-                "[PreviewEngine] Error calculating filegroup index: %s, using global",
-                e
-            )
+            logger.warning("[PreviewEngine] Error calculating filegroup index: %s, using global", e)
             return global_index
 
     # Fallback

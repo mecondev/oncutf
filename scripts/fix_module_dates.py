@@ -22,10 +22,10 @@ from pathlib import Path
 
 # Hardcoded exclusions - files/folders that should not be modified
 EXCLUDED_PATHS = {
-    'scripts/',  # Entire scripts folder (recently added to git)
-    'main.py',  # Written 2025-05-01 but added to git 2025-05-06
-    'main_window.py',  # Written 2025-05-01 but added to git 2025-05-06
-    'config.py',  # Written 2025-05-01 but added to git 2025-05-06
+    "scripts/",  # Entire scripts folder (recently added to git)
+    "main.py",  # Written 2025-05-01 but added to git 2025-05-06
+    "main_window.py",  # Written 2025-05-01 but added to git 2025-05-06
+    "config.py",  # Written 2025-05-01 but added to git 2025-05-06
 }
 
 # Minimum date threshold - all dates before this become 2025-05-01
@@ -45,9 +45,9 @@ def is_excluded(filepath: Path, project_path: Path) -> bool:
 
     # Check if in excluded folder
     for excluded in EXCLUDED_PATHS:
-        if excluded.endswith('/'):
-            folder = excluded.rstrip('/')
-            if filepath_str.startswith(folder + '/'):
+        if excluded.endswith("/"):
+            folder = excluded.rstrip("/")
+            if filepath_str.startswith(folder + "/"):
                 return True
 
     return False
@@ -68,19 +68,19 @@ def get_file_creation_date(filepath: Path) -> str:
     # Try git first (most reliable for tracked files)
     try:
         result = subprocess.run(
-            ['git', 'log', '--follow', '--diff-filter=A', '--format=%aI', '--', str(filepath)],
+            ["git", "log", "--follow", "--diff-filter=A", "--format=%aI", "--", str(filepath)],
             capture_output=True,
             text=True,
             check=False,
-            cwd=filepath.parent
+            cwd=filepath.parent,
         )
 
         if result.returncode == 0 and result.stdout.strip():
             # Parse ISO date: "2025-05-06T19:24:35+03:00"
-            git_dates = result.stdout.strip().split('\n')
+            git_dates = result.stdout.strip().split("\n")
             # Get the LAST date (oldest commit)
-            oldest_date_str = git_dates[-1].split('T')[0]
-            file_date = datetime.strptime(oldest_date_str, '%Y-%m-%d')
+            oldest_date_str = git_dates[-1].split("T")[0]
+            file_date = datetime.strptime(oldest_date_str, "%Y-%m-%d")
     except Exception:
         pass
 
@@ -102,7 +102,7 @@ def get_file_creation_date(filepath: Path) -> str:
     today = datetime.now()
     file_date = min(file_date, today)
 
-    return file_date.strftime('%Y-%m-%d')
+    return file_date.strftime("%Y-%m-%d")
 
 
 def extract_module_docstring(content: str) -> tuple[str | None, int, int]:
@@ -111,13 +111,13 @@ def extract_module_docstring(content: str) -> tuple[str | None, int, int]:
 
     Returns (docstring_text, start_pos, end_pos) or (None, 0, 0) if not found.
     """
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Skip shebang and encoding declarations
     start_line = 0
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if stripped.startswith('#') or stripped == '':
+        if stripped.startswith("#") or stripped == "":
             continue
         start_line = i
         break
@@ -147,8 +147,8 @@ def extract_module_docstring(content: str) -> tuple[str | None, int, int]:
             end_line = i
             break
 
-    docstring_lines = lines[start_line:end_line + 1]
-    docstring = '\n'.join(docstring_lines)
+    docstring_lines = lines[start_line : end_line + 1]
+    docstring = "\n".join(docstring_lines)
     start_pos = content.find(docstring)
     end_pos = start_pos + len(docstring)
 
@@ -171,49 +171,37 @@ def check_and_fix_docstring_date(filepath: Path, project_path: Path, dry_run: bo
     """
     # Check if file is excluded
     if is_excluded(filepath, project_path):
-        return {
-            "changed": False,
-            "message": "File is excluded from date fixing"
-        }
+        return {"changed": False, "message": "File is excluded from date fixing"}
 
     try:
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        return {
-            "changed": False,
-            "error": f"Could not read file: {e}"
-        }
+        return {"changed": False, "error": f"Could not read file: {e}"}
 
     # Get actual file date from git
     git_date_str = get_file_creation_date(filepath)
-    git_date = datetime.strptime(git_date_str, '%Y-%m-%d')
+    git_date = datetime.strptime(git_date_str, "%Y-%m-%d")
 
     # Extract docstring
     docstring, start_pos, end_pos = extract_module_docstring(content)
 
     if not docstring:
-        return {
-            "changed": False,
-            "message": "No module docstring found"
-        }
+        return {"changed": False, "message": "No module docstring found"}
 
     # Check for Author and Date patterns
-    author_pattern = r'Author:\s*(.+?)(?:\n|$)'
-    date_pattern = r'Date:\s*(\d{4}-\d{2}-\d{2})'
+    author_pattern = r"Author:\s*(.+?)(?:\n|$)"
+    date_pattern = r"Date:\s*(\d{4}-\d{2}-\d{2})"
 
     author_match = re.search(author_pattern, docstring)
     date_match = re.search(date_pattern, docstring)
 
     if not author_match or not date_match:
-        return {
-            "changed": False,
-            "message": "Missing Author or Date field in docstring"
-        }
+        return {"changed": False, "message": "Missing Author or Date field in docstring"}
 
     current_author = author_match.group(1).strip()
     current_date_str = date_match.group(1)
-    current_date = datetime.strptime(current_date_str, '%Y-%m-%d')
+    current_date = datetime.strptime(current_date_str, "%Y-%m-%d")
 
     # Check Author
     needs_author_fix = current_author != "Michael Economou"
@@ -235,7 +223,7 @@ def check_and_fix_docstring_date(filepath: Path, project_path: Path, dry_run: bo
     if not needs_author_fix and not needs_date_fix:
         return {
             "changed": False,
-            "message": f"Already correct: Author={current_author}, Date={current_date_str}"
+            "message": f"Already correct: Author={current_author}, Date={current_date_str}",
         }
 
     # Need to fix author and/or date
@@ -243,58 +231,52 @@ def check_and_fix_docstring_date(filepath: Path, project_path: Path, dry_run: bo
     changes = []
 
     if needs_author_fix:
-        new_docstring = re.sub(
-            author_pattern,
-            'Author: Michael Economou\n',
-            new_docstring
-        )
+        new_docstring = re.sub(author_pattern, "Author: Michael Economou\n", new_docstring)
         changes.append(f"Author: {current_author} -> Michael Economou")
 
     if needs_date_fix:
-        new_date_str = new_date.strftime('%Y-%m-%d')
-        new_docstring = re.sub(
-            date_pattern,
-            f'Date: {new_date_str}',
-            new_docstring
-        )
+        new_date_str = new_date.strftime("%Y-%m-%d")
+        new_docstring = re.sub(date_pattern, f"Date: {new_date_str}", new_docstring)
         changes.append(f"Date: {current_date_str} -> {new_date_str}")
 
     change_msg = ", ".join(changes)
 
     if dry_run:
-        new_date_str = new_date.strftime('%Y-%m-%d') if needs_date_fix else current_date_str
+        new_date_str = new_date.strftime("%Y-%m-%d") if needs_date_fix else current_date_str
         return {
             "changed": True,
             "dry_run": True,
             "old_author": current_author if needs_author_fix else None,
             "old_date": current_date_str if needs_date_fix else None,
             "new_date": new_date_str if needs_date_fix else None,
-            "message": change_msg
+            "message": change_msg,
         }
 
     # Apply the fix
     new_content = content[:start_pos] + new_docstring + content[end_pos:]
 
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(new_content)
 
-        new_date_str = new_date.strftime('%Y-%m-%d')
+        new_date_str = new_date.strftime("%Y-%m-%d")
         return {
             "changed": True,
             "dry_run": False,
             "old_date": current_date_str,
             "new_date": new_date_str,
-            "message": f"Updated: {current_date_str} -> {new_date_str}"
+            "message": f"Updated: {current_date_str} -> {new_date_str}",
         }
     except Exception as e:
-        return {
-            "changed": False,
-            "error": f"Could not write file: {e}"
-        }
+        return {"changed": False, "error": f"Could not write file: {e}"}
 
 
-def process_project(project_path: Path, dry_run: bool = True, verbose: bool = False, exclude_files: list[str] | None = None):
+def process_project(
+    project_path: Path,
+    dry_run: bool = True,
+    verbose: bool = False,
+    exclude_files: list[str] | None = None,
+):
     """Process all Python files in the project."""
     if exclude_files is None:
         exclude_files = []
@@ -314,7 +296,7 @@ def process_project(project_path: Path, dry_run: bool = True, verbose: bool = Fa
 
     for root, _, files in os.walk(project_path):
         for filename in files:
-            if not filename.endswith('.py'):
+            if not filename.endswith(".py"):
                 continue
 
             filepath = Path(root) / filename
@@ -335,11 +317,13 @@ def process_project(project_path: Path, dry_run: bool = True, verbose: bool = Fa
                     print(f"  {result['error']}")
             elif result.get("changed"):
                 files_changed += 1
-                changes.append({
-                    "path": relative_path,
-                    "old_date": result.get("old_date"),
-                    "new_date": result.get("new_date")
-                })
+                changes.append(
+                    {
+                        "path": relative_path,
+                        "old_date": result.get("old_date"),
+                        "new_date": result.get("new_date"),
+                    }
+                )
                 print(f"{'WOULD CHANGE' if dry_run else 'CHANGED'}: {relative_path}")
                 print(f"  {result['message']}")
             else:
@@ -374,34 +358,27 @@ Examples:
   %(prog)s -p .                    # Dry-run on current directory
   %(prog)s -p /path/to/project -f  # Apply changes
   %(prog)s -p . -f -v              # Apply with verbose output
-        """
+        """,
     )
 
     parser.add_argument(
-        '-p', '--project',
+        "-p", "--project", type=str, required=True, help="Path to project directory"
+    )
+
+    parser.add_argument(
+        "-f", "--fix", action="store_true", help="Apply changes (default: dry-run mode)"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show all files including skipped ones"
+    )
+
+    parser.add_argument(
+        "--exclude",
         type=str,
-        required=True,
-        help='Path to project directory'
-    )
-
-    parser.add_argument(
-        '-f', '--fix',
-        action='store_true',
-        help='Apply changes (default: dry-run mode)'
-    )
-
-    parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Show all files including skipped ones'
-    )
-
-    parser.add_argument(
-        '--exclude',
-        type=str,
-        action='append',
+        action="append",
         default=[],
-        help='Exclude specific files (can be used multiple times)'
+        help="Exclude specific files (can be used multiple times)",
     )
 
     args = parser.parse_args()
@@ -416,10 +393,12 @@ Examples:
         print(f"ERROR: Path is not a directory: {project_path}")
         return 1
 
-    process_project(project_path, dry_run=not args.fix, verbose=args.verbose, exclude_files=args.exclude)
+    process_project(
+        project_path, dry_run=not args.fix, verbose=args.verbose, exclude_files=args.exclude
+    )
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

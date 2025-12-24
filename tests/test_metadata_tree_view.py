@@ -56,12 +56,14 @@ class TestMetadataTreeView:
     def tree_view(self, qapp, theme_engine, qtbot):  # noqa: ARG002
         """Create a MetadataTreeView for testing."""
         tree = MetadataTreeView()
-        tree.setStyleSheet(f"""
+        tree.setStyleSheet(
+            f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
                 color: {theme_engine.get_color("text")};
             }}
-        """)
+        """
+        )
         qtbot.addWidget(tree)
         yield tree
 
@@ -153,6 +155,7 @@ class TestMetadataTreeViewLogic:
 
     def test_tree_item_creation_logic(self):
         """Test the logic for creating tree items."""
+
         # Mock the tree item creation without GUI
         def create_tree_item(key, value):
             return {"key": key, "value": str(value), "type": type(value).__name__}

@@ -54,7 +54,9 @@ class MetadataCommandManager(QObject):
         config_max_history: Any = UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
         config_grouping_timeout: Any = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
 
-        self.max_history = int(max_history) if max_history is not None else int(cast("int", config_max_history))
+        self.max_history = (
+            int(max_history) if max_history is not None else int(cast("int", config_max_history))
+        )
         self.grouping_timeout = float(cast("float", config_grouping_timeout))
 
         # Command stacks
