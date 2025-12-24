@@ -9,6 +9,7 @@ with case-sensitive or case-insensitive matching.
 """
 
 from __future__ import annotations
+from typing import Any
 
 import logging
 import re
@@ -233,7 +234,7 @@ class TextRemovalModule(BaseRenameModule):
         """Handle case sensitivity changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
-    def get_data(self) -> dict:
+    def get_data(self) -> dict[str, Any]:
         """Get the current configuration data.
 
         Returns:
@@ -246,7 +247,7 @@ class TextRemovalModule(BaseRenameModule):
             "case_sensitive": self.case_sensitive_check.isChecked(),
         }
 
-    def set_data(self, data: dict):
+    def set_data(self, data: dict[str, Any]):
         """Set the configuration data.
 
         Args:
@@ -353,7 +354,7 @@ class TextRemovalModule(BaseRenameModule):
         return "".join(result_parts)
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
+    def is_effective(data: dict[str, Any]) -> bool:
         """Check if this module configuration is effective.
 
         Args:
@@ -367,7 +368,7 @@ class TextRemovalModule(BaseRenameModule):
         return len(text_to_remove) > 0
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, _index: int, _metadata_cache=None) -> str:
+    def apply_from_data(data: dict[str, Any], file_item, _index: int, _metadata_cache=None) -> str:
         """Apply text removal to a filename based on configuration data.
 
         Args:

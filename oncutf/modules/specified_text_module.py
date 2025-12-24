@@ -10,6 +10,7 @@ Used in the oncutf application as one of the modular renaming components.
 """
 
 import os
+from typing import Any
 
 from oncutf.core.pyqt_imports import (
     QAction,
@@ -72,7 +73,7 @@ class SpecifiedTextModule(BaseRenameModule):
         # Track validation state
         self._is_input_valid = True
 
-    def set_current_file(self, file_item) -> None:
+    def set_current_file(self, file_item: Any) -> None:
         """Set the current file item for the "Original Name" context menu option.
 
         Args:
@@ -81,7 +82,7 @@ class SpecifiedTextModule(BaseRenameModule):
         """
         self._current_file = file_item
 
-    def _show_context_menu(self, position) -> None:
+    def _show_context_menu(self, position: Any) -> None:
         """Show custom context menu for the text input field.
 
         Args:
@@ -278,7 +279,7 @@ class SpecifiedTextModule(BaseRenameModule):
         # Emit update signal so preview can refresh
         self.updated.emit(self)
 
-    def get_data(self) -> dict:
+    def get_data(self) -> dict[str, Any]:
         """Retrieves the current configuration of the specified text module.
 
         :return: A dictionary containing the type and the user-specified text.
@@ -291,15 +292,15 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.clear()
         self.text_input.reset_validation_state()  # Reset ValidatedLineEdit state
 
-    def apply(self, file_item, index=0, metadata_cache=None) -> str:
+    def apply(self, file_item: Any, index: int = 0, metadata_cache: dict[str, Any] | None = None) -> str:
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
     def apply_from_data(
-        data: dict,
-        _file_item,
+        data: dict[str, Any],
+        _file_item: Any,
         _index: int = 0,
-        _metadata_cache: dict | None = None,
+        _metadata_cache: dict[str, Any] | None = None,
     ) -> str:
         logger.debug(
             "[SpecifiedTextModule] apply_from_data called with data: %s",
@@ -327,5 +328,5 @@ class SpecifiedTextModule(BaseRenameModule):
         return text
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
+    def is_effective(data: dict[str, Any]) -> bool:
         return bool(data.get("text", ""))
