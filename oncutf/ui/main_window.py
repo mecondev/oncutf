@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         self._preview_debounce_timer: QTimer | None = None
         self._preview_pending = False
 
-        # Use InitializationOrchestrator for structured initialization (Phase 4)
+        # Use InitializationOrchestrator for structured initialization
         from oncutf.core.initialization.initialization_orchestrator import (
             InitializationOrchestrator,
         )
@@ -1327,8 +1327,6 @@ class MainWindow(QMainWindow):
 
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.
-
-        Phase 2 of Application Context Migration.
         """
         try:
             # Core managers

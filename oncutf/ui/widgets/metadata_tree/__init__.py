@@ -24,8 +24,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-# Phase 1: Data model only
-# Phase 3: Controller layer
+# Controller layer
 from oncutf.ui.widgets.metadata_tree.controller import (
     MetadataTreeController,
     create_metadata_tree_controller,
@@ -52,7 +51,7 @@ from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHan
 # Selection handler
 from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
 
-# Phase 2: Service layer
+# Service layer
 from oncutf.ui.widgets.metadata_tree.service import (
     MetadataTreeService,
     create_metadata_tree_service,

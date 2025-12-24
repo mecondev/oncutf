@@ -4,7 +4,6 @@ Author: Michael Economou
 Date: 2025-12-16
 
 Counter scope enumeration for controlling counter reset behavior.
-Part of Phase 2: State Management Fix.
 """
 
 from enum import Enum

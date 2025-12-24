@@ -57,7 +57,7 @@ class ApplicationContext(QObject):
         self._file_store: FileStore | None = None
         self._selection_store: SelectionStore | None = None
 
-        # Manager registry (Phase 2: centralized manager access)
+        # Manager registry for centralized manager access
         self._managers: dict[str, Any] = {}
 
         # Legacy state containers (will be removed gradually)
@@ -295,7 +295,7 @@ class ApplicationContext(QObject):
         return base_metrics
 
     # =====================================
-    # Manager Registry (Phase 2)
+    # Manager Registry
     # =====================================
 
     def register_manager(self, name: str, manager: Any) -> None:

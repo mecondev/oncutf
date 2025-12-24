@@ -1,6 +1,6 @@
 """Module: metadata_writer.py
 
-Author: Michael Economou (refactored)
+Author: Michael Economou
 Date: 2025-12-20
 Updated: 2025-12-21
 

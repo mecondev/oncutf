@@ -1,6 +1,6 @@
 """Module: metadata_cache_service.py
 
-Author: Michael Economou (refactored)
+Author: Michael Economou
 Date: 2025-12-20
 Updated: 2025-12-21
 
