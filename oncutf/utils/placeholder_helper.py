@@ -13,9 +13,9 @@ Performance optimizations (2025-12-20):
 """
 
 from oncutf.core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.path_utils import get_images_dir
-from oncutf.utils.theme import get_theme_color
 
 logger = get_cached_logger(__name__)
 
@@ -129,7 +129,7 @@ class PlaceholderHelper:
     def _apply_styling(self) -> None:
         """Apply theme-aware styling to the placeholder."""
         try:
-            bg_color = get_theme_color("table_background")
+            bg_color = get_theme_manager().get_color("table_background")
 
             if self.placeholder_text:
                 # Text + icon styling

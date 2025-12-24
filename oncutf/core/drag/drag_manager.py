@@ -262,18 +262,18 @@ class DragManager(QObject):
                         "[DragManager] Escape key pressed during drag", extra={"dev_only": True}
                     )
 
-                    # Check if FileLoadingDialog is active
-                    from oncutf.ui.widgets.metadata_waiting_dialog import MetadataWaitingDialog
+                    # Check if OperationDialog is active
+                    from oncutf.ui.widgets.metadata_waiting_dialog import OperationDialog
 
                     active_dialogs = [
                         w
                         for w in QApplication.topLevelWidgets()
-                        if isinstance(w, MetadataWaitingDialog) and w.isVisible()
+                        if isinstance(w, OperationDialog) and w.isVisible()
                     ]
 
                     if active_dialogs:
                         logger.debug(
-                            "[DragManager] FileLoadingDialog is active, allowing it to handle ESC",
+                            "[DragManager] OperationDialog is active, allowing it to handle ESC",
                             extra={"dev_only": True},
                         )
                         return False  # Let dialog handle ESC

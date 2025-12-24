@@ -28,6 +28,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipHelper
 
@@ -54,15 +55,16 @@ class ColorButton(QToolButton):
         self.color = color
 
         from oncutf.config import COLOR_SWATCH_SIZE
-        from oncutf.utils.theme import get_theme_color
+        from oncutf.core.theme_manager import get_theme_manager
 
         self.setFixedSize(COLOR_SWATCH_SIZE + 2, COLOR_SWATCH_SIZE)
         TooltipHelper.setup_tooltip(self, color.upper())
 
         # Get theme colors for borders
-        border_normal = get_theme_color("border")
-        border_hover = get_theme_color("text")
-        border_pressed = get_theme_color("border_hover")
+        theme = get_theme_manager()
+        border_normal = theme.get_color("border")
+        border_hover = theme.get_color("text")
+        border_pressed = theme.get_color("border_hover")
 
         # Style with solid color background and theme-aware borders
         self.setStyleSheet(
@@ -115,8 +117,6 @@ class ColorGridMenu(QWidget):
 
     def _setup_ui(self):
         """Setup the menu UI layout."""
-        from oncutf.utils.theme import get_theme_color
-
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(6, 6, 6, 6)
         main_layout.setSpacing(6)
@@ -144,13 +144,14 @@ class ColorGridMenu(QWidget):
         main_layout.addLayout(right_layout)
 
         # Apply theme-consistent styling
-        bg_color = get_theme_color("background")
-        border_color = get_theme_color("border")
-        border_hover = get_theme_color("accent")  # Brighter blue like browse button
-        button_bg = get_theme_color("button_bg")
-        button_hover_bg = get_theme_color("button_hover_bg")
-        button_pressed = get_theme_color("button_pressed_bg")
-        text_color = get_theme_color("text")
+        theme = get_theme_manager()
+        bg_color = theme.get_color("background")
+        border_color = theme.get_color("border")
+        border_hover = theme.get_color("accent")  # Brighter blue like browse button
+        button_bg = theme.get_color("button_bg")
+        button_hover_bg = theme.get_color("button_hover_bg")
+        button_pressed = theme.get_color("button_pressed_bg")
+        text_color = theme.get_color("text")
 
         self.setStyleSheet(
             f"""
