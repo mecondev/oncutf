@@ -24,7 +24,6 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
 from oncutf.ui.widgets.metadata.category_manager import CategoryManager
-from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
 from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
 from oncutf.ui.widgets.metadata.styling_handler import StylingHandler
@@ -162,14 +161,6 @@ class MetadataWidget(QWidget):
         self.setLayout(layout)
         logger.debug("MetadataWidget UI setup completed")
 
-    def _on_category_changed(self) -> None:
-        """Handle category combo box changes.
-
-        Deprecated: Use CategoryManager.on_category_changed() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._category_manager.on_category_changed()
-
     def _emit_settings_changed(self) -> None:
         """Emit settings_changed signal on ANY user interaction.
 
@@ -212,14 +203,6 @@ class MetadataWidget(QWidget):
             self.options_combo.setCurrentIndex(0)
             logger.debug("Regular combo set to index 0")
 
-    def populate_file_dates(self) -> None:
-        """Populate options combo with file date formats.
-
-        Deprecated: Use CategoryManager.populate_file_dates() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._category_manager.populate_file_dates()
-
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
         return self._hash_handler.populate_hash_options()
@@ -252,35 +235,11 @@ class MetadataWidget(QWidget):
 
         return []
 
-    def _calculate_hashes_for_files(self, files_needing_hash):
-        """Calculate hashes for the given file paths.
-
-        Deprecated: Use HashHandler._calculate_hashes_for_files() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._hash_handler._calculate_hashes_for_files(files_needing_hash)
-
     def populate_metadata_keys(self) -> None:
         """Populate the hierarchical combo box with available metadata keys.
         Keys are grouped by category for better organization.
         """
         self._metadata_keys_handler.populate_metadata_keys()
-
-    def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
-        """Group metadata keys by category for better organization.
-
-        Deprecated: Use MetadataKeysHandler._group_metadata_keys() instead.
-        This method is kept for backwards compatibility.
-        """
-        return self._metadata_keys_handler._group_metadata_keys(keys)
-
-    def _classify_metadata_key(self, key: str) -> str:
-        """Classify a metadata key into a category.
-
-        Deprecated: Use MetadataKeysHandler._classify_metadata_key() instead.
-        This method is kept for backwards compatibility.
-        """
-        return self._metadata_keys_handler._classify_metadata_key(key)
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -317,30 +276,6 @@ class MetadataWidget(QWidget):
             Set of metadata key names found in selected files
         """
         return self._metadata_keys_handler.get_available_metadata_keys()
-
-    def format_metadata_key_name(self, key: str) -> str:
-        """Format metadata key names for better readability.
-
-        Deprecated: Use FieldFormatter.format_metadata_key_name() instead.
-        This method is kept for backwards compatibility.
-        """
-        return FieldFormatter.format_metadata_key_name(key)
-
-    def _format_field_name(self, field: str) -> str:
-        """Format field names by replacing underscores and camelCase.
-
-        Deprecated: Use FieldFormatter._format_field_name() instead.
-        This method is kept for backwards compatibility.
-        """
-        return FieldFormatter._format_field_name(field)
-
-    def _format_camel_case(self, text: str) -> str:
-        """Format camelCase text by adding spaces before capitals.
-
-        Deprecated: Use FieldFormatter._format_camel_case() instead.
-        This method is kept for backwards compatibility.
-        """
-        return FieldFormatter._format_camel_case(text)
 
     def get_data(self) -> dict:
         """Returns the state for use in the rename system."""
@@ -499,38 +434,6 @@ class MetadataWidget(QWidget):
         # For other categories, any field is effective
         return bool(field)
 
-    def _get_supported_hash_algorithms(self) -> set:
-        """Get list of supported hash algorithms from the async operations manager.
-
-        Deprecated: Use HashHandler._get_supported_hash_algorithms() instead.
-        This method is kept for backwards compatibility.
-        """
-        return self._hash_handler._get_supported_hash_algorithms()
-
-    def update_category_availability(self):
-        """Update category combo box availability based on selected files.
-
-        Deprecated: Use CategoryManager.update_category_availability() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._category_manager.update_category_availability()
-
-    def _check_files_have_hash(self, selected_files) -> bool:
-        """Check if any of the selected files have hash data.
-
-        Deprecated: Use HashHandler._check_files_have_hash() instead.
-        This method is kept for backwards compatibility.
-        """
-        return self._hash_handler._check_files_have_hash(selected_files)
-
-    def _ensure_theme_inheritance(self) -> None:
-        """Ensure that child widgets inherit theme styles properly.
-
-        Deprecated: Use StylingHandler.ensure_theme_inheritance() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.ensure_theme_inheritance()
-
     def trigger_update_options(self):
         """Trigger update_options and hash check immediately (no debounce)."""
         # Update category availability first
@@ -544,30 +447,6 @@ class MetadataWidget(QWidget):
         self.update_category_availability()
         # Then update options
         self.update_options()
-
-    def _check_calculation_requirements(self, category: str):
-        """Check if calculation dialog is needed for the selected category.
-
-        Deprecated: Use CategoryManager._check_calculation_requirements() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._category_manager._check_calculation_requirements(category)
-
-    def _check_hash_calculation_requirements(self, selected_files):
-        """Check if hash calculation dialog is needed.
-
-        Deprecated: Use HashHandler._check_hash_calculation_requirements() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._hash_handler._check_hash_calculation_requirements(selected_files)
-
-    def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
-        """Show calculation dialog for hash or metadata.
-
-        Deprecated: Use HashHandler._show_calculation_dialog() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._hash_handler._show_calculation_dialog(files_needing_calculation, calculation_type)
 
     def _load_metadata_for_files(self, files_needing_metadata):
         """Load metadata for the given file paths."""
@@ -619,46 +498,6 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.error("[MetadataWidget] Error loading metadata: %s", e)
             self._hash_dialog_active = False
-
-    def _apply_disabled_combo_styling(self):
-        """Apply disabled styling to hierarchical combo box.
-
-        Deprecated: Use StylingHandler.apply_disabled_combo_styling() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.apply_disabled_combo_styling()
-
-    def _apply_normal_combo_styling(self):
-        """Apply normal styling to hierarchical combo box.
-
-        Deprecated: Use StylingHandler.apply_normal_combo_styling() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.apply_normal_combo_styling()
-
-    def _apply_combo_theme_styling(self):
-        """Apply theme styling to combo boxes.
-
-        Deprecated: Use StylingHandler.apply_combo_theme_styling() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.apply_combo_theme_styling()
-
-    def _apply_disabled_category_styling(self):
-        """Apply disabled styling to the category combo box.
-
-        Deprecated: Use StylingHandler.apply_disabled_category_styling() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.apply_disabled_category_styling()
-
-    def _apply_category_styling(self):
-        """Apply normal styling to the category combo box.
-
-        Deprecated: Use StylingHandler.apply_category_styling() instead.
-        This method is kept for backwards compatibility.
-        """
-        self._styling_handler.apply_category_styling()
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""

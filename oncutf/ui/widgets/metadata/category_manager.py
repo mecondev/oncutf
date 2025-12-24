@@ -57,7 +57,7 @@ class CategoryManager:
             # Enable combo box for metadata keys
             if current_data == "metadata_keys":
                 self.widget.options_combo.setEnabled(True)
-                self.widget._apply_normal_combo_styling()
+                self.widget._styling_handler.apply_normal_combo_styling()
 
             # Check calculation requirements
             if current_data in ["hash", "metadata_keys"]:
@@ -129,7 +129,7 @@ class CategoryManager:
     def update_category_availability(self) -> None:
         """Update category combo box availability based on selected files."""
         # Ensure theme inheritance
-        self.widget._ensure_theme_inheritance()
+        self.widget._styling_handler.ensure_theme_inheritance()
 
         # Get selected files
         selected_files = self.widget._get_selected_files()
@@ -170,14 +170,14 @@ class CategoryManager:
             metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
-            self.widget._apply_category_styling()
+            self.widget._styling_handler.apply_category_styling()
 
             # If current category is hash and is disabled, apply disabled styling
             if self.widget.category_combo.currentData() == "hash":
                 self.widget.options_combo.clear()
                 self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                 self.widget.options_combo.setEnabled(False)
-                self.widget._apply_disabled_combo_styling()
+                self.widget._styling_handler.apply_disabled_combo_styling()
 
             logger.debug(
                 "[MetadataWidget] No files selected - disabled Hash and EXIF options",
@@ -185,7 +185,7 @@ class CategoryManager:
             )
         else:
             # Check if files have hash data
-            has_hash_data = self.widget._hash_handler._check_files_have_hash(selected_files)
+            has_hash_data = self.widget._hash_handler.check_files_have_hash(selected_files)
             theme = get_theme_manager()
             hash_item = self.widget.category_model.item(1)
 
@@ -201,7 +201,7 @@ class CategoryManager:
                     self.widget.options_combo.clear()
                     self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                     self.widget.options_combo.setEnabled(False)
-                    self.widget._apply_disabled_combo_styling()
+                    self.widget._styling_handler.apply_disabled_combo_styling()
 
             # Check if files have EXIF/metadata data
             has_metadata_data = self._check_files_have_metadata(selected_files)
@@ -216,7 +216,7 @@ class CategoryManager:
                 metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
 
             # Apply styling to category combo based on state
-            self.widget._apply_category_styling()
+            self.widget._styling_handler.apply_category_styling()
 
             logger.debug(
                 "[MetadataWidget] %d files selected - Hash: %s, EXIF: %s",
@@ -252,7 +252,7 @@ class CategoryManager:
                 return
 
             if category == "hash":
-                self.widget._hash_handler._check_hash_calculation_requirements(selected_files)
+                self.widget._hash_handler.check_hash_calculation_requirements(selected_files)
             elif category == "metadata_keys":
                 self._check_metadata_calculation_requirements(selected_files)
 
@@ -278,7 +278,7 @@ class CategoryManager:
                 extra={"dev_only": True},
             )
             self.widget._hash_dialog_active = True
-            self.widget._hash_handler._show_calculation_dialog(
+            self.widget._hash_handler.show_calculation_dialog(
                 files_needing_metadata, "metadata"
             )
         else:

@@ -58,7 +58,7 @@ class HashHandler:
                 # Disable the combo box
                 self._widget.options_combo.setEnabled(False)
                 # Apply disabled styling to show text in gray
-                self._widget._apply_disabled_combo_styling()
+                self._widget._styling_handler.apply_disabled_combo_styling()
                 return False
 
             # Use efficient batch checking via database
@@ -84,7 +84,7 @@ class HashHandler:
             # Always disabled combo box for hash (only CRC32 available)
             self._widget.options_combo.setEnabled(False)
             # Apply disabled styling to show text in gray
-            self._widget._apply_disabled_combo_styling()
+            self._widget._styling_handler.apply_disabled_combo_styling()
 
             if files_needing_hash:
                 # Some files need hash calculation
@@ -101,10 +101,10 @@ class HashHandler:
             # Disable the combo box in case of error
             self._widget.options_combo.setEnabled(False)
             # Apply disabled styling to show text in gray
-            self._widget._apply_disabled_combo_styling()
+            self._widget._styling_handler.apply_disabled_combo_styling()
             return False
 
-    def _calculate_hashes_for_files(self, files_needing_hash):
+    def calculate_hashes_for_files(self, files_needing_hash):
         """Calculate hashes for the given file paths.
 
         Args:
@@ -153,7 +153,7 @@ class HashHandler:
             logger.error("[HashHandler] Error calculating hashes: %s", e)
             self._widget._hash_dialog_active = False  # <-- Ensure flag reset on error
 
-    def _check_hash_calculation_requirements(self, selected_files):
+    def check_hash_calculation_requirements(self, selected_files) -> None:
         """Check if hash calculation dialog is needed.
 
         Args:
@@ -173,14 +173,14 @@ class HashHandler:
                 extra={"dev_only": True},
             )
             self._widget._hash_dialog_active = True
-            self._show_calculation_dialog(files_needing_hash, "hash")
+            self.show_calculation_dialog(files_needing_hash, "hash")
         else:
             logger.debug(
                 "[HashHandler] All files have hashes - no dialog needed",
                 extra={"dev_only": True},
             )
 
-    def _check_files_have_hash(self, selected_files) -> bool:
+    def check_files_have_hash(self, selected_files) -> bool:
         """Check if any of the selected files have hash data.
 
         Args:
@@ -205,7 +205,7 @@ class HashHandler:
         # Only CRC32 is supported and implemented
         return {"CRC32"}
 
-    def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
+    def show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
         """Show calculation dialog for hash or metadata.
 
         Args:
@@ -246,7 +246,7 @@ class HashHandler:
                     extra={"dev_only": True},
                 )
                 if calculation_type == "hash":
-                    self._calculate_hashes_for_files(files_needing_calculation)
+                    self.calculate_hashes_for_files(files_needing_calculation)
                 else:
                     # Delegate to widget for metadata loading
                     self._widget._load_metadata_for_files(files_needing_calculation)

@@ -52,7 +52,7 @@ class MetadataKeysHandler:
             return
 
         # Group keys by category
-        grouped_keys = self._group_metadata_keys(keys)
+        grouped_keys = self.group_metadata_keys(keys)
         logger.debug("Grouped keys: %s", grouped_keys)
 
         # Build hierarchical data structure
@@ -82,11 +82,11 @@ class MetadataKeysHandler:
         self._widget.options_combo.setEnabled(True)
 
         # Apply normal styling
-        self._widget._apply_normal_combo_styling()
+        self._widget._styling_handler.apply_normal_combo_styling()
 
         logger.debug("Populated metadata keys with %d categories", len(hierarchical_data))
 
-    def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
+    def group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization.
 
         Args:
@@ -98,7 +98,7 @@ class MetadataKeysHandler:
         grouped = {}
 
         for key in keys:
-            category = self._classify_metadata_key(key)
+            category = self.classify_metadata_key(key)
             if category not in grouped:
                 grouped[category] = []
             grouped[category].append(key)
@@ -123,7 +123,7 @@ class MetadataKeysHandler:
 
         return ordered_grouped
 
-    def _classify_metadata_key(self, key: str) -> str:
+    def classify_metadata_key(self, key: str) -> str:
         """Classify a metadata key into a category.
 
         Args:

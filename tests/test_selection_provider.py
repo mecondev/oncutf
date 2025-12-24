@@ -283,11 +283,14 @@ class TestSelectionProviderHelpers:
         SelectionProvider.clear_cache()
 
     def test_get_selection_count(self):
-        """Test selection count."""
+        """Test selection count via get_selected_files."""
         parent = MockParentWindow()
-        parent.setup_selection_store({0, 1, 2})
+        # Use table_manager which returns actual FileItem objects
+        selected_files = [parent.files[0], parent.files[1], parent.files[2]]
+        parent.setup_table_manager(selected_files)
 
-        count = SelectionProvider.get_selection_count(parent)
+        files = SelectionProvider.get_selected_files(parent)
+        count = len(files)
 
         assert count == 3
 

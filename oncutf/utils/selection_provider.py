@@ -236,27 +236,6 @@ class SelectionProvider:
         return [f for f in file_model.files if f.checked]
 
     @classmethod
-    def get_selection_count(cls, parent_window: Any) -> int:
-        """Get count of selected files.
-
-        Args:
-            parent_window: MainWindow or any widget with selection state
-
-        Returns:
-            Number of selected files
-
-        """
-        # Fast path: use SelectionStore if available
-        if hasattr(parent_window, "selection_store"):
-            try:
-                return parent_window.selection_store.get_selection_count()
-            except Exception:
-                pass
-
-        # Fallback: count selected files
-        return len(cls.get_selected_files(parent_window))
-
-    @classmethod
     def has_selection(cls, parent_window: Any) -> bool:
         """Check if any files are selected.
 
@@ -267,7 +246,15 @@ class SelectionProvider:
             True if at least one file is selected
 
         """
-        return cls.get_selection_count(parent_window) > 0
+        # Fast path: use SelectionStore if available
+        if hasattr(parent_window, "selection_store"):
+            try:
+                return parent_window.selection_store.get_selection_count() > 0
+            except Exception:
+                pass
+
+        # Fallback: check if any files are selected
+        return len(cls.get_selected_files(parent_window)) > 0
 
     @classmethod
     def get_single_selected_file(cls, parent_window: Any) -> FileItem | None:
