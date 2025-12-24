@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.widgets.metadata.hash_handler import HASH_OPTIONS_DATA
 from oncutf.utils.file_status_helpers import batch_metadata_status
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_ui_update
@@ -174,14 +175,7 @@ class CategoryManager:
             # If current category is hash and is disabled, apply disabled styling
             if self.widget.category_combo.currentData() == "hash":
                 self.widget.options_combo.clear()
-                hierarchical_data = {
-                    "Hash Types": [
-                        ("CRC32", "hash_crc32"),
-                    ]
-                }
-
-                self.widget.options_combo.populate_from_metadata_groups(hierarchical_data)
-
+                self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                 self.widget.options_combo.setEnabled(False)
                 self.widget._apply_disabled_combo_styling()
 
@@ -205,14 +199,7 @@ class CategoryManager:
                 # If current category is hash and is disabled, apply disabled styling
                 if self.widget.category_combo.currentData() == "hash":
                     self.widget.options_combo.clear()
-                    hierarchical_data = {
-                        "Hash Types": [
-                            ("CRC32", "hash_crc32"),
-                        ]
-                    }
-
-                    self.widget.options_combo.populate_from_metadata_groups(hierarchical_data)
-
+                    self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                     self.widget.options_combo.setEnabled(False)
                     self.widget._apply_disabled_combo_styling()
 

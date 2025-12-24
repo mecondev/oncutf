@@ -34,34 +34,25 @@ class StylingHandler:
 
     def ensure_theme_inheritance(self) -> None:
         """Ensure that child widgets inherit theme styles properly.
-        This is needed because child widgets sometimes don't inherit
-        the global application stylesheet correctly.
-        """
-        try:
-            # Apply minimal styles to combo boxes
-            # Note: Detailed styling is handled by ComboBoxItemDelegate
-            pass
 
-        except Exception as e:
-            logger.warning("[MetadataWidget] Failed to ensure theme inheritance: %s", e)
+        Note: This method is currently a no-op as detailed styling is handled
+        by ComboBoxItemDelegate and the global theme engine.
+        """
 
     def apply_disabled_combo_styling(self) -> None:
-        """Apply disabled styling to hierarchical combo box to show grayed-out text."""
-        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
-        # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug(
-            "[MetadataWidget] Disabled combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply disabled styling to hierarchical combo box.
+
+        Note: This method is currently a no-op. Disabled state is handled
+        by setEnabled(False) + global theme, avoiding interference with
+        TreeViewItemDelegate dropdown states.
+        """
 
     def apply_normal_combo_styling(self) -> None:
-        """Apply normal styling to hierarchical combo box."""
-        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
-        # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug(
-            "[MetadataWidget] Normal combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply normal styling to hierarchical combo box.
+
+        Note: This method is currently a no-op. Global ThemeEngine + delegates
+        handle combo styling consistently, avoiding per-widget QSS interference.
+        """
 
     def apply_combo_theme_styling(self) -> None:
         """Apply theme styling to combo boxes and ensure inheritance."""
@@ -140,27 +131,20 @@ class StylingHandler:
 
             self.widget.category_combo.setStyleSheet(css)
 
-            # Apply style recursively to ensure inheritance
-            # apply_style_recursively(self.category_combo, self.category_combo.style())
-            # This line was removed
-
         except Exception as e:
             logger.error("[MetadataWidget] Error applying combo theme styling: %s", e)
 
     def apply_disabled_category_styling(self) -> None:
-        """Apply disabled styling to the category combo box to show gray text."""
-        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
-        # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug(
-            "[MetadataWidget] Disabled category combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply disabled styling to the category combo box.
+
+        Note: This method is currently a no-op. Disabled state is handled
+        by setEnabled(False) + global theme, avoiding interference with
+        ComboBoxItemDelegate dropdown states.
+        """
 
     def apply_category_styling(self) -> None:
-        """Apply normal styling to the category combo box."""
-        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
-        # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug(
-            "[MetadataWidget] Normal category combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply normal styling to the category combo box.
+
+        Note: This method is currently a no-op. Global ThemeEngine + delegates
+        handle combo styling consistently, avoiding per-widget QSS interference.
+        """
