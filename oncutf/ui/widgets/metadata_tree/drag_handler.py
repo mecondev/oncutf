@@ -195,7 +195,7 @@ class MetadataTreeDragHandler:
         Centralized drag cleanup logic.
 
         Args:
-            _drag_cancel_filter: The drag cancel filter (unused but kept for interface)
+            _drag_cancel_filter: The drag cancel filter (interface parameter)
         """
         # Force cleanup of any drag state
         while QApplication.overrideCursor():

@@ -130,7 +130,8 @@ class MetadataTreeService:
             return "Camera Settings"
 
         # GPS and Location
-        if any(term in key_lower for term in ["gps", "location", "latitude", "longitude", "altitude"]):
+        gps_terms = ["gps", "location", "latitude", "longitude", "altitude"]
+        if any(term in key_lower for term in gps_terms):
             return "GPS & Location"
 
         # Sensor Data (accelerometer, gyroscope, etc.)
@@ -166,10 +167,11 @@ class MetadataTreeService:
             return "Audio Info"
 
         # Image-specific metadata
+        image_terms = ["width", "height", "resolution", "dpi", "colorspace"]
         if (
             key_lower.startswith("image")
             or "sensor" in key_lower
-            or any(term in key_lower for term in ["width", "height", "resolution", "dpi", "colorspace"])
+            or any(term in key_lower for term in image_terms)
         ):
             return "Image Info"
 

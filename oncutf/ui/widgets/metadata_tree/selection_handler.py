@@ -168,7 +168,7 @@ class MetadataTreeSelectionHandler:
         """Smart display logic for metadata or empty state."""
         try:
             logger.debug(
-                "[MetadataTree] smart_display_metadata_or_empty_state called: metadata=%s, selected_count=%d, context=%s",
+                "[MetadataTree] smart_display called: metadata=%s, count=%d, ctx=%s",
                 bool(metadata),
                 selected_count,
                 context,

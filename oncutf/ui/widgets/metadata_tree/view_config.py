@@ -109,7 +109,7 @@ class MetadataTreeViewConfig:
         Configure view for placeholder mode with anti-flickering.
 
         Args:
-            _model: The model (unused but kept for interface compatibility)
+            _model: The model (interface parameter for consistency)
         """
         view = self._tree_view
 
@@ -278,7 +278,7 @@ class MetadataTreeViewConfig:
         view.repaint()
 
     def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
-        """Update scrollbar policy only if it differs from current to prevent unnecessary updates."""
+        """Update scrollbar policy only if different from current."""
         view = self._tree_view
         current_policy = view.horizontalScrollBarPolicy()
         if current_policy != target_policy:
