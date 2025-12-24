@@ -1,5 +1,4 @@
-"""
-file_item.py
+"""file_item.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -23,8 +22,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileItem:
-    """
-    Represents a file in the application.
+    """Represents a file in the application.
     Stores file metadata and handles file operations.
     """
 
@@ -68,16 +66,15 @@ class FileItem:
 
     @classmethod
     def from_path(cls, file_path: str) -> "FileItem":
-        """
-        Create a FileItem from a file path by auto-detecting properties.
+        """Create a FileItem from a file path by auto-detecting properties.
 
         Args:
             file_path: Full path to the file
 
         Returns:
             FileItem instance with auto-detected properties
-        """
 
+        """
         filename = os.path.basename(file_path)
         _, ext = os.path.splitext(filename)
         extension = ext[1:].lower() if ext.startswith(".") else ""
@@ -119,8 +116,7 @@ class FileItem:
         return isinstance(self.metadata, dict) and self.metadata.get("__extended__") is True
 
     def _detect_size(self) -> int:
-        """
-        Attempts to determine the file size in bytes from full_path.
+        """Attempts to determine the file size in bytes from full_path.
         Returns 0 if file is inaccessible or not found.
         """
         if self.full_path and os.path.exists(self.full_path):
@@ -135,8 +131,7 @@ class FileItem:
         return 0
 
     def get_human_readable_size(self) -> str:
-        """
-        Returns a human-readable string for the file size, e.g. '1.2 GB', '540 MB', '999 KB'.
+        """Returns a human-readable string for the file size, e.g. '1.2 GB', '540 MB', '999 KB'.
         Uses cross-platform formatting that respects system locale and conventions.
         """
         from oncutf.utils.file_size_formatter import format_file_size_system_compatible

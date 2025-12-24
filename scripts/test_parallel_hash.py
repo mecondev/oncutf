@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for parallel hash worker performance comparison.
+"""Test script for parallel hash worker performance comparison.
 
 Compares performance between serial and parallel hash workers.
 """
@@ -17,8 +16,7 @@ sys.path.insert(0, str(project_root))
 
 
 def create_test_files(count: int = 100, size_mb: float = 1.0) -> list[str]:
-    """
-    Create temporary test files for hash calculation.
+    """Create temporary test files for hash calculation.
 
     Args:
         count: Number of files to create
@@ -26,6 +24,7 @@ def create_test_files(count: int = 100, size_mb: float = 1.0) -> list[str]:
 
     Returns:
         list: Paths to created files
+
     """
     temp_dir = tempfile.mkdtemp(prefix="hash_test_")
     file_paths = []

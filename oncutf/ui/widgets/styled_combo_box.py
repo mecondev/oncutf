@@ -1,5 +1,4 @@
-"""
-Module: styled_combo_box.py
+"""Module: styled_combo_box.py
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -18,8 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class StyledComboBox(QComboBox):
-    """
-    ComboBox with automatic theme integration.
+    """ComboBox with automatic theme integration.
 
     Features:
     - Automatic ComboBoxItemDelegate setup
@@ -28,11 +26,11 @@ class StyledComboBox(QComboBox):
     """
 
     def __init__(self, parent: QWidget | None = None):
-        """
-        Initialize the styled combo box.
+        """Initialize the styled combo box.
 
         Args:
             parent: Parent widget
+
         """
         super().__init__(parent)
         self._setup_delegate()

@@ -1,5 +1,4 @@
-"""
-Module: theme_font_generator.py
+"""Module: theme_font_generator.py
 
 Author: Michael Economou
 Date: 2025-06-20
@@ -14,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 def generate_dpi_aware_css() -> str:
-    """
-    Generate CSS with DPI-aware font sizes for all UI elements.
+    """Generate CSS with DPI-aware font sizes for all UI elements.
 
     Returns:
         CSS string with properly scaled font sizes
+
     """
     try:
         from oncutf.utils.dpi_helper import get_font_sizes

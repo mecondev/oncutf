@@ -37,6 +37,7 @@ class FolderCount:
 
         Returns:
             String like "5 items", "3 folders / 127 items", etc.
+
         """
         # Always show in format "X folder(s) / Y item(s)" for folders
         # For consistency and clarity
@@ -71,6 +72,7 @@ def count_folder_contents(
 
     Returns:
         FolderCount with results and timeout status
+
     """
     start_time = time.perf_counter()
     timeout_seconds = timeout_ms / 1000.0

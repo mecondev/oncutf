@@ -1,5 +1,4 @@
-"""
-Module: cursor_helper.py
+"""Module: cursor_helper.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -20,14 +19,15 @@ logger = get_cached_logger(__name__)
 
 @contextlib.contextmanager
 def wait_cursor(restore_after: bool = True):
-    """
-    Context manager that sets the cursor to wait and restores it after.
+    """Context manager that sets the cursor to wait and restores it after.
     Logs the file, line number, and function from where it was called.
     The logged path is shortened to start from 'oncutf/' for clarity.
 
-    Parameters:
+    Parameters
+    ----------
         restore_after: If True, the cursor will be restored after the context block.
                        If False, the cursor will remain as wait cursor.
+
     """
     QApplication.setOverrideCursor(Qt.WaitCursor)
 
@@ -66,11 +66,11 @@ def wait_cursor(restore_after: bool = True):
 
 
 def emergency_cursor_cleanup() -> int:
-    """
-    Emergency cleanup for stuck cursors.
+    """Emergency cleanup for stuck cursors.
 
     Returns:
         Number of cursors cleaned up
+
     """
     cursor_count = 0
     while QApplication.overrideCursor() and cursor_count < 10:
@@ -88,8 +88,7 @@ def emergency_cursor_cleanup() -> int:
 
 
 def force_restore_cursor() -> None:
-    """
-    Force restoration of cursor to default state.
+    """Force restoration of cursor to default state.
     Removes all override cursors without limit checking.
     """
     count = 0
@@ -108,11 +107,11 @@ def force_restore_cursor() -> None:
 
 
 def get_current_cursor_info() -> str | None:
-    """
-    Get information about the current override cursor.
+    """Get information about the current override cursor.
 
     Returns:
         String description of current cursor or None if no override
+
     """
     current = QApplication.overrideCursor()
     if not current:
@@ -134,11 +133,11 @@ def get_current_cursor_info() -> str | None:
 
 
 def is_drag_cursor_active() -> bool:
-    """
-    Check if a drag-related cursor is currently active.
+    """Check if a drag-related cursor is currently active.
 
     Returns:
         True if a drag cursor is active
+
     """
     current = QApplication.overrideCursor()
     if not current:

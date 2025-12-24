@@ -169,7 +169,6 @@ class TestFileSizeFormatter(unittest.TestCase):
 
     def test_global_functions(self):
         """Test global convenience functions."""
-
         # Test format_file_size
         result = format_file_size(1000)
         self.assertIsInstance(result, str)
@@ -182,7 +181,6 @@ class TestFileSizeFormatter(unittest.TestCase):
 
     def test_different_unit_labels(self):
         """Test different unit label formats."""
-
         # Binary with IEC labels (KiB, MiB)
         formatter_iec = FileSizeFormatter(use_binary=True, use_legacy_labels=False)
         result = formatter_iec.format_size(1024)
@@ -225,7 +223,6 @@ class TestIntegrationWithFileItem(unittest.TestCase):
 
 def run_comparison_test():
     """Run a comparison test to show the differences."""
-
     test_sizes = [512, 1000, 1024, 1500, 1536, 1000000, 1048576, 1000000000, 1073741824]
 
     for size in test_sizes:

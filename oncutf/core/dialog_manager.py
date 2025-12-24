@@ -1,5 +1,4 @@
-"""
-Module: dialog_manager.py
+"""Module: dialog_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -18,8 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class DialogManager:
-    """
-    Manages all dialog and validation operations.
+    """Manages all dialog and validation operations.
 
     Features:
     - Centralized dialog creation
@@ -130,11 +128,11 @@ class DialogManager:
         )
 
     def confirm_unsaved_changes(self, parent: QWidget = None) -> str:
-        """
-        Show confirmation dialog for unsaved metadata changes with three options.
+        """Show confirmation dialog for unsaved metadata changes with three options.
 
         Returns:
             str: One of 'save_and_close', 'close_without_saving', 'cancel'
+
         """
         from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 

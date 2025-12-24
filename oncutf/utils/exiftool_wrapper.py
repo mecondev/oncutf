@@ -1,5 +1,4 @@
-"""
-Module: exiftool_wrapper.py
+"""Module: exiftool_wrapper.py
 
 Author: Michael Economou
 Date: 2025-05-23
@@ -52,8 +51,7 @@ class ExifToolWrapper:
             self.close()
 
     def get_metadata(self, file_path: str, use_extended: bool = False) -> dict:
-        """
-        Get metadata for a single file using exiftool.
+        """Get metadata for a single file using exiftool.
 
         Args:
             file_path: Path to the file
@@ -61,6 +59,7 @@ class ExifToolWrapper:
 
         Returns:
             Dictionary containing metadata
+
         """
         try:
             result = self._get_metadata_with_exiftool(file_path, use_extended)
@@ -87,8 +86,7 @@ class ExifToolWrapper:
         return result if result is not None else {}
 
     def _get_metadata_fast(self, file_path: str) -> dict | None:
-        """
-        Execute ExifTool with standard options for fast metadata extraction.
+        """Execute ExifTool with standard options for fast metadata extraction.
         """
         # Normalize path for Windows compatibility
         from oncutf.utils.path_normalizer import normalize_path
@@ -176,8 +174,7 @@ class ExifToolWrapper:
             return None
 
     def get_metadata_batch(self, file_paths: list[str], use_extended: bool = False) -> list[dict]:
-        """
-        Load metadata for multiple files in a single ExifTool call (10x faster than individual calls).
+        """Load metadata for multiple files in a single ExifTool call (10x faster than individual calls).
 
         Args:
             file_paths: List of file paths to process
@@ -185,6 +182,7 @@ class ExifToolWrapper:
 
         Returns:
             List of metadata dictionaries, one per file (empty dict on error)
+
         """
         if not file_paths:
             return []
@@ -239,8 +237,7 @@ class ExifToolWrapper:
             return [{} for _ in file_paths]
 
     def _get_metadata_extended(self, file_path: str) -> dict | None:
-        """
-        Uses a one-shot subprocess call with -ee for extended metadata.
+        """Uses a one-shot subprocess call with -ee for extended metadata.
         Parses and merges embedded entries, marks result as extended.
         """
         # Normalize path for Windows compatibility
@@ -374,8 +371,7 @@ class ExifToolWrapper:
             return None
 
     def write_metadata(self, file_path: str, metadata_changes: dict) -> bool:
-        """
-        Writes metadata changes to a file using exiftool.
+        """Writes metadata changes to a file using exiftool.
 
         Args:
             file_path (str): Full path to the file
@@ -384,6 +380,7 @@ class ExifToolWrapper:
 
         Returns:
             bool: True if successful, False otherwise
+
         """
         # Normalize path for cross-platform compatibility (critical for Windows)
         from oncutf.utils.path_normalizer import normalize_path
@@ -613,6 +610,7 @@ class ExifToolWrapper:
 
         Returns:
             True if the process is running and no consecutive errors exceed threshold.
+
         """
         try:
             # Check if process is alive
@@ -629,6 +627,7 @@ class ExifToolWrapper:
 
         Returns:
             Last error message or None if no errors.
+
         """
         return self._last_error
 
@@ -637,6 +636,7 @@ class ExifToolWrapper:
 
         Returns:
             Dictionary with health status and metrics.
+
         """
         import time
 

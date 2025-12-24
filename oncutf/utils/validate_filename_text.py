@@ -1,5 +1,4 @@
-"""
-Module: validate_filename_text.py
+"""Module: validate_filename_text.py
 
 Author: Michael Economou
 Date: 2025-05-12
@@ -18,13 +17,13 @@ from oncutf.config import ALLOWED_FILENAME_CHARS
 
 
 def is_valid_filename_text(text: str) -> bool:
-    """
-    Checks if the given text is valid for use in filenames.
+    """Checks if the given text is valid for use in filenames.
 
     Args:
         text (str): The input text to validate.
 
     Returns:
         bool: True if valid, False otherwise.
+
     """
     return bool(re.match(ALLOWED_FILENAME_CHARS, text))

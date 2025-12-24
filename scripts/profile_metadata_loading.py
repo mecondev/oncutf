@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Profile metadata loading performance for sample files.
+"""Profile metadata loading performance for sample files.
 
 Author: Michael Economou
 Date: 2025-12-20

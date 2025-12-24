@@ -1,5 +1,4 @@
-"""
-Module: initialization_orchestrator.py
+"""Module: initialization_orchestrator.py
 
 Author: Michael Economou
 Date: 2025-11-21
@@ -25,8 +24,7 @@ logger = get_cached_logger(__name__)
 
 
 class InitializationOrchestrator:
-    """
-    Orchestrates MainWindow initialization in phases.
+    """Orchestrates MainWindow initialization in phases.
 
     This class breaks down the complex initialization into logical phases,
     making it easier to understand, maintain, and modify.
@@ -39,18 +37,17 @@ class InitializationOrchestrator:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize orchestrator with MainWindow reference.
+        """Initialize orchestrator with MainWindow reference.
 
         Args:
             main_window: MainWindow instance being initialized
+
         """
         self.window = main_window
         logger.debug("InitializationOrchestrator created", extra={"dev_only": True})
 
     def orchestrate_initialization(self, theme_callback=None) -> None:
-        """
-        Orchestrate complete initialization in phases.
+        """Orchestrate complete initialization in phases.
 
         Args:
             theme_callback: Optional callback to apply theme before enabling updates
@@ -60,6 +57,7 @@ class InitializationOrchestrator:
         2. Attributes and state
         3. UI setup
         4. Configuration and finalization (with theme application)
+
         """
         self._phase1_core_infrastructure()
         self._phase2_attributes_and_state()
@@ -68,8 +66,7 @@ class InitializationOrchestrator:
         logger.info("MainWindow initialization orchestration complete")
 
     def _phase1_core_infrastructure(self) -> None:
-        """
-        Phase 1: Initialize core infrastructure.
+        """Phase 1: Initialize core infrastructure.
 
         - Application context
         - Singleton managers (drag, preview, rename engine)
@@ -118,8 +115,7 @@ class InitializationOrchestrator:
         logger.debug("Phase 1: Core infrastructure initialized", extra={"dev_only": True})
 
     def _phase2_attributes_and_state(self) -> None:
-        """
-        Phase 2: Initialize attributes and application state.
+        """Phase 2: Initialize attributes and application state.
 
         - File model
         - Metadata system
@@ -171,8 +167,7 @@ class InitializationOrchestrator:
         logger.debug("Phase 2: Attributes and state initialized", extra={"dev_only": True})
 
     def _phase3_ui_setup(self) -> None:
-        """
-        Phase 3: Setup user interface.
+        """Phase 3: Setup user interface.
 
         - Initialize all managers
         - Setup UI layout (via UIManager)
@@ -278,8 +273,7 @@ class InitializationOrchestrator:
         logger.debug("Phase 3: UI setup complete", extra={"dev_only": True})
 
     def _phase4_configuration_and_finalization(self, theme_callback=None) -> None:
-        """
-        Phase 4: Apply configuration and finalize.
+        """Phase 4: Apply configuration and finalize.
 
         Args:
             theme_callback: Optional callback to apply theme before enabling updates
@@ -291,6 +285,7 @@ class InitializationOrchestrator:
         - Connect signals
         - Apply theme (if callback provided)
         - Enable updates
+
         """
         from oncutf.core.application_service import initialize_application_service
         from oncutf.core.shutdown_coordinator import get_shutdown_coordinator
@@ -338,8 +333,7 @@ class InitializationOrchestrator:
         logger.info("Phase 4: Configuration and finalization complete", extra={"dev_only": True})
 
     def _register_managers_for_ui(self) -> None:
-        """
-        Register managers needed for UI setup (Phase 3).
+        """Register managers needed for UI setup (Phase 3).
 
         These managers are created before UI setup and must be available
         to the context before setup_all_ui() is called.
@@ -365,8 +359,7 @@ class InitializationOrchestrator:
         logger.debug("UI managers registered in context", extra={"dev_only": True})
 
     def _register_managers_remaining(self) -> None:
-        """
-        Register remaining managers after app_service creation (Phase 4).
+        """Register remaining managers after app_service creation (Phase 4).
 
         These managers depend on app_service and other Phase 4 components.
         """

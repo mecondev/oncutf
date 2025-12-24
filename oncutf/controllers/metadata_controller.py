@@ -1,5 +1,4 @@
-"""
-MetadataController — Orchestration layer for metadata operations.
+"""MetadataController — Orchestration layer for metadata operations.
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -29,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class MetadataController:
-    """
-    Controller for metadata operations.
+    """Controller for metadata operations.
 
     Responsibilities:
         - Coordinate metadata loading for selected files
@@ -51,13 +49,13 @@ class MetadataController:
         structured_metadata_manager: StructuredMetadataManager,
         app_context: ApplicationContext,
     ) -> None:
-        """
-        Initialize MetadataController.
+        """Initialize MetadataController.
 
         Args:
             unified_metadata_manager: Manager for metadata loading operations
             structured_metadata_manager: Manager for structured metadata access
             app_context: Application context for file store and settings
+
         """
         self._unified_metadata_mgr = unified_metadata_manager
         self._structured_metadata_mgr = structured_metadata_manager
@@ -79,8 +77,7 @@ class MetadataController:
         use_extended: bool = False,
         source: str = "controller",
     ) -> dict[str, Any]:
-        """
-        Load metadata for given file items.
+        """Load metadata for given file items.
 
         This method orchestrates metadata loading by:
         1. Checking if files are provided
@@ -99,6 +96,7 @@ class MetadataController:
                 'skipped_count': int,
                 'errors': List[str]
             }
+
         """
         if not file_items:
             logger.debug("[MetadataController] No items provided for metadata loading")
@@ -148,8 +146,7 @@ class MetadataController:
         file_items: list[FileItem] | None = None,
         use_extended: bool = False,
     ) -> dict[str, Any]:
-        """
-        Reload metadata for given files (or all if None).
+        """Reload metadata for given files (or all if None).
 
         This is essentially the same as load_metadata but with force_reload semantics.
         The UnifiedMetadataManager will check cache and reload as needed.
@@ -160,6 +157,7 @@ class MetadataController:
 
         Returns:
             dict: Result with success status and counts
+
         """
         if file_items is None:
             # Get all files from file store
@@ -180,8 +178,7 @@ class MetadataController:
     # -------------------------------------------------------------------------
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
-        """
-        Determine metadata mode based on keyboard modifiers.
+        """Determine metadata mode based on keyboard modifiers.
 
         Returns (load_metadata, use_extended) based on modifier state:
         - Shift only: (True, False) - Load fast metadata
@@ -193,6 +190,7 @@ class MetadataController:
 
         Returns:
             tuple: (load_metadata: bool, use_extended: bool)
+
         """
         result = self._unified_metadata_mgr.determine_metadata_mode(modifier_state)
         logger.debug(
@@ -203,8 +201,7 @@ class MetadataController:
         return result
 
     def should_use_extended_metadata(self, modifier_state=None) -> bool:
-        """
-        Check if extended metadata should be used (Ctrl+Shift both held).
+        """Check if extended metadata should be used (Ctrl+Shift both held).
 
         This is used in contexts where metadata WILL be loaded,
         and we only decide if it's fast or extended.
@@ -214,6 +211,7 @@ class MetadataController:
 
         Returns:
             bool: True if Ctrl+Shift are both held
+
         """
         result = self._unified_metadata_mgr.should_use_extended_metadata(modifier_state)
         logger.debug(
@@ -223,14 +221,14 @@ class MetadataController:
         return result
 
     def restore_metadata_from_cache(self) -> dict[str, Any]:
-        """
-        Restore metadata from cache for all files in table.
+        """Restore metadata from cache for all files in table.
 
         This delegates to TableManager which restores metadata from
         the persistent cache and updates the table display.
 
         Returns:
             dict: Result with success status
+
         """
         logger.info("[MetadataController] Restoring metadata from cache")
 
@@ -256,8 +254,7 @@ class MetadataController:
         export_format: str,
         output_path: str,
     ) -> dict[str, Any]:
-        """
-        Export metadata to file.
+        """Export metadata to file.
 
         Args:
             file_items: List of files to export metadata from
@@ -271,6 +268,7 @@ class MetadataController:
                 'output_path': str,
                 'errors': List[str]
             }
+
         """
         logger.info(
             "[MetadataController] export_metadata: %d items to %s (%s)",
@@ -319,20 +317,20 @@ class MetadataController:
     # -------------------------------------------------------------------------
 
     def is_loading(self) -> bool:
-        """
-        Check if metadata loading is in progress.
+        """Check if metadata loading is in progress.
 
         Returns:
             bool: True if loading
+
         """
         return self._unified_metadata_mgr.is_loading()
 
     def get_loaded_metadata_count(self) -> int:
-        """
-        Get count of files with loaded metadata.
+        """Get count of files with loaded metadata.
 
         Returns:
             int: Number of files with metadata
+
         """
         file_model = self._app_context.file_store
         count = 0
@@ -345,14 +343,14 @@ class MetadataController:
         return count
 
     def has_metadata(self, file_item: FileItem) -> bool:
-        """
-        Check if file has loaded metadata.
+        """Check if file has loaded metadata.
 
         Args:
             file_item: File to check
 
         Returns:
             bool: True if metadata is loaded
+
         """
         # Check if file has metadata in cache
         if hasattr(self._app_context.main_window, "metadata_cache"):
@@ -370,11 +368,11 @@ class MetadataController:
         return False
 
     def get_common_metadata_fields(self) -> list[str]:
-        """
-        Get list of common metadata fields across selected files.
+        """Get list of common metadata fields across selected files.
 
         Returns:
             list: Common field names
+
         """
         try:
             # Get selected files

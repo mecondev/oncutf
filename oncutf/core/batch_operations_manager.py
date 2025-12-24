@@ -1,5 +1,4 @@
-"""
-Module: batch_operations_manager.py
+"""Module: batch_operations_manager.py
 
 Author: Michael Economou
 Date: 2025-06-20
@@ -55,8 +54,7 @@ class BatchStats:
 
 
 class BatchOperationsManager:
-    """
-    Manages batch operations for improved performance.
+    """Manages batch operations for improved performance.
 
     Automatically batches similar operations together and flushes them
     based on size thresholds, time intervals, or manual triggers.
@@ -216,11 +214,11 @@ class BatchOperationsManager:
             return
 
     def flush_all(self) -> dict[str, int]:
-        """
-        Flush all pending batches immediately.
+        """Flush all pending batches immediately.
 
         Returns:
             Dict mapping batch type to number of operations flushed
+
         """
         results = {}
 
@@ -233,14 +231,14 @@ class BatchOperationsManager:
         return results
 
     def flush_batch_type(self, batch_type: str) -> int:
-        """
-        Flush a specific batch type.
+        """Flush a specific batch type.
 
         Args:
             batch_type: Type of batch to flush
 
         Returns:
             Number of operations flushed
+
         """
         with self._batch_lock:
             return self._flush_batch_type(batch_type)

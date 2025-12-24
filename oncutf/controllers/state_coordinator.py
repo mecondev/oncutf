@@ -1,5 +1,4 @@
-"""
-Module: state_coordinator.py
+"""Module: state_coordinator.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -20,8 +19,7 @@ if TYPE_CHECKING:
 
 
 class StateCoordinator(QObject):
-    """
-    Central coordinator for state changes.
+    """Central coordinator for state changes.
 
     Emits signals when state changes occur, allowing components to react
     without tight coupling. This is the single source of truth for state
@@ -41,18 +39,17 @@ class StateCoordinator(QObject):
     metadata_changed = pyqtSignal(str)  # file_path
 
     def __init__(self, file_store: FileStore) -> None:
-        """
-        Initialize StateCoordinator.
+        """Initialize StateCoordinator.
 
         Args:
             file_store: The FileStore instance to coordinate
+
         """
         super().__init__()
         self._file_store = file_store
 
     def notify_files_changed(self, files: list[FileItem]) -> None:
-        """
-        Notify that the file list has changed.
+        """Notify that the file list has changed.
 
         This will:
         1. Update the FileStore
@@ -61,6 +58,7 @@ class StateCoordinator(QObject):
 
         Args:
             files: New list of FileItem objects
+
         """
         # Update file store
         self._file_store.set_loaded_files(files)
@@ -70,17 +68,16 @@ class StateCoordinator(QObject):
         self.preview_invalidated.emit()
 
     def notify_selection_changed(self, selected_indices: set[int]) -> None:
-        """
-        Notify that the selection has changed.
+        """Notify that the selection has changed.
 
         Args:
             selected_indices: Set of selected row indices
+
         """
         self.selection_changed.emit(selected_indices)
 
     def notify_preview_invalidated(self) -> None:
-        """
-        Notify that the preview needs to be refreshed.
+        """Notify that the preview needs to be refreshed.
 
         This should be called when:
         - Rename settings change
@@ -90,11 +87,11 @@ class StateCoordinator(QObject):
         self.preview_invalidated.emit()
 
     def notify_metadata_changed(self, file_path: str) -> None:
-        """
-        Notify that metadata for a file has changed.
+        """Notify that metadata for a file has changed.
 
         Args:
             file_path: Path of the file whose metadata changed
+
         """
         self.metadata_changed.emit(file_path)
         # Metadata changes might affect preview (e.g., metadata module)

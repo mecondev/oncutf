@@ -1,5 +1,4 @@
-"""
-Module: signal_coordinator.py
+"""Module: signal_coordinator.py
 
 Author: Michael Economou
 Date: 2025-11-21
@@ -21,8 +20,7 @@ logger = get_cached_logger(__name__)
 
 
 class SignalCoordinator:
-    """
-    Centralized coordinator for all application signal connections.
+    """Centralized coordinator for all application signal connections.
 
     This class manages all signal-slot connections in one place, making it easier
     to understand signal flow and debug connection issues.
@@ -35,19 +33,18 @@ class SignalCoordinator:
     """
 
     def __init__(self, parent_window: "MainWindow"):
-        """
-        Initialize SignalCoordinator with parent window reference.
+        """Initialize SignalCoordinator with parent window reference.
 
         Args:
             parent_window: MainWindow instance
+
         """
         self.parent_window = parent_window
         self._connected_signals: list[str] = []
         logger.debug("SignalCoordinator initialized", extra={"dev_only": True})
 
     def setup_all_signals(self) -> None:
-        """
-        Setup all signal connections.
+        """Setup all signal connections.
 
         Called after all components are initialized.
         """
@@ -60,8 +57,7 @@ class SignalCoordinator:
         )
 
     def setup_metadata_refresh_signals(self) -> None:
-        """
-        Connect signals for hash, selection, and metadata changes to refresh metadata widgets.
+        """Connect signals for hash, selection, and metadata changes to refresh metadata widgets.
 
         This ensures metadata widgets stay synchronized with:
         - Hash calculation results
@@ -156,8 +152,7 @@ class SignalCoordinator:
             )
 
     def setup_timer_signals(self) -> None:
-        """
-        Connect timer signals for debounced operations.
+        """Connect timer signals for debounced operations.
 
         Currently handles preview update timer.
         """
@@ -172,17 +167,16 @@ class SignalCoordinator:
             )
 
     def get_connected_signals(self) -> list[str]:
-        """
-        Get list of all connected signals for debugging.
+        """Get list of all connected signals for debugging.
 
         Returns:
             List of signal connection descriptions
+
         """
         return self._connected_signals.copy()
 
     def disconnect_all(self) -> None:
-        """
-        Disconnect all signals (cleanup on shutdown).
+        """Disconnect all signals (cleanup on shutdown).
 
         Note: Qt automatically disconnects signals when objects are destroyed,
         but this can be useful for testing or explicit cleanup.

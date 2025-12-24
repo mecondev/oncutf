@@ -1,5 +1,4 @@
-"""
-Module: drag_cleanup_manager.py
+"""Module: drag_cleanup_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -26,8 +25,7 @@ logger = get_cached_logger(__name__)
 
 
 class DragCleanupManager:
-    """
-    Manages drag and drop cleanup operations for the main window.
+    """Manages drag and drop cleanup operations for the main window.
 
     This manager handles:
     - Force drag cleanup triggered by Escape key
@@ -37,18 +35,17 @@ class DragCleanupManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize the DragCleanupManager.
+        """Initialize the DragCleanupManager.
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         logger.debug("[DragCleanupManager] Initialized", extra={"dev_only": True})
 
     def force_drag_cleanup(self) -> None:
-        """
-        Force cleanup of any active drag operations.
+        """Force cleanup of any active drag operations.
         Triggered by Escape key globally.
         """
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
@@ -90,11 +87,11 @@ class DragCleanupManager:
             logger.info("[MainWindow] FORCE CLEANUP: Nothing to clean")
 
     def _clean_stuck_cursors(self) -> int:
-        """
-        Clean any stuck override cursors.
+        """Clean any stuck override cursors.
 
         Returns:
             Number of cursors that were cleaned
+
         """
         cursor_count = 0
         while QApplication.overrideCursor() and cursor_count < 5:
@@ -116,8 +113,7 @@ class DragCleanupManager:
         logger.debug("[DragCleanupManager] Widget drag states cleaned")
 
     def emergency_drag_cleanup(self) -> None:
-        """
-        Emergency cleanup that runs every 5 seconds to catch stuck cursors.
+        """Emergency cleanup that runs every 5 seconds to catch stuck cursors.
         Only acts if cursor has been stuck for multiple checks.
         """
         app = QApplication.instance()
@@ -184,30 +180,30 @@ class DragCleanupManager:
             self.main_window._stuck_cursor_count = 0
 
     def is_drag_active(self) -> bool:
-        """
-        Check if there's currently an active drag operation.
+        """Check if there's currently an active drag operation.
 
         Returns:
             True if drag is active, False otherwise
+
         """
         drag_manager = DragManager.get_instance()
         return drag_manager.is_drag_active()
 
     def has_override_cursor(self) -> bool:
-        """
-        Check if there's currently an override cursor.
+        """Check if there's currently an override cursor.
 
         Returns:
             True if override cursor exists, False otherwise
+
         """
         return QApplication.overrideCursor() is not None
 
     def get_drag_cleanup_status(self) -> dict:
-        """
-        Get current drag cleanup status.
+        """Get current drag cleanup status.
 
         Returns:
             Dictionary with drag and cursor status information
+
         """
         return {
             "has_active_drag": self.is_drag_active(),

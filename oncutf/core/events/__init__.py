@@ -1,5 +1,4 @@
-"""
-Module: events/__init__.py
+"""Module: events/__init__.py
 
 Author: Michael Economou
 Date: 2025-12-20

@@ -1,5 +1,4 @@
-"""
-Module: fonts.py
+"""Module: fonts.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -174,8 +173,7 @@ class InterFonts:
             logger.info("Run: pyrcc5 resources/fonts.qrc -o utils/fonts_rc.py")
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
-        """
-        Get a QFont for specific use case with DPI scaling
+        """Get a QFont for specific use case with DPI scaling
 
         Args:
             use_case: One of 'base', 'buttons', 'headers', 'titles', 'emphasis', 'medium'
@@ -183,6 +181,7 @@ class InterFonts:
 
         Returns:
             QFont object configured for the use case
+
         """
         font_mapping = {
             "base": "regular",

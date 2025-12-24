@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: test_human_readable.py
+"""Module: test_human_readable.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -59,7 +58,6 @@ def get_system_human_sizes(filepath):
 
 def test_different_size_ranges():
     """Test our size formatting with different byte ranges."""
-
     test_sizes = [
         512,  # 512 B
         1023,  # 1023 B
@@ -88,7 +86,6 @@ def format_size_our_way(size):
 @pytest.mark.skipif(IS_WINDOWS, reason="Linux-specific test using ls/du commands")
 def test_actual_files():
     """Test with actual files comparing our format vs system (Linux only)."""
-
     # Test with some larger files if available
     test_paths = ["oncutf/config.py", "main.py", "oncutf/ui/main_window.py", "requirements.txt"]
 
@@ -105,7 +102,6 @@ def test_actual_files():
 
 def test_actual_files_cross_platform():
     """Test with actual files using cross-platform methods."""
-
     # Test with some files
     test_paths = ["oncutf/config.py", "main.py", "requirements.txt"]
 
@@ -125,7 +121,6 @@ def test_actual_files_cross_platform():
 
 def test_edge_cases():
     """Test edge cases that might cause discrepancies."""
-
     # Test 1000 vs 1024 boundaries
     sizes_1000 = [999, 1000, 1001]
     sizes_1024 = [1023, 1024, 1025]

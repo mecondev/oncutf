@@ -1,5 +1,4 @@
-"""
-test_selection_provider.py
+"""test_selection_provider.py
 
 Test suite for SelectionProvider unified selection interface.
 """

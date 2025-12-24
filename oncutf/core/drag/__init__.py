@@ -1,5 +1,4 @@
-"""
-Drag & drop operations module.
+"""Drag & drop operations module.
 
 This module provides drag and drop functionality including:
 - DragManager: Main drag & drop coordination

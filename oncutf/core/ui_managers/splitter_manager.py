@@ -1,5 +1,4 @@
-"""
-Module: splitter_manager.py
+"""Module: splitter_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -21,8 +20,7 @@ logger = get_cached_logger(__name__)
 
 
 class SplitterManager:
-    """
-    Manages splitter functionality for the main window.
+    """Manages splitter functionality for the main window.
 
     This class handles:
     - Horizontal and vertical splitter movement events
@@ -32,23 +30,23 @@ class SplitterManager:
     """
 
     def __init__(self, parent_window: "MainWindow") -> None:
-        """
-        Initialize the SplitterManager.
+        """Initialize the SplitterManager.
 
         Args:
             parent_window: Reference to the main window instance
+
         """
         self.parent_window = parent_window
         logger.debug("[SplitterManager] Initialized", extra={"dev_only": True})
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """
-        Handle horizontal splitter movement.
+        """Handle horizontal splitter movement.
         Updates UI elements that depend on horizontal space allocation.
 
         Args:
             pos: New position of the splitter
             index: Index of the splitter section that moved
+
         """
         logger.debug(
             "[SplitterManager] Horizontal moved: pos=%d, index=%d",
@@ -65,13 +63,13 @@ class SplitterManager:
             self.parent_window.file_table_view.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """
-        Handle vertical splitter movement.
+        """Handle vertical splitter movement.
         Updates UI elements that depend on vertical space allocation.
 
         Args:
             pos: New position of the splitter
             index: Index of the splitter section that moved
+
         """
         logger.debug(
             "[SplitterManager] Vertical moved: pos=%d, index=%d",
@@ -91,14 +89,14 @@ class SplitterManager:
             self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
 
     def calculate_optimal_splitter_sizes(self, window_width: int) -> list[int]:
-        """
-        Calculate optimal splitter sizes based on window width with smart adaptation for wide screens.
+        """Calculate optimal splitter sizes based on window width with smart adaptation for wide screens.
 
         Args:
             window_width: Current window width in pixels
 
         Returns:
             List of optimal sizes for splitter sections
+
         """
         # Import configuration constants
         from oncutf.core.config_imports import (
@@ -169,11 +167,11 @@ class SplitterManager:
         return optimal_sizes
 
     def update_splitter_sizes_for_window_width(self, window_width: int) -> None:
-        """
-        Update splitter sizes based on new window width.
+        """Update splitter sizes based on new window width.
 
         Args:
             window_width: New window width in pixels
+
         """
         if not hasattr(self.parent_window, "horizontal_splitter"):
             logger.debug("[SplitterManager] No horizontal splitter found, skipping size update")
@@ -203,8 +201,7 @@ class SplitterManager:
     def _sizes_differ_significantly(
         self, current_sizes: list[int], optimal_sizes: list[int], threshold: int = 50
     ) -> bool:
-        """
-        Check if current and optimal sizes differ significantly.
+        """Check if current and optimal sizes differ significantly.
 
         Args:
             current_sizes: Current splitter sizes
@@ -213,6 +210,7 @@ class SplitterManager:
 
         Returns:
             True if sizes differ significantly, False otherwise
+
         """
         if len(current_sizes) != len(optimal_sizes):
             return True
@@ -224,11 +222,11 @@ class SplitterManager:
         return False
 
     def get_current_splitter_sizes(self) -> tuple[list[int], list[int]]:
-        """
-        Get current splitter sizes.
+        """Get current splitter sizes.
 
         Returns:
             Tuple of (horizontal_sizes, vertical_sizes)
+
         """
         horizontal_sizes = []
         vertical_sizes = []
@@ -242,8 +240,7 @@ class SplitterManager:
         return horizontal_sizes, vertical_sizes
 
     def trigger_column_adjustment_after_splitter_change(self) -> None:
-        """
-        Trigger column adjustment in UI elements after splitter changes.
+        """Trigger column adjustment in UI elements after splitter changes.
         This is useful when splitter movements affect column layouts.
         """
         # For file table, use the original sophisticated logic

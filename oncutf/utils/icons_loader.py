@@ -1,5 +1,4 @@
-"""
-Module: icons_loader.py
+"""Module: icons_loader.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -30,8 +29,7 @@ _metadata_icons_cache: dict[str, QPixmap] | None = None
 
 
 def load_metadata_icons(_base_dir: str | None = None) -> dict[str, QPixmap]:
-    """
-    Loads metadata status icons for the file table's first column.
+    """Loads metadata status icons for the file table's first column.
 
     Now uses SVG-based icons with proper theming instead of PNG files.
     Implements caching to avoid regenerating icons on every call.
@@ -41,6 +39,7 @@ def load_metadata_icons(_base_dir: str | None = None) -> dict[str, QPixmap]:
 
     Returns:
         Dictionary mapping status names to QPixmap objects
+
     """
     global _metadata_icons_cache
 
@@ -76,8 +75,7 @@ def load_metadata_icons(_base_dir: str | None = None) -> dict[str, QPixmap]:
 
 # Theme icon loader implementation
 class ThemeIconLoader:
-    """
-    Handles loading SVG icons with theme-specific functionality.
+    """Handles loading SVG icons with theme-specific functionality.
 
     This class loads SVG icons from the resources directory, with
     support for different themes (dark/light). It caches icons
@@ -85,11 +83,11 @@ class ThemeIconLoader:
     """
 
     def __init__(self, theme: str = "dark"):
-        """
-        Initialize the ThemeIconLoader.
+        """Initialize the ThemeIconLoader.
 
         Args:
             theme: The current theme ("dark" or "light")
+
         """
         self.theme = theme
         self.icon_cache: dict[str, dict[str, QIcon]] = {"dark": {}, "light": {}}
@@ -102,8 +100,7 @@ class ThemeIconLoader:
         return str(get_icons_dir())
 
     def get_icon_path(self, name: str, theme: str | None = None) -> str:
-        """
-        Get the full path to an icon file.
+        """Get the full path to an icon file.
 
         Args:
             name: The icon name (without extension)
@@ -111,6 +108,7 @@ class ThemeIconLoader:
 
         Returns:
             The full path to the icon file
+
         """
         theme = theme or self.theme
 
@@ -133,8 +131,7 @@ class ThemeIconLoader:
         return ""
 
     def load_icon(self, name: str, theme: str | None = None) -> QIcon:
-        """
-        Load an icon with caching.
+        """Load an icon with caching.
 
         Args:
             name: The icon name (without extension)
@@ -142,6 +139,7 @@ class ThemeIconLoader:
 
         Returns:
             QIcon object for the requested icon
+
         """
         theme = theme or self.theme
 
@@ -162,11 +160,11 @@ class ThemeIconLoader:
         return icon
 
     def set_theme(self, theme: str) -> None:
-        """
-        Set the current theme.
+        """Set the current theme.
 
         Args:
             theme: The theme to use ("dark" or "light")
+
         """
         if theme not in ["dark", "light"]:
             logger.warning("Invalid theme: %s, using 'dark' instead", theme)
@@ -175,23 +173,23 @@ class ThemeIconLoader:
         self.theme = theme
 
     def get_menu_icon(self, name: str) -> QIcon:
-        """
-        Get an icon specifically for use in menus.
+        """Get an icon specifically for use in menus.
 
         Args:
             name: The icon name (without extension)
 
         Returns:
             QIcon object for the requested icon
+
         """
         return self.load_icon(name)
 
     def get_app_icon(self) -> QIcon:
-        """
-        Get the main application icon (favicon) for window icon.
+        """Get the main application icon (favicon) for window icon.
 
         Returns:
             QIcon object for the application icon
+
         """
         from oncutf.utils.path_utils import get_assets_dir
 
@@ -210,27 +208,27 @@ icons_loader = ThemeIconLoader(theme="dark")
 
 
 def get_menu_icon(name: str) -> QIcon:
-    """
-    Convenience function to get a menu icon from the global icon loader.
+    """Convenience function to get a menu icon from the global icon loader.
 
     Args:
         name: The icon name (without extension)
 
     Returns:
         QIcon object for the requested icon
+
     """
     return icons_loader.get_menu_icon(name)
 
 
 def get_menu_icon_path(icon_name: str) -> str:
-    """
-    Get the absolute path to a menu icon file.
+    """Get the absolute path to a menu icon file.
 
     Args:
         icon_name: Name of the icon (without extension)
 
     Returns:
         str: Absolute path to the icon file
+
     """
     try:
         from oncutf.utils.path_utils import get_resource_path
@@ -260,10 +258,10 @@ def get_menu_icon_path(icon_name: str) -> str:
 
 
 def get_app_icon() -> QIcon:
-    """
-    Convenience function to get the application icon from the global icon loader.
+    """Convenience function to get the application icon from the global icon loader.
 
     Returns:
         QIcon object for the application icon
+
     """
     return icons_loader.get_app_icon()

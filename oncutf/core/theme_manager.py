@@ -1,5 +1,4 @@
-"""
-Module: theme_manager.py
+"""Module: theme_manager.py
 
 Author: Michael Economou
 Date: 2025-12-01
@@ -32,8 +31,7 @@ _theme_manager_instance: Optional["ThemeManager"] = None
 
 
 class ThemeManager(QObject):
-    """
-    Centralized theme management system.
+    """Centralized theme management system.
 
     Manages application-wide theme (dark/light) and provides:
     - Color token resolution
@@ -75,23 +73,23 @@ class ThemeManager(QObject):
             self._theme_tokens = {}
 
     def get_current_theme(self) -> str:
-        """
-        Get the currently active theme name.
+        """Get the currently active theme name.
 
         Returns:
             Current theme name ('dark' or 'light')
+
         """
         return self._current_theme
 
     def set_theme(self, theme_name: str) -> None:
-        """
-        Set the active theme and emit change signal.
+        """Set the active theme and emit change signal.
 
         Args:
             theme_name: Name of theme to activate ('dark' or 'light')
 
         Raises:
             ValueError: If theme_name is not valid
+
         """
         if theme_name not in self._theme_tokens:
             available = ", ".join(self._theme_tokens.keys())
@@ -105,8 +103,7 @@ class ThemeManager(QObject):
             self.theme_changed.emit(theme_name)
 
     def get_color(self, token: str) -> str:
-        """
-        Get color value for a specific token in current theme.
+        """Get color value for a specific token in current theme.
 
         Args:
             token: Color token name (e.g., 'background', 'text', 'selected')
@@ -116,6 +113,7 @@ class ThemeManager(QObject):
 
         Raises:
             KeyError: If token doesn't exist in current theme
+
         """
         theme_colors = self._theme_tokens.get(self._current_theme, {})
         if token not in theme_colors:
@@ -130,23 +128,23 @@ class ThemeManager(QObject):
 
     @property
     def colors(self) -> dict:
-        """
-        Get all color tokens for current theme.
+        """Get all color tokens for current theme.
 
         Returns:
             Dictionary of token -> color mappings
+
         """
         return self._theme_tokens.get(self._current_theme, {})
 
     def get_qss(self) -> str:
-        """
-        Get rendered QSS stylesheet for current theme.
+        """Get rendered QSS stylesheet for current theme.
 
         Renders the QSS template with current theme colors.
         Results are cached until theme changes.
 
         Returns:
             Complete QSS stylesheet string
+
         """
         if self._qss_cache:
             return self._qss_cache
@@ -155,14 +153,14 @@ class ThemeManager(QObject):
         return self._qss_cache
 
     def _render_qss_template(self) -> str:
-        """
-        Render QSS template with current theme colors.
+        """Render QSS template with current theme colors.
 
         Reads resources/styles/main.qss.template and replaces
         {{token}} placeholders with actual color values.
 
         Returns:
             Rendered QSS string
+
         """
         import os
 
@@ -197,13 +195,13 @@ class ThemeManager(QObject):
             return ""
 
     def apply_theme(self, app) -> None:
-        """
-        Apply current theme to QApplication.
+        """Apply current theme to QApplication.
 
         Sets the global application stylesheet.
 
         Args:
             app: QApplication instance
+
         """
         qss = self.get_qss()
         if qss:
@@ -213,8 +211,7 @@ class ThemeManager(QObject):
             logger.warning("[ThemeManager] No QSS to apply (empty or error)")
 
     def reload_theme(self) -> None:
-        """
-        Reload theme tokens from config and re-render QSS.
+        """Reload theme tokens from config and re-render QSS.
 
         Useful for development/debugging.
         """
@@ -223,8 +220,7 @@ class ThemeManager(QObject):
         logger.info("[ThemeManager] Theme tokens reloaded")
 
     def get_constant(self, key: str) -> int:
-        """
-        Get a layout/sizing constant from theme tokens.
+        """Get a layout/sizing constant from theme tokens.
 
         Provides backwards compatibility with ThemeEngine.get_constant().
 
@@ -233,6 +229,7 @@ class ThemeManager(QObject):
 
         Returns:
             Integer value for the constant (default: 0 if not found)
+
         """
         try:
             value_str = self.get_color(key)
@@ -246,13 +243,13 @@ class ThemeManager(QObject):
             return 0
 
     def get_font_sizes(self) -> dict:
-        """
-        Get font size definitions for the current theme.
+        """Get font size definitions for the current theme.
 
         Provides backwards compatibility with ThemeEngine.fonts.
 
         Returns:
             Dictionary with font size configurations
+
         """
         return {
             "base_family": "Inter",
@@ -266,21 +263,21 @@ class ThemeManager(QObject):
 
     @property
     def fonts(self) -> dict:
-        """
-        Get fonts configuration (property for ThemeEngine compatibility).
+        """Get fonts configuration (property for ThemeEngine compatibility).
 
         Returns:
             Dictionary with font settings
+
         """
         return self.get_font_sizes()
 
     @property
     def constants(self) -> dict:
-        """
-        Get layout/sizing constants (property for ThemeEngine compatibility).
+        """Get layout/sizing constants (property for ThemeEngine compatibility).
 
         Returns:
             Dictionary with constant values
+
         """
         return {
             "table_row_height": self.get_constant("table_row_height"),
@@ -289,14 +286,14 @@ class ThemeManager(QObject):
         }
 
     def apply_complete_theme(self, app, main_window=None) -> None:
-        """
-        Apply complete theming to the entire application.
+        """Apply complete theming to the entire application.
 
         Provides backwards compatibility with ThemeEngine.apply_complete_theme().
 
         Args:
             app: QApplication instance
             main_window: Optional QMainWindow instance (for additional styling)
+
         """
         # Clear any existing stylesheets
         app.setStyleSheet("")
@@ -315,11 +312,11 @@ class ThemeManager(QObject):
 
 
 def get_theme_manager() -> ThemeManager:
-    """
-    Get the global ThemeManager singleton instance.
+    """Get the global ThemeManager singleton instance.
 
     Returns:
         ThemeManager instance
+
     """
     global _theme_manager_instance
     if _theme_manager_instance is None:

@@ -1,5 +1,4 @@
-"""
-Module: tooltip_helper.py
+"""Module: tooltip_helper.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -382,8 +381,7 @@ class TooltipHelper:
         duration: int | None = None,
         persistent: bool = False,
     ) -> None:
-        """
-        Show a custom tooltip near the specified widget
+        """Show a custom tooltip near the specified widget
 
         Args:
             widget: The widget to show tooltip for
@@ -391,6 +389,7 @@ class TooltipHelper:
             tooltip_type: Type of tooltip (error, warning, info, success, default)
             duration: Duration in milliseconds (None for config default, 0 for no auto-hide)
             persistent: If True, tooltip behaves like Qt standard tooltip (show on hover)
+
         """
         try:
             if persistent:
@@ -491,13 +490,13 @@ class TooltipHelper:
     def setup_tooltip(
         cls, widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT
     ) -> None:
-        """
-        Setup a persistent tooltip for a widget (replacement for setToolTip)
+        """Setup a persistent tooltip for a widget (replacement for setToolTip)
 
         Args:
             widget: The widget to add tooltip to
             message: Tooltip text
             tooltip_type: Type of tooltip styling
+
         """
         cls._setup_persistent_tooltip(widget, message, tooltip_type)
 
@@ -505,8 +504,7 @@ class TooltipHelper:
     def setup_action_tooltip(
         cls, action, message: str, tooltip_type: str = TooltipType.INFO, menu: QMenu | None = None
     ) -> None:
-        """
-        Setup a custom tooltip for QAction in a QMenu
+        """Setup a custom tooltip for QAction in a QMenu
 
         Args:
             action: The QAction to add tooltip to
@@ -516,6 +514,7 @@ class TooltipHelper:
 
         Note:
             If menu is not provided, falls back to standard setToolTip()
+
         """
         if menu is None:
             # Fallback to standard tooltip
@@ -538,14 +537,14 @@ class TooltipHelper:
         message: str,
         tooltip_type: str = TooltipType.INFO,
     ) -> None:
-        """
-        Setup a custom tooltip for a QListWidgetItem or QTableWidgetItem
+        """Setup a custom tooltip for a QListWidgetItem or QTableWidgetItem
 
         Args:
             widget: The QListWidget or QTableWidget containing the item
             item: The item to add tooltip to
             message: Tooltip text
             tooltip_type: Type of tooltip styling
+
         """
         # Install event filter on widget viewport if not already installed
         if not hasattr(widget, "_item_tooltip_filter"):

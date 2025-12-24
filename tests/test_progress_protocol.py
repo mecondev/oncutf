@@ -1,5 +1,4 @@
-"""
-Module: test_progress_protocol.py
+"""Module: test_progress_protocol.py
 
 Tests for the standard progress reporting protocol.
 """

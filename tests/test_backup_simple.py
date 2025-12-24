@@ -1,5 +1,4 @@
-"""
-Module: test_backup_simple.py
+"""Module: test_backup_simple.py
 
 Author: Michael Economou
 Date: 2025-05-31

@@ -1,5 +1,4 @@
-"""
-Module: rename_module_widget.py
+"""Module: rename_module_widget.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -49,8 +48,7 @@ logger = get_cached_logger(__name__)
 
 
 class RenameModuleWidget(QWidget):
-    """
-    Container widget that hosts all rename modules and a fixed post-processing section.
+    """Container widget that hosts all rename modules and a fixed post-processing section.
     Provides a structured area for inserting, configuring, and removing rename logic modules.
 
     Now supports ApplicationContext for optimized access patterns while maintaining
@@ -253,8 +251,7 @@ class RenameModuleWidget(QWidget):
                 logger.warning("[RenameModuleWidget] Signal connection failed: %s", e)
 
     def update_module_content(self, module_name: str) -> None:
-        """
-        Replace module widget and adjust height constraint.
+        """Replace module widget and adjust height constraint.
         Now uses ApplicationContext-optimized approach for MetadataWidget creation.
         """
         if self.current_module_widget:
@@ -297,8 +294,7 @@ class RenameModuleWidget(QWidget):
         self.updated.emit(self)
 
     def get_data(self) -> dict:
-        """
-        Return the current module data.
+        """Return the current module data.
         """
         if self.current_module_widget and hasattr(self.current_module_widget, "get_data"):
             data = self.current_module_widget.get_data()
@@ -308,8 +304,7 @@ class RenameModuleWidget(QWidget):
         return data
 
     def to_dict(self, _preview: bool = False) -> dict:
-        """
-        Returns the configuration of this rename module as a dictionary.
+        """Returns the configuration of this rename module as a dictionary.
         Delegates to the active submodule and adds type.
         """
         module_type = self.type_combo.currentText()
@@ -319,8 +314,7 @@ class RenameModuleWidget(QWidget):
         return data
 
     def is_effective(self) -> bool:
-        """
-        Determines if this module is effectively doing something, by checking its data.
+        """Determines if this module is effectively doing something, by checking its data.
         """
         if not self.current_module_widget:
             logger.warning("[ModuleWidget] No module loaded for widget!")

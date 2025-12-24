@@ -1,5 +1,4 @@
-"""
-Module: test_metadata_validation_system.py
+"""Module: test_metadata_validation_system.py
 
 Author: Michael Economou
 Date: 2025-05-31

@@ -1,5 +1,4 @@
-"""
-Module: column_management_mixin.py
+"""Module: column_management_mixin.py
 
 Author: Michael Economou
 Date: 2025-05-21
@@ -25,8 +24,7 @@ logger = get_cached_logger(__name__)
 
 
 class ColumnManagementMixin:
-    """
-    Provides column management functionality for table views.
+    """Provides column management functionality for table views.
 
     This mixin handles all aspects of column management including:
     - Width configuration and persistence
@@ -89,7 +87,6 @@ class ColumnManagementMixin:
 
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
-
         if not self.model() or self.model().columnCount() == 0:
             return
         header = self.horizontalHeader()
@@ -871,7 +868,6 @@ class ColumnManagementMixin:
 
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
-
         from oncutf.core.unified_column_service import get_column_service
 
         all_columns = get_column_service().get_all_columns()
@@ -933,7 +929,6 @@ class ColumnManagementMixin:
 
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
-
         from oncutf.core.unified_column_service import get_column_service
 
         if column_key not in get_column_service().get_all_columns():
@@ -1018,7 +1013,6 @@ class ColumnManagementMixin:
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
-
         from oncutf.core.unified_column_service import get_column_service
 
         all_columns = get_column_service().get_all_columns()

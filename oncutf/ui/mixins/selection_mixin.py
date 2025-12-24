@@ -1,5 +1,4 @@
-"""
-Module: selection_mixin.py
+"""Module: selection_mixin.py
 
 Author: Michael Economou
 Date: 2025-12-04
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class SelectionMixin:
-    """
-    Mixin providing selection management functionality for QTableView widgets.
+    """Mixin providing selection management functionality for QTableView widgets.
 
     This mixin handles:
     - Integration with SelectionStore for centralized selection state
@@ -65,12 +63,12 @@ class SelectionMixin:
             return None
 
     def _update_selection_store(self, selected_rows: set, emit_signal: bool = True) -> None:
-        """
-        Update SelectionStore and Qt selection model with new selection.
+        """Update SelectionStore and Qt selection model with new selection.
 
         Args:
             selected_rows: Set of row indices to select
             emit_signal: Whether to emit selection changed signal
+
         """
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -85,14 +83,14 @@ class SelectionMixin:
             self._sync_qt_selection_model(selected_rows)
 
     def _sync_qt_selection_model(self, selected_rows: set) -> None:
-        """
-        Optimized batch synchronization of Qt's selection model.
+        """Optimized batch synchronization of Qt's selection model.
 
         Uses batch selection instead of row-by-row to improve performance
         with large selections.
 
         Args:
             selected_rows: Set of row indices to sync
+
         """
         try:
             selection_model = self.selectionModel()
@@ -127,11 +125,11 @@ class SelectionMixin:
             logger.exception("[SyncQt] Error syncing selection")
 
     def _get_current_selection(self) -> set:
-        """
-        Get current selection from SelectionStore or fallback to Qt model.
+        """Get current selection from SelectionStore or fallback to Qt model.
 
         Returns:
             Set of currently selected row indices
+
         """
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -148,13 +146,13 @@ class SelectionMixin:
                 return self.selected_rows
 
     def _get_current_selection_safe(self) -> set:
-        """
-        Get current selection safely without SelectionStore dependency.
+        """Get current selection safely without SelectionStore dependency.
 
         This is a simplified version that directly queries Qt's selection model.
 
         Returns:
             Set of currently selected row indices
+
         """
         selection_model = self.selectionModel()
         if selection_model:
@@ -163,12 +161,12 @@ class SelectionMixin:
             return set()
 
     def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
-        """
-        Set anchor row in SelectionStore or fallback to legacy.
+        """Set anchor row in SelectionStore or fallback to legacy.
 
         Args:
             row: Row index to set as anchor (None to clear)
             emit_signal: Whether to emit anchor changed signal
+
         """
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -178,11 +176,11 @@ class SelectionMixin:
         self.anchor_row = row
 
     def _get_anchor_row(self) -> int | None:
-        """
-        Get anchor row from SelectionStore or fallback to legacy.
+        """Get anchor row from SelectionStore or fallback to legacy.
 
         Returns:
             Anchor row index or None if no anchor set
+
         """
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -191,8 +189,7 @@ class SelectionMixin:
             return self.anchor_row
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
-        """
-        Handle selection logic with anchor and modifier support.
+        """Handle selection logic with anchor and modifier support.
 
         Implements Windows Explorer-like selection behavior:
         - No modifier: Clear and select
@@ -202,6 +199,7 @@ class SelectionMixin:
         Args:
             index: QModelIndex of clicked item
             modifiers: Qt keyboard modifiers (Shift, Ctrl, etc.)
+
         """
         # Add protection against infinite loops
         if hasattr(self, "_ensuring_selection") and self._ensuring_selection:
@@ -315,14 +313,14 @@ class SelectionMixin:
             self._ensuring_selection = False
 
     def selectionChanged(self, selected, deselected) -> None:
-        """
-        Override Qt's selectionChanged to update SelectionStore.
+        """Override Qt's selectionChanged to update SelectionStore.
 
         This ensures our application state stays in sync with Qt's selection model.
 
         Args:
             selected: QItemSelection of newly selected items
             deselected: QItemSelection of newly deselected items
+
         """
         # SIMPLIFIED: Only essential protection against infinite loops
         if hasattr(self, "_processing_selection_change") and self._processing_selection_change:
@@ -352,12 +350,12 @@ class SelectionMixin:
             self._processing_selection_change = False
 
     def select_rows_range(self, start_row: int, end_row: int) -> None:
-        """
-        Select a range of rows efficiently using batch selection.
+        """Select a range of rows efficiently using batch selection.
 
         Args:
             start_row: Starting row index
             end_row: Ending row index (inclusive)
+
         """
         self.blockSignals(True)
         selection_model = self.selectionModel()
@@ -391,11 +389,11 @@ class SelectionMixin:
             self._update_selection_store(selected_rows, emit_signal=True)
 
     def select_dropped_files(self, file_paths: list[str] | None = None) -> None:
-        """
-        Select specific files that were just dropped/loaded in the table.
+        """Select specific files that were just dropped/loaded in the table.
 
         Args:
             file_paths: List of file paths to select (None = select all)
+
         """
         model = self.model()
         if not model or not hasattr(model, "files"):
@@ -466,8 +464,7 @@ class SelectionMixin:
             self.viewport().update()
 
     def _sync_selection_safely(self) -> None:
-        """
-        Sync selection state with parent window or SelectionStore.
+        """Sync selection state with parent window or SelectionStore.
 
         This is typically called when selection needs to be synchronized
         with external components (e.g., checked files in parent window).

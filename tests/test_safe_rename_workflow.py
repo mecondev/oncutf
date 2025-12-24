@@ -1,5 +1,4 @@
-"""
-Test module for safe rename workflow functionality.
+"""Test module for safe rename workflow functionality.
 
 This module tests the enhanced rename workflow that prevents Qt object lifecycle crashes
 while ensuring proper UI state restoration after rename operations.

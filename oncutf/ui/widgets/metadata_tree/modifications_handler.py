@@ -28,15 +28,16 @@ class MetadataTreeModificationsHandler:
 
         Args:
             view: The metadata tree view instance
+
         """
         self._view = view
 
     def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
-        """
-        Collect all modified metadata for all files that have modifications.
+        """Collect all modified metadata for all files that have modifications.
 
         Returns:
             Dictionary mapping file paths to their modified metadata
+
         """
         # Get staging manager
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
@@ -49,8 +50,7 @@ class MetadataTreeModificationsHandler:
         return staging_manager.get_all_staged_changes()
 
     def clear_modifications(self) -> None:
-        """
-        Clear all modified metadata items for the current file.
+        """Clear all modified metadata items for the current file.
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
 
@@ -67,11 +67,11 @@ class MetadataTreeModificationsHandler:
         self._view.viewport().update()
 
     def clear_modifications_for_file(self, file_path: str) -> None:
-        """
-        Clear modifications for a specific file.
+        """Clear modifications for a specific file.
 
         Args:
             file_path: Full path of the file to clear modifications for
+
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
 
@@ -99,11 +99,11 @@ class MetadataTreeModificationsHandler:
             self._view.viewport().update()
 
     def has_modifications_for_selected_files(self) -> bool:
-        """
-        Check if any of the currently selected files have modifications.
+        """Check if any of the currently selected files have modifications.
 
         Returns:
             bool: True if any selected file has modifications
+
         """
         # Get staging manager
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
@@ -126,11 +126,11 @@ class MetadataTreeModificationsHandler:
         return False
 
     def has_any_modifications(self) -> bool:
-        """
-        Check if there are any modifications in any file.
+        """Check if there are any modifications in any file.
 
         Returns:
             bool: True if any file has modifications
+
         """
         # Get staging manager
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager

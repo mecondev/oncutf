@@ -1,5 +1,4 @@
-"""
-Module: metadata_writer.py
+"""Module: metadata_writer.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
@@ -33,8 +32,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataWriter(QObject):
-    """
-    Writer service for metadata save/write operations.
+    """Writer service for metadata save/write operations.
 
     Responsibilities:
     - Set metadata values (update cache)
@@ -66,8 +64,7 @@ class MetadataWriter(QObject):
         logger.info("[MetadataWriter] Save cancellation requested")
 
     def set_metadata_value(self, file_path: str, key_path: str, new_value: str) -> bool:
-        """
-        Set a metadata value for a file (updates cache only, doesn't write to disk).
+        """Set a metadata value for a file (updates cache only, doesn't write to disk).
 
         Args:
             file_path: Path to the file
@@ -76,6 +73,7 @@ class MetadataWriter(QObject):
 
         Returns:
             bool: True if successful, False otherwise
+
         """
         try:
             # Stage the change
@@ -179,6 +177,7 @@ class MetadataWriter(QObject):
         Args:
             is_exit_save: If True, indicates this is a save-on-exit operation.
                          ESC will be blocked to prevent incomplete saves.
+
         """
         if not self.parent_window:
             return
@@ -242,6 +241,7 @@ class MetadataWriter(QObject):
             files_to_save: List of FileItem objects to save
             all_modifications: Dictionary of all staged modifications
             is_exit_save: If True, ESC will be blocked in progress dialog
+
         """
         import contextlib
 

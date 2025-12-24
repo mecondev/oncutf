@@ -1,5 +1,4 @@
-"""
-Module: test_metadata_worker.py
+"""Module: test_metadata_worker.py
 
 Author: Michael Economou
 Date: 2025-05-09

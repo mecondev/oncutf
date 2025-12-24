@@ -1,5 +1,4 @@
-"""
-Module: original_name_module.py
+"""Module: original_name_module.py
 
 Author: Michael Economou
 Date: 2025-05-19
@@ -18,8 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class OriginalNameModule:
-    """
-    Logic component (non-UI) for applying original name transformations.
+    """Logic component (non-UI) for applying original name transformations.
     Used during rename preview and execution.
     """
 
@@ -27,8 +25,7 @@ class OriginalNameModule:
     def apply_from_data(
         data: dict, file_item: FileItem, _index: int = 0, _metadata_cache: dict = None
     ) -> str:
-        """
-        Applies original filename with optional Greeklish transformation.
+        """Applies original filename with optional Greeklish transformation.
         Case and separator transformations are handled by NameTransformModule.
 
         Args:
@@ -39,6 +36,7 @@ class OriginalNameModule:
 
         Returns:
             str: Original filename base with optional Greeklish conversion
+
         """
         base_name = os.path.splitext(file_item.filename)[0]
         logger.debug("[OriginalNameModule] Starting with: %s", base_name, extra={"dev_only": True})

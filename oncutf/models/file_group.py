@@ -1,5 +1,4 @@
-"""
-Module: file_group.py
+"""Module: file_group.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -18,8 +17,7 @@ from oncutf.models.file_item import FileItem
 
 @dataclass
 class FileGroup:
-    """
-    Represents a group of files from a common source.
+    """Represents a group of files from a common source.
 
     Used for:
     - Counter scope management (reset per folder)
@@ -31,6 +29,7 @@ class FileGroup:
         files: List of FileItem objects in this group
         recursive: Whether files were loaded recursively
         metadata: Optional metadata about the group (e.g., load timestamp)
+
     """
 
     source_path: Path

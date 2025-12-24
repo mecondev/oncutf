@@ -1,5 +1,4 @@
-"""
-Module: original_name_widget.py
+"""Module: original_name_widget.py
 
 Author: Michael Economou
 Date: 2025-05-19
@@ -15,8 +14,7 @@ logger = get_cached_logger(__name__)
 
 
 class OriginalNameWidget(BaseRenameModule):
-    """
-    Rename module widget for reusing the original filename.
+    """Rename module widget for reusing the original filename.
 
     Simple module that just returns the original filename without modifications.
     """
@@ -64,7 +62,6 @@ class OriginalNameWidget(BaseRenameModule):
 
     @staticmethod
     def is_effective(_data: dict) -> bool:
-        """
-        The original name module is always effective because it produces output.
+        """The original name module is always effective because it produces output.
         """
         return True

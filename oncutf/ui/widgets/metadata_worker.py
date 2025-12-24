@@ -1,5 +1,4 @@
-"""
-Module: metadata_worker.py
+"""Module: metadata_worker.py
 
 Author: Michael Economou
 Date: 2025-05-09
@@ -32,8 +31,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataWorker(QObject):
-    """
-    Worker class for threaded metadata extraction with batch optimization.
+    """Worker class for threaded metadata extraction with batch optimization.
     Emits progress and result signals and supports graceful cancellation.
 
     Attributes:
@@ -41,6 +39,7 @@ class MetadataWorker(QObject):
         metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
+
     """
 
     finished = pyqtSignal()
@@ -110,8 +109,7 @@ class MetadataWorker(QObject):
 
     @pyqtSlot()
     def run_batch(self) -> None:
-        """
-        Executes a batch metadata extraction process in a separate thread with timing logs.
+        """Executes a batch metadata extraction process in a separate thread with timing logs.
 
         This method:
         - Iterates over a list of file paths
@@ -367,8 +365,7 @@ class MetadataWorker(QObject):
             self.finished.emit()
 
     def cancel(self) -> None:
-        """
-        Cancels the batch processing. Safe flag that is checked per file.
+        """Cancels the batch processing. Safe flag that is checked per file.
         """
         logger.info("[Worker] cancel() requested — will cancel after current file")
         self._cancelled = True

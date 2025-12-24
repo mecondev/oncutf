@@ -1,5 +1,4 @@
-"""
-Module: metadata_field_mapper.py
+"""Module: metadata_field_mapper.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -18,8 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataFieldMapper:
-    """
-    Centralized metadata field mapping and value formatting.
+    """Centralized metadata field mapping and value formatting.
 
     Handles:
     - Mapping from column keys to metadata keys (with fallbacks)
@@ -94,8 +92,7 @@ class MetadataFieldMapper:
 
     @classmethod
     def get_metadata_value(cls, metadata_dict: dict[str, Any], field_key: str) -> str:
-        """
-        Get metadata value for a field key with fallback support and formatting.
+        """Get metadata value for a field key with fallback support and formatting.
 
         Args:
             metadata_dict: Dictionary containing metadata
@@ -103,6 +100,7 @@ class MetadataFieldMapper:
 
         Returns:
             Formatted string value for display, or empty string if not found
+
         """
         if not isinstance(metadata_dict, dict) or not metadata_dict:
             return ""
@@ -151,14 +149,14 @@ class MetadataFieldMapper:
 
     @classmethod
     def _get_image_size_value(cls, metadata_dict: dict[str, Any]) -> str:
-        """
-        Special handling for image size (combines width x height).
+        """Special handling for image size (combines width x height).
 
         Args:
             metadata_dict: Dictionary containing metadata
 
         Returns:
             Formatted image size string (e.g., "1920x1080") or empty string
+
         """
         # Try different possible keys for width and height
         width_keys = ["ImageWidth", "ExifImageWidth", "PixelXDimension"]
@@ -192,8 +190,7 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_value_for_display(cls, field_key: str, _metadata_key: str, raw_value: Any) -> str:
-        """
-        Format metadata value for compact display in file table columns.
+        """Format metadata value for compact display in file table columns.
 
         Args:
             field_key: Column key (e.g., "rotation", "aperture")
@@ -202,6 +199,7 @@ class MetadataFieldMapper:
 
         Returns:
             Formatted string for display
+
         """
         if raw_value is None:
             return ""
@@ -232,14 +230,14 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_rotation_value(cls, value: str) -> str:
-        """
-        Format rotation/orientation values consistently.
+        """Format rotation/orientation values consistently.
 
         Examples:
             "Horizontal (normal)" -> "0°"
             "0" -> "0°"
             "90" -> "90°"
             "180" -> "180°"
+
         """
         value_lower = value.lower()
 
@@ -268,13 +266,13 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_duration_value(cls, value: str) -> str:
-        """
-        Format duration values for compact display.
+        """Format duration values for compact display.
 
         Examples:
             "0:01:23" -> "1:23"
             "00:00:05.50" -> "5.5s"
             "123.45 s" -> "2:03"
+
         """
         # Try to parse common duration formats
         value_clean = value.replace(" s", "").replace("s", "").strip()
@@ -330,13 +328,13 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_camera_setting_value(cls, field_key: str, value: str) -> str:
-        """
-        Format camera settings (aperture, ISO, shutter speed) for display.
+        """Format camera settings (aperture, ISO, shutter speed) for display.
 
         Examples:
             "2.8" -> "f/2.8" (aperture)
             "1/250" -> "1/250" (shutter speed)
             "100" -> "ISO 100" (ISO)
+
         """
         if field_key == "aperture":
             # Add f/ prefix for aperture values
@@ -373,24 +371,24 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_device_value(cls, value: str) -> str:
-        """
-        Format device model/manufacturer values (keep as-is, but limit length).
+        """Format device model/manufacturer values (keep as-is, but limit length).
 
         Examples:
             "NIKON D800" -> "NIKON D800" (keep as requested)
             "Canon EOS 5D Mark IV" -> "Canon EOS 5D Mark IV"
+
         """
         # Keep device names as-is but limit to reasonable length for columns
         return value[:20]
 
     @classmethod
     def _format_video_value(cls, field_key: str, value: str) -> str:
-        """
-        Format video-specific values.
+        """Format video-specific values.
 
         Examples:
             "29.97" -> "30 fps" (video_fps)
             "5000000" -> "5 Mbps" (video_avg_bitrate)
+
         """
         if field_key == "video_fps":
             try:
@@ -415,14 +413,14 @@ class MetadataFieldMapper:
 
     @classmethod
     def _format_default_value(cls, value: str) -> str:
-        """
-        Default value formatting - clean up and limit length.
+        """Default value formatting - clean up and limit length.
 
         Args:
             value: Raw string value
 
         Returns:
             Cleaned and truncated value
+
         """
         # Remove extra whitespace
         cleaned = " ".join(value.split())
@@ -435,36 +433,36 @@ class MetadataFieldMapper:
 
     @classmethod
     def get_available_field_keys(cls) -> list[str]:
-        """
-        Get list of all available field keys that can be mapped.
+        """Get list of all available field keys that can be mapped.
 
         Returns:
             List of field keys (column keys) that have mappings defined
+
         """
         return list(cls.FIELD_KEY_MAPPING.keys())
 
     @classmethod
     def get_metadata_keys_for_field(cls, field_key: str) -> list[str]:
-        """
-        Get list of metadata keys that are checked for a given field key.
+        """Get list of metadata keys that are checked for a given field key.
 
         Args:
             field_key: Column key (e.g., "rotation", "aperture")
 
         Returns:
             List of metadata keys that are checked in order
+
         """
         return cls.FIELD_KEY_MAPPING.get(field_key, [])
 
     @classmethod
     def has_field_mapping(cls, field_key: str) -> bool:
-        """
-        Check if a field key has a mapping defined.
+        """Check if a field key has a mapping defined.
 
         Args:
             field_key: Column key to check
 
         Returns:
             True if mapping exists, False otherwise
+
         """
         return field_key in cls.FIELD_KEY_MAPPING

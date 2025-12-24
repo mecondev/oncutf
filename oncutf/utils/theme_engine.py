@@ -1,5 +1,4 @@
-"""
-Module: theme_engine.py
+"""Module: theme_engine.py
 
 Author: Michael Economou
 Date: 2025-06-20
@@ -24,19 +23,18 @@ logger = logging.getLogger(__name__)
 
 
 class ThemeEngine:
-    """
-    Simplified theme engine that applies all styling globally.
+    """Simplified theme engine that applies all styling globally.
 
     DEPRECATED: This is a facade for backwards compatibility.
     Delegates to ThemeManager for actual theme management.
     """
 
     def __init__(self, theme_name: str = "dark"):
-        """
-        Initialize ThemeEngine (facade).
+        """Initialize ThemeEngine (facade).
 
         Args:
             theme_name: Theme name to use (passed to ThemeManager)
+
         """
         self.theme_name = theme_name or oncutf.config.THEME_NAME
         self.is_windows = platform.system() == "Windows"
@@ -152,14 +150,14 @@ class ThemeEngine:
         }
 
     def get_color(self, color_key: str) -> str:
-        """
-        Get a color from the current theme.
+        """Get a color from the current theme.
 
         Args:
             color_key: Color token name
 
         Returns:
             Hex color string
+
         """
         # First try the local colors dict (backwards compatible keys)
         if color_key in self.colors:
@@ -250,26 +248,26 @@ class ThemeEngine:
             return "#000000"  # Default fallback
 
     def get_constant(self, key: str) -> int:
-        """
-        Get a layout/sizing constant.
+        """Get a layout/sizing constant.
 
         Args:
             key: Constant name
 
         Returns:
             Integer value
+
         """
         return self.constants.get(key, 0)
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
-        """
-        Apply complete theming to the entire application.
+        """Apply complete theming to the entire application.
 
         Delegates to ThemeManager and adds backwards-compatible styling.
 
         Args:
             app: QApplication instance
             main_window: QMainWindow instance
+
         """
         # Clear any existing stylesheets
         app.setStyleSheet("")

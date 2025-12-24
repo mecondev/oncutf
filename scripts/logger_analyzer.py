@@ -1,5 +1,4 @@
-"""
-Module: scripts/logger_analyzer.py
+"""Module: scripts/logger_analyzer.py
 
 Author: Michael Economou
 Date: 2025-12-07

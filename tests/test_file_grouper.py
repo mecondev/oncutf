@@ -1,5 +1,4 @@
-"""
-Module: test_file_grouper.py
+"""Module: test_file_grouper.py
 
 Author: Michael Economou
 Date: 2025-12-17

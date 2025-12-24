@@ -1,5 +1,4 @@
-"""
-Module: metadata_validated_input.py
+"""Module: metadata_validated_input.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -22,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
-    """
-    Single-line input widget with metadata-specific validation.
+    """Single-line input widget with metadata-specific validation.
 
     Features:
     - Field-specific character blocking (e.g., filename chars for Title)
@@ -69,11 +67,11 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         return field_limits.get(self._field_name, 0)
 
     def get_blocked_characters(self) -> set[str]:
-        """
-        Get set of characters that should be blocked for this field.
+        """Get set of characters that should be blocked for this field.
 
         Returns:
             Set of characters to block
+
         """
         # Only Title field blocks filename-unsafe characters
         if self._field_name == "Title":
@@ -83,14 +81,14 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         return set()
 
     def validate_text_content(self, text: str) -> tuple[bool, str]:
-        """
-        Validate text content using metadata field validators.
+        """Validate text content using metadata field validators.
 
         Args:
             text: Text to validate
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not self._field_name:
             return super().validate_text_content(text)
@@ -124,11 +122,11 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         self.update_validation_state(text)
 
     def set_field_name(self, field_name: str) -> None:
-        """
-        Set the field name and update validation rules.
+        """Set the field name and update validation rules.
 
         Args:
             field_name: Name of the metadata field
+
         """
         self._field_name = field_name
         self._setup_field_specific_properties()
@@ -138,8 +136,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
 
 
 class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
-    """
-    Multi-line input widget for description and other long text fields.
+    """Multi-line input widget for description and other long text fields.
 
     Features:
     - Multi-line text support
@@ -194,24 +191,24 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         return self._max_length_override
 
     def get_blocked_characters(self) -> set[str]:
-        """
-        Get set of characters that should be blocked for this field.
+        """Get set of characters that should be blocked for this field.
 
         Returns:
             Set of characters to block (empty for text fields)
+
         """
         # Text fields generally don't block characters
         return set()
 
     def validate_text_content(self, text: str) -> tuple[bool, str]:
-        """
-        Validate text content using metadata field validators.
+        """Validate text content using metadata field validators.
 
         Args:
             text: Text to validate
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not self._field_name:
             return super().validate_text_content(text)
@@ -251,11 +248,11 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         self.update_validation_state(self.text())
 
     def set_field_name(self, field_name: str) -> None:
-        """
-        Set the field name and update validation rules.
+        """Set the field name and update validation rules.
 
         Args:
             field_name: Name of the metadata field
+
         """
         self._field_name = field_name
         self._setup_field_specific_properties()
@@ -265,8 +262,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
 
 
 class MetadataRotationComboBox(QComboBox):
-    """
-    Specialized combo box for rotation values.
+    """Specialized combo box for rotation values.
 
     Features:
     - Predefined rotation values (0°, 90°, 180°, 270°)
@@ -361,8 +357,7 @@ class MetadataRotationComboBox(QComboBox):
 def create_metadata_input_widget(
     field_name: str, is_multiline: bool = False, parent: QWidget | None = None
 ):
-    """
-    Factory function to create appropriate metadata input widget.
+    """Factory function to create appropriate metadata input widget.
 
     Args:
         field_name: Name of the metadata field
@@ -371,6 +366,7 @@ def create_metadata_input_widget(
 
     Returns:
         MetadataValidatedLineEdit, MetadataValidatedTextEdit, or MetadataRotationComboBox
+
     """
     # Special case for Rotation field - use combo box
     if field_name == "Rotation":

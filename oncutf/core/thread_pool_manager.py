@@ -1,5 +1,4 @@
-"""
-Module: thread_pool_manager.py
+"""Module: thread_pool_manager.py
 
 Author: Michael Economou
 Date: 2025-06-25
@@ -95,8 +94,7 @@ class ThreadPoolStats:
 
 
 class PriorityQueue:
-    """
-    Priority queue implementation for task scheduling.
+    """Priority queue implementation for task scheduling.
 
     Tasks are ordered by priority and creation time.
     """
@@ -141,8 +139,7 @@ class PriorityQueue:
 
 
 class SmartWorkerThread(QThread):
-    """
-    Smart worker thread that can handle multiple types of tasks.
+    """Smart worker thread that can handle multiple types of tasks.
 
     Features:
     - Task execution with error handling
@@ -156,13 +153,13 @@ class SmartWorkerThread(QThread):
     task_progress = pyqtSignal(str, float)  # task_id, progress
 
     def __init__(self, worker_id: str, task_queue: PriorityQueue, parent=None):
-        """
-        Initialize smart worker thread.
+        """Initialize smart worker thread.
 
         Args:
             worker_id: Unique worker identifier
             task_queue: Shared task queue
             parent: Parent QObject
+
         """
         super().__init__(parent)
 
@@ -267,8 +264,7 @@ class SmartWorkerThread(QThread):
 
 
 class ThreadPoolManager(QObject):
-    """
-    Advanced thread pool manager with intelligent work distribution.
+    """Advanced thread pool manager with intelligent work distribution.
 
     Features:
     - Dynamic thread pool sizing
@@ -285,13 +281,13 @@ class ThreadPoolManager(QObject):
     pool_resized = pyqtSignal(int)  # new_size
 
     def __init__(self, min_threads: int = 2, max_threads: int = None, parent=None):
-        """
-        Initialize thread pool manager.
+        """Initialize thread pool manager.
 
         Args:
             min_threads: Minimum number of threads
             max_threads: Maximum number of threads (default: CPU count * 2)
             parent: Parent QObject
+
         """
         super().__init__(parent)
 
@@ -342,8 +338,7 @@ class ThreadPoolManager(QObject):
         priority: TaskPriority = TaskPriority.NORMAL,
         callback: Callable | None = None,
     ) -> bool:
-        """
-        Submit a task for execution.
+        """Submit a task for execution.
 
         Args:
             task_id: Unique task identifier
@@ -355,6 +350,7 @@ class ThreadPoolManager(QObject):
 
         Returns:
             Success status
+
         """
         if kwargs is None:
             kwargs = {}
@@ -558,6 +554,7 @@ class ThreadPoolManager(QObject):
 
         Returns:
             True if the pool is operating normally.
+
         """
         return self._is_healthy and len(self._workers) > 0
 
@@ -566,6 +563,7 @@ class ThreadPoolManager(QObject):
 
         Returns:
             Last error message or None if no errors.
+
         """
         return self._last_error
 
@@ -574,6 +572,7 @@ class ThreadPoolManager(QObject):
 
         Returns:
             Dictionary with health status and metrics.
+
         """
         active_workers = sum(1 for w in self._workers.values() if w.isRunning())
 

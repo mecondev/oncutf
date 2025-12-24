@@ -1,5 +1,4 @@
-"""
-Module: initialization_worker.py
+"""Module: initialization_worker.py
 
 Author: Michael Economou
 Date: 2025-12-07
@@ -46,8 +45,7 @@ logger = get_cached_logger(__name__)
 
 
 class InitializationWorker(QObject):
-    """
-    Background worker for application initialization tasks.
+    """Background worker for application initialization tasks.
 
     This worker performs heavy non-GUI operations in a background thread
     to keep the splash screen responsive during app startup.
@@ -82,8 +80,7 @@ class InitializationWorker(QObject):
         }
 
     def run(self) -> None:
-        """
-        Main worker entry point (runs in background thread).
+        """Main worker entry point (runs in background thread).
 
         Performs all initialization tasks and emits signals for progress updates.
         Emits finished signal with results dict on success, or error signal on failure.
@@ -140,8 +137,7 @@ class InitializationWorker(QObject):
             self.error.emit(error_msg)
 
     def _load_fonts(self) -> None:
-        """
-        Load and validate custom fonts.
+        """Load and validate custom fonts.
 
         This is a file I/O operation that can be safely done in background thread.
         Actual font registration with Qt must be done in main thread later.
@@ -174,8 +170,7 @@ class InitializationWorker(QObject):
             # Don't fail initialization if fonts can't be loaded
 
     def _prepare_theme(self) -> None:
-        """
-        Prepare theme data without applying to GUI.
+        """Prepare theme data without applying to GUI.
 
         This performs non-GUI preparatory work like:
         - Reading theme files from disk
@@ -209,8 +204,7 @@ class InitializationWorker(QObject):
             # Don't fail initialization if theme prep fails
 
     def _validate_database(self) -> None:
-        """
-        Validate database files and perform integrity checks.
+        """Validate database files and perform integrity checks.
 
         This is file I/O and SQL operations (no GUI), safe for background thread.
         Checks:
@@ -234,8 +228,7 @@ class InitializationWorker(QObject):
             # Don't fail initialization if database validation fails
 
     def _warmup_caches(self) -> None:
-        """
-        Perform cache warmup operations.
+        """Perform cache warmup operations.
 
         This is file I/O and computation (no GUI), safe for background thread.
         Preloads frequently accessed data to improve responsiveness.

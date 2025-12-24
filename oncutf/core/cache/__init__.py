@@ -1,5 +1,4 @@
-"""
-Cache management module.
+"""Cache management module.
 
 This module provides caching functionality including:
 - AdvancedCacheManager: High-level cache coordination

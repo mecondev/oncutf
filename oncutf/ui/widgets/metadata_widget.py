@@ -1,5 +1,4 @@
-"""
-Module: metadata_widget.py
+"""Module: metadata_widget.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -34,8 +33,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataWidget(QWidget):
-    """
-    Widget for file metadata selection (file dates or EXIF).
+    """Widget for file metadata selection (file dates or EXIF).
     Supports category selection and dynamic fields,
     and emits update signal only when there is an actual change.
     """
@@ -122,8 +120,7 @@ class MetadataWidget(QWidget):
         logger.debug("MetadataWidget UI setup completed")
 
     def _on_category_changed(self) -> None:
-        """
-        Handle category combo box changes.
+        """Handle category combo box changes.
         Updates available options based on selected category.
         """
         current_data = self.category_combo.currentData()
@@ -156,8 +153,7 @@ class MetadataWidget(QWidget):
             logger.error("Error in _on_category_changed: %s", e)
 
     def _emit_settings_changed(self) -> None:
-        """
-        Emit settings_changed signal on ANY user interaction.
+        """Emit settings_changed signal on ANY user interaction.
 
         This provides instant preview updates while maintaining
         backwards compatibility with the 'updated' signal.
@@ -399,8 +395,7 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
-        """
-        Populate the hierarchical combo box with available metadata keys.
+        """Populate the hierarchical combo box with available metadata keys.
         Keys are grouped by category for better organization.
         """
         keys = self.get_available_metadata_keys()
@@ -943,8 +938,7 @@ class MetadataWidget(QWidget):
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        """
-        The metadata module is effective if it has a valid field for the selected category.
+        """The metadata module is effective if it has a valid field for the selected category.
         """
         field = data.get("field")
         category = data.get("category", "file_dates")
@@ -1093,8 +1087,7 @@ class MetadataWidget(QWidget):
             return False
 
     def _ensure_theme_inheritance(self) -> None:
-        """
-        Ensure that child widgets inherit theme styles properly.
+        """Ensure that child widgets inherit theme styles properly.
         This is needed because child widgets sometimes don't inherit
         the global application stylesheet correctly.
         """

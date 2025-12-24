@@ -1,5 +1,4 @@
-"""
-Module: selection_store.py
+"""Module: selection_store.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -24,8 +23,7 @@ logger = get_cached_logger(__name__)
 
 
 class SelectionStore(QObject):
-    """
-    Centralized selection and checked state manager.
+    """Centralized selection and checked state manager.
 
     Handles all selection-related logic previously scattered across
     MainWindow and FileTableView, providing better performance and
@@ -81,24 +79,24 @@ class SelectionStore(QObject):
     # =====================================
 
     def get_selected_rows(self) -> set[int]:
-        """
-        Get currently selected row indices.
+        """Get currently selected row indices.
 
         Returns:
             Set of selected row indices
+
         """
         return self._selected_rows.copy()
 
     def set_selected_rows(
         self, rows: set[int], *, emit_signal: bool = True, force_emit: bool = False
     ) -> None:
-        """
-        Set selected row indices with optimized debouncing.
+        """Set selected row indices with optimized debouncing.
 
         Args:
             rows: Set of row indices to select
             emit_signal: Whether to emit selection_changed signal
             force_emit: Whether to emit signal even if no change (for delayed updates)
+
         """
         # Protection against infinite loops during sync operations
         if self._syncing_selection:
@@ -118,12 +116,12 @@ class SelectionStore(QObject):
             self._schedule_selection_signal()
 
     def add_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
-        """
-        Add rows to current selection.
+        """Add rows to current selection.
 
         Args:
             rows: Set of row indices to add
             emit_signal: Whether to emit selection_changed signal
+
         """
         if not rows:
             return
@@ -138,12 +136,12 @@ class SelectionStore(QObject):
                 self._schedule_selection_signal()
 
     def remove_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
-        """
-        Remove rows from current selection.
+        """Remove rows from current selection.
 
         Args:
             rows: Set of row indices to remove
             emit_signal: Whether to emit selection_changed signal
+
         """
         if not rows:
             return
@@ -158,11 +156,11 @@ class SelectionStore(QObject):
                 self._schedule_selection_signal()
 
     def clear_selection(self, *, emit_signal: bool = True) -> None:
-        """
-        Clear all selected rows.
+        """Clear all selected rows.
 
         Args:
             emit_signal: Whether to emit selection_changed signal
+
         """
         if not self._selected_rows:
             return
@@ -176,21 +174,21 @@ class SelectionStore(QObject):
     # =====================================
 
     def get_checked_rows(self) -> set[int]:
-        """
-        Get currently checked row indices.
+        """Get currently checked row indices.
 
         Returns:
             Set of checked row indices
+
         """
         return self._checked_rows.copy()
 
     def set_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
-        """
-        Set checked row indices.
+        """Set checked row indices.
 
         Args:
             rows: Set of row indices to check
             emit_signal: Whether to emit checked_changed signal
+
         """
         if rows == self._checked_rows:
             return  # No change
@@ -209,12 +207,12 @@ class SelectionStore(QObject):
             self._schedule_checked_signal()
 
     def add_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
-        """
-        Add rows to checked state.
+        """Add rows to checked state.
 
         Args:
             rows: Set of row indices to check
             emit_signal: Whether to emit checked_changed signal
+
         """
         if not rows:
             return
@@ -234,12 +232,12 @@ class SelectionStore(QObject):
                 self._schedule_checked_signal()
 
     def remove_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
-        """
-        Remove rows from checked state.
+        """Remove rows from checked state.
 
         Args:
             rows: Set of row indices to uncheck
             emit_signal: Whether to emit checked_changed signal
+
         """
         if not rows:
             return
@@ -259,11 +257,11 @@ class SelectionStore(QObject):
                 self._schedule_checked_signal()
 
     def clear_checked(self, *, emit_signal: bool = True) -> None:
-        """
-        Clear all checked rows.
+        """Clear all checked rows.
 
         Args:
             emit_signal: Whether to emit checked_changed signal
+
         """
         if not self._checked_rows:
             return
@@ -281,12 +279,12 @@ class SelectionStore(QObject):
         return self._anchor_row
 
     def set_anchor_row(self, row: int | None, *, emit_signal: bool = True) -> None:
-        """
-        Set anchor row for range selection.
+        """Set anchor row for range selection.
 
         Args:
             row: Row index to set as anchor, or None to clear
             emit_signal: Whether to emit anchor_changed signal
+
         """
         if row == self._anchor_row:
             return
@@ -310,11 +308,11 @@ class SelectionStore(QObject):
     # =====================================
 
     def select_all(self, total_files: int) -> None:
-        """
-        Select all files efficiently.
+        """Select all files efficiently.
 
         Args:
             total_files: Total number of files available
+
         """
         if total_files <= 0:
             return
@@ -333,11 +331,11 @@ class SelectionStore(QObject):
         self._schedule_checked_signal()
 
     def invert_selection(self, total_files: int) -> None:
-        """
-        Invert current selection efficiently.
+        """Invert current selection efficiently.
 
         Args:
             total_files: Total number of files available
+
         """
         if total_files <= 0:
             return
@@ -392,11 +390,11 @@ class SelectionStore(QObject):
     # =====================================
 
     def update_total_files(self, total: int) -> None:
-        """
-        Update total file count and validate current selections.
+        """Update total file count and validate current selections.
 
         Args:
             total: New total file count
+
         """
         old_total = self._total_files
         self._total_files = total

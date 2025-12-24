@@ -1,5 +1,4 @@
-"""
-Module: counter_module.py
+"""Module: counter_module.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -36,8 +35,7 @@ logger = get_cached_logger(__name__)
 
 
 class CounterModule(BaseRenameModule):
-    """
-    A widget for inserting an incrementing counter in filenames.
+    """A widget for inserting an incrementing counter in filenames.
     Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus]
     """
 
@@ -79,8 +77,7 @@ class CounterModule(BaseRenameModule):
         self._last_value = str(self.get_data())
 
     def _on_value_change(self) -> None:
-        """
-        Triggered when any of the spinboxes change.
+        """Triggered when any of the spinboxes change.
         Emits update only if data has truly changed.
         """
         self.emit_if_changed(str(self.get_data()))
@@ -88,8 +85,7 @@ class CounterModule(BaseRenameModule):
     def _create_row(
         self, label_text: str, initial_value: int = 1, min_val: int = 0, max_val: int = 999999
     ) -> tuple[QLineEdit, QHBoxLayout]:
-        """
-        Create a row layout with:
+        """Create a row layout with:
         [QLabel(label_text)] [QLineEdit] [btn_minus] [btn_plus]
         Returns the input field and the layout.
         """
@@ -128,8 +124,7 @@ class CounterModule(BaseRenameModule):
 
         # Adjust helper
         def adjust(delta: int) -> None:
-            """
-            Adjusts the value in the input field by the specified delta,
+            """Adjusts the value in the input field by the specified delta,
             ensuring it remains within the specified minimum and maximum bounds.
 
             Emits the 'updated' signal after updating the value.
@@ -163,8 +158,7 @@ class CounterModule(BaseRenameModule):
         return input_field, row_layout
 
     def _create_scope_row(self) -> QHBoxLayout:
-        """
-        Create a row for counter scope selection.
+        """Create a row for counter scope selection.
         Returns the layout containing label and combobox.
         """
         # Label with fixed width and right alignment
@@ -205,8 +199,7 @@ class CounterModule(BaseRenameModule):
         return row_layout
 
     def get_data(self) -> dict:
-        """
-        Returns the current configuration of the counter module.
+        """Returns the current configuration of the counter module.
 
         :return: dict with counter info including scope
         """
@@ -225,8 +218,7 @@ class CounterModule(BaseRenameModule):
     def apply_from_data(
         data: dict, _file_item, index: int = 0, _metadata_cache: dict | None = None
     ) -> str:
-        """
-        Applies a counter-based transformation using the given config and index.
+        """Applies a counter-based transformation using the given config and index.
 
         Parameters
         ----------
@@ -251,6 +243,7 @@ class CounterModule(BaseRenameModule):
         -------
         str
             The stringified counter value with proper padding.
+
         """
         try:
             start = int(data.get("start", 1))

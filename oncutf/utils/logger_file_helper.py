@@ -1,5 +1,4 @@
-"""
-Module: logger_file_helper.py
+"""Module: logger_file_helper.py
 
 Author: Michael Economou
 Date: 2025-05-12
@@ -24,8 +23,7 @@ def add_file_handler(
     backup_count: int = 3,
     filter_by_name: str | None = None,
 ) -> None:
-    """
-    Attaches a rotating file handler to a logger.
+    """Attaches a rotating file handler to a logger.
 
     Args:
         logger (logging.Logger): The logger to attach the handler to.
@@ -34,6 +32,7 @@ def add_file_handler(
         max_bytes (int): Maximum file size before rotating.
         backup_count (int): Number of backup files to keep.
         filter_by_name (str, optional): Only log messages from loggers with this name.
+
     """
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 

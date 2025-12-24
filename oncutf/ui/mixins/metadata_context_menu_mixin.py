@@ -1,5 +1,4 @@
-"""
-Metadata context menu mixin for MetadataTreeView.
+"""Metadata context menu mixin for MetadataTreeView.
 
 This mixin handles all context menu operations including:
 - Context menu creation and display
@@ -19,8 +18,7 @@ logger = get_logger(__name__)
 
 
 class MetadataContextMenuMixin:
-    """
-    Mixin providing context menu operations for metadata tree views.
+    """Mixin providing context menu operations for metadata tree views.
 
     This mixin encapsulates all logic related to context menus:
     - Creating and displaying context menus
@@ -41,11 +39,11 @@ class MetadataContextMenuMixin:
     # =====================================
 
     def show_context_menu(self, position: QPoint) -> None:
-        """
-        Display context menu with available options.
+        """Display context menu with available options.
 
         Args:
             position: Position where the context menu should appear
+
         """
         if (hasattr(self, "_is_placeholder_mode") and self._is_placeholder_mode) or self.property(
             "placeholder"
@@ -250,14 +248,14 @@ class MetadataContextMenuMixin:
             self._current_menu = None
 
     def _get_menu_icon(self, icon_name: str):
-        """
-        Get menu icon using the icon loader system.
+        """Get menu icon using the icon loader system.
 
         Args:
             icon_name: Name of the icon to load
 
         Returns:
             QIcon or None if icon loading fails
+
         """
         try:
             from oncutf.utils.icons_loader import get_menu_icon
@@ -271,14 +269,14 @@ class MetadataContextMenuMixin:
     # =====================================
 
     def _is_column_visible_in_file_view(self, key_path: str) -> bool:
-        """
-        Check if a column is already visible in the file view.
+        """Check if a column is already visible in the file view.
 
         Args:
             key_path: Metadata key path
 
         Returns:
             bool: True if column is visible, False otherwise
+
         """
         try:
             # Get the file table view
@@ -307,11 +305,11 @@ class MetadataContextMenuMixin:
         return False
 
     def _add_column_to_file_view(self, key_path: str) -> None:
-        """
-        Add a metadata column to the file view.
+        """Add a metadata column to the file view.
 
         Args:
             key_path: Metadata key path
+
         """
         try:
             # Get the file table view
@@ -346,11 +344,11 @@ class MetadataContextMenuMixin:
             logger.exception("Error adding column to file view: %s", e)
 
     def _remove_column_from_file_view(self, key_path: str) -> None:
-        """
-        Remove a metadata column from the file view.
+        """Remove a metadata column from the file view.
 
         Args:
             key_path: Metadata key path
+
         """
         try:
             # Get the file table view
@@ -385,11 +383,11 @@ class MetadataContextMenuMixin:
             logger.exception("Error removing column from file view: %s", e)
 
     def _get_file_table_view(self):
-        """
-        Get the file table view from the parent hierarchy.
+        """Get the file table view from the parent hierarchy.
 
         Returns:
             FileTableView or None if not found
+
         """
         try:
             # Look for file table view in parent hierarchy
@@ -422,14 +420,14 @@ class MetadataContextMenuMixin:
     # =====================================
 
     def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
-        """
-        Map a metadata key path to a file table column key.
+        """Map a metadata key path to a file table column key.
 
         Args:
             metadata_key: Metadata key path (e.g., "EXIF:Make")
 
         Returns:
             str | None: Column key if found, None otherwise
+
         """
         try:
             # Create mapping from metadata keys to column keys

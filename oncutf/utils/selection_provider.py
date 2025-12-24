@@ -65,6 +65,7 @@ class SelectionProvider:
 
         Returns:
             List of selected FileItem objects
+
         """
         # Fast path: use cached result if available
         if cls._cached_selected_files is not None:
@@ -180,6 +181,7 @@ class SelectionProvider:
 
         Returns:
             Set of selected row indices
+
         """
         # Fast path: use cached result if available
         if cls._cached_selected_rows is not None:
@@ -220,6 +222,7 @@ class SelectionProvider:
 
         Returns:
             List of FileItem objects where checked=True
+
         """
         if not parent_window or not hasattr(parent_window, "file_model"):
             return []
@@ -239,6 +242,7 @@ class SelectionProvider:
 
         Returns:
             Number of selected files
+
         """
         # Fast path: use SelectionStore if available
         if hasattr(parent_window, "selection_store"):
@@ -259,6 +263,7 @@ class SelectionProvider:
 
         Returns:
             True if at least one file is selected
+
         """
         return cls.get_selection_count(parent_window) > 0
 
@@ -271,6 +276,7 @@ class SelectionProvider:
 
         Returns:
             Single FileItem if exactly one selected, None otherwise
+
         """
         selected = cls.get_selected_files(parent_window)
         return selected[0] if len(selected) == 1 else None
@@ -290,6 +296,7 @@ def get_selected_files(parent_window: Any, *, ordered: bool = True) -> list[File
 
     Returns:
         List of selected FileItem objects
+
     """
     return SelectionProvider.get_selected_files(parent_window, ordered=ordered)
 
@@ -304,6 +311,7 @@ def get_selected_rows(parent_window: Any) -> set[int]:
 
     Returns:
         Set of selected row indices
+
     """
     return SelectionProvider.get_selected_rows(parent_window)
 
@@ -318,6 +326,7 @@ def get_checked_files(parent_window: Any) -> list[FileItem]:
 
     Returns:
         List of FileItem objects where checked=True
+
     """
     return SelectionProvider.get_checked_files(parent_window)
 
@@ -332,6 +341,7 @@ def has_selection(parent_window: Any) -> bool:
 
     Returns:
         True if at least one file is selected
+
     """
     return SelectionProvider.has_selection(parent_window)
 
@@ -346,5 +356,6 @@ def get_single_selected_file(parent_window: Any) -> FileItem | None:
 
     Returns:
         Single FileItem if exactly one selected, None otherwise
+
     """
     return SelectionProvider.get_single_selected_file(parent_window)

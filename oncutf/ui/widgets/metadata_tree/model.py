@@ -1,5 +1,4 @@
-"""
-Module: model.py
+"""Module: model.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -43,8 +42,7 @@ class FieldStatus(Enum):
 
 @dataclass
 class TreeNodeData:
-    """
-    Data for a single node in the metadata tree.
+    """Data for a single node in the metadata tree.
 
     This is a pure data structure that can represent any node
     in the tree hierarchy without Qt dependencies.
@@ -60,6 +58,7 @@ class TreeNodeData:
         tooltip: Optional tooltip text
         editable: Whether the field can be edited
         key_path: Full path to this node (e.g., "EXIF/DateTimeOriginal")
+
     """
 
     key: str
@@ -114,14 +113,14 @@ class TreeNodeData:
         return None
 
     def find_by_path(self, key_path: str) -> TreeNodeData | None:
-        """
-        Find a node by its full key path.
+        """Find a node by its full key path.
 
         Args:
             key_path: Path like "EXIF/DateTimeOriginal"
 
         Returns:
             The node if found, None otherwise
+
         """
         parts = key_path.split("/")
         current = self
@@ -169,8 +168,7 @@ class TreeNodeData:
 
 @dataclass
 class MetadataDisplayState:
-    """
-    Current display state of the metadata tree.
+    """Current display state of the metadata tree.
 
     Tracks the current file, modifications, scroll position,
     and other UI state without coupling to Qt.
@@ -183,6 +181,7 @@ class MetadataDisplayState:
         expanded_groups: Set of group names that are expanded
         search_filter: Current search/filter text
         is_placeholder: Whether showing placeholder (no file selected)
+
     """
 
     file_path: str | None = None
@@ -227,8 +226,7 @@ class MetadataDisplayState:
 
 @dataclass(frozen=True)
 class MetadataFieldInfo:
-    """
-    Information about a metadata field for validation and display.
+    """Information about a metadata field for validation and display.
 
     Immutable configuration for a specific metadata field type.
 
@@ -240,6 +238,7 @@ class MetadataFieldInfo:
         max_length: Maximum allowed length (0 = unlimited)
         allowed_chars: Regex pattern for allowed characters
         tooltip: Help text for this field
+
     """
 
     key: str

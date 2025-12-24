@@ -1,5 +1,4 @@
-"""
-Module: final_transform_container.py
+"""Module: final_transform_container.py
 
 Author: Michael Economou
 Date: 2025-06-25
@@ -32,8 +31,7 @@ logger = get_cached_logger(__name__)
 
 
 class FinalTransformContainer(QWidget):
-    """
-    Container widget for final transformation controls.
+    """Container widget for final transformation controls.
 
     Layout structure:
     3 columns (Labels | Controls | Buttons)

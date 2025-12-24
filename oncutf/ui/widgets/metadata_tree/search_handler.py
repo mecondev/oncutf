@@ -1,5 +1,4 @@
-"""
-Module: search_handler.py
+"""Module: search_handler.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -30,8 +29,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataTreeSearchHandler:
-    """
-    Handler for metadata tree search functionality.
+    """Handler for metadata tree search functionality.
 
     This class encapsulates all search-related logic:
     - Enabling/disabling search field
@@ -46,20 +44,20 @@ class MetadataTreeSearchHandler:
     """
 
     def __init__(self, tree_view: MetadataTreeView) -> None:
-        """
-        Initialize the search handler.
+        """Initialize the search handler.
 
         Args:
             tree_view: The MetadataTreeView instance this handler belongs to
+
         """
         self._tree_view = tree_view
 
     def update_search_field_state(self, enabled: bool) -> None:
-        """
-        Update the metadata search field enabled state and tooltip.
+        """Update the metadata search field enabled state and tooltip.
 
         Args:
             enabled: Whether to enable or disable the search field
+
         """
         parent_window = self._tree_view._get_parent_with_file_table()
         if not parent_window or not hasattr(parent_window, "metadata_search_field"):
@@ -209,12 +207,12 @@ class MetadataTreeSearchHandler:
             logger.exception("[MetadataTreeSearchHandler] Error updating search suggestions: %s", e)
 
     def _collect_suggestions_from_tree_model(self, model, suggestions: set) -> None:
-        """
-        Collect search suggestions from the current tree model.
+        """Collect search suggestions from the current tree model.
 
         Args:
             model: The tree model to collect from
             suggestions: Set to add suggestions to
+
         """
         if not model:
             return
@@ -274,12 +272,12 @@ class MetadataTreeSearchHandler:
                             suggestions.add(f"{group_name}:{key}={value}")
 
     def _collect_suggestions_from_metadata(self, metadata: dict, suggestions: set) -> None:
-        """
-        Collect search suggestions from a metadata dictionary.
+        """Collect search suggestions from a metadata dictionary.
 
         Args:
             metadata: The metadata dictionary to collect from
             suggestions: Set to add suggestions to
+
         """
         if not isinstance(metadata, dict):
             return

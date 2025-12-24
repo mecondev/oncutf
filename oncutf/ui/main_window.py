@@ -1,5 +1,4 @@
-"""
-main_window.py
+"""main_window.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -39,11 +38,11 @@ logger = get_cached_logger(__name__)
 
 class MainWindow(QMainWindow):
     def __init__(self, theme_callback=None) -> None:
-        """
-        Initializes the main window and sets up the layout.
+        """Initializes the main window and sets up the layout.
 
         Args:
             theme_callback: Optional callback to apply theme before enabling updates
+
         """
         super().__init__()
 
@@ -114,8 +113,7 @@ class MainWindow(QMainWindow):
         self.app_service.force_drag_cleanup()
 
     def global_undo(self) -> None:
-        """
-        Global undo handler (Ctrl+Z) - will call unified undo system.
+        """Global undo handler (Ctrl+Z) - will call unified undo system.
 
         TODO: Implement unified undo/redo system that handles:
         - Rename operations
@@ -129,8 +127,7 @@ class MainWindow(QMainWindow):
         # TODO: Call unified undo manager when implemented
 
     def global_redo(self) -> None:
-        """
-        Global redo handler (Ctrl+Shift+Z) - will call unified redo system.
+        """Global redo handler (Ctrl+Shift+Z) - will call unified redo system.
 
         TODO: Implement unified undo/redo system that handles:
         - Rename operations
@@ -146,8 +143,7 @@ class MainWindow(QMainWindow):
         # TODO: Call unified undo manager when implemented
 
     def show_command_history(self) -> None:
-        """
-        Show command history dialog (Ctrl+Y) - displays chronological undo/redo stack.
+        """Show command history dialog (Ctrl+Y) - displays chronological undo/redo stack.
 
         Currently shows MetadataHistoryDialog (metadata operations only).
         TODO: Implement unified command history dialog that shows:
@@ -165,8 +161,7 @@ class MainWindow(QMainWindow):
             logger.info("[MainWindow] Unified command history not yet fully implemented")
 
     def auto_color_by_folder(self) -> None:
-        """
-        Auto-color files by their parent folder (Ctrl+Shift+C).
+        """Auto-color files by their parent folder (Ctrl+Shift+C).
 
         Groups all files by folder and assigns unique random colors to each folder's files.
         Skips files that already have colors assigned (preserves user choices).
@@ -366,8 +361,7 @@ class MainWindow(QMainWindow):
 
     @property
     def files(self) -> list:
-        """
-        Backward compatibility property for accessing files.
+        """Backward compatibility property for accessing files.
 
         Returns files from FileTableModel (which is the source of truth for UI display).
         Use context.file_store.get_loaded_files() for centralized state access.
@@ -378,8 +372,7 @@ class MainWindow(QMainWindow):
 
     @property
     def current_folder_path(self) -> str | None:
-        """
-        Backward compatibility property for current folder path.
+        """Backward compatibility property for current folder path.
 
         Returns current folder from ApplicationContext.
         """
@@ -397,8 +390,7 @@ class MainWindow(QMainWindow):
 
     @property
     def current_folder_is_recursive(self) -> bool:
-        """
-        Backward compatibility property for recursive mode flag.
+        """Backward compatibility property for recursive mode flag.
 
         Returns recursive mode from ApplicationContext.
         """
@@ -701,13 +693,13 @@ class MainWindow(QMainWindow):
     # =====================================
 
     def on_metadata_value_edited(self, key_path: str, old_value: str, new_value: str) -> None:
-        """
-        Handle metadata value edited signal from metadata tree view.
+        """Handle metadata value edited signal from metadata tree view.
 
         Args:
             key_path: The metadata key path (e.g. "EXIF/Rotation")
             old_value: The previous value
             new_value: The new value
+
         """
         logger.info(
             "[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value
@@ -726,11 +718,11 @@ class MainWindow(QMainWindow):
         logger.debug("[MetadataEdit] Modified metadata field: %s", key_path)
 
     def on_metadata_value_reset(self, key_path: str) -> None:
-        """
-        Handle metadata value reset signal from metadata tree view.
+        """Handle metadata value reset signal from metadata tree view.
 
         Args:
             key_path: The metadata key path that was reset
+
         """
         logger.info("[MetadataEdit] Value reset: %s", key_path)
 
@@ -744,11 +736,11 @@ class MainWindow(QMainWindow):
         logger.debug("[MetadataEdit] Reset metadata field: %s", key_path)
 
     def on_metadata_value_copied(self, value: str) -> None:
-        """
-        Handle metadata value copied signal from metadata tree view.
+        """Handle metadata value copied signal from metadata tree view.
 
         Args:
             value: The value that was copied to clipboard
+
         """
         logger.debug("[MetadataEdit] Value copied to clipboard: %s", value)
 
@@ -843,11 +835,11 @@ class MainWindow(QMainWindow):
         self.window_config_manager.restore_last_folder_if_available()
 
     def get_selected_files_ordered(self) -> list[FileItem]:
-        """
-        Unified method to get selected files in table display order.
+        """Unified method to get selected files in table display order.
 
         Returns:
             List of FileItem objects sorted by their row position in the table
+
         """
         if not (hasattr(self, "file_table_view") and hasattr(self, "file_model")):
             return []
@@ -959,8 +951,7 @@ class MainWindow(QMainWindow):
         schedule_resize_adjust(refresh, 25)
 
     def closeEvent(self, event) -> None:
-        """
-        Handles application shutdown and cleanup using Shutdown Coordinator.
+        """Handles application shutdown and cleanup using Shutdown Coordinator.
 
         Ensures all resources are properly released and threads are stopped.
         """
@@ -1175,11 +1166,11 @@ class MainWindow(QMainWindow):
                 QApplication.quit()
 
     def _check_for_unsaved_changes(self) -> bool:
-        """
-        Check if there are any unsaved metadata changes.
+        """Check if there are any unsaved metadata changes.
 
         Returns:
             bool: True if there are unsaved changes, False otherwise
+
         """
         if not hasattr(self, "metadata_tree_view"):
             return False
@@ -1332,8 +1323,7 @@ class MainWindow(QMainWindow):
             logger.warning("[MainWindow] Error updating metadata widget: %s", e)
 
     def _register_managers_in_context(self):
-        """
-        Register all managers in ApplicationContext for centralized access.
+        """Register all managers in ApplicationContext for centralized access.
 
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.

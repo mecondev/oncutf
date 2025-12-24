@@ -1,5 +1,4 @@
-"""
-Module: name_transform_module.py
+"""Module: name_transform_module.py
 
 Author: Michael Economou
 Date: 2025-05-27
@@ -15,14 +14,12 @@ logger = get_cached_logger(__name__)
 
 
 class NameTransformModule:
-    """
-    Logic component (non-UI) for applying case and separator transformations.
+    """Logic component (non-UI) for applying case and separator transformations.
     """
 
     @staticmethod
     def apply_from_data(data: dict, base_name: str) -> str:
-        """
-        Applies transformation options to the given base name.
+        """Applies transformation options to the given base name.
 
         Args:
             data (dict): Contains 'case', 'separator', and 'greeklish'
@@ -30,6 +27,7 @@ class NameTransformModule:
 
         Returns:
             str: Transformed base name
+
         """
         original = base_name
         case = data.get("case", "original")
@@ -65,8 +63,7 @@ class NameTransformModule:
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        """
-        Returns True if any transformation is active.
+        """Returns True if any transformation is active.
         """
         return (
             data.get("case", "original") != "original"

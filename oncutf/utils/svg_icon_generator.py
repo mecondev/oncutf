@@ -1,5 +1,4 @@
-"""
-Module: svg_icon_generator.py
+"""Module: svg_icon_generator.py
 
 Author: Michael Economou
 Date: 2025-06-20
@@ -23,8 +22,7 @@ logger = get_cached_logger(__name__)
 
 
 class SVGIconGenerator:
-    """
-    Generates colored SVG icons for metadata status display.
+    """Generates colored SVG icons for metadata status display.
 
     Uses feather icons as base and applies OnCutF color scheme from config.
     """
@@ -42,25 +40,25 @@ class SVGIconGenerator:
     }
 
     def __init__(self, size: int = 16):
-        """
-        Initialize the SVG icon generator.
+        """Initialize the SVG icon generator.
 
         Args:
             size: Icon size in pixels (default: 16)
+
         """
         self.size = size
         self.icons_dir = get_icons_dir()
         self.feather_dir = self.icons_dir / "feather_icons"
 
     def _load_svg_content(self, icon_name: str) -> str | None:
-        """
-        Load SVG content from feather icons directory.
+        """Load SVG content from feather icons directory.
 
         Args:
             icon_name: Name of the feather icon (without .svg extension)
 
         Returns:
             SVG content as string, or None if not found
+
         """
         svg_path = self.feather_dir / f"{icon_name}.svg"
 
@@ -75,8 +73,7 @@ class SVGIconGenerator:
             return None
 
     def _colorize_svg(self, svg_content: str, color: str) -> str:
-        """
-        Replace colors in SVG content with the specified color.
+        """Replace colors in SVG content with the specified color.
 
         Args:
             svg_content: Original SVG content
@@ -84,6 +81,7 @@ class SVGIconGenerator:
 
         Returns:
             Modified SVG content with new color
+
         """
         # Replace various stroke color formats used in feather icons
         svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
@@ -106,8 +104,7 @@ class SVGIconGenerator:
         return svg_content
 
     def generate_icon(self, status: str, size: int | None = None) -> QPixmap:
-        """
-        Generate a colored icon for the given status.
+        """Generate a colored icon for the given status.
 
         Args:
             status: Status name (basic, extended, invalid, loaded, modified, partial, hash)
@@ -115,6 +112,7 @@ class SVGIconGenerator:
 
         Returns:
             QPixmap with the generated icon
+
         """
         if size is None:
             size = self.size
@@ -138,8 +136,7 @@ class SVGIconGenerator:
         return self._render_svg_to_pixmap(colored_svg, size)
 
     def _render_svg_to_pixmap(self, svg_content: str, size: int) -> QPixmap:
-        """
-        Render SVG content to a QPixmap.
+        """Render SVG content to a QPixmap.
 
         Args:
             svg_content: SVG content as string
@@ -147,6 +144,7 @@ class SVGIconGenerator:
 
         Returns:
             QPixmap with rendered SVG
+
         """
         try:
             # Create SVG renderer
@@ -174,28 +172,28 @@ class SVGIconGenerator:
             return self._create_fallback_pixmap(size)
 
     def _create_fallback_pixmap(self, size: int) -> QPixmap:
-        """
-        Create a fallback pixmap when SVG generation fails.
+        """Create a fallback pixmap when SVG generation fails.
 
         Args:
             size: Pixmap size in pixels
 
         Returns:
             Empty transparent pixmap
+
         """
         pixmap = QPixmap(size, size)
         pixmap.fill(QColor(0, 0, 0, 0))  # Transparent
         return pixmap
 
     def generate_all_icons(self, size: int | None = None) -> dict[str, QPixmap]:
-        """
-        Generate all metadata status icons.
+        """Generate all metadata status icons.
 
         Args:
             size: Icon size override (default: use instance size)
 
         Returns:
             Dictionary mapping status names to QPixmap objects
+
         """
         if size is None:
             size = self.size
@@ -219,8 +217,7 @@ class SVGIconGenerator:
         return icons
 
     def generate_inverted_icon(self, _icon_name: str, _size: int | None = None) -> QPixmap:
-        """
-        Generate an inverted (dark) version of an icon for selection states.
+        """Generate an inverted (dark) version of an icon for selection states.
         REMOVED: This functionality was too complex and not needed.
         """
         return QPixmap()
@@ -228,8 +225,7 @@ class SVGIconGenerator:
     def generate_icon_pair(
         self, icon_name: str, size: int | None = None
     ) -> tuple[QPixmap, QPixmap]:
-        """
-        Generate both normal and inverted versions of an icon.
+        """Generate both normal and inverted versions of an icon.
         REMOVED: This functionality was too complex and not needed.
         """
         normal = self.generate_icon(icon_name, size)
@@ -238,28 +234,28 @@ class SVGIconGenerator:
 
 # Convenience functions for backward compatibility
 def generate_metadata_icons(size: int = 16) -> dict[str, QPixmap]:
-    """
-    Generate all metadata status icons.
+    """Generate all metadata status icons.
 
     Args:
         size: Icon size in pixels (default: 16)
 
     Returns:
         Dictionary mapping status names to QPixmap objects
+
     """
     generator = SVGIconGenerator(size)
     return generator.generate_all_icons()
 
 
 def generate_hash_icon(size: int = 16) -> QPixmap:
-    """
-    Generate hash operation icon.
+    """Generate hash operation icon.
 
     Args:
         size: Icon size in pixels (default: 16)
 
     Returns:
         QPixmap with hash icon
+
     """
     generator = SVGIconGenerator(size)
     return generator.generate_icon("hash", size)

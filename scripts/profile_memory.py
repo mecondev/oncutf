@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: profile_memory.py
+"""Module: profile_memory.py
 
 Memory profiling script for oncutf application.
 Measures memory usage during startup and operation.
@@ -37,6 +36,7 @@ def format_size(size: int) -> str:
 
     Returns:
         Human readable size string.
+
     """
     for unit in ("B", "KB", "MB", "GB"):
         if abs(size) < 1024:
@@ -54,6 +54,7 @@ def display_top_allocations(snapshot: tracemalloc.Snapshot, limit: int = 20) -> 
 
     Returns:
         List of formatted allocation strings.
+
     """
     top_stats = snapshot.statistics("lineno")
 
@@ -84,6 +85,7 @@ def display_top_by_file(snapshot: tracemalloc.Snapshot, limit: int = 15) -> list
 
     Returns:
         List of formatted allocation strings.
+
     """
     top_stats = snapshot.statistics("filename")
 
@@ -107,6 +109,7 @@ def profile_startup_memory(detailed: bool = False) -> tuple[int, int, list[str]]
 
     Returns:
         Tuple of (current_memory, peak_memory, report_lines).
+
     """
     report_lines: list[str] = []
 
@@ -176,6 +179,7 @@ def save_report(lines: list[str], path: Path) -> None:
     Args:
         lines: Report lines.
         path: Output file path.
+
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -188,6 +192,7 @@ def main() -> int:
 
     Returns:
         Exit code (0 for success).
+
     """
     parser = argparse.ArgumentParser(description="Profile oncutf memory usage")
     parser.add_argument("--detailed", action="store_true", help="Show detailed memory breakdown")

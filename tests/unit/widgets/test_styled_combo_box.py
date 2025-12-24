@@ -1,5 +1,4 @@
-"""
-Unit tests for StyledComboBox widget.
+"""Unit tests for StyledComboBox widget.
 
 Tests theme integration and delegate setup.
 """

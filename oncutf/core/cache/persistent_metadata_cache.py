@@ -1,5 +1,4 @@
-"""
-Module: persistent_metadata_cache.py
+"""Module: persistent_metadata_cache.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -47,8 +46,7 @@ except Exception as e:
 
 
 class MetadataEntry:
-    """
-    Enhanced metadata entry with database persistence support.
+    """Enhanced metadata entry with database persistence support.
     Maintains compatibility with existing MetadataEntry interface.
     """
 
@@ -73,8 +71,7 @@ class MetadataEntry:
 
 
 class PersistentMetadataCache:
-    """
-    Enhanced persistent metadata cache using improved database architecture.
+    """Enhanced persistent metadata cache using improved database architecture.
 
     Benefits:
     - Better separation of concerns
@@ -223,14 +220,14 @@ class PersistentMetadataCache:
         return None
 
     def get_entries_batch(self, file_paths: list[str]) -> dict[str, MetadataEntry | None]:
-        """
-        Get metadata entries for multiple files in a single batch operation.
+        """Get metadata entries for multiple files in a single batch operation.
 
         Args:
             file_paths: List of file paths to get entries for
 
         Returns:
             dict: Mapping of normalized path -> MetadataEntry (or None if not found)
+
         """
         if not file_paths:
             return {}
@@ -307,22 +304,22 @@ class PersistentMetadataCache:
             return False
 
     def add(self, file_path: str, metadata: dict, is_extended: bool = False):
-        """
-        Add metadata (alias for set for backward compatibility).
+        """Add metadata (alias for set for backward compatibility).
 
         Args:
             file_path: Path to the file
             metadata: Metadata dictionary
             is_extended: Whether this is extended metadata
+
         """
         self.set(file_path, metadata, is_extended=is_extended)
 
     def update(self, other: dict):
-        """
-        Update cache with another dictionary.
+        """Update cache with another dictionary.
 
         Args:
             other: Dictionary to merge into cache
+
         """
         for file_path, metadata in other.items():
             if isinstance(metadata, dict):
@@ -333,14 +330,14 @@ class PersistentMetadataCache:
         self._memory_cache.clear()
 
     def remove(self, file_path: str) -> bool:
-        """
-        Remove metadata for a file from both cache and database.
+        """Remove metadata for a file from both cache and database.
 
         Args:
             file_path: Path to the file
 
         Returns:
             True if removed successfully
+
         """
         norm_path = self._normalize_path(file_path)
 
@@ -365,11 +362,11 @@ class PersistentMetadataCache:
         }
 
     def cleanup_orphaned_records(self) -> int:
-        """
-        Clean up orphaned records in database.
+        """Clean up orphaned records in database.
 
         Returns:
             Number of records cleaned up
+
         """
         # This would be implemented in database_manager_v2 if needed
         return 0

@@ -1,5 +1,4 @@
-"""
-Module: test_timer_manager.py
+"""Module: test_timer_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31

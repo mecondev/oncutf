@@ -1,5 +1,4 @@
-"""
-Module: progress_manager.py
+"""Module: progress_manager.py
 
 Author: Michael Economou
 Date: 2025-06-25
@@ -42,8 +41,7 @@ logger = get_cached_logger(__name__)
 
 
 class ProgressManager:
-    """
-    Unified progress manager for all file operations.
+    """Unified progress manager for all file operations.
 
     Provides a consistent API for progress tracking across different operation types:
     - hash: Size-based progress with real-time tracking
@@ -54,12 +52,12 @@ class ProgressManager:
     SUPPORTED_OPERATIONS = ["hash", "metadata", "copy"]
 
     def __init__(self, operation_type: str, parent: QWidget | None = None):
-        """
-        Initialize ProgressManager for specific operation type.
+        """Initialize ProgressManager for specific operation type.
 
         Args:
             operation_type: Type of operation ("hash", "metadata", "copy")
             parent: Parent widget for the progress widget
+
         """
         if operation_type not in self.SUPPORTED_OPERATIONS:
             raise ValueError(
@@ -92,12 +90,12 @@ class ProgressManager:
             self.progress_widget = create_size_based_progress_widget(parent=self.parent)
 
     def start_tracking(self, total_size: int = 0, total_files: int = 0):
-        """
-        Start progress tracking with appropriate parameters.
+        """Start progress tracking with appropriate parameters.
 
         Args:
             total_size: Total bytes to process (for size-based operations)
             total_files: Total files to process (for count-based operations)
+
         """
         if self._is_tracking:
             logger.warning("[ProgressManager] Already tracking progress, resetting...")
@@ -141,8 +139,7 @@ class ProgressManager:
         filename: str = "",
         status: str = "",
     ):
-        """
-        Update progress with unified API.
+        """Update progress with unified API.
 
         This method automatically selects the appropriate progress calculation
         based on the operation type and provided parameters.
@@ -154,6 +151,7 @@ class ProgressManager:
             total_bytes: Total bytes to process (optional, uses stored value if 0)
             filename: Current filename being processed
             status: Status message to display
+
         """
         if not self._is_tracking:
             logger.warning("[ProgressManager] Not tracking progress, call start_tracking() first")

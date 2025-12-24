@@ -1,5 +1,4 @@
-"""
-Module: interactive_header.py
+"""Module: interactive_header.py
 
 Author: Michael Economou
 Date: 2025-05-22
@@ -23,8 +22,7 @@ except ImportError:
 
 
 class InteractiveHeader(QHeaderView):
-    """
-    A custom QHeaderView that toggles selection on column 0 click,
+    """A custom QHeaderView that toggles selection on column 0 click,
     and performs manual sorting for other columns. Prevents accidental sort
     when user clicks near the edge to resize.
     """
@@ -99,8 +97,7 @@ class InteractiveHeader(QHeaderView):
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, position):
-        """
-        Show unified right-click context menu for header with sorting and column visibility options.
+        """Show unified right-click context menu for header with sorting and column visibility options.
         """
         logical_index = self.logicalIndexAt(position)
 
@@ -139,8 +136,7 @@ class InteractiveHeader(QHeaderView):
         menu.exec_(self.mapToGlobal(position))
 
     def _sort(self, column: int, order: Qt.SortOrder) -> None:
-        """
-        Calls MainWindow.sort_by_column() with forced order from context menu.
+        """Calls MainWindow.sort_by_column() with forced order from context menu.
         """
         main_window = self._get_main_window_via_context()
         if main_window and hasattr(main_window, "sort_by_column"):

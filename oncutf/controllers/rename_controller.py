@@ -1,5 +1,4 @@
-"""
-Module: rename_controller.py
+"""Module: rename_controller.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -32,8 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class RenameController:
-    """
-    Controller for rename operations.
+    """Controller for rename operations.
 
     Orchestrates rename workflows by coordinating UnifiedRenameEngine,
     PreviewManager, RenameManager, and related services. Provides a clean
@@ -52,6 +50,7 @@ class RenameController:
         _rename_manager: Manager for rename execution and post-rename workflow
         _file_store: Store maintaining loaded file state
         _context: Application context for global state
+
     """
 
     def __init__(
@@ -62,8 +61,7 @@ class RenameController:
         file_store: Optional["FileStore"] = None,
         context: Optional["ApplicationContext"] = None,
     ) -> None:
-        """
-        Initialize RenameController.
+        """Initialize RenameController.
 
         Args:
             unified_rename_engine: Engine for rename operations (injected)
@@ -71,6 +69,7 @@ class RenameController:
             rename_manager: Manager for rename execution (injected)
             file_store: Store for maintaining file state (injected)
             context: Application context for global state (injected)
+
         """
         logger.info("[RenameController] Initializing controller")
         self._unified_rename_engine = unified_rename_engine
@@ -102,8 +101,7 @@ class RenameController:
         post_transform: dict[str, Any],
         metadata_cache: Any,
     ) -> dict[str, Any]:
-        """
-        Generate rename preview for given files.
+        """Generate rename preview for given files.
 
         This method orchestrates preview generation by:
         1. Validating input files and configuration
@@ -124,6 +122,7 @@ class RenameController:
                 'has_changes': bool,
                 'errors': List[str]
             }
+
         """
         logger.info(
             "[RenameController] Generating preview for %d files",
@@ -186,8 +185,7 @@ class RenameController:
             }
 
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> dict[str, Any]:
-        """
-        Validate preview name pairs.
+        """Validate preview name pairs.
 
         This method orchestrates preview validation by:
         1. Checking for filename validity
@@ -209,6 +207,7 @@ class RenameController:
                 'validation_items': List[ValidationItem],
                 'errors': List[str]
             }
+
         """
         logger.info(
             "[RenameController] Validating %d preview pairs",
@@ -279,8 +278,7 @@ class RenameController:
         metadata_cache: Any,
         current_folder: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Execute rename operation with full workflow.
+        """Execute rename operation with full workflow.
 
         This method orchestrates the complete rename workflow:
         1. Generate preview
@@ -304,6 +302,7 @@ class RenameController:
                 'skipped_count': int,
                 'errors': List[str]
             }
+
         """
         logger.info(
             "[RenameController] Executing rename for %d files",
@@ -486,11 +485,11 @@ class RenameController:
     # -------------------------------------------------------------------------
 
     def has_pending_changes(self) -> bool:
-        """
-        Check if there are pending rename changes.
+        """Check if there are pending rename changes.
 
         Returns:
             bool: True if preview has changes that can be executed
+
         """
         if not self._unified_rename_engine:
             return False
@@ -507,11 +506,11 @@ class RenameController:
             return False
 
     def get_current_state(self) -> Any | None:
-        """
-        Get current rename state.
+        """Get current rename state.
 
         Returns:
             Optional[RenameState]: Current state or None if not available
+
         """
         if not self._unified_rename_engine:
             return None
@@ -544,6 +543,7 @@ class RenameController:
 
         Returns:
             str: User decision ("skip", "cancel", or "refresh")
+
         """
         try:
             from oncutf.ui.widgets.validation_issues_dialog import (

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: oncutf.__main__
+"""Module: oncutf.__main__
 
 This module allows the oncutf package to be executed as a module using:
     python -m oncutf

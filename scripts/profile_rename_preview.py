@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Profile rename preview generation performance.
+"""Profile rename preview generation performance.
 
 Author: Michael Economou
 Date: 2025-12-20

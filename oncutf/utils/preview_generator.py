@@ -24,8 +24,7 @@ def generate_preview_names(
     modules_data: list[dict[str, Any]],
     metadata_cache: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[list[tuple[str, str]], bool, str]:
-    """
-    Generate new filenames based on rename modules for a list of files.
+    """Generate new filenames based on rename modules for a list of files.
 
     Args:
         files: The list of files to rename.
@@ -37,6 +36,7 @@ def generate_preview_names(
         - List of (old_name, new_name) preview pairs
         - Bool indicating if any error occurred
         - Tooltip message if an error occurred
+
     """
     preview_pairs = []
     has_error = False

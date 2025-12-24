@@ -1,5 +1,4 @@
-"""
-Module: service.py
+"""Module: service.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -37,8 +36,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataTreeService:
-    """
-    Service layer for metadata tree operations.
+    """Service layer for metadata tree operations.
 
     This class handles all business logic related to metadata processing:
     - Classifying keys into groups (File Info, Camera Settings, GPS, etc.)
@@ -64,8 +62,7 @@ class MetadataTreeService:
         self._staging_manager = manager
 
     def format_key(self, key: str) -> str:
-        """
-        Convert camelCase/PascalCase keys to readable format.
+        """Convert camelCase/PascalCase keys to readable format.
 
         Examples:
             'ImageSensorType' -> 'Image Sensor Type'
@@ -77,12 +74,12 @@ class MetadataTreeService:
 
         Returns:
             Human-readable formatted key
+
         """
         return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
 
     def classify_key(self, key: str) -> str:
-        """
-        Classify a metadata key into a detailed group label.
+        """Classify a metadata key into a detailed group label.
 
         Groups metadata into logical categories for better organization:
         - File Info: File-related metadata (filename, directory, rotation)
@@ -103,6 +100,7 @@ class MetadataTreeService:
 
         Returns:
             Group label for the key
+
         """
         key_lower = key.lower()
 
@@ -241,8 +239,7 @@ class MetadataTreeService:
         metadata: dict[str, Any],
         display_state: MetadataDisplayState,
     ) -> TreeNodeData:
-        """
-        Build a TreeNodeData hierarchy from metadata.
+        """Build a TreeNodeData hierarchy from metadata.
 
         This is the main entry point for converting raw metadata into
         a structured tree representation. Returns pure data structures
@@ -254,6 +251,7 @@ class MetadataTreeService:
 
         Returns:
             Root TreeNodeData node with full hierarchy
+
         """
         logger.debug(
             "[MetadataTreeService] Building tree data for file: %s",
@@ -284,8 +282,7 @@ class MetadataTreeService:
         modified_keys: set[str],
         extended_keys: set[str],
     ) -> TreeNodeData:
-        """
-        Build the tree hierarchy from metadata.
+        """Build the tree hierarchy from metadata.
 
         Args:
             metadata: Processed metadata dictionary
@@ -294,6 +291,7 @@ class MetadataTreeService:
 
         Returns:
             Root TreeNodeData with children
+
         """
         root = TreeNodeData(
             key="root",
@@ -361,8 +359,7 @@ class MetadataTreeService:
         modified_keys: set[str],
         extended_keys: set[str],
     ) -> FieldStatus:
-        """
-        Determine the status of a field based on modifications and extensions.
+        """Determine the status of a field based on modifications and extensions.
 
         Args:
             key: The field key
@@ -372,6 +369,7 @@ class MetadataTreeService:
 
         Returns:
             FieldStatus enum value
+
         """
         # Check for modification
         # We check multiple patterns to handle different key path formats:
@@ -399,8 +397,7 @@ class MetadataTreeService:
         metadata: dict[str, Any],
         display_state: MetadataDisplayState,
     ) -> dict[str, Any]:
-        """
-        Prepare metadata for display by applying staged changes.
+        """Prepare metadata for display by applying staged changes.
 
         Args:
             metadata: Raw metadata from file
@@ -408,6 +405,7 @@ class MetadataTreeService:
 
         Returns:
             Display-ready metadata dictionary
+
         """
         display_data = dict(metadata)
 
@@ -437,13 +435,13 @@ class MetadataTreeService:
         key_path: str,
         value: str,
     ) -> None:
-        """
-        Apply a staged change to display data.
+        """Apply a staged change to display data.
 
         Args:
             display_data: The metadata dictionary to modify
             key_path: Path to the field (e.g., "EXIF/Title" or "Rotation")
             value: The new value
+
         """
         # Special handling for rotation - it's always top-level
         if key_path.lower() == "rotation":
@@ -468,14 +466,14 @@ class MetadataTreeService:
         display_data: dict[str, Any],
         display_state: MetadataDisplayState,
     ) -> None:
-        """
-        Remove empty groups from display data.
+        """Remove empty groups from display data.
 
         Preserves groups that have modified items even if currently empty.
 
         Args:
             display_data: Metadata dictionary to clean
             display_state: Current state (for modification tracking)
+
         """
         groups_with_modifications = set()
 
@@ -500,8 +498,7 @@ class MetadataTreeService:
         metadata: dict[str, Any],
         display_state: MetadataDisplayState,
     ) -> set[str]:
-        """
-        Detect which keys are extended-only metadata.
+        """Detect which keys are extended-only metadata.
 
         Args:
             metadata: Raw metadata
@@ -509,6 +506,7 @@ class MetadataTreeService:
 
         Returns:
             Set of keys that are extended-only
+
         """
         extended_keys = set(display_state.extended_keys)
 
@@ -523,26 +521,26 @@ class MetadataTreeService:
         return extended_keys
 
     def get_modification_count(self, display_state: MetadataDisplayState) -> int:
-        """
-        Get the number of modified fields.
+        """Get the number of modified fields.
 
         Args:
             display_state: Current display state
 
         Returns:
             Count of modified fields
+
         """
         return display_state.modification_count
 
     def get_field_count(self, metadata: dict[str, Any]) -> int:
-        """
-        Count total fields in metadata (including nested).
+        """Count total fields in metadata (including nested).
 
         Args:
             metadata: Metadata dictionary
 
         Returns:
             Total field count
+
         """
         total_fields = 0
 
@@ -559,11 +557,11 @@ class MetadataTreeService:
 
 
 def create_metadata_tree_service() -> MetadataTreeService:
-    """
-    Factory function to create a configured MetadataTreeService.
+    """Factory function to create a configured MetadataTreeService.
 
     Returns:
         Configured service instance
+
     """
     service = MetadataTreeService()
 

@@ -1,5 +1,4 @@
-"""
-Module: logger_setup.py
+"""Module: logger_setup.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -23,8 +22,7 @@ from oncutf.utils.logger_file_helper import add_file_handler
 
 
 def safe_text(text: str) -> str:
-    """
-    Replaces unsupported Unicode characters with ASCII-safe alternatives.
+    """Replaces unsupported Unicode characters with ASCII-safe alternatives.
     """
     replacements = {
         "\u2192": "->",  # → Right arrow
@@ -37,8 +35,7 @@ def safe_text(text: str) -> str:
 
 
 def safe_log(logger_func, message: str):
-    """
-    Wrapper for logger functions that catches encoding issues and falls back to ASCII.
+    """Wrapper for logger functions that catches encoding issues and falls back to ASCII.
     """
     try:
         logger_func(message)
@@ -47,8 +44,7 @@ def safe_log(logger_func, message: str):
 
 
 class ConfigureLogger:
-    """
-    Configures application-wide logging.
+    """Configures application-wide logging.
     Logs INFO and higher to the console, ERROR and higher to app.log,
     and DEBUG and higher to app_debug.log.
     """
@@ -62,8 +58,7 @@ class ConfigureLogger:
         max_bytes: int = 1_000_000,
         backup_count: int = 3,
     ):
-        """
-        Initializes and configures the logger.
+        """Initializes and configures the logger.
 
         Args:
             log_name (str): Base name for the log file.
@@ -72,6 +67,7 @@ class ConfigureLogger:
             file_level (int): Logging level for the log file.
             max_bytes (int): Max size in bytes for rotating file.
             backup_count (int): Number of backup log files to keep.
+
         """
         # Load config with fallback to defaults
         try:

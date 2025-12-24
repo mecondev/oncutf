@@ -1,5 +1,4 @@
-"""
-Module: counter_scope.py
+"""Module: counter_scope.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -12,8 +11,7 @@ from enum import Enum
 
 
 class CounterScope(str, Enum):
-    """
-    Defines the scope for counter reset behavior.
+    """Defines the scope for counter reset behavior.
 
     Used to control when the counter resets to the start value:
     - GLOBAL: Single counter across all files (legacy behavior)

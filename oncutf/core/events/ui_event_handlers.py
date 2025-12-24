@@ -1,5 +1,4 @@
-"""
-Module: ui_event_handlers.py
+"""Module: ui_event_handlers.py
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -20,8 +19,7 @@ logger = get_cached_logger(__name__)
 
 
 class UIEventHandlers:
-    """
-    Handles UI-related events.
+    """Handles UI-related events.
 
     Responsibilities:
     - Table header toggle (select all)
@@ -36,8 +34,7 @@ class UIEventHandlers:
         logger.debug("UIEventHandlers initialized", extra={"dev_only": True})
 
     def handle_header_toggle(self, _: Any) -> None:
-        """
-        Triggered when column 0 header is clicked.
+        """Triggered when column 0 header is clicked.
         Toggles selection and checked state of all files (efficient, like Ctrl+A).
         """
         if not self.parent_window.file_model.files:
@@ -66,8 +63,7 @@ class UIEventHandlers:
             self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
-        """
-        Handles single clicks on table rows.
+        """Handles single clicks on table rows.
         Metadata updates are handled by the selection system, not here.
         """
         if not index.isValid():
@@ -82,8 +78,7 @@ class UIEventHandlers:
             # Removed redundant refresh_metadata_from_selection() call that was causing conflicts
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Any = None) -> None:
-        """
-        Placeholder for future double-click functionality.
+        """Placeholder for future double-click functionality.
 
         NOTE: Metadata loading on double-click was removed (2025-12-21).
         This method is kept as a placeholder for future functionality.

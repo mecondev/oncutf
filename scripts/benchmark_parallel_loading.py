@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Benchmark script for parallel metadata loading.
+"""Benchmark script for parallel metadata loading.
 
 Compares sequential vs parallel metadata loading performance.
 """

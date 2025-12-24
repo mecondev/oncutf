@@ -1,5 +1,4 @@
-"""
-Module: view_helpers.py
+"""Module: view_helpers.py
 
 Author: Michael Economou
 Date: 2025-05-24
@@ -17,13 +16,13 @@ from oncutf.utils.path_utils import paths_equal
 
 
 def update_info_icon(file_table_view: QTableView, model, file_path: str) -> None:
-    """
-    Triggers visual refresh of the icon cell in column 0 for the given file path.
+    """Triggers visual refresh of the icon cell in column 0 for the given file path.
 
     Args:
         file_table_view (QTableView): The QTableView displaying the files.
         model: The FileTableModel containing FileItem instances.
         file_path (str): The full path of the file whose icon should be updated.
+
     """
     for row, file_item in enumerate(model.files):
         if paths_equal(file_item.full_path, file_path):

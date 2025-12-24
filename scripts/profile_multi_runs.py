@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Run multiple startup performance tests and report statistics.
+"""Run multiple startup performance tests and report statistics.
 
 Author: Michael Economou
 Date: 2025-12-20

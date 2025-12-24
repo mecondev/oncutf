@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Metadata Comparison Analysis Script
+"""Metadata Comparison Analysis Script
 
 This script runs exiftool on all files in C/ExifTest directory in both fast and extended modes,
 stores the results in the database, and provides detailed comparison analysis.
@@ -226,7 +225,6 @@ class MetadataComparisonAnalyzer:
         self, file_id: int, fast_data: dict[str, Any], extended_data: dict[str, Any]
     ) -> None:
         """Compare fast and extended metadata and store analysis."""
-
         # Clean internal markers for comparison
         fast_clean = {k: v for k, v in fast_data.items() if not k.startswith("__")}
         extended_clean = {k: v for k, v in extended_data.items() if not k.startswith("__")}

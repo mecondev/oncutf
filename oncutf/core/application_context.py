@@ -26,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class ApplicationContext(QObject):
-    """
-    Centralized application state and coordination hub.
+    """Centralized application state and coordination hub.
 
     This singleton provides fast access to all application state,
     eliminating expensive parent widget traversals and improving performance.
@@ -77,8 +76,7 @@ class ApplicationContext(QObject):
         logger.info("ApplicationContext initialized (skeleton mode)", extra={"dev_only": True})
 
     def initialize_stores(self) -> None:
-        """
-        Initialize core stores. Called after basic setup is complete.
+        """Initialize core stores. Called after basic setup is complete.
         This allows for proper dependency injection and delayed initialization.
         """
         if self._file_store is None:
@@ -152,14 +150,14 @@ class ApplicationContext(QObject):
 
     @classmethod
     def get_instance(cls) -> ApplicationContext:
-        """
-        Get the singleton instance of ApplicationContext.
+        """Get the singleton instance of ApplicationContext.
 
         Returns:
             ApplicationContext: The singleton instance
 
         Raises:
             RuntimeError: If instance has not been created yet
+
         """
         if cls._instance is None:
             raise RuntimeError("ApplicationContext not initialized. Call create_instance() first.")
@@ -167,14 +165,14 @@ class ApplicationContext(QObject):
 
     @classmethod
     def create_instance(cls, parent: QObject | None = None) -> ApplicationContext:
-        """
-        Create the singleton instance of ApplicationContext.
+        """Create the singleton instance of ApplicationContext.
 
         Args:
             parent: Optional parent QObject
 
         Returns:
             ApplicationContext: The newly created instance
+
         """
         if cls._instance is not None:
             logger.warning("ApplicationContext already exists. Returning existing instance.")
@@ -217,12 +215,12 @@ class ApplicationContext(QObject):
         return self._current_folder
 
     def set_current_folder(self, folder_path: str | None, recursive: bool = False) -> None:
-        """
-        Set current folder path and recursive mode.
+        """Set current folder path and recursive mode.
 
         Args:
             folder_path: Path to the folder, or None to clear
             recursive: Whether the folder was loaded recursively
+
         """
         self._current_folder = folder_path
         self._recursive_mode = recursive
@@ -301,8 +299,7 @@ class ApplicationContext(QObject):
     # =====================================
 
     def register_manager(self, name: str, manager: Any) -> None:
-        """
-        Register a manager in the centralized registry.
+        """Register a manager in the centralized registry.
 
         This allows components to access managers through the context instead of
         traversing the widget hierarchy (parent_window.some_manager).
@@ -314,6 +311,7 @@ class ApplicationContext(QObject):
         Example:
             context.register_manager('table', TableManager(self))
             context.register_manager('metadata', get_unified_metadata_manager(self))
+
         """
         if name in self._managers:
             logger.warning(
@@ -330,8 +328,7 @@ class ApplicationContext(QObject):
         )
 
     def get_manager(self, name: str) -> Any:
-        """
-        Get a manager from the registry by name.
+        """Get a manager from the registry by name.
 
         Args:
             name: Manager identifier (e.g., 'table', 'metadata', 'rename')
@@ -345,6 +342,7 @@ class ApplicationContext(QObject):
         Example:
             table_mgr = context.get_manager('table')
             metadata_mgr = context.get_manager('metadata')
+
         """
         if name not in self._managers:
             available = ", ".join(sorted(self._managers.keys()))
@@ -354,23 +352,23 @@ class ApplicationContext(QObject):
         return self._managers[name]
 
     def has_manager(self, name: str) -> bool:
-        """
-        Check if a manager is registered.
+        """Check if a manager is registered.
 
         Args:
             name: Manager identifier to check
 
         Returns:
             True if manager is registered, False otherwise
+
         """
         return name in self._managers
 
     def list_managers(self) -> list[str]:
-        """
-        Get list of all registered manager names.
+        """Get list of all registered manager names.
 
         Returns:
             List of manager names in alphabetical order
+
         """
         return sorted(self._managers.keys())
 
@@ -404,10 +402,10 @@ class ApplicationContext(QObject):
 
 # Convenience function for getting the singleton
 def get_app_context() -> ApplicationContext:
-    """
-    Convenience function to get the ApplicationContext singleton.
+    """Convenience function to get the ApplicationContext singleton.
 
     Returns:
         ApplicationContext: The singleton instance
+
     """
     return ApplicationContext.get_instance()

@@ -1,5 +1,4 @@
-"""
-Filesystem operations service implementation.
+"""Filesystem operations service implementation.
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -44,6 +43,7 @@ class FilesystemService:
 
         Args:
             backup_on_overwrite: If True, create backup before overwriting files.
+
         """
         self._backup_on_overwrite = backup_on_overwrite
 
@@ -56,6 +56,7 @@ class FilesystemService:
 
         Returns:
             True if successful, False otherwise.
+
         """
         if not source.exists():
             logger.error("Source file does not exist: %s", source)
@@ -102,6 +103,7 @@ class FilesystemService:
 
         Returns:
             True if file exists and is a file (not directory).
+
         """
         return path.exists() and path.is_file()
 
@@ -113,6 +115,7 @@ class FilesystemService:
 
         Returns:
             True if path exists and is a directory.
+
         """
         return path.exists() and path.is_dir()
 
@@ -125,6 +128,7 @@ class FilesystemService:
         Returns:
             Dictionary with file info. Empty dict if file not found.
             Keys: name, size, mtime, ctime, atime, extension, is_symlink
+
         """
         if not path.exists():
             logger.warning("File not found: %s", path)
@@ -163,6 +167,7 @@ class FilesystemService:
 
         Returns:
             True if successful, False otherwise.
+
         """
         if not source.exists():
             logger.error("Source file does not exist: %s", source)
@@ -197,6 +202,7 @@ class FilesystemService:
 
         Returns:
             True if successful, False otherwise.
+
         """
         if not path.exists():
             logger.warning("File does not exist: %s", path)
@@ -229,6 +235,7 @@ class FilesystemService:
 
         Returns:
             List of matching file paths.
+
         """
         if not path.exists():
             logger.warning("Directory does not exist: %s", path)
@@ -255,6 +262,7 @@ class FilesystemService:
 
         Returns:
             Free space in bytes, or -1 on error.
+
         """
         try:
             if path.is_file():
@@ -273,6 +281,7 @@ class FilesystemService:
 
         Returns:
             Backup path with timestamp suffix.
+
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"{path.stem}_backup_{timestamp}{path.suffix}"

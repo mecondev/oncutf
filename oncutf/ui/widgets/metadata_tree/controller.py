@@ -1,5 +1,4 @@
-"""
-Module: controller.py
+"""Module: controller.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -37,8 +36,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataTreeController:
-    """
-    Controller for metadata tree widget.
+    """Controller for metadata tree widget.
 
     This class orchestrates between the service layer (pure business logic)
     and the view layer (Qt widgets). It handles:
@@ -57,12 +55,12 @@ class MetadataTreeController:
         service: MetadataTreeService,
         staging_manager: MetadataStagingManager | None = None,
     ) -> None:
-        """
-        Initialize the controller.
+        """Initialize the controller.
 
         Args:
             service: The business logic service
             staging_manager: Optional staging manager for modifications
+
         """
         self._service = service
         self._staging_manager = staging_manager
@@ -75,8 +73,7 @@ class MetadataTreeController:
         metadata: dict[str, Any],
         display_state: MetadataDisplayState,
     ) -> QStandardItemModel:
-        """
-        Build a QStandardItemModel from metadata.
+        """Build a QStandardItemModel from metadata.
 
         This is the main entry point for creating a Qt model ready for display.
         It delegates business logic to the service and handles Qt presentation.
@@ -87,6 +84,7 @@ class MetadataTreeController:
 
         Returns:
             QStandardItemModel ready for QTreeView
+
         """
         logger.debug(
             "[MetadataTreeController] Building Qt model for: %s",
@@ -109,14 +107,14 @@ class MetadataTreeController:
         return qt_model
 
     def _convert_to_qt_model(self, root: TreeNodeData) -> QStandardItemModel:
-        """
-        Convert TreeNodeData hierarchy to QStandardItemModel.
+        """Convert TreeNodeData hierarchy to QStandardItemModel.
 
         Args:
             root: Root TreeNodeData node
 
         Returns:
             QStandardItemModel with styled items
+
         """
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["Key", "Value"])
@@ -136,14 +134,14 @@ class MetadataTreeController:
         return model
 
     def _create_group_items(self, group_node: TreeNodeData) -> tuple[QStandardItem, QStandardItem]:
-        """
-        Create QStandardItem pair for a group node.
+        """Create QStandardItem pair for a group node.
 
         Args:
             group_node: The group TreeNodeData
 
         Returns:
             Tuple of (key_item, value_item)
+
         """
         # Check if group has extended metadata
         has_extended = any(child.status == FieldStatus.EXTENDED for child in group_node.children)
@@ -179,14 +177,14 @@ class MetadataTreeController:
         return group_item, value_item
 
     def _create_field_items(self, field_node: TreeNodeData) -> tuple[QStandardItem, QStandardItem]:
-        """
-        Create QStandardItem pair for a field node.
+        """Create QStandardItem pair for a field node.
 
         Args:
             field_node: The field TreeNodeData
 
         Returns:
             Tuple of (key_item, value_item)
+
         """
         # Format the key
         formatted_key = self._service.format_key(field_node.key)
@@ -207,14 +205,14 @@ class MetadataTreeController:
         status: FieldStatus,
         formatted_key: str,
     ) -> None:
-        """
-        Apply styling to field items based on status.
+        """Apply styling to field items based on status.
 
         Args:
             key_item: The key QStandardItem
             value_item: The value QStandardItem
             status: The field status
             formatted_key: Human-readable formatted key
+
         """
         if status == FieldStatus.MODIFIED:
             # Modified metadata styling - yellow text + bold
@@ -249,26 +247,26 @@ class MetadataTreeController:
             value_item.setToolTip("Available only in extended metadata mode")
 
     def get_field_count(self, metadata: dict[str, Any]) -> int:
-        """
-        Get total field count.
+        """Get total field count.
 
         Args:
             metadata: Metadata dictionary
 
         Returns:
             Total number of fields
+
         """
         return self._service.get_field_count(metadata)
 
     def get_modification_count(self, display_state: MetadataDisplayState) -> int:
-        """
-        Get modification count.
+        """Get modification count.
 
         Args:
             display_state: Current display state
 
         Returns:
             Number of modified fields
+
         """
         return self._service.get_modification_count(display_state)
 
@@ -277,8 +275,7 @@ def create_metadata_tree_controller(
     service: MetadataTreeService | None = None,
     staging_manager: MetadataStagingManager | None = None,
 ) -> MetadataTreeController:
-    """
-    Factory function to create a configured MetadataTreeController.
+    """Factory function to create a configured MetadataTreeController.
 
     Args:
         service: Optional service instance (creates new if None)
@@ -286,6 +283,7 @@ def create_metadata_tree_controller(
 
     Returns:
         Configured controller instance
+
     """
     if service is None:
         from oncutf.ui.widgets.metadata_tree.service import create_metadata_tree_service

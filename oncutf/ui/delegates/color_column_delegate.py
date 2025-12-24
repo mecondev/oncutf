@@ -1,5 +1,4 @@
-"""
-Module: color_column_delegate.py
+"""Module: color_column_delegate.py
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -31,8 +30,7 @@ logger = get_cached_logger(__name__)
 
 
 class ColorColumnDelegate(FileTableHoverDelegate):
-    """
-    Custom delegate for the color column.
+    """Custom delegate for the color column.
 
     Inherits from FileTableHoverDelegate to maintain proper hover/selection states.
 
@@ -42,18 +40,17 @@ class ColorColumnDelegate(FileTableHoverDelegate):
     """
 
     def __init__(self, parent=None):
-        """
-        Initialize the color column delegate.
+        """Initialize the color column delegate.
 
         Args:
             parent: Parent widget (FileTableView)
+
         """
         super().__init__(parent)
         logger.debug("[ColorColumnDelegate] Initialized (inheriting hover behavior)")
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
-        """
-        Custom painting for color column with proper hover/selection states.
+        """Custom painting for color column with proper hover/selection states.
 
         Paints:
         - Background color based on hover/selection state
@@ -105,8 +102,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             icon_data.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
 
     def editorEvent(self, event, model, option, index):
-        """
-        Handle mouse events on the color column.
+        """Handle mouse events on the color column.
 
         Selection behavior:
         - Right-click on non-selected row: change selection to that row, color only that row
@@ -120,6 +116,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         Returns:
             True if event was handled, False otherwise
+
         """
         # Right-click shows color menu
         if event.type() == QEvent.MouseButtonPress:
@@ -174,14 +171,14 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         return [idx.row() for idx in selected_indexes]
 
     def _show_color_menu(self, pos, model, index, table):
-        """
-        Show the color grid menu at the specified position.
+        """Show the color grid menu at the specified position.
 
         Args:
             pos: Global position for menu
             model: Data model
             index: Model index of clicked cell
             table: Parent table view
+
         """
         from oncutf.ui.widgets.color_grid_menu import ColorGridMenu
 
@@ -217,13 +214,13 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             logger.exception("[ColorColumnDelegate] ERROR creating/showing menu: %s", e)
 
     def _set_files_color(self, model, rows, color):
-        """
-        Set the color tag for multiple files.
+        """Set the color tag for multiple files.
 
         Args:
             model: Data model
             rows: List of row indices to color
             color: Selected color (hex string or "none")
+
         """
         logger.info(
             "[ColorColumnDelegate] Setting color %s for %d rows: %s", color, len(rows), rows
@@ -283,12 +280,12 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         logger.info("[ColorColumnDelegate] Cursor restored")
 
     def _set_file_color(self, model, index, color):
-        """
-        Set the color tag for a single file (legacy method for compatibility).
+        """Set the color tag for a single file (legacy method for compatibility).
 
         Args:
             model: Data model
             index: Model index
             color: Selected color (hex string or "none")
+
         """
         self._set_files_color(model, [index.row()], color)

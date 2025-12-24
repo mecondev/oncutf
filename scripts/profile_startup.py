@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: profile_startup.py
+"""Module: profile_startup.py
 
 Startup profiling script for oncutf application.
 Measures import time, initialization time, and identifies bottlenecks.
@@ -37,6 +36,7 @@ def measure_import_times() -> dict[str, float]:
 
     Returns:
         Dictionary mapping module name to import time in seconds.
+
     """
     import_times: dict[str, float] = {}
 
@@ -92,6 +92,7 @@ def measure_window_creation() -> tuple[float, float]:
 
     Returns:
         Tuple of (creation_time, show_time) in seconds.
+
     """
     from PyQt5.QtWidgets import QApplication
 
@@ -132,6 +133,7 @@ def run_full_profile(save_path: Path | None = None) -> None:
 
     Args:
         save_path: Optional path to save profile data.
+
     """
     print("\nRunning full profile (this may take a moment)...")
     print("-" * 50)
@@ -200,6 +202,7 @@ def main() -> int:
 
     Returns:
         Exit code (0 for success).
+
     """
     parser = argparse.ArgumentParser(description="Profile oncutf startup performance")
     parser.add_argument("--full", action="store_true", help="Run full cProfile analysis")

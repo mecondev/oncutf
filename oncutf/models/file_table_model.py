@@ -1,5 +1,4 @@
-"""
-file_table_model.py
+"""file_table_model.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -40,8 +39,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileTableModel(QAbstractTableModel):
-    """
-    Table model for displaying and managing a list of FileItem objects
+    """Table model for displaying and managing a list of FileItem objects
     in a QTableView. Supports row selection (blue highlighting), sorting, and preview updates.
     Now supports displaying both metadata and hash icons in column 0.
     """
@@ -348,26 +346,26 @@ class FileTableModel(QAbstractTableModel):
         return count
 
     def _has_hash_cached(self, file_path: str) -> bool:
-        """
-        Check if a file has a hash stored in the persistent cache.
+        """Check if a file has a hash stored in the persistent cache.
 
         Args:
             file_path: Full path to the file
 
         Returns:
             bool: True if file has a cached hash, False otherwise
+
         """
         return has_hash(file_path)
 
     def _get_hash_value(self, file_path: str) -> str:
-        """
-        Get the hash value for a file from the persistent cache.
+        """Get the hash value for a file from the persistent cache.
 
         Args:
             file_path: Full path to the file
 
         Returns:
             str: Hash value if found, empty string otherwise
+
         """
         hash_value = get_hash_for_file(file_path)
         return hash_value if hash_value else ""
@@ -417,8 +415,7 @@ class FileTableModel(QAbstractTableModel):
         return tooltip
 
     def _create_combined_icon(self, metadata_status: str, hash_status: str) -> QIcon:
-        """
-        Create a combined icon showing metadata status (left) and hash status (right).
+        """Create a combined icon showing metadata status (left) and hash status (right).
         Always shows both icons - uses grayout color for missing states.
 
         Args:
@@ -427,6 +424,7 @@ class FileTableModel(QAbstractTableModel):
 
         Returns:
             QIcon: Combined icon with metadata and hash status
+
         """
         # Use hardcoded width for status column (column 0)
         combined_width = 50  # Fixed width for status column
@@ -453,14 +451,14 @@ class FileTableModel(QAbstractTableModel):
         return QIcon(combined_pixmap)
 
     def _create_color_icon(self, hex_color: str) -> QIcon:
-        """
-        Create a color swatch icon for the color column.
+        """Create a color swatch icon for the color column.
 
         Args:
             hex_color: Hex color string (e.g., "#ff0000")
 
         Returns:
             QIcon with colored rectangle swatch
+
         """
         # Create 22x30 pixmap for color swatch (fits 24px row height)
         width = 18
@@ -916,11 +914,11 @@ class FileTableModel(QAbstractTableModel):
         # The _update_icons_immediately() does all the work
 
     def add_files(self, new_files: list[FileItem]) -> None:
-        """
-        Adds new files to the existing file list and updates the model.
+        """Adds new files to the existing file list and updates the model.
 
         Args:
             new_files (list[FileItem]): List of new FileItem objects to add
+
         """
         if not new_files:
             return
@@ -951,8 +949,7 @@ class FileTableModel(QAbstractTableModel):
                 self.parent_window.update_files_label()
 
     def refresh_icons(self):
-        """
-        Refresh all icons in column 0.
+        """Refresh all icons in column 0.
         Call this after hash operations to update hash icon display.
         """
         if not self.files:
@@ -972,8 +969,7 @@ class FileTableModel(QAbstractTableModel):
         )
 
     def refresh_icon_for_file(self, file_path: str):
-        """
-        Refresh icon for a specific file by path.
+        """Refresh icon for a specific file by path.
         More efficient than refreshing all icons.
         """
         if not self.files:
@@ -1001,11 +997,11 @@ class FileTableModel(QAbstractTableModel):
         )
 
     def get_checked_files(self) -> list[FileItem]:
-        """
-        Returns a list of all checked files.
+        """Returns a list of all checked files.
 
         Returns:
             list[FileItem]: List of checked FileItem objects
+
         """
         return [f for f in self.files if f.checked]
 
@@ -1025,8 +1021,7 @@ class FileTableModel(QAbstractTableModel):
         )
 
     def update_file_metadata(self, file_item: FileItem) -> None:
-        """
-        Update the row for the given file item.
+        """Update the row for the given file item.
         Emits dataChanged for the corresponding row.
         """
         try:

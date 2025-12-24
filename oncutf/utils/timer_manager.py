@@ -1,5 +1,4 @@
-"""
-Module: timer_manager.py
+"""Module: timer_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -47,8 +46,7 @@ class TimerType(Enum):
 
 
 class TimerManager(QObject):
-    """
-    Centralized timer management with optimization and debugging capabilities.
+    """Centralized timer management with optimization and debugging capabilities.
 
     Features:
     - Automatic timer cleanup
@@ -97,8 +95,7 @@ class TimerManager(QObject):
         timer_id: str | None = None,
         consolidate: bool = True,
     ) -> str:
-        """
-        Schedule a callback to run after a delay.
+        """Schedule a callback to run after a delay.
 
         Args:
             callback: Function to call
@@ -110,6 +107,7 @@ class TimerManager(QObject):
 
         Returns:
             str: Timer ID for tracking/cancellation
+
         """
         with self._lock:
             # Use priority default delay if not specified
@@ -163,14 +161,14 @@ class TimerManager(QObject):
             return timer_id
 
     def cancel(self, timer_id: str) -> bool:
-        """
-        Cancel a scheduled timer.
+        """Cancel a scheduled timer.
 
         Args:
             timer_id: Timer ID to cancel
 
         Returns:
             bool: True if timer was cancelled, False if not found
+
         """
         if timer_id not in self._active_timers:
             return False
@@ -192,14 +190,14 @@ class TimerManager(QObject):
         return True
 
     def cancel_by_type(self, timer_type: TimerType) -> int:
-        """
-        Cancel all timers of a specific type.
+        """Cancel all timers of a specific type.
 
         Args:
             timer_type: Type of timers to cancel
 
         Returns:
             int: Number of timers cancelled
+
         """
         # Create a copy to avoid dictionary changed size during iteration
         timer_items = list(self._timer_types.items())
@@ -327,6 +325,7 @@ class TimerManager(QObject):
 
         Returns:
             True if operating normally.
+
         """
         # Consider unhealthy if too many callbacks have failed
         return self._failed_callbacks < 10
@@ -336,6 +335,7 @@ class TimerManager(QObject):
 
         Returns:
             Last error message or None if no errors.
+
         """
         return self._last_error
 
@@ -344,6 +344,7 @@ class TimerManager(QObject):
 
         Returns:
             Dictionary with health status and metrics.
+
         """
         with self._lock:
             return {

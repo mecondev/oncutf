@@ -1,5 +1,4 @@
-"""
-Module: icon_cache.py
+"""Module: icon_cache.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -31,14 +30,14 @@ ICON_PATHS = {}
 
 
 def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
-    """
-    Prepares and caches status icons by creating colored icons if they do not exist.
+    """Prepares and caches status icons by creating colored icons if they do not exist.
 
     Args:
         base_dir (str): The base directory where icons will be stored. Defaults to project icons dir.
 
     Returns:
         dict[str, str]: A dictionary mapping icon names to their file paths.
+
     """
     from oncutf.utils.path_utils import get_icons_dir
 
@@ -66,14 +65,14 @@ def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
 
 
 def load_preview_status_icons(size: tuple[int, int] = None) -> dict[str, QIcon]:
-    """
-    Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
+    """Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
 
     Args:
         size (tuple[int, int]): Size to scale icons to. Default uses PREVIEW_INDICATOR_SIZE from config.
 
     Returns:
         dict[str, QIcon]: Mapping from status to QIcon.
+
     """
     # Use config size if not specified
     if size is None:

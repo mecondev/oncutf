@@ -1,5 +1,4 @@
-"""
-Module: modifier_handler.py
+"""Module: modifier_handler.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -24,8 +23,7 @@ class ModifierAction(Enum):
 
 
 def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> tuple[ModifierAction, str]:
-    """
-    Decode keyboard modifiers into a ModifierAction and description.
+    """Decode keyboard modifiers into a ModifierAction and description.
 
     Modifier logic:
     - Normal: Replace + shallow
@@ -38,6 +36,7 @@ def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> tuple[ModifierAction, s
 
     Returns:
         Tuple of (ModifierAction, human-readable description)
+
     """
     is_ctrl = bool(modifiers & Qt.ControlModifier)
     is_shift = bool(modifiers & Qt.ShiftModifier)
@@ -53,14 +52,14 @@ def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> tuple[ModifierAction, s
 
 
 def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
-    """
-    Get merge_mode and recursive flags from a ModifierAction.
+    """Get merge_mode and recursive flags from a ModifierAction.
 
     Args:
         action: The ModifierAction to decode
 
     Returns:
         Tuple of (merge_mode, recursive)
+
     """
     if action == ModifierAction.MERGE_RECURSIVE:
         return True, True  # merge=True, recursive=True
@@ -73,14 +72,14 @@ def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
 
 
 def decode_modifiers_to_flags(modifiers: Qt.KeyboardModifiers) -> tuple[bool, bool, str]:
-    """
-    Convenience function to decode modifiers directly to flags and description.
+    """Convenience function to decode modifiers directly to flags and description.
 
     Args:
         modifiers: Qt keyboard modifiers
 
     Returns:
         Tuple of (merge_mode, recursive, description)
+
     """
     action, description = decode_modifiers(modifiers)
     merge_mode, recursive = get_action_flags(action)
@@ -88,14 +87,14 @@ def decode_modifiers_to_flags(modifiers: Qt.KeyboardModifiers) -> tuple[bool, bo
 
 
 def get_action_description(action: ModifierAction) -> str:
-    """
-    Get human-readable description for a ModifierAction.
+    """Get human-readable description for a ModifierAction.
 
     Args:
         action: The ModifierAction to describe
 
     Returns:
         Human-readable description string
+
     """
     descriptions = {
         ModifierAction.REPLACE_SHALLOW: "Replace + Shallow",

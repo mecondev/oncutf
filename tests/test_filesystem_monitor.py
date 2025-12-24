@@ -1,5 +1,4 @@
-"""
-Module: test_filesystem_monitor.py
+"""Module: test_filesystem_monitor.py
 
 Author: Michael Economou
 Date: 2025-12-16

@@ -1,5 +1,4 @@
-"""
-Unit tests for MetadataExtractor.
+"""Unit tests for MetadataExtractor.
 
 Tests pure Python metadata extraction logic without UI dependencies.
 """

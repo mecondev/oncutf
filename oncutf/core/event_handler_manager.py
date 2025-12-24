@@ -1,5 +1,4 @@
-"""
-Module: event_handler_manager.py
+"""Module: event_handler_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -29,8 +28,7 @@ logger = get_cached_logger(__name__)
 
 
 class EventHandlerManager:
-    """
-    Manages all event handling operations.
+    """Manages all event handling operations.
 
     This is now a facade that delegates to specialized handlers:
     - FileEventHandlers: browse, folder import

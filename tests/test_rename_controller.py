@@ -1,5 +1,4 @@
-"""
-Module: test_rename_controller.py
+"""Module: test_rename_controller.py
 
 Author: Michael Economou
 Date: 2025-12-16

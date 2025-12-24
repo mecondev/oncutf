@@ -1,5 +1,4 @@
-"""
-Module: test_loading_dialog.py
+"""Module: test_loading_dialog.py
 
 Author: Michael Economou
 Date: 2025-05-09
@@ -50,8 +49,7 @@ from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 
 class FakeWorker(QObject):
-    """
-    A fake worker with progressed and finished signals to simulate metadata loading.
+    """A fake worker with progressed and finished signals to simulate metadata loading.
     """
 
     progressed = pyqtSignal(int, int)  # emit(value, total)
@@ -60,8 +58,7 @@ class FakeWorker(QObject):
 
 @pytest.fixture
 def parent_widget(qtbot):
-    """
-    A simple parent QWidget for dialogs.
+    """A simple parent QWidget for dialogs.
     """
     widget = QWidget()
     qtbot.addWidget(widget)
@@ -71,8 +68,7 @@ def parent_widget(qtbot):
 
 @pytest.fixture
 def dialog(qtbot, parent_widget):
-    """
-    Create a non-modal waiting dialog using show_waiting.
+    """Create a non-modal waiting dialog using show_waiting.
     """
     dlg = CustomMessageDialog.show_waiting(parent_widget, message="Loading...")
     qtbot.addWidget(dlg)

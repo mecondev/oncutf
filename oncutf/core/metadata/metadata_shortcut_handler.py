@@ -1,5 +1,4 @@
-"""
-Module: metadata_shortcut_handler.py
+"""Module: metadata_shortcut_handler.py
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataShortcutHandler:
-    """
-    Handler for keyboard shortcuts that trigger metadata operations.
+    """Handler for keyboard shortcuts that trigger metadata operations.
 
     This class encapsulates all shortcut-related logic that was previously
     in UnifiedMetadataManager, including:
@@ -38,12 +36,12 @@ class MetadataShortcutHandler:
     """
 
     def __init__(self, manager: UnifiedMetadataManager, parent_window: Any = None) -> None:
-        """
-        Initialize shortcut handler.
+        """Initialize shortcut handler.
 
         Args:
             manager: Reference to the UnifiedMetadataManager for delegation
             parent_window: Reference to the main application window
+
         """
         self._manager = manager
         self._parent_window = parent_window
@@ -58,8 +56,7 @@ class MetadataShortcutHandler:
     # =========================================================================
 
     def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
-        """
-        Determines whether to use extended mode based on modifier keys.
+        """Determines whether to use extended mode based on modifier keys.
 
         Args:
             modifier_state: Qt.KeyboardModifiers to use, or None for current state
@@ -70,6 +67,7 @@ class MetadataShortcutHandler:
             - skip_metadata = True  -> No metadata scan (no modifiers)
             - skip_metadata = False & use_extended = False -> Fast scan (Ctrl)
             - skip_metadata = False & use_extended = True  -> Extended scan (Ctrl+Shift)
+
         """
         from oncutf.core.pyqt_imports import QApplication, Qt
 
@@ -105,8 +103,7 @@ class MetadataShortcutHandler:
         return skip_metadata, use_extended
 
     def should_use_extended_metadata(self, modifier_state: Any = None) -> bool:
-        """
-        Returns True if Ctrl+Shift are both held.
+        """Returns True if Ctrl+Shift are both held.
 
         Used in cases where metadata is always loaded (drag & drop).
         This assumes that metadata will be loaded - we only decide if it's fast or extended.
@@ -116,6 +113,7 @@ class MetadataShortcutHandler:
 
         Returns:
             bool: True if extended metadata should be used
+
         """
         from oncutf.core.pyqt_imports import QApplication, Qt
 
@@ -135,8 +133,7 @@ class MetadataShortcutHandler:
     # =========================================================================
 
     def shortcut_load_metadata(self) -> None:
-        """
-        Load standard (non-extended) metadata for currently selected files.
+        """Load standard (non-extended) metadata for currently selected files.
 
         Triggered by keyboard shortcut (e.g., M key).
         """
@@ -176,8 +173,7 @@ class MetadataShortcutHandler:
         self._manager.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
 
     def shortcut_load_extended_metadata(self) -> None:
-        """
-        Load extended metadata for selected files.
+        """Load extended metadata for selected files.
 
         Triggered by keyboard shortcut (e.g., Shift+M).
         """
@@ -247,8 +243,7 @@ class MetadataShortcutHandler:
     # =========================================================================
 
     def shortcut_load_metadata_all(self) -> None:
-        """
-        Load basic metadata for ALL files in current folder.
+        """Load basic metadata for ALL files in current folder.
 
         Triggered by keyboard shortcut (e.g., Ctrl+M).
         """
@@ -291,8 +286,7 @@ class MetadataShortcutHandler:
         self._manager.load_metadata_for_items(all_files, use_extended=False, source="shortcut_all")
 
     def shortcut_load_extended_metadata_all(self) -> None:
-        """
-        Load extended metadata for ALL files in current folder.
+        """Load extended metadata for ALL files in current folder.
 
         Triggered by keyboard shortcut (e.g., Ctrl+Shift+M).
         """
@@ -356,14 +350,14 @@ class MetadataShortcutHandler:
         return context.file_store.get_loaded_files()
 
     def _analyze_metadata_state(self, files: list[FileItem]) -> dict[str, Any]:
-        """
-        Analyze metadata state of files using event handler manager.
+        """Analyze metadata state of files using event handler manager.
 
         Args:
             files: List of files to analyze
 
         Returns:
             Dictionary with metadata analysis results
+
         """
         if (
             self.parent_window

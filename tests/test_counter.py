@@ -1,5 +1,4 @@
-"""
-Module: test_counter.py
+"""Module: test_counter.py
 
 Author: Michael Economou
 Date: 2025-05-12

@@ -1,5 +1,4 @@
-"""
-Module: file_load_controller.py
+"""Module: file_load_controller.py
 
 Author: Michael Economou
 Date: 2025-12-15
@@ -35,8 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class FileLoadController:
-    """
-    Controller for file loading operations.
+    """Controller for file loading operations.
 
     Orchestrates file loading workflows by coordinating FileLoadManager,
     FileStore, and related services. Provides a clean API for UI components
@@ -54,6 +52,7 @@ class FileLoadController:
         _table_manager: Manager for table UI updates
         _context: Application context for global state
         _allowed_extensions: Set of allowed file extensions
+
     """
 
     def __init__(
@@ -63,14 +62,14 @@ class FileLoadController:
         table_manager: Optional["TableManager"] = None,
         context: Optional["ApplicationContext"] = None,
     ) -> None:
-        """
-        Initialize FileLoadController.
+        """Initialize FileLoadController.
 
         Args:
             file_load_manager: Manager for file loading operations (injected)
             file_store: Store for maintaining file state (injected)
             table_manager: Manager for table UI updates (injected)
             context: Application context for global state (injected)
+
         """
         logger.info("[FileLoadController] Initializing controller")
         self._file_load_manager = file_load_manager
@@ -90,8 +89,7 @@ class FileLoadController:
         )
 
     def load_files(self, paths: list[str], clear: bool = True) -> dict[str, Any]:
-        """
-        Load files from given paths with validation and error handling.
+        """Load files from given paths with validation and error handling.
 
         This method orchestrates file loading by:
         1. Validating input paths exist
@@ -109,6 +107,7 @@ class FileLoadController:
                 - loaded_count (int): Number of files successfully loaded
                 - errors (List[str]): Any error messages encountered
                 - skipped (List[str]): Files skipped (wrong extension, etc.)
+
         """
         logger.info("[FileLoadController] load_files: %d paths (clear=%s)", len(paths), clear)
 
@@ -202,8 +201,7 @@ class FileLoadController:
     def load_folder(
         self, folder_path: str, merge_mode: bool = False, recursive: bool = False
     ) -> dict[str, Any]:
-        """
-        Load all files from a folder with optional recursion.
+        """Load all files from a folder with optional recursion.
 
         Args:
             folder_path: Path to folder to load
@@ -212,6 +210,7 @@ class FileLoadController:
 
         Returns:
             Dictionary with success status and loaded count
+
         """
         logger.info(
             "[FileLoadController] load_folder: %s (merge=%s, recursive=%s)",
@@ -262,8 +261,7 @@ class FileLoadController:
     def handle_drop(
         self, paths: list[str], modifiers: "Qt.KeyboardModifiers" = Qt.NoModifier  # type: ignore
     ) -> dict[str, Any]:
-        """
-        Handle file/folder drop with keyboard modifiers.
+        """Handle file/folder drop with keyboard modifiers.
 
         Args:
             paths: List of dropped paths (files or folders)
@@ -271,6 +269,7 @@ class FileLoadController:
 
         Returns:
             Dictionary with success status
+
         """
         logger.info(
             "[FileLoadController] handle_drop: %d paths (modifiers=%s)", len(paths), modifiers
@@ -298,11 +297,11 @@ class FileLoadController:
             return {"success": False, "errors": [str(e)]}
 
     def clear_files(self) -> bool:
-        """
-        Clear all loaded files.
+        """Clear all loaded files.
 
         Returns:
             True if files were cleared successfully
+
         """
         logger.info("[FileLoadController] Clearing all files")
 
@@ -324,11 +323,11 @@ class FileLoadController:
             return False
 
     def get_loaded_file_count(self) -> int:
-        """
-        Get count of currently loaded files.
+        """Get count of currently loaded files.
 
         Returns:
             Number of loaded files
+
         """
         if self._file_store is None:
             logger.debug(
@@ -348,11 +347,11 @@ class FileLoadController:
             return 0
 
     def is_recursive_mode(self) -> bool:
-        """
-        Check if recursive mode is enabled.
+        """Check if recursive mode is enabled.
 
         Returns:
             True if recursive mode is active
+
         """
         if self._context is None:
             return False
@@ -363,11 +362,11 @@ class FileLoadController:
             return False
 
     def set_recursive_mode(self, recursive: bool) -> None:
-        """
-        Set recursive mode for future folder loads.
+        """Set recursive mode for future folder loads.
 
         Args:
             recursive: Whether to enable recursive scanning
+
         """
         logger.info("[FileLoadController] Setting recursive mode: %s", recursive)
 

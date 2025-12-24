@@ -1,5 +1,4 @@
-"""
-companion_files_helper.py
+"""companion_files_helper.py
 
 Utility for detecting and managing companion/sidecar files that are associated with main media files.
 Handles patterns like Sony camera XML files, XMP sidecar files, etc.
@@ -19,8 +18,7 @@ logger = get_cached_logger(__name__)
 
 
 class CompanionFilesHelper:
-    """
-    Handles detection and management of companion/sidecar files.
+    """Handles detection and management of companion/sidecar files.
 
     Common companion file patterns:
     - Sony cameras: C8227.MP4 + C8227M01.XML
@@ -241,8 +239,7 @@ class CompanionFilesHelper:
 
     @classmethod
     def find_companion_files(cls, main_file_path: str, folder_files: list[str]) -> list[str]:
-        """
-        Find companion files for a given main file.
+        """Find companion files for a given main file.
 
         Args:
             main_file_path: Path to the main file
@@ -250,6 +247,7 @@ class CompanionFilesHelper:
 
         Returns:
             List of companion file paths
+
         """
         main_file = Path(main_file_path)
         main_name = main_file.stem  # filename without extension
@@ -285,8 +283,7 @@ class CompanionFilesHelper:
     def get_main_file_for_companion(
         cls, companion_path: str, folder_files: list[str]
     ) -> str | None:
-        """
-        Find the main file that this companion file belongs to.
+        """Find the main file that this companion file belongs to.
 
         Args:
             companion_path: Path to the companion file
@@ -294,6 +291,7 @@ class CompanionFilesHelper:
 
         Returns:
             Path to main file, or None if not found
+
         """
         companion_file = Path(companion_path)
         companion_name = companion_file.name
@@ -328,14 +326,14 @@ class CompanionFilesHelper:
 
     @classmethod
     def group_files_with_companions(cls, file_paths: list[str]) -> dict[str, dict[str, Any]]:
-        """
-        Group files with their companions.
+        """Group files with their companions.
 
         Args:
             file_paths: List of file paths to analyze
 
         Returns:
             Dictionary with file groups: {main_file: {"main": path, "companions": [paths], "type": "group/standalone"}}
+
         """
         file_groups: dict[str, dict[str, Any]] = {}
         processed_files: set[str] = set()
@@ -387,8 +385,7 @@ class CompanionFilesHelper:
 
     @classmethod
     def is_companion_file(cls, file_path: str, folder_files: list[str]) -> bool:
-        """
-        Check if a file is a companion file.
+        """Check if a file is a companion file.
 
         Args:
             file_path: Path to check
@@ -396,19 +393,20 @@ class CompanionFilesHelper:
 
         Returns:
             True if this is a companion file
+
         """
         return cls.get_main_file_for_companion(file_path, folder_files) is not None
 
     @classmethod
     def should_include_companion_files(cls, main_extensions: set[str]) -> bool:
-        """
-        Check if companion files should be included based on the main file types being loaded.
+        """Check if companion files should be included based on the main file types being loaded.
 
         Args:
             main_extensions: Set of main file extensions being processed
 
         Returns:
             True if companion files are relevant for these file types
+
         """
         relevant_extensions = set(cls.COMPANION_PATTERNS.keys())
         return bool(main_extensions.intersection(relevant_extensions))
@@ -417,8 +415,7 @@ class CompanionFilesHelper:
     def get_companion_rename_pairs(
         cls, main_old_path: str, main_new_path: str, companions: list[str]
     ) -> list[tuple[str, str]]:
-        """
-        Generate rename pairs for companion files when main file is renamed.
+        """Generate rename pairs for companion files when main file is renamed.
 
         Args:
             main_old_path: Original main file path
@@ -427,6 +424,7 @@ class CompanionFilesHelper:
 
         Returns:
             List of (old_path, new_path) tuples for companions
+
         """
         if not companions:
             return []
@@ -455,14 +453,14 @@ class CompanionFilesHelper:
 
     @classmethod
     def extract_companion_metadata(cls, companion_path: str) -> dict[str, Any]:
-        """
-        Extract useful metadata from companion files (like Sony XML).
+        """Extract useful metadata from companion files (like Sony XML).
 
         Args:
             companion_path: Path to companion file
 
         Returns:
             Dictionary with extracted metadata
+
         """
         metadata = {}
 

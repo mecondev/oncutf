@@ -1,5 +1,4 @@
-"""
-Module: hash_manager.py
+"""Module: hash_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -21,8 +20,7 @@ logger = get_cached_logger(__name__)
 
 
 class HashManager:
-    """
-    Manages file hashing operations and duplicate detection.
+    """Manages file hashing operations and duplicate detection.
 
     Provides functionality for:
     - CRC32 hash calculation with progress tracking
@@ -45,14 +43,14 @@ class HashManager:
             self._use_persistent_cache = False
 
     def has_cached_hash(self, file_path: str | Path) -> bool:
-        """
-        Check if a hash exists in cache without calculating it.
+        """Check if a hash exists in cache without calculating it.
 
         Args:
             file_path: Path to the file to check
 
         Returns:
             bool: True if hash exists in cache, False otherwise
+
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -66,14 +64,14 @@ class HashManager:
             return cache_key in self._hash_cache
 
     def get_cached_hash(self, file_path: str | Path) -> str | None:
-        """
-        Get hash from cache without calculating it.
+        """Get hash from cache without calculating it.
 
         Args:
             file_path: Path to the file
 
         Returns:
             str: Cached hash if found, None otherwise
+
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -91,8 +89,7 @@ class HashManager:
         file_path: str | Path,
         progress_callback: Callable[[int], None] | None = None,
     ) -> str | None:
-        """
-        Calculate the CRC32 hash of a file with error handling and progress tracking.
+        """Calculate the CRC32 hash of a file with error handling and progress tracking.
         Checks cache first before calculating.
 
         Args:
@@ -101,6 +98,7 @@ class HashManager:
 
         Returns:
             str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
+
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -180,8 +178,7 @@ class HashManager:
     def compare_folders(
         self, folder1: str | Path, folder2: str | Path
     ) -> dict[str, tuple[bool, str, str]]:
-        """
-        Compare two folders and return file comparison results.
+        """Compare two folders and return file comparison results.
 
         Args:
             folder1: First folder to compare
@@ -189,6 +186,7 @@ class HashManager:
 
         Returns:
             dict: Dictionary with filename as key and (is_same, hash1, hash2) as value
+
         """
         if isinstance(folder1, str):
             folder1 = Path(folder1)
@@ -239,14 +237,14 @@ class HashManager:
             return {}
 
     def find_duplicates_in_list(self, file_items: list[FileItem]) -> dict[str, list[FileItem]]:
-        """
-        Find duplicate files in a list of FileItem objects based on CRC32 hash.
+        """Find duplicate files in a list of FileItem objects based on CRC32 hash.
 
         Args:
             file_items: List of FileItem objects to check for duplicates
 
         Returns:
             dict: Dictionary with hash as key and list of duplicate FileItem objects as value
+
         """
         if not file_items:
             return {}
@@ -284,14 +282,14 @@ class HashManager:
         return duplicates
 
     def find_duplicates_in_paths(self, file_paths: list[str]) -> dict[str, list[str]]:
-        """
-        Find duplicate files in a list of file paths based on CRC32 hash.
+        """Find duplicate files in a list of file paths based on CRC32 hash.
 
         Args:
             file_paths: List of file paths (strings) to check for duplicates
 
         Returns:
             dict: Dictionary with hash as key and list of duplicate file paths as value
+
         """
         if not file_paths:
             return {}
@@ -329,8 +327,7 @@ class HashManager:
         return duplicates
 
     def verify_file_integrity(self, file_path: str | Path, expected_hash: str) -> bool:
-        """
-        Verify file integrity by comparing its hash with an expected hash.
+        """Verify file integrity by comparing its hash with an expected hash.
 
         Args:
             file_path: Path to the file to verify
@@ -338,6 +335,7 @@ class HashManager:
 
         Returns:
             bool: True if file hash matches expected hash, False otherwise
+
         """
         actual_hash = self.calculate_hash(file_path)
         if actual_hash is None:
@@ -351,11 +349,11 @@ class HashManager:
         return matches
 
     def get_cache_info(self) -> dict[str, str | int | float]:
-        """
-        Get cache performance and size information.
+        """Get cache performance and size information.
 
         Returns:
             dict: Dictionary with cache statistics
+
         """
         if self._use_persistent_cache:
             # Get persistent cache stats
@@ -378,8 +376,7 @@ class HashManager:
             }
 
     def clear_cache(self) -> None:
-        """
-        Clear hash cache (memory and/or persistent).
+        """Clear hash cache (memory and/or persistent).
         """
         if self._use_persistent_cache:
             self._persistent_cache.clear_memory_cache()
@@ -391,22 +388,21 @@ class HashManager:
 
 # Convenience functions for simple usage
 def calculate_crc32(file_path: str | Path) -> str | None:
-    """
-    Calculate the CRC32 hash of a file (convenience function).
+    """Calculate the CRC32 hash of a file (convenience function).
 
     Args:
         file_path: Path to the file to hash
 
     Returns:
         str: CRC32 hash in hexadecimal format, or None if error occurred
+
     """
     manager = HashManager()
     return manager.calculate_hash(file_path)
 
 
 def compare_folders(folder1: str | Path, folder2: str | Path) -> dict[str, tuple[bool, str, str]]:
-    """
-    Compare two folders and return file comparison results (convenience function).
+    """Compare two folders and return file comparison results (convenience function).
 
     Args:
         folder1: First folder to compare
@@ -414,6 +410,7 @@ def compare_folders(folder1: str | Path, folder2: str | Path) -> dict[str, tuple
 
     Returns:
         dict: Dictionary with filename as key and (is_same, hash1, hash2) as value
+
     """
     manager = HashManager()
     return manager.compare_folders(folder1, folder2)

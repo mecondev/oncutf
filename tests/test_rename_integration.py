@@ -1,5 +1,4 @@
-"""
-Module: test_rename_integration.py
+"""Module: test_rename_integration.py
 
 Author: Michael Economou
 Date: 2025-05-31

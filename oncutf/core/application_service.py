@@ -18,8 +18,7 @@ logger = get_cached_logger(__name__)
 
 
 class ApplicationService:
-    """
-    Application Service Layer that provides unified access to all application operations.
+    """Application Service Layer that provides unified access to all application operations.
 
     This service acts as a facade for all managers and reduces the coupling between
     MainWindow and individual managers. It groups related operations logically.
@@ -126,6 +125,7 @@ class ApplicationService:
             items: List of FileItem objects to load metadata for
             use_extended: Whether to use extended metadata loading
             source: Source of the request (for logging)
+
         """
         if not items:
             return
@@ -545,7 +545,6 @@ class ApplicationService:
 
     def prompt_file_conflict(self, target_path: str) -> str:
         """Prompt file conflict via DialogManager."""
-
         old_name = os.path.basename(target_path)
         new_name = os.path.basename(target_path)
         result = self.main_window.dialog_manager.prompt_file_conflict(old_name, new_name)
@@ -658,14 +657,14 @@ _application_service_instance: ApplicationService | None = None
 
 
 def get_application_service(main_window=None) -> ApplicationService | None:
-    """
-    Get the global application service instance.
+    """Get the global application service instance.
 
     Args:
         main_window: MainWindow instance (required for first call)
 
     Returns:
         ApplicationService instance or None if not initialized
+
     """
     global _application_service_instance
 
@@ -677,14 +676,14 @@ def get_application_service(main_window=None) -> ApplicationService | None:
 
 
 def initialize_application_service(main_window) -> ApplicationService:
-    """
-    Initialize the global application service.
+    """Initialize the global application service.
 
     Args:
         main_window: MainWindow instance
 
     Returns:
         Initialized ApplicationService instance
+
     """
     service = get_application_service(main_window)
     if service:

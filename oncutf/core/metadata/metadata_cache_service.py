@@ -1,5 +1,4 @@
-"""
-Module: metadata_cache_service.py
+"""Module: metadata_cache_service.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
@@ -32,8 +31,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataCacheService:
-    """
-    Service for metadata cache operations.
+    """Service for metadata cache operations.
 
     Responsibilities:
     - Check if metadata/hash exists in cache
@@ -63,14 +61,14 @@ class MetadataCacheService:
         return self._cache_helper
 
     def check_cached_metadata(self, file_item: FileItem) -> dict[str, Any] | None:
-        """
-        Check if metadata exists in cache without loading.
+        """Check if metadata exists in cache without loading.
 
         Args:
             file_item: The file to check
 
         Returns:
             Metadata dict if cached, None if not available
+
         """
         try:
             return get_metadata_for_file(file_item.full_path)
@@ -83,14 +81,14 @@ class MetadataCacheService:
             return None
 
     def check_cached_hash(self, file_item: FileItem) -> str | None:
-        """
-        Check if hash exists in cache without loading.
+        """Check if hash exists in cache without loading.
 
         Args:
             file_item: The file to check
 
         Returns:
             Hash string if cached, None if not available
+
         """
         try:
             return get_hash_for_file(file_item.full_path)
@@ -103,25 +101,25 @@ class MetadataCacheService:
             return None
 
     def has_cached_metadata(self, file_path: str) -> bool:
-        """
-        Check if metadata exists in cache for a file path.
+        """Check if metadata exists in cache for a file path.
 
         Args:
             file_path: Path to check
 
         Returns:
             bool: True if metadata exists in cache
+
         """
         return has_metadata(file_path)
 
     def has_cached_hash(self, file_path: str) -> bool:
-        """
-        Check if hash exists in cache for a file path.
+        """Check if hash exists in cache for a file path.
 
         Args:
             file_path: Path to check
 
         Returns:
             bool: True if hash exists in cache
+
         """
         return has_hash(file_path)

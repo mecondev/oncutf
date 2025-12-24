@@ -1,5 +1,4 @@
-"""
-Metadata domain layer.
+"""Metadata domain layer.
 
 Author: Michael Economou
 Date: December 17, 2025

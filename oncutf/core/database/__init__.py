@@ -1,5 +1,4 @@
-"""
-Database operations module.
+"""Database operations module.
 
 This module provides database management functionality including:
 - DatabaseManager: Main database operations and migrations

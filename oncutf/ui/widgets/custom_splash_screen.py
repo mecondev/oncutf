@@ -1,5 +1,4 @@
-"""
-Module: custom_splash_screen.py
+"""Module: custom_splash_screen.py
 
 Author: Michael Economou
 Date: 2025-06-23
@@ -34,18 +33,17 @@ logger = logging.getLogger(__name__)
 
 
 class CustomSplashScreen(QSplashScreen):
-    """
-    Custom splash screen with version info and animated initialize text.
+    """Custom splash screen with version info and animated initialize text.
 
     Size: 16:9 aspect ratio with 400px height (711x400)
     """
 
     def __init__(self, pixmap_path: str):
-        """
-        Initialize the custom splash screen.
+        """Initialize the custom splash screen.
 
         Args:
             pixmap_path: Path to the splash image
+
         """
         # Calculate 16:9 aspect ratio dimensions
         self.splash_height = 400
@@ -296,22 +294,22 @@ class CustomSplashScreen(QSplashScreen):
     def showMessage(
         self, message: str, alignment: int = Qt.AlignBottom | Qt.AlignCenter, color=None
     ):
-        """
-        Override showMessage to add custom text rendering.
+        """Override showMessage to add custom text rendering.
 
         Args:
             message: Message to display
             alignment: Text alignment
             color: Text color (optional)
+
         """
         # Don't use the default showMessage, we'll handle text in drawContents
 
     def drawContents(self, painter: QPainter):
-        """
-        Custom drawing of splash screen contents.
+        """Custom drawing of splash screen contents.
 
         Args:
             painter: QPainter instance
+
         """
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -359,11 +357,11 @@ class CustomSplashScreen(QSplashScreen):
         painter.drawText(init_x, init_y, init_text_with_dots)
 
     def finish(self, widget):
-        """
-        Override finish to restore cursor and stop animation.
+        """Override finish to restore cursor and stop animation.
 
         Args:
             widget: Widget to finish splash for
+
         """
         # Stop the dots animation timer
         if hasattr(self, "dots_timer"):

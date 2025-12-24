@@ -1,5 +1,4 @@
-"""
-Module: qt_imports.py
+"""Module: qt_imports.py
 
 Author: Michael Economou
 Date: 2025-05-31

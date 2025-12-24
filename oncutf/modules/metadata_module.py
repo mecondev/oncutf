@@ -1,5 +1,4 @@
-"""
-Module: metadata_module.py
+"""Module: metadata_module.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -22,15 +21,13 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataModule:
-    """
-    Logic component (non-UI) for extracting and formatting metadata fields.
+    """Logic component (non-UI) for extracting and formatting metadata fields.
     Uses MetadataExtractor for actual extraction logic.
     """
 
     @staticmethod
     def clean_metadata_value(value: str) -> str:
-        """
-        Clean metadata value for filename safety by replacing problematic characters.
+        """Clean metadata value for filename safety by replacing problematic characters.
 
         DEPRECATED: Use MetadataExtractor.clean_for_filename() instead.
         Kept for backwards compatibility.
@@ -40,6 +37,7 @@ class MetadataModule:
 
         Returns:
             str: Cleaned value safe for use in filenames
+
         """
         from oncutf.domain.metadata.extractor import MetadataExtractor
 
@@ -50,8 +48,7 @@ class MetadataModule:
     def apply_from_data(
         data: dict, file_item: FileItem, _index: int = 0, metadata_cache: dict | None = None
     ) -> str:
-        """
-        Apply metadata extraction using MetadataExtractor domain logic.
+        """Apply metadata extraction using MetadataExtractor domain logic.
 
         This method delegates to MetadataExtractor for actual extraction,
         maintaining backwards compatibility with existing code.
@@ -64,6 +61,7 @@ class MetadataModule:
 
         Returns:
             Extracted metadata value or fallback
+
         """
         logger.debug(
             "[DEBUG] [MetadataModule] apply_from_data CALLED for %s",
@@ -127,8 +125,7 @@ class MetadataModule:
 
     @staticmethod
     def _get_metadata_dict(path: str, metadata_cache: dict | None = None) -> dict:
-        """
-        Get metadata dict from cache or persistent cache.
+        """Get metadata dict from cache or persistent cache.
 
         Args:
             path: Normalized file path
@@ -136,6 +133,7 @@ class MetadataModule:
 
         Returns:
             Metadata dict (empty if not found)
+
         """
         if not metadata_cache:
             # Use persistent metadata cache
@@ -209,8 +207,7 @@ class MetadataModule:
 
     @staticmethod
     def clear_cache() -> None:
-        """
-        Clear the metadata cache.
+        """Clear the metadata cache.
 
         NOTE: Caching is now handled by MetadataExtractor internally.
         This method is kept for backwards compatibility.
@@ -223,8 +220,7 @@ class MetadataModule:
 
     @staticmethod
     def _get_file_hash(file_path: str, hash_type: str) -> str:
-        """
-        Get file hash using the hash cache.
+        """Get file hash using the hash cache.
 
         DEPRECATED: Hash extraction is now handled by MetadataExtractor.
         Kept for backwards compatibility.
@@ -235,6 +231,7 @@ class MetadataModule:
 
         Returns:
             str: Hash value or original name if not available
+
         """
         from oncutf.utils.file_status_helpers import get_hash_for_file
 
@@ -251,29 +248,27 @@ class MetadataModule:
 
     @staticmethod
     def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
-        """
-        DEPRECATED: Hash calculation is handled manually by the user.
+        """DEPRECATED: Hash calculation is handled manually by the user.
         Kept for backward compatibility.
         """
         return False
 
     @staticmethod
     def _start_hash_calculation(file_path: str, hash_type: str) -> None:
-        """
-        DEPRECATED: Hash calculation is handled manually by the user.
+        """DEPRECATED: Hash calculation is handled manually by the user.
         Kept for backward compatibility.
         """
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        """
-        Check if module is effective (will produce output).
+        """Check if module is effective (will produce output).
 
         Args:
             data: Configuration dict with 'field' and 'category'
 
         Returns:
             True if module will produce output
+
         """
         field = data.get("field")
         category = data.get("category", "file_dates")

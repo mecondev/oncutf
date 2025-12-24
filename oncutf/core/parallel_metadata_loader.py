@@ -1,5 +1,4 @@
-"""
-Module: parallel_metadata_loader.py
+"""Module: parallel_metadata_loader.py
 
 Author: Michael Economou
 Date: 2025-11-22
@@ -29,8 +28,7 @@ logger = get_cached_logger(__name__)
 
 
 class ParallelMetadataLoader:
-    """
-    Parallel metadata loader using thread pool for optimal performance.
+    """Parallel metadata loader using thread pool for optimal performance.
 
     Features:
     - Parallel ExifTool execution (multiple files simultaneously)
@@ -46,13 +44,13 @@ class ParallelMetadataLoader:
     """
 
     def __init__(self, max_workers: int = None):
-        """
-        Initialize parallel metadata loader.
+        """Initialize parallel metadata loader.
 
         Args:
             max_workers: Maximum number of worker threads. If None, uses optimal default:
                         - CPU count for small files
                         - CPU count * 2 for I/O-bound operations (exiftool)
+
         """
         if max_workers is None:
             # ExifTool is I/O-bound, so we can use more workers than CPU count
@@ -77,8 +75,7 @@ class ParallelMetadataLoader:
         completion_callback: Callable[[], None] | None = None,
         cancellation_check: Callable[[], bool] | None = None,
     ) -> list[tuple[FileItem, dict]]:
-        """
-        Load metadata for multiple files in parallel.
+        """Load metadata for multiple files in parallel.
 
         Args:
             items: List of FileItem objects to load metadata for
@@ -89,6 +86,7 @@ class ParallelMetadataLoader:
 
         Returns:
             List of (FileItem, metadata_dict) tuples in original order
+
         """
         if not items:
             return []
@@ -240,8 +238,7 @@ class ParallelMetadataLoader:
         return ordered_results
 
     def _load_single_file_safe(self, item: FileItem, use_extended: bool) -> dict:
-        """
-        Load metadata for a single file with error handling.
+        """Load metadata for a single file with error handling.
 
         This runs in a worker thread and should not raise exceptions.
 
@@ -251,6 +248,7 @@ class ParallelMetadataLoader:
 
         Returns:
             Metadata dictionary (empty dict on error)
+
         """
         try:
             logger.info(
@@ -287,8 +285,7 @@ class ParallelMetadataLoader:
             return {}
 
     def _calculate_optimal_batch_size(self, total_files: int) -> int:
-        """
-        Calculate optimal batch size based on file count.
+        """Calculate optimal batch size based on file count.
 
         Larger batches are more efficient but less responsive.
         Smaller batches provide better progress updates.
@@ -298,6 +295,7 @@ class ParallelMetadataLoader:
 
         Returns:
             Optimal batch size
+
         """
         if total_files <= 10:
             return 1  # Process individually for immediate feedback
@@ -321,8 +319,7 @@ class ParallelMetadataLoader:
 def update_file_item_metadata(
     item: FileItem, metadata: dict, parent_window, metadata_cache, use_extended: bool
 ) -> None:
-    """
-    Update FileItem with metadata and emit UI signals.
+    """Update FileItem with metadata and emit UI signals.
 
     Helper function to update file item and UI components with loaded metadata.
 
@@ -332,6 +329,7 @@ def update_file_item_metadata(
         parent_window: Main window reference (for file_model)
         metadata_cache: Metadata cache instance
         use_extended: Whether this is extended metadata
+
     """
     if not metadata:
         return

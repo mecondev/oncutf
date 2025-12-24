@@ -1,5 +1,4 @@
-"""
-Module: build_metadata_tree_model.py
+"""Module: build_metadata_tree_model.py
 
 Author: Michael Economou
 Date: 2025-05-10
@@ -27,8 +26,7 @@ def format_key(key: str) -> str:
 
 
 def classify_key(key: str) -> str:
-    """
-    Classify a metadata key into a detailed group label.
+    """Classify a metadata key into a detailed group label.
     Enhanced grouping for better organization of metadata.
     """
     key_lower = key.lower()
@@ -185,14 +183,14 @@ def create_item(text: str, alignment=None, icon_name: str | None = None) -> QSta
 
 
 def get_hidden_fields_for_level(level: str = "essential") -> set:
-    """
-    Get the set of fields to hide based on the display level.
+    """Get the set of fields to hide based on the display level.
 
     Args:
         level: Display level - "essential", "standard", or "all"
 
     Returns:
         Set of field names to hide
+
     """
     # Always hide ExifToolVersion regardless of level
     always_hidden = {"ExifToolVersion"}
@@ -434,14 +432,14 @@ def build_metadata_tree_model(
     extended_keys: set = None,
     _display_level: str = "all",
 ) -> QStandardItemModel:
-    """
-    Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
+    """Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
 
     Args:
         metadata: Dictionary containing metadata
         modified_keys: Set of keys that have been modified
         extended_keys: Set of keys that are only available in extended metadata mode
         display_level: Display level - always "all" (no filtering)
+
     """
     logger.debug(">>> build_metadata_tree_model called", extra={"dev_only": True})
     logger.debug(

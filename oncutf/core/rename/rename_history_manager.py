@@ -1,5 +1,4 @@
-"""
-Module: rename_history_manager.py
+"""Module: rename_history_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -25,8 +24,7 @@ logger = get_cached_logger(__name__)
 
 
 class RenameOperation:
-    """
-    Represents a single rename operation within a batch.
+    """Represents a single rename operation within a batch.
     """
 
     def __init__(self, old_path: str, new_path: str, old_filename: str, new_filename: str):
@@ -40,8 +38,7 @@ class RenameOperation:
 
 
 class RenameBatch:
-    """
-    Represents a batch of rename operations that can be undone as a unit.
+    """Represents a batch of rename operations that can be undone as a unit.
     """
 
     def __init__(
@@ -67,8 +64,7 @@ class RenameBatch:
 
 
 class RenameHistoryManager:
-    """
-    Manages rename history for undo/redo functionality.
+    """Manages rename history for undo/redo functionality.
 
     Provides persistent storage of rename operations and rollback capabilities.
     """
@@ -84,8 +80,7 @@ class RenameHistoryManager:
         modules_data: list[dict] | None = None,
         post_transform_data: dict | None = None,
     ) -> str:
-        """
-        Record a batch rename operation for future undo.
+        """Record a batch rename operation for future undo.
 
         Args:
             renames: List of (old_path, new_path) tuples
@@ -94,6 +89,7 @@ class RenameHistoryManager:
 
         Returns:
             Operation ID for the recorded batch
+
         """
         operation_id = str(uuid.uuid4())
 
@@ -122,14 +118,14 @@ class RenameHistoryManager:
             return ""
 
     def get_recent_operations(self, limit: int = 20) -> list[dict]:
-        """
-        Get recent rename operations for undo menu.
+        """Get recent rename operations for undo menu.
 
         Args:
             limit: Maximum number of operations to return
 
         Returns:
             List of operation summaries
+
         """
         try:
             # Check if database manager has the method (may not be implemented yet)
@@ -162,14 +158,14 @@ class RenameHistoryManager:
             return []
 
     def get_operation_details(self, operation_id: str) -> RenameBatch | None:
-        """
-        Get detailed information about a specific operation.
+        """Get detailed information about a specific operation.
 
         Args:
             operation_id: ID of the operation
 
         Returns:
             RenameBatch object or None if not found
+
         """
         try:
             details = self._db_manager.get_operation_details(operation_id)
@@ -211,14 +207,14 @@ class RenameHistoryManager:
             return None
 
     def can_undo_operation(self, operation_id: str) -> tuple[bool, str]:
-        """
-        Check if an operation can be undone.
+        """Check if an operation can be undone.
 
         Args:
             operation_id: ID of the operation to check
 
         Returns:
             Tuple of (can_undo, reason_if_not)
+
         """
         try:
             batch = self.get_operation_details(operation_id)
@@ -260,14 +256,14 @@ class RenameHistoryManager:
             return False, f"Error checking operation: {str(e)}"
 
     def undo_operation(self, operation_id: str) -> tuple[bool, str, int]:
-        """
-        Undo a rename operation by reverting all files to their original names.
+        """Undo a rename operation by reverting all files to their original names.
 
         Args:
             operation_id: ID of the operation to undo
 
         Returns:
             Tuple of (success, message, files_processed)
+
         """
         try:
             # Check if operation can be undone
@@ -347,14 +343,14 @@ class RenameHistoryManager:
             return False, f"Undo failed: {str(e)}", 0
 
     def cleanup_old_history(self, _days_to_keep: int = 30) -> int:
-        """
-        Clean up old rename history records.
+        """Clean up old rename history records.
 
         Args:
             days_to_keep: Number of days of history to keep
 
         Returns:
             Number of records cleaned up
+
         """
         try:
             # This would require additional database methods
@@ -366,11 +362,11 @@ class RenameHistoryManager:
             return 0
 
     def get_history_stats(self) -> dict:
-        """
-        Get statistics about rename history.
+        """Get statistics about rename history.
 
         Returns:
             Dictionary with history statistics
+
         """
         try:
             db_stats = self._db_manager.get_database_stats()

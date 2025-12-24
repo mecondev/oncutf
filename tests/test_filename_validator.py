@@ -1,5 +1,4 @@
-"""
-Module: test_filename_validator.py
+"""Module: test_filename_validator.py
 
 Author: Michael Economou
 Date: 2025-05-31

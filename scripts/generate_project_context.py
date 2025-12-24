@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate a high-level project context Markdown file for AI assistants.
+"""Generate a high-level project context Markdown file for AI assistants.
 
 This script scans the repository for Python source files and produces a
 concise Markdown report that contains, per-module:
@@ -60,8 +59,7 @@ def is_ignored_dir(path: Path) -> bool:
 
 
 def get_module_summary(path: Path, max_doc_len: int = 160) -> dict:
-    """
-    Parse a Python file and return a small summary:
+    """Parse a Python file and return a small summary:
     - line_count
     - module_doc (first line only)
     - classes (top-level)
@@ -119,13 +117,13 @@ def get_module_summary(path: Path, max_doc_len: int = 160) -> dict:
 
 
 def group_by_top_level_dir(root: Path, files: list[Path]) -> dict[str, list[Path]]:
-    """
-    Group files by their top-level directory.
+    """Group files by their top-level directory.
 
     Example:
       core/metadata_manager.py -> group 'core'
       widgets/file_table_view.py -> group 'widgets'
       main.py -> group '(root)'
+
     """
     groups: dict[str, list[Path]] = {}
 
@@ -158,6 +156,7 @@ def find_python_files(
         root: project root
         recursive: if True walk recursively, otherwise only top-level directory
         extra_ignored: optional set of additional directory names to ignore
+
     """
     result: list[Path] = []
 
@@ -184,8 +183,7 @@ def find_python_files(
 
 
 def main() -> None:
-    """
-    Generate the project context Markdown file.
+    """Generate the project context Markdown file.
 
     The function determines the project root (based on the script location
     or current working directory), finds Python source files according to

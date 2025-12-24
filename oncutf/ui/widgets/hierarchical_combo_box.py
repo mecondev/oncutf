@@ -278,6 +278,7 @@ class HierarchicalComboBox(QComboBox):
         Args:
             groups: mapping category -> list of (display, data)
             auto_select_first: when True select and emit the first item (keeps previous behaviour when desired)
+
         """
         self.model.clear()
         self._categories.clear()

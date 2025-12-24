@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for ColorGridMenu widget.
+"""Test script for ColorGridMenu widget.
 
 Run: python scripts/test_color_grid_menu.py
 """

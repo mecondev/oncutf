@@ -1,5 +1,4 @@
-"""
-Module: specified_text_module.py
+"""Module: specified_text_module.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -33,8 +32,7 @@ logger = get_cached_logger(__name__)
 
 
 class SpecifiedTextModule(BaseRenameModule):
-    """
-    A module for inserting user-defined text in filenames.
+    """A module for inserting user-defined text in filenames.
     """
 
     updated = pyqtSignal(object)
@@ -75,20 +73,20 @@ class SpecifiedTextModule(BaseRenameModule):
         self._is_input_valid = True
 
     def set_current_file(self, file_item) -> None:
-        """
-        Set the current file item for the "Original Name" context menu option.
+        """Set the current file item for the "Original Name" context menu option.
 
         Args:
             file_item: The FileItem object representing the currently selected file
+
         """
         self._current_file = file_item
 
     def _show_context_menu(self, position) -> None:
-        """
-        Show custom context menu for the text input field.
+        """Show custom context menu for the text input field.
 
         Args:
             position: The position where the context menu was requested
+
         """
         menu = QMenu(self.text_input)
 
@@ -190,8 +188,7 @@ class SpecifiedTextModule(BaseRenameModule):
         menu.exec_(global_pos)
 
     def _insert_original_name(self) -> None:
-        """
-        Insert the original filename (without extension) at the current cursor position.
+        """Insert the original filename (without extension) at the current cursor position.
         """
         if not self._current_file:
             return
@@ -213,6 +210,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         Args:
             text (str): The text entered by the user.
+
         """
         # Track if field has ever had content
         if text and not self._has_had_content:
@@ -264,11 +262,11 @@ class SpecifiedTextModule(BaseRenameModule):
         self.updated.emit(self)
 
     def _on_validation_changed(self, is_valid: bool) -> None:
-        """
-        Handle validation state changes from the ValidatedLineEdit
+        """Handle validation state changes from the ValidatedLineEdit
 
         Args:
             is_valid: True if input is valid, False otherwise
+
         """
         self._is_input_valid = is_valid
         logger.debug(
@@ -281,12 +279,10 @@ class SpecifiedTextModule(BaseRenameModule):
         self.updated.emit(self)
 
     def get_data(self) -> dict:
-        """
-        Retrieves the current configuration of the specified text module.
+        """Retrieves the current configuration of the specified text module.
 
         :return: A dictionary containing the type and the user-specified text.
         """
-
         return {"type": "specified_text", "text": self.text_input.text()}
 
     def reset(self) -> None:

@@ -54,8 +54,7 @@ class IconCacheEntry:
 
 
 class SmartIconCache(QObject):
-    """
-    Advanced icon caching system with LRU eviction and memory management.
+    """Advanced icon caching system with LRU eviction and memory management.
 
     Features:
     - LRU eviction based on access patterns
@@ -73,13 +72,13 @@ class SmartIconCache(QObject):
     cache_evicted = pyqtSignal(str)  # cache_key
 
     def __init__(self, max_entries: int = 500, max_memory_mb: float = 50.0, parent=None):
-        """
-        Initialize smart icon cache.
+        """Initialize smart icon cache.
 
         Args:
             max_entries: Maximum number of cached icons
             max_memory_mb: Maximum memory usage in MB
             parent: Parent QObject
+
         """
         super().__init__(parent)
 
@@ -144,8 +143,7 @@ class SmartIconCache(QObject):
         )
 
     def get_icon(self, name: str, size: QSize = None, theme: str = None) -> QIcon:
-        """
-        Get icon from cache or load it.
+        """Get icon from cache or load it.
 
         Args:
             name: Icon name
@@ -154,6 +152,7 @@ class SmartIconCache(QObject):
 
         Returns:
             QIcon object
+
         """
         if size is None:
             size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])

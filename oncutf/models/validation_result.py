@@ -1,5 +1,4 @@
-"""
-Module: validation_result.py
+"""Module: validation_result.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -45,6 +44,7 @@ class ValidationResult:
         valid_files: Files that passed all validation checks
         issues: List of validation issues found
         total_files: Total number of files validated
+
     """
 
     valid_files: list[FileItem] = field(default_factory=list)

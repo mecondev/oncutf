@@ -98,11 +98,11 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     """Custom delegate for file table items with full-row hover highlighting."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        """
-        Initialize the hover delegate.
+        """Initialize the hover delegate.
 
         Args:
             parent: The parent widget.
+
         """
         super().__init__(parent)
         self.hovered_row: int = -1
@@ -151,8 +151,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         # Note: QStyledItemDelegate doesn't have focusOutEvent, this is for compatibility
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        """
-        Custom painting for full-row hover and selection with proper icon handling.
+        """Custom painting for full-row hover and selection with proper icon handling.
 
         Features:
         - Always paints background for hover/selection to override alternate colors

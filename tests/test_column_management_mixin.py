@@ -1,5 +1,4 @@
-"""
-Module: test_column_management_mixin.py
+"""Module: test_column_management_mixin.py
 
 Author: Michael Economou
 Date: 2025-12-09

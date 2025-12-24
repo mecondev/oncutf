@@ -1,5 +1,4 @@
-"""
-Module: time_formatter.py
+"""Module: time_formatter.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -22,8 +21,7 @@ logger = get_cached_logger(__name__)
 
 
 class TimeTracker:
-    """
-    Tracks progress timing and calculates estimates.
+    """Tracks progress timing and calculates estimates.
     """
 
     def __init__(self):
@@ -107,14 +105,14 @@ class TimeTracker:
 
 
 def format_duration(seconds: float) -> str:
-    """
-    Format duration in seconds to human-readable string.
+    """Format duration in seconds to human-readable string.
 
     Args:
         seconds: Duration in seconds
 
     Returns:
         Formatted string (e.g., "3':20''", "1:24':15''")
+
     """
     if seconds < 0:
         return "0''"
@@ -133,8 +131,7 @@ def format_duration(seconds: float) -> str:
 
 
 def format_time_range(elapsed: float, estimated_total: float | None = None) -> str:
-    """
-    Format time range showing elapsed/estimated.
+    """Format time range showing elapsed/estimated.
 
     Args:
         elapsed: Elapsed time in seconds
@@ -142,6 +139,7 @@ def format_time_range(elapsed: float, estimated_total: float | None = None) -> s
 
     Returns:
         Formatted string (e.g., "3':20''/1:24':15''", "3':20''")
+
     """
     elapsed_str = format_duration(elapsed)
 
@@ -153,8 +151,7 @@ def format_time_range(elapsed: float, estimated_total: float | None = None) -> s
 
 
 class ProgressEstimator:
-    """
-    Combines time tracking with size tracking for comprehensive progress estimation.
+    """Combines time tracking with size tracking for comprehensive progress estimation.
     """
 
     def __init__(self):
@@ -170,23 +167,23 @@ class ProgressEstimator:
         self.processed_size = 0
 
     def update(self, current_item: int, total_items: int, current_size: int = 0):
-        """
-        Update progress with both item count and size information.
+        """Update progress with both item count and size information.
 
         Args:
             current_item: Current item number (0-based)
             total_items: Total number of items
             current_size: Size processed so far (bytes)
+
         """
         self.time_tracker.update_progress(current_item, total_items)
         self.processed_size = current_size
 
     def get_size_info(self) -> tuple[str, str]:
-        """
-        Get size information as formatted strings.
+        """Get size information as formatted strings.
 
         Returns:
             Tuple of (processed_size_str, total_size_str)
+
         """
         from oncutf.utils.file_size_formatter import format_file_size_system_compatible
 
@@ -196,11 +193,11 @@ class ProgressEstimator:
         return processed_str, total_str
 
     def get_size_range(self) -> str:
-        """
-        Get size range as formatted string.
+        """Get size range as formatted string.
 
         Returns:
             Formatted string (e.g., "35MB/20GB")
+
         """
         processed_str, total_str = self.get_size_info()
 
@@ -210,32 +207,32 @@ class ProgressEstimator:
             return processed_str
 
     def get_time_info(self) -> tuple[float, float | None]:
-        """
-        Get time information.
+        """Get time information.
 
         Returns:
             Tuple of (elapsed_time, estimated_total_time)
+
         """
         elapsed = self.time_tracker.get_elapsed_time()
         estimated = self.time_tracker.get_estimated_total_time()
         return elapsed, estimated
 
     def get_time_range(self) -> str:
-        """
-        Get time range as formatted string.
+        """Get time range as formatted string.
 
         Returns:
             Formatted string (e.g., "3':20''/1:24':15''")
+
         """
         elapsed, estimated = self.get_time_info()
         return format_time_range(elapsed, estimated)
 
     def get_progress_summary(self) -> dict:
-        """
-        Get comprehensive progress summary.
+        """Get comprehensive progress summary.
 
         Returns:
             Dictionary with all progress information
+
         """
         elapsed, estimated_total = self.get_time_info()
         processed_str, total_str = self.get_size_info()

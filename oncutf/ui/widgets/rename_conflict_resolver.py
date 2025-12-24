@@ -1,5 +1,4 @@
-"""
-Module: rename_conflict_resolver.py
+"""Module: rename_conflict_resolver.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -33,8 +32,7 @@ class ConflictResolutionStrategy(Enum):
 
 
 class RenameConflictResolver(QObject):
-    """
-    Handles file rename conflicts without blocking the main application.
+    """Handles file rename conflicts without blocking the main application.
 
     This class provides various strategies for resolving conflicts when
     a target file already exists during a rename operation.
@@ -44,22 +42,22 @@ class RenameConflictResolver(QObject):
     conflict_resolved = pyqtSignal(str, str, str)  # original_path, target_path, resolution
 
     def __init__(self, parent: QObject | None = None):
-        """
-        Initialize the conflict resolver.
+        """Initialize the conflict resolver.
 
         Args:
             parent: Parent QObject for proper cleanup
+
         """
         super().__init__(parent)
         self.default_strategy = ConflictResolutionStrategy.SKIP
         self.resolution_callbacks: dict[str, Callable] = {}
 
     def set_default_strategy(self, strategy: ConflictResolutionStrategy) -> None:
-        """
-        Set the default strategy for conflict resolution.
+        """Set the default strategy for conflict resolution.
 
         Args:
             strategy: The default strategy to use
+
         """
         self.default_strategy = strategy
         logger.debug("Default conflict resolution strategy set to: %s", strategy.value)
@@ -70,8 +68,7 @@ class RenameConflictResolver(QObject):
         target_path: str,
         strategy: ConflictResolutionStrategy | None = None,
     ) -> str:
-        """
-        Resolve a file rename conflict using the specified strategy.
+        """Resolve a file rename conflict using the specified strategy.
 
         Args:
             original_path: Path to the original file
@@ -80,6 +77,7 @@ class RenameConflictResolver(QObject):
 
         Returns:
             The resolved target path or empty string if skipped
+
         """
         if strategy is None:
             strategy = self.default_strategy
@@ -144,8 +142,7 @@ class RenameConflictResolver(QObject):
                 return self._skip_conflict(original_path, target_path)
 
     def _ask_user_for_resolution(self, original_path: str, target_path: str) -> str:
-        """
-        Ask user for conflict resolution (placeholder for future implementation).
+        """Ask user for conflict resolution (placeholder for future implementation).
 
         Currently defaults to skip strategy.
         """
@@ -153,12 +150,12 @@ class RenameConflictResolver(QObject):
         return self._skip_conflict(original_path, target_path)
 
     def register_resolution_callback(self, conflict_id: str, callback: Callable) -> None:
-        """
-        Register a callback for specific conflict resolution.
+        """Register a callback for specific conflict resolution.
 
         Args:
             conflict_id: Unique identifier for the conflict
             callback: Function to call when resolution is needed
+
         """
         self.resolution_callbacks[conflict_id] = callback
         logger.debug("Registered resolution callback for conflict: %s", conflict_id)

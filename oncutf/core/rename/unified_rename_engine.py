@@ -40,6 +40,7 @@ class PreviewResult:
         errors: Optional list of error messages captured during preview
             generation.
         timestamp: Time when preview was generated (for staleness checking).
+
     """
 
     name_pairs: list[tuple[str, str]]
@@ -63,6 +64,7 @@ class PreviewResult:
 
         Returns:
             bool: True if preview is older than max_age_seconds
+
         """
         import time
 
@@ -74,6 +76,7 @@ class PreviewResult:
 
         Returns:
             float: Age in seconds
+
         """
         import time
 
@@ -92,6 +95,7 @@ class ValidationItem:
             current preview set.
         is_unchanged: True when `old_name == new_name`.
         error_message: Optional human-readable validation error.
+
     """
 
     old_name: str
@@ -112,6 +116,7 @@ class ValidationResult:
         has_errors: True if any item failed validation.
         has_unchanged: True if all items are unchanged (no actual renames).
         unchanged_count: Number of unchanged files.
+
     """
 
     items: list[ValidationItem]
@@ -139,6 +144,7 @@ class ExecutionItem:
         is_conflict: True when a filesystem conflict was detected for the
             target path (existing file).
         conflict_resolved: True when a conflict was resolved (e.g. overwrite).
+
     """
 
     old_path: str
@@ -161,6 +167,7 @@ class ExecutionResult:
         skipped_count: Number of items skipped (computed).
         conflicts_count: Number of items that hit a filesystem conflict
             (computed).
+
     """
 
     items: list[ExecutionItem]
@@ -196,6 +203,7 @@ class RenameState:
         preview_changed / validation_changed / execution_changed: Flags set by
             :class:`RenameStateManager` when corresponding parts of the state
             change.
+
     """
 
     files: list[FileItem] | None = None
@@ -435,8 +443,8 @@ class UnifiedPreviewManager:
         Returns:
             A :class:`PreviewResult` containing proposed names and a flag
             indicating whether any change is present.
-        """
 
+        """
         if not files:
             return PreviewResult([], False)
 
@@ -519,7 +527,6 @@ class UnifiedPreviewManager:
         availability hints to short-circuit modules that require metadata or
         hashes, and validates generated basenames before returning them.
         """
-
         from oncutf.modules.name_transform_module import NameTransformModule
 
         name_pairs = []
@@ -591,8 +598,8 @@ class UnifiedPreviewManager:
             hash_availability: Dict of hash availability per file
             metadata_availability: Dict of metadata availability per file
             all_files: Full file list (for scope-aware counters)
-        """
 
+        """
         from oncutf.utils.preview_engine import apply_rename_modules
 
         # Check if this file has required data for modules
@@ -620,6 +627,7 @@ class UnifiedPreviewManager:
 
         Returns:
             Basename without extension.
+
         """
         if extension and fullname.lower().endswith(extension.lower()):
             return fullname[: -(len(extension))]
@@ -637,6 +645,7 @@ class UnifiedPreviewManager:
 
         Returns:
             Transformed basename or original if no transform.
+
         """
         if not has_transform:
             return basename
@@ -654,6 +663,7 @@ class UnifiedPreviewManager:
 
         Returns:
             Complete filename.
+
         """
         return f"{basename}{extension}" if extension else basename
 
@@ -686,7 +696,6 @@ class UnifiedValidationManager:
         Performs filename validation, duplicate detection and returns a
         :class:`ValidationResult` containing the findings.
         """
-
         # Generate cache key
         cache_key = self._generate_validation_cache_key(preview_pairs)
 
@@ -781,8 +790,8 @@ class UnifiedExecutionManager:
 
         Returns:
             An :class:`ExecutionResult` summarizing the applied operations.
-        """
 
+        """
         self.conflict_callback = conflict_callback
         self.validator = validator
 

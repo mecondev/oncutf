@@ -1,5 +1,4 @@
-"""
-Test suite for metadata tree visual feedback system.
+"""Test suite for metadata tree visual feedback system.
 
 Verifies that modified metadata fields are displayed with yellow color and bold font.
 """

@@ -1,5 +1,4 @@
-"""
-Module: rename_manager.py
+"""Module: rename_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -24,8 +23,7 @@ logger = get_cached_logger(__name__)
 
 
 class RenameManager:
-    """
-    Manages rename operations and workflow for the main window.
+    """Manages rename operations and workflow for the main window.
 
     This manager handles:
     - Batch rename execution
@@ -35,19 +33,18 @@ class RenameManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize the RenameManager.
+        """Initialize the RenameManager.
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         self.pending_completion_dialog = None
         logger.debug("[RenameManager] Initialized", extra={"dev_only": True})
 
     def rename_files(self) -> None:
-        """
-        Execute the batch rename process for checked files using active rename modules.
+        """Execute the batch rename process for checked files using active rename modules.
 
         This method handles the complete rename workflow including validation,
         execution, folder reload, and state restoration.
@@ -162,11 +159,11 @@ class RenameManager:
                 logger.info("[RenameManager] No files renamed, skipping post-rename workflow")
 
     def _execute_post_rename_workflow_safe(self, checked_paths: set[str]) -> None:
-        """
-        Execute the post-rename workflow with enhanced safety checks.
+        """Execute the post-rename workflow with enhanced safety checks.
 
         Args:
             checked_paths: Set of file paths that were checked before rename
+
         """
         try:
             # Validate main window state
@@ -281,11 +278,11 @@ class RenameManager:
             )
 
     def _execute_post_rename_workflow(self, checked_paths: set[str]) -> None:
-        """
-        Execute the post-rename workflow including folder reload and state restoration.
+        """Execute the post-rename workflow including folder reload and state restoration.
 
         Args:
             checked_paths: Set of file paths that were checked before rename
+
         """
         # Post-rename workflow
         self.main_window.last_action = "rename"
@@ -314,14 +311,14 @@ class RenameManager:
         )
 
     def _restore_checked_state_safe(self, checked_paths: set[str]) -> int:
-        """
-        Safely restore checked state for files after rename.
+        """Safely restore checked state for files after rename.
 
         Args:
             checked_paths: Set of file paths that were checked before rename
 
         Returns:
             Number of files whose checked state was restored
+
         """
         restored_count = 0
         try:
@@ -348,14 +345,14 @@ class RenameManager:
         return restored_count
 
     def _restore_checked_state(self, checked_paths: set[str]) -> int:
-        """
-        Restore checked state for files after rename.
+        """Restore checked state for files after rename.
 
         Args:
             checked_paths: Set of file paths that were checked before rename
 
         Returns:
             Number of files whose checked state was restored
+
         """
         restored_count = 0
         for path in checked_paths:
@@ -416,19 +413,18 @@ class RenameManager:
         self.main_window.file_table_view.viewport().update()
 
     def update_module_dividers(self) -> None:
-        """
-        Updates the visibility of module dividers based on module position.
+        """Updates the visibility of module dividers based on module position.
         """
         for index, module in enumerate(self.main_window.rename_modules):
             if hasattr(module, "divider"):
                 module.divider.setVisible(index > 0)
 
     def get_rename_data(self) -> dict:
-        """
-        Get current rename data from modules area.
+        """Get current rename data from modules area.
 
         Returns:
             Dictionary containing modules data and post_transform settings
+
         """
         if hasattr(self.main_window, "rename_modules_area"):
             rename_data = self.main_window.rename_modules_area.get_all_data()
@@ -444,20 +440,20 @@ class RenameManager:
         return {"modules": [], "post_transform": {}}
 
     def get_selected_files_for_rename(self) -> list[FileItem]:
-        """
-        Get files selected for rename operation.
+        """Get files selected for rename operation.
 
         Returns:
             List of FileItem objects that are checked/selected for rename
+
         """
         return self.main_window.get_selected_files()
 
     def is_rename_possible(self) -> bool:
-        """
-        Check if rename operation is possible.
+        """Check if rename operation is possible.
 
         Returns:
             True if rename can be performed, False otherwise
+
         """
         selected_files = self.get_selected_files_for_rename()
         return len(selected_files) > 0 and bool(self.main_window.current_folder_path)

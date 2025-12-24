@@ -1,5 +1,4 @@
-"""
-Module: results_table_dialog.py
+"""Module: results_table_dialog.py
 
 Author: Michael Economou
 Date: 2025-11-23
@@ -55,8 +54,7 @@ logger = get_cached_logger(__name__)
 
 
 class ResultsTableDialog(QDialog):
-    """
-    Global reusable dialog for displaying two-column tabular results using QTableView.
+    """Global reusable dialog for displaying two-column tabular results using QTableView.
 
     Features:
     - QTableView with custom ResultsTableModel for full control

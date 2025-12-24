@@ -1,5 +1,4 @@
-"""
-Tests for FilesystemService.
+"""Tests for FilesystemService.
 
 Author: Michael Economou
 Date: December 18, 2025

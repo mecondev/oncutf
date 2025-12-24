@@ -1,5 +1,4 @@
-"""
-Module: datetime_edit_dialog.py
+"""Module: datetime_edit_dialog.py
 
 Author: Michael Economou
 Date: 2025-12-03
@@ -35,13 +34,13 @@ class DateTimeEditDialog(QDialog):
     """Dialog for editing creation and modification dates of selected files."""
 
     def __init__(self, parent=None, selected_files=None, date_type="modified"):
-        """
-        Initialize the DateTime edit dialog.
+        """Initialize the DateTime edit dialog.
 
         Args:
             parent: Parent widget
             selected_files: List of file paths (str or Path)
             date_type: "modified" or "created" - which date to edit
+
         """
         super().__init__(parent)
         self.selected_files = [Path(f) for f in (selected_files or [])]
@@ -308,8 +307,7 @@ class DateTimeEditDialog(QDialog):
 
     @classmethod
     def get_datetime_edit_choice(cls, parent, selected_files, date_type="modified"):
-        """
-        Factory method to show dialog and return selected files + datetime.
+        """Factory method to show dialog and return selected files + datetime.
 
         Args:
             parent: Parent widget
@@ -318,6 +316,7 @@ class DateTimeEditDialog(QDialog):
 
         Returns:
             Tuple of (selected_files, new_datetime) or (None, None) if cancelled
+
         """
         dialog = cls(parent, selected_files, date_type)
         result = dialog.exec_()

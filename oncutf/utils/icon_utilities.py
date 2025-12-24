@@ -1,5 +1,4 @@
-"""
-Module: icons.py
+"""Module: icons.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -30,8 +29,7 @@ def create_colored_icon(
     border_color: str = None,
     border_thickness: int = 0,
 ) -> QPixmap:
-    """
-    Creates a small colored shape (circle or rectangle) as a QPixmap icon.
+    """Creates a small colored shape (circle or rectangle) as a QPixmap icon.
 
     Args:
         fill_color (str): Fill color in hex (e.g. "#ff0000").
@@ -43,6 +41,7 @@ def create_colored_icon(
 
     Returns:
         QPixmap: A QPixmap with the desired shape and color.
+
     """
     pixmap = QPixmap(size_x, size_y)
     pixmap.fill(Qt.transparent)

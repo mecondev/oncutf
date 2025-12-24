@@ -1,5 +1,4 @@
-"""
-Tests for HashService.
+"""Tests for HashService.
 
 Author: Michael Economou
 Date: December 18, 2025

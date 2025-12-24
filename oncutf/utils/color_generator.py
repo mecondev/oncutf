@@ -1,5 +1,4 @@
-"""
-Module: color_generator.py
+"""Module: color_generator.py
 
 Author: Michael Economou
 Date: 2025-12-22
@@ -26,22 +25,22 @@ class ColorGenerator:
         min_brightness: int = AUTO_COLOR_MIN_BRIGHTNESS,
         max_retries: int = AUTO_COLOR_MAX_RETRIES,
     ) -> None:
-        """
-        Initialize color generator.
+        """Initialize color generator.
 
         Args:
             min_brightness: Minimum value for each RGB component (0-255)
             max_retries: Maximum attempts to find a unique color
+
         """
         self.min_brightness = max(0, min(255, min_brightness))
         self.max_retries = max(1, max_retries)
 
     def generate_random_color(self) -> str:
-        """
-        Generate a single random color.
+        """Generate a single random color.
 
         Returns:
             Hex color string (e.g., "#A3B5C7")
+
         """
         r = random.randint(self.min_brightness, 255)
         g = random.randint(self.min_brightness, 255)
@@ -49,14 +48,14 @@ class ColorGenerator:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def generate_unique_color(self, existing_colors: set[str]) -> str | None:
-        """
-        Generate a unique random color not in existing set.
+        """Generate a unique random color not in existing set.
 
         Args:
             existing_colors: Set of existing hex colors to avoid
 
         Returns:
             Unique hex color string, or None if failed after max retries
+
         """
         for attempt in range(self.max_retries):
             color = self.generate_random_color()

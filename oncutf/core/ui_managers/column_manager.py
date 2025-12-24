@@ -1,5 +1,4 @@
-"""
-Module: column_manager.py
+"""Module: column_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -102,19 +101,18 @@ class ColumnState:
 
 
 class ColumnManager:
-    """
-    Centralized column management system for all table views.
+    """Centralized column management system for all table views.
 
     This class handles intelligent column width calculation, user preference tracking,
     and dynamic column adjustment based on available space and content.
     """
 
     def __init__(self, main_window: QWidget) -> None:
-        """
-        Initialize the ColumnManager.
+        """Initialize the ColumnManager.
 
         Args:
             main_window: Reference to the main window for accessing components
+
         """
         self.main_window = main_window
         self.state = ColumnState()
@@ -179,12 +177,12 @@ class ColumnManager:
         # Preview tables auto-regulate and don't need column management
 
     def configure_table_columns(self, table_view: QTableView | QTreeView, table_type: str) -> None:
-        """
-        Configure columns for a specific table view.
+        """Configure columns for a specific table view.
 
         Args:
             table_view: The table/tree view to configure
             table_type: Type identifier ('file_table', 'metadata_tree', 'preview_old', 'preview_new')
+
         """
         # Skip preview tables as they auto-regulate
         if table_type in ["preview_old", "preview_new"]:
@@ -467,8 +465,7 @@ class ColumnManager:
     def _calculate_stretch_column_width(
         self, table_view: QTableView | QTreeView, table_type: str, column_config: ColumnConfig
     ) -> int:
-        """
-        Calculate width for stretch columns that fill remaining space.
+        """Calculate width for stretch columns that fill remaining space.
 
         Args:
             table_view: The table/tree view
@@ -477,6 +474,7 @@ class ColumnManager:
 
         Returns:
             Calculated width in pixels
+
         """
         try:
             viewport_width = table_view.viewport().width()
@@ -564,8 +562,7 @@ class ColumnManager:
         return 14  # Default estimate
 
     def ensure_horizontal_scrollbar_state(self, table_view: QTableView) -> None:
-        """
-        Ensure that the horizontal scrollbar state is consistent with the current column layout.
+        """Ensure that the horizontal scrollbar state is consistent with the current column layout.
         Forces proper recalculation when viewport changes.
         """
         try:
@@ -704,12 +701,12 @@ class ColumnManager:
     def adjust_columns_for_splitter_change(
         self, table_view: QTableView | QTreeView, table_type: str
     ) -> None:
-        """
-        Adjust columns when splitter position changes.
+        """Adjust columns when splitter position changes.
 
         Args:
             table_view: The table/tree view to adjust
             table_type: Type identifier
+
         """
         if table_type not in self.table_configs:
             return
@@ -738,12 +735,12 @@ class ColumnManager:
             self.ensure_horizontal_scrollbar_state(table_view)
 
     def reset_user_preferences(self, table_type: str, column_index: int | None = None) -> None:
-        """
-        Reset user preferences for columns to allow auto-sizing.
+        """Reset user preferences for columns to allow auto-sizing.
 
         Args:
             table_type: Type identifier
             column_index: Specific column to reset, or None for all columns
+
         """
         if column_index is not None:
             self.state.clear_user_preference(column_index)
@@ -764,14 +761,14 @@ class ColumnManager:
             )
 
     def save_column_state(self, table_type: str) -> dict[str, Any]:
-        """
-        Save current column state for persistence.
+        """Save current column state for persistence.
 
         Args:
             table_type: Type identifier
 
         Returns:
             Dictionary containing column state data
+
         """
         state_data = {"user_preferences": {}, "manual_flags": {}}
 
@@ -793,12 +790,12 @@ class ColumnManager:
         return state_data
 
     def load_column_state(self, table_type: str, state_data: dict[str, Any]) -> None:
-        """
-        Load column state from persistence.
+        """Load column state from persistence.
 
         Args:
             table_type: Type identifier
             state_data: Dictionary containing column state data
+
         """
         try:
             if "user_preferences" in state_data:
@@ -819,8 +816,7 @@ class ColumnManager:
             logger.warning("[ColumnManager] Error loading column state: %s", e)
 
     def get_column_config(self, table_type: str, column_index: int) -> ColumnConfig | None:
-        """
-        Get column configuration for a specific column.
+        """Get column configuration for a specific column.
 
         Args:
             table_type: Type identifier
@@ -828,19 +824,20 @@ class ColumnManager:
 
         Returns:
             ColumnConfig if found, None otherwise
+
         """
         if table_type in self.table_configs:
             return self.table_configs[table_type].get(column_index)
         return None
 
     def update_column_config(self, table_type: str, column_index: int, **kwargs) -> None:
-        """
-        Update column configuration.
+        """Update column configuration.
 
         Args:
             table_type: Type identifier
             column_index: Column index
             **kwargs: Configuration parameters to update
+
         """
         if table_type in self.table_configs and column_index in self.table_configs[table_type]:
             config = self.table_configs[table_type][column_index]

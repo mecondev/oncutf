@@ -1,5 +1,4 @@
-"""
-Test module for TextRemovalMatch and find_matches/apply_removal methods.
+"""Test module for TextRemovalMatch and find_matches/apply_removal methods.
 
 Author: Michael Economou
 Date: 2025-12-18

@@ -1,5 +1,4 @@
-"""
-file_status_helpers.py
+"""file_status_helpers.py
 
 Central helpers for file metadata and hash status.
 All lookups use path normalization for cross-platform compatibility.

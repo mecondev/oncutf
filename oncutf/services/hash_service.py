@@ -1,5 +1,4 @@
-"""
-File hashing service implementation.
+"""File hashing service implementation.
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -51,6 +50,7 @@ class HashService:
         Args:
             default_algorithm: Default algorithm to use when not specified.
             use_cache: Whether to cache computed hashes.
+
         """
         if default_algorithm not in SUPPORTED_ALGORITHMS:
             raise ValueError(
@@ -76,6 +76,7 @@ class HashService:
         Returns:
             Hex string representation of the hash.
             Returns empty string on error.
+
         """
         if algorithm not in SUPPORTED_ALGORITHMS:
             logger.error("Unsupported hash algorithm: %s", algorithm)
@@ -132,6 +133,7 @@ class HashService:
 
         Returns:
             Dictionary mapping paths to their hash strings.
+
         """
         results: dict[Path, str] = {}
         total = len(paths)
@@ -157,6 +159,7 @@ class HashService:
 
         Returns:
             8-character hex string of CRC32 hash.
+
         """
         # Adaptive buffer sizing based on file size
         file_size = path.stat().st_size
@@ -198,6 +201,7 @@ class HashService:
 
         Returns:
             Hex digest string.
+
         """
         hasher = hashlib.new(algorithm)
         file_size = path.stat().st_size
@@ -230,6 +234,7 @@ class HashService:
 
         Returns:
             Optimal buffer size in bytes.
+
         """
         if file_size < 64 * 1024:  # Files < 64KB
             return min(file_size, 8 * 1024)  # 8KB max for small files
@@ -248,6 +253,7 @@ class HashService:
 
         Returns:
             Number of entries in the cache.
+
         """
         return len(self._cache)
 

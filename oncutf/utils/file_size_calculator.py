@@ -1,5 +1,4 @@
-"""
-Module: file_size_calculator.py
+"""Module: file_size_calculator.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -18,14 +17,14 @@ logger = get_cached_logger(__name__)
 
 
 def calculate_files_total_size(file_items: list) -> int:
-    """
-    Calculate total size of a list of file items with optimized caching.
+    """Calculate total size of a list of file items with optimized caching.
 
     Args:
         file_items: List of FileItem objects or file paths
 
     Returns:
         Total size in bytes
+
     """
     total_size = 0
     files_checked = 0
@@ -67,8 +66,7 @@ def calculate_files_total_size(file_items: list) -> int:
 
 
 def calculate_processed_size(file_items: list, current_index: int) -> int:
-    """
-    Calculate size of files processed so far.
+    """Calculate size of files processed so far.
 
     Args:
         file_items: List of FileItem objects or file paths
@@ -76,6 +74,7 @@ def calculate_processed_size(file_items: list, current_index: int) -> int:
 
     Returns:
         Processed size in bytes
+
     """
     if current_index <= 0:
         return 0
@@ -108,8 +107,7 @@ def calculate_processed_size(file_items: list, current_index: int) -> int:
 
 
 def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> int:
-    """
-    Calculate total size of a folder.
+    """Calculate total size of a folder.
 
     Args:
         folder_path: Path to folder
@@ -117,6 +115,7 @@ def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> in
 
     Returns:
         Total size in bytes
+
     """
     total_size = 0
     folder_path = Path(folder_path)
@@ -155,8 +154,7 @@ def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> in
 def estimate_operation_time(
     file_count: int, total_size: int, operation_type: str = "metadata"
 ) -> float:
-    """
-    Estimate operation time based on file count and size.
+    """Estimate operation time based on file count and size.
 
     Args:
         file_count: Number of files
@@ -165,6 +163,7 @@ def estimate_operation_time(
 
     Returns:
         Estimated time in seconds
+
     """
     # Basic estimation rates (files per second and bytes per second)
     rates = {

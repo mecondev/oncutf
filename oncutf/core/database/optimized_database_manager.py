@@ -52,8 +52,7 @@ class QueryStats:
 
 
 class ConnectionPool:
-    """
-    Database connection pool for efficient resource management.
+    """Database connection pool for efficient resource management.
 
     Features:
     - Connection reuse and pooling
@@ -63,12 +62,12 @@ class ConnectionPool:
     """
 
     def __init__(self, db_path: str, max_connections: int = 10):
-        """
-        Initialize connection pool.
+        """Initialize connection pool.
 
         Args:
             db_path: Database file path
             max_connections: Maximum number of connections
+
         """
         self.db_path = db_path
         self.max_connections = max_connections
@@ -135,8 +134,7 @@ class ConnectionPool:
 
 
 class PreparedStatementCache:
-    """
-    Cache for prepared statements to improve query performance.
+    """Cache for prepared statements to improve query performance.
 
     Features:
     - Statement preparation and caching
@@ -146,11 +144,11 @@ class PreparedStatementCache:
     """
 
     def __init__(self, max_statements: int = 100):
-        """
-        Initialize prepared statement cache.
+        """Initialize prepared statement cache.
 
         Args:
             max_statements: Maximum number of cached statements
+
         """
         self.max_statements = max_statements
         self._statements: OrderedDict[str, str] = OrderedDict()
@@ -193,8 +191,7 @@ class PreparedStatementCache:
 
 
 class OptimizedDatabaseManager(QObject):
-    """
-    Enhanced database manager with optimization features.
+    """Enhanced database manager with optimization features.
 
     Features:
     - Prepared statements for better performance
@@ -213,13 +210,13 @@ class OptimizedDatabaseManager(QObject):
     SCHEMA_VERSION = 3
 
     def __init__(self, db_path: str | None = None, max_connections: int = 10, parent=None):
-        """
-        Initialize optimized database manager.
+        """Initialize optimized database manager.
 
         Args:
             db_path: Database file path
             max_connections: Maximum number of connections
             parent: Parent QObject
+
         """
         super().__init__(parent)
 
@@ -293,8 +290,7 @@ class OptimizedDatabaseManager(QObject):
     def execute_query(
         self, query: str, params: tuple = (), fetch_all: bool = True, use_prepared: bool = True
     ) -> list[sqlite3.Row] | None:
-        """
-        Execute a SELECT query with optimization.
+        """Execute a SELECT query with optimization.
 
         Args:
             query: SQL query string
@@ -304,6 +300,7 @@ class OptimizedDatabaseManager(QObject):
 
         Returns:
             Query results or None
+
         """
         query_hash = str(hash(query))
         start_time = time.time()
@@ -335,8 +332,7 @@ class OptimizedDatabaseManager(QObject):
             return None
 
     def execute_update(self, query: str, params: tuple = (), use_prepared: bool = True) -> bool:
-        """
-        Execute an INSERT/UPDATE/DELETE query.
+        """Execute an INSERT/UPDATE/DELETE query.
 
         Args:
             query: SQL query string
@@ -345,6 +341,7 @@ class OptimizedDatabaseManager(QObject):
 
         Returns:
             Success status
+
         """
         query_hash = str(hash(query))
         start_time = time.time()
@@ -376,8 +373,7 @@ class OptimizedDatabaseManager(QObject):
     def execute_batch(
         self, query: str, params_list: list[tuple], use_transaction: bool = True
     ) -> bool:
-        """
-        Execute batch operations for better performance.
+        """Execute batch operations for better performance.
 
         Args:
             query: SQL query string
@@ -386,6 +382,7 @@ class OptimizedDatabaseManager(QObject):
 
         Returns:
             Success status
+
         """
         if not params_list:
             return True

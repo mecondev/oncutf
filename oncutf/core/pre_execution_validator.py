@@ -1,5 +1,4 @@
-"""
-Module: pre_execution_validator.py
+"""Module: pre_execution_validator.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -42,6 +41,7 @@ class PreExecutionValidator:
 
         Args:
             check_hash: Whether to verify file hashes haven't changed
+
         """
         self.check_hash = check_hash
         self._is_windows = platform.system() == "Windows"
@@ -54,6 +54,7 @@ class PreExecutionValidator:
 
         Returns:
             ValidationResult with valid files and issues
+
         """
         result = ValidationResult(total_files=len(files))
 
@@ -80,6 +81,7 @@ class PreExecutionValidator:
 
         Returns:
             List of validation issues (empty if valid)
+
         """
         issues: list[ValidationIssue] = []
         file_path = Path(file_item.path)
@@ -129,6 +131,7 @@ class PreExecutionValidator:
 
         Returns:
             ValidationIssue if locked, None otherwise
+
         """
         try:
             # Try opening file for writing (non-destructive)
@@ -181,6 +184,7 @@ class PreExecutionValidator:
 
         Returns:
             ValidationIssue if hash changed, None otherwise
+
         """
         if not hasattr(file_item, "hash") or not file_item.hash:
             # No cached hash available

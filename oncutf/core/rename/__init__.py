@@ -1,5 +1,4 @@
-"""
-Rename operations module.
+"""Rename operations module.
 
 This module provides file renaming functionality including:
 - RenameManager: High-level rename coordination

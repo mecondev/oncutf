@@ -1,5 +1,4 @@
-"""
-Module: .cache/add_module_docstrings.py
+"""Module: .cache/add_module_docstrings.py
 
 Author: Michael Economou
 Date: 2025-06-14

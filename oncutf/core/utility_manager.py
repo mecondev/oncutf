@@ -1,5 +1,4 @@
-"""
-Module: utility_manager.py
+"""Module: utility_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -26,8 +25,7 @@ logger = get_cached_logger(__name__)
 
 
 class UtilityManager:
-    """
-    Manages utility functions and miscellaneous operations for the main window.
+    """Manages utility functions and miscellaneous operations for the main window.
 
     This manager handles:
     - Event filtering and keyboard modifier tracking
@@ -38,11 +36,11 @@ class UtilityManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize the UtilityManager.
+        """Initialize the UtilityManager.
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         # Cache for avoiding unnecessary preview generation
@@ -51,8 +49,7 @@ class UtilityManager:
         logger.debug("[UtilityManager] Initialized", extra={"dev_only": True})
 
     def event_filter(self, obj, event):
-        """
-        Captures global keyboard modifier state (Ctrl, Shift).
+        """Captures global keyboard modifier state (Ctrl, Shift).
         """
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.main_window.modifier_state = QApplication.keyboardModifiers()
@@ -66,8 +63,7 @@ class UtilityManager:
         return super(type(self.main_window), self.main_window).eventFilter(obj, event)
 
     def request_preview_update(self) -> None:
-        """
-        Schedules a delayed update of the name previews.
+        """Schedules a delayed update of the name previews.
         Instead of calling generate_preview_names directly every time something changes,
         the timer is restarted so that the actual update occurs only when
         changes stop for the specified duration (250ms).
@@ -80,8 +76,7 @@ class UtilityManager:
         self.main_window.preview_update_timer.start()
 
     def force_reload(self) -> None:
-        """
-        Triggered by F5.
+        """Triggered by F5.
         If Ctrl is held, metadata scan is skipped (like Select/Browse).
         Otherwise, full reload with scan.
         """
@@ -127,8 +122,7 @@ class UtilityManager:
             )
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
-        """
-        Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
+        """Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
         Example: [1,2,3,7,8,10] -> [(1,3), (7,8), (10,10)]
         """
         if not indices:
@@ -145,8 +139,7 @@ class UtilityManager:
         return ranges
 
     def center_window(self) -> None:
-        """
-        Centers the application window on the user's screen.
+        """Centers the application window on the user's screen.
 
         It calculates the screen's center point and moves the window
         so its center aligns with that. This improves the initial UX
@@ -154,6 +147,7 @@ class UtilityManager:
 
         Returns:
             None
+
         """
         try:
             # Use modern QScreen API instead of deprecated QDesktopWidget
@@ -202,8 +196,7 @@ class UtilityManager:
             self.main_window.move(100, 100)
 
     def update_files_label(self) -> None:
-        """
-        Updates the UI label that displays the count of selected files.
+        """Updates the UI label that displays the count of selected files.
 
         If no files are loaded, the label shows a default "Files".
         Otherwise, it shows how many files are currently selected
@@ -217,8 +210,7 @@ class UtilityManager:
         )
 
     def get_selected_rows_files(self) -> list:
-        """
-        Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
+        """Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
         """
         selected_indexes = self.main_window.file_table_view.selectionModel().selectedRows()
         return [
@@ -228,13 +220,13 @@ class UtilityManager:
         ]
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
-        """
-        Checks which keyboard modifiers are currently held down.
+        """Checks which keyboard modifiers are currently held down.
 
         Returns:
             tuple: (skip_metadata: bool, use_extended: bool)
                 - skip_metadata: True if NO modifiers are pressed (default) or if Ctrl is NOT pressed
                 - use_extended: True if Ctrl+Shift is pressed
+
         """
         modifiers = self.main_window.modifier_state
         ctrl = bool(modifiers & Qt.ControlModifier)
@@ -247,8 +239,7 @@ class UtilityManager:
         return skip_metadata, use_extended
 
     def close_event(self, event) -> None:
-        """
-        Called when the main window is about to close.
+        """Called when the main window is about to close.
 
         Ensures any background metadata threads are cleaned up
         properly before the application exits.

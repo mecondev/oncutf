@@ -1,5 +1,4 @@
-"""
-Tests for ServiceRegistry.
+"""Tests for ServiceRegistry.
 
 Author: Michael Economou
 Date: December 18, 2025

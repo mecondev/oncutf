@@ -1,5 +1,4 @@
-"""
-Module: filesystem_monitor.py
+"""Module: filesystem_monitor.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -45,6 +44,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             file_store: FileStore instance for auto-refresh
+
         """
         super().__init__()
         self.file_store = file_store
@@ -104,6 +104,7 @@ class FilesystemMonitor(QObject):
 
         Returns:
             bool: True if added successfully
+
         """
         path = Path(folder_path)
         if not path.exists() or not path.is_dir():
@@ -134,6 +135,7 @@ class FilesystemMonitor(QObject):
 
         Returns:
             bool: True if removed successfully
+
         """
         normalized_path = str(Path(folder_path).resolve())
         if normalized_path not in self._monitored_folders:
@@ -163,6 +165,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             callback: Function called with list of current drives
+
         """
         self._on_drive_change_callback = callback
 
@@ -171,6 +174,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             callback: Function called with changed folder path
+
         """
         self._on_folder_change_callback = callback
 
@@ -179,6 +183,7 @@ class FilesystemMonitor(QObject):
 
         Returns:
             set: Set of drive paths
+
         """
         drives: set[str] = set()
 
@@ -291,6 +296,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             path: Changed directory path
+
         """
         logger.debug("[FilesystemMonitor] Directory changed: %s", path, extra={"dev_only": True})
 
@@ -306,6 +312,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             path: Changed file path
+
         """
         logger.debug("[FilesystemMonitor] File changed: %s", path, extra={"dev_only": True})
         self.file_changed.emit(path)
@@ -337,6 +344,7 @@ class FilesystemMonitor(QObject):
 
         Args:
             changed_path: Path that changed
+
         """
         if not self.file_store:
             return
@@ -364,6 +372,7 @@ class FilesystemMonitor(QObject):
 
         Returns:
             list: List of folder paths
+
         """
         return sorted(self._monitored_folders)
 
@@ -372,5 +381,6 @@ class FilesystemMonitor(QObject):
 
         Returns:
             list: List of drive paths
+
         """
         return sorted(self._current_drives)

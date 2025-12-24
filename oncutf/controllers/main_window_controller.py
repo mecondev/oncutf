@@ -1,5 +1,4 @@
-"""
-Module: main_window_controller.py
+"""Module: main_window_controller.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -40,8 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindowController:
-    """
-    High-level orchestration controller.
+    """High-level orchestration controller.
 
     Coordinates FileLoadController, MetadataController, and RenameController
     to handle complex workflows that span multiple domains.
@@ -62,6 +60,7 @@ class MainWindowController:
         _file_load_controller: Controller for file loading operations
         _metadata_controller: Controller for metadata operations
         _rename_controller: Controller for rename operations
+
     """
 
     def __init__(
@@ -71,14 +70,14 @@ class MainWindowController:
         metadata_controller: "MetadataController",
         rename_controller: "RenameController",
     ) -> None:
-        """
-        Initialize MainWindowController.
+        """Initialize MainWindowController.
 
         Args:
             app_context: Application context with shared services
             file_load_controller: Controller for file loading operations
             metadata_controller: Controller for metadata operations
             rename_controller: Controller for rename operations
+
         """
         self._app_context = app_context
         self._file_load_controller = file_load_controller
@@ -95,8 +94,7 @@ class MainWindowController:
         sort_column: int | None = None,
         sort_order: int | None = None,
     ) -> dict[str, Any]:
-        """
-        Orchestrate session restoration workflow.
+        """Orchestrate session restoration workflow.
 
         This workflow handles the restoration of a previous session by:
         1. Validating the last folder exists
@@ -122,6 +120,7 @@ class MainWindowController:
                 'sort_order': Optional[int],
                 'errors': List[str]
             }
+
         """
         logger.info("[MainWindowController] Starting session restoration workflow")
 
@@ -233,8 +232,7 @@ class MainWindowController:
         main_window: Any,
         progress_callback: Any = None,
     ) -> dict[str, Any]:
-        """
-        Coordinate application shutdown workflow across all services.
+        """Coordinate application shutdown workflow across all services.
 
         This method orchestrates the graceful shutdown of the application by:
         1. Saving configuration and window state
@@ -260,6 +258,7 @@ class MainWindowController:
                 'errors': list[str],       # Any errors encountered
                 'summary': dict            # ShutdownCoordinator summary
             }
+
         """
         logger.info("[MainWindowController] Starting coordinated shutdown workflow")
         result: dict[str, Any] = {

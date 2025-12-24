@@ -1,5 +1,4 @@
-"""
-Module: metadata_history_dialog.py
+"""Module: metadata_history_dialog.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -45,19 +44,18 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataHistoryDialog(QDialog):
-    """
-    Dialog for viewing and managing metadata command history.
+    """Dialog for viewing and managing metadata command history.
 
     Provides interface for viewing recent metadata operations,
     rename operations, and performing undo/redo operations.
     """
 
     def __init__(self, parent: QWidget | None = None):
-        """
-        Initialize metadata history dialog.
+        """Initialize metadata history dialog.
 
         Args:
             parent: Parent widget
+
         """
         super().__init__(parent)
         self.parent_window = parent
@@ -476,11 +474,11 @@ class MetadataHistoryDialog(QDialog):
 
 
 def show_metadata_history_dialog(parent: QWidget | None = None) -> None:
-    """
-    Show the metadata history dialog.
+    """Show the metadata history dialog.
 
     Args:
         parent: Parent widget
+
     """
     dialog = MetadataHistoryDialog(parent)
     dialog.exec_()

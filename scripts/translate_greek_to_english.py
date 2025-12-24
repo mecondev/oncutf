@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script to translate Greek text to English in Python codebase.
+"""Script to translate Greek text to English in Python codebase.
 
 This script scans Python, Markdown, JSON, and text files for Greek characters
 in comments, docstrings, logger messages, and string literals, then translates
@@ -105,8 +104,7 @@ def contains_greek(text: str) -> bool:
 
 
 def extract_greek_strings_from_python(content: str) -> list[tuple[int, str, str]]:
-    """
-    Extract Greek strings from Python file (comments, docstrings, logger messages).
+    """Extract Greek strings from Python file (comments, docstrings, logger messages).
 
     Returns list of (line_number, context_type, greek_text).
     """

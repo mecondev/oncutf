@@ -1,5 +1,4 @@
-"""
-Module: unified_metadata_manager.py
+"""Module: unified_metadata_manager.py
 
 Author: Michael Economou
 Date: 2025-07-06
@@ -36,8 +35,7 @@ logger = get_cached_logger(__name__)
 
 
 class UnifiedMetadataManager(QObject):
-    """
-    Unified metadata management system - Facade.
+    """Unified metadata management system - Facade.
 
     This class delegates to specialized handlers while maintaining
     a unified API for all metadata operations.

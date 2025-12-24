@@ -1,5 +1,4 @@
-"""
-Metadata editing mixin for MetadataTreeView.
+"""Metadata editing mixin for MetadataTreeView.
 
 This mixin handles all metadata editing operations including:
 - Value editing with dialogs
@@ -24,8 +23,7 @@ logger = get_logger(__name__)
 
 
 class MetadataEditMixin:
-    """
-    Mixin providing metadata editing operations for tree views.
+    """Mixin providing metadata editing operations for tree views.
 
     This mixin encapsulates all logic related to editing metadata:
     - Opening edit dialogs (text, datetime)
@@ -48,14 +46,14 @@ class MetadataEditMixin:
     # =====================================
 
     def _is_date_time_field(self, key_path: str) -> bool:
-        """
-        Check if a metadata field is a date/time field.
+        """Check if a metadata field is a date/time field.
 
         Args:
             key_path: Metadata key path
 
         Returns:
             bool: True if field is date/time related
+
         """
         key_lower = key_path.lower()
         date_keywords = [
@@ -76,14 +74,14 @@ class MetadataEditMixin:
         return any(keyword in key_lower for keyword in date_keywords)
 
     def _get_date_type_from_field(self, key_path: str) -> str:
-        """
-        Determine date type (created/modified) from field name.
+        """Determine date type (created/modified) from field name.
 
         Args:
             key_path: Metadata key path
 
         Returns:
             str: "created" or "modified"
+
         """
         key_lower = key_path.lower()
 
@@ -99,14 +97,14 @@ class MetadataEditMixin:
         return "modified"
 
     def _is_editable_metadata_field(self, key_path: str) -> bool:
-        """
-        Check if a metadata field can be edited directly.
+        """Check if a metadata field can be edited directly.
 
         Args:
             key_path: Metadata key path
 
         Returns:
             bool: True if field is editable
+
         """
         # Standard metadata fields that can be edited
         editable_fields = {
@@ -138,14 +136,14 @@ class MetadataEditMixin:
         return self._is_date_time_field(key_path)
 
     def _normalize_metadata_field_name(self, key_path: str) -> str:
-        """
-        Normalize metadata field names to standard form.
+        """Normalize metadata field names to standard form.
 
         Args:
             key_path: Raw metadata key path
 
         Returns:
             str: Normalized field name
+
         """
         key_lower = key_path.lower()
 
@@ -185,14 +183,14 @@ class MetadataEditMixin:
     # =====================================
 
     def _get_item_path(self, index: QModelIndex) -> list[str]:
-        """
-        Get the path from root to the given index as a list of display texts.
+        """Get the path from root to the given index as a list of display texts.
 
         Args:
             index: QModelIndex to get path for
 
         Returns:
             List of strings representing the path, e.g. ["File Info", "File Name"]
+
         """
         path = []
         current = index
@@ -202,14 +200,14 @@ class MetadataEditMixin:
         return path
 
     def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
-        """
-        Find an item in the tree by its path from root.
+        """Find an item in the tree by its path from root.
 
         Args:
             path: List of display texts from root to target item
 
         Returns:
             QModelIndex if found, None otherwise
+
         """
         if not path:
             return None
@@ -239,8 +237,7 @@ class MetadataEditMixin:
         return current_index
 
     def _find_path_by_key(self, key_path: str) -> list[str] | None:
-        """
-        Find the tree path (display names) for a given metadata key path.
+        """Find the tree path (display names) for a given metadata key path.
 
         Args:
             key_path: Metadata key like "File:FileName" or "EXIF:Make"
@@ -248,6 +245,7 @@ class MetadataEditMixin:
         Returns:
             List of display names from root to item, e.g. ["File Info", "File Name"]
             None if not found
+
         """
         model = self.model()
         if not model:
@@ -277,11 +275,11 @@ class MetadataEditMixin:
         return search_tree(QModelIndex(), key_path)
 
     def _restore_selection(self, path: list[str]) -> None:
-        """
-        Restore selection to the given path.
+        """Restore selection to the given path.
 
         Args:
             path: List of display names from root to item
+
         """
         restored_index = self._find_item_by_path(path)
         if restored_index and restored_index.isValid():
@@ -299,12 +297,12 @@ class MetadataEditMixin:
     # =====================================
 
     def edit_value(self, key_path: str, current_value: Any) -> None:
-        """
-        Open a dialog to edit the value of a metadata field.
+        """Open a dialog to edit the value of a metadata field.
 
         Args:
             key_path: Metadata key path to edit
             current_value: Current value of the field
+
         """
         # Save current selection path before opening dialog
         current_index = self.currentIndex()
@@ -404,14 +402,14 @@ class MetadataEditMixin:
     def _fallback_edit_value(
         self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
     ) -> None:
-        """
-        Fallback method for editing metadata without command system.
+        """Fallback method for editing metadata without command system.
 
         Args:
             key_path: Metadata key path
             new_value: New value to set
             _old_value: Old value (unused in fallback)
             files_to_modify: List of file items to modify
+
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
 
@@ -455,13 +453,13 @@ class MetadataEditMixin:
     def _edit_date_time_field(
         self, key_path: str, current_value: Any, saved_path: list[str] | None = None
     ) -> None:
-        """
-        Open DateTimeEditDialog to edit a date/time field.
+        """Open DateTimeEditDialog to edit a date/time field.
 
         Args:
             key_path: Metadata key path
             current_value: Current value of the field
             saved_path: Saved selection path for restoration
+
         """
         from oncutf.ui.widgets.datetime_edit_dialog import DateTimeEditDialog
 
@@ -560,11 +558,11 @@ class MetadataEditMixin:
     # =====================================
 
     def set_rotation_to_zero(self, key_path: str) -> None:
-        """
-        Set rotation metadata to 0 degrees.
+        """Set rotation metadata to 0 degrees.
 
         Args:
             key_path: Metadata key path for rotation field
+
         """
         if not key_path:
             return
@@ -626,13 +624,13 @@ class MetadataEditMixin:
     def _fallback_set_rotation_to_zero(
         self, key_path: str, new_value: str, _current_value: Any
     ) -> None:
-        """
-        Fallback method for setting rotation to zero without command system.
+        """Fallback method for setting rotation to zero without command system.
 
         Args:
             key_path: Metadata key path
             new_value: New rotation value (should be "0")
             _current_value: Current value (unused in fallback)
+
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
 
@@ -657,11 +655,11 @@ class MetadataEditMixin:
         self.viewport().update()
 
     def reset_value(self, key_path: str) -> None:
-        """
-        Reset a metadata value to its original value.
+        """Reset a metadata value to its original value.
 
         Args:
             key_path: Metadata key path to reset
+
         """
         if not key_path:
             return
@@ -722,12 +720,12 @@ class MetadataEditMixin:
         self._fallback_reset_value(key_path, original_value)
 
     def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
-        """
-        Fallback method for resetting metadata without command system.
+        """Fallback method for resetting metadata without command system.
 
         Args:
             key_path: Metadata key path
             original_value: Original value to restore
+
         """
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
 
@@ -752,13 +750,13 @@ class MetadataEditMixin:
     # =====================================
 
     def _update_tree_item_value(self, _key_path: str, _new_value: str) -> None:
-        """
-        Update the display value of a tree item to reflect changes.
+        """Update the display value of a tree item to reflect changes.
         Defers actual tree rebuild to UI scheduler to avoid race conditions.
 
         Args:
             _key_path: Metadata key path (unused, triggers full refresh)
             _new_value: New value (unused, triggers full refresh)
+
         """
 
         def _do_update():
@@ -787,11 +785,11 @@ class MetadataEditMixin:
     # =====================================
 
     def mark_as_modified(self, key_path: str) -> None:
-        """
-        Mark an item as modified.
+        """Mark an item as modified.
 
         Args:
             key_path: Metadata key path to mark as modified
+
         """
         if not hasattr(self, "modified_items"):
             self.modified_items = set()
@@ -809,12 +807,12 @@ class MetadataEditMixin:
         self.viewport().update()
 
     def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
-        """
-        Mark a field as modified only if it differs from the original value.
+        """Mark a field as modified only if it differs from the original value.
 
         Args:
             key_path: Metadata key path
             new_value: New value to compare with original
+
         """
         # Get original value from ORIGINAL metadata cache, not staging
         original_value = self._get_original_metadata_value(key_path)
@@ -918,14 +916,14 @@ class MetadataEditMixin:
     # =====================================
 
     def get_key_path(self, index: QModelIndex) -> str:
-        """
-        Return the full key path for the given index.
+        """Return the full key path for the given index.
 
         Args:
             index: QModelIndex to get key path for
 
         Returns:
             str: Key path like "EXIF/DateTimeOriginal" or "XMP/Creator"
+
         """
         if not index.isValid():
             return ""
@@ -946,11 +944,11 @@ class MetadataEditMixin:
         return item_text
 
     def copy_value(self, value: Any) -> None:
-        """
-        Copy the value to clipboard and emit the value_copied signal.
+        """Copy the value to clipboard and emit the value_copied signal.
 
         Args:
             value: Value to copy to clipboard
+
         """
         if not value:
             return

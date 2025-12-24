@@ -1,5 +1,4 @@
-"""
-Module: test_theme_integration.py
+"""Module: test_theme_integration.py
 
 Author: Michael Economou
 Date: 2025-05-01

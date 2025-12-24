@@ -1,5 +1,4 @@
-"""
-Module: test_metadata_tree_view.py
+"""Module: test_metadata_tree_view.py
 
 Author: Michael Economou
 Date: 2025-05-01

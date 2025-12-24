@@ -1,5 +1,4 @@
-"""
-Module: path_utils.py
+"""Module: path_utils.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -24,8 +23,7 @@ logger = get_cached_logger(__name__)
 
 
 def get_project_root() -> Path:
-    """
-    Get the project root directory (where main.py is located).
+    """Get the project root directory (where main.py is located).
 
     This function finds the project root regardless of current working directory
     by looking for main.py in the path hierarchy.
@@ -36,6 +34,7 @@ def get_project_root() -> Path:
 
     Returns:
         Path: Absolute path to project root directory
+
     """
     # Handle PyInstaller frozen executables
     if getattr(sys, "frozen", False):
@@ -84,81 +83,80 @@ def get_project_root() -> Path:
 
 
 def get_resources_dir() -> Path:
-    """
-    Get the resources directory path.
+    """Get the resources directory path.
 
     Returns:
         Path: The resources directory path
+
     """
     return get_project_root() / "resources"
 
 
 def get_assets_dir() -> Path:
-    """
-    Get the assets directory path.
+    """Get the assets directory path.
 
     Returns:
         Path: The assets directory path
+
     """
     return get_project_root() / "assets"
 
 
 def get_style_dir() -> Path:
-    """
-    Get the style directory path.
+    """Get the style directory path.
 
     Returns:
         Path: The style directory path
+
     """
     return get_project_root() / "style"
 
 
 def get_fonts_dir() -> Path:
-    """
-    Get the fonts directory path.
+    """Get the fonts directory path.
 
     Returns:
         Path: The fonts directory path (resources/fonts/inter)
+
     """
     return get_resources_dir() / "fonts" / "inter"
 
 
 def get_icons_dir() -> Path:
-    """
-    Get the icons directory path.
+    """Get the icons directory path.
 
     Returns:
         Path: The icons directory path (resources/icons)
+
     """
     return get_resources_dir() / "icons"
 
 
 def get_images_dir() -> Path:
-    """
-    Get the images directory path.
+    """Get the images directory path.
 
     Returns:
         Path: The images directory path (resources/images)
+
     """
     return get_resources_dir() / "images"
 
 
 def get_theme_dir(theme_name: str) -> Path:
-    """
-    Get the theme directory path for a specific theme.
+    """Get the theme directory path for a specific theme.
 
     Args:
         theme_name: The theme name (e.g., 'dark', 'light')
 
     Returns:
         Path: The theme directory path (style/{theme_name}_theme)
+
     """
     return get_style_dir() / f"{theme_name}_theme"
 
 
 def get_resource_path(relative_path: str) -> Path:
-    """
-    Get the absolute path to a resource file, handling both development and packaged scenarios.
+    """Get the absolute path to a resource file, handling both development and packaged scenarios.
 
     This function ensures resources are found regardless of:
     - Current working directory
@@ -170,6 +168,7 @@ def get_resource_path(relative_path: str) -> Path:
 
     Returns:
         Path: Absolute path to the resource
+
     """
     # Get project root - always use the directory containing main.py
     project_root = get_project_root()
@@ -205,21 +204,20 @@ def get_resource_path(relative_path: str) -> Path:
 
 
 def resource_exists(relative_path: str) -> bool:
-    """
-    Check if a resource file exists.
+    """Check if a resource file exists.
 
     Args:
         relative_path: Relative path from project root
 
     Returns:
         bool: True if the resource exists, False otherwise
+
     """
     return get_resource_path(relative_path).exists()
 
 
 def normalize_path(path: str) -> str:
-    """
-    Normalize a file path to use consistent separators for the current OS.
+    """Normalize a file path to use consistent separators for the current OS.
 
     This resolves issues with mixed path separators (e.g., forward slashes mixed
     with backslashes on Windows) that can occur when paths come from different sources.
@@ -235,6 +233,7 @@ def normalize_path(path: str) -> str:
         "C:\\folder\\subfolder\\file.txt"
         >>> normalize_path("/home/user\\folder/file.txt")   # Linux/Mac
         "/home/user/folder/file.txt"
+
     """
     if not path:
         return path
@@ -247,8 +246,7 @@ def normalize_path(path: str) -> str:
 
 
 def paths_equal(path1: str, path2: str) -> bool:
-    """
-    Compare two file paths for equality after normalizing both.
+    """Compare two file paths for equality after normalizing both.
 
     This ensures that paths with different separator styles are compared correctly
     across different operating systems. Works correctly even when comparing Windows
@@ -266,6 +264,7 @@ def paths_equal(path1: str, path2: str) -> bool:
         True
         >>> paths_equal("/home/user/file.txt", "/home/user\\file.txt")  # Linux
         True
+
     """
     if not path1 or not path2:
         return path1 == path2
@@ -288,8 +287,7 @@ def paths_equal(path1: str, path2: str) -> bool:
 
 
 def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path") -> object | None:
-    """
-    Find a file object in a list by comparing paths with normalization.
+    """Find a file object in a list by comparing paths with normalization.
 
     Args:
         files (list): List of file objects to search through
@@ -303,6 +301,7 @@ def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path
         >>> files = [FileItem(full_path="C:\\folder\\file1.txt"), ...]
         >>> find_file_by_path(files, "C:/folder\\file1.txt")
         <FileItem object>
+
     """
     if not files or not target_path:
         return None
@@ -317,8 +316,7 @@ def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path
 
 
 def find_parent_with_attribute(widget, attribute_name: str):
-    """
-    Unified function to find parent widget with specific attribute.
+    """Unified function to find parent widget with specific attribute.
 
     Args:
         widget: Starting widget
@@ -326,6 +324,7 @@ def find_parent_with_attribute(widget, attribute_name: str):
 
     Returns:
         Parent widget with the attribute, or None if not found
+
     """
     if not widget:
         return None

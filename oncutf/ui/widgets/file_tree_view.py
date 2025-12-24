@@ -1,5 +1,4 @@
-"""
-Module: file_tree_view.py
+"""Module: file_tree_view.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -43,8 +42,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileTreeView(QTreeView):
-    """
-    Custom tree view with clean single-item drag & drop implementation.
+    """Custom tree view with clean single-item drag & drop implementation.
 
     Features:
     - Manual drag control (no Qt built-in drag system)
@@ -201,6 +199,7 @@ class FileTreeView(QTreeView):
 
         Args:
             dir_path: Path of changed directory
+
         """
         logger.debug("[FileTreeView] Directory changed: %s", dir_path, extra={"dev_only": True})
 
@@ -221,6 +220,7 @@ class FileTreeView(QTreeView):
 
         Args:
             _drives: Current list of available drives (unused)
+
         """
         logger.info("[FileTreeView] Drives changed, refreshing tree")
 
@@ -475,8 +475,7 @@ class FileTreeView(QTreeView):
     # =====================================
 
     def drawBranches(self, painter, rect, index):
-        """
-        Override to paint alternating row background in branch area before branches.
+        """Override to paint alternating row background in branch area before branches.
 
         This ensures that the branch indicators (chevrons) are visible on top of
         the alternating row background, fixing the Windows-specific rendering issue
@@ -510,7 +509,6 @@ class FileTreeView(QTreeView):
 
     def mouseMoveEvent(self, event):
         """Handle mouse move for custom drag start and real-time drop zone validation"""
-
         # If we're dragging, only handle drag feedback and block all other processing
         if self._is_dragging:
             # Only update drag feedback after the cursor has moved away from the FileTreeView widget
@@ -1086,11 +1084,11 @@ class FileTreeView(QTreeView):
                 )
 
     def _save_expanded_state(self) -> list[str]:
-        """
-        Save the current expanded state of all nodes in the tree.
+        """Save the current expanded state of all nodes in the tree.
 
         Returns:
             List of file paths for all expanded nodes
+
         """
         expanded_paths = []
         model = self.model()
@@ -1132,11 +1130,11 @@ class FileTreeView(QTreeView):
         return expanded_paths
 
     def _restore_expanded_state(self, expanded_paths: list[str]) -> None:
-        """
-        Restore the expanded state of nodes from saved paths.
+        """Restore the expanded state of nodes from saved paths.
 
         Args:
             expanded_paths: List of file paths that should be expanded
+
         """
         if not expanded_paths:
             return
@@ -1243,8 +1241,7 @@ class FileTreeView(QTreeView):
 
 
 class DragCancelFilter:
-    """
-    Filter that prevents selection clearing during drag operations.
+    """Filter that prevents selection clearing during drag operations.
 
     This is used to maintain file selection when dragging from FileTableView
     to MetadataTreeView, especially when no modifier keys are pressed.

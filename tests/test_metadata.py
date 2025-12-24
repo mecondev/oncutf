@@ -1,5 +1,4 @@
-"""
-Module: test_metadata.py
+"""Module: test_metadata.py
 
 Author: Michael Economou
 Date: 2025-05-12

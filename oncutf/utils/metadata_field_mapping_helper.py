@@ -1,5 +1,4 @@
-"""
-metadata_field_mapping_helper.py
+"""metadata_field_mapping_helper.py
 
 Centralized metadata field mapping and conversion helper.
 Handles file-type-specific field mapping for read/write operations.
@@ -16,8 +15,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataFieldMappingHelper:
-    """
-    Centralized helper for metadata field mapping and value conversion.
+    """Centralized helper for metadata field mapping and value conversion.
 
     Handles:
     - File-type-specific field name mapping for write operations
@@ -109,14 +107,14 @@ class MetadataFieldMappingHelper:
 
     @classmethod
     def get_file_category(cls, file_path: str) -> str:
-        """
-        Determine the file category based on extension.
+        """Determine the file category based on extension.
 
         Args:
             file_path: Path to the file
 
         Returns:
             File category: 'image', 'raw', 'video', 'audio', or 'unknown'
+
         """
         ext = os.path.splitext(file_path)[1].lower()
 
@@ -133,8 +131,7 @@ class MetadataFieldMappingHelper:
 
     @classmethod
     def get_write_field_name(cls, generic_field: str, file_path: str) -> str | None:
-        """
-        Get the appropriate field name for writing metadata to a specific file type.
+        """Get the appropriate field name for writing metadata to a specific file type.
 
         Args:
             generic_field: Generic field name (e.g., "Rotation", "Title")
@@ -142,6 +139,7 @@ class MetadataFieldMappingHelper:
 
         Returns:
             File-specific field name or None if not supported
+
         """
         category = cls.get_file_category(file_path)
 
@@ -170,8 +168,7 @@ class MetadataFieldMappingHelper:
 
     @classmethod
     def convert_value_for_write(cls, generic_field: str, value: str, file_path: str) -> str:
-        """
-        Convert a generic field value to the appropriate format for a specific file type.
+        """Convert a generic field value to the appropriate format for a specific file type.
 
         Args:
             generic_field: Generic field name
@@ -180,6 +177,7 @@ class MetadataFieldMappingHelper:
 
         Returns:
             Converted value appropriate for the file type
+
         """
         category = cls.get_file_category(file_path)
 
@@ -206,8 +204,7 @@ class MetadataFieldMappingHelper:
     def prepare_metadata_for_write(
         cls, metadata_changes: dict[str, str], file_path: str
     ) -> dict[str, str]:
-        """
-        Prepare metadata changes dictionary for writing to a specific file.
+        """Prepare metadata changes dictionary for writing to a specific file.
 
         Args:
             metadata_changes: Dictionary of generic field -> value mappings
@@ -215,6 +212,7 @@ class MetadataFieldMappingHelper:
 
         Returns:
             Dictionary of file-specific field -> converted value mappings
+
         """
         prepared_changes = {}
         category = cls.get_file_category(file_path)
@@ -246,14 +244,14 @@ class MetadataFieldMappingHelper:
 
     @classmethod
     def get_supported_fields_for_file(cls, file_path: str) -> dict[str, str]:
-        """
-        Get all supported metadata fields for a specific file type.
+        """Get all supported metadata fields for a specific file type.
 
         Args:
             file_path: Path to the file
 
         Returns:
             Dictionary mapping generic field names to file-specific field names
+
         """
         category = cls.get_file_category(file_path)
         supported_fields = {}

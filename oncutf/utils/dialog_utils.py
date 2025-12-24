@@ -1,5 +1,4 @@
-"""
-Module: dialog_utils.py
+"""Module: dialog_utils.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -13,12 +12,12 @@ from oncutf.core.pyqt_imports import QWidget
 
 
 def center_widget_on_parent(widget: QWidget, parent: QWidget | None = None) -> None:
-    """
-    Center a widget on its parent window using multiscreen-aware positioning.
+    """Center a widget on its parent window using multiscreen-aware positioning.
 
     Args:
         widget: The widget to center
         parent: The parent widget to center on. If None, uses widget.parent()
+
     """
     from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
 
@@ -26,12 +25,12 @@ def center_widget_on_parent(widget: QWidget, parent: QWidget | None = None) -> N
 
 
 def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> None:
-    """
-    Set dialog size to match content widget and center it on parent using multiscreen-aware positioning.
+    """Set dialog size to match content widget and center it on parent using multiscreen-aware positioning.
 
     Args:
         dialog: The dialog to setup
         content_widget: The content widget to size the dialog to
+
     """
     # Use the same size as the content widget - no extra padding
     widget_size = content_widget.sizeHint()
@@ -42,11 +41,11 @@ def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> No
 
 
 def show_dialog_smooth(dialog: QWidget) -> None:
-    """
-    Show dialog with smooth appearance to prevent shadow flicker.
+    """Show dialog with smooth appearance to prevent shadow flicker.
 
     Args:
         dialog: The dialog to show
+
     """
     # Force layout completion before showing
     dialog.adjustSize()
@@ -60,13 +59,13 @@ def show_dialog_smooth(dialog: QWidget) -> None:
 
 
 def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
-    """
-    Show an information message dialog.
+    """Show an information message dialog.
 
     Args:
         parent: Parent widget for the dialog
         title: Dialog title
         message: Message to display
+
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
@@ -74,13 +73,13 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
 
 
 def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
-    """
-    Show an error message dialog.
+    """Show an error message dialog.
 
     Args:
         parent: Parent widget for the dialog
         title: Dialog title
         message: Message to display
+
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
@@ -88,8 +87,7 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
 
 
 def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
-    """
-    Show a question dialog with Yes/No buttons.
+    """Show a question dialog with Yes/No buttons.
 
     Args:
         parent: Parent widget for the dialog
@@ -98,6 +96,7 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
 
     Returns:
         bool: True if Yes was clicked, False if No was clicked
+
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 

@@ -1,5 +1,4 @@
-"""
-Module: test_simple_hash_integration.py
+"""Module: test_simple_hash_integration.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -23,7 +22,6 @@ from oncutf.core.hash.hash_manager import HashManager
 
 def test_hash_manager_basic_functionality():
     """Test that HashManager works correctly with multiple files."""
-
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test files
         files = []
@@ -58,7 +56,6 @@ def test_hash_manager_basic_functionality():
 
 def test_hash_manager_with_progress_callback():
     """Test HashManager with progress callback to simulate real usage."""
-
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a larger file to test progress tracking
         large_file = os.path.join(temp_dir, "large_test.txt")
@@ -92,7 +89,6 @@ def test_hash_manager_with_progress_callback():
 
 def test_cumulative_size_calculation():
     """Test cumulative size calculation which is part of the fix."""
-
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create files with known sizes
         sizes = [1000, 2000, 3000, 4000, 5000]

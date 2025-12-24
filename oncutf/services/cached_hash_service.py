@@ -1,5 +1,4 @@
-"""
-Cached-only hash service for rename operations.
+"""Cached-only hash service for rename operations.
 
 Author: Michael Economou
 Date: December 19, 2025
@@ -59,6 +58,7 @@ class CachedHashService:
 
         Returns:
             Cached hash or empty string if not in cache.
+
         """
         try:
             cache = self._get_cache_manager()
@@ -95,6 +95,7 @@ class CachedHashService:
 
         Returns:
             Dict mapping paths to cached hashes (empty string if not cached).
+
         """
         results = {}
         for path in paths:

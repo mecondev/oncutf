@@ -1,5 +1,4 @@
-"""
-Module: rename_logic.py
+"""Module: rename_logic.py
 
 Author: Michael Economou
 Date: 2025-05-12
@@ -30,8 +29,7 @@ def is_case_only_change(old: str, new: str) -> bool:
 
 
 def safe_case_rename(src_path: str, dst_path: str) -> bool:
-    """
-    Safely rename a file when only the case changes, working around Windows limitations.
+    """Safely rename a file when only the case changes, working around Windows limitations.
 
     On Windows, NTFS is case-insensitive, so os.rename(file.txt, FILE.TXT) fails.
     This function uses a two-step process: rename to temporary name, then to final name.
@@ -42,6 +40,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
     Returns:
         bool: True if rename was successful, False otherwise
+
     """
     try:
         # Get the directory and filenames
@@ -108,8 +107,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 def build_rename_plan(
     _file_items: list[object], preview_pairs: list[tuple[str, str]], folder_path: str
 ) -> list[dict]:
-    """
-    Builds a plan of rename operations with conflict detection.
+    """Builds a plan of rename operations with conflict detection.
 
     Args:
         file_items (List[object]): List of file objects, each with .filename
@@ -118,8 +116,8 @@ def build_rename_plan(
 
     Returns:
         List[Dict]: A list of rename instructions with conflict info and undecided action
-    """
 
+    """
     plan = []
 
     for old_name, new_name in preview_pairs:
@@ -154,8 +152,7 @@ def build_rename_plan(
 def resolve_rename_conflicts(
     plan: list[dict], ask_user_callback: Callable[[str, str], tuple[str, bool]]
 ) -> list[dict]:
-    """
-    Resolves rename conflicts by prompting the user.
+    """Resolves rename conflicts by prompting the user.
 
     Args:
         plan (List[Dict]): The rename plan with conflict flags.
@@ -164,6 +161,7 @@ def resolve_rename_conflicts(
 
     Returns:
         List[Dict]: Updated plan with 'action' set per entry, or empty list if cancelled.
+
     """
     resolved_plan = []
     remembered_action = None
@@ -192,14 +190,14 @@ def resolve_rename_conflicts(
 
 
 def execute_rename_plan(plan: list[dict]) -> int:
-    """
-    Executes the rename plan based on resolved actions.
+    """Executes the rename plan based on resolved actions.
 
     Args:
         plan (List[Dict]): List of rename instructions with 'action' field defined
 
     Returns:
         int: Number of successful renames
+
     """
     success_count = 0
 
@@ -228,8 +226,7 @@ def execute_rename_plan(plan: list[dict]) -> int:
 def get_preview_pairs(
     file_items: list[object], rename_function: Callable[[object], str]
 ) -> list[tuple[str, str]]:
-    """
-    Generates preview name pairs (old, new) for the selected files using rename logic.
+    """Generates preview name pairs (old, new) for the selected files using rename logic.
 
     Args:
         file_items (List[object]): List of checked FileItem-like objects
@@ -237,6 +234,7 @@ def get_preview_pairs(
 
     Returns:
         List[Tuple[str, str]]: List of (original_name, preview_name) pairs
+
     """
     pairs = []
     for file in file_items:

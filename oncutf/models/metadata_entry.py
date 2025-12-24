@@ -1,5 +1,4 @@
-"""
-metadata_entry.py
+"""metadata_entry.py
 
 Author: Michael Economou
 Date: 2025-12-03
@@ -70,6 +69,7 @@ class MetadataEntry:
 
         Returns:
             MetadataEntry with is_extended=False
+
         """
         return cls(data=metadata, is_extended=False)
 
@@ -82,6 +82,7 @@ class MetadataEntry:
 
         Returns:
             MetadataEntry with is_extended=True
+
         """
         return cls(data=metadata, is_extended=True)
 
@@ -94,6 +95,7 @@ class MetadataEntry:
 
         Returns:
             New MetadataEntry instance
+
         """
         return cls(
             data=data.get("data", {}),
@@ -112,6 +114,7 @@ class MetadataEntry:
 
         Returns:
             True if field exists
+
         """
         if "/" in field_key:
             # Nested field (group/key)
@@ -136,6 +139,7 @@ class MetadataEntry:
 
         Returns:
             Field value or default
+
         """
         if "/" in field_key:
             # Nested field
@@ -155,6 +159,7 @@ class MetadataEntry:
         Args:
             field_key: Field key (can be nested like "EXIF/DateTimeOriginal")
             value: New value
+
         """
         if "/" in field_key:
             # Nested field
@@ -187,6 +192,7 @@ class MetadataEntry:
 
         Returns:
             True if field was removed
+
         """
         removed = False
 
@@ -242,6 +248,7 @@ class MetadataEntry:
 
         Returns:
             Dictionary with all fields
+
         """
         return {
             "data": self.data.copy(),
@@ -257,6 +264,7 @@ class MetadataEntry:
 
         Returns:
             Clean metadata dict for database
+
         """
         clean_data = self.data.copy()
 

@@ -1,5 +1,4 @@
-"""
-Module: config_imports.py
+"""Module: config_imports.py
 
 Author: Michael Economou
 Date: 2025-05-31

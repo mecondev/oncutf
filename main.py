@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: main.py
+"""Module: main.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -108,8 +107,7 @@ atexit.register(cleanup_on_exit)
 
 
 def global_exception_handler(exc_type, exc_value, exc_tb) -> None:
-    """
-    Global exception handler for unhandled exceptions.
+    """Global exception handler for unhandled exceptions.
 
     Logs the exception with full traceback and attempts graceful recovery.
     This prevents silent crashes and ensures all errors are logged.
@@ -134,8 +132,7 @@ sys.excepthook = global_exception_handler
 
 
 def main() -> int:
-    """
-    Entry point for the Batch File Renamer application.
+    """Entry point for the Batch File Renamer application.
 
     Initializes logging, creates a Qt application and stylesheet, creates a
     MainWindow and shows it, and enters the application's main loop.

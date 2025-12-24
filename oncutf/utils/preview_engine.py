@@ -1,5 +1,4 @@
-"""
-Module: preview_engine.py
+"""Module: preview_engine.py
 
 Author: Michael Economou
 Date: 2025-05-12
@@ -54,8 +53,7 @@ _cache_validity_duration = 0.05  # 50ms cache validity
 def calculate_scope_aware_index(
     scope: str, global_index: int, file_item, all_files: list | None = None
 ) -> int:
-    """
-    Calculate the appropriate counter index based on scope.
+    """Calculate the appropriate counter index based on scope.
 
     Args:
         scope: Counter scope ('global', 'per_folder', 'per_extension', 'per_filegroup')
@@ -71,6 +69,7 @@ def calculate_scope_aware_index(
         For PER_FOLDER: returns index within current folder group
         For PER_EXTENSION: returns index within current extension group
         For PER_FILEGROUP: returns index within file group (future feature)
+
     """
     # Default to global scope if not recognized
     try:
@@ -172,8 +171,7 @@ def apply_rename_modules(
     metadata_cache: dict | None = None,
     all_files: list | None = None,
 ) -> str:
-    """
-    Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
+    """Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
 
     Args:
         modules_data: List of module configurations
@@ -184,6 +182,7 @@ def apply_rename_modules(
 
     Returns:
         The new filename with extension.
+
     """
     logger.debug(
         "[DEBUG] [PreviewEngine] apply_rename_modules CALLED for %s",

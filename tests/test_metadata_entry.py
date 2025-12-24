@@ -1,5 +1,4 @@
-"""
-test_metadata_entry.py
+"""test_metadata_entry.py
 
 Test suite for MetadataEntry dataclass.
 """

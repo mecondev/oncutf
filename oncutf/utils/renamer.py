@@ -1,11 +1,12 @@
-"""
-Module: renamer.py
+"""Module: renamer.py
 
 Author: Michael Economou
 Date: 2025-05-15
 
 Initializes the Renamer with required inputs for batch renaming.
-Parameters:
+
+Parameters
+----------
 files (List[FileItem]): List of FileItem objects selected for rename.
 modules_data (List[dict]): Serialized rename module data.
 metadata_cache (dict): Metadata dictionary (full_path → metadata dict).
@@ -13,6 +14,7 @@ post_transform (dict, optional): Transformation options (case, separator).
 parent (QWidget, optional): Parent UI component.
 conflict_callback (Callable, optional): Function to handle filename conflicts.
 validator (object): Object to validate filename text.
+
 """
 
 import os
@@ -56,10 +58,10 @@ class Renamer:
         conflict_callback: Callable[[QWidget, str], str] | None = None,
         validator: object | None = None,
     ) -> None:
-        """
-        Initializes the Renamer with required inputs for batch renaming.
+        """Initializes the Renamer with required inputs for batch renaming.
 
-        Parameters:
+        Parameters
+        ----------
             files (List[FileItem]): List of FileItem objects selected for rename.
             modules_data (List[dict]): Serialized rename module data.
             metadata_cache (dict): Metadata dictionary (full_path → metadata dict).
@@ -67,6 +69,7 @@ class Renamer:
             parent (QWidget, optional): Parent UI component.
             conflict_callback (Callable, optional): Function to handle filename conflicts.
             validator (object): Object to validate filename text.
+
         """
         self.files = files
         self.modules_data = modules_data
@@ -80,11 +83,11 @@ class Renamer:
             raise ValueError("Filename validator is required for renaming.")
 
     def rename(self) -> list[RenameResult]:
-        """
-        Executes the renaming process for the selected files.
+        """Executes the renaming process for the selected files.
 
         Returns:
             List[RenameResult]: Outcome of each rename attempt.
+
         """
         logger.debug(
             "Starting rename process for %d files...", len(self.files), extra={"dev_only": True}
@@ -251,15 +254,17 @@ class Renamer:
 
 
 def filter_metadata_safe(metadata: dict) -> dict:
-    """
-    Returns a shallow copy of metadata with only JSON-safe primitive fields.
+    """Returns a shallow copy of metadata with only JSON-safe primitive fields.
     Excludes objects like preview_map, Qt instances, and recursive structures.
 
-    Parameters:
+    Parameters
+    ----------
         metadata (dict): Original metadata dict.
 
-    Returns:
+    Returns
+    -------
         dict: Filtered dictionary with only str, int, float, bool, or None values.
+
     """
     return {
         k: v for k, v in metadata.items() if isinstance(v, str | int | float | bool | type(None))

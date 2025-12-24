@@ -1,5 +1,4 @@
-"""
-Module: test_theme_manager.py
+"""Module: test_theme_manager.py
 
 Author: Michael Economou
 Date: 2025-12-01

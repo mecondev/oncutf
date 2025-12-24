@@ -1,5 +1,4 @@
-"""
-Module: database_manager.py
+"""Module: database_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -31,8 +30,7 @@ logger = get_cached_logger(__name__)
 
 
 class DatabaseManager:
-    """
-    Enhanced database management with improved separation of concerns.
+    """Enhanced database management with improved separation of concerns.
 
     Architecture:
     - file_paths: Central registry of all file paths
@@ -51,11 +49,11 @@ class DatabaseManager:
     SCHEMA_VERSION = 4
 
     def __init__(self, db_path: str | None = None):
-        """
-        Initialize database manager.
+        """Initialize database manager.
 
         Args:
             db_path: Optional custom database path
+
         """
         if db_path:
             self.db_path = Path(db_path)
@@ -114,8 +112,7 @@ class DatabaseManager:
 
     @contextlib.contextmanager
     def transaction(self):
-        """
-        Context manager for atomic transactions.
+        """Context manager for atomic transactions.
 
         Usage:
             with db_manager.transaction() as conn:
@@ -180,7 +177,6 @@ class DatabaseManager:
 
     def _create_schema_v2(self, cursor: sqlite3.Cursor):
         """Create the new v2 schema with separated tables."""
-
         # 1. Central file paths table
         cursor.execute(
             """
@@ -420,8 +416,7 @@ class DatabaseManager:
     # =====================================
 
     def get_or_create_path_id(self, file_path: str) -> int:
-        """
-        Get path_id for a file, creating record if needed.
+        """Get path_id for a file, creating record if needed.
 
         This is the core method that ensures every file path has an ID.
         All other operations use this ID to reference files.
@@ -431,6 +426,7 @@ class DatabaseManager:
 
         Returns:
             path_id for the file
+
         """
         norm_path = self._normalize_path(file_path)
         filename = os.path.basename(norm_path)
@@ -539,14 +535,14 @@ class DatabaseManager:
         self,
         metadata_items: list[tuple[str, dict[str, Any], bool, bool]],
     ) -> int:
-        """
-        Store metadata for multiple files in a single batch operation.
+        """Store metadata for multiple files in a single batch operation.
 
         Args:
             metadata_items: List of (file_path, metadata_dict, is_extended, is_modified) tuples
 
         Returns:
             Number of files successfully stored
+
         """
         if not metadata_items:
             return 0
@@ -639,14 +635,14 @@ class DatabaseManager:
             return None
 
     def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
-        """
-        Retrieve metadata for multiple files in a single batch operation.
+        """Retrieve metadata for multiple files in a single batch operation.
 
         Args:
             file_paths: List of file paths to get metadata for
 
         Returns:
             dict: Mapping of file_path -> metadata dict (or None if not found)
+
         """
         if not file_paths:
             return {}
@@ -1057,8 +1053,7 @@ class DatabaseManager:
     def batch_store_structured_metadata(
         self, file_path: str, field_data: list[tuple[str, str]]
     ) -> int:
-        """
-        Store multiple structured metadata fields for a file in a single batch operation.
+        """Store multiple structured metadata fields for a file in a single batch operation.
 
         Args:
             file_path: Path to the file
@@ -1066,6 +1061,7 @@ class DatabaseManager:
 
         Returns:
             Number of fields successfully stored
+
         """
         if not field_data:
             return 0
@@ -1456,8 +1452,7 @@ class DatabaseManager:
     # =====================================
 
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
-        """
-        Set color tag for a file.
+        """Set color tag for a file.
 
         Args:
             file_path: File path
@@ -1465,6 +1460,7 @@ class DatabaseManager:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Validate and normalize color
@@ -1496,14 +1492,14 @@ class DatabaseManager:
             return False
 
     def get_color_tag(self, file_path: str) -> str:
-        """
-        Get color tag for a file.
+        """Get color tag for a file.
 
         Args:
             file_path: File path
 
         Returns:
             Hex color string or "none" if not set
+
         """
         try:
             path_id = self.get_path_id(file_path)
@@ -1529,8 +1525,7 @@ class DatabaseManager:
             return "none"
 
     def update_file_path(self, old_path: str, new_path: str) -> bool:
-        """
-        Update file path in database (e.g., after rename operation).
+        """Update file path in database (e.g., after rename operation).
         This preserves all associated data (metadata, hashes, color_tag, etc.)
         by keeping the same path_id.
 
@@ -1540,6 +1535,7 @@ class DatabaseManager:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             old_norm_path = self._normalize_path(old_path)

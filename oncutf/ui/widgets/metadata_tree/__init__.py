@@ -1,5 +1,4 @@
-"""
-Package: metadata_tree
+"""Package: metadata_tree
 
 Author: Michael Economou
 Date: 2025-12-23

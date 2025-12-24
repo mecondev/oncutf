@@ -1,5 +1,4 @@
-"""
-Hash operations module.
+"""Hash operations module.
 
 This module provides file hash calculation functionality including:
 - HashManager: Main hash operations coordination

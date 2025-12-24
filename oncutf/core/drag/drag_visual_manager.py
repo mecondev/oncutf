@@ -64,8 +64,7 @@ class ModifierState(Enum):
 
 
 class DragVisualManager:
-    """
-    Manages visual feedback for drag & drop operations.
+    """Manages visual feedback for drag & drop operations.
 
     Provides dynamic cursors, icons, and visual indicators based on:
     - Type of content being dragged (file/folder/multiple)
@@ -120,13 +119,13 @@ class DragVisualManager:
     def start_drag_visual(
         self, drag_type: DragType, source_info: str, drag_source: str = None
     ) -> None:
-        """
-        Start visual feedback for a drag operation.
+        """Start visual feedback for a drag operation.
 
         Args:
             drag_type: Type of content being dragged
             source_info: Description of the source (e.g., filename, folder path)
             drag_source: Source widget identifier (e.g., "file_table", "file_tree")
+
         """
         self._drag_type = drag_type
         self._drag_source = drag_source
@@ -166,11 +165,11 @@ class DragVisualManager:
             self._clear_cache()
 
     def update_drop_zone_state(self, state: DropZoneState) -> None:
-        """
-        Update drop zone state and refresh cursor.
+        """Update drop zone state and refresh cursor.
 
         Args:
             state: New drop zone state
+
         """
         if self._drop_zone_state != state:
             self._drop_zone_state = state
@@ -190,6 +189,7 @@ class DragVisualManager:
 
         Args:
             source_info: New text to display (e.g., "5 folders / 127 items")
+
         """
         if self._source_info != source_info:
             self._source_info = source_info
@@ -290,12 +290,12 @@ class DragVisualManager:
         return self._create_composite_cursor(base_icon, action_icons)
 
     def _create_composite_cursor(self, base_icon: str, action_icons: list) -> QCursor:
-        """
-        Create a composite cursor with base + action icons and text label.
+        """Create a composite cursor with base + action icons and text label.
 
         Args:
             base_icon: Name of base icon (file/folder/copy)
             action_icons: List of action icon names (e.g., ["plus", "layers"])
+
         """
         # Calculate dimensions
         # Base icon: 32x32 (drawn at 4,8)
@@ -519,14 +519,14 @@ class DragVisualManager:
         return result
 
     def get_drag_type_from_path(self, path: str) -> DragType:
-        """
-        Determine drag type from file path.
+        """Determine drag type from file path.
 
         Args:
             path: Path to analyze
 
         Returns:
             Appropriate DragType
+
         """
         if os.path.isdir(path):
             return DragType.FOLDER
@@ -534,8 +534,7 @@ class DragVisualManager:
             return DragType.FILE
 
     def is_valid_drop_target(self, widget: QWidget, drag_source: str) -> bool:
-        """
-        Check if widget is a valid drop target for the given drag source.
+        """Check if widget is a valid drop target for the given drag source.
         Walks up the parent hierarchy to find valid targets.
 
         Args:
@@ -544,6 +543,7 @@ class DragVisualManager:
 
         Returns:
             True if valid drop target
+
         """
         if widget is None:
             return False
@@ -623,8 +623,7 @@ def is_valid_drop_target(widget: QWidget, drag_source: str) -> bool:
 
 
 def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
-    """
-    Update drag feedback for a widget - convenience function.
+    """Update drag feedback for a widget - convenience function.
 
     Args:
         source_widget: The widget that started the drag
@@ -632,6 +631,7 @@ def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
 
     Returns:
         bool: True to continue drag, False to end drag
+
     """
     return DragVisualManager.get_instance().update_drag_feedback_for_widget(
         source_widget, drag_source

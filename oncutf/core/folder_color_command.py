@@ -1,5 +1,4 @@
-"""
-Module: folder_color_command.py
+"""Module: folder_color_command.py
 
 Author: Michael Economou
 Date: 2025-12-22
@@ -25,8 +24,7 @@ logger = get_cached_logger(__name__)
 
 
 class AutoColorByFolderCommand(MetadataCommand):
-    """
-    Command for auto-coloring files by their parent folder.
+    """Command for auto-coloring files by their parent folder.
 
     Groups files by folder and assigns a unique random color to each folder's files.
     Skips files that already have a color assigned.
@@ -40,8 +38,7 @@ class AutoColorByFolderCommand(MetadataCommand):
         color_generator: ColorGenerator | None = None,
         timestamp: datetime | None = None,
     ):
-        """
-        Initialize auto-color by folder command.
+        """Initialize auto-color by folder command.
 
         Args:
             file_items: List of all file items in the table
@@ -49,6 +46,7 @@ class AutoColorByFolderCommand(MetadataCommand):
             skip_existing: If True, skip files with existing colors; if False, recolor all
             color_generator: Color generator instance (optional)
             timestamp: Command creation timestamp
+
         """
         # Use empty string for file_path since this is a batch operation
         super().__init__("", timestamp)
@@ -194,11 +192,11 @@ class AutoColorByFolderCommand(MetadataCommand):
         return "auto_color_folders"
 
     def _group_by_folder(self) -> dict[str, list[FileItem]]:
-        """
-        Group file items by their parent folder.
+        """Group file items by their parent folder.
 
         Returns:
             Dictionary mapping folder path to list of file items
+
         """
         folder_groups: dict[str, list[FileItem]] = {}
 
@@ -213,11 +211,11 @@ class AutoColorByFolderCommand(MetadataCommand):
         return folder_groups
 
     def _get_existing_colors(self) -> set[str]:
-        """
-        Get all existing colors from file items and database.
+        """Get all existing colors from file items and database.
 
         Returns:
             Set of existing hex color strings
+
         """
         existing_colors: set[str] = set()
 
@@ -238,11 +236,11 @@ class AutoColorByFolderCommand(MetadataCommand):
         return existing_colors
 
     def get_files_with_existing_colors(self) -> list[str]:
-        """
-        Get list of filenames that already have colors assigned.
+        """Get list of filenames that already have colors assigned.
 
         Returns:
             List of filenames with existing colors (for warning dialog)
+
         """
         files_with_colors: list[str] = []
 

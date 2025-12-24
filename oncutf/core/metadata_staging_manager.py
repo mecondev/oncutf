@@ -1,5 +1,4 @@
-"""
-Module: metadata_staging_manager.py
+"""Module: metadata_staging_manager.py
 
 Author: Michael Economou
 Date: 2025-11-25
@@ -17,8 +16,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataStagingManager(QObject):
-    """
-    Manages staged metadata changes.
+    """Manages staged metadata changes.
 
     This class maintains a registry of all metadata changes that have been
     made by the user but not yet saved to disk. It provides methods to
@@ -42,13 +40,13 @@ class MetadataStagingManager(QObject):
         logger.debug("MetadataStagingManager initialized", extra={"dev_only": True})
 
     def stage_change(self, file_path: str, key: str, value: str) -> None:
-        """
-        Stage a metadata change for a file.
+        """Stage a metadata change for a file.
 
         Args:
             file_path: The full path to the file.
             key: The metadata key (e.g., "Rotation", "XMP:Title").
             value: The new value.
+
         """
         norm_path = normalize_path(file_path)
 
@@ -62,24 +60,24 @@ class MetadataStagingManager(QObject):
         self.change_staged.emit(file_path, key, str(value))
 
     def get_staged_changes(self, file_path: str) -> dict[str, str]:
-        """
-        Get all staged changes for a specific file.
+        """Get all staged changes for a specific file.
 
         Args:
             file_path: The full path to the file.
 
         Returns:
             Dictionary of {key: value} for staged changes.
+
         """
         norm_path = normalize_path(file_path)
         return self._staged_changes.get(norm_path, {}).copy()
 
     def get_all_staged_changes(self) -> dict[str, dict[str, str]]:
-        """
-        Get all staged changes for all files.
+        """Get all staged changes for all files.
 
         Returns:
             Dictionary of {normalized_path: {key: value}}.
+
         """
         return {k: v.copy() for k, v in self._staged_changes.items()}
 
@@ -89,12 +87,12 @@ class MetadataStagingManager(QObject):
         return norm_path in self._staged_changes and bool(self._staged_changes[norm_path])
 
     def clear_staged_change(self, file_path: str, key: str) -> None:
-        """
-        Clear a specific staged change for a file.
+        """Clear a specific staged change for a file.
 
         Args:
             file_path: The full path to the file.
             key: The metadata key to clear.
+
         """
         norm_path = normalize_path(file_path)
         if norm_path in self._staged_changes and key in self._staged_changes[norm_path]:
@@ -114,11 +112,11 @@ class MetadataStagingManager(QObject):
                 self.change_unstaged.emit(file_path, key)
 
     def clear_staged_changes(self, file_path: str) -> None:
-        """
-        Clear all staged changes for a specific file (e.g., after save).
+        """Clear all staged changes for a specific file (e.g., after save).
 
         Args:
             file_path: The full path to the file.
+
         """
         norm_path = normalize_path(file_path)
         if norm_path in self._staged_changes:

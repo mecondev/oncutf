@@ -1,5 +1,4 @@
-"""
-Module: progress_dialog.py
+"""Module: progress_dialog.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -38,8 +37,7 @@ logger = get_cached_logger(__name__)
 
 
 class ProgressDialog(QDialog):
-    """
-    Unified progress dialog for all background operations.
+    """Unified progress dialog for all background operations.
 
     Supports different operation types with configurable colors:
     - metadata_basic: Fast metadata loading (blue)
@@ -78,8 +76,7 @@ class ProgressDialog(QDialog):
         show_enhanced_info: bool = True,
         is_exit_save: bool = False,
     ) -> None:
-        """
-        Initialize the progress dialog.
+        """Initialize the progress dialog.
 
         Args:
             parent: Parent widget
@@ -88,6 +85,7 @@ class ProgressDialog(QDialog):
             cancel_callback: Function to call when user cancels operation
             show_enhanced_info: Whether to show enhanced size/time tracking
             is_exit_save: If True, ESC is always blocked (save on exit scenario)
+
         """
         super().__init__(parent)
         self.cancel_callback = cancel_callback
@@ -319,8 +317,7 @@ class ProgressDialog(QDialog):
         processed_bytes: int = 0,
         total_bytes: int = 0,
     ) -> None:
-        """
-        Unified method to update progress regardless of mode.
+        """Unified method to update progress regardless of mode.
 
         This method automatically selects the appropriate progress calculation
         based on the progress widget's current mode setting.
@@ -330,6 +327,7 @@ class ProgressDialog(QDialog):
             total_files: Total number of files to process
             processed_bytes: Current bytes processed (cumulative)
             total_bytes: Total bytes to process (optional, uses stored value if 0)
+
         """
         if hasattr(self.waiting_widget, "update_progress"):
             self.waiting_widget.update_progress(
@@ -354,8 +352,7 @@ class ProgressDialog(QDialog):
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":
-        """
-        Create a progress dialog for metadata operations.
+        """Create a progress dialog for metadata operations.
 
         Args:
             parent: Parent widget
@@ -366,6 +363,7 @@ class ProgressDialog(QDialog):
 
         Returns:
             ProgressDialog configured for metadata operations with optional size-based progress
+
         """
         operation_type = "metadata_extended" if is_extended else "metadata_basic"
         dialog = cls(
@@ -393,8 +391,7 @@ class ProgressDialog(QDialog):
         cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
     ) -> "ProgressDialog":
-        """
-        Create a progress dialog for file loading operations.
+        """Create a progress dialog for file loading operations.
 
         Args:
             parent: Parent widget
@@ -403,6 +400,7 @@ class ProgressDialog(QDialog):
 
         Returns:
             ProgressDialog configured for file loading operations
+
         """
         return cls(
             parent=parent,
@@ -419,8 +417,7 @@ class ProgressDialog(QDialog):
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":
-        """
-        Create a progress dialog for hash/checksum operations.
+        """Create a progress dialog for hash/checksum operations.
 
         Args:
             parent: Parent widget
@@ -430,6 +427,7 @@ class ProgressDialog(QDialog):
 
         Returns:
             ProgressDialog configured for hash operations with optional size-based progress
+
         """
         dialog = cls(
             parent=parent,

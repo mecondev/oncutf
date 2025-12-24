@@ -1,5 +1,4 @@
-"""
-Module: text_removal_module.py
+"""Module: text_removal_module.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -41,8 +40,7 @@ class TextRemovalMatch:
 
 
 class TextRemovalModule(BaseRenameModule):
-    """
-    Module for removing specific text patterns from filenames.
+    """Module for removing specific text patterns from filenames.
 
     This module allows users to remove text from different positions in filenames:
     - From the end of the filename
@@ -172,8 +170,7 @@ class TextRemovalModule(BaseRenameModule):
             self.preview_label.setText(error_msg)
 
     def _create_highlighted_html(self, text: str, matches: list[TextRemovalMatch]) -> str:
-        """
-        Create HTML with highlighted matches.
+        """Create HTML with highlighted matches.
 
         Args:
             text: Original text
@@ -181,6 +178,7 @@ class TextRemovalModule(BaseRenameModule):
 
         Returns:
             HTML string with strikethrough styling for matches
+
         """
         if not matches:
             return f'<span style="color: #666;">{self._html_escape(text)}</span>'
@@ -207,14 +205,14 @@ class TextRemovalModule(BaseRenameModule):
 
     @staticmethod
     def _html_escape(text: str) -> str:
-        """
-        Escape HTML special characters.
+        """Escape HTML special characters.
 
         Args:
             text: Text to escape
 
         Returns:
             HTML-safe text
+
         """
         return (
             text.replace("&", "&amp;")
@@ -236,11 +234,11 @@ class TextRemovalModule(BaseRenameModule):
         self._on_setting_changed()
 
     def get_data(self) -> dict:
-        """
-        Get the current configuration data.
+        """Get the current configuration data.
 
         Returns:
             Dictionary containing text removal configuration
+
         """
         return {
             "text_to_remove": self.text_input.text(),
@@ -249,11 +247,11 @@ class TextRemovalModule(BaseRenameModule):
         }
 
     def set_data(self, data: dict):
-        """
-        Set the configuration data.
+        """Set the configuration data.
 
         Args:
             data: Dictionary containing text removal configuration
+
         """
         self.text_input.setText(data.get("text_to_remove", ""))
         position = data.get("position", "End of name")
@@ -268,8 +266,7 @@ class TextRemovalModule(BaseRenameModule):
         position: str = "End of name",
         case_sensitive: bool = False,
     ) -> list[TextRemovalMatch]:
-        """
-        Find all matches of pattern in text based on position and case sensitivity.
+        """Find all matches of pattern in text based on position and case sensitivity.
 
         Args:
             text: Text to search in
@@ -279,6 +276,7 @@ class TextRemovalModule(BaseRenameModule):
 
         Returns:
             List of TextRemovalMatch objects representing matched regions
+
         """
         if not pattern:
             return []
@@ -331,8 +329,7 @@ class TextRemovalModule(BaseRenameModule):
 
     @staticmethod
     def apply_removal(text: str, matches: list[TextRemovalMatch]) -> str:
-        """
-        Apply removal of matched text regions.
+        """Apply removal of matched text regions.
 
         Args:
             text: Original text
@@ -340,6 +337,7 @@ class TextRemovalModule(BaseRenameModule):
 
         Returns:
             Text with matched regions removed
+
         """
         if not matches:
             return text
@@ -356,22 +354,21 @@ class TextRemovalModule(BaseRenameModule):
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        """
-        Check if this module configuration is effective.
+        """Check if this module configuration is effective.
 
         Args:
             data: Configuration data
 
         Returns:
             True if the module will modify filenames
+
         """
         text_to_remove = data.get("text_to_remove", "").strip()
         return len(text_to_remove) > 0
 
     @staticmethod
     def apply_from_data(data: dict, file_item, _index: int, _metadata_cache=None) -> str:
-        """
-        Apply text removal to a filename based on configuration data.
+        """Apply text removal to a filename based on configuration data.
 
         Args:
             data: Configuration data
@@ -381,6 +378,7 @@ class TextRemovalModule(BaseRenameModule):
 
         Returns:
             Modified filename with text removed
+
         """
         import os
 
@@ -402,8 +400,7 @@ class TextRemovalModule(BaseRenameModule):
         return f"{result_name}{ext}"
 
     def get_preview_text(self, file_item, index: int, metadata_cache=None) -> str:
-        """
-        Get preview text for this module.
+        """Get preview text for this module.
 
         Args:
             file_item: File item to preview
@@ -412,6 +409,7 @@ class TextRemovalModule(BaseRenameModule):
 
         Returns:
             Preview text showing the result
+
         """
         data = self.get_data()
         if not self.is_effective(data):

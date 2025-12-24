@@ -1,5 +1,4 @@
-"""
-Module: shortcut_manager.py
+"""Module: shortcut_manager.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class ShortcutManager:
-    """
-    Manages keyboard shortcuts for the main window.
+    """Manages keyboard shortcuts for the main window.
 
     This manager handles:
     - Clear file table shortcut functionality
@@ -38,18 +36,17 @@ class ShortcutManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize the ShortcutManager.
+        """Initialize the ShortcutManager.
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         logger.debug("[ShortcutManager] Initialized", extra={"dev_only": True})
 
     def clear_file_table_shortcut(self) -> None:
-        """
-        Clear file table triggered by Shift+Escape shortcut.
+        """Clear file table triggered by Shift+Escape shortcut.
         """
         logger.info("[MainWindow] CLEAR TABLE: Shift+Escape key pressed")
 
@@ -82,8 +79,7 @@ class ShortcutManager:
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 
     def undo_metadata_operation(self) -> None:
-        """
-        Undo the last metadata operation triggered by Ctrl+Z shortcut.
+        """Undo the last metadata operation triggered by Ctrl+Z shortcut.
         """
         logger.info("[MainWindow] UNDO: Ctrl+Z key pressed")
 
@@ -126,8 +122,7 @@ class ShortcutManager:
                 )
 
     def redo_metadata_operation(self) -> None:
-        """
-        Redo the last undone metadata operation triggered by Ctrl+Shift+Z shortcut.
+        """Redo the last undone metadata operation triggered by Ctrl+Shift+Z shortcut.
         """
         logger.info("[MainWindow] REDO: Ctrl+Shift+Z key pressed")
 
@@ -170,8 +165,7 @@ class ShortcutManager:
                 )
 
     def show_history_dialog(self) -> None:
-        """
-        Show the command history dialog triggered by Ctrl+Shift+Z shortcut.
+        """Show the command history dialog triggered by Ctrl+Shift+Z shortcut.
         """
         logger.info("[MainWindow] HISTORY: Ctrl+Shift+Z key pressed")
 
@@ -193,8 +187,7 @@ class ShortcutManager:
                 )
 
     def show_rename_history_dialog(self) -> None:
-        """
-        Show the rename history dialog.
+        """Show the rename history dialog.
         """
         logger.info("[MainWindow] RENAME_HISTORY: Showing rename history dialog")
 
@@ -216,8 +209,7 @@ class ShortcutManager:
                 )
 
     def show_results_hash_list(self) -> None:
-        """
-        Show the results hash list dialog triggered by Ctrl+L shortcut.
+        """Show the results hash list dialog triggered by Ctrl+L shortcut.
 
         Requirements:
         - Files must be selected
@@ -357,8 +349,7 @@ class ShortcutManager:
                 )
 
     def auto_color_by_folder_shortcut(self) -> None:
-        """
-        Auto-color files by folder triggered by Ctrl+Shift+C shortcut.
+        """Auto-color files by folder triggered by Ctrl+Shift+C shortcut.
         """
         logger.info("[MainWindow] AUTO_COLOR: Ctrl+Shift+C key pressed")
 
@@ -368,11 +359,11 @@ class ShortcutManager:
             logger.warning("[MainWindow] AUTO_COLOR: Method not found in main window")
 
     def get_shortcut_status(self) -> dict:
-        """
-        Get current shortcut and initialization status.
+        """Get current shortcut and initialization status.
 
         Returns:
             Dictionary with status information
+
         """
         # Get command manager status
         command_status = {}

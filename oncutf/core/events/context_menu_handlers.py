@@ -1,5 +1,4 @@
-"""
-Module: context_menu_handlers.py
+"""Module: context_menu_handlers.py
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -32,8 +31,7 @@ logger = get_cached_logger(__name__)
 
 
 class ContextMenuHandlers:
-    """
-    Handles context menu events and related operations.
+    """Handles context menu events and related operations.
 
     Responsibilities:
     - Table context menu (right-click)
@@ -60,8 +58,7 @@ class ContextMenuHandlers:
         logger.debug("ContextMenuHandlers initialized", extra={"dev_only": True})
 
     def handle_table_context_menu(self, position: Any) -> None:
-        """
-        Handles the right-click context menu for the file table.
+        """Handles the right-click context menu for the file table.
         Simplified for faster response - basic functionality only.
         """
         if not self.parent_window.file_model.files:
@@ -567,12 +564,12 @@ class ContextMenuHandlers:
     # =====================================
 
     def _handle_bulk_rotation(self, selected_files: list[FileItem]) -> None:
-        """
-        Handle bulk rotation setting to 0 deg for selected files.
+        """Handle bulk rotation setting to 0 deg for selected files.
         Analyzes metadata availability and prompts user to load if needed.
 
         Args:
             selected_files: List of FileItem objects to process
+
         """
         if not selected_files:
             logger.warning("[BulkRotation] No files selected for bulk rotation")
@@ -676,13 +673,13 @@ class ContextMenuHandlers:
     def _show_load_metadata_prompt(
         self, with_metadata_count: int, without_metadata_count: int
     ) -> str:
-        """
-        Show prompt asking user whether to load metadata for files that don't have it.
+        """Show prompt asking user whether to load metadata for files that don't have it.
 
         Returns:
             'load': Load metadata and continue
             'skip': Skip files without metadata
             'cancel': Cancel operation
+
         """
         from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
@@ -718,11 +715,11 @@ class ContextMenuHandlers:
         return button_map.get(selected, "cancel")
 
     def _apply_bulk_rotation(self, files_to_process: list[FileItem]) -> None:
-        """
-        Apply 0 deg rotation to the specified files, but only to files that actually need the change.
+        """Apply 0 deg rotation to the specified files, but only to files that actually need the change.
 
         Args:
             files_to_process: List of FileItem objects to set rotation to 0 deg
+
         """
         if not files_to_process:
             return
@@ -877,11 +874,11 @@ class ContextMenuHandlers:
             )
 
     def _get_current_rotation_for_file(self, file_item: FileItem) -> str:
-        """
-        Get the current rotation value for a file, checking cache first then file metadata.
+        """Get the current rotation value for a file, checking cache first then file metadata.
 
         Returns:
             str: Current rotation value ("0", "90", "180", "270") or "0" if not found
+
         """
         if hasattr(self.parent_window, "metadata_cache"):
             cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
@@ -902,14 +899,14 @@ class ContextMenuHandlers:
     # =====================================
 
     def _analyze_metadata_state(self, files: list[FileItem]) -> dict[str, Any]:
-        """
-        Analyze the metadata state of files to determine smart metadata menu options.
+        """Analyze the metadata state of files to determine smart metadata menu options.
 
         Args:
             files: List of FileItem objects to analyze
 
         Returns:
             dict: Analysis results with enable/disable logic for metadata menu items
+
         """
         if not files:
             return {
@@ -1035,14 +1032,14 @@ class ContextMenuHandlers:
         }
 
     def _analyze_hash_state(self, files: list[FileItem]) -> dict[str, Any]:
-        """
-        Analyze the hash state of files to determine smart hash menu options.
+        """Analyze the hash state of files to determine smart hash menu options.
 
         Args:
             files: List of FileItem objects to analyze
 
         Returns:
             dict: Analysis results with enable/disable logic for hash menu items
+
         """
         if not files:
             return {
@@ -1163,8 +1160,7 @@ class ContextMenuHandlers:
         extended: bool = False,
         scope: str = "selected",
     ) -> dict[str, Any]:
-        """
-        Unified file status checking for metadata and hash operations.
+        """Unified file status checking for metadata and hash operations.
 
         Args:
             files: List of files to check (None for all files)
@@ -1174,6 +1170,7 @@ class ContextMenuHandlers:
 
         Returns:
             dict with status information
+
         """
         if files is None:
             if scope == "all" and hasattr(self.parent_window, "file_model"):

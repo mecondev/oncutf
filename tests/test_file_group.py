@@ -1,5 +1,4 @@
-"""
-Tests for FileGroup model.
+"""Tests for FileGroup model.
 
 Author: Michael Economou
 Date: 2025-12-16

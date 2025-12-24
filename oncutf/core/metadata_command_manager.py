@@ -1,5 +1,4 @@
-"""
-Module: metadata_command_manager.py
+"""Module: metadata_command_manager.py
 
 Author: Michael Economou
 Date: 2025-07-08
@@ -28,8 +27,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataCommandManager(QObject):
-    """
-    Manages metadata commands with undo/redo functionality.
+    """Manages metadata commands with undo/redo functionality.
 
     Provides command execution, undo/redo operations, and maintains
     command history for metadata operations.
@@ -44,11 +42,11 @@ class MetadataCommandManager(QObject):
     history_changed = pyqtSignal()  # general history change
 
     def __init__(self, max_history: int | None = None):
-        """
-        Initialize metadata command manager.
+        """Initialize metadata command manager.
 
         Args:
             max_history: Maximum number of commands to keep in history
+
         """
         super().__init__()
         config_max_history: Any = UNDO_REDO_SETTINGS["MAX_UNDO_STEPS"]
@@ -70,8 +68,7 @@ class MetadataCommandManager(QObject):
         logger.info("[MetadataCommandManager] Initialized with max_history=%d", self.max_history)
 
     def execute_command(self, command: MetadataCommand, group_with_previous: bool = False) -> bool:
-        """
-        Execute a metadata command and add it to the undo stack.
+        """Execute a metadata command and add it to the undo stack.
 
         Args:
             command: Command to execute
@@ -79,6 +76,7 @@ class MetadataCommandManager(QObject):
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Execute the command
@@ -114,11 +112,11 @@ class MetadataCommandManager(QObject):
             return False
 
     def undo(self) -> bool:
-        """
-        Undo the last command.
+        """Undo the last command.
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Finalize any pending group first
@@ -154,11 +152,11 @@ class MetadataCommandManager(QObject):
             return False
 
     def redo(self) -> bool:
-        """
-        Redo the last undone command.
+        """Redo the last undone command.
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             if not self._redo_stack:
@@ -213,14 +211,14 @@ class MetadataCommandManager(QObject):
         return None
 
     def get_command_history(self, limit: int | None = None) -> list[dict[str, object]]:
-        """
-        Get command history for UI display.
+        """Get command history for UI display.
 
         Args:
             limit: Maximum number of commands to return
 
         Returns:
             List of command information dictionaries
+
         """
         self._finalize_pending_group()
 
@@ -273,14 +271,14 @@ class MetadataCommandManager(QObject):
         logger.info("[MetadataCommandManager] Command history cleared")
 
     def _can_group_with_previous(self, command: MetadataCommand) -> bool:
-        """
-        Check if command can be grouped with previous commands.
+        """Check if command can be grouped with previous commands.
 
         Args:
             command: Command to check
 
         Returns:
             True if can be grouped, False otherwise
+
         """
         if not self._last_command_time:
             return False

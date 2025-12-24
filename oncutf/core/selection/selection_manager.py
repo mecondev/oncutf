@@ -1,5 +1,4 @@
-"""
-Module: selection_manager.py
+"""Module: selection_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -20,8 +19,7 @@ logger = get_cached_logger(__name__)
 
 
 class SelectionManager:
-    """
-    Centralized selection management operations.
+    """Centralized selection management operations.
 
     Handles:
     - Select all, clear all, invert selection operations
@@ -47,8 +45,7 @@ class SelectionManager:
         return self._cache_helper
 
     def select_all_rows(self) -> None:
-        """
-        Selects all rows in the file table efficiently with wait cursor.
+        """Selects all rows in the file table efficiently with wait cursor.
         """
         if not self.parent_window:
             return
@@ -113,8 +110,7 @@ class SelectionManager:
                     file_table_view.blockSignals(False)
 
     def clear_all_selection(self) -> None:
-        """
-        Clears all selection in the file table.
+        """Clears all selection in the file table.
         """
         if not self.parent_window:
             return
@@ -163,8 +159,7 @@ class SelectionManager:
                     file_table_view.blockSignals(False)
 
     def invert_selection(self) -> None:
-        """
-        Inverts the selection in the file table efficiently using select_rows_range helper.
+        """Inverts the selection in the file table efficiently using select_rows_range helper.
         Shows wait cursor during the operation.
         """
         if not self.parent_window:
@@ -276,8 +271,7 @@ class SelectionManager:
                     file_table_view.blockSignals(False)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """
-        Synchronizes the checked state of files and updates preview + metadata panel.
+        """Synchronizes the checked state of files and updates preview + metadata panel.
         Optimized for performance with minimal logging and simplified logic.
         """
         if not self.parent_window:
@@ -370,8 +364,7 @@ class SelectionManager:
             rename_modules_area.set_current_file_for_modules(None)
 
     def force_preview_update(self) -> None:
-        """
-        Force a preview update regardless of cache state.
+        """Force a preview update regardless of cache state.
         Useful when rename modules change or other external factors require an update.
         """
         logger.debug("[Sync] Force preview update requested", extra={"dev_only": True})

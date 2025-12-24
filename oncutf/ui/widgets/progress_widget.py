@@ -1,5 +1,4 @@
-"""
-Module: progress_widget.py
+"""Module: progress_widget.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -60,8 +59,7 @@ logger = get_cached_logger(__name__)
 
 
 class ProgressWidget(QWidget):
-    """
-    Unified progress widget with flexible configuration.
+    """Unified progress widget with flexible configuration.
 
     Handles all progress display needs:
     - Basic progress (file counting, metadata loading)
@@ -79,8 +77,7 @@ class ProgressWidget(QWidget):
         fixed_width: int = 400,
         progress_mode: str = "count",
     ):
-        """
-        Initialize the progress widget.
+        """Initialize the progress widget.
 
         Args:
             parent: Parent widget
@@ -90,6 +87,7 @@ class ProgressWidget(QWidget):
             show_time_info: Whether to show time information
             fixed_width: Fixed width for the widget
             progress_mode: Progress bar mode - "count" for file count, "size" for data volume
+
         """
         super().__init__(parent)
         self.setFixedWidth(fixed_width)
@@ -303,12 +301,12 @@ class ProgressWidget(QWidget):
         self.percentage_label.setText(f"{percentage}%")
 
     def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
-        """
-        Set progress based on data volume (bytes processed).
+        """Set progress based on data volume (bytes processed).
 
         Args:
             processed_bytes: Number of bytes processed so far
             total_bytes: Total number of bytes to process
+
         """
         # Throttling to prevent excessive updates (max 20 updates per second)
         current_time = time.time()
@@ -345,11 +343,11 @@ class ProgressWidget(QWidget):
             )
 
     def set_status(self, text: str):
-        """
-        Set status text with intelligent truncation for long messages.
+        """Set status text with intelligent truncation for long messages.
 
         Args:
             text: Status message to display
+
         """
         if not text:
             self.status_label.setText("Ready...")
@@ -402,11 +400,11 @@ class ProgressWidget(QWidget):
         )
 
     def set_progress_mode(self, mode: str):
-        """
-        Set progress calculation mode.
+        """Set progress calculation mode.
 
         Args:
             mode: Either "count" (file count based) or "size" (byte size based)
+
         """
         if mode not in ["count", "size"]:
             logger.warning("[ProgressWidget] Invalid progress mode: %s, using 'count'", mode)
@@ -470,8 +468,7 @@ class ProgressWidget(QWidget):
         processed_bytes: int = 0,
         total_bytes: int = 0,
     ):
-        """
-        Unified method to update progress regardless of mode.
+        """Unified method to update progress regardless of mode.
 
         This method automatically selects the appropriate progress calculation
         based on the current progress_mode setting.
@@ -481,6 +478,7 @@ class ProgressWidget(QWidget):
             total_files: Total number of files to process
             processed_bytes: Current bytes processed (cumulative)
             total_bytes: Total bytes to process (optional, uses stored value if 0)
+
         """
         # Update internal size tracking
         if processed_bytes > 0:
@@ -519,8 +517,7 @@ class ProgressWidget(QWidget):
         self.size_label.setText(size_text)
 
     def _update_time_display(self):
-        """
-        Update time display with elapsed and estimated time in HH:MM:SS format.
+        """Update time display with elapsed and estimated time in HH:MM:SS format.
 
         Improved estimation (2025): More stable time calculation that doesn't reset
         between files - better than old approach that lost estimation accuracy.
@@ -600,14 +597,14 @@ class ProgressWidget(QWidget):
             )
 
     def _format_time_hms(self, seconds: float) -> str:
-        """
-        Format time in HH:MM:SS format for consistent display.
+        """Format time in HH:MM:SS format for consistent display.
 
         Args:
             seconds: Time in seconds
 
         Returns:
             Formatted time string (e.g., "00:01:30", "01:23:45")
+
         """
         if seconds < 0:
             return "00:00:00"
@@ -622,8 +619,7 @@ class ProgressWidget(QWidget):
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
     def _format_time(self, seconds: float) -> str:
-        """
-        Format time in a human-readable format (legacy method).
+        """Format time in a human-readable format (legacy method).
 
         Note: This method is kept for compatibility but _format_time_hms
         should be used for new implementations.
@@ -648,8 +644,7 @@ class ProgressWidget(QWidget):
                 return f"{hours}h {remaining_minutes}m"
 
     def set_size_info(self, processed_size: int, total_size: int = 0):
-        """
-        Update size information display with cumulative tracking.
+        """Update size information display with cumulative tracking.
 
         Improved handling (2025): Accepts cumulative processed_size that continuously
         increases - no more reset issues between files like the old approach.
@@ -659,6 +654,7 @@ class ProgressWidget(QWidget):
         Args:
             processed_size: Cumulative bytes processed (always increasing, 64-bit)
             total_size: Total bytes to process (optional, uses stored value if 0, 64-bit)
+
         """
         if not self.show_size_info or not hasattr(self, "size_label"):
             return

@@ -1,5 +1,4 @@
-"""
-Module: batch_processor.py
+"""Module: batch_processor.py
 
 Author: Michael Economou
 Date: 2025-05-01

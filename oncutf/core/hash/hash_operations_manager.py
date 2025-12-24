@@ -1,5 +1,4 @@
-"""
-Module: hash_operations_manager.py
+"""Module: hash_operations_manager.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -30,8 +29,7 @@ logger = get_cached_logger(__name__)
 
 
 class HashOperationsManager:
-    """
-    Manages all hash-related operations (duplicates, comparison, checksums).
+    """Manages all hash-related operations (duplicates, comparison, checksums).
 
     This manager handles:
     - Finding duplicate files based on CRC32 hashes
@@ -42,11 +40,11 @@ class HashOperationsManager:
     """
 
     def __init__(self, parent_window: QWidget) -> None:
-        """
-        Initialize the hash operations manager.
+        """Initialize the hash operations manager.
 
         Args:
             parent_window: Reference to the main window for accessing models, views, and managers
+
         """
         self.parent_window = parent_window
         self.hash_worker = None
@@ -57,53 +55,53 @@ class HashOperationsManager:
     # ===== Public Interface Methods =====
 
     def handle_find_duplicates(self, selected_files: list | None) -> None:
-        """
-        Handle duplicate file detection.
+        """Handle duplicate file detection.
 
         Searches for files with identical CRC32 hashes within the selected files
         or all files in the current folder.
 
         Args:
             selected_files: List of FileItem objects to search, or None for all files
+
         """
         self._handle_find_duplicates(selected_files)
 
     def handle_compare_external(self, selected_files: list) -> None:
-        """
-        Handle comparison of selected files with an external folder.
+        """Handle comparison of selected files with an external folder.
 
         Args:
             selected_files: List of FileItem objects to compare
+
         """
         self._handle_compare_external(selected_files)
 
     def handle_calculate_hashes(self, selected_files: list) -> None:
-        """
-        Handle calculating and displaying checksums for selected files.
+        """Handle calculating and displaying checksums for selected files.
 
         Args:
             selected_files: List of FileItem objects to calculate hashes for
+
         """
         self._handle_calculate_hashes(selected_files)
 
     def check_files_have_hashes(self, files: list | None = None) -> bool:
-        """
-        Check if specified files or all files have hash values.
+        """Check if specified files or all files have hash values.
 
         Args:
             files: List of FileItem objects to check, or None for all files
 
         Returns:
             bool: True if any files have hashes, False otherwise
+
         """
         return self._check_files_have_hashes(files)
 
     def get_files_without_hashes(self) -> list:
-        """
-        Get list of files that don't have hash values yet.
+        """Get list of files that don't have hash values yet.
 
         Returns:
             list: FileItem objects without hashes
+
         """
         if (
             not hasattr(self.parent_window, "file_table_model")
@@ -117,11 +115,11 @@ class HashOperationsManager:
     # ===== Hash Operation Workflow =====
 
     def _handle_find_duplicates(self, selected_files: list | None) -> None:
-        """
-        Handle duplicate file detection in selected or all files.
+        """Handle duplicate file detection in selected or all files.
 
         Args:
             selected_files: List of FileItem objects to search, or None for all files
+
         """
         # Determine scope
         if selected_files:
@@ -159,13 +157,13 @@ class HashOperationsManager:
         file_paths: list,
         external_folder: str | None = None,
     ) -> None:
-        """
-        Start a hash operation using a worker thread with progress dialog.
+        """Start a hash operation using a worker thread with progress dialog.
 
         Args:
             operation: Type of operation ("duplicates", "compare", "checksums")
             file_paths: List of file paths to process
             external_folder: Folder path for comparison operation
+
         """
         from oncutf.config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
         from oncutf.core.pyqt_imports import QMessageBox
@@ -253,12 +251,12 @@ class HashOperationsManager:
         )
 
     def _create_hash_progress_dialog(self, _operation: str, file_count: int) -> None:
-        """
-        Create and show a progress dialog for hash operations.
+        """Create and show a progress dialog for hash operations.
 
         Args:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
+
         """
         from oncutf.utils.progress_dialog import ProgressDialog
 
@@ -290,25 +288,25 @@ class HashOperationsManager:
             )
 
     def _on_hash_progress_updated(self, current: int, total: int, message: str) -> None:
-        """
-        Handle hash calculation progress updates.
+        """Handle hash calculation progress updates.
 
         Args:
             current: Current file number
             total: Total number of files
             message: Status message
+
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             self.hash_dialog.set_count(current, total)
             self.hash_dialog.set_status(message)
 
     def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
-        """
-        Handle file size progress updates (for large files).
+        """Handle file size progress updates (for large files).
 
         Args:
             current_bytes: Bytes processed so far
             total_bytes: Total file size
+
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Ensure the dialog is configured for size-based tracking and
@@ -342,13 +340,13 @@ class HashOperationsManager:
                     self.hash_dialog.update_progress(current_bytes, total_bytes)
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
-        """
-        Handle notification that a file's hash was calculated.
+        """Handle notification that a file's hash was calculated.
         Updates the file table icon in real-time.
 
         Args:
             file_path: Path to the file
             hash_value: Calculated hash value (optional, for backward compatibility)
+
         """
         try:
             # Store hash in persistent cache if provided (safe in main thread)
@@ -471,12 +469,12 @@ class HashOperationsManager:
     # ===== UI Display Methods =====
 
     def _show_duplicates_results(self, duplicates: dict, scope: str) -> None:
-        """
-        Show duplicate detection results to the user.
+        """Show duplicate detection results to the user.
 
         Args:
             duplicates: Dictionary with hash as key and list of duplicate FileItem objects as value
             scope: Either "selected" or "all" for display purposes
+
         """
         if not duplicates:
             from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
@@ -529,12 +527,12 @@ class HashOperationsManager:
         )
 
     def _show_comparison_results(self, results: dict, external_folder: str) -> None:
-        """
-        Show external folder comparison results to the user.
+        """Show external folder comparison results to the user.
 
         Args:
             results: Dictionary with comparison results
             external_folder: Path to the external folder that was compared
+
         """
         if not results:
             from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
@@ -603,12 +601,12 @@ class HashOperationsManager:
         )
 
     def _show_hash_results(self, hash_results: dict, was_cancelled: bool = False) -> None:
-        """
-        Show checksum calculation results to the user.
+        """Show checksum calculation results to the user.
 
         Args:
             hash_results: Dictionary with filename as key and hash data as value
             was_cancelled: Whether the operation was cancelled (for partial results)
+
         """
         if not hash_results:
             from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
@@ -661,11 +659,11 @@ class HashOperationsManager:
     # ===== Entry Point Handlers =====
 
     def _handle_compare_external(self, selected_files: list) -> None:
-        """
-        Handle comparison of selected files with an external folder.
+        """Handle comparison of selected files with an external folder.
 
         Args:
             selected_files: List of FileItem objects to compare
+
         """
         if not selected_files:
             logger.warning("[HashManager] No files selected for external comparison")
@@ -714,11 +712,11 @@ class HashOperationsManager:
             )
 
     def _handle_calculate_hashes(self, selected_files: list) -> None:
-        """
-        Handle calculating and displaying checksums for selected files.
+        """Handle calculating and displaying checksums for selected files.
 
         Args:
             selected_files: List of FileItem objects to calculate hashes for
+
         """
         if not selected_files:
             logger.warning("[HashManager] No files selected for checksum calculation")
@@ -737,11 +735,11 @@ class HashOperationsManager:
             self._start_hash_operation("checksums", file_paths)
 
     def _calculate_single_file_hash_fast(self, file_item) -> None:
-        """
-        Calculate hash for a single small file using wait cursor (fast, no cancellation).
+        """Calculate hash for a single small file using wait cursor (fast, no cancellation).
 
         Args:
             file_item: FileItem object to calculate hash for
+
         """
         from oncutf.core.hash.hash_manager import HashManager
         from oncutf.utils.cursor_helper import wait_cursor
@@ -769,14 +767,14 @@ class HashOperationsManager:
     # ===== Status Check Methods =====
 
     def _check_files_have_hashes(self, files: list | None = None) -> bool:
-        """
-        Check if any of the specified files have hash values.
+        """Check if any of the specified files have hash values.
 
         Args:
             files: List of FileItem objects to check, or None for all files
 
         Returns:
             bool: True if any files have hashes, False otherwise
+
         """
         if files is None:
             # Check all files

@@ -63,8 +63,7 @@ class MemoryStats:
 
 
 class LRUCache:
-    """
-    LRU (Least Recently Used) cache implementation with memory management.
+    """LRU (Least Recently Used) cache implementation with memory management.
 
     Features:
     - Automatic eviction based on size or count limits
@@ -74,12 +73,12 @@ class LRUCache:
     """
 
     def __init__(self, max_size: int = 1000, max_memory_mb: float = 100.0):
-        """
-        Initialize LRU cache.
+        """Initialize LRU cache.
 
         Args:
             max_size: Maximum number of entries
             max_memory_mb: Maximum memory usage in MB
+
         """
         self.max_size = max_size
         self.max_memory_mb = max_memory_mb
@@ -181,8 +180,7 @@ class LRUCache:
 
 
 class MemoryManager(QObject):
-    """
-    Comprehensive memory management system for OnCutF.
+    """Comprehensive memory management system for OnCutF.
 
     Features:
     - Automatic cache cleanup
@@ -223,22 +221,22 @@ class MemoryManager(QObject):
         logger.info("[MemoryManager] Initialized with automatic cleanup")
 
     def register_cache(self, name: str, cache_object: Any) -> None:
-        """
-        Register a cache object for monitoring and cleanup.
+        """Register a cache object for monitoring and cleanup.
 
         Args:
             name: Cache identifier
             cache_object: Cache object (must have cleanup methods)
+
         """
         self._registered_caches[name] = cache_object
         logger.debug("[MemoryManager] Registered cache: %s", name)
 
     def register_cleanup_callback(self, callback: Callable) -> None:
-        """
-        Register a cleanup callback function.
+        """Register a cleanup callback function.
 
         Args:
             callback: Function to call during cleanup
+
         """
         self._cleanup_callbacks.append(callback)
         logger.debug("[MemoryManager] Registered cleanup callback")

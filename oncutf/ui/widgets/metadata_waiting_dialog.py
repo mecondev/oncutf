@@ -1,5 +1,4 @@
-"""
-Module: metadata_waiting_dialog.py
+"""Module: metadata_waiting_dialog.py
 
 Author: Michael Economou
 Date: 2025-05-24
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class OperationDialog(QDialog):
-    """
-    QDialog wrapper for background operations (legacy).
+    """QDialog wrapper for background operations (legacy).
 
     This dialog:
     - Has no title bar (frameless)

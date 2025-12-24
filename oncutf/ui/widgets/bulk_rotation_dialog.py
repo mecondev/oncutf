@@ -1,5 +1,4 @@
-"""
-Module: bulk_rotation_dialog.py
+"""Module: bulk_rotation_dialog.py
 
 Author: Michael Economou
 Date: 2025-06-01

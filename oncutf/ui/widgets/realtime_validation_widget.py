@@ -1,5 +1,4 @@
-"""
-Module: realtime_validation_widget.py
+"""Module: realtime_validation_widget.py
 
 Author: Michael Economou
 Date: 2025-05-01

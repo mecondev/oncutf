@@ -1,5 +1,4 @@
-"""
-Module: custom_file_system_model.py
+"""Module: custom_file_system_model.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -22,8 +21,7 @@ logger = get_cached_logger(__name__)
 
 
 class CustomFileSystemModel(QFileSystemModel):
-    """
-    Custom file system model that uses feather icons for consistent appearance.
+    """Custom file system model that uses feather icons for consistent appearance.
 
     Features:
     - Custom folder icons (folder.svg)
@@ -182,7 +180,6 @@ class CustomFileSystemModel(QFileSystemModel):
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # type: ignore
         """Override data method to provide custom icons"""
-
         # Handle decoration role (icons)
         if role == Qt.DecorationRole:  # type: ignore
             if index.isValid():
@@ -208,14 +205,14 @@ class CustomFileSystemModel(QFileSystemModel):
         return False
 
     def refresh(self, index: QModelIndex = QModelIndex()) -> None:
-        """
-        Refresh the file system model to detect new/removed drives.
+        """Refresh the file system model to detect new/removed drives.
 
         This method updates the model by clearing and reloading file system data,
         which is useful when drives are connected/disconnected.
 
         Args:
             index: The model index to refresh (default: root)
+
         """
         try:
             # If no index provided, refresh the root (all drives)

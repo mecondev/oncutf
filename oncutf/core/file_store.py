@@ -1,5 +1,4 @@
-"""
-Module: file_store.py
+"""Module: file_store.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileStore(QObject):
-    """
-    Centralized file management and operations.
+    """Centralized file management and operations.
 
     Handles all file-related logic previously scattered across MainWindow
     and other components. Provides optimized file loading and caching.
@@ -59,8 +57,7 @@ class FileStore(QObject):
     def get_file_items_from_folder(
         self, folder_path: str, *, use_cache: bool = True
     ) -> list[FileItem]:
-        """
-        Scans a folder and returns FileItem objects for supported files.
+        """Scans a folder and returns FileItem objects for supported files.
 
         Moved from MainWindow.get_file_items_from_folder() with optimizations:
         - Caching for frequently accessed folders
@@ -73,6 +70,7 @@ class FileStore(QObject):
 
         Returns:
             List of FileItem objects for supported files
+
         """
         self._load_timer.start()
 
@@ -113,8 +111,7 @@ class FileStore(QObject):
         return file_items
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> list[FileItem]:
-        """
-        Loads a mix of files and folders into FileItem objects.
+        """Loads a mix of files and folders into FileItem objects.
 
         Moved from MainWindow.load_files_from_paths() with optimizations:
         - Batch processing
@@ -127,6 +124,7 @@ class FileStore(QObject):
 
         Returns:
             List of FileItem objects loaded
+
         """
         self._load_timer.start()
 
@@ -187,11 +185,11 @@ class FileStore(QObject):
         return self._loaded_files.copy()
 
     def set_loaded_files(self, files: list[FileItem]) -> None:
-        """
-        Set loaded files directly (used when files are loaded externally).
+        """Set loaded files directly (used when files are loaded externally).
 
         Args:
             files: List of FileItem objects to set as loaded
+
         """
         self._loaded_files = files.copy() if files else []
         self.files_loaded.emit(self._loaded_files)
@@ -278,6 +276,7 @@ class FileStore(QObject):
 
         Returns:
             bool: True if files were refreshed
+
         """
         if not self._loaded_files:
             logger.debug("[FileStore] No files loaded, skipping refresh")

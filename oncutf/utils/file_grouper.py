@@ -1,5 +1,4 @@
-"""
-Module: file_grouper.py
+"""Module: file_grouper.py
 
 Author: Michael Economou
 Date: 2025-12-17
@@ -24,14 +23,14 @@ logger = get_cached_logger(__name__)
 
 
 def group_files_by_folder(files: list[FileItem]) -> list[FileGroup]:
-    """
-    Group files by their parent folder.
+    """Group files by their parent folder.
 
     Args:
         files: List of FileItem objects
 
     Returns:
         List of FileGroup objects, one per unique folder
+
     """
     folder_groups: dict[Path, FileGroup] = {}
 
@@ -58,8 +57,7 @@ def group_files_by_folder(files: list[FileItem]) -> list[FileGroup]:
 def group_files_by_companion(
     files: list[FileItem], companion_patterns: dict[str, list[str]] | None = None
 ) -> list[FileGroup]:
-    """
-    Group files by companion relationships (e.g., RAW+JPG pairs).
+    """Group files by companion relationships (e.g., RAW+JPG pairs).
 
     Companion files are identified by:
     1. Same base filename (without extension)
@@ -73,6 +71,7 @@ def group_files_by_companion(
 
     Returns:
         List of FileGroup objects, one per companion group or standalone file
+
     """
     if companion_patterns is None:
         # Default companion patterns: RAW formats + JPG
@@ -163,8 +162,7 @@ def group_files_by_companion(
 
 
 def get_file_group_index(file_item: FileItem, groups: list[FileGroup]) -> tuple[int, int]:
-    """
-    Get the group index and index within group for a file.
+    """Get the group index and index within group for a file.
 
     Args:
         file_item: File to find
@@ -173,6 +171,7 @@ def get_file_group_index(file_item: FileItem, groups: list[FileGroup]) -> tuple[
     Returns:
         Tuple of (group_index, index_within_group)
         Returns (-1, -1) if file not found
+
     """
     for group_idx, group in enumerate(groups):
         for file_idx, f in enumerate(group.files):
@@ -189,8 +188,7 @@ def calculate_filegroup_counter_index(
     global_index: int,
     groups: list[FileGroup] | None = None,
 ) -> int:
-    """
-    Calculate counter index for PER_FILEGROUP scope.
+    """Calculate counter index for PER_FILEGROUP scope.
 
     Args:
         file_item: Current file
@@ -200,6 +198,7 @@ def calculate_filegroup_counter_index(
 
     Returns:
         Index within the file's group
+
     """
     if groups is None:
         # Default: group by folder

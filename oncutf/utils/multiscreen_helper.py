@@ -1,5 +1,4 @@
-"""
-Module: multiscreen_helper.py
+"""Module: multiscreen_helper.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -15,14 +14,14 @@ logger = get_cached_logger(__name__)
 
 
 def get_screen_for_widget(widget: QWidget) -> QScreen | None:
-    """
-    Get the screen that contains the given widget.
+    """Get the screen that contains the given widget.
 
     Args:
         widget: The widget to find the screen for
 
     Returns:
         QScreen object containing the widget, or None if not found
+
     """
     if not widget:
         return None
@@ -59,12 +58,12 @@ def get_screen_for_widget(widget: QWidget) -> QScreen | None:
 
 
 def center_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = None) -> None:
-    """
-    Center a dialog on the same screen as its parent widget.
+    """Center a dialog on the same screen as its parent widget.
 
     Args:
         dialog: The dialog to center
         parent: The parent widget. If None, uses dialog.parent()
+
     """
     target_parent = parent or dialog.parent()
 
@@ -85,12 +84,12 @@ def center_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = Non
 
 
 def center_dialog_on_screen(dialog: QWidget, screen: QScreen | None = None) -> None:
-    """
-    Center a dialog on the specified screen.
+    """Center a dialog on the specified screen.
 
     Args:
         dialog: The dialog to center
         screen: The screen to center on. If None, uses primary screen
+
     """
     app = QApplication.instance()
     if not app:
@@ -122,12 +121,12 @@ def center_dialog_on_screen(dialog: QWidget, screen: QScreen | None = None) -> N
 
 
 def position_dialog_relative_to_parent(dialog: QWidget, parent: QWidget | None = None) -> None:
-    """
-    Position a dialog relative to its parent widget, ensuring it stays on the same screen.
+    """Position a dialog relative to its parent widget, ensuring it stays on the same screen.
 
     Args:
         dialog: The dialog to position
         parent: The parent widget. If None, uses dialog.parent()
+
     """
     target_parent = parent or dialog.parent()
 
@@ -177,13 +176,13 @@ def position_dialog_relative_to_parent(dialog: QWidget, parent: QWidget | None =
 
 
 def ensure_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = None) -> None:
-    """
-    Ensure a dialog is positioned on the same screen as its parent.
+    """Ensure a dialog is positioned on the same screen as its parent.
     This is the main function to use for dialog positioning.
 
     Args:
         dialog: The dialog to position
         parent: The parent widget. If None, uses dialog.parent()
+
     """
     try:
         position_dialog_relative_to_parent(dialog, parent)
@@ -204,8 +203,7 @@ def get_existing_directory_on_parent_screen(
     directory: str = "",
     options: QFileDialog.Options = QFileDialog.ShowDirsOnly,
 ) -> str:
-    """
-    Show a directory selection dialog positioned on the same screen as the parent.
+    """Show a directory selection dialog positioned on the same screen as the parent.
 
     Args:
         parent: Parent widget
@@ -215,6 +213,7 @@ def get_existing_directory_on_parent_screen(
 
     Returns:
         Selected directory path, or empty string if cancelled
+
     """
     # For static methods, we need to use a different approach
     # Create a temporary dialog and position it properly
@@ -241,8 +240,7 @@ def get_open_file_name_on_parent_screen(
     filter: str = "",
     options: QFileDialog.Options = QFileDialog.Options(),
 ) -> tuple[str, str]:
-    """
-    Show a file selection dialog positioned on the same screen as the parent.
+    """Show a file selection dialog positioned on the same screen as the parent.
 
     Args:
         parent: Parent widget
@@ -253,6 +251,7 @@ def get_open_file_name_on_parent_screen(
 
     Returns:
         Tuple of (selected_file_path, selected_filter)
+
     """
     dialog = QFileDialog(parent, caption, directory, filter)
     dialog.setFileMode(QFileDialog.ExistingFile)
@@ -278,8 +277,7 @@ def get_save_file_name_on_parent_screen(
     filter: str = "",
     options: QFileDialog.Options = QFileDialog.Options(),
 ) -> tuple[str, str]:
-    """
-    Show a save file dialog positioned on the same screen as the parent.
+    """Show a save file dialog positioned on the same screen as the parent.
 
     Args:
         parent: Parent widget
@@ -290,6 +288,7 @@ def get_save_file_name_on_parent_screen(
 
     Returns:
         Tuple of (selected_file_path, selected_filter)
+
     """
     dialog = QFileDialog(parent, caption, directory, filter)
     dialog.setFileMode(QFileDialog.AnyFile)

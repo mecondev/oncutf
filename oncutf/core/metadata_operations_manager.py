@@ -1,5 +1,4 @@
-"""
-Module: metadata_operations_manager.py
+"""Module: metadata_operations_manager.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -29,8 +28,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataOperationsManager:
-    """
-    Manages all metadata-related operations (export, field editing, compatibility).
+    """Manages all metadata-related operations (export, field editing, compatibility).
 
     This manager handles:
     - Exporting metadata to JSON or Markdown formats
@@ -40,11 +38,11 @@ class MetadataOperationsManager:
     """
 
     def __init__(self, parent_window: QWidget) -> None:
-        """
-        Initialize the metadata operations manager.
+        """Initialize the metadata operations manager.
 
         Args:
             parent_window: Reference to the main window for accessing models, views, and managers
+
         """
         self.parent_window = parent_window
         logger.debug("MetadataOperationsManager initialized", extra={"dev_only": True})
@@ -52,28 +50,27 @@ class MetadataOperationsManager:
     # ===== Public Interface Methods =====
 
     def handle_export_metadata(self, file_items: list, scope: str) -> None:
-        """
-        Handle metadata export dialog and process.
+        """Handle metadata export dialog and process.
 
         Args:
             file_items: List of FileItem objects to export
             scope: Either "selected" or "all" for display purposes
+
         """
         self._handle_export_metadata(file_items, scope)
 
     def handle_metadata_field_edit(self, selected_files: list, field_name: str) -> None:
-        """
-        Handle metadata field editing for selected files.
+        """Handle metadata field editing for selected files.
 
         Args:
             selected_files: List of FileItem objects to edit
             field_name: Name of the field to edit (Title, Artist, etc.)
+
         """
         self._handle_metadata_field_edit(selected_files, field_name)
 
     def check_metadata_field_compatibility(self, selected_files: list, field_name: str) -> bool:
-        """
-        Check if all selected files support a specific metadata field.
+        """Check if all selected files support a specific metadata field.
 
         Args:
             selected_files: List of FileItem objects to check
@@ -81,27 +78,28 @@ class MetadataOperationsManager:
 
         Returns:
             bool: True if ALL selected files support the field, False otherwise
+
         """
         return self._check_metadata_field_compatibility(selected_files, field_name)
 
     def check_selected_files_have_metadata(self, selected_files: list) -> bool:
-        """
-        Check if any of the selected files have metadata.
+        """Check if any of the selected files have metadata.
 
         Args:
             selected_files: List of FileItem objects to check
 
         Returns:
             bool: True if any files have metadata, False otherwise
+
         """
         return any(self._file_has_metadata(f) for f in selected_files)
 
     def check_any_files_have_metadata(self) -> bool:
-        """
-        Check if any file in the current folder has metadata.
+        """Check if any file in the current folder has metadata.
 
         Returns:
             bool: True if any files have metadata, False otherwise
+
         """
         if (
             not hasattr(self.parent_window, "file_table_model")
@@ -217,12 +215,12 @@ class MetadataOperationsManager:
     # ===== Metadata Field Editing =====
 
     def _handle_metadata_field_edit(self, selected_files: list, field_name: str) -> None:
-        """
-        Handle metadata field editing for selected files.
+        """Handle metadata field editing for selected files.
 
         Args:
             selected_files: List of FileItem objects to edit
             field_name: Name of the field to edit (Title, Artist, etc.)
+
         """
         if not selected_files:
             logger.warning("[MetadataEdit] No files selected for %s editing", field_name)
@@ -297,8 +295,7 @@ class MetadataOperationsManager:
             )
 
     def _get_current_field_value(self, file_item, field_name: str) -> str:
-        """
-        Get the current value of a metadata field for a file.
+        """Get the current value of a metadata field for a file.
 
         Args:
             file_item: FileItem object
@@ -306,6 +303,7 @@ class MetadataOperationsManager:
 
         Returns:
             str: Current value or empty string if not found
+
         """
         try:
             if not self.parent_window.metadata_cache:
@@ -350,8 +348,7 @@ class MetadataOperationsManager:
     def _apply_metadata_field_changes(
         self, files_to_modify: list, field_name: str, new_value: str
     ) -> None:
-        """
-        Apply metadata field changes to files by updating the metadata tree view.
+        """Apply metadata field changes to files by updating the metadata tree view.
         This ensures the changes are properly tracked and can be saved later.
         """
         if not hasattr(self.parent_window, "metadata_tree_view"):
@@ -391,8 +388,7 @@ class MetadataOperationsManager:
         )
 
     def _get_preferred_field_standard(self, file_item, field_name: str) -> str | None:
-        """
-        Get the preferred metadata standard for a field based on file type and existing metadata.
+        """Get the preferred metadata standard for a field based on file type and existing metadata.
 
         Args:
             file_item: FileItem object
@@ -400,6 +396,7 @@ class MetadataOperationsManager:
 
         Returns:
             str: Preferred field standard name (e.g., "XMP:Title") or None if not supported
+
         """
         try:
             cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
@@ -471,8 +468,7 @@ class MetadataOperationsManager:
     # ===== Field Compatibility Detection =====
 
     def _check_metadata_field_compatibility(self, selected_files: list, field_name: str) -> bool:
-        """
-        Check if all selected files support a specific metadata field.
+        """Check if all selected files support a specific metadata field.
         Uses exiftool metadata to determine compatibility.
 
         Args:
@@ -481,6 +477,7 @@ class MetadataOperationsManager:
 
         Returns:
             bool: True if ALL selected files support the field, False otherwise
+
         """
         if not selected_files:
             logger.debug(
@@ -518,8 +515,7 @@ class MetadataOperationsManager:
         return result
 
     def _file_supports_field(self, file_item, field_name: str) -> bool:
-        """
-        Check if a file supports a specific metadata field.
+        """Check if a file supports a specific metadata field.
         Uses exiftool's field availability information from metadata cache.
 
         Args:
@@ -528,6 +524,7 @@ class MetadataOperationsManager:
 
         Returns:
             bool: True if the file supports the field, False otherwise
+
         """
         try:
             # Get metadata from cache
@@ -626,8 +623,7 @@ class MetadataOperationsManager:
     # ===== File Type Detection =====
 
     def _get_file_type_field_support(self, file_item, metadata: dict) -> set:
-        """
-        Determine which metadata fields a file type supports based on its metadata.
+        """Determine which metadata fields a file type supports based on its metadata.
 
         Args:
             file_item: FileItem object
@@ -635,6 +631,7 @@ class MetadataOperationsManager:
 
         Returns:
             set: Set of supported field names
+
         """
         try:
             # Basic fields that most files with metadata support

@@ -1,5 +1,4 @@
-"""
-Module: placeholder_helper.py
+"""Module: placeholder_helper.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -25,8 +24,7 @@ _PIXMAP_CACHE: dict[tuple[str, int], QPixmap] = {}
 
 
 class PlaceholderHelper:
-    """
-    Unified placeholder management for widgets.
+    """Unified placeholder management for widgets.
 
     Features:
     - Consistent placeholder appearance across all widgets
@@ -43,14 +41,14 @@ class PlaceholderHelper:
         placeholder_text: str = "",
         icon_size: int = 160,
     ):
-        """
-        Initialize placeholder helper.
+        """Initialize placeholder helper.
 
         Args:
             parent_widget: The widget that will contain the placeholder
             icon_name: Name of the icon file (without extension)
             placeholder_text: Optional text to display (defaults to icon only)
             icon_size: Size of the placeholder icon in pixels
+
         """
         self.parent_widget = parent_widget
         self.icon_name = icon_name
@@ -245,8 +243,7 @@ class PlaceholderHelper:
 def create_placeholder_helper(
     widget: QWidget, placeholder_type: str, text: str = "", icon_size: int = 160
 ) -> PlaceholderHelper:
-    """
-    Factory function to create placeholder helpers for different widget types.
+    """Factory function to create placeholder helpers for different widget types.
 
     Args:
         widget: The widget to add placeholder to
@@ -256,6 +253,7 @@ def create_placeholder_helper(
 
     Returns:
         PlaceholderHelper instance
+
     """
     icon_mapping = {
         "file_table": "File_table_placeholder_fixed",

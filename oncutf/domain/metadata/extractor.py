@@ -1,5 +1,4 @@
-"""
-Module: extractor.py
+"""Module: extractor.py
 
 Author: Michael Economou
 Date: December 17, 2025
@@ -43,8 +42,7 @@ class ExtractionResult:
 
 
 class MetadataExtractor:
-    """
-    Pure Python metadata extraction logic.
+    """Pure Python metadata extraction logic.
     No Qt/PyQt5 dependencies - fully testable in isolation.
 
     Supports dependency injection for services:
@@ -67,6 +65,7 @@ class MetadataExtractor:
                               If None, retrieved from ServiceRegistry.
             hash_service: Optional service for hash computation.
                           If None, retrieved from ServiceRegistry.
+
         """
         self._cache: dict[str, ExtractionResult] = {}
         self._cache_timestamp = 0.0
@@ -116,8 +115,7 @@ class MetadataExtractor:
         category: str = "file_dates",
         metadata: dict[str, Any] | None = None,
     ) -> ExtractionResult:
-        """
-        Extract metadata value from file.
+        """Extract metadata value from file.
 
         Args:
             file_path: Path to the file
@@ -127,6 +125,7 @@ class MetadataExtractor:
 
         Returns:
             ExtractionResult with extracted value
+
         """
         # Normalize path
         if isinstance(file_path, str):
@@ -370,8 +369,7 @@ class MetadataExtractor:
         )
 
     def clean_for_filename(self, value: str) -> str:
-        """
-        Clean metadata value for filename safety.
+        """Clean metadata value for filename safety.
 
         Windows-safe filename cleaning that handles all invalid characters.
         Time separators and timezone offsets use underscores for consistency.
@@ -381,6 +379,7 @@ class MetadataExtractor:
 
         Returns:
             Cleaned value safe for use in filenames
+
         """
         if not value:
             return value
@@ -430,14 +429,14 @@ class MetadataExtractor:
         return cleaned
 
     def get_available_fields(self, category: str) -> list[str]:
-        """
-        Get list of available fields for a category.
+        """Get list of available fields for a category.
 
         Args:
             category: Category ('file_dates', 'hash', 'metadata_keys')
 
         Returns:
             List of field names
+
         """
         category_fields = {
             "file_dates": [

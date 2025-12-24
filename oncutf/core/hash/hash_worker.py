@@ -1,5 +1,4 @@
-"""
-Module: hash_worker.py
+"""Module: hash_worker.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -32,8 +31,7 @@ logger = get_cached_logger(__name__)
 
 
 class HashWorker(QThread):
-    """
-    Background worker for hash calculation operations with batch optimization.
+    """Background worker for hash calculation operations with batch optimization.
 
     Supports three main operations:
     1. Find duplicates in file list
@@ -274,11 +272,11 @@ class HashWorker(QThread):
                     logger.error("[HashWorker] Error flushing batch operations: %s", e)
 
     def _check_cache_before_calculation(self, file_path: str) -> str | None:
-        """
-        Check if hash exists in cache before calculating.
+        """Check if hash exists in cache before calculating.
 
         Returns:
             str: Hash value if found in cache, None otherwise
+
         """
         try:
             hash_value = self._hash_manager.get_cached_hash(file_path)
@@ -322,12 +320,12 @@ class HashWorker(QThread):
     def _process_file_with_progress(
         self, file_path: str, i: int, total_files: int
     ) -> tuple[str | None, int]:
-        """
-        Helper method to process a single file with progress tracking.
+        """Helper method to process a single file with progress tracking.
         Checks cache first before calculating hash.
 
         Returns:
             tuple: (file_hash, file_size) or (None, file_size) if hash failed
+
         """
         filename = os.path.basename(file_path)
         self.progress_updated.emit(i + 1, total_files, filename)

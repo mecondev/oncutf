@@ -1,5 +1,4 @@
-"""
-Module: shutdown_coordinator.py
+"""Module: shutdown_coordinator.py
 
 Author: Michael Economou
 Date: 2025-11-21
@@ -53,8 +52,7 @@ class ShutdownResult:
 
 
 class ShutdownCoordinator(QObject):
-    """
-    Coordinates graceful shutdown of all concurrent components.
+    """Coordinates graceful shutdown of all concurrent components.
 
     Manages ordered shutdown sequence with health checks, timeouts,
     and progress reporting.
@@ -80,11 +78,11 @@ class ShutdownCoordinator(QObject):
     }
 
     def __init__(self, parent=None):
-        """
-        Initialize shutdown coordinator.
+        """Initialize shutdown coordinator.
 
         Args:
             parent: Optional parent QObject
+
         """
         super().__init__(parent)
 
@@ -125,12 +123,12 @@ class ShutdownCoordinator(QObject):
         logger.debug("[ShutdownCoordinator] ExifTool wrapper registered")
 
     def set_phase_timeout(self, phase: ShutdownPhase, timeout: float):
-        """
-        Set custom timeout for a specific phase.
+        """Set custom timeout for a specific phase.
 
         Args:
             phase: Shutdown phase
             timeout: Timeout in seconds
+
         """
         self.phase_timeouts[phase] = timeout
         logger.debug("[ShutdownCoordinator] %s timeout set to %ss", phase.value, timeout)
@@ -140,8 +138,7 @@ class ShutdownCoordinator(QObject):
         progress_callback: Callable[[str, float], None] | None = None,
         emergency: bool = False,
     ) -> bool:
-        """
-        Execute coordinated shutdown of all components.
+        """Execute coordinated shutdown of all components.
 
         Args:
             progress_callback: Optional callback for progress updates (message, progress)
@@ -149,6 +146,7 @@ class ShutdownCoordinator(QObject):
 
         Returns:
             True if all phases completed successfully
+
         """
         if self._shutdown_in_progress:
             logger.warning("[ShutdownCoordinator] Shutdown already in progress")
@@ -238,8 +236,7 @@ class ShutdownCoordinator(QObject):
     def _execute_phase(
         self, phase: ShutdownPhase, shutdown_func: Callable[[], tuple[bool, str | None]]
     ) -> ShutdownResult:
-        """
-        Execute a single shutdown phase with timeout handling.
+        """Execute a single shutdown phase with timeout handling.
 
         Args:
             phase: Shutdown phase
@@ -247,6 +244,7 @@ class ShutdownCoordinator(QObject):
 
         Returns:
             ShutdownResult with phase outcome
+
         """
         phase_start = time.time()
         timeout = self.phase_timeouts[phase]
@@ -314,14 +312,14 @@ class ShutdownCoordinator(QObject):
             )
 
     def _get_component_health(self, phase: ShutdownPhase) -> dict[str, Any] | None:
-        """
-        Get health check for component corresponding to phase.
+        """Get health check for component corresponding to phase.
 
         Args:
             phase: Shutdown phase
 
         Returns:
             Health check dictionary or None if not available
+
         """
         try:
             if phase == ShutdownPhase.TIMERS and self._timer_manager:
@@ -462,20 +460,20 @@ class ShutdownCoordinator(QObject):
             return False, f"Finalization failed: {e}"
 
     def get_results(self) -> list[ShutdownResult]:
-        """
-        Get results from last shutdown execution.
+        """Get results from last shutdown execution.
 
         Returns:
             List of ShutdownResult objects
+
         """
         return self._results.copy()
 
     def get_summary(self) -> dict[str, Any]:
-        """
-        Get summary of last shutdown execution.
+        """Get summary of last shutdown execution.
 
         Returns:
             Dictionary with shutdown statistics
+
         """
         if not self._results:
             return {"executed": False}
@@ -509,11 +507,11 @@ _shutdown_coordinator_instance: ShutdownCoordinator | None = None
 
 
 def get_shutdown_coordinator() -> ShutdownCoordinator:
-    """
-    Get the global shutdown coordinator instance.
+    """Get the global shutdown coordinator instance.
 
     Returns:
         ShutdownCoordinator singleton instance
+
     """
     global _shutdown_coordinator_instance
     if _shutdown_coordinator_instance is None:

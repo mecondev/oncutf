@@ -1,5 +1,4 @@
-"""
-Module: parallel_hash_worker.py
+"""Module: parallel_hash_worker.py
 
 Author: Michael Economou
 Date: 2025-11-24
@@ -34,8 +33,7 @@ logger = get_cached_logger(__name__)
 
 
 class ParallelHashWorker(QThread):
-    """
-    Parallel hash worker using ThreadPoolExecutor for concurrent processing.
+    """Parallel hash worker using ThreadPoolExecutor for concurrent processing.
 
     Provides significant speedup for multiple files by utilizing all CPU cores
     while respecting I/O constraints.
@@ -62,12 +60,12 @@ class ParallelHashWorker(QThread):
     file_hash_calculated = pyqtSignal(str, str)  # file_path, hash_value
 
     def __init__(self, parent=None, max_workers: int | None = None):
-        """
-        Initialize parallel hash worker.
+        """Initialize parallel hash worker.
 
         Args:
             parent: Parent QObject (usually main window)
             max_workers: Maximum worker threads (None = auto-detect optimal count)
+
         """
         super().__init__(parent)
         self._mutex = QMutex()
@@ -215,14 +213,14 @@ class ParallelHashWorker(QThread):
         return total_size
 
     def _process_single_file(self, file_path: str) -> tuple[str, str | None, int]:
-        """
-        Process a single file in worker thread (called concurrently).
+        """Process a single file in worker thread (called concurrently).
 
         Args:
             file_path: Path to file to process
 
         Returns:
             tuple: (file_path, hash_value, file_size)
+
         """
         if self.is_cancelled():
             return (file_path, None, 0)

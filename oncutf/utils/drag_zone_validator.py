@@ -1,5 +1,4 @@
-"""
-Module: drag_zone_validator.py
+"""Module: drag_zone_validator.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -17,8 +16,7 @@ logger = get_cached_logger(__name__)
 
 
 class DragZoneValidator:
-    """
-    Centralized logic for validating drag & drop zones.
+    """Centralized logic for validating drag & drop zones.
 
     Provides consistent validation rules across different source widgets.
     Features "left and returned" logic for improved UX.
@@ -54,12 +52,12 @@ class DragZoneValidator:
 
     @classmethod
     def validate_drop_zone(cls, drag_source: str, log_prefix: str) -> None:
-        """
-        Validate current drop zone and update visual feedback with "left and returned" logic.
+        """Validate current drop zone and update visual feedback with "left and returned" logic.
 
         Args:
             drag_source: Source of the drag operation ("file_tree" or "file_table")
             log_prefix: Prefix for log messages (e.g., "[FileTreeView]")
+
         """
         # Get widget under cursor
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
@@ -163,11 +161,11 @@ class DragZoneValidator:
 
     @classmethod
     def is_valid_zone(cls, drag_source: str, widget_class_name: str) -> bool | None:
-        """
-        Check if a widget class is valid/invalid for a drag source.
+        """Check if a widget class is valid/invalid for a drag source.
 
         Returns:
             True if valid, False if invalid, None if neutral
+
         """
         if drag_source not in cls.ZONE_RULES:
             return None

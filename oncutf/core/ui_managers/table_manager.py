@@ -1,5 +1,4 @@
-"""
-Module: table_manager.py
+"""Module: table_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -18,8 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class TableManager:
-    """
-    Manager for handling all file table operations.
+    """Manager for handling all file table operations.
 
     This manager consolidates table-related logic that was previously scattered
     throughout the MainWindow, providing a clean interface for:
@@ -30,11 +28,11 @@ class TableManager:
     """
 
     def __init__(self, parent_window):
-        """
-        Initialize the TableManager.
+        """Initialize the TableManager.
 
         Args:
             parent_window: Reference to the MainWindow instance
+
         """
         self.parent_window = parent_window
         logger.debug("[TableManager] Initialized", extra={"dev_only": True})
@@ -42,8 +40,7 @@ class TableManager:
     def sort_by_column(
         self, column: int, _order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
     ) -> None:
-        """
-        Sorts the file table based on clicked header column or context menu.
+        """Sorts the file table based on clicked header column or context menu.
         Toggle logic unless a force_order is explicitly provided.
         """
         if column == 0:
@@ -66,8 +63,7 @@ class TableManager:
         header.setSortIndicator(column, new_order)
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
-        """
-        Clears the file table and shows a placeholder message.
+        """Clears the file table and shows a placeholder message.
         """
         # Only clear metadata modifications if we're actually changing folders
         # This preserves modifications when reloading the same folder
@@ -128,14 +124,14 @@ class TableManager:
             self.parent_window.preview_tables_view.clear_tables()
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
-        """
-        Prepare the file table view with the given file items.
+        """Prepare the file table view with the given file items.
 
         Delegates the core table preparation to the FileTableView and handles
         application-specific logic like updating labels and preview maps.
 
         Args:
             file_items: List of FileItem objects to display in the table
+
         """
         # Delegate table preparation to the view itself
         self.parent_window.file_table_view.prepare_table(file_items)
@@ -173,12 +169,12 @@ class TableManager:
             )
 
     def get_selected_files(self) -> list[FileItem]:
-        """
-        Returns a list of currently selected files (blue highlighted) in table display order.
+        """Returns a list of currently selected files (blue highlighted) in table display order.
 
         Returns:
             List of FileItem objects that are currently selected in the table view,
             sorted by their row position to maintain consistent rename order
+
         """
         if not self.parent_window.file_model or not self.parent_window.file_model.files:
             return []
@@ -204,8 +200,7 @@ class TableManager:
         return selected_files
 
     def after_check_change(self) -> None:
-        """
-        Called after the selection state of any file is modified.
+        """Called after the selection state of any file is modified.
 
         Triggers UI refresh for the file table, updates the header state and label,
         and regenerates the filename preview.
@@ -215,8 +210,7 @@ class TableManager:
         self.parent_window.request_preview_update()
 
     def get_common_metadata_fields(self) -> list[str]:
-        """
-        Returns the intersection of metadata keys from all selected files.
+        """Returns the intersection of metadata keys from all selected files.
         """
         selected_files = self.get_selected_files()
         if not selected_files:
@@ -239,8 +233,7 @@ class TableManager:
         return sorted(common_keys) if common_keys else []
 
     def set_fields_from_list(self, field_names: list[str]) -> None:
-        """
-        Replaces the combo box entries with the given field names.
+        """Replaces the combo box entries with the given field names.
         """
         self.parent_window.combo.clear()
         for name in field_names:
@@ -250,8 +243,7 @@ class TableManager:
         self.parent_window.updated.emit(self.parent_window)
 
     def restore_fileitem_metadata_from_cache(self) -> None:
-        """
-        After a folder reload (e.g. after rename), reassigns cached metadata
+        """After a folder reload (e.g. after rename), reassigns cached metadata
         to the corresponding FileItem objects in self.file_model.files.
 
         This allows icons and previews to remain consistent without rescanning.

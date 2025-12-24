@@ -1,5 +1,4 @@
-"""
-Module: rename_modules_area.py
+"""Module: rename_modules_area.py
 
 Author: Michael Economou
 Date: 2025-05-27
@@ -38,8 +37,7 @@ logger = get_cached_logger(__name__)
 
 
 class RenameModulesArea(QWidget):
-    """
-    Main area that contains all rename modules and final transformation widget.
+    """Main area that contains all rename modules and final transformation widget.
     Supports scrolling for large numbers of modules.
 
     Now supports ApplicationContext for optimized access patterns while maintaining
@@ -121,8 +119,7 @@ class RenameModulesArea(QWidget):
         )
 
     def add_module(self):
-        """
-        Add a new RenameModuleWidget to the area.
+        """Add a new RenameModuleWidget to the area.
         Now uses ApplicationContext-optimized approach when available.
         """
         # Always pass parent_window for stability
@@ -185,11 +182,11 @@ class RenameModulesArea(QWidget):
         self.scroll_layout.addStretch()
 
     def set_current_file_for_modules(self, file_item) -> None:
-        """
-        Set the current file for all SpecifiedText modules.
+        """Set the current file for all SpecifiedText modules.
 
         Args:
             file_item: The FileItem object representing the currently selected file
+
         """
         for module_widget in self.module_widgets:
             if (
@@ -202,15 +199,13 @@ class RenameModulesArea(QWidget):
                     module_instance.set_current_file(file_item)
 
     def get_all_data(self) -> dict:
-        """
-        Collects data from all modules.
+        """Collects data from all modules.
         Note: post_transform data is now handled by FinalTransformContainer.
         """
         return {"modules": [m.to_dict() for m in self.module_widgets]}
 
     def get_all_module_instances(self) -> list[BaseRenameModule]:
-        """
-        Returns all current rename module widget instances.
+        """Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
         logger.debug("[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True})
@@ -223,11 +218,11 @@ class RenameModulesArea(QWidget):
         return self.module_widgets
 
     def set_theme(self, theme: str):
-        """
-        Change the theme for the rename modules area.
+        """Change the theme for the rename modules area.
 
         Args:
             theme: 'dark' or 'light'
+
         """
         self.current_theme = theme
         # Theme styling is now handled by the global theme engine

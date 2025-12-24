@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: test_filesize.py
+"""Module: test_filesize.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -105,7 +104,6 @@ class TestFileSizeComparison(unittest.TestCase):
     @pytest.mark.skipif(IS_WINDOWS, reason="Linux-specific test using ls/stat commands")
     def test_file_size_comparison(self):
         """Print detailed comparison for manual verification."""
-
         for test_file in self.test_files:
             file_path = project_root / test_file
             if file_path.exists():
@@ -143,7 +141,6 @@ class TestFileSizeComparison(unittest.TestCase):
 
 def run_manual_test():
     """Run the test as a standalone script for manual verification."""
-
     test_files = ["oncutf.config.py", "main.py", "requirements.txt"]
 
     for test_file in test_files:

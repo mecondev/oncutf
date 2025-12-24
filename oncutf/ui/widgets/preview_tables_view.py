@@ -1,5 +1,4 @@
-"""
-Module: preview_tables_view.py
+"""Module: preview_tables_view.py
 
 Author: Michael Economou
 Date: 2025-06-11
@@ -39,8 +38,7 @@ logger = get_cached_logger(__name__)
 
 
 class PreviewTableWidget(QTableWidget):
-    """
-    Custom QTableWidget for preview tables with intelligent scrollbar management.
+    """Custom QTableWidget for preview tables with intelligent scrollbar management.
     Emits resize signal when the widget is resized to update placeholders and column widths.
     Supports enhanced tooltips for validation errors.
     """
@@ -88,8 +86,7 @@ class PreviewTableWidget(QTableWidget):
 
 
 class PreviewTablesView(QWidget):
-    """
-    View that manages the preview tables for old/new filenames.
+    """View that manages the preview tables for old/new filenames.
 
     Features:
     - Unified placeholder management using PlaceholderHelper
@@ -264,8 +261,7 @@ class PreviewTablesView(QWidget):
         self.refresh_requested.emit()
 
     def _on_refresh_shortcut_pressed(self) -> None:
-        """
-        Handle F5 shortcut press - refresh preview with status message.
+        """Handle F5 shortcut press - refresh preview with status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
 

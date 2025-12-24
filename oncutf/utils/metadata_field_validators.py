@@ -1,5 +1,4 @@
-"""
-Module: metadata_field_validators.py
+"""Module: metadata_field_validators.py
 
 Author: Michael Economou
 Date: 2025-06-20
@@ -18,8 +17,7 @@ def _default_validator(_value):
 
 
 class MetadataFieldValidator:
-    """
-    Validation rules for different metadata fields.
+    """Validation rules for different metadata fields.
 
     Provides static methods for validating various metadata field types
     with appropriate error messages and length limits.
@@ -38,8 +36,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_title(value: str) -> tuple[bool, str]:
-        """
-        Validate title field.
+        """Validate title field.
 
         Rules:
         - Cannot be empty (after stripping)
@@ -51,6 +48,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Title must be a string"
@@ -77,8 +75,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_artist(value: str) -> tuple[bool, str]:
-        """
-        Validate artist/author field.
+        """Validate artist/author field.
 
         Rules:
         - Can be empty
@@ -90,6 +87,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Artist must be a string"
@@ -110,8 +108,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_copyright(value: str) -> tuple[bool, str]:
-        """
-        Validate copyright field.
+        """Validate copyright field.
 
         Rules:
         - Can be empty
@@ -123,6 +120,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Copyright must be a string"
@@ -143,8 +141,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_description(value: str) -> tuple[bool, str]:
-        """
-        Validate description field.
+        """Validate description field.
 
         Rules:
         - Can be empty
@@ -156,6 +153,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Description must be a string"
@@ -176,8 +174,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_keywords(value: str) -> tuple[bool, str]:
-        """
-        Validate keywords field (comma-separated).
+        """Validate keywords field (comma-separated).
 
         Rules:
         - Can be empty
@@ -191,6 +188,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Keywords must be a string"
@@ -222,8 +220,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_rotation(value: str) -> tuple[bool, str]:
-        """
-        Validate rotation field.
+        """Validate rotation field.
 
         Rules:
         - Can be empty (defaults to 0)
@@ -235,6 +232,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not isinstance(value, str):
             return False, "Rotation must be a string"
@@ -276,14 +274,14 @@ class MetadataFieldValidator:
 
     @staticmethod
     def parse_keywords(value: str) -> list[str]:
-        """
-        Parse and clean keywords string into a list.
+        """Parse and clean keywords string into a list.
 
         Args:
             value: Keywords string (comma-separated)
 
         Returns:
             List of cleaned keyword strings
+
         """
         if not isinstance(value, str):
             return []
@@ -298,14 +296,14 @@ class MetadataFieldValidator:
 
     @staticmethod
     def format_keywords(keywords: list[str]) -> str:
-        """
-        Format a list of keywords into a comma-separated string.
+        """Format a list of keywords into a comma-separated string.
 
         Args:
             keywords: List of keyword strings
 
         Returns:
             Comma-separated keywords string
+
         """
         if not keywords:
             return ""
@@ -316,14 +314,14 @@ class MetadataFieldValidator:
 
     @staticmethod
     def get_field_validator(field_name: str):
-        """
-        Get the appropriate validator function for a field name.
+        """Get the appropriate validator function for a field name.
 
         Args:
             field_name: Name of the field to validate
 
         Returns:
             Validator function or None if not found
+
         """
         validators = {
             "Title": MetadataFieldValidator.validate_title,
@@ -339,8 +337,7 @@ class MetadataFieldValidator:
 
     @staticmethod
     def validate_field(field_name: str, value):
-        """
-        Validate a field by name. Always returns (bool, error_message_or_None).
+        """Validate a field by name. Always returns (bool, error_message_or_None).
         Uses _default_validator when no callable is found.
 
         Args:
@@ -349,6 +346,7 @@ class MetadataFieldValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         # Lookup validator at runtime to avoid forward-reference issues
         validator = MetadataFieldValidator.get_field_validator(field_name)

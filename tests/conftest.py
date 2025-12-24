@@ -1,5 +1,4 @@
-"""
-Module: conftest.py
+"""Module: conftest.py
 
 Author: Michael Economou
 Date: 2025-05-09

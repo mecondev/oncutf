@@ -1,5 +1,4 @@
-"""
-Module: drag_handler.py
+"""Module: drag_handler.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -35,8 +34,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataTreeDragHandler:
-    """
-    Handler for drag and drop operations in the metadata tree.
+    """Handler for drag and drop operations in the metadata tree.
 
     This class encapsulates all drag & drop logic:
     - Validating drag sources (only accepts from internal file table)
@@ -55,22 +53,22 @@ class MetadataTreeDragHandler:
     MIME_TYPE = "application/x-oncutf-filetable"
 
     def __init__(self, tree_view: MetadataTreeView) -> None:
-        """
-        Initialize the drag handler.
+        """Initialize the drag handler.
 
         Args:
             tree_view: The MetadataTreeView instance this handler belongs to
+
         """
         self._tree_view = tree_view
 
     def handle_drag_enter(self, event: QDragEnterEvent) -> None:
-        """
-        Accept drag only if it comes from our application's file table.
+        """Accept drag only if it comes from our application's file table.
 
         This is identified by the presence of our custom MIME type.
 
         Args:
             event: The drag enter event
+
         """
         if event.mimeData().hasFormat(self.MIME_TYPE):
             event.acceptProposedAction()
@@ -78,11 +76,11 @@ class MetadataTreeDragHandler:
             event.ignore()
 
     def handle_drag_move(self, event: QDragMoveEvent) -> None:
-        """
-        Continue accepting drag move events only for items from our file table.
+        """Continue accepting drag move events only for items from our file table.
 
         Args:
             event: The drag move event
+
         """
         if event.mimeData().hasFormat(self.MIME_TYPE):
             event.acceptProposedAction()
@@ -90,14 +88,14 @@ class MetadataTreeDragHandler:
             event.ignore()
 
     def handle_drop(self, event: QDropEvent) -> None:
-        """
-        Handle drop events for file loading.
+        """Handle drop events for file loading.
 
         Processes the dropped files and triggers metadata loading via the
         parent window's application service.
 
         Args:
             event: The drop event
+
         """
         # Get and deactivate any drag cancel filter
         _drag_cancel_filter = getattr(self._tree_view, "_drag_cancel_filter", None)
@@ -137,12 +135,12 @@ class MetadataTreeDragHandler:
         schedule_drag_cleanup(self._complete_drag_cleanup, 0)
 
     def _trigger_metadata_load(self, files: list[str], use_extended: bool) -> None:
-        """
-        Trigger metadata loading for dropped files.
+        """Trigger metadata loading for dropped files.
 
         Args:
             files: List of file paths to load metadata for
             use_extended: Whether to load extended metadata
+
         """
         parent_window = self._tree_view._get_parent_with_file_table()
         if not parent_window or not hasattr(parent_window, "load_metadata_for_items"):
@@ -189,11 +187,11 @@ class MetadataTreeDragHandler:
         )
 
     def _perform_drag_cleanup(self, _drag_cancel_filter: Any) -> None:
-        """
-        Centralized drag cleanup logic.
+        """Centralized drag cleanup logic.
 
         Args:
             _drag_cancel_filter: The drag cancel filter (interface parameter)
+
         """
         # Force cleanup of any drag state
         while QApplication.overrideCursor():

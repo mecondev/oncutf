@@ -1,5 +1,4 @@
-"""
-Module: external_tools.py
+"""Module: external_tools.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -44,8 +43,7 @@ class ToolName(str, Enum):
 
 
 def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
-    """
-    Get path to bundled external tool, handling platform-specific binaries.
+    """Get path to bundled external tool, handling platform-specific binaries.
 
     This function searches for tools in the bin/ directory structure:
     - bin/windows/exiftool.exe
@@ -62,6 +60,7 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
         >>> path = get_bundled_tool_path(ToolName.EXIFTOOL)
         >>> if path:
         ...     print(f"Found at: {path}")
+
     """
     system = platform.system()
     machine = platform.machine().lower()
@@ -119,8 +118,7 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
 
 
 def get_system_tool_path(tool_name: ToolName) -> str | None:
-    """
-    Find tool in system PATH.
+    """Find tool in system PATH.
 
     Args:
         tool_name: Tool to locate
@@ -132,6 +130,7 @@ def get_system_tool_path(tool_name: ToolName) -> str | None:
         >>> path = get_system_tool_path(ToolName.EXIFTOOL)
         >>> if path:
         ...     print(f"System exiftool: {path}")
+
     """
     try:
         # Use 'where' on Windows, 'which' on Unix-like
@@ -152,8 +151,7 @@ def get_system_tool_path(tool_name: ToolName) -> str | None:
 
 
 def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
-    """
-    Get the path to an external tool, with fallback strategies.
+    """Get the path to an external tool, with fallback strategies.
 
     Strategy:
     1. Try bundled version (if prefer_bundled=True)
@@ -176,6 +174,7 @@ def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
         ...     print(f"Using: {exiftool}")
         ... except FileNotFoundError:
         ...     print("ExifTool not available")
+
     """
     # Try bundled first if preferred
     if prefer_bundled:
@@ -199,8 +198,7 @@ def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
 
 
 def is_tool_available(tool_name: ToolName, prefer_bundled: bool = True) -> bool:
-    """
-    Check if a tool is available without raising exceptions.
+    """Check if a tool is available without raising exceptions.
 
     Args:
         tool_name: Tool to check
@@ -214,6 +212,7 @@ def is_tool_available(tool_name: ToolName, prefer_bundled: bool = True) -> bool:
         ...     print("ExifTool is ready")
         ... else:
         ...     print("ExifTool not installed")
+
     """
     try:
         get_tool_path(tool_name, prefer_bundled=prefer_bundled)
@@ -232,8 +231,7 @@ def _get_download_url(tool_name: ToolName) -> str:
 
 
 def get_tool_version(tool_name: ToolName) -> str | None:
-    """
-    Get version of an external tool.
+    """Get version of an external tool.
 
     Args:
         tool_name: Tool to check
@@ -245,6 +243,7 @@ def get_tool_version(tool_name: ToolName) -> str | None:
         >>> version = get_tool_version(ToolName.EXIFTOOL)
         >>> if version:
         ...     print(f"ExifTool version: {version}")
+
     """
     try:
         tool_path = get_tool_path(tool_name)

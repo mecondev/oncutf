@@ -1,5 +1,4 @@
-"""
-Unit tests for DateTimeEditDialog.
+"""Unit tests for DateTimeEditDialog.
 
 Created: 2025-12-03
 """

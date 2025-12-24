@@ -1,5 +1,4 @@
-"""
-Module: persistent_hash_cache.py
+"""Module: persistent_hash_cache.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -25,8 +24,7 @@ MAX_MEMORY_CACHE_SIZE = 2000
 
 
 class PersistentHashCache:
-    """
-    Enhanced persistent hash cache using improved database architecture.
+    """Enhanced persistent hash cache using improved database architecture.
 
     Benefits:
     - Better separation of concerns with dedicated hash table

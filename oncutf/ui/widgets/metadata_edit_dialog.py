@@ -1,5 +1,4 @@
-"""
-Module: metadata_edit_dialog.py
+"""Module: metadata_edit_dialog.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -27,8 +26,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataEditDialog(QDialog):
-    """
-    Generic dialog for editing metadata fields.
+    """Generic dialog for editing metadata fields.
 
     Supports:
     - Single field editing (Title, Artist, Copyright, etc.)
@@ -486,8 +484,7 @@ class MetadataEditDialog(QDialog):
     def edit_metadata_field(
         parent, selected_files, metadata_cache, field_name: str, current_value: str = ""
     ):
-        """
-        Static method to show metadata edit dialog and return results.
+        """Static method to show metadata edit dialog and return results.
 
         Args:
             parent: Parent widget
@@ -498,6 +495,7 @@ class MetadataEditDialog(QDialog):
 
         Returns:
             Tuple of (success: bool, value: str, files_to_modify: List)
+
         """
         dialog = MetadataEditDialog(
             parent, selected_files, metadata_cache, field_name, current_value

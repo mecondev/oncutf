@@ -1,5 +1,4 @@
-"""
-Module: file_validation_manager.py
+"""Module: file_validation_manager.py
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -97,8 +96,7 @@ class ValidationThresholds:
 
 
 class FileValidationManager:
-    """
-    Advanced file validation manager with content-based identification.
+    """Advanced file validation manager with content-based identification.
 
     Optimized for archival applications where files may be moved/renamed
     at the OS level, requiring robust content-based tracking.
@@ -221,8 +219,7 @@ class FileValidationManager:
         return base_ttl
 
     def validate_file_medium_accuracy(self, file_path: str, cached_data: dict) -> ValidationResult:
-        """
-        Validate file using medium accuracy (mtime + size).
+        """Validate file using medium accuracy (mtime + size).
         Balanced approach for archival applications.
         """
         try:
@@ -269,8 +266,7 @@ class FileValidationManager:
             )
 
     def find_moved_file_by_content(self, target_signature: FileSignature) -> dict | None:
-        """
-        Find moved file using content-based identification.
+        """Find moved file using content-based identification.
         Critical for archival applications where files are moved at OS level.
         """
         if not target_signature.content_hash:
@@ -336,8 +332,7 @@ class FileValidationManager:
         return None
 
     def identify_file_with_content_fallback(self, file_path: str) -> tuple[dict | None, bool]:
-        """
-        Identify file using hybrid approach: path-based first, then content-based.
+        """Identify file using hybrid approach: path-based first, then content-based.
         Returns (file_record, was_moved).
         """
         # First try: direct path lookup (fastest)
@@ -383,8 +378,7 @@ class FileValidationManager:
     def should_warn_user(
         self, operation: OperationType, file_count: int, total_size_mb: float
     ) -> bool:
-        """
-        Determine if user should be warned about operation size.
+        """Determine if user should be warned about operation size.
         Considers user preferences and operation-specific thresholds.
         """
         thresholds = self.get_operation_thresholds(operation)
@@ -432,8 +426,7 @@ class FileValidationManager:
     def validate_operation_batch(
         self, files: list[str], operation: OperationType
     ) -> dict[str, Any]:
-        """
-        Validate a batch of files for specific operation.
+        """Validate a batch of files for specific operation.
         Returns validation summary and recommendations.
         """
         if not files:

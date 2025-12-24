@@ -1,5 +1,4 @@
-"""
-Module: json_config_manager.py
+"""Module: json_config_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -325,14 +324,14 @@ class JSONConfigManager:
             self.save()
 
     def save_immediate(self, force: bool = True) -> bool:
-        """
-        Force immediate save (used on app/dialog close).
+        """Force immediate save (used on app/dialog close).
 
         Args:
             force: If True, always save. If False, only save if dirty.
 
         Returns:
             True if save successful, False otherwise
+
         """
         with self._lock:
             # Cancel pending auto-save timer
@@ -364,8 +363,7 @@ class JSONConfigManager:
     # =====================================
 
     def get_cached(self, category_name: str, key: str, default: Any = None) -> Any:
-        """
-        Get value from cache, fallback to category.
+        """Get value from cache, fallback to category.
 
         Args:
             category_name: Category name
@@ -374,6 +372,7 @@ class JSONConfigManager:
 
         Returns:
             Cached value or category value or default
+
         """
         if not self._cache_enabled:
             category = self.get_category(category_name)
@@ -390,13 +389,13 @@ class JSONConfigManager:
         return value
 
     def set_cached(self, category_name: str, key: str, value: Any) -> None:
-        """
-        Set value in cache and mark dirty.
+        """Set value in cache and mark dirty.
 
         Args:
             category_name: Category name
             key: Setting key
             value: Value to set
+
         """
         cache_key = f"{category_name}.{key}"
         self._cache[cache_key] = value

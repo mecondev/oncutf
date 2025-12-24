@@ -1,5 +1,4 @@
-"""
-Tests for CounterScope and CounterModule scope support.
+"""Tests for CounterScope and CounterModule scope support.
 
 Author: Michael Economou
 Date: 2025-12-16

@@ -1,5 +1,4 @@
-"""
-Module: metadata_loader.py
+"""Module: metadata_loader.py
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -38,8 +37,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataLoader:
-    """
-    Orchestrates metadata loading operations.
+    """Orchestrates metadata loading operations.
 
     This class encapsulates the core loading logic that was previously
     in UnifiedMetadataManager, including:
@@ -57,14 +55,14 @@ class MetadataLoader:
         companion_handler: CompanionMetadataHandler | None = None,
         progress_handler: MetadataProgressHandler | None = None,
     ) -> None:
-        """
-        Initialize metadata loader.
+        """Initialize metadata loader.
 
         Args:
             parent_window: Reference to the main application window
             exiftool_getter: Callable that returns ExifToolWrapper instance
             companion_handler: Handler for companion file metadata
             progress_handler: Handler for progress dialogs
+
         """
         self._parent_window = parent_window
         self._exiftool_getter = exiftool_getter
@@ -132,14 +130,14 @@ class MetadataLoader:
     # =========================================================================
 
     def determine_loading_mode(self, file_count: int) -> str:
-        """
-        Determine the appropriate loading mode based on file count.
+        """Determine the appropriate loading mode based on file count.
 
         Args:
             file_count: Number of files to process
 
         Returns:
             str: Loading mode ("single_file_wait_cursor" or "multiple_files_dialog")
+
         """
         if file_count == 1:
             return "single_file_wait_cursor"
@@ -158,8 +156,7 @@ class MetadataLoader:
         source: str = "unknown",
         on_finished: Callable[[], None] | None = None,
     ) -> None:
-        """
-        Load metadata for the given FileItem objects.
+        """Load metadata for the given FileItem objects.
 
         Loading modes (determined by file count AFTER cache check):
         - Single file: Immediate loading with wait_cursor (fast and responsive)
@@ -175,6 +172,7 @@ class MetadataLoader:
             use_extended: Whether to use extended metadata loading (Shift modifier)
             source: Source of the request (for logging)
             on_finished: Optional callback when loading completes
+
         """
         if not items:
             logger.debug("[MetadataLoader] No items provided for metadata loading")
@@ -239,8 +237,7 @@ class MetadataLoader:
     def _filter_cached_items(
         self, items: list[FileItem], use_extended: bool
     ) -> tuple[list[FileItem], int]:
-        """
-        Filter items that already have valid cached metadata.
+        """Filter items that already have valid cached metadata.
 
         Args:
             items: List of items to check
@@ -248,6 +245,7 @@ class MetadataLoader:
 
         Returns:
             Tuple of (items_needing_load, skipped_count)
+
         """
         needs_loading = []
         skipped_count = 0
@@ -311,13 +309,13 @@ class MetadataLoader:
     def _load_single_file_metadata(
         self, item: FileItem, use_extended: bool, metadata_tree_view: Any
     ) -> None:
-        """
-        Load metadata for a single file with wait_cursor (immediate, no dialog).
+        """Load metadata for a single file with wait_cursor (immediate, no dialog).
 
         Args:
             item: The FileItem to load metadata for
             use_extended: Whether to use extended metadata
             metadata_tree_view: Reference to metadata tree view for display
+
         """
         from oncutf.utils.cursor_helper import wait_cursor
 
@@ -382,8 +380,7 @@ class MetadataLoader:
         source: str,
         on_finished: Callable[[], None] | None = None,
     ) -> None:
-        """
-        Load metadata for multiple files with ProgressDialog and parallel loading.
+        """Load metadata for multiple files with ProgressDialog and parallel loading.
 
         Args:
             needs_loading: List of FileItem objects that need loading
@@ -391,6 +388,7 @@ class MetadataLoader:
             metadata_tree_view: Reference to metadata tree view for display
             source: Source of the request (for logging)
             on_finished: Optional callback when loading completes
+
         """
         # Cancellation support
         self._metadata_cancelled = False
@@ -541,8 +539,7 @@ class MetadataLoader:
     def load_metadata_streaming(
         self, items: list[FileItem], use_extended: bool = False
     ) -> Iterator[tuple[FileItem, dict[str, Any]]]:
-        """
-        Yield metadata as soon as available using parallel loading.
+        """Yield metadata as soon as available using parallel loading.
 
         Args:
             items: List of FileItem objects to load metadata for
@@ -550,6 +547,7 @@ class MetadataLoader:
 
         Yields:
             Tuple[FileItem, dict]: (item, metadata)
+
         """
         if not items:
             return
@@ -625,8 +623,7 @@ class MetadataLoader:
     def _enhance_with_companions(
         self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
     ) -> dict[str, Any]:
-        """
-        Enhance metadata with companion file data.
+        """Enhance metadata with companion file data.
 
         Args:
             file_item: The main file being processed
@@ -635,6 +632,7 @@ class MetadataLoader:
 
         Returns:
             Enhanced metadata including companion data
+
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return base_metadata
@@ -651,8 +649,7 @@ class MetadataLoader:
     def _enhance_metadata_with_companions_inline(
         self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
     ) -> dict[str, Any]:
-        """
-        Inline implementation of companion metadata enhancement.
+        """Inline implementation of companion metadata enhancement.
 
         This is a fallback when no companion handler is injected.
         """

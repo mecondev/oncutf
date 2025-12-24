@@ -1,5 +1,4 @@
-"""
-Module: dpi_helper.py
+"""Module: dpi_helper.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -19,8 +18,7 @@ logger = get_cached_logger(__name__)
 
 
 class DPIHelper:
-    """
-    Cross-platform DPI adaptation helper.
+    """Cross-platform DPI adaptation helper.
 
     Handles font scaling and UI element sizing to ensure consistent
     appearance across Windows and Linux systems.
@@ -113,14 +111,14 @@ class DPIHelper:
             self.font_scale = 1.0
 
     def scale_font_size(self, base_size: int) -> int:
-        """
-        Scale font size based on system and DPI.
+        """Scale font size based on system and DPI.
 
         Args:
             base_size: Base font size in points
 
         Returns:
             Scaled font size in points
+
         """
         scaled_size = int(base_size * self.font_scale)
 
@@ -131,23 +129,23 @@ class DPIHelper:
         return max(min_size, min(max_size, scaled_size))
 
     def scale_ui_size(self, base_size: int) -> int:
-        """
-        Scale UI element size based on DPI.
+        """Scale UI element size based on DPI.
 
         Args:
             base_size: Base size in pixels
 
         Returns:
             Scaled size in pixels
+
         """
         return int(base_size * self.dpi_scale)
 
     def get_font_sizes(self) -> dict[str, int]:
-        """
-        Get recommended font sizes for different UI elements.
+        """Get recommended font sizes for different UI elements.
 
         Returns:
             Dictionary with font sizes for different use cases
+
         """
         base_sizes = {
             "small": 8,  # Small labels, status text

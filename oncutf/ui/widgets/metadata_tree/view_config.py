@@ -1,5 +1,4 @@
-"""
-Module: view_config.py
+"""Module: view_config.py
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -35,8 +34,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataTreeViewConfig:
-    """
-    Handler for metadata tree view configuration.
+    """Handler for metadata tree view configuration.
 
     This class encapsulates all view configuration logic:
     - Initial view setup (edit triggers, row heights, etc.)
@@ -53,11 +51,11 @@ class MetadataTreeViewConfig:
     """
 
     def __init__(self, tree_view: MetadataTreeView) -> None:
-        """
-        Initialize the view configuration handler.
+        """Initialize the view configuration handler.
 
         Args:
             tree_view: The MetadataTreeView instance this handler configures
+
         """
         self._tree_view = tree_view
 
@@ -75,14 +73,14 @@ class MetadataTreeViewConfig:
         view.setAlternatingRowColors(True)
 
     def detect_placeholder_mode(self, model: Any) -> bool:
-        """
-        Detect if the model contains placeholder content.
+        """Detect if the model contains placeholder content.
 
         Args:
             model: The model to check
 
         Returns:
             True if the model is in placeholder mode (empty or placeholder text)
+
         """
         # Check if it's a proxy model and get the source model
         source_model = model
@@ -105,11 +103,11 @@ class MetadataTreeViewConfig:
         return False
 
     def configure_placeholder_mode(self, _model: Any) -> None:
-        """
-        Configure view for placeholder mode with anti-flickering.
+        """Configure view for placeholder mode with anti-flickering.
 
         Args:
             _model: The model (interface parameter for consistency)
+
         """
         view = self._tree_view
 
@@ -292,11 +290,11 @@ class MetadataTreeViewConfig:
 
     @staticmethod
     def make_placeholder_items_non_selectable(model: Any) -> None:
-        """
-        Make placeholder items non-selectable.
+        """Make placeholder items non-selectable.
 
         Args:
             model: The model containing placeholder items
+
         """
         root = model.invisibleRootItem()
         item = root.child(0, 0)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Metadata Field Analysis Script
+"""Metadata Field Analysis Script
 
 This script analyzes actual files to understand:
 1. What metadata fields are returned by exiftool

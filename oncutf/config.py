@@ -1,5 +1,4 @@
-"""
-Module: config.py
+"""Module: config.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -79,8 +78,7 @@ ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 # Tool availability and feature flags
 # Dynamically updated by external_tools.py at runtime
 class FeatureAvailability:
-    """
-    Runtime feature availability based on external tool detection.
+    """Runtime feature availability based on external tool detection.
 
     This class tracks which external tools are available and enables/disables
     features accordingly. It provides graceful degradation when tools are missing.
@@ -92,6 +90,7 @@ class FeatureAvailability:
         ffmpeg_available: Whether FFmpeg is detected and usable
         metadata_features_enabled: Whether EXIF/metadata features are active
         video_features_enabled: Whether video processing features are active
+
     """
 
     # Tool availability (updated at runtime)
@@ -111,14 +110,14 @@ class FeatureAvailability:
 
     @classmethod
     def update_availability(cls, exiftool: bool = False, ffmpeg: bool = False) -> None:
-        """
-        Update tool availability flags.
+        """Update tool availability flags.
 
         Called by external_tools module during application initialization.
 
         Args:
             exiftool: Whether ExifTool is available
             ffmpeg: Whether FFmpeg is available
+
         """
         cls.exiftool_available = exiftool
         cls.ffmpeg_available = ffmpeg

@@ -1,5 +1,4 @@
-"""
-Module: metadata_exporter.py
+"""Module: metadata_exporter.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -23,8 +22,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataExporter:
-    """
-    Handles exporting metadata in various human-readable formats.
+    """Handles exporting metadata in various human-readable formats.
     Supports JSON, Markdown, and CSV with proper grouping and branding.
     """
 
@@ -38,8 +36,7 @@ class MetadataExporter:
         return datetime.now().strftime(EXPORT_DATE_FORMAT)
 
     def export_selected_files(self, output_dir: str, format_type: str = "json") -> bool:
-        """
-        Export metadata for selected files.
+        """Export metadata for selected files.
 
         Args:
             output_dir: Directory to save export files
@@ -47,6 +44,7 @@ class MetadataExporter:
 
         Returns:
             bool: True if export successful
+
         """
         if not self.parent_window:
             logger.error("[MetadataExporter] No parent window available")
@@ -61,8 +59,7 @@ class MetadataExporter:
         return self._export_files(selected_files, output_dir, format_type, "selected")
 
     def export_all_files(self, output_dir: str, format_type: str = "json") -> bool:
-        """
-        Export metadata for all files in the current folder.
+        """Export metadata for all files in the current folder.
 
         Args:
             output_dir: Directory to save export files
@@ -70,6 +67,7 @@ class MetadataExporter:
 
         Returns:
             bool: True if export successful
+
         """
         if not self.parent_window:
             logger.error("[MetadataExporter] No parent window available")
@@ -84,8 +82,7 @@ class MetadataExporter:
         return self._export_files(all_files, output_dir, format_type, "all")
 
     def export_files(self, files: list[Any], output_dir: str, format_type: str = "json") -> bool:
-        """
-        Export metadata for a specific list of files.
+        """Export metadata for a specific list of files.
 
         Args:
             files: List of file items to export
@@ -94,6 +91,7 @@ class MetadataExporter:
 
         Returns:
             bool: True if export successful
+
         """
         if not files:
             logger.warning("[MetadataExporter] No files provided for export")
@@ -119,14 +117,14 @@ class MetadataExporter:
     def _export_files(
         self, files: list[Any], output_dir: str, format_type: str, scope: str
     ) -> bool:
-        """
-        Export metadata for a list of files.
+        """Export metadata for a list of files.
 
         Args:
             files: List of file items to export
             output_dir: Output directory
             format_type: Export format
             scope: "selected" or "all"
+
         """
         try:
             os.makedirs(output_dir, exist_ok=True)
@@ -258,14 +256,14 @@ class MetadataExporter:
             return False
 
     def _prepare_file_data(self, file_item: Any) -> dict[str, Any] | None:
-        """
-        Prepare file data for export including metadata grouping and hash info.
+        """Prepare file data for export including metadata grouping and hash info.
 
         Args:
             file_item: FileItem object
 
         Returns:
             dict: Prepared file data or None if no metadata available
+
         """
         try:
             # Basic file info

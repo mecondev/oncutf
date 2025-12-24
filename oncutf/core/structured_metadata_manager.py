@@ -1,5 +1,4 @@
-"""
-Structured Metadata Manager
+"""Structured Metadata Manager
 
 This module handles the conversion of raw metadata from ExifTool to structured metadata
 that can be stored in the database with proper categorization and field definitions.
@@ -15,8 +14,7 @@ logger = get_cached_logger(__name__)
 
 
 class StructuredMetadataManager:
-    """
-    Manages the conversion and storage of structured metadata.
+    """Manages the conversion and storage of structured metadata.
 
     This class handles:
     - Converting raw ExifTool metadata to structured format
@@ -56,8 +54,7 @@ class StructuredMetadataManager:
         self._load_caches()
 
     def process_and_store_metadata(self, file_path: str, raw_metadata: dict[str, Any]) -> bool:
-        """
-        Process raw metadata and store it in structured format.
+        """Process raw metadata and store it in structured format.
 
         Args:
             file_path: Path to the file
@@ -65,6 +62,7 @@ class StructuredMetadataManager:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Prepare batch data: list of (field_key, field_value_str) tuples
@@ -116,8 +114,7 @@ class StructuredMetadataManager:
             return False
 
     def _format_field_value(self, field_key: str, field_value: Any) -> str:
-        """
-        Format field value according to its data type and display format.
+        """Format field value according to its data type and display format.
 
         Args:
             field_key: The metadata field key
@@ -125,6 +122,7 @@ class StructuredMetadataManager:
 
         Returns:
             Formatted string value
+
         """
         try:
             field_info = self._field_cache.get(field_key)
@@ -178,14 +176,14 @@ class StructuredMetadataManager:
             return str(field_value)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, dict[str, Any]]:
-        """
-        Get structured metadata for a file, organized by categories.
+        """Get structured metadata for a file, organized by categories.
 
         Args:
             file_path: Path to the file
 
         Returns:
             Dictionary organized by category names containing field data
+
         """
         try:
             raw_structured = self.db_manager.get_structured_metadata(file_path)
@@ -221,8 +219,7 @@ class StructuredMetadataManager:
             return {}
 
     def get_field_value(self, file_path: str, field_key: str) -> str | None:
-        """
-        Get a specific field value for a file.
+        """Get a specific field value for a file.
 
         Args:
             file_path: Path to the file
@@ -230,6 +227,7 @@ class StructuredMetadataManager:
 
         Returns:
             Field value or None if not found
+
         """
         try:
             structured_data = self.db_manager.get_structured_metadata(file_path)
@@ -246,14 +244,14 @@ class StructuredMetadataManager:
             return None
 
     def get_available_fields(self, category_name: str = None) -> list[dict[str, Any]]:
-        """
-        Get available metadata fields, optionally filtered by category.
+        """Get available metadata fields, optionally filtered by category.
 
         Args:
             category_name: Optional category name to filter by
 
         Returns:
             List of field definitions
+
         """
         try:
             if category_name:
@@ -271,11 +269,11 @@ class StructuredMetadataManager:
             return []
 
     def get_available_categories(self) -> list[dict[str, Any]]:
-        """
-        Get all available metadata categories.
+        """Get all available metadata categories.
 
         Returns:
             List of category definitions
+
         """
         try:
             return self.db_manager.get_metadata_categories()
@@ -293,8 +291,7 @@ class StructuredMetadataManager:
         is_searchable: bool = True,
         display_format: str = None,
     ) -> bool:
-        """
-        Add a custom metadata field.
+        """Add a custom metadata field.
 
         Args:
             field_key: Unique field key
@@ -307,6 +304,7 @@ class StructuredMetadataManager:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Get category ID
@@ -346,8 +344,7 @@ class StructuredMetadataManager:
             return False
 
     def update_field_value(self, file_path: str, field_key: str, new_value: str) -> bool:
-        """
-        Update a specific field value for a file.
+        """Update a specific field value for a file.
 
         Args:
             file_path: Path to the file
@@ -356,6 +353,7 @@ class StructuredMetadataManager:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Check if field is editable
@@ -395,8 +393,7 @@ class StructuredMetadataManager:
     def search_files_by_metadata(
         self, field_key: str, _search_value: str, _search_type: str = "contains"
     ) -> list[str]:
-        """
-        Search files by metadata field value.
+        """Search files by metadata field value.
 
         Args:
             field_key: The metadata field key to search
@@ -405,6 +402,7 @@ class StructuredMetadataManager:
 
         Returns:
             List of file paths matching the search criteria
+
         """
         try:
             # Check if field is searchable

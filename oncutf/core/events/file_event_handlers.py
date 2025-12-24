@@ -1,5 +1,4 @@
-"""
-Module: file_event_handlers.py
+"""Module: file_event_handlers.py
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -21,8 +20,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileEventHandlers:
-    """
-    Handles file-related events.
+    """Handles file-related events.
 
     Responsibilities:
     - Browse folder selection
@@ -36,8 +34,7 @@ class FileEventHandlers:
         logger.debug("FileEventHandlers initialized", extra={"dev_only": True})
 
     def handle_browse(self) -> None:
-        """
-        Opens a file dialog to select a folder and loads its files.
+        """Opens a file dialog to select a folder and loads its files.
         Supports modifier keys for different loading modes:
         - Normal: Replace + shallow (skip metadata)
         - Ctrl: Replace + recursive (skip metadata)

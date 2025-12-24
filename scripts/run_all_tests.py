@@ -38,11 +38,11 @@ class ComprehensiveTestRunner:
     """Runs all optimization system tests and generates comprehensive reports."""
 
     def __init__(self, output_dir: str = "test_results"):
-        """
-        Initialize comprehensive test runner.
+        """Initialize comprehensive test runner.
 
         Args:
             output_dir: Directory for test results and reports
+
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
@@ -391,8 +391,7 @@ class ComprehensiveTestRunner:
     def run_all_tests(
         self, quick_benchmarks: bool = False, skip_unit_tests: bool = False
     ) -> dict[str, Any]:
-        """
-        Run all tests and generate comprehensive report.
+        """Run all tests and generate comprehensive report.
 
         Args:
             quick_benchmarks: Use quick benchmark configuration
@@ -400,6 +399,7 @@ class ComprehensiveTestRunner:
 
         Returns:
             Comprehensive test results
+
         """
         logger.info("[ComprehensiveTestRunner] Starting comprehensive test suite...")
 
@@ -436,7 +436,6 @@ class ComprehensiveTestRunner:
 
 def main():
     """Main function for command-line interface."""
-
     parser = argparse.ArgumentParser(
         description="OnCutF Comprehensive Test Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,

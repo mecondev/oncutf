@@ -1,5 +1,4 @@
-"""
-Module: test_validated_line_edit.py
+"""Module: test_validated_line_edit.py
 
 Author: Michael Economou
 Date: 2025-05-31

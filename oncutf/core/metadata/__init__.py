@@ -1,5 +1,4 @@
-"""
-Metadata management package.
+"""Metadata management package.
 
 Extracted from unified_metadata_manager.py for better separation of concerns.
 

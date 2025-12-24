@@ -1,5 +1,4 @@
-"""
-Module: performance_monitor.py
+"""Module: performance_monitor.py
 
 Author: Michael Economou
 Date: 2025-05-01

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Detailed cProfile analysis of MainWindow initialization.
+"""Detailed cProfile analysis of MainWindow initialization.
 
 Author: Michael Economou
 Date: 2025-12-20

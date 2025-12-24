@@ -1,5 +1,4 @@
-"""
-Module: file_drop_helper.py
+"""Module: file_drop_helper.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -24,8 +23,7 @@ DropType = Literal["single_folder", "multiple_folders", "files", "mixed", "unkno
 
 
 def analyze_drop(paths: list[str]) -> dict:
-    """
-    Analyze the given paths from drag & drop and return information about the drop type.
+    """Analyze the given paths from drag & drop and return information about the drop type.
     Returns a dict with keys: type, folders, files, rejected.
     """
     folders = [p for p in paths if os.path.isdir(p)]
@@ -47,8 +45,7 @@ def analyze_drop(paths: list[str]) -> dict:
 
 
 def filter_allowed_files(files: list[str]) -> tuple[list[str], list[str]]:
-    """
-    Returns two lists: allowed files (by ALLOWED_EXTENSIONS) and rejected files.
+    """Returns two lists: allowed files (by ALLOWED_EXTENSIONS) and rejected files.
     """
     allowed = []
     rejected = []
@@ -62,8 +59,7 @@ def filter_allowed_files(files: list[str]) -> tuple[list[str], list[str]]:
 
 
 def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
-    """
-    Show a custom dialog asking if the user wants a recursive scan for the folder.
+    """Show a custom dialog asking if the user wants a recursive scan for the folder.
     Returns True if the user selects Yes.
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
@@ -80,8 +76,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
 
 
 def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=None) -> None:
-    """
-    Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
+    """Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
@@ -114,8 +109,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
 
 
 def extract_file_paths(mime_data: QMimeData) -> list[str]:
-    """
-    Extracts local file paths from a QMimeData object.
+    """Extracts local file paths from a QMimeData object.
     Only includes local files, ignores other types like text.
     """
     return [url.toLocalFile() for url in mime_data.urls() if url.isLocalFile()]

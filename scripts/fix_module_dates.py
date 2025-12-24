@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script to fix module docstring dates to match actual file creation/modification dates.
+"""Script to fix module docstring dates to match actual file creation/modification dates.
 
 This script scans Python files and ensures the Date field in module docstrings
 matches the actual file creation date. It looks for patterns like:
@@ -33,8 +32,7 @@ PROJECT_START = datetime(2025, 5, 1)
 
 
 def is_excluded(filepath: Path, project_path: Path) -> bool:
-    """
-    Check if file is in excluded list.
+    """Check if file is in excluded list.
     """
     relative_path = filepath.relative_to(project_path)
     filepath_str = str(relative_path)
@@ -54,8 +52,7 @@ def is_excluded(filepath: Path, project_path: Path) -> bool:
 
 
 def get_file_creation_date(filepath: Path) -> str:
-    """
-    Get file creation date using git history where available.
+    """Get file creation date using git history where available.
 
     Strategy:
     1. Try git log to find first commit (most reliable)
@@ -106,8 +103,7 @@ def get_file_creation_date(filepath: Path) -> str:
 
 
 def extract_module_docstring(content: str) -> tuple[str | None, int, int]:
-    """
-    Extract module docstring from file content.
+    """Extract module docstring from file content.
 
     Returns (docstring_text, start_pos, end_pos) or (None, 0, 0) if not found.
     """
@@ -156,8 +152,7 @@ def extract_module_docstring(content: str) -> tuple[str | None, int, int]:
 
 
 def check_and_fix_docstring_date(filepath: Path, project_path: Path, dry_run: bool = True) -> dict:
-    """
-    Check if module docstring date matches file creation date and fix if needed.
+    """Check if module docstring date matches file creation date and fix if needed.
     Also ensures Author is 'Michael Economou'.
 
     Logic:

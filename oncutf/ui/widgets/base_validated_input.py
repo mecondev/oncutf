@@ -1,5 +1,4 @@
-"""
-Module: base_validated_input.py
+"""Module: base_validated_input.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseValidatedInput:
-    """
-    Abstract base class for validated input widgets.
+    """Abstract base class for validated input widgets.
 
     Provides common validation functionality including:
     - Real-time character validation and blocking
@@ -74,37 +72,37 @@ class BaseValidatedInput:
         raise NotImplementedError("Subclasses must implement emit_validation_changed")
 
     def get_blocked_characters(self) -> set[str]:
-        """
-        Get set of characters that should be blocked from input.
+        """Get set of characters that should be blocked from input.
         Override in subclasses for field-specific blocking.
 
         Returns:
             Set of characters to block
+
         """
         return set()
 
     def should_block_character(self, char: str) -> bool:
-        """
-        Check if a character should be blocked from input.
+        """Check if a character should be blocked from input.
 
         Args:
             char: Character to check
 
         Returns:
             bool: True if character should be blocked
+
         """
         blocked_chars = self.get_blocked_characters()
         return char in blocked_chars
 
     def clean_text_for_paste(self, text: str) -> tuple[str, set[str]]:
-        """
-        Clean text for paste operations by removing blocked characters.
+        """Clean text for paste operations by removing blocked characters.
 
         Args:
             text: Original text to clean
 
         Returns:
             Tuple of (cleaned_text, removed_characters)
+
         """
         blocked_chars = self.get_blocked_characters()
         if not blocked_chars:
@@ -116,8 +114,7 @@ class BaseValidatedInput:
         return cleaned_text, removed_chars
 
     def validate_text_content(self, text: str) -> tuple[bool, str]:
-        """
-        Validate text content according to field-specific rules.
+        """Validate text content according to field-specific rules.
         Override in subclasses for custom validation logic.
 
         Args:
@@ -125,6 +122,7 @@ class BaseValidatedInput:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not text:
             return True, ""  # Empty text is generally valid
@@ -137,14 +135,14 @@ class BaseValidatedInput:
         return True, ""
 
     def handle_key_press_validation(self, event: QKeyEvent) -> bool:
-        """
-        Handle key press events with validation.
+        """Handle key press events with validation.
 
         Args:
             event: The key press event
 
         Returns:
             bool: True if event should be processed, False if blocked
+
         """
         try:
             # Allow control characters (backspace, delete, arrow keys, etc.)
@@ -174,14 +172,14 @@ class BaseValidatedInput:
             return True  # Allow on error to prevent blocking valid input
 
     def handle_paste_validation(self, text: str) -> str:
-        """
-        Handle paste operations with validation and cleaning.
+        """Handle paste operations with validation and cleaning.
 
         Args:
             text: Text being pasted
 
         Returns:
             str: Cleaned text to insert
+
         """
         try:
             cleaned_text, removed_chars = self.clean_text_for_paste(text)
@@ -205,11 +203,11 @@ class BaseValidatedInput:
             return text  # Return original text on error
 
     def update_validation_state(self, text: str) -> None:
-        """
-        Update validation state and visual styling based on current text.
+        """Update validation state and visual styling based on current text.
 
         Args:
             text: Current text content
+
         """
         try:
             # Track content history
@@ -231,11 +229,11 @@ class BaseValidatedInput:
             logger.exception("[BaseValidatedInput] Error in update_validation_state")
 
     def _update_visual_styling(self, text: str) -> None:
-        """
-        Update visual styling based on validation state and content.
+        """Update visual styling based on validation state and content.
 
         Args:
             text: Current text content
+
         """
         try:
             theme = get_theme_manager()
@@ -303,20 +301,20 @@ class BaseValidatedInput:
             logger.exception("[BaseValidatedInput] Error in _apply_temporary_error_style")
 
     def is_valid(self) -> bool:
-        """
-        Check if current content is valid.
+        """Check if current content is valid.
 
         Returns:
             bool: True if content is valid
+
         """
         return self._is_valid
 
     def has_had_content(self) -> bool:
-        """
-        Check if widget has ever had content (for styling purposes).
+        """Check if widget has ever had content (for styling purposes).
 
         Returns:
             bool: True if widget has had content
+
         """
         return self._has_had_content
 
@@ -326,11 +324,11 @@ class BaseValidatedInput:
         self._has_had_content = False
 
     def get_validation_error_message(self) -> str:
-        """
-        Get current validation error message.
+        """Get current validation error message.
 
         Returns:
             str: Error message or empty string if valid
+
         """
         _, error_message = self.validate_text_content(self.text())
         return error_message

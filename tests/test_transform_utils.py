@@ -15,7 +15,6 @@ def test_safe_upper_basic():
 
     This module consolidates transform-related tests and removes duplicate blocks.
     """
-
     import unicodedata
 
     import pytest

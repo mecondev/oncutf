@@ -1,5 +1,4 @@
-"""
-Unit tests for ShutdownCoordinator.
+"""Unit tests for ShutdownCoordinator.
 
 Tests coordinated shutdown of all application components with special
 attention to Windows-specific behavior and edge cases.

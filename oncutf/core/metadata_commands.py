@@ -1,5 +1,4 @@
-"""
-Module: metadata_commands.py
+"""Module: metadata_commands.py
 
 Author: Michael Economou
 Date: 2025-07-08
@@ -25,20 +24,19 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataCommand(ABC):
-    """
-    Abstract base class for all metadata commands.
+    """Abstract base class for all metadata commands.
 
     Implements the Command pattern for metadata operations,
     providing execute, undo, and redo functionality.
     """
 
     def __init__(self, file_path: str, timestamp: datetime | None = None):
-        """
-        Initialize metadata command.
+        """Initialize metadata command.
 
         Args:
             file_path: Path to the file being modified
             timestamp: When the command was created
+
         """
         self.file_path = file_path
         self.timestamp = timestamp or datetime.now()
@@ -48,38 +46,38 @@ class MetadataCommand(ABC):
 
     @abstractmethod
     def execute(self) -> bool:
-        """
-        Execute the command.
+        """Execute the command.
 
         Returns:
             True if successful, False otherwise
+
         """
 
     @abstractmethod
     def undo(self) -> bool:
-        """
-        Undo the command.
+        """Undo the command.
 
         Returns:
             True if successful, False otherwise
+
         """
 
     @abstractmethod
     def get_description(self) -> str:
-        """
-        Get human-readable description of the command.
+        """Get human-readable description of the command.
 
         Returns:
             Description string for UI display
+
         """
 
     @abstractmethod
     def get_command_type(self) -> str:
-        """
-        Get the type of command.
+        """Get the type of command.
 
         Returns:
             Command type string
+
         """
 
     def can_execute(self) -> bool:
@@ -102,8 +100,7 @@ class MetadataCommand(ABC):
 
 
 class EditMetadataFieldCommand(MetadataCommand):
-    """
-    Command for editing a single metadata field.
+    """Command for editing a single metadata field.
     """
 
     def __init__(
@@ -114,8 +111,7 @@ class EditMetadataFieldCommand(MetadataCommand):
         old_value: Any,
         metadata_tree_view: Any | None = None,
     ):
-        """
-        Initialize edit metadata field command.
+        """Initialize edit metadata field command.
 
         Args:
             file_path: Path to the file
@@ -123,6 +119,7 @@ class EditMetadataFieldCommand(MetadataCommand):
             new_value: New value to set
             old_value: Previous value (for undo)
             metadata_tree_view: Reference to the metadata tree view
+
         """
         super().__init__(file_path)
         self.field_path = field_path
@@ -182,8 +179,7 @@ class EditMetadataFieldCommand(MetadataCommand):
             return False
 
     def _update_metadata_field(self, field_path: str, value: Any) -> bool:
-        """
-        Update metadata field in cache and UI.
+        """Update metadata field in cache and UI.
 
         Args:
             field_path: Path to the metadata field
@@ -191,6 +187,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Use the passed metadata tree view reference
@@ -247,8 +244,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
 
 class ResetMetadataFieldCommand(MetadataCommand):
-    """
-    Command for resetting a metadata field to its original value.
+    """Command for resetting a metadata field to its original value.
     """
 
     def __init__(
@@ -259,8 +255,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
         original_value: Any,
         metadata_tree_view: Any | None = None,
     ):
-        """
-        Initialize reset metadata field command.
+        """Initialize reset metadata field command.
 
         Args:
             file_path: Path to the file
@@ -268,6 +263,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
             current_value: Current modified value
             original_value: Original value from file
             metadata_tree_view: Reference to the metadata tree view
+
         """
         super().__init__(file_path)
         self.field_path = field_path
@@ -327,8 +323,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
             return False
 
     def _reset_metadata_field(self, field_path: str, value: Any) -> bool:
-        """
-        Reset metadata field in cache and UI.
+        """Reset metadata field in cache and UI.
 
         Args:
             field_path: Path to the metadata field
@@ -336,6 +331,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             # Use the passed metadata tree view reference
@@ -376,17 +372,16 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
 
 class SaveMetadataCommand(MetadataCommand):
-    """
-    Command for saving metadata changes to files.
+    """Command for saving metadata changes to files.
     """
 
     def __init__(self, file_paths: list[str], saved_metadata: dict[str, dict[str, Any]]):
-        """
-        Initialize save metadata command.
+        """Initialize save metadata command.
 
         Args:
             file_paths: List of file paths that were saved
             saved_metadata: Dictionary of file_path -> {field_path: value} that was saved
+
         """
         # Use first file path as primary file for command
         super().__init__(file_paths[0] if file_paths else "")
@@ -444,17 +439,16 @@ class SaveMetadataCommand(MetadataCommand):
 
 
 class BatchMetadataCommand(MetadataCommand):
-    """
-    Command for grouping multiple metadata commands together.
+    """Command for grouping multiple metadata commands together.
     """
 
     def __init__(self, commands: list[MetadataCommand], description: str = ""):
-        """
-        Initialize batch metadata command.
+        """Initialize batch metadata command.
 
         Args:
             commands: List of commands to group together
             description: Custom description for the batch
+
         """
         # Use first command's file path as primary
         file_path = commands[0].file_path if commands else ""

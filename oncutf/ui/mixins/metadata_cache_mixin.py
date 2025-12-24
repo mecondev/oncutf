@@ -1,5 +1,4 @@
-"""
-Metadata cache interaction mixin for MetadataTreeView.
+"""Metadata cache interaction mixin for MetadataTreeView.
 
 This mixin handles all interactions with the persistent metadata cache,
 including reading, updating, and removing cached metadata values.
@@ -17,8 +16,7 @@ logger = get_logger(__name__)
 
 
 class MetadataCacheMixin:
-    """
-    Mixin providing cache interaction methods for metadata tree views.
+    """Mixin providing cache interaction methods for metadata tree views.
 
     This mixin encapsulates all logic related to the persistent metadata cache:
     - Getting/setting metadata values in cache
@@ -38,11 +36,11 @@ class MetadataCacheMixin:
     # =====================================
 
     def _get_metadata_cache(self):
-        """
-        Get metadata cache via parent traversal.
+        """Get metadata cache via parent traversal.
 
         Returns:
             dict | None: Metadata cache dictionary if found, None otherwise
+
         """
         parent_window = self._get_parent_with_file_table()
         if parent_window and hasattr(parent_window, "metadata_cache"):
@@ -51,8 +49,7 @@ class MetadataCacheMixin:
         return None
 
     def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-        """
-        Get the original value of a metadata field from the cache.
+        """Get the original value of a metadata field from the cache.
         This should be called before resetting to get the original value.
 
         Args:
@@ -60,6 +57,7 @@ class MetadataCacheMixin:
 
         Returns:
             Any | None: Original value if found, None otherwise
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -74,8 +72,7 @@ class MetadataCacheMixin:
         return cache_helper.get_metadata_value(file_item, key_path)
 
     def _get_original_metadata_value(self, key_path: str) -> Any | None:
-        """
-        Get the ORIGINAL metadata value (not staged) for comparison.
+        """Get the ORIGINAL metadata value (not staged) for comparison.
         Used by smart_mark_modified to check against actual original values.
 
         Args:
@@ -83,6 +80,7 @@ class MetadataCacheMixin:
 
         Returns:
             Any | None: Original metadata value if found, None otherwise
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -102,8 +100,7 @@ class MetadataCacheMixin:
         return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
 
     def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
-        """
-        Extract a value from metadata dictionary using key path.
+        """Extract a value from metadata dictionary using key path.
 
         Args:
             metadata: Metadata dictionary (flat or nested)
@@ -111,6 +108,7 @@ class MetadataCacheMixin:
 
         Returns:
             Any | None: Value if found, None otherwise
+
         """
         parts = key_path.split("/")
 
@@ -130,12 +128,12 @@ class MetadataCacheMixin:
     # =====================================
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
-        """
-        Update the metadata value in the cache to persist changes.
+        """Update the metadata value in the cache to persist changes.
 
         Args:
             key_path: Metadata key path
             new_value: New value to store
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -165,12 +163,12 @@ class MetadataCacheMixin:
         )
 
     def _set_metadata_in_cache(self, key_path: str, new_value: str) -> None:
-        """
-        Set metadata value in cache (similar to update, but used in specific contexts).
+        """Set metadata value in cache (similar to update, but used in specific contexts).
 
         Args:
             key_path: Metadata key path
             new_value: New value to store
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -192,13 +190,13 @@ class MetadataCacheMixin:
         )
 
     def _set_metadata_in_file_item(self, key_path: str, new_value: str) -> None:
-        """
-        Set metadata value directly in file_item.metadata dict.
+        """Set metadata value directly in file_item.metadata dict.
         Used for direct updates bypassing cache helper.
 
         Args:
             key_path: Metadata key path
             new_value: New value to store
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -230,11 +228,11 @@ class MetadataCacheMixin:
         )
 
     def _reset_metadata_in_cache(self, key_path: str) -> None:
-        """
-        Reset the metadata value in the cache to its original state.
+        """Reset the metadata value in the cache to its original state.
 
         Args:
             key_path: Metadata key path to reset
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -272,11 +270,11 @@ class MetadataCacheMixin:
         self._update_file_icon_status()
 
     def _remove_metadata_from_cache(self, key_path: str) -> None:
-        """
-        Remove a metadata key from the cache.
+        """Remove a metadata key from the cache.
 
         Args:
             key_path: Metadata key path to remove
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -300,11 +298,11 @@ class MetadataCacheMixin:
         )
 
     def _remove_metadata_from_file_item(self, key_path: str) -> None:
-        """
-        Remove a metadata key from file_item.metadata dict.
+        """Remove a metadata key from file_item.metadata dict.
 
         Args:
             key_path: Metadata key path to remove
+
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -332,8 +330,7 @@ class MetadataCacheMixin:
     # =====================================
 
     def _update_file_icon_status(self) -> None:
-        """
-        Update the file icon in the file table to reflect modified status.
+        """Update the file icon in the file table to reflect modified status.
         Checks staging manager for modifications and updates file model icons.
         """
         selected_files = self._get_current_selection()
@@ -394,8 +391,7 @@ class MetadataCacheMixin:
     def _try_lazy_metadata_loading(
         self, file_item: Any, _context: str = ""
     ) -> dict[str, Any] | None:
-        """
-        Try to load metadata using simple fallback loading (lazy manager removed).
+        """Try to load metadata using simple fallback loading (lazy manager removed).
 
         Args:
             file_item: FileItem to load metadata for
@@ -403,13 +399,13 @@ class MetadataCacheMixin:
 
         Returns:
             dict | None: Metadata if available, None if not cached
+
         """
         # Since LazyMetadataManager was removed, use direct fallback loading
         return self._fallback_metadata_loading(file_item)
 
     def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
-        """
-        Fallback metadata loading method.
+        """Fallback metadata loading method.
         Attempts to load metadata from cache helper.
 
         Args:
@@ -417,6 +413,7 @@ class MetadataCacheMixin:
 
         Returns:
             dict | None: Metadata dictionary if found, None otherwise
+
         """
         try:
             if hasattr(self, "_cache_helper") and self._cache_helper:

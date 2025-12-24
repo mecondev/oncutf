@@ -1,5 +1,4 @@
-"""
-Module: filename_validator.py
+"""Module: filename_validator.py
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -20,27 +19,27 @@ logger = logging.getLogger(__name__)
 
 
 def is_valid_filename_char(char: str) -> bool:
-    """
-    Check if a character is valid for filenames
+    """Check if a character is valid for filenames
 
     Args:
         char: Single character to check
 
     Returns:
         bool: True if character is valid for filenames
+
     """
     return char not in INVALID_FILENAME_CHARS
 
 
 def clean_filename_text(text: str) -> str:
-    """
-    Clean text by removing invalid filename characters
+    """Clean text by removing invalid filename characters
 
     Args:
         text: Input text to clean
 
     Returns:
         str: Cleaned text with invalid characters removed
+
     """
     # Remove invalid characters
     cleaned = "".join(char for char in text if is_valid_filename_char(char))
@@ -50,14 +49,14 @@ def clean_filename_text(text: str) -> str:
 
 
 def clean_trailing_chars(filename_part: str) -> str:
-    """
-    Remove trailing characters that are not allowed at the end of filenames
+    """Remove trailing characters that are not allowed at the end of filenames
 
     Args:
         filename_part: The filename part (without extension) to clean
 
     Returns:
         str: Cleaned filename part
+
     """
     original = filename_part
     cleaned = filename_part.rstrip(INVALID_TRAILING_CHARS)
@@ -69,14 +68,14 @@ def clean_trailing_chars(filename_part: str) -> str:
 
 
 def validate_filename_part(filename_part: str) -> tuple[bool, str]:
-    """
-    Validate a filename part and return validation status and clean version
+    """Validate a filename part and return validation status and clean version
 
     Args:
         filename_part: The filename part to validate
 
     Returns:
         Tuple[bool, str]: (is_valid, cleaned_filename_part)
+
     """
     if not filename_part:
         return False, INVALID_FILENAME_MARKER
@@ -130,27 +129,27 @@ def validate_filename_part(filename_part: str) -> tuple[bool, str]:
 
 
 def should_allow_character_input(char: str) -> bool:
-    """
-    Determine if a character input should be allowed in filename text fields
+    """Determine if a character input should be allowed in filename text fields
 
     Args:
         char: Character being typed
 
     Returns:
         bool: True if character should be allowed
+
     """
     return is_valid_filename_char(char)
 
 
 def get_validation_error_message(filename_part: str) -> str:
-    """
-    Get a user-friendly error message for invalid filename
+    """Get a user-friendly error message for invalid filename
 
     Args:
         filename_part: The invalid filename part
 
     Returns:
         str: User-friendly error message
+
     """
     if not filename_part:
         return "Filename cannot be empty"
@@ -204,28 +203,28 @@ def get_validation_error_message(filename_part: str) -> str:
 
 
 def is_validation_error_marker(text: str) -> bool:
-    """
-    Check if text is a validation error marker
+    """Check if text is a validation error marker
 
-        Args:
+    Args:
         text: Text to check
 
-        Returns:
+    Returns:
         bool: True if text is a validation error marker
+
     """
     return text == INVALID_FILENAME_MARKER or text.endswith(INVALID_FILENAME_MARKER)
 
 
 # Convenience functions for common operations
 def clean_and_validate(text: str) -> tuple[bool, str, str]:
-    """
-    Clean and validate text in one operation
+    """Clean and validate text in one operation
 
     Args:
         text: Input text
 
     Returns:
         Tuple[bool, str, str]: (is_valid, cleaned_text, error_message)
+
     """
     cleaned = clean_filename_text(text)
     is_valid, result = validate_filename_part(cleaned)
@@ -238,15 +237,15 @@ def clean_and_validate(text: str) -> tuple[bool, str, str]:
 
 
 def prepare_final_filename(filename_part: str, extension: str = "") -> str:
-    """
-    Prepare final filename by cleaning and combining with extension
+    """Prepare final filename by cleaning and combining with extension
 
-        Args:
+    Args:
         filename_part: The main filename part
         extension: File extension (with or without dot)
 
-        Returns:
+    Returns:
         str: Final cleaned filename
+
     """
     # Clean the filename part
     cleaned_part = clean_trailing_chars(filename_part)

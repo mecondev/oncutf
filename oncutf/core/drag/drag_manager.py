@@ -15,8 +15,7 @@ logger = get_cached_logger(__name__)
 
 
 class DragManager(QObject):
-    """
-    Centralized drag & drop state manager.
+    """Centralized drag & drop state manager.
 
     Solves the sticky cursor issue by providing unified cleanup
     and state tracking across all widgets.
@@ -63,11 +62,11 @@ class DragManager(QObject):
     # =====================================
 
     def start_drag(self, source: str) -> None:
-        """
-        Register the start of a drag operation.
+        """Register the start of a drag operation.
 
         Args:
             source: String identifier of the drag source widget
+
         """
         if self._drag_active:
             logger.warning("[DragManager] Drag already active from %s", self._drag_source)
@@ -88,11 +87,11 @@ class DragManager(QObject):
         logger.debug("[DragManager] Drag started from: %s", source, extra={"dev_only": True})
 
     def end_drag(self, source: str = None) -> None:
-        """
-        Register the end of a drag operation.
+        """Register the end of a drag operation.
 
         Args:
             source: Optional source identifier for verification
+
         """
         if not self._drag_active:
             logger.debug(
@@ -220,8 +219,7 @@ class DragManager(QObject):
             self._perform_cleanup()
 
     def force_cleanup(self) -> None:
-        """
-        Public method to force immediate cleanup (used by Escape key).
+        """Public method to force immediate cleanup (used by Escape key).
 
         This is called when ESC is pressed during a drag operation.
         It immediately terminates the drag and cleans up all visual feedback.

@@ -1,5 +1,4 @@
-"""
-Module: test_hierarchical_combo_box.py
+"""Module: test_hierarchical_combo_box.py
 
 Author: Michael Economou
 Date: 2025-05-01

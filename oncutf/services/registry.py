@@ -1,5 +1,4 @@
-"""
-Service registry for dependency injection.
+"""Service registry for dependency injection.
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -54,6 +53,7 @@ class ServiceRegistry:
 
         Returns:
             The global ServiceRegistry instance.
+
         """
         if cls._instance is None:
             cls._instance = cls()
@@ -70,6 +70,7 @@ class ServiceRegistry:
         Args:
             protocol: The protocol/interface type.
             implementation: The concrete implementation instance.
+
         """
         self._services[protocol] = implementation
         logger.debug(
@@ -87,6 +88,7 @@ class ServiceRegistry:
             protocol: The protocol/interface type.
             factory: A callable that returns an implementation instance,
                      or a class to instantiate.
+
         """
         self._factories[protocol] = factory
         logger.debug(
@@ -102,6 +104,7 @@ class ServiceRegistry:
 
         Returns:
             The registered implementation, or None if not found.
+
         """
         # Check direct registrations first
         if protocol in self._services:
@@ -135,6 +138,7 @@ class ServiceRegistry:
 
         Raises:
             KeyError: If no service is registered for the protocol.
+
         """
         service = self.get(protocol)
         if service is None:
@@ -149,6 +153,7 @@ class ServiceRegistry:
 
         Returns:
             True if a service or factory is registered.
+
         """
         return protocol in self._services or protocol in self._factories
 
@@ -160,6 +165,7 @@ class ServiceRegistry:
 
         Returns:
             True if a service was unregistered, False if none existed.
+
         """
         removed = False
         if protocol in self._services:
@@ -184,6 +190,7 @@ class ServiceRegistry:
 
         Returns:
             List of protocol names.
+
         """
         registered = set(self._services.keys()) | set(self._factories.keys())
         return [p.__name__ for p in registered]
@@ -196,6 +203,7 @@ def get_service_registry() -> ServiceRegistry:
 
     Returns:
         The global ServiceRegistry instance.
+
     """
     return ServiceRegistry.instance()
 
@@ -208,6 +216,7 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
 
     Args:
         registry: Optional registry to configure. Uses global if None.
+
     """
     if registry is None:
         registry = get_service_registry()

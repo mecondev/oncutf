@@ -1,5 +1,4 @@
-"""
-Module: color_grid_menu.py
+"""Module: color_grid_menu.py
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -36,8 +35,7 @@ logger = get_cached_logger(__name__)
 
 
 class ColorButton(QToolButton):
-    """
-    Single color button in the color grid.
+    """Single color button in the color grid.
 
     Displays a solid color swatch that can be clicked to select.
     """
@@ -45,12 +43,12 @@ class ColorButton(QToolButton):
     clicked_with_color = pyqtSignal(str)  # Emits hex color on click
 
     def __init__(self, color: str, parent=None):
-        """
-        Initialize color button.
+        """Initialize color button.
 
         Args:
             color: Hex color string (e.g., "#ff0000")
             parent: Parent widget
+
         """
         super().__init__(parent)
         self.color = color
@@ -87,8 +85,7 @@ class ColorButton(QToolButton):
 
 
 class ColorGridMenu(QWidget):
-    """
-    Color grid menu widget with 32 color swatches, custom color picker, and reset option.
+    """Color grid menu widget with 32 color swatches, custom color picker, and reset option.
 
     This widget appears as a popup when right-clicking on the color column.
     """
@@ -96,11 +93,11 @@ class ColorGridMenu(QWidget):
     color_selected = pyqtSignal(str)  # Emits selected color hex or "none"
 
     def __init__(self, parent=None):
-        """
-        Initialize color grid menu.
+        """Initialize color grid menu.
 
         Args:
             parent: Parent widget
+
         """
         super().__init__(parent)
 
@@ -185,11 +182,11 @@ class ColorGridMenu(QWidget):
         )
 
     def _create_color_grid(self) -> QWidget:
-        """
-        Create the color grid widget with all color swatches.
+        """Create the color grid widget with all color swatches.
 
         Returns:
             Widget containing the color grid
+
         """
         from oncutf.config import COLOR_GRID_COLS, COLOR_GRID_ROWS, FILE_TAG_COLOR_ARRAY
 
@@ -210,11 +207,11 @@ class ColorGridMenu(QWidget):
         return grid_widget
 
     def _create_picker_button(self) -> QToolButton:
-        """
-        Create the custom color picker button with image.
+        """Create the custom color picker button with image.
 
         Returns:
             Color picker button widget
+
         """
         from oncutf.config import COLOR_PICKER_IMAGE
         from oncutf.utils.path_utils import get_resource_path
@@ -246,11 +243,11 @@ class ColorGridMenu(QWidget):
         return picker_btn
 
     def _on_color_selected(self, color: str):
-        """
-        Handle color selection.
+        """Handle color selection.
 
         Args:
             color: Selected hex color or "none"
+
         """
         logger.info("[ColorGridMenu] Color selected: %s", color)
 

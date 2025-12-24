@@ -1,5 +1,4 @@
-"""
-Module: rename_history_dialog.py
+"""Module: rename_history_dialog.py
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -39,8 +38,7 @@ logger = get_cached_logger(__name__)
 
 
 class RenameHistoryDialog(QDialog):
-    """
-    Dialog for viewing and managing rename history.
+    """Dialog for viewing and managing rename history.
 
     Provides interface for viewing recent rename operations and
     undoing them if possible.
@@ -354,11 +352,11 @@ class RenameHistoryDialog(QDialog):
 
 
 def show_rename_history_dialog(parent: QWidget | None = None) -> None:
-    """
-    Show the rename history dialog.
+    """Show the rename history dialog.
 
     Args:
         parent: Parent widget for the dialog
+
     """
     dialog = RenameHistoryDialog(parent)
 

@@ -34,6 +34,7 @@ class MetadataTreeCacheHandler:
 
         Args:
             view: The metadata tree view instance
+
         """
         self._view = view
 

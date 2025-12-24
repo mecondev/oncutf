@@ -1,5 +1,4 @@
-"""
-Module: test_custom_msgdialog.py
+"""Module: test_custom_msgdialog.py
 
 Author: Michael Economou
 Date: 2025-05-09

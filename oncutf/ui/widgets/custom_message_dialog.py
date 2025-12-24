@@ -1,5 +1,4 @@
-"""
-Module: custom_msgdialog.py
+"""Module: custom_msgdialog.py
 
 Author: Michael Economou
 Date: 2025-05-07
@@ -37,8 +36,7 @@ logger = get_cached_logger(__name__)
 
 
 class CustomMessageDialog(QDialog):
-    """
-    A custom-styled message dialog to replace QMessageBox.
+    """A custom-styled message dialog to replace QMessageBox.
     Supports question dialogs and information dialogs.
     """
 
@@ -51,8 +49,7 @@ class CustomMessageDialog(QDialog):
         show_progress: bool = False,
         show_checkbox: bool = False,
     ):
-        """
-        Initialize a CustomMessageDialog.
+        """Initialize a CustomMessageDialog.
 
         Parameters
         ----------
@@ -74,6 +71,7 @@ class CustomMessageDialog(QDialog):
         The dialog is modal and removes the window help button.
         Button text is used as the key to access the corresponding button
         in the instance's _buttons dictionary.
+
         """
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -147,16 +145,15 @@ class CustomMessageDialog(QDialog):
         # We need to ensure the dialog has normal cursor while parent keeps wait cursor
 
     def _on_button(self, btn_text: str):
-        """
-        Handles button click events, setting the selected button text
+        """Handles button click events, setting the selected button text
         and closing the dialog with acceptance.
 
         Parameters
         ----------
         btn_text : str
             The text of the button that was clicked.
-        """
 
+        """
         self.selected = btn_text
         self.accept()
 
@@ -167,8 +164,7 @@ class CustomMessageDialog(QDialog):
     def question(
         parent: QWidget, title: str, message: str, yes_text: str = "Yes", no_text: str = "No"
     ) -> bool:
-        """
-        Displays a question dialog, returning True if the "Yes" button was
+        """Displays a question dialog, returning True if the "Yes" button was
         clicked and False if the "No" button was clicked.
 
         Parameters
@@ -188,6 +184,7 @@ class CustomMessageDialog(QDialog):
         -------
         bool
             True if the "Yes" button was clicked, False if the "No" button was clicked.
+
         """
         dlg = CustomMessageDialog(title, message, [yes_text, no_text], parent)
 
@@ -202,8 +199,7 @@ class CustomMessageDialog(QDialog):
 
     @staticmethod
     def information(parent: QWidget, title: str, message: str, ok_text: str = "OK") -> None:
-        """
-        Displays an information dialog with the given title, message, and
+        """Displays an information dialog with the given title, message, and
         "OK" button. The dialog is modal and removes the window help button.
 
         Parameters
@@ -220,6 +216,7 @@ class CustomMessageDialog(QDialog):
         Returns
         -------
         None
+
         """
         dlg = CustomMessageDialog(title, message, [ok_text], parent)
 
@@ -237,8 +234,7 @@ class CustomMessageDialog(QDialog):
         title: str = "Unsaved Changes",
         message: str = "You have unsaved metadata changes. What would you like to do?",
     ) -> str:
-        """
-        Displays a dialog for handling unsaved changes with three options.
+        """Displays a dialog for handling unsaved changes with three options.
 
         Parameters
         ----------
@@ -253,6 +249,7 @@ class CustomMessageDialog(QDialog):
         -------
         str
             One of: 'save_and_close', 'close_without_saving', 'cancel'
+
         """
         buttons = ["Save & Close", "Close without saving", "Cancel"]
         dlg = CustomMessageDialog(title, message, buttons, parent)
@@ -275,8 +272,7 @@ class CustomMessageDialog(QDialog):
         return button_map.get(dlg.selected, "cancel")
 
     def set_progress(self, value: int, total: int = None):
-        """
-        Updates the progress bar with the current progress value.
+        """Updates the progress bar with the current progress value.
 
         Parameters
         ----------
@@ -285,6 +281,7 @@ class CustomMessageDialog(QDialog):
         total : int, optional
             The total value for the progress bar range. If provided,
             updates the progress bar range to (0, total).
+
         """
         logger.debug("[Dialog] set_progress called with value=%d, total=%s", value, total)
         if not self.progress_bar:
@@ -300,8 +297,7 @@ class CustomMessageDialog(QDialog):
 
     @staticmethod
     def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
-        """
-        Shows a dialog with options for renaming conflict resolution.
+        """Shows a dialog with options for renaming conflict resolution.
 
         Parameters
         ----------
@@ -314,6 +310,7 @@ class CustomMessageDialog(QDialog):
         -------
         str
             One of: 'overwrite', 'skip', 'skip_all', 'cancel'
+
         """
         message = f"The file '{filename}' already exists.\nWhat would you like to do?"
         buttons = ["Overwrite", "Skip", "Skip All", "Cancel"]
@@ -338,21 +335,20 @@ class CustomMessageDialog(QDialog):
         return label_map.get(dlg.selected, "cancel")  # fallback = cancel
 
     def set_message(self, msg: str) -> None:
-        """
-        Updates the dialog's label with the given message.
+        """Updates the dialog's label with the given message.
 
         Parameters
         ----------
         msg : str
             The new message to display in the dialog.
+
         """
         logger.debug("Dialog message updated: %s", msg)
         self.label.setText(msg)
 
     @staticmethod
     def show_waiting(parent: QWidget, message: str = "Please wait...") -> "CustomMessageDialog":
-        """
-        Shows a modal waiting dialog with a progress bar.
+        """Shows a modal waiting dialog with a progress bar.
 
         Parameters
         ----------
@@ -365,6 +361,7 @@ class CustomMessageDialog(QDialog):
         -------
         CustomMessageDialog
             The waiting dialog.
+
         """
         logger.debug("Creating waiting dialog: %s", message)
 
@@ -379,8 +376,7 @@ class CustomMessageDialog(QDialog):
         return dlg
 
     def set_progress_range(self, total: int) -> None:
-        """
-        Sets the progress bar range to (0, total).
+        """Sets the progress bar range to (0, total).
         """
         if self.progress_bar:
             self.progress_bar.setRange(0, total)
@@ -399,8 +395,7 @@ class CustomMessageDialog(QDialog):
     def choice_with_apply_all(
         parent: QWidget, title: str, message: str, buttons: dict[str, str]
     ) -> tuple[str, bool]:
-        """
-        Show a custom dialog using CustomMessageDialog with a checkbox.
+        """Show a custom dialog using CustomMessageDialog with a checkbox.
         Returns (selected_key, apply_to_all)
         """
         dlg = CustomMessageDialog(
@@ -423,8 +418,7 @@ class CustomMessageDialog(QDialog):
         return buttons.get(selected, "cancel"), apply_to_all
 
     def closeEvent(self, event):
-        """
-        Handles window close (X) button by treating it as 'Cancel'.
+        """Handles window close (X) button by treating it as 'Cancel'.
         """
         self.selected = "Cancel"
         event.accept()

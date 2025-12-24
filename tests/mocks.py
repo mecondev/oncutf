@@ -1,5 +1,4 @@
-"""
-Module: mocks.py
+"""Module: mocks.py
 
 Author: Michael Economou
 Date: 2025-05-12

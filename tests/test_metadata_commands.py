@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: test_metadata_commands.py
+"""Module: test_metadata_commands.py
 
 Author: Michael Economou
 Date: 2025-07-08

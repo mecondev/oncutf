@@ -1,5 +1,4 @@
-"""
-Module: .cache/test_html_icon.py
+"""Module: .cache/test_html_icon.py
 
 Author: Michael Economou
 Date: 2025-06-14

@@ -1,5 +1,4 @@
-"""
-Module: test_stress_large_file_sets.py
+"""Module: test_stress_large_file_sets.py
 
 Author: Michael Economou
 Date: 2025-12-19

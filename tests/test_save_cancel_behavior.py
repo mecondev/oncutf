@@ -1,5 +1,4 @@
-"""
-Tests for save operation cancel behavior.
+"""Tests for save operation cancel behavior.
 
 Tests ESC key blocking logic for different save scenarios:
 - Normal save: ESC blocked by default (config controlled)

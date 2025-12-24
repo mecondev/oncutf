@@ -1,5 +1,4 @@
-"""
-Module: validation_issues_dialog.py
+"""Module: validation_issues_dialog.py
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -47,6 +46,7 @@ class ValidationIssuesDialog(QDialog):
         Args:
             validation_result: Validation result with issues
             parent: Parent widget
+
         """
         super().__init__(parent)
         self.validation_result = validation_result
@@ -119,6 +119,7 @@ class ValidationIssuesDialog(QDialog):
 
         Args:
             list_widget: QListWidget to populate
+
         """
         for issue in self.validation_result.issues:
             # Create item text
@@ -139,6 +140,7 @@ class ValidationIssuesDialog(QDialog):
 
         Returns:
             ASCII icon character
+
         """
         # Use ASCII characters only (no Unicode/emoji)
         icons = {

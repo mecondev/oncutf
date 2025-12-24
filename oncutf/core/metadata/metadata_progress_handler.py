@@ -1,5 +1,4 @@
-"""
-Module: metadata_progress_handler.py
+"""Module: metadata_progress_handler.py
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -30,8 +29,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataProgressHandler:
-    """
-    Handler for progress dialogs during metadata and hash operations.
+    """Handler for progress dialogs during metadata and hash operations.
 
     This class encapsulates all progress-related logic that was previously
     in UnifiedMetadataManager, including:
@@ -42,11 +40,11 @@ class MetadataProgressHandler:
     """
 
     def __init__(self, parent_window: Any = None) -> None:
-        """
-        Initialize progress handler.
+        """Initialize progress handler.
 
         Args:
             parent_window: Reference to the main application window
+
         """
         self._parent_window = parent_window
 
@@ -73,8 +71,7 @@ class MetadataProgressHandler:
         is_extended: bool,
         cancel_callback: Callable[[], None] | None = None,
     ) -> ProgressDialog:
-        """
-        Create a progress dialog for metadata loading.
+        """Create a progress dialog for metadata loading.
 
         Args:
             is_extended: Whether loading extended metadata
@@ -82,6 +79,7 @@ class MetadataProgressHandler:
 
         Returns:
             ProgressDialog instance
+
         """
         from oncutf.utils.progress_dialog import ProgressDialog
 
@@ -98,8 +96,7 @@ class MetadataProgressHandler:
         is_extended: bool,
         cancel_callback: Callable[[], None] | None = None,
     ) -> ProgressDialog | None:
-        """
-        Create and show a progress dialog for metadata loading.
+        """Create and show a progress dialog for metadata loading.
 
         Args:
             files: List of files being processed
@@ -108,6 +105,7 @@ class MetadataProgressHandler:
 
         Returns:
             ProgressDialog instance or None on error
+
         """
         try:
             from oncutf.core.pyqt_imports import QApplication
@@ -156,14 +154,14 @@ class MetadataProgressHandler:
         self,
         cancel_callback: Callable[[], None] | None = None,
     ) -> ProgressDialog:
-        """
-        Create a progress dialog for hash calculation.
+        """Create a progress dialog for hash calculation.
 
         Args:
             cancel_callback: Callback to invoke when user cancels
 
         Returns:
             ProgressDialog instance
+
         """
         from oncutf.utils.progress_dialog import ProgressDialog
 
@@ -178,8 +176,7 @@ class MetadataProgressHandler:
         files: list[FileItem],
         cancel_callback: Callable[[], None] | None = None,
     ) -> ProgressDialog | None:
-        """
-        Create and show a progress dialog for hash calculation.
+        """Create and show a progress dialog for hash calculation.
 
         Args:
             files: List of files being processed
@@ -187,6 +184,7 @@ class MetadataProgressHandler:
 
         Returns:
             ProgressDialog instance or None on error
+
         """
         try:
             from oncutf.core.pyqt_imports import QApplication
@@ -233,8 +231,7 @@ class MetadataProgressHandler:
         total_bytes: int = 0,
         filename: str = "",
     ) -> None:
-        """
-        Update metadata progress dialog.
+        """Update metadata progress dialog.
 
         Args:
             current: Current file index
@@ -242,6 +239,7 @@ class MetadataProgressHandler:
             processed_bytes: Bytes processed so far
             total_bytes: Total bytes to process
             filename: Current filename being processed
+
         """
         if not self._metadata_progress_dialog:
             return
@@ -269,14 +267,14 @@ class MetadataProgressHandler:
         processed_bytes: int = 0,
         total_bytes: int = 0,
     ) -> None:
-        """
-        Update hash progress dialog.
+        """Update hash progress dialog.
 
         Args:
             current: Current file index
             total: Total file count
             processed_bytes: Bytes processed so far
             total_bytes: Total bytes to process
+
         """
         if not self._hash_progress_dialog:
             return

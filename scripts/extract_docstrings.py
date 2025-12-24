@@ -1,5 +1,4 @@
-"""
-Module: .cache/extract_docstrings.py
+"""Module: .cache/extract_docstrings.py
 
 Author: Michael Economou
 Date: 2025-06-14

@@ -1,5 +1,4 @@
-"""
-Module: backup_manager.py
+"""Module: backup_manager.py
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -33,8 +32,7 @@ logger = get_logger(__name__)
 
 
 class BackupManager(QObject):
-    """
-    Manages database backup operations including periodic backups and cleanup.
+    """Manages database backup operations including periodic backups and cleanup.
 
     This class handles:
     - Creating backups of the database file
@@ -55,14 +53,14 @@ class BackupManager(QObject):
         periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED,
         grouping_timeout: float = 10.0,
     ):
-        """
-        Initialize the backup manager.
+        """Initialize the backup manager.
 
         Args:
             backup_count: Number of backup files to keep (default from config)
             backup_interval: Interval between periodic backups in seconds
             periodic_enabled: Whether periodic backups are enabled
             grouping_timeout: Time window (seconds) used for grouping operations
+
         """
         super().__init__()
 
@@ -89,14 +87,14 @@ class BackupManager(QObject):
         )
 
     def create_backup(self, reason: str = "manual") -> str | None:
-        """
-        Create a backup of the database file.
+        """Create a backup of the database file.
 
         Args:
             reason: Reason for the backup (for logging)
 
         Returns:
             Path to the created backup file, or None if backup failed
+
         """
         try:
             # Check if database file exists
@@ -170,21 +168,21 @@ class BackupManager(QObject):
         self.create_backup("periodic")
 
     def backup_on_shutdown(self) -> str | None:
-        """
-        Create a backup when the application is shutting down.
+        """Create a backup when the application is shutting down.
 
         Returns:
             Path to the created backup file, or None if backup failed
+
         """
         logger.info("Creating shutdown backup...")
         return self.create_backup("shutdown")
 
     def set_backup_count(self, count: int) -> None:
-        """
-        Update the number of backup files to keep.
+        """Update the number of backup files to keep.
 
         Args:
             count: New backup count
+
         """
         if count < 1:
             logger.warning("Invalid backup count: %d. Must be >= 1", count)
@@ -199,11 +197,11 @@ class BackupManager(QObject):
             self._cleanup_old_backups()
 
     def set_backup_interval(self, interval: int) -> None:
-        """
-        Update the periodic backup interval.
+        """Update the periodic backup interval.
 
         Args:
             interval: New interval in seconds
+
         """
         if interval < 0:
             logger.warning("Invalid backup interval: %d. Must be >= 0", interval)
@@ -220,11 +218,11 @@ class BackupManager(QObject):
                 self.start_periodic_backups()
 
     def enable_periodic_backups(self, enabled: bool) -> None:
-        """
-        Enable or disable periodic backups.
+        """Enable or disable periodic backups.
 
         Args:
             enabled: Whether to enable periodic backups
+
         """
         self.periodic_enabled = enabled
 
@@ -236,11 +234,11 @@ class BackupManager(QObject):
             logger.info("Periodic backups disabled")
 
     def get_backup_files(self) -> list[Path]:
-        """
-        Get a list of all backup files for this database.
+        """Get a list of all backup files for this database.
 
         Returns:
             List of backup file paths, sorted by modification time (newest first)
+
         """
         try:
             basename = self.database_path.stem
@@ -258,11 +256,11 @@ class BackupManager(QObject):
             return []
 
     def get_status(self) -> dict[str, object]:
-        """
-        Get current backup manager status.
+        """Get current backup manager status.
 
         Returns:
             Dictionary with status information
+
         """
         backup_files = self.get_backup_files()
 
@@ -289,8 +287,7 @@ def get_backup_manager(
     periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED,
     grouping_timeout: float = 10.0,
 ) -> BackupManager:
-    """
-    Get or create the global backup manager instance.
+    """Get or create the global backup manager instance.
 
     Args:
         database_path: Path to the database file
@@ -298,6 +295,7 @@ def get_backup_manager(
 
     Returns:
         The global BackupManager instance
+
     """
     global _backup_manager
 

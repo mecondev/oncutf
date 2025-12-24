@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Profile cache performance and analyze hit rates.
+"""Profile cache performance and analyze hit rates.
 
 Author: Michael Economou
 Date: 2025-12-20

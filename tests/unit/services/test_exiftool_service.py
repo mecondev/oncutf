@@ -1,5 +1,4 @@
-"""
-Tests for ExifToolService.
+"""Tests for ExifToolService.
 
 Author: Michael Economou
 Date: December 18, 2025

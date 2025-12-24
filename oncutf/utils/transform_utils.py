@@ -1,5 +1,4 @@
-"""
-Module: transform_utils.py
+"""Module: transform_utils.py
 
 Author: Michael Economou
 Date: 2025-05-19
@@ -88,8 +87,7 @@ def strip_accents(text: str) -> str:
 
 
 def safe_upper(text: str) -> str:
-    """
-    Convert Greek text to uppercase.
+    """Convert Greek text to uppercase.
     If the first letter is a stressed vowel, preserve the accent.
     All other accents are removed.
     """
@@ -130,8 +128,7 @@ def to_greeklish(text: str) -> str:
 
 
 def apply_transform(name: str, transform: str) -> str:
-    """
-    Apply string transformation to a name.
+    """Apply string transformation to a name.
 
     Args:
         name (str): Input name (base filename, no extension)
@@ -141,6 +138,7 @@ def apply_transform(name: str, transform: str) -> str:
 
     Returns:
         str: Transformed name
+
     """
     if not name.strip():
         return ""

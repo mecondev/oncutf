@@ -1,5 +1,4 @@
-"""
-Module: test_specified_text.py
+"""Module: test_specified_text.py
 
 Author: Michael Economou
 Date: 2025-05-12

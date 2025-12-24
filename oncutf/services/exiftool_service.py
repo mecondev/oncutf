@@ -1,5 +1,4 @@
-"""
-ExifTool-based metadata service implementation.
+"""ExifTool-based metadata service implementation.
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -41,6 +40,7 @@ class ExifToolService:
         Args:
             use_extended: Whether to use extended metadata extraction (-ee flag).
                           Extended mode is slower but extracts embedded metadata.
+
         """
         self._use_extended = use_extended
         self._wrapper: Any = None  # Lazy initialization
@@ -64,6 +64,7 @@ class ExifToolService:
 
         Returns:
             True if ExifTool is installed and accessible.
+
         """
         if self._available is not None:
             return self._available
@@ -101,6 +102,7 @@ class ExifToolService:
         Returns:
             Dictionary with metadata key-value pairs.
             Returns empty dict if file cannot be read or ExifTool fails.
+
         """
         if not self.is_available():
             logger.warning("ExifTool not available, returning empty metadata")
@@ -130,6 +132,7 @@ class ExifToolService:
 
         Returns:
             Dictionary mapping paths to their metadata dicts.
+
         """
         if not self.is_available():
             logger.warning("ExifTool not available, returning empty batch result")

@@ -1,5 +1,4 @@
-"""
-Module: companion_metadata_handler.py
+"""Module: companion_metadata_handler.py
 
 Author: Michael Economou (refactored)
 Date: 2025-12-20
@@ -30,8 +29,7 @@ logger = get_cached_logger(__name__)
 
 
 class CompanionMetadataHandler:
-    """
-    Handler for companion file metadata operations.
+    """Handler for companion file metadata operations.
 
     Responsibilities:
     - Find companion files for a main file
@@ -58,8 +56,7 @@ class CompanionMetadataHandler:
         base_metadata: dict[str, Any] | None,
         folder_files: list[str] | None = None,
     ) -> dict[str, Any] | None:
-        """
-        Get enhanced metadata that includes companion file metadata.
+        """Get enhanced metadata that includes companion file metadata.
 
         Args:
             file_item: The main file item
@@ -68,6 +65,7 @@ class CompanionMetadataHandler:
 
         Returns:
             Enhanced metadata dict including companion file data, or None if not available
+
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return base_metadata
@@ -150,8 +148,7 @@ class CompanionMetadataHandler:
     def enhance_metadata_with_companions(
         self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
     ) -> dict[str, Any]:
-        """
-        Enhance metadata with companion file data during loading.
+        """Enhance metadata with companion file data during loading.
 
         Args:
             file_item: The main file being processed
@@ -160,6 +157,7 @@ class CompanionMetadataHandler:
 
         Returns:
             Enhanced metadata including companion data
+
         """
         if not COMPANION_FILES_ENABLED or not LOAD_COMPANION_METADATA:
             return base_metadata

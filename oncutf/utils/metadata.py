@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Module: metadata.py
+"""Module: metadata.py
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -29,8 +28,7 @@ def _format_tz_offset_for_filename(offset: timedelta) -> str:
 
 
 def datetime_to_filename(dt: datetime) -> str:
-    """
-    Convert a datetime to a filename-safe string using underscores for time separators.
+    """Convert a datetime to a filename-safe string using underscores for time separators.
     Format: 2024-05-12_14_23_10 (with tz: +2024-05-12_14_23_10+03_00)
     """
     if dt is None:

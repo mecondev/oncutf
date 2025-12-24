@@ -1,5 +1,4 @@
-"""
-Module: progress_protocol.py
+"""Module: progress_protocol.py
 
 Author: Michael Economou
 Date: 2025-11-21
@@ -28,14 +27,14 @@ from oncutf.core.pyqt_imports import QObject, pyqtSignal
 
 @dataclass
 class ProgressInfo:
-    """
-    Standard progress information structure.
+    """Standard progress information structure.
 
     Attributes:
         current: Current item/bytes processed
         total: Total items/bytes to process
         message: Optional status message
         percent: Progress percentage (0-100)
+
     """
 
     current: int
@@ -57,13 +56,13 @@ class ProgressInfo:
 
 @dataclass
 class SizeProgress:
-    """
-    Size-based progress information (for file operations).
+    """Size-based progress information (for file operations).
 
     Attributes:
         processed_bytes: Bytes processed so far
         total_bytes: Total bytes to process
         current_file: Name of current file being processed
+
     """
 
     processed_bytes: int
@@ -85,8 +84,7 @@ class SizeProgress:
 
 @runtime_checkable
 class ProgressCallback(Protocol):
-    """
-    Protocol for progress callback functions.
+    """Protocol for progress callback functions.
 
     Any callable matching this signature can be used as a progress callback.
 
@@ -96,24 +94,24 @@ class ProgressCallback(Protocol):
 
         # Type checker will accept this as ProgressCallback
         callback: ProgressCallback = my_progress_callback
+
     """
 
     def __call__(self, current: int, total: int, message: str = "") -> None:
-        """
-        Report progress.
+        """Report progress.
 
         Args:
             current: Current item number (1-based)
             total: Total number of items
             message: Optional status message
+
         """
         ...
 
 
 @runtime_checkable
 class SizeProgressCallback(Protocol):
-    """
-    Protocol for size-based progress callback functions.
+    """Protocol for size-based progress callback functions.
 
     Used for file operations where byte-level progress is important.
 
@@ -124,23 +122,23 @@ class SizeProgressCallback(Protocol):
             print(f"{filename}: {mb_done:.2f}/{mb_total:.2f} MB")
 
         callback: SizeProgressCallback = my_size_callback
+
     """
 
     def __call__(self, processed_bytes: int, total_bytes: int, current_file: str = "") -> None:
-        """
-        Report size-based progress.
+        """Report size-based progress.
 
         Args:
             processed_bytes: Bytes processed so far
             total_bytes: Total bytes to process
             current_file: Name of file currently being processed
+
         """
         ...
 
 
 class ProgressSignals(QObject):
-    """
-    Standard progress signals mixin for Qt workers.
+    """Standard progress signals mixin for Qt workers.
 
     Workers should inherit from both QObject and this mixin (or just include these signals).
 
@@ -185,8 +183,7 @@ class ProgressSignals(QObject):
 def create_progress_callback(
     progress_signal: Any | None = None, size_signal: Any | None = None
 ) -> tuple[ProgressCallback | None, SizeProgressCallback | None]:
-    """
-    Create callback functions from Qt signals.
+    """Create callback functions from Qt signals.
 
     Helper function to bridge Qt signals to callback functions.
 
@@ -209,6 +206,7 @@ def create_progress_callback(
         for i, item in enumerate(items):
             if progress_cb:
                 progress_cb(i + 1, len(items), f"Processing {item}")
+
     """
     progress_callback = None
     size_callback = None
@@ -233,8 +231,7 @@ def create_progress_callback(
 def format_progress_message(
     current: int, total: int, operation: str = "Processing", item_name: str = ""
 ) -> str:
-    """
-    Format a standard progress message.
+    """Format a standard progress message.
 
     Args:
         current: Current item number
@@ -250,6 +247,7 @@ def format_progress_message(
         'Loading 5/10: image.jpg'
         >>> format_progress_message(7, 20, "Processing")
         'Processing 7/20'
+
     """
     if item_name:
         return f"{operation} {current}/{total}: {item_name}"
@@ -259,8 +257,7 @@ def format_progress_message(
 def format_size_progress(
     processed_bytes: int, total_bytes: int, include_percent: bool = True
 ) -> str:
-    """
-    Format size-based progress as human-readable string.
+    """Format size-based progress as human-readable string.
 
     Args:
         processed_bytes: Bytes processed
@@ -275,6 +272,7 @@ def format_size_progress(
         '5.00 MB / 10.00 MB (50.0%)'
         >>> format_size_progress(1024, 2048, include_percent=False)
         '1.00 KB / 2.00 KB'
+
     """
 
     def format_bytes(size: int) -> str:

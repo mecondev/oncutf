@@ -1,5 +1,4 @@
-"""
-Module: metadata_loader.py
+"""Module: metadata_loader.py
 
 Author: Michael Economou
 Date: 2025-05-22
@@ -28,8 +27,7 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataLoader:
-    """
-    Provides a unified interface for loading metadata using ExifTool.
+    """Provides a unified interface for loading metadata using ExifTool.
     Supports both fast and extended scanning, with smart caching and reuse.
     """
 
@@ -142,8 +140,7 @@ class MetadataLoader:
     def read_metadata(
         self, filepath: str, _timeout: int = 10, use_extended: bool = False
     ) -> dict[str, str] | None:
-        """
-        Reads metadata using ExifToolWrapper. Falls back to subprocess if needed.
+        """Reads metadata using ExifToolWrapper. Falls back to subprocess if needed.
 
         Args:
             filepath (str): Target file.
@@ -152,6 +149,7 @@ class MetadataLoader:
 
         Returns:
             dict or None: Raw metadata dictionary or None on failure.
+
         """
         # Normalize path for Windows compatibility
         from oncutf.utils.path_normalizer import normalize_path

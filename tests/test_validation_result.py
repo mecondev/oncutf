@@ -1,5 +1,4 @@
-"""
-Module: test_validation_result.py
+"""Module: test_validation_result.py
 
 Author: Michael Economou
 Date: 2025-12-16

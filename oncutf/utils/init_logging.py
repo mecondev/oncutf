@@ -1,5 +1,4 @@
-"""
-Module: init_logging.py
+"""Module: init_logging.py
 
 Author: Michael Economou
 Date: 2025-05-12
@@ -18,8 +17,7 @@ from oncutf.utils.logger_file_helper import add_file_handler
 
 
 def init_logging(app_name: str = "app") -> logging.Logger:
-    """
-    Initializes logging for the application, adding rotating file handlers
+    """Initializes logging for the application, adding rotating file handlers
     for activity and error logs under the given app name.
 
     Args:
@@ -27,6 +25,7 @@ def init_logging(app_name: str = "app") -> logging.Logger:
 
     Returns:
         logging.Logger: The main logger for __main__ module.
+
     """
     logger = get_cached_logger(__name__)
 

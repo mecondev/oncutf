@@ -1,5 +1,4 @@
-"""
-Tests for service protocol interfaces.
+"""Tests for service protocol interfaces.
 
 Author: Michael Economou
 Date: December 18, 2025

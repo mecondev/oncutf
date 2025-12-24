@@ -1,5 +1,4 @@
-"""
-Module: validated_line_edit.py
+"""Module: validated_line_edit.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
-    """
-    Custom QLineEdit with filename validation and input filtering.
+    """Custom QLineEdit with filename validation and input filtering.
 
     Features:
     - Blocks invalid characters on input
@@ -52,23 +50,23 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
         self.validation_changed.emit(is_valid)
 
     def get_blocked_characters(self) -> set[str]:
-        """
-        Get set of characters that should be blocked for filename input.
+        """Get set of characters that should be blocked for filename input.
 
         Returns:
             Set of characters to block
+
         """
         return set(INVALID_FILENAME_CHARS)
 
     def validate_text_content(self, text: str) -> tuple[bool, str]:
-        """
-        Validate text content using filename validation.
+        """Validate text content using filename validation.
 
         Args:
             text: Text to validate
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not text:
             return True, ""  # Empty text is valid

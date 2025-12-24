@@ -27,6 +27,7 @@ class MetadataTreeSelectionHandler:
 
         Args:
             view: The metadata tree view instance
+
         """
         self._view = view
 
@@ -120,26 +121,24 @@ class MetadataTreeSelectionHandler:
             self._view.show_empty_state("Error loading metadata")
 
     def refresh_metadata_from_selection(self) -> None:
-        """
-        Convenience method that triggers metadata update from parent selection.
+        """Convenience method that triggers metadata update from parent selection.
         Can be called from parent window when selection changes.
         """
         logger.debug("[MetadataTree] Refreshing metadata from selection", extra={"dev_only": True})
         self.update_from_parent_selection()
 
     def handle_selection_change(self) -> None:
-        """
-        Handle selection changes from the parent file table.
+        """Handle selection changes from the parent file table.
         This is a convenience method that can be connected to selection signals.
         """
         self.refresh_metadata_from_selection()
 
     def handle_invert_selection(self, metadata: dict[str, Any] | None) -> None:
-        """
-        Handle metadata display after selection inversion.
+        """Handle metadata display after selection inversion.
 
         Args:
             metadata: The metadata to display, or None to clear
+
         """
         if isinstance(metadata, dict) and metadata:
             self._view.display_metadata(metadata, context="invert_selection")
@@ -150,14 +149,14 @@ class MetadataTreeSelectionHandler:
         self._view._update_header_visibility()
 
     def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:
-        """
-        Central logic to determine if metadata should be displayed based on selection count.
+        """Central logic to determine if metadata should be displayed based on selection count.
 
         Args:
             selected_files_count: Number of currently selected files
 
         Returns:
             bool: True if metadata should be displayed, False if empty state should be shown
+
         """
         # Only display metadata for single file selection
         return selected_files_count == 1
@@ -209,11 +208,11 @@ class MetadataTreeSelectionHandler:
         self._view._update_header_visibility()
 
     def get_modified_metadata(self) -> dict[str, str]:
-        """
-        Collect all modified metadata items for the current file.
+        """Collect all modified metadata items for the current file.
 
         Returns:
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
+
         """
         # Get staging manager
         from oncutf.core.metadata_staging_manager import get_metadata_staging_manager

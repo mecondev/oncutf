@@ -1,5 +1,4 @@
-"""
-Module: status_manager.py
+"""Module: status_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -104,8 +103,7 @@ class StatusManager:
         priority: StatusPriority = StatusPriority.NORMAL,
         operation_id: str | None = None,
     ) -> None:
-        """
-        Enhanced status setting with categorization and priority.
+        """Enhanced status setting with categorization and priority.
 
         Args:
             text: Status text to display
@@ -115,6 +113,7 @@ class StatusManager:
             category: Category of the status message
             priority: Priority level of the message
             operation_id: Optional operation identifier for tracking
+
         """
         if not self.status_label:
             logger.warning("[StatusManager] No status label set")

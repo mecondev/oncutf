@@ -1,5 +1,4 @@
-"""
-Service protocol definitions for oncutf application.
+"""Service protocol definitions for oncutf application.
 
 Author: Michael Economou
 Date: December 18, 2025
@@ -52,6 +51,7 @@ class MetadataServiceProtocol(Protocol):
         Returns:
             Dictionary with metadata key-value pairs.
             Returns empty dict if file cannot be read.
+
         """
         ...
 
@@ -63,6 +63,7 @@ class MetadataServiceProtocol(Protocol):
 
         Returns:
             Dictionary mapping paths to their metadata dicts.
+
         """
         ...
 
@@ -84,6 +85,7 @@ class HashServiceProtocol(Protocol):
 
         Returns:
             Hex string representation of the hash.
+
         """
         ...
 
@@ -96,6 +98,7 @@ class HashServiceProtocol(Protocol):
 
         Returns:
             Dictionary mapping paths to their hash strings.
+
         """
         ...
 
@@ -117,6 +120,7 @@ class FilesystemServiceProtocol(Protocol):
 
         Returns:
             True if successful, False otherwise.
+
         """
         ...
 
@@ -128,6 +132,7 @@ class FilesystemServiceProtocol(Protocol):
 
         Returns:
             True if file exists and is a file (not directory).
+
         """
         ...
 
@@ -139,6 +144,7 @@ class FilesystemServiceProtocol(Protocol):
 
         Returns:
             Dictionary with file info (size, mtime, ctime, etc.).
+
         """
         ...
 
@@ -158,6 +164,7 @@ class DatabaseServiceProtocol(Protocol):
             source: Original file path.
             target: New file path.
             timestamp: Unix timestamp of the operation.
+
         """
         ...
 
@@ -169,6 +176,7 @@ class DatabaseServiceProtocol(Protocol):
 
         Returns:
             List of rename operations involving this path.
+
         """
         ...
 
@@ -190,6 +198,7 @@ class ConfigServiceProtocol(Protocol):
 
         Returns:
             Configuration value or default.
+
         """
         ...
 
@@ -199,5 +208,6 @@ class ConfigServiceProtocol(Protocol):
         Args:
             key: Configuration key.
             value: Value to set.
+
         """
         ...

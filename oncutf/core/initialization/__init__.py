@@ -1,5 +1,4 @@
-"""
-Application initialization module.
+"""Application initialization module.
 
 This module provides application startup and initialization functionality including:
 - InitializationManager: Manages initialization state and progress

@@ -1,5 +1,4 @@
-"""
-Module: file_table_view.py
+"""Module: file_table_view.py
 
 Author: Michael Economou
 Date: 2025-05-21
@@ -49,8 +48,7 @@ SCROLLBAR_MARGIN = 40
 
 
 class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTableView):
-    """
-    Custom QTableView with Windows Explorer-like behavior.
+    """Custom QTableView with Windows Explorer-like behavior.
 
     Features:
     - Full-row selection with anchor handling (via SelectionMixin)
@@ -683,8 +681,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self.set_placeholder_visible(is_empty)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle mouse press events for selection and drag initiation.
+        """Handle mouse press events for selection and drag initiation.
         """
         # Get the index under the mouse
         index = self.indexAt(event.pos())
@@ -758,8 +755,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self._sync_selection_safely()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle mouse release events.
+        """Handle mouse release events.
         """
         was_dragging = False
         if event.button() == Qt.LeftButton:
@@ -788,8 +784,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
-        """
-        Handle mouse move events for drag initiation.
+        """Handle mouse move events for drag initiation.
         """
         if self.is_empty():
             return
@@ -1022,8 +1017,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                         self.viewport().update(row_rect)
 
     def scrollTo(self, index, hint=None) -> None:
-        """
-        Override scrollTo to prevent automatic scrolling when selections change.
+        """Override scrollTo to prevent automatic scrolling when selections change.
         This prevents the table from moving when selecting rows.
         """
         # Check if table is empty or in placeholder mode

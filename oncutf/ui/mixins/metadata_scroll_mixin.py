@@ -1,5 +1,4 @@
-"""
-Mixin for MetadataTreeView scroll position management and state persistence.
+"""Mixin for MetadataTreeView scroll position management and state persistence.
 
 This mixin handles:
 - Scroll position memory per file
@@ -18,8 +17,7 @@ from oncutf.utils.timer_manager import schedule_ui_update
 
 
 class MetadataScrollMixin:
-    """
-    Mixin providing scroll position management for metadata tree view.
+    """Mixin providing scroll position management for metadata tree view.
 
     This mixin manages per-file scroll positions and expanded item states,
     with intelligent restoration when switching between files.
@@ -37,8 +35,7 @@ class MetadataScrollMixin:
     # =====================================
 
     def _path_in_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
-        """
-        Check if a path exists in dictionary using path-aware comparison.
+        """Check if a path exists in dictionary using path-aware comparison.
 
         Args:
             path: Path to look for
@@ -46,6 +43,7 @@ class MetadataScrollMixin:
 
         Returns:
             bool: True if path exists in dictionary
+
         """
         if not path or not path_dict:
             return False
@@ -58,8 +56,7 @@ class MetadataScrollMixin:
         return any(paths_equal(path, existing_path) for existing_path in path_dict)
 
     def _get_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> Any:
-        """
-        Get value from dictionary using path-aware comparison.
+        """Get value from dictionary using path-aware comparison.
 
         Args:
             path: Path key to look for
@@ -67,6 +64,7 @@ class MetadataScrollMixin:
 
         Returns:
             Any: Value if found, None otherwise
+
         """
         if not path or not path_dict:
             return None
@@ -83,13 +81,13 @@ class MetadataScrollMixin:
         return None
 
     def _set_in_path_dict(self, path: str, value: Any, path_dict: dict[str, Any]) -> None:
-        """
-        Set value in dictionary using path-aware key management.
+        """Set value in dictionary using path-aware key management.
 
         Args:
             path: Path key to set
             value: Value to set
             path_dict: Dictionary with path keys
+
         """
         if not path:
             return
@@ -107,8 +105,7 @@ class MetadataScrollMixin:
         path_dict[path] = value
 
     def _remove_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
-        """
-        Remove path from dictionary using path-aware comparison.
+        """Remove path from dictionary using path-aware comparison.
 
         Args:
             path: Path key to remove
@@ -116,6 +113,7 @@ class MetadataScrollMixin:
 
         Returns:
             bool: True if something was removed
+
         """
         if not path or not path_dict:
             return False
@@ -235,11 +233,11 @@ class MetadataScrollMixin:
         scrollbar.setValue(target_position)
 
     def _apply_scroll_position_immediately(self, position: int) -> None:
-        """
-        Apply scroll position immediately without animation.
+        """Apply scroll position immediately without animation.
 
         Args:
             position: Target scroll position
+
         """
         scrollbar = self.verticalScrollBar()
         max_scroll = scrollbar.maximum()

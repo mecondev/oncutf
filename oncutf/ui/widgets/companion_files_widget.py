@@ -1,5 +1,4 @@
-"""
-companion_files_widget.py
+"""companion_files_widget.py
 
 Widget for managing companion files settings and preferences.
 Allows users to control how companion/sidecar files are handled.
@@ -37,8 +36,7 @@ logger = get_cached_logger(__name__)
 
 
 class CompanionFilesWidget(QWidget):
-    """
-    Widget for companion files settings.
+    """Widget for companion files settings.
 
     Allows users to control:
     - Whether companion files are detected and handled
@@ -285,8 +283,7 @@ class CompanionFilesWidget(QWidget):
 
 
 class CompanionFilesDialog(QWidget):
-    """
-    Standalone dialog for companion files settings.
+    """Standalone dialog for companion files settings.
     Can be opened from settings menu or toolbar.
     """
 

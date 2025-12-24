@@ -1,5 +1,4 @@
-"""
-Module: direct_metadata_loader.py
+"""Module: direct_metadata_loader.py
 
 Author: Michael Economou
 Date: 2025-07-06
@@ -31,8 +30,7 @@ logger = get_cached_logger(__name__)
 
 
 class DirectMetadataLoader(QObject):
-    """
-    Simple, direct metadata loader for on-demand loading.
+    """Simple, direct metadata loader for on-demand loading.
 
     Only loads metadata/hash when explicitly requested by user.
     Checks cache first for instant display, loads missing data in background.
@@ -58,14 +56,14 @@ class DirectMetadataLoader(QObject):
             logger.debug("[DirectMetadataLoader] Cache helper initialized")
 
     def check_cached_metadata(self, file_item: FileItem) -> dict | None:
-        """
-        Check if metadata exists in cache without loading.
+        """Check if metadata exists in cache without loading.
 
         Args:
             file_item: The file to check
 
         Returns:
             Metadata dict if cached, None if not available
+
         """
         try:
             return get_metadata_for_file(file_item.full_path)
@@ -79,14 +77,14 @@ class DirectMetadataLoader(QObject):
             return None
 
     def check_cached_hash(self, file_item: FileItem) -> str | None:
-        """
-        Check if hash exists in cache without loading.
+        """Check if hash exists in cache without loading.
 
         Args:
             file_item: The file to check
 
         Returns:
             Hash string if cached, None if not available
+
         """
         try:
             return get_hash_for_file(file_item.full_path)
@@ -100,14 +98,14 @@ class DirectMetadataLoader(QObject):
             return None
 
     def has_cached_metadata(self, file_item: FileItem) -> bool:
-        """
-        Check if metadata exists in cache (fast check).
+        """Check if metadata exists in cache (fast check).
 
         Args:
             file_item: The file to check
 
         Returns:
             True if metadata exists in cache, False otherwise
+
         """
         try:
             return has_metadata(file_item.full_path)
@@ -121,14 +119,14 @@ class DirectMetadataLoader(QObject):
             return False
 
     def has_cached_hash(self, file_item: FileItem) -> bool:
-        """
-        Check if hash exists in cache (fast check).
+        """Check if hash exists in cache (fast check).
 
         Args:
             file_item: The file to check
 
         Returns:
             True if hash exists in cache, False otherwise
+
         """
         try:
             return has_hash(file_item.full_path)
@@ -144,13 +142,13 @@ class DirectMetadataLoader(QObject):
     def load_metadata_for_files(
         self, files: list[FileItem], use_extended: bool = False, source: str = "user_request"
     ) -> None:
-        """
-        Load metadata for files that don't have it cached.
+        """Load metadata for files that don't have it cached.
 
         Args:
             files: List of files to load metadata for
             use_extended: Whether to use extended metadata
             source: Source of request for logging
+
         """
         if not files:
             return
@@ -293,12 +291,12 @@ class DirectMetadataLoader(QObject):
         self._currently_loading.clear()
 
     def load_hashes_for_files(self, files: list[FileItem], source: str = "user_request") -> None:
-        """
-        Load hashes for files that don't have them cached.
+        """Load hashes for files that don't have them cached.
 
         Args:
             files: List of files to load hashes for
             source: Source of request for logging
+
         """
         if not files:
             return

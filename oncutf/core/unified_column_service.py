@@ -1,5 +1,4 @@
-"""
-Module: unified_column_service.py
+"""Module: unified_column_service.py
 
 Author: Michael Economou
 Date: 2025-08-24
@@ -41,8 +40,7 @@ class ColumnAlignment(Enum):
 
 @dataclass(frozen=True)
 class ColumnConfig:
-    """
-    Immutable column configuration.
+    """Immutable column configuration.
 
     This replaces the scattered configuration dictionaries with a type-safe,
     validated configuration object.
@@ -68,8 +66,7 @@ class ColumnConfig:
 
 
 class UnifiedColumnService:
-    """
-    Unified column management service.
+    """Unified column management service.
 
     This service provides a single API for all column-related operations,
     replacing the complex multi-layer approach with a simple, cached service.
@@ -110,14 +107,14 @@ class UnifiedColumnService:
         return None
 
     def get_column_config(self, column_key: str) -> ColumnConfig | None:
-        """
-        Get configuration for a specific column.
+        """Get configuration for a specific column.
 
         Args:
             column_key: The column identifier
 
         Returns:
             ColumnConfig object or None if column doesn't exist
+
         """
         if self._config_cache is None:
             self._load_configuration()
@@ -139,11 +136,11 @@ class UnifiedColumnService:
         return self._visible_columns_cache.copy()
 
     def get_column_mapping(self) -> dict[int, str]:
-        """
-        Get column index to key mapping.
+        """Get column index to key mapping.
 
         Returns:
             Dictionary mapping column indices to column keys.
+
         """
         if self._column_mapping_cache is None:
             self._compute_column_mapping()
@@ -151,14 +148,14 @@ class UnifiedColumnService:
         return self._column_mapping_cache.copy()
 
     def get_column_width(self, column_key: str) -> int:
-        """
-        Get effective width for a column (user override or default).
+        """Get effective width for a column (user override or default).
 
         Args:
             column_key: The column identifier
 
         Returns:
             Column width in pixels
+
         """
         # Check user settings first
         user_settings = self._get_user_settings()
@@ -172,12 +169,12 @@ class UnifiedColumnService:
         return config.width if config else 100
 
     def set_column_width(self, column_key: str, width: int) -> None:
-        """
-        Set user override for column width.
+        """Set user override for column width.
 
         Args:
             column_key: The column identifier
             width: Width in pixels
+
         """
         # This would integrate with the window config manager
         # For now, we'll implement a simple approach
@@ -193,12 +190,12 @@ class UnifiedColumnService:
         return column_key in self.get_visible_columns()
 
     def set_column_visibility(self, column_key: str, visible: bool) -> None:
-        """
-        Set column visibility.
+        """Set column visibility.
 
         Args:
             column_key: The column identifier
             visible: Whether column should be visible
+
         """
         user_settings = self._get_user_settings()
         if "file_table_columns" not in user_settings:
@@ -360,11 +357,11 @@ _column_service_instance: UnifiedColumnService | None = None
 
 
 def get_column_service() -> UnifiedColumnService:
-    """
-    Get the global column service instance.
+    """Get the global column service instance.
 
     Returns:
         Singleton UnifiedColumnService instance
+
     """
     global _column_service_instance
 

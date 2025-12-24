@@ -1,5 +1,4 @@
-"""
-Module: file_load_manager.py
+"""Module: file_load_manager.py
 
 Author: Michael Economou
 Date: 2025-06-13
@@ -30,8 +29,7 @@ logger = get_cached_logger(__name__)
 
 
 class FileLoadManager:
-    """
-    Unified file loading manager with fully optimized policy:
+    """Unified file loading manager with fully optimized policy:
     - All operations: wait_cursor only (fast, synchronous like external drops)
     - Same behavior for drag, import, and external operations
     - No complex progress dialogs, just simple and fast loading
@@ -56,8 +54,7 @@ class FileLoadManager:
     def load_folder(
         self, folder_path: str, merge_mode: bool = False, recursive: bool = False
     ) -> None:
-        """
-        Unified folder loading method for both drag and import operations.
+        """Unified folder loading method for both drag and import operations.
 
         New Policy:
         - All operations: wait_cursor only (fast, synchronous like external drops)
@@ -110,8 +107,7 @@ class FileLoadManager:
         self._load_folder_with_wait_cursor(folder_path, merge_mode, recursive)
 
     def load_files_from_paths(self, paths: list[str], clear: bool = True) -> None:
-        """
-        Load files from multiple paths (used by import button).
+        """Load files from multiple paths (used by import button).
         Now uses same fast approach as drag operations for consistency.
         """
         logger.info(
@@ -148,8 +144,7 @@ class FileLoadManager:
     def load_single_item_from_drop(
         self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
     ) -> None:
-        """
-        Handle single item drop with modifier support.
+        """Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
         logger.info(
@@ -196,8 +191,7 @@ class FileLoadManager:
     def load_files_from_dropped_items(
         self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
     ) -> None:
-        """
-        Handle multiple dropped items (table drop).
+        """Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.
         """
         if not paths:
@@ -244,8 +238,7 @@ class FileLoadManager:
             self._update_ui_with_files(file_paths, clear=not merge_mode)
 
     def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> list[str]:
-        """
-        Get all valid files from folder.
+        """Get all valid files from folder.
         Returns list of file paths.
         """
         file_paths = []
@@ -273,14 +266,14 @@ class FileLoadManager:
         return ext in self.allowed_extensions
 
     def _filter_companion_files(self, file_paths: list[str]) -> list[str]:
-        """
-        Filter companion files based on configuration.
+        """Filter companion files based on configuration.
 
         Args:
             file_paths: List of file paths to filter
 
         Returns:
             Filtered list of file paths
+
         """
         if not COMPANION_FILES_ENABLED or SHOW_COMPANION_FILES_IN_TABLE:
             # Either companion files are disabled or we should show them
@@ -312,8 +305,7 @@ class FileLoadManager:
             return file_paths
 
     def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
-        """
-        Update UI with loaded files.
+        """Update UI with loaded files.
         Converts file paths to FileItem objects and updates the model.
         """
         if not file_paths:
@@ -347,8 +339,7 @@ class FileLoadManager:
         self._update_ui_after_load(file_items, clear=clear)
 
     def _update_ui_after_load(self, items: list[FileItem], clear: bool = True) -> None:
-        """
-        Update UI after loading files.
+        """Update UI after loading files.
         Uses streaming approach for large file sets to keep UI responsive.
         """
         if not hasattr(self.parent_window, "file_model"):
@@ -393,8 +384,7 @@ class FileLoadManager:
             logger.error("[FileLoadManager] Error updating UI: %s", e)
 
     def _load_files_immediate(self, items: list[FileItem], clear: bool = True) -> None:
-        """
-        Load files immediately (legacy behavior for small file sets).
+        """Load files immediately (legacy behavior for small file sets).
         Used for < 200 files where UI blocking is negligible.
         """
         if clear:
@@ -449,8 +439,7 @@ class FileLoadManager:
                 )
 
     def _load_files_streaming(self, items: list[FileItem], clear: bool = True) -> None:
-        """
-        Load files in batches to keep UI responsive.
+        """Load files in batches to keep UI responsive.
         Used for large file sets (> 200 files) to prevent UI freeze.
         """
         logger.info(
@@ -474,8 +463,7 @@ class FileLoadManager:
         self._process_next_batch()
 
     def _process_next_batch(self) -> None:
-        """
-        Process next batch of files in streaming loading.
+        """Process next batch of files in streaming loading.
         Called recursively via QTimer to keep UI responsive.
         """
         if not self._loading_in_progress or not self._pending_files:
@@ -528,8 +516,7 @@ class FileLoadManager:
         )
 
     def _refresh_ui_after_file_load(self) -> None:
-        """
-        Refresh all UI elements after files are loaded.
+        """Refresh all UI elements after files are loaded.
         This ensures placeholders are hidden, labels are updated, and selection works.
         """
         try:
@@ -670,8 +657,7 @@ class FileLoadManager:
             logger.error("[FileLoadManager] Error refreshing UI: %s", e)
 
     def prepare_folder_load(self, folder_path: str, *, _clear: bool = True) -> list[str]:
-        """
-        Prepare folder for loading by getting file list.
+        """Prepare folder for loading by getting file list.
         Returns list of file paths without loading them into UI.
         """
         logger.info("[FileLoadManager] prepare_folder_load: %s", folder_path)

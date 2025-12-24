@@ -1,5 +1,4 @@
-"""
-Domain layer for oncutf application.
+"""Domain layer for oncutf application.
 
 Author: Michael Economou
 Date: December 17, 2025

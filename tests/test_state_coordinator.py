@@ -1,5 +1,4 @@
-"""
-Tests for StateCoordinator.
+"""Tests for StateCoordinator.
 
 Author: Michael Economou
 Date: 2025-12-16

@@ -1,5 +1,4 @@
-"""
-Module: test_rename_logic.py
+"""Module: test_rename_logic.py
 
 Author: Michael Economou
 Date: 2025-05-12

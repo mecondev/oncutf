@@ -1,5 +1,4 @@
-"""
-Module: performance_widget.py
+"""Module: performance_widget.py
 
 Author: Michael Economou
 Date: 2025-05-01

@@ -1,5 +1,4 @@
-"""
-Module: preview_manager.py
+"""Module: preview_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -242,8 +241,7 @@ class PreviewManager:
         logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
-        """
-        Calculate the ideal column width in pixels based on the longest filename.
+        """Calculate the ideal column width in pixels based on the longest filename.
 
         The width is estimated as: 8 * length of longest filename,
         clamped between 250 and 1000 pixels. This ensures a readable but bounded width
@@ -254,6 +252,7 @@ class PreviewManager:
 
         Returns:
             Pixel width suitable for displaying the longest filename.
+
         """
         # Get the length of the longest filename (in characters)
         max_len = max((len(file.filename) for file in file_list), default=0)
@@ -279,11 +278,11 @@ class PreviewManager:
         return [(file.filename, file.filename) for file in file_list]
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """
-        Updates all three preview tables using the PreviewTablesView.
+        """Updates all three preview tables using the PreviewTablesView.
 
         Args:
             name_pairs: List of (old_name, new_name) pairs generated during preview generation.
+
         """
         if not self.parent_window:
             logger.warning("[PreviewManager] No parent window available for preview table updates")
@@ -300,8 +299,7 @@ class PreviewManager:
             logger.warning("[PreviewManager] Preview tables view not available")
 
     def on_hash_calculation_completed(self) -> None:
-        """
-        Called when hash calculation is completed.
+        """Called when hash calculation is completed.
         Triggers preview refresh to update hash-based metadata.
         """
         logger.debug(
@@ -325,8 +323,7 @@ class PreviewManager:
         metadata_cache: Any,
         all_modules: list[Any],
     ) -> tuple[list[tuple[str, str]], bool]:
-        """
-        Force generate preview names bypassing the short-lived cache.
+        """Force generate preview names bypassing the short-lived cache.
         This clears the internal preview cache and calls generate_preview_names.
         """
         # Clear short-lived cache and force regeneration

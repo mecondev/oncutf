@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script to generate fonts_rc.py from fonts.qrc resource file.
+"""Script to generate fonts_rc.py from fonts.qrc resource file.
 
 Author: Michael Economou
 Date: 2025-12-21

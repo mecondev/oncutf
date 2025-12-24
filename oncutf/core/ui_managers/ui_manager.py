@@ -1,5 +1,4 @@
-"""
-Module: ui_manager.py
+"""Module: ui_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -788,8 +787,7 @@ class UIManager:
             self.parent_window.shortcuts.append(shortcut)
 
     def _refresh_file_table(self) -> None:
-        """
-        Refresh file table (F5) - reloads files and clears selection for better UX.
+        """Refresh file table (F5) - reloads files and clears selection for better UX.
         Shows status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
@@ -810,8 +808,7 @@ class UIManager:
                 )
 
     def _show_search_context_menu(self, position, line_edit: QLineEdit) -> None:
-        """
-        Show custom context menu for the search field with consistent styling and icons.
+        """Show custom context menu for the search field with consistent styling and icons.
         """
         menu = QMenu(line_edit)
 

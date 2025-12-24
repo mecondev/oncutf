@@ -1,5 +1,4 @@
-"""
-Module: test_per_filegroup_scope.py
+"""Module: test_per_filegroup_scope.py
 
 Author: Michael Economou
 Date: 2025-12-17

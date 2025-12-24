@@ -1,5 +1,4 @@
-"""
-Module: text_helpers.py
+"""Module: text_helpers.py
 
 Author: Michael Economou
 Date: 2025-05-19
@@ -13,19 +12,21 @@ import os
 
 
 def elide_text(text: str, max_len: int) -> str:
-    """
-    Truncates text to a maximum number of characters with ellipsis if needed.
+    """Truncates text to a maximum number of characters with ellipsis if needed.
 
     Example:
         elide_text("example_filename_that_is_too_long.txt", 25)
         → "example_filename_that_i…"
 
-    Parameters:
+    Parameters
+    ----------
         text (str): The original text to truncate.
         max_len (int): Maximum allowed length, including ellipsis.
 
-    Returns:
+    Returns
+    -------
         str: Elided version of the text.
+
     """
     if max_len <= 0:
         # No space to display anything
@@ -41,8 +42,7 @@ def elide_text(text: str, max_len: int) -> str:
 
 
 def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
-    """
-    Truncate filename with "..." in the middle, preserving file extension.
+    """Truncate filename with "..." in the middle, preserving file extension.
 
     This function intelligently truncates long filenames by placing "..." in the middle
     while preserving the file extension. This provides better UX than truncating at the end.
@@ -63,6 +63,7 @@ def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
 
         >>> truncate_filename_middle("no_extension_file")
         "no_extension_file"
+
     """
     if not filename:
         return ""
@@ -93,8 +94,7 @@ def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
 
 
 def format_file_size_stable(size_bytes: int) -> str:
-    """
-    Format file size with stable display for better UX.
+    """Format file size with stable display for better UX.
 
     Uses fixed-width formatting to prevent visual "jumping" when text length changes.
     All formatted strings have the same width (10 characters) for perfect alignment.
@@ -104,6 +104,7 @@ def format_file_size_stable(size_bytes: int) -> str:
 
     Returns:
         Formatted size string with consistent width (e.g., "  1.5 GB  ", " 999 MB  ")
+
     """
     if size_bytes < 0:
         return "     0 B   "[:10].ljust(10)  # Fixed width: 10 characters

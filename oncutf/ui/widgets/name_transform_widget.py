@@ -1,5 +1,4 @@
-"""
-Module: name_transform_widget.py
+"""Module: name_transform_widget.py
 
 Author: Michael Economou
 Date: 2025-05-27
@@ -23,8 +22,7 @@ from oncutf.modules.base_module import BaseRenameModule  # Debounced signal base
 
 
 class NameTransformWidget(BaseRenameModule):
-    """
-    UI component for selecting Greek to Greeklish conversion, case and separator transformations.
+    """UI component for selecting Greek to Greeklish conversion, case and separator transformations.
     Emits 'updated' signal only when the configuration changes.
     """
 
@@ -103,16 +101,14 @@ class NameTransformWidget(BaseRenameModule):
         layout.addLayout(sep_layout)
 
     def _on_value_change(self) -> None:
-        """
-        Triggered when any control changes.
+        """Triggered when any control changes.
         Emits update only if the new configuration differs from the last.
         """
         current_data = str(self.get_data())
         self.emit_if_changed(current_data)
 
     def get_data(self) -> dict:
-        """
-        Returns the current name transformation configuration.
+        """Returns the current name transformation configuration.
         """
         return {
             "greeklish": self.greeklish_checkbox.isChecked(),
@@ -121,11 +117,11 @@ class NameTransformWidget(BaseRenameModule):
         }
 
     def set_data(self, data: dict) -> None:
-        """
-        Sets the current state of the controls from saved configuration.
+        """Sets the current state of the controls from saved configuration.
 
         Args:
             data (dict): Should include keys 'greeklish', 'case' and 'separator'.
+
         """
         self.greeklish_checkbox.setChecked(data.get("greeklish", False))
         self.case_combo.setCurrentText(data.get("case", "original"))

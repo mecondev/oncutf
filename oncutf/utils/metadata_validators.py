@@ -1,5 +1,4 @@
-"""
-Module: metadata_validators.py
+"""Module: metadata_validators.py
 
 Author: Michael Economou
 Date: 2025-06-07
@@ -15,8 +14,7 @@ logger = get_cached_logger(__name__)
 
 
 def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
-    """
-    Validates rotation values.
+    """Validates rotation values.
 
     Args:
         value: The rotation value to validate as string
@@ -26,6 +24,7 @@ def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
         - bool: True if valid, False otherwise
         - str or None: Normalized value if valid, None otherwise
         - str or None: Error message if invalid, None otherwise
+
     """
     valid_rotations = ["0", "90", "180", "270"]
 
@@ -66,14 +65,14 @@ def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
 
 
 def get_validator_for_key(key_path: str):
-    """
-    Returns the appropriate validator function for a given key path.
+    """Returns the appropriate validator function for a given key path.
 
     Args:
         key_path: The metadata key path (e.g. "EXIF/Rotation")
 
     Returns:
         A validator function or None if no specific validator exists
+
     """
     if "Rotation" in key_path:
         return validate_rotation

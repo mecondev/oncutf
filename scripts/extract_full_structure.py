@@ -1,5 +1,4 @@
-"""
-Module: extract_full_structure.py
+"""Module: extract_full_structure.py
 Extract full project structure with docstring snippets and coverage statistics.
 
 This script generates a comprehensive project structure report including:

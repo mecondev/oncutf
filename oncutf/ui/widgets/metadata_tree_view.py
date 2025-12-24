@@ -92,8 +92,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
         self.setRecursiveFilteringEnabled(True)
 
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
-        """
-        Custom filter logic for metadata tree.
+        """Custom filter logic for metadata tree.
 
         Shows a row if:
         1. The row itself matches the filter
@@ -137,8 +136,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
 class MetadataTreeView(
     MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView
 ):
-    """
-    Custom tree view that accepts file drag & drop to trigger metadata loading.
+    """Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
     Includes intelligent scroll position memory per file with smooth animation.
     Uses unified placeholder helper for consistent empty state display.
@@ -355,22 +353,19 @@ class MetadataTreeView(
     # =====================================
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """
-        Accept drag only if it comes from our application's file table.
+        """Accept drag only if it comes from our application's file table.
         Delegates to drag handler.
         """
         self._drag_handler.handle_drag_enter(event)
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """
-        Continue accepting drag move events only for items from our file table.
+        """Continue accepting drag move events only for items from our file table.
         Delegates to drag handler.
         """
         self._drag_handler.handle_drag_move(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """
-        Handle drop events for file loading.
+        """Handle drop events for file loading.
         Delegates to drag handler.
         """
         self._drag_handler.handle_drop(event)
@@ -380,8 +375,7 @@ class MetadataTreeView(
     # =====================================
 
     def setModel(self, model: Any) -> None:
-        """
-        Override the setModel method to set minimum column widths after the model is set.
+        """Override the setModel method to set minimum column widths after the model is set.
         """
         # Cancel any pending restore operation
         if self._pending_restore_timer_id is not None:
@@ -479,8 +473,7 @@ class MetadataTreeView(
         return self._selection_handler.get_current_selection()
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
-        """
-        Update the metadata value in the cache to persist changes.
+        """Update the metadata value in the cache to persist changes.
         """
         selected_files = self._get_current_selection()
         if not selected_files:
@@ -589,8 +582,7 @@ class MetadataTreeView(
     def scrollTo(
         self, index: QModelIndex, hint: QAbstractItemView.ScrollHint | None = None
     ) -> None:
-        """
-        Override scrollTo to prevent automatic scrolling when selections change.
+        """Override scrollTo to prevent automatic scrolling when selections change.
         Scroll position is managed manually via the scroll position memory system.
         This prevents the table from moving when selecting cells from column 1.
         """
@@ -608,8 +600,7 @@ class MetadataTreeView(
         super().focusOutEvent(event)
 
     def drawBranches(self, painter, rect, index):
-        """
-        Override to paint alternating row background in branch area before branches.
+        """Override to paint alternating row background in branch area before branches.
 
         This ensures that the branch indicators (chevrons) are visible on top of
         the alternating row background, fixing the Windows-specific rendering issue
@@ -641,8 +632,7 @@ class MetadataTreeView(
     # =====================================
 
     def show_empty_state(self, _message: str = "No file selected") -> None:
-        """
-        Shows empty state using unified placeholder helper.
+        """Shows empty state using unified placeholder helper.
         No longer creates text model - uses only the placeholder helper.
         """
         # Create empty model to trigger placeholder mode
@@ -697,8 +687,7 @@ class MetadataTreeView(
         self._update_header_visibility()
 
     def clear_view(self) -> None:
-        """
-        Clears the metadata tree view and shows a placeholder message.
+        """Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
         self.show_empty_state("No file selected")
@@ -761,8 +750,7 @@ class MetadataTreeView(
         return self._search_handler._get_all_loaded_files()
 
     def _render_metadata_view(self, metadata: dict[str, Any], context: str = "") -> None:
-        """
-        Public interface for metadata tree rebuild.
+        """Public interface for metadata tree rebuild.
         Emits rebuild_requested signal which is processed via QueuedConnection.
         This ensures all model operations happen in the main thread via Qt event queue.
         """
@@ -774,8 +762,7 @@ class MetadataTreeView(
         self.rebuild_requested.emit(metadata, context)
 
     def _render_metadata_view_impl(self, metadata: dict[str, Any], context: str = "") -> None:
-        """
-        Actually builds the metadata tree and displays it.
+        """Actually builds the metadata tree and displays it.
         Called via QueuedConnection from rebuild_requested signal.
         Assumes metadata is a non-empty dict.
 
@@ -1040,15 +1027,13 @@ class MetadataTreeView(
         self._selection_handler.update_from_parent_selection()
 
     def refresh_metadata_from_selection(self) -> None:
-        """
-        Convenience method that triggers metadata update from parent selection.
+        """Convenience method that triggers metadata update from parent selection.
         Can be called from parent window when selection changes. Delegates to selection handler.
         """
         self._selection_handler.refresh_metadata_from_selection()
 
     def _on_refresh_shortcut(self) -> None:
-        """
-        Handle F5 shortcut press - refresh metadata with status message.
+        """Handle F5 shortcut press - refresh metadata with status message.
         """
         from oncutf.utils.cursor_helper import wait_cursor
 
@@ -1066,8 +1051,7 @@ class MetadataTreeView(
                     )
 
     def initialize_with_parent(self) -> None:
-        """
-        Performs initial setup that requires parent window to be available.
+        """Performs initial setup that requires parent window to be available.
         Should be called after the tree view is added to its parent.
         """
         self.show_empty_state("No file selected")
@@ -1079,8 +1063,7 @@ class MetadataTreeView(
     # =====================================
 
     def clear_for_folder_change(self) -> None:
-        """
-        Clears both view and scroll memory when changing folders.
+        """Clears both view and scroll memory when changing folders.
         This is different from clear_view() which preserves scroll memory.
         """
         self.clear_scroll_memory()
@@ -1099,13 +1082,13 @@ class MetadataTreeView(
         self._update_search_field_state(False)
 
     def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
-        """
-        Display metadata for a specific file item.
+        """Display metadata for a specific file item.
         Handles metadata extraction from file_item or cache automatically.
 
         Args:
             file_item: FileItem object with metadata
             context: Context string for logging
+
         """
         if not file_item:
             self.clear_view()
@@ -1147,30 +1130,29 @@ class MetadataTreeView(
         self._update_header_visibility()
 
     def handle_selection_change(self) -> None:
-        """
-        Handle selection changes from the parent file table.
+        """Handle selection changes from the parent file table.
         This is a convenience method that can be connected to selection signals.
         Delegates to selection handler.
         """
         self._selection_handler.handle_selection_change()
 
     def handle_invert_selection(self, metadata: dict[str, Any] | None) -> None:
-        """
-        Handle metadata display after selection inversion.
+        """Handle metadata display after selection inversion.
         Delegates to selection handler.
 
         Args:
             metadata: The metadata to display, or None to clear
+
         """
         self._selection_handler.handle_invert_selection(metadata)
 
     def handle_metadata_load_completion(self, metadata: dict[str, Any] | None, source: str) -> None:
-        """
-        Handle metadata display after a metadata loading operation completes.
+        """Handle metadata display after a metadata loading operation completes.
 
         Args:
             metadata: The loaded metadata, or None if loading failed
             source: Source of the metadata loading (e.g., "worker", "cache")
+
         """
         if isinstance(metadata, dict) and metadata:
             self.display_metadata(metadata, context=f"load_completion_from_{source}")
@@ -1194,8 +1176,7 @@ class MetadataTreeView(
             return None
 
     def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:
-        """
-        Central logic to determine if metadata should be displayed based on selection count.
+        """Central logic to determine if metadata should be displayed based on selection count.
         Delegates to selection handler.
 
         Args:
@@ -1203,6 +1184,7 @@ class MetadataTreeView(
 
         Returns:
             bool: True if metadata should be displayed, False if empty state should be shown
+
         """
         return self._selection_handler.should_display_metadata_for_selection(selected_files_count)
 
@@ -1215,59 +1197,58 @@ class MetadataTreeView(
         )
 
     def get_modified_metadata(self) -> dict[str, str]:
-        """
-        Collect all modified metadata items for the current file.
+        """Collect all modified metadata items for the current file.
         Delegates to selection handler.
 
         Returns:
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
+
         """
         return self._selection_handler.get_modified_metadata()
 
     def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
-        """
-        Collect all modified metadata for all files that have modifications.
+        """Collect all modified metadata for all files that have modifications.
         Delegates to modifications handler.
 
         Returns:
             Dictionary mapping file paths to their modified metadata
+
         """
         return self._modifications_handler.get_all_modified_metadata_for_files()
 
     def clear_modifications(self) -> None:
-        """
-        Clear all modified metadata items for the current file.
+        """Clear all modified metadata items for the current file.
         Delegates to modifications handler.
         """
         self._modifications_handler.clear_modifications()
 
     def clear_modifications_for_file(self, file_path: str) -> None:
-        """
-        Clear modifications for a specific file.
+        """Clear modifications for a specific file.
         Delegates to modifications handler.
 
         Args:
             file_path: Full path of the file to clear modifications for
+
         """
         self._modifications_handler.clear_modifications_for_file(file_path)
 
     def has_modifications_for_selected_files(self) -> bool:
-        """
-        Check if any of the currently selected files have modifications.
+        """Check if any of the currently selected files have modifications.
         Delegates to modifications handler.
 
         Returns:
             bool: True if any selected file has modifications
+
         """
         return self._modifications_handler.has_modifications_for_selected_files()
 
     def has_any_modifications(self) -> bool:
-        """
-        Check if there are any modifications in any file.
+        """Check if there are any modifications in any file.
         Delegates to modifications handler.
 
         Returns:
             bool: True if any file has modifications
+
         """
         return self._modifications_handler.has_any_modifications()
 

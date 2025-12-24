@@ -1,5 +1,4 @@
-"""
-Services layer for oncutf application.
+"""Services layer for oncutf application.
 
 Author: Michael Economou
 Date: December 18, 2025

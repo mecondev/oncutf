@@ -1,5 +1,4 @@
-"""
-Module: drag_drop_mixin.py
+"""Module: drag_drop_mixin.py
 
 Author: Michael Economou
 Date: 2025-12-04
@@ -38,8 +37,7 @@ logger = get_cached_logger(__name__)
 
 
 class DragDropMixin:
-    """
-    Mixin providing drag-and-drop functionality for QTableView widgets.
+    """Mixin providing drag-and-drop functionality for QTableView widgets.
 
     This mixin handles:
     - Custom drag operations with visual feedback
@@ -286,8 +284,7 @@ class DragDropMixin:
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """
-        Handle drop on metadata tree - single entry point for FileTable->MetadataTree drops.
+        """Handle drop on metadata tree - single entry point for FileTable->MetadataTree drops.
 
         Behavior:
         - No modifier: Fast metadata loading

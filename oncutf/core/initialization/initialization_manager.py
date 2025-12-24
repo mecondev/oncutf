@@ -1,5 +1,4 @@
-"""
-Module: initialization_manager.py
+"""Module: initialization_manager.py
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -23,8 +22,7 @@ logger = get_cached_logger(__name__)
 
 
 class InitializationManager:
-    """
-    Manages initialization and setup operations for the main window.
+    """Manages initialization and setup operations for the main window.
 
     This manager handles:
     - Metadata status display logic
@@ -34,18 +32,17 @@ class InitializationManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """
-        Initialize the InitializationManager.
+        """Initialize the InitializationManager.
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         logger.debug("[InitializationManager] Initialized", extra={"dev_only": True})
 
     def show_metadata_status(self) -> None:
-        """
-        Shows a status bar message indicating the number of loaded files
+        """Shows a status bar message indicating the number of loaded files
         and the type of metadata scan performed (basic, extended).
         """
         num_files = len(self.main_window.file_model.files)
@@ -132,15 +129,13 @@ class InitializationManager:
             self.main_window.update_files_label()
 
     def update_status_from_preview(self, status_html: str) -> None:
-        """
-        Updates status from preview widgets.
+        """Updates status from preview widgets.
         Delegates to PreviewManager for status updates from preview.
         """
         self.main_window.preview_manager.update_status_from_preview(status_html)
 
     def setup_application_components(self) -> None:
-        """
-        Setup and initialize application components.
+        """Setup and initialize application components.
         This can be extended with other initialization logic.
         """
         logger.debug(
@@ -157,11 +152,11 @@ class InitializationManager:
         )
 
     def get_initialization_status(self) -> dict:
-        """
-        Get current initialization status.
+        """Get current initialization status.
 
         Returns:
             Dictionary with initialization status information
+
         """
         return {
             "has_files": len(self.main_window.file_model.files) > 0,
@@ -172,11 +167,11 @@ class InitializationManager:
         }
 
     def validate_initialization(self) -> bool:
-        """
-        Validate that all required components are properly initialized.
+        """Validate that all required components are properly initialized.
 
         Returns:
             True if initialization is valid, False otherwise
+
         """
         required_components = ["status_manager", "file_model", "file_table_view", "preview_manager"]
 
