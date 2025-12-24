@@ -16,9 +16,9 @@ from oncutf.ui.widgets.metadata.category_manager import CategoryManager
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
 from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
+from oncutf.ui.widgets.metadata.styling_handler import StylingHandler
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
@@ -53,6 +53,7 @@ class MetadataWidget(QWidget):
         self._category_manager = CategoryManager(self)
         self._metadata_keys_handler = MetadataKeysHandler(self)
         self._hash_handler = HashHandler(self)
+        self._styling_handler = StylingHandler(self)
 
         self.setup_ui()
 
@@ -486,16 +487,11 @@ class MetadataWidget(QWidget):
 
     def _ensure_theme_inheritance(self) -> None:
         """Ensure that child widgets inherit theme styles properly.
-        This is needed because child widgets sometimes don't inherit
-        the global application stylesheet correctly.
-        """
-        try:
-            # Apply minimal styles to combo boxes
-            # Note: Detailed styling is handled by ComboBoxItemDelegate
-            pass
 
-        except Exception as e:
-            logger.warning("[MetadataWidget] Failed to ensure theme inheritance: %s", e)
+        Deprecated: Use StylingHandler.ensure_theme_inheritance() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.ensure_theme_inheritance()
 
     def trigger_update_options(self):
         """Trigger update_options and hash check immediately (no debounce)."""
@@ -587,123 +583,44 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False
 
     def _apply_disabled_combo_styling(self):
-        """Apply disabled styling to hierarchical combo box to show grayed-out text"""
-        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
-        # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug(
-            "[MetadataWidget] Disabled combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply disabled styling to hierarchical combo box.
+
+        Deprecated: Use StylingHandler.apply_disabled_combo_styling() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.apply_disabled_combo_styling()
 
     def _apply_normal_combo_styling(self):
-        """Apply normal styling to hierarchical combo box"""
-        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
-        # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug(
-            "[MetadataWidget] Normal combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply normal styling to hierarchical combo box.
+
+        Deprecated: Use StylingHandler.apply_normal_combo_styling() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.apply_normal_combo_styling()
 
     def _apply_combo_theme_styling(self):
-        """Apply theme styling to combo boxes and ensure inheritance"""
-        try:
-            theme = ThemeEngine()
-            logger.debug(
-                "[MetadataWidget] Theme inheritance ensured for combo boxes",
-                extra={"dev_only": True},
-            )
+        """Apply theme styling to combo boxes.
 
-            css = f"""
-                QComboBox {{
-                    background-color: {theme.get_color("input_background")};
-                    border: 1px solid {theme.get_color("input_border")};
-                    border-radius: 4px;
-                    padding: 6px 8px;
-                    color: {theme.get_color("input_text")};
-                    font-size: 12px;
-                    min-height: 20px;
-                    selection-background-color: {theme.get_color("input_selection_background")};
-                    selection-color: {theme.get_color("input_selection_text")};
-                }}
-
-                QComboBox:hover {{
-                    border-color: {theme.get_color("input_border_hover")};
-                }}
-
-                QComboBox:focus {{
-                    border-color: {theme.get_color("input_border_focus")};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    width: 20px;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-
-                /* Custom styling for disabled items in custom model */
-                QComboBox QAbstractItemView::item {{
-                    background-color: transparent;
-                    color: {theme.get_color("text")};
-                    padding: 6px 8px;
-                    border: none;
-                    min-height: 18px;
-                    border-radius: 3px;
-                    margin: 1px;
-                }}
-
-                QComboBox QAbstractItemView::item:hover {{
-                    background-color: {theme.get_color("combo_item_background_hover")};
-                    color: {theme.get_color("text")};
-                }}
-
-                QComboBox QAbstractItemView::item:selected {{
-                    background-color: {theme.get_color("combo_item_background_selected")};
-                    color: {theme.get_color("input_selection_text")};
-                }}
-
-                /* Force grayout for items without ItemIsEnabled flag */
-                QComboBox QAbstractItemView::item:!enabled {{
-                    background-color: transparent !important;
-                    color: {theme.get_color("disabled_text")} !important;
-                    opacity: 0.6 !important;
-                }}
-
-                QComboBox QAbstractItemView::item:!enabled:hover {{
-                    background-color: transparent !important;
-                    color: {theme.get_color("disabled_text")} !important;
-                }}
-            """
-
-            self.category_combo.setStyleSheet(css)
-
-            # Apply style recursively to ensure inheritance
-            # apply_style_recursively(self.category_combo, self.category_combo.style()) # This line was removed
-
-        except Exception as e:
-            logger.error("[MetadataWidget] Error applying combo theme styling: %s", e)
+        Deprecated: Use StylingHandler.apply_combo_theme_styling() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.apply_combo_theme_styling()
 
     def _apply_disabled_category_styling(self):
-        """Apply disabled styling to the category combo box to show gray text"""
-        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
-        # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug(
-            "[MetadataWidget] Disabled category combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply disabled styling to the category combo box.
+
+        Deprecated: Use StylingHandler.apply_disabled_category_styling() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.apply_disabled_category_styling()
 
     def _apply_category_styling(self):
-        """Apply normal styling to the category combo box"""
-        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
-        # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug(
-            "[MetadataWidget] Normal category combo styling via global theme (no per-widget QSS)",
-            extra={"dev_only": True},
-        )
+        """Apply normal styling to the category combo box.
+
+        Deprecated: Use StylingHandler.apply_category_styling() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._styling_handler.apply_category_styling()
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
