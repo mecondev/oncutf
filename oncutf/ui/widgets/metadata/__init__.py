@@ -7,5 +7,6 @@ Package for MetadataWidget components - field formatters and handlers.
 """
 
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
+from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
 
-__all__ = ["FieldFormatter"]
+__all__ = ["FieldFormatter", "MetadataKeysHandler"]
