@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 
 logger = get_cached_logger(__name__)
 
+# Standard hash options data structure (only CRC32 supported)
+HASH_OPTIONS_DATA = {"Hash Types": [("CRC32", "hash_crc32")]}
+
 
 class HashHandler:
     """Handler for hash operations in MetadataWidget."""
@@ -45,17 +48,11 @@ class HashHandler:
 
             if not selected_files:
                 # No files selected - disable hash option
-                hierarchical_data = {
-                    "Hash Types": [
-                        ("CRC32", "hash_crc32"),
-                    ]
-                }
-
                 logger.debug("No files selected, populating disabled hash options")
 
                 # For hash options we avoid auto-select to prevent unintended preview refreshes
                 self._widget.options_combo.populate_from_metadata_groups(
-                    hierarchical_data, auto_select_first=False
+                    HASH_OPTIONS_DATA, auto_select_first=False
                 )
 
                 # Disable the combo box
@@ -76,20 +73,13 @@ class HashHandler:
             files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
-            # Always add CRC32 option (only hash type supported)
-            hierarchical_data = {
-                "Hash Types": [
-                    ("CRC32", "hash_crc32"),
-                ]
-            }
-
             logger.debug(
                 "Populating hash options: %d/%d files have hash",
                 len(files_with_hash),
                 len(file_paths),
             )
 
-            self._widget.options_combo.populate_from_metadata_groups(hierarchical_data)
+            self._widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
 
             # Always disabled combo box for hash (only CRC32 available)
             self._widget.options_combo.setEnabled(False)
@@ -106,13 +96,7 @@ class HashHandler:
         except Exception as e:
             logger.error("[HashHandler] Error in populate_hash_options: %s", e)
             # On error, disable hash option
-            hierarchical_data = {
-                "Hash Types": [
-                    ("CRC32", "hash_crc32"),
-                ]
-            }
-
-            self._widget.options_combo.populate_from_metadata_groups(hierarchical_data)
+            self._widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
 
             # Disable the combo box in case of error
             self._widget.options_combo.setEnabled(False)
