@@ -14,6 +14,7 @@ from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
+from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.file_status_helpers import (
     batch_hash_status,
@@ -424,7 +425,7 @@ class MetadataWidget(QWidget):
             if category_keys:  # Only add categories that have items
                 hierarchical_data[category] = []
                 for key in sorted(category_keys):
-                    display_text = self.format_metadata_key_name(key)
+                    display_text = FieldFormatter.format_metadata_key_name(key)
                     hierarchical_data[category].append((display_text, key))
                     logger.debug("Added %s -> %s to %s", display_text, key, category)
 
@@ -639,159 +640,28 @@ class MetadataWidget(QWidget):
         return keys
 
     def format_metadata_key_name(self, key: str) -> str:
-        """Format metadata key names for better readability."""
-        # Handle common metadata prefixes and formats
-        if ":" in key:
-            # Split by colon (e.g., "EXIF:DeviceName" -> "EXIF: Device Name")
-            parts = key.split(":", 1)
-            if len(parts) == 2:
-                prefix, field = parts
-                # Format the field part
-                formatted_field = self._format_field_name(field)
-                return f"{prefix}: {formatted_field}"
+        """Format metadata key names for better readability.
 
-        # Handle underscore-separated keys
-        if "_" in key:
-            return self._format_field_name(key)
-
-        # Handle camelCase keys
-        if key != key.lower() and key != key.upper():
-            return self._format_camel_case(key)
-
-        return key
+        Deprecated: Use FieldFormatter.format_metadata_key_name() instead.
+        This method is kept for backwards compatibility.
+        """
+        return FieldFormatter.format_metadata_key_name(key)
 
     def _format_field_name(self, field: str) -> str:
-        """Format field names by replacing underscores and camelCase."""
-        # Replace underscores with spaces and title case
-        formatted = field.replace("_", " ").title()
+        """Format field names by replacing underscores and camelCase.
 
-        # Common replacements for better readability
-        replacements = {
-            "Exif": "EXIF",
-            "Gps": "GPS",
-            "Iso": "ISO",
-            "Rgb": "RGB",
-            "Dpi": "DPI",
-            "Device": "Device",
-            "Model": "Model",
-            "Make": "Make",
-            "Serial": "Serial",
-            "Number": "Number",
-            "Date": "Date",
-            "Time": "Time",
-            "Width": "Width",
-            "Height": "Height",
-            "Size": "Size",
-            "Format": "Format",
-            "Codec": "Codec",
-            "Frame": "Frame",
-            "Rate": "Rate",
-            "Bit": "Bit",
-            "Audio": "Audio",
-            "Video": "Video",
-            "Image": "Image",
-            "Camera": "Camera",
-            "Lens": "Lens",
-            "Focal": "Focal",
-            "Length": "Length",
-            "Aperture": "Aperture",
-            "Shutter": "Shutter",
-            "Exposure": "Exposure",
-            "White": "White",
-            "Balance": "Balance",
-            "Flash": "Flash",
-            "Metering": "Metering",
-            "Mode": "Mode",
-            "Program": "Program",
-            "Sensitivity": "Sensitivity",
-            "Compression": "Compression",
-            "Quality": "Quality",
-            "Resolution": "Resolution",
-            "Pixel": "Pixel",
-            "Dimension": "Dimension",
-            "Orientation": "Orientation",
-            "Rotation": "Rotation",
-            "Duration": "Duration",
-            "Track": "Track",
-            "Channel": "Channel",
-            "Sample": "Sample",
-            "Frequency": "Frequency",
-            "Bitrate": "Bitrate",
-            "Brand": "Brand",
-            "Type": "Type",
-            "Version": "Version",
-            "Software": "Software",
-            "Hardware": "Hardware",
-            "Manufacturer": "Manufacturer",
-            "Creator": "Creator",
-            "Artist": "Artist",
-            "Author": "Author",
-            "Copyright": "Copyright",
-            "Rights": "Rights",
-            "Description": "Description",
-            "Comment": "Comment",
-            "Keyword": "Keyword",
-            "Tag": "Tag",
-            "Label": "Label",
-            "Category": "Category",
-            "Genre": "Genre",
-            "Subject": "Subject",
-            "Title": "Title",
-            "Headline": "Headline",
-            "Caption": "Caption",
-            "Abstract": "Abstract",
-            "Location": "Location",
-            "Place": "Place",
-            "Country": "Country",
-            "City": "City",
-            "State": "State",
-            "Province": "Province",
-            "Address": "Address",
-            "Street": "Street",
-            "Coordinate": "Coordinate",
-            "Latitude": "Latitude",
-            "Longitude": "Longitude",
-            "Altitude": "Altitude",
-            "Direction": "Direction",
-            "Bearing": "Bearing",
-            "Distance": "Distance",
-            "Area": "Area",
-            "Volume": "Volume",
-            "Weight": "Weight",
-            "Mass": "Mass",
-            "Temperature": "Temperature",
-            "Pressure": "Pressure",
-            "Humidity": "Humidity",
-            "Weather": "Weather",
-            "Light": "Light",
-            "Color": "Color",
-            "Tone": "Tone",
-            "Saturation": "Saturation",
-            "Brightness": "Brightness",
-            "Contrast": "Contrast",
-            "Sharpness": "Sharpness",
-            "Noise": "Noise",
-            "Grain": "Grain",
-            "Filter": "Filter",
-            "Effect": "Effect",
-            "Style": "Style",
-            "Theme": "Theme",
-            "Mood": "Mood",
-            "Atmosphere": "Atmosphere",
-        }
-
-        for old, new in replacements.items():
-            formatted = formatted.replace(old, new)
-
-        return formatted
+        Deprecated: Use FieldFormatter._format_field_name() instead.
+        This method is kept for backwards compatibility.
+        """
+        return FieldFormatter._format_field_name(field)
 
     def _format_camel_case(self, text: str) -> str:
-        """Format camelCase text by adding spaces before capitals."""
-        import re
+        """Format camelCase text by adding spaces before capitals.
 
-        # Add space before capital letters, but not at the beginning
-        formatted = re.sub(r"(?<!^)(?=[A-Z])", " ", text)
-        return formatted.title()
+        Deprecated: Use FieldFormatter._format_camel_case() instead.
+        This method is kept for backwards compatibility.
+        """
+        return FieldFormatter._format_camel_case(text)
 
     def get_data(self) -> dict:
         """Returns the state for use in the rename system."""
