@@ -15,12 +15,10 @@ from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
+from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.utils.file_status_helpers import (
-    batch_hash_status,
-    batch_metadata_status,
-)
+from oncutf.utils.file_status_helpers import batch_metadata_status
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.timer_manager import schedule_ui_update
@@ -55,6 +53,7 @@ class MetadataWidget(QWidget):
 
         # Initialize handlers
         self._metadata_keys_handler = MetadataKeysHandler(self)
+        self._hash_handler = HashHandler(self)
 
         self.setup_ui()
 
@@ -244,88 +243,7 @@ class MetadataWidget(QWidget):
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
-        self.options_combo.clear()
-
-        try:
-            # Get selected files
-            selected_files = self._get_selected_files()
-
-            if not selected_files:
-                # No files selected - disable hash option
-                hierarchical_data = {
-                    "Hash Types": [
-                        ("CRC32", "hash_crc32"),
-                    ]
-                }
-
-                logger.debug("No files selected, populating disabled hash options")
-
-                # For hash options we avoid auto-select to prevent unintended preview refreshes
-                self.options_combo.populate_from_metadata_groups(
-                    hierarchical_data, auto_select_first=False
-                )
-
-                # Disable the combo box
-                self.options_combo.setEnabled(False)
-                # Apply disabled styling to show text in gray
-                self._apply_disabled_combo_styling()
-                return False
-
-            # Use efficient batch checking via database
-            file_paths = [file_item.full_path for file_item in selected_files]
-
-            # Get files that have hashes using batch query
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
-
-            hash_cache = get_persistent_hash_cache()
-
-            # Use batch method for efficiency
-            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
-            files_needing_hash = [path for path in file_paths if path not in files_with_hash]
-
-            # Always add CRC32 option (only hash type supported)
-            hierarchical_data = {
-                "Hash Types": [
-                    ("CRC32", "hash_crc32"),
-                ]
-            }
-
-            logger.debug(
-                "Populating hash options: %d/%d files have hash",
-                len(files_with_hash),
-                len(file_paths),
-            )
-
-            self.options_combo.populate_from_metadata_groups(hierarchical_data)
-
-            # Always disabled combo box for hash (only CRC32 available)
-            self.options_combo.setEnabled(False)
-            # Apply disabled styling to show text in gray
-            self._apply_disabled_combo_styling()
-
-            if files_needing_hash:
-                # Some files need hash calculation
-                return True
-            else:
-                # All files have hashes - but combo still disabled
-                return True
-
-        except Exception as e:
-            logger.error("[MetadataWidget] Error in populate_hash_options: %s", e)
-            # On error, disable hash option
-            hierarchical_data = {
-                "Hash Types": [
-                    ("CRC32", "hash_crc32"),
-                ]
-            }
-
-            self.options_combo.populate_from_metadata_groups(hierarchical_data)
-
-            # Disable the combo box in case of error
-            self.options_combo.setEnabled(False)
-            # Apply disabled styling to show text in gray
-            self._apply_disabled_combo_styling()
-            return False
+        return self._hash_handler.populate_hash_options()
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
@@ -356,49 +274,12 @@ class MetadataWidget(QWidget):
         return []
 
     def _calculate_hashes_for_files(self, files_needing_hash):
-        """Calculate hashes for the given file paths."""
-        try:
-            # Convert file paths back to FileItem objects for hash calculation
-            selected_files = self._get_selected_files()
-            file_items_needing_hash = []
+        """Calculate hashes for the given file paths.
 
-            for file_path in files_needing_hash:
-                for file_item in selected_files:
-                    if file_item.full_path == file_path:
-                        file_items_needing_hash.append(file_item)
-                        break
-
-            if not file_items_needing_hash:
-                logger.warning("[MetadataWidget] No file items found for hash calculation")
-                return
-
-            # Get main window for hash calculation
-            main_window = None
-            if self.parent_window and hasattr(self.parent_window, "main_window"):
-                main_window = self.parent_window.main_window
-            elif self.parent_window:
-                main_window = self.parent_window
-            else:
-                context = self._get_app_context()
-                if context and hasattr(context, "main_window"):
-                    main_window = context.main_window  # type: ignore
-
-            if main_window and hasattr(main_window, "event_handler_manager"):
-                # Use the existing hash calculation method
-                main_window.event_handler_manager._handle_calculate_hashes(file_items_needing_hash)
-
-                # Force preview update after hash calculation
-                schedule_ui_update(
-                    self.force_preview_update, 100
-                )  # Small delay to ensure hash calculation completes
-                self._hash_dialog_active = False  # <-- Ensure flag reset after calculation
-            else:
-                logger.error("[MetadataWidget] Could not find main window for hash calculation")
-                self._hash_dialog_active = False
-
-        except Exception as e:
-            logger.error("[MetadataWidget] Error calculating hashes: %s", e)
-            self._hash_dialog_active = False  # <-- Ensure flag reset on error
+        Deprecated: Use HashHandler._calculate_hashes_for_files() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._hash_handler._calculate_hashes_for_files(files_needing_hash)
 
     def populate_metadata_keys(self) -> None:
         """Populate the hierarchical combo box with available metadata keys.
@@ -640,9 +521,12 @@ class MetadataWidget(QWidget):
         return bool(field)
 
     def _get_supported_hash_algorithms(self) -> set:
-        """Get list of supported hash algorithms from the async operations manager."""
-        # Only CRC32 is supported and implemented
-        return {"CRC32"}
+        """Get list of supported hash algorithms from the async operations manager.
+
+        Deprecated: Use HashHandler._get_supported_hash_algorithms() instead.
+        This method is kept for backwards compatibility.
+        """
+        return self._hash_handler._get_supported_hash_algorithms()
 
     def update_category_availability(self):
         """Update category combo box availability based on selected files."""
@@ -758,13 +642,12 @@ class MetadataWidget(QWidget):
             )
 
     def _check_files_have_hash(self, selected_files) -> bool:
-        """Check if any of the selected files have hash data."""
-        try:
-            file_paths = [file_item.full_path for file_item in selected_files]
-            return any(batch_hash_status(file_paths).values())
-        except Exception as e:
-            logger.error("[MetadataWidget] Error checking hash availability: %s", e)
-            return False
+        """Check if any of the selected files have hash data.
+
+        Deprecated: Use HashHandler._check_files_have_hash() instead.
+        This method is kept for backwards compatibility.
+        """
+        return self._hash_handler._check_files_have_hash(selected_files)
 
     def _check_files_have_metadata(self, selected_files) -> bool:
         """Check if any of the selected files have metadata."""
@@ -819,7 +702,7 @@ class MetadataWidget(QWidget):
                 return
 
             if category == "hash":
-                self._check_hash_calculation_requirements(selected_files)
+                self._hash_handler._check_hash_calculation_requirements(selected_files)
             elif category == "metadata_keys":
                 self._check_metadata_calculation_requirements(selected_files)
 
@@ -828,27 +711,12 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False
 
     def _check_hash_calculation_requirements(self, selected_files):
-        """Check if hash calculation dialog is needed."""
-        file_paths = [file_item.full_path for file_item in selected_files]
-        from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+        """Check if hash calculation dialog is needed.
 
-        hash_cache = get_persistent_hash_cache()
-        files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
-        files_needing_hash = [path for path in file_paths if path not in files_with_hash]
-
-        if files_needing_hash:
-            logger.debug(
-                "[MetadataWidget] %d files need hash calculation - showing dialog",
-                len(files_needing_hash),
-                extra={"dev_only": True},
-            )
-            self._hash_dialog_active = True
-            self._show_calculation_dialog(files_needing_hash, "hash")
-        else:
-            logger.debug(
-                "[MetadataWidget] All files have hashes - no dialog needed",
-                extra={"dev_only": True},
-            )
+        Deprecated: Use HashHandler._check_hash_calculation_requirements() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._hash_handler._check_hash_calculation_requirements(selected_files)
 
     def _check_metadata_calculation_requirements(self, selected_files):
         file_paths = [file_item.full_path for file_item in selected_files]
@@ -875,59 +743,12 @@ class MetadataWidget(QWidget):
             )
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
-        try:
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+        """Show calculation dialog for hash or metadata.
 
-            # Create dialog message based on calculation type
-            file_count = len(files_needing_calculation)
-
-            if calculation_type == "hash":
-                message = f"{file_count} out of {len(self._get_selected_files())} selected files do not have hash.\n\nWould you like to calculate hash for all files now?\n\nThis will allow you to use hash values in your filename transformations."
-                title = "Hash Calculation Required"
-                yes_text = "Calculate Hash"
-            else:  # metadata
-                message = f"{file_count} out of {len(self._get_selected_files())} selected files do not have metadata.\n\nWould you like to load metadata for all files now?\n\nThis will allow you to use metadata values in your filename transformations."
-                title = "Metadata Loading Required"
-                yes_text = "Load Metadata"
-
-            logger.debug(
-                "[MetadataWidget] Showing %s calculation dialog",
-                calculation_type,
-                extra={"dev_only": True},
-            )
-
-            # Show dialog
-            result = CustomMessageDialog.question(
-                self.parent_window, title, message, yes_text=yes_text, no_text="Cancel"
-            )
-
-            if result:
-                # User chose to calculate
-                logger.debug(
-                    "[MetadataWidget] User chose to calculate %s",
-                    calculation_type,
-                    extra={"dev_only": True},
-                )
-                if calculation_type == "hash":
-                    self._calculate_hashes_for_files(files_needing_calculation)
-                else:
-                    self._load_metadata_for_files(files_needing_calculation)
-            else:
-                # User cancelled - combo remains enabled but shows original names
-                logger.debug(
-                    "[MetadataWidget] User cancelled %s calculation",
-                    calculation_type,
-                    extra={"dev_only": True},
-                )
-                # Don't disable combo - let it show original names for files without hash/metadata
-
-        except Exception as e:
-            logger.error(
-                "[MetadataWidget] Error showing %s calculation dialog: %s",
-                calculation_type,
-                e,
-            )
-            self._hash_dialog_active = False
+        Deprecated: Use HashHandler._show_calculation_dialog() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._hash_handler._show_calculation_dialog(files_needing_calculation, calculation_type)
 
     def _load_metadata_for_files(self, files_needing_metadata):
         """Load metadata for the given file paths."""
