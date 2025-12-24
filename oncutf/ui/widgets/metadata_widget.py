@@ -9,16 +9,14 @@ Widget for metadata selection (file dates or EXIF), with optimized signal emissi
 from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
+from oncutf.ui.widgets.metadata.category_manager import CategoryManager
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
 from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.utils.file_status_helpers import batch_metadata_status
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.timer_manager import schedule_ui_update
@@ -52,6 +50,7 @@ class MetadataWidget(QWidget):
         self._update_timer = None  # Timer for debouncing updates
 
         # Initialize handlers
+        self._category_manager = CategoryManager(self)
         self._metadata_keys_handler = MetadataKeysHandler(self)
         self._hash_handler = HashHandler(self)
 
@@ -126,36 +125,11 @@ class MetadataWidget(QWidget):
 
     def _on_category_changed(self) -> None:
         """Handle category combo box changes.
-        Updates available options based on selected category.
+
+        Deprecated: Use CategoryManager.on_category_changed() instead.
+        This method is kept for backwards compatibility.
         """
-        current_data = self.category_combo.currentData()
-        logger.debug("Category changed to: %s", current_data)
-
-        if current_data is None:
-            self.category_combo.setCurrentIndex(0)
-            return
-
-        try:
-            # Clear and update options
-            self.options_combo.clear()
-            self.update_options()
-
-            # Enable combo box for metadata keys
-            if current_data == "metadata_keys":
-                self.options_combo.setEnabled(True)
-                self._apply_normal_combo_styling()
-
-            # Check calculation requirements
-            if current_data in ["hash", "metadata_keys"]:
-                self._check_calculation_requirements(current_data)
-
-            # Force UI update
-            self.options_combo.repaint()
-
-            logger.debug("Category change completed for: %s", current_data)
-
-        except Exception as e:
-            logger.error("Error in _on_category_changed: %s", e)
+        self._category_manager.on_category_changed()
 
     def _emit_settings_changed(self) -> None:
         """Emit settings_changed signal on ANY user interaction.
@@ -173,30 +147,21 @@ class MetadataWidget(QWidget):
             logger.warning("Error emitting settings_changed: %s", e)
 
     def update_options(self) -> None:
+        """Update options combo box based on selected category.
+
+        Deprecated: Use CategoryManager.update_options() instead.
+        This method is kept for backwards compatibility.
+        """
         category = self.category_combo.currentData()
-        self.options_combo.clear()
 
-        logger.debug("update_options called with category: %s", category)
-
-        if category == "file_dates":
+        # Set label based on category
+        if category in {"file_dates", "hash"}:
             self.options_label.setText("Type")
-            self.populate_file_dates()
-            # File dates are always enabled
-            self.options_combo.setEnabled(True)
-            # Apply normal styling
-            self._apply_normal_combo_styling()
-        elif category == "hash":
-            self.options_label.setText("Type")
-            # ALWAYS call populate_hash_options for hash checking (even when file selection changes)
-            self.populate_hash_options()
-            # Hash combo is managed by populate_hash_options
         elif category == "metadata_keys":
             self.options_label.setText("Field")
-            self.populate_metadata_keys()
-            # Metadata combo is managed by populate_metadata_keys
-            # Apply normal styling if enabled
-            if self.options_combo.isEnabled():
-                self._apply_normal_combo_styling()
+
+        # Delegate to CategoryManager
+        self._category_manager.update_options()
 
         # Set to first option by default (if exists)
         if hasattr(self.options_combo, "get_current_data"):
@@ -208,38 +173,13 @@ class MetadataWidget(QWidget):
             self.options_combo.setCurrentIndex(0)
             logger.debug("Regular combo set to index 0")
 
-        # Use timer to ensure currentData is updated before emitting
-        try:
-            from oncutf.utils.timer_manager import schedule_ui_update
-
-            schedule_ui_update(self.emit_if_changed, 10)
-        except Exception:
-            # Fallback for testing or when timer manager is not available
-            self.emit_if_changed()
-
     def populate_file_dates(self) -> None:
-        # Prepare hierarchical data for file dates
-        hierarchical_data = {
-            "File Date/Time": [
-                ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
-                ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
-                ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
-                ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
-                ("Last Modified (YYYY)", "last_modified_year"),
-                ("Last Modified (YYYY-MM)", "last_modified_month"),
-                # New variants with time included
-                ("Last Modified (YYYY-MM-DD HH-MM)", "last_modified_iso_time"),
-                ("Last Modified (DD-MM-YYYY HH-MM)", "last_modified_eu_time"),
-                ("Last Modified (YYMMDD_HHMM)", "last_modified_compact"),
-            ]
-        }
+        """Populate options combo with file date formats.
 
-        logger.debug("Populating file dates with data: %s", hierarchical_data)
-
-        # Populate the hierarchical combo box
-        # auto-select first date format by default (behaviour preserved)
-        self.options_combo.populate_from_metadata_groups(hierarchical_data, auto_select_first=True)
-        logger.debug("Used hierarchical combo populate_from_metadata_groups for file dates")
+        Deprecated: Use CategoryManager.populate_file_dates() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._category_manager.populate_file_dates()
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
@@ -529,117 +469,12 @@ class MetadataWidget(QWidget):
         return self._hash_handler._get_supported_hash_algorithms()
 
     def update_category_availability(self):
-        """Update category combo box availability based on selected files."""
-        # Ensure theme inheritance
-        self._ensure_theme_inheritance()
+        """Update category combo box availability based on selected files.
 
-        # Get selected files
-        selected_files = self._get_selected_files()
-
-        # Set up the model if not already done
-        if not hasattr(self, "category_model"):
-            self.category_model = QStandardItemModel()
-            self.category_combo.setModel(self.category_model)
-
-            # Add items to model
-            item1 = QStandardItem("File Date/Time")
-            item1.setData("file_dates", Qt.UserRole)  # type: ignore
-            self.category_model.appendRow(item1)
-
-            item2 = QStandardItem("Hash")
-            item2.setData("hash", Qt.UserRole)  # type: ignore
-            self.category_model.appendRow(item2)
-
-            item3 = QStandardItem("EXIF/Metadata")
-            item3.setData("metadata_keys", Qt.UserRole)  # type: ignore
-            self.category_model.appendRow(item3)
-
-        # File Dates category is ALWAYS enabled
-        file_dates_item = self.category_model.item(0)
-        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-        file_dates_item.setForeground(QColor())  # type: ignore # Reset to default color
-
-        if not selected_files:
-            # Disable Hash and EXIF when no files are selected
-            theme = get_theme_manager()
-            hash_item = self.category_model.item(1)
-            metadata_item = self.category_model.item(2)
-
-            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
-
-            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
-
-            # Apply normal styling - disabled items will be gray via QAbstractItemView styling
-            self._apply_category_styling()
-
-            # If current category is hash and is disabled, apply disabled styling
-            if self.category_combo.currentData() == "hash":
-                self.options_combo.clear()
-                hierarchical_data = {
-                    "Hash Types": [
-                        ("CRC32", "hash_crc32"),
-                    ]
-                }
-
-                self.options_combo.populate_from_metadata_groups(hierarchical_data)
-
-                self.options_combo.setEnabled(False)
-                self._apply_disabled_combo_styling()
-
-            logger.debug(
-                "[MetadataWidget] No files selected - disabled Hash and EXIF options",
-                extra={"dev_only": True},
-            )
-        else:
-            # Check if files have hash data
-            has_hash_data = self._check_files_have_hash(selected_files)
-            theme = get_theme_manager()
-            hash_item = self.category_model.item(1)
-
-            if has_hash_data:
-                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor())  # type: ignore # Reset to default color
-            else:
-                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
-
-                # If current category is hash and is disabled, apply disabled styling
-                if self.category_combo.currentData() == "hash":
-                    self.options_combo.clear()
-                    hierarchical_data = {
-                        "Hash Types": [
-                            ("CRC32", "hash_crc32"),
-                        ]
-                    }
-
-                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
-
-                    self.options_combo.setEnabled(False)
-                    self._apply_disabled_combo_styling()
-
-            # Check if files have EXIF/metadata data
-            has_metadata_data = self._check_files_have_metadata(selected_files)
-            theme = get_theme_manager()
-            metadata_item = self.category_model.item(2)
-
-            if has_metadata_data:
-                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
-            else:
-                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
-
-            # Apply styling to category combo based on state
-            self._apply_category_styling()
-
-            logger.debug(
-                "[MetadataWidget] %d files selected - Hash: %s, EXIF: %s",
-                len(selected_files),
-                has_hash_data,
-                has_metadata_data,
-            )
+        Deprecated: Use CategoryManager.update_category_availability() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._category_manager.update_category_availability()
 
     def _check_files_have_hash(self, selected_files) -> bool:
         """Check if any of the selected files have hash data.
@@ -648,15 +483,6 @@ class MetadataWidget(QWidget):
         This method is kept for backwards compatibility.
         """
         return self._hash_handler._check_files_have_hash(selected_files)
-
-    def _check_files_have_metadata(self, selected_files) -> bool:
-        """Check if any of the selected files have metadata."""
-        try:
-            file_paths = [file_item.full_path for file_item in selected_files]
-            return any(batch_metadata_status(file_paths).values())
-        except Exception as e:
-            logger.error("[MetadataWidget] Error checking metadata availability: %s", e)
-            return False
 
     def _ensure_theme_inheritance(self) -> None:
         """Ensure that child widgets inherit theme styles properly.
@@ -686,29 +512,12 @@ class MetadataWidget(QWidget):
         self.update_options()
 
     def _check_calculation_requirements(self, category: str):
-        """Check if calculation dialog is needed for the selected category."""
-        if self._hash_dialog_active:
-            logger.debug(
-                "[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True}
-            )
-            return
+        """Check if calculation dialog is needed for the selected category.
 
-        try:
-            selected_files = self._get_selected_files()
-            if not selected_files:
-                logger.debug(
-                    "[MetadataWidget] No files selected, no dialog needed", extra={"dev_only": True}
-                )
-                return
-
-            if category == "hash":
-                self._hash_handler._check_hash_calculation_requirements(selected_files)
-            elif category == "metadata_keys":
-                self._check_metadata_calculation_requirements(selected_files)
-
-        except Exception as e:
-            logger.error("[MetadataWidget] Error checking calculation requirements: %s", e)
-            self._hash_dialog_active = False
+        Deprecated: Use CategoryManager._check_calculation_requirements() instead.
+        This method is kept for backwards compatibility.
+        """
+        self._category_manager._check_calculation_requirements(category)
 
     def _check_hash_calculation_requirements(self, selected_files):
         """Check if hash calculation dialog is needed.
@@ -717,30 +526,6 @@ class MetadataWidget(QWidget):
         This method is kept for backwards compatibility.
         """
         self._hash_handler._check_hash_calculation_requirements(selected_files)
-
-    def _check_metadata_calculation_requirements(self, selected_files):
-        file_paths = [file_item.full_path for file_item in selected_files]
-        batch_status = batch_metadata_status(file_paths)
-        files_with_metadata = [p for p, has in batch_status.items() if has]
-        total_files = len(selected_files)
-        if len(files_with_metadata) < total_files:
-            files_needing_metadata = [
-                file_item.full_path
-                for file_item in selected_files
-                if not batch_status.get(file_item.full_path, False)
-            ]
-            logger.debug(
-                "[MetadataWidget] %d files need metadata - showing dialog",
-                len(files_needing_metadata),
-                extra={"dev_only": True},
-            )
-            self._hash_dialog_active = True
-            self._show_calculation_dialog(files_needing_metadata, "metadata")
-        else:
-            logger.debug(
-                "[MetadataWidget] All files have metadata - no dialog needed",
-                extra={"dev_only": True},
-            )
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
         """Show calculation dialog for hash or metadata.
