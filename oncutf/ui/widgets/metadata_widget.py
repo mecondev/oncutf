@@ -2,8 +2,19 @@
 
 Author: Michael Economou
 Date: 2025-05-31
+Refactored: 2025-12-24
 
 Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
+
+This widget has been refactored into specialized handlers:
+- CategoryManager: Category selection and options population
+- FieldFormatter: Metadata key name formatting
+- HashHandler: Hash operations and dialogs
+- MetadataKeysHandler: Metadata keys collection and grouping
+- StylingHandler: Theme inheritance and combo styling
+
+The widget now acts as a thin orchestration layer, delegating most operations
+to these specialized handlers while maintaining backwards compatibility.
 """
 
 from typing import Any
@@ -31,15 +42,41 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataWidget(QWidget):
-    """Widget for file metadata selection (file dates or EXIF).
-    Supports category selection and dynamic fields,
-    and emits update signal only when there is an actual change.
+    """Widget for file metadata selection (file dates, hash, or EXIF/metadata).
+
+    This widget provides a user interface for selecting metadata sources for file renaming.
+    It supports three categories:
+    - File Date/Time: Various file modification date formats
+    - Hash: CRC32 hash values (requires calculation)
+    - EXIF/Metadata: Metadata fields from image/video files
+
+    The widget has been refactored to use specialized handlers for better maintainability:
+    - CategoryManager: Handles category selection and option population
+    - FieldFormatter: Formats metadata key names for display
+    - HashHandler: Manages hash operations and calculation dialogs
+    - MetadataKeysHandler: Collects and groups metadata keys from files
+    - StylingHandler: Manages theme inheritance and combo box styling
+
+    Signals:
+        updated: Emitted when the selection changes (legacy compatibility)
+        settings_changed: Emitted on any setting change for instant preview updates
+
+    Attributes:
+        category_combo: Combo box for selecting the category
+        options_combo: Hierarchical combo box for selecting specific options
+        parent_window: Reference to parent window for file selection
     """
 
     updated = pyqtSignal(object)
     settings_changed = pyqtSignal(dict)  # Emitted on ANY setting change for instant preview
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
+        """Initialize the MetadataWidget.
+
+        Args:
+            parent: Optional parent widget.
+            parent_window: Reference to main window for file selection access.
+        """
         super().__init__(parent)
         self.parent_window = parent_window
         self._last_data = None
@@ -49,11 +86,12 @@ class MetadataWidget(QWidget):
         self._last_selection_count = 0  # Track selection count to avoid unnecessary updates
         self._update_timer = None  # Timer for debouncing updates
 
-        # Initialize handlers
-        self._category_manager = CategoryManager(self)
-        self._metadata_keys_handler = MetadataKeysHandler(self)
-        self._hash_handler = HashHandler(self)
-        self._styling_handler = StylingHandler(self)
+        # Initialize specialized handlers for better code organization
+        # Each handler manages a specific aspect of the widget's functionality
+        self._category_manager = CategoryManager(self)  # Category and options management
+        self._metadata_keys_handler = MetadataKeysHandler(self)  # Metadata key operations
+        self._hash_handler = HashHandler(self)  # Hash operations and dialogs
+        self._styling_handler = StylingHandler(self)  # Theme and styling
 
         self.setup_ui()
 
