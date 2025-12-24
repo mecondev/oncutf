@@ -48,6 +48,7 @@ from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixi
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
+from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
@@ -179,6 +180,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
 
         # Selection handler (Phase 4 refactoring)
         self._selection_handler = MetadataTreeSelectionHandler(self)
+
+        # Modifications handler (Phase 5 refactoring)
+        self._modifications_handler = MetadataTreeModificationsHandler(self)
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -1257,108 +1261,49 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
     def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
         """
         Collect all modified metadata for all files that have modifications.
+        Delegates to modifications handler.
 
         Returns:
             Dictionary mapping file paths to their modified metadata
         """
-        # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return {}
-
-        return staging_manager.get_all_staged_changes()
+        return self._modifications_handler.get_all_modified_metadata_for_files()
 
     def clear_modifications(self) -> None:
         """
         Clear all modified metadata items for the current file.
+        Delegates to modifications handler.
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if staging_manager and self._current_file_path:
-            staging_manager.clear_staged_changes(self._current_file_path)
-
-        # Update the information label with current display data
-        if hasattr(self, "_current_display_data") and self._current_display_data:
-            self._update_information_label(self._current_display_data)
-
-        self._update_file_icon_status()
-        self.viewport().update()
+        self._modifications_handler.clear_modifications()
 
     def clear_modifications_for_file(self, file_path: str) -> None:
         """
         Clear modifications for a specific file.
+        Delegates to modifications handler.
 
         Args:
             file_path: Full path of the file to clear modifications for
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if staging_manager:
-            staging_manager.clear_staged_changes(file_path)
-
-        # If this is the current file, also clear current modifications and update UI
-        if paths_equal(file_path, self._current_file_path):
-            # Refresh the view to remove italic style
-            if hasattr(self, "display_metadata"):
-                # Get current selection to refresh
-                selected_files = self._get_current_selection()
-                if selected_files and len(selected_files) == 1:
-                    file_item = selected_files[0]
-                    cache_helper = self._get_cache_helper()
-                    if cache_helper:
-                        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-                        if metadata_entry and hasattr(metadata_entry, "data"):
-                            display_data = dict(metadata_entry.data)
-                            display_data["FileName"] = file_item.filename
-                            self.display_metadata(display_data, context="after_save")
-            self._update_file_icon_status()
-            self.viewport().update()
+        self._modifications_handler.clear_modifications_for_file(file_path)
 
     def has_modifications_for_selected_files(self) -> bool:
         """
         Check if any of the currently selected files have modifications.
+        Delegates to modifications handler.
 
         Returns:
             bool: True if any selected file has modifications
         """
-        # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return False
-
-        # Get selected files
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return False
-
-        # Check if any selected file has modifications
-        for file_item in selected_files:
-            if staging_manager.has_staged_changes(file_item.full_path):
-                return True
-
-        return False
+        return self._modifications_handler.has_modifications_for_selected_files()
 
     def has_any_modifications(self) -> bool:
         """
         Check if there are any modifications in any file.
+        Delegates to modifications handler.
 
         Returns:
             bool: True if any file has modifications
         """
-        # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return False
-
-        return staging_manager.has_any_staged_changes()
+        return self._modifications_handler.has_any_modifications()
 
     # =====================================
     # Lazy Loading Methods

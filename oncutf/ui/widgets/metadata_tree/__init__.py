@@ -44,6 +44,9 @@ from oncutf.ui.widgets.metadata_tree.model import (
     TreeNodeData,
 )
 
+# Modifications handler
+from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
+
 # Search handler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 
@@ -92,6 +95,7 @@ __all__ = [
     "MetadataTreeViewConfig",
     "MetadataTreeSearchHandler",
     "MetadataTreeSelectionHandler",
+    "MetadataTreeModificationsHandler",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]
