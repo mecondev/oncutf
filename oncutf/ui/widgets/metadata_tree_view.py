@@ -47,6 +47,7 @@ from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
 from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
+from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
@@ -184,6 +185,9 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
         # Modifications handler (Phase 5 refactoring)
         self._modifications_handler = MetadataTreeModificationsHandler(self)
 
+        # Cache handler (Phase 6 refactoring)
+        self._cache_handler = MetadataTreeCacheHandler(self)
+
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
 
@@ -317,56 +321,20 @@ class MetadataTreeView(MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixi
                     self.viewport().update(self.visualRect(new_index))
 
     def _initialize_cache_helper(self) -> None:
-        """Initialize the metadata cache helper."""
-        try:
-            # Use the persistent cache instance from parent window if available
-            parent_window = self._get_parent_with_file_table()
-            cache_instance = None
-            if parent_window and hasattr(parent_window, "metadata_cache"):
-                cache_instance = parent_window.metadata_cache
-
-            self._cache_helper = MetadataCacheHelper(cache_instance)
-            logger.debug(
-                "[MetadataTreeView] MetadataCacheHelper initialized (with persistent cache)",
-                extra={"dev_only": True},
-            )
-        except Exception as e:
-            logger.exception("[MetadataTreeView] Failed to initialize MetadataCacheHelper: %s", e)
-            self._cache_helper = None
+        """Initialize the metadata cache helper. Delegates to cache handler."""
+        self._cache_handler.initialize_cache_helper()
 
     def _get_cache_helper(self) -> MetadataCacheHelper | None:
-        """Get the MetadataCacheHelper instance, initializing if needed."""
-        # Always check if we need to initialize or re-initialize (if cache backend is missing)
-        if self._cache_helper is None or (
-            self._cache_helper and self._cache_helper.metadata_cache is None
-        ):
-            self._initialize_cache_helper()
-        return self._cache_helper
+        """Get the MetadataCacheHelper instance, initializing if needed. Delegates to cache handler."""
+        return self._cache_handler.get_cache_helper()
 
     def _initialize_direct_loader(self) -> None:
-        """Initialize the direct metadata loader."""
-        try:
-            if UnifiedMetadataManager is not None:
-                self._direct_loader = UnifiedMetadataManager()
-                logger.debug(
-                    "[MetadataTreeView] UnifiedMetadataManager initialized",
-                    extra={"dev_only": True},
-                )
-            else:
-                logger.debug(
-                    "[MetadataTreeView] UnifiedMetadataManager not available",
-                    extra={"dev_only": True},
-                )
-                self._direct_loader = None
-        except Exception as e:
-            logger.exception("[MetadataTreeView] Failed to initialize UnifiedMetadataManager: %s", e)
-            self._direct_loader = None
+        """Initialize the direct metadata loader. Delegates to cache handler."""
+        self._cache_handler.initialize_direct_loader()
 
     def _get_direct_loader(self):
-        """Get the UnifiedMetadataManager instance, initializing if needed."""
-        if self._direct_loader is None:
-            self._initialize_direct_loader()
-        return self._direct_loader
+        """Get the UnifiedMetadataManager instance, initializing if needed. Delegates to cache handler."""
+        return self._cache_handler.get_direct_loader()
 
     def _setup_tree_view_properties(self) -> None:
         """Configure standard tree view properties. Delegates to view config handler."""

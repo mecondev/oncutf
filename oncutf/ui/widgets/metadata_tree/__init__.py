@@ -96,6 +96,7 @@ __all__ = [
     "MetadataTreeSearchHandler",
     "MetadataTreeSelectionHandler",
     "MetadataTreeModificationsHandler",
+    "MetadataTreeCacheHandler",
     # Main widget (legacy location, will move in Phase 4)
     "MetadataTreeView",
 ]
