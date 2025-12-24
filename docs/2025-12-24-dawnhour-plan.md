@@ -13,6 +13,7 @@
 | **Tests** | 893 passed, 6 skipped |
 | **Ruff** | All checks passed |
 | **Main files reduced** | metadata_widget.py: 1565→814 lines, metadata_tree_view.py: 2043→1338 lines |
+| **Legacy code removed** | theme_engine.py + theme.py: 1886 lines deleted |
 
 ---
 
@@ -47,6 +48,13 @@
 - ✅ Phase D: ThemeEngine→ThemeManager migration (22 files)
 - ✅ Phase E: Deprecated theme.py imports removed (9 files)
 - ✅ Phase F: Stale phase reference comments cleaned (7 files)
+
+### 4. Legacy Facade Removal ✅ (NEW)
+
+- **Deleted:** `oncutf/utils/theme_engine.py` (1745 lines)
+- **Deleted:** `oncutf/utils/theme.py` (75 lines)
+- **Updated:** Tests migrated to use `ThemeManager` directly
+- **Cleaned:** All "backwards compatibility" comments removed
 
 ---
 
@@ -96,15 +104,13 @@ These delegate to handlers but add unnecessary indirection. Can be removed after
 - 2,815 typing issues (ANN rules)
 - **Strategy:** Enable mypy module-by-module, starting with controllers and models
 
-### 5. Deprecated Modules — KEEP FOR NOW
+### 5. ~~Deprecated Modules~~ — REMOVED ✅
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| `utils/theme_engine.py` | Facade only | All usages migrated to ThemeManager |
-| `utils/theme.py` | Facade only | All usages migrated |
-| `MetadataWaitingDialog` alias | Compatibility | Still referenced in 3 files |
-
-These are thin facades that delegate to proper implementations. Keep for backward compatibility.
+| Module | Status |
+|--------|--------|
+| ~~`utils/theme_engine.py`~~ | **DELETED** (1745 lines) |
+| ~~`utils/theme.py`~~ | **DELETED** (75 lines) |
+| `MetadataWaitingDialog` alias | Still referenced in 3 files |
 
 ---
 
@@ -121,11 +127,12 @@ These are thin facades that delegate to proper implementations. Keep for backwar
 
 ## Recommended Next Steps
 
-1. **Commit current docstring cleanups** (already done this session)
-2. **Archive completed plan documents** (this document replaces them)
-3. **Optional:** Remove deprecated wrapper methods from MetadataWidget
-4. **Optional:** Remove clearly unused functions (dead code list above)
-5. **Future:** Gradual mypy strictness improvement
+1. ~~**Commit current docstring cleanups**~~ ✅ Done
+2. ~~**Archive completed plan documents**~~ ✅ Done  
+3. ~~**Remove deprecated theme facades**~~ ✅ Done (1886 lines removed)
+4. **Optional:** Remove deprecated wrapper methods from MetadataWidget
+5. **Optional:** Remove clearly unused functions (dead code list above)
+6. **Future:** Gradual mypy strictness improvement
 
 ---
 
