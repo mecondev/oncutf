@@ -16,6 +16,7 @@ Architecture:
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -232,8 +233,8 @@ class MetadataController:
         logger.info("[MetadataController] Restoring metadata from cache")
 
         try:
-            # Get TableManager from ApplicationContext
-            table_manager = self._app_context.main_window.table_manager
+            # Get TableManager from ApplicationContext manager registry
+            table_manager = self._app_context.get_manager("table")
             table_manager.restore_fileitem_metadata_from_cache()
 
             return {"success": True, "errors": []}
@@ -277,15 +278,22 @@ class MetadataController:
         )
 
         try:
-            # Delegate to metadata_exporter utility
-            from oncutf.utils.metadata_exporter import export_metadata_to_file
+            # Use MetadataExporter class
+            from oncutf.utils.metadata_exporter import MetadataExporter
 
-            result = export_metadata_to_file(
-                file_items=file_items,
-                output_path=output_path,
-                export_format=export_format,
-                structured_metadata_manager=self._structured_metadata_mgr,
+            exporter = MetadataExporter()
+            success = exporter.export_files(
+                files=file_items,
+                output_dir=str(Path(output_path).parent),
+                format_type=export_format,
             )
+
+            result = {
+                "success": success,
+                "exported_count": len(file_items) if success else 0,
+                "output_path": output_path,
+                "errors": [] if success else ["Export failed"],
+            }
 
             if result.get("success"):
                 logger.info(
@@ -331,11 +339,10 @@ class MetadataController:
             int: Number of files with metadata
 
         """
-        file_model = self._app_context.file_store
         count = 0
+        items = self._app_context.file_store.get_loaded_files()
 
-        for i in range(file_model.rowCount()):
-            item = file_model.item_at(i)
+        for item in items:
             if self.has_metadata(item):
                 count += 1
 
@@ -352,19 +359,26 @@ class MetadataController:
 
         """
         # Check if file has metadata in cache
-        if hasattr(self._app_context.main_window, "metadata_cache"):
+        # Try to get metadata manager which has the cache
+        try:
             from oncutf.utils.path_normalizer import normalize_path
 
+            metadata_manager = self._app_context.get_manager("metadata")
             norm_path = normalize_path(file_item.full_path)
-            cache_entry = self._app_context.main_window.metadata_cache.get_entry(norm_path)
+
+            if not hasattr(metadata_manager, "metadata_cache"):
+                return False
+
+            cache_entry = metadata_manager.metadata_cache.get_entry(norm_path)
 
             return (
                 cache_entry is not None
                 and hasattr(cache_entry, "data")
                 and cache_entry.data is not None
             )
-
-        return False
+        except (KeyError, AttributeError):
+            # Manager not found or doesn't have metadata_cache
+            return False
 
     def get_common_metadata_fields(self) -> list[str]:
         """Get list of common metadata fields across selected files.
@@ -374,22 +388,21 @@ class MetadataController:
 
         """
         try:
-            # Get selected files
-            selected_files = self._app_context.main_window.table_manager.get_selected_files()
+            # Get selected files from TableManager via manager registry
+            table_manager = self._app_context.get_manager("table")
+            selected_files = table_manager.get_selected_files()
 
             if not selected_files:
                 return []
 
-            # Use StructuredMetadataManager to get common fields
-            common_fields = self._structured_metadata_mgr.get_common_fields(selected_files)
-
+            # TODO: Implement get_common_fields in StructuredMetadataManager
+            # For now, return empty list as this method doesn't exist yet
             logger.debug(
-                "[MetadataController] Found %d common fields for %d files",
-                len(common_fields),
+                "[MetadataController] get_common_fields not yet implemented for %d files",
                 len(selected_files),
             )
 
-            return common_fields
+            return []
 
         except Exception as e:
             logger.exception(
