@@ -207,7 +207,9 @@ class SelectionProvider:
             if file_table_view:
                 selection_model = file_table_view.selectionModel()
                 if selection_model:
-                    result = {index.row() for index in selection_model.selectedRows()}
+                    from oncutf.utils.selection_provider import get_selected_row_set
+
+                    result = get_selected_row_set(selection_model)
                     cls._cached_selected_rows = result
                     return result
 
@@ -359,3 +361,26 @@ def get_single_selected_file(parent_window: Any) -> FileItem | None:
 
     """
     return SelectionProvider.get_single_selected_file(parent_window)
+
+
+def get_selected_row_set(selection_model) -> set[int]:
+    """Get set of selected row indices from a selection model.
+
+    This helper function eliminates duplicate code pattern appearing 12+ times
+    across the codebase: {index.row() for index in selection_model.selectedRows()}
+
+    Args:
+        selection_model: QItemSelectionModel instance
+
+    Returns:
+        Set of selected row indices
+
+    Example:
+        >>> sm = table_view.selectionModel()
+        >>> selected_rows = get_selected_row_set(sm)
+        >>> if 5 in selected_rows:
+        >>>     print("Row 5 is selected")
+    """
+    if not selection_model:
+        return set()
+    return {index.row() for index in selection_model.selectedRows()}

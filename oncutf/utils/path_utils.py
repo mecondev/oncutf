@@ -13,7 +13,6 @@ PyInstaller Support:
 When frozen (compiled to exe), this module uses sys._MEIPASS to locate bundled resources.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -214,35 +213,6 @@ def resource_exists(relative_path: str) -> bool:
 
     """
     return get_resource_path(relative_path).exists()
-
-
-def normalize_path(path: str) -> str:
-    """Normalize a file path to use consistent separators for the current OS.
-
-    This resolves issues with mixed path separators (e.g., forward slashes mixed
-    with backslashes on Windows) that can occur when paths come from different sources.
-
-    Args:
-        path (str): The file path to normalize
-
-    Returns:
-        str: Normalized path with consistent separators
-
-    Example:
-        >>> normalize_path("C:/folder\\subfolder/file.txt")  # Windows
-        "C:\\folder\\subfolder\\file.txt"
-        >>> normalize_path("/home/user\\folder/file.txt")   # Linux/Mac
-        "/home/user/folder/file.txt"
-
-    """
-    if not path:
-        return path
-
-    # First normalize separators to forward slashes for cross-platform compatibility
-    normalized = path.replace("\\", "/")
-
-    # Then use os.path.normpath for final normalization
-    return os.path.normpath(normalized)
 
 
 def paths_equal(path1: str, path2: str) -> bool:

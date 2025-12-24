@@ -1,12 +1,13 @@
 from types import SimpleNamespace
 
 from oncutf.utils import path_utils
+from oncutf.utils.path_normalizer import normalize_path
 
 
 def test_normalize_and_paths_equal():
     p1 = "C:/folder\\sub/f.txt"
     p2 = "C:\\folder/sub/f.txt"
-    assert path_utils.normalize_path(p1) == path_utils.normalize_path(p2)
+    assert normalize_path(p1) == normalize_path(p2)
     assert path_utils.paths_equal(p1, p2)
 
 

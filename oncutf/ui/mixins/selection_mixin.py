@@ -136,14 +136,13 @@ class SelectionMixin:
             return selection_store.get_selected_rows()
         else:
             # Fallback: get from Qt selection model (more reliable than legacy)
+            from oncutf.utils.selection_provider import get_selected_row_set
+
             selection_model = self.selectionModel()
-            if selection_model:
-                qt_selection = {index.row() for index in selection_model.selectedRows()}
-                # Update legacy state to match Qt
-                self.selected_rows = qt_selection
-                return qt_selection
-            else:
-                return self.selected_rows
+            qt_selection = get_selected_row_set(selection_model)
+            # Update legacy state to match Qt
+            self.selected_rows = qt_selection
+            return qt_selection
 
     def _get_current_selection_safe(self) -> set:
         """Get current selection safely without SelectionStore dependency.
@@ -154,11 +153,10 @@ class SelectionMixin:
             Set of currently selected row indices
 
         """
+        from oncutf.utils.selection_provider import get_selected_row_set
+
         selection_model = self.selectionModel()
-        if selection_model:
-            return {index.row() for index in selection_model.selectedRows()}
-        else:
-            return set()
+        return get_selected_row_set(selection_model)
 
     def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
         """Set anchor row in SelectionStore or fallback to legacy.
@@ -215,7 +213,9 @@ class SelectionMixin:
 
             if modifiers & Qt.ShiftModifier:
                 # Check if we're clicking on an already selected item
-                current_selection = {idx.row() for idx in sm.selectedRows()}
+                from oncutf.utils.selection_provider import get_selected_row_set
+
+                current_selection = get_selected_row_set(sm)
                 clicked_row = index.row()
 
                 # If clicking on an already selected item, don't change selection
@@ -248,7 +248,9 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    from oncutf.utils.selection_provider import get_selected_row_set
+
+                    current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(
                         current_qt_selection, emit_signal=False
                     )  # Don't emit signal to prevent loops
@@ -281,7 +283,9 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    from oncutf.utils.selection_provider import get_selected_row_set
+
+                    current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(
                         current_qt_selection, emit_signal=False
                     )  # Don't emit signal to prevent loops
@@ -300,7 +304,9 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    from oncutf.utils.selection_provider import get_selected_row_set
+
+                    current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(current_qt_selection, emit_signal=False)
                     selection_store.set_anchor_row(index.row(), emit_signal=False)
 
@@ -330,9 +336,11 @@ class SelectionMixin:
         try:
             super().selectionChanged(selected, deselected)  # type: ignore
 
+            from oncutf.utils.selection_provider import get_selected_row_set
+
             selection_model = self.selectionModel()
             if selection_model is not None:
-                selected_rows = {index.row() for index in selection_model.selectedRows()}
+                selected_rows = get_selected_row_set(selection_model)
 
                 # OPTIMIZED: Only check for critical cases that need special handling
                 if not selected_rows and hasattr(self, "_is_dragging") and self._is_dragging:
@@ -470,9 +478,11 @@ class SelectionMixin:
         with external components (e.g., checked files in parent window).
         """
         # First, try to sync with SelectionStore if available
+        from oncutf.utils.selection_provider import get_selected_row_set
+
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
-            current_qt_selection = {idx.row() for idx in self.selectionModel().selectedRows()}
+            current_qt_selection = get_selected_row_set(self.selectionModel())
             selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
             return
 
