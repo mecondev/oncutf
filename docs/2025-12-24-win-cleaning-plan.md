@@ -1,6 +1,6 @@
 # Codebase Cleaning Plan — 2025-12-24
 
-**Status:** In Progress (Phase A, B, B+ Complete — Phase D Next)  
+**Status:** In Progress (Phase A, B, B+, D Complete — Phase E/F Next)  
 **Author:** Michael Economou  
 **Goal:** Clean dead code, stale comments, duplicate patterns, and improve type safety
 
@@ -13,8 +13,8 @@ Full codebase analysis revealed:
 - ~~**Duplicate `normalize_path()` functions**~~ ✅ **DONE (Phase B)**
 - ~~**12 instances of duplicate row selection pattern**~~ ✅ **DONE (Phase B)**
 - ~~**4 legacy main_window access patterns**~~ ✅ **DONE (Phase B+)**
+- ~~**20+ ThemeEngine imports to migrate**~~ ✅ **DONE (Phase D)**
 - **~35 dead functions/classes** that are never called (many may not exist anymore)
-- **3 deprecated modules** still in active use (need migration)
 - **~50 modules** with `ignore_errors=true` in mypy (gradual strictness opportunity)
 
 ---
@@ -403,25 +403,115 @@ ignore_errors = false
 
 **Branch:** `refactor/2025-12-24/consolidate-phase-b` (merged to main)
 
-### Phase C: Type Safety Improvements (NEXT)
+---
 
-**Estimated effort:** 4-6 hours
+## ✅ Phase D: Deprecated Module Migration — ThemeEngine (COMPLETED)
+
+**Branch:** `refactor/2025-12-24/consolidate-phase-b` (same branch)  
+**Commit:** `c48a6164`  
+**Status:** Completed
+
+### Completed Actions:
+
+**1. Migrated from ThemeEngine facade to ThemeManager singleton (22 files)**
+
+Replaced all `ThemeEngine()` instantiations with `get_theme_manager()` calls:
+
+- **Main application:**
+  - `main.py`: Removed duplicate theme manager, simplified theme application callback
+  
+- **Rename modules (3 files):**
+  - `oncutf/modules/counter_module.py`
+  - `oncutf/modules/specified_text_module.py`
+  - `oncutf/modules/text_removal_module.py`
+
+- **UI widgets (12 files):**
+  - `oncutf/ui/widgets/file_table_view.py` — row height from theme
+  - `oncutf/ui/widgets/styled_combo_box.py` — delegate + theme height
+  - `oncutf/ui/widgets/rename_module_widget.py` — drag handle colors + combo height
+  - `oncutf/ui/widgets/rename_modules_area.py` — drop indicator + placeholder colors
+  - `oncutf/ui/widgets/ui_delegates.py` — type hints updated to ThemeManager
+  - `oncutf/ui/widgets/progress_widget.py` — bar colors from theme
+  - `oncutf/ui/widgets/preview_tables_view.py` — table row heights (2 occurrences)
+  - `oncutf/ui/widgets/name_transform_widget.py` — combo height
+  - `oncutf/ui/widgets/original_name_widget.py` — secondary text color
+  - `oncutf/ui/widgets/metadata_validated_input.py` — combo height
+  - `oncutf/ui/widgets/metadata_history_dialog.py` — table row height
+  - `oncutf/ui/widgets/interactive_header.py` — context menu stylesheet
+  - `oncutf/ui/widgets/final_transform_container.py` — combo height
+  - `oncutf/ui/widgets/metadata/styling_handler.py` — combo box styling
+
+- **UI mixins (1 file):**
+  - `oncutf/ui/mixins/metadata_context_menu_mixin.py` — context menu styling
+
+- **Test files (2 files):**
+  - `tests/test_metadata_tree_view.py` — updated fixture to use get_theme_manager()
+  - `tests/test_hierarchical_combo_box.py` — updated fixture to use get_theme_manager()
+
+**2. Added backwards compatibility tokens to THEME_TOKENS**
+
+Added to `oncutf/config.py`:
+```python
+# Component-Specific: ComboBoxes
+"combo_dropdown_background": "#181818",
+"combo_item_background_hover": "#3e5c76",
+"combo_item_background_selected": "#748cab",
+```
+
+**3. Import organization improvements**
+
+- Moved inline `from oncutf.utils.theme_engine import ThemeEngine` to top-level imports
+- Changed to `from oncutf.core.theme_manager import get_theme_manager`
+- Updated TYPE_CHECKING imports in `ui_delegates.py`
+
+**Files changed:** 22 files  
+**Lines changed:** +68 insertions, -87 deletions  
+**Quality gates:** ruff ✓, pytest ✓ (888 passed, 11 skipped)
+
+### Migration Summary
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Import | `from oncutf.utils.theme_engine import ThemeEngine` | `from oncutf.core.theme_manager import get_theme_manager` |
+| Usage | `theme = ThemeEngine()` | `theme = get_theme_manager()` |
+| Type hint | `theme: "ThemeEngine"` | `theme: "ThemeManager"` |
+| Result | New instance per call (inefficient) | Singleton pattern (efficient) |
+
+### Remaining ThemeEngine Usage
+
+**test_theme_integration.py** — Intentionally NOT migrated  
+This test file specifically tests the ThemeEngine facade for backwards compatibility.  
+It verifies that the facade correctly delegates to ThemeManager.
+
+---
+
+### Phase C: Type Safety Improvements (DEFERRED)
+
+**Estimated effort:** 4-6 hours  
+**Complexity:** High (116 mypy errors, 54 Qt-related)
+
+Analysis showed this phase needs module-by-module approach due to Qt typing complexity.  
+Deferred in favor of higher-value quick wins (Phase D completed instead).
 
 1. Enable mypy for `oncutf.controllers.*`
 2. Enable mypy for `oncutf.models.*`
 3. Enable `F403` in ruff, fix violations
 4. Add `-> None` to `__init__` methods in strict modules
 
-### Phase D: Deprecated Module Migration (Long-term)
+### ~~Phase D: ThemeEngine Migration~~ ✅ COMPLETED
 
-**Estimated effort:** 8-12 hours
+See dedicated section above.
 
-1. Migrate `theme_engine.py` usages to `ThemeManager`
-2. Migrate `theme.py` usages to `ThemeManager`
+### Phase E: Remaining Deprecated Modules (NEXT)
+
+**Estimated effort:** 4-6 hours
+
+1. ~~Migrate `theme_engine.py` usages to `ThemeManager`~~ ✅ **DONE**
+2. Migrate `theme.py` usages (if any remain)
 3. Assess and remove `MetadataWaitingDialog` if no longer needed
 4. Remove deprecated wrapper methods from `metadata_module_widget.py`
 
-### Phase E: Additional Cleanup (Optional)
+### Phase F: Additional Cleanup (Optional)
 
 **Estimated effort:** Variable
 
