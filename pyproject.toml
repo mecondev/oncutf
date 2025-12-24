@@ -304,6 +304,8 @@ ignore = [
     "TC001", # typing imports should be in TYPE_CHECKING block
     "TC002", # typing imports should be in TYPE_CHECKING block
     "TC003", # typing imports should be in TYPE_CHECKING block
+    "ARG002", # unused method argument (intentional in polymorphic/override methods)
+    "ARG004", # unused static method argument (intentional for API consistency)
     # PLR ignores - keep useful rules, ignore overly strict ones
     "PLR2004", # magic-value-comparison (too noisy for constants like 0, 1, 2)
     "PLR0911", # too-many-return-statements (common pattern in switch-like logic)
