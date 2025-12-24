@@ -1,6 +1,6 @@
 # Codebase Cleaning Plan — 2025-12-24
 
-**Status:** Planning  
+**Status:** In Progress (Phase A & B Complete)  
 **Author:** Michael Economou  
 **Goal:** Clean dead code, stale comments, duplicate patterns, and improve type safety
 
@@ -9,15 +9,57 @@
 ## Executive Summary
 
 Full codebase analysis revealed:
-- **~35 dead functions/classes** that are never called
-- **~50 "Phase X" comments** referencing completed refactorings
-- **6 duplicate code patterns** that should be consolidated
+- ~~**~50 "Phase X" comments** referencing completed refactorings~~ ✅ **DONE (Phase A)**
+- ~~**Duplicate `normalize_path()` functions**~~ ✅ **DONE (Phase B)**
+- ~~**12 instances of duplicate row selection pattern**~~ ✅ **DONE (Phase B)**
+- **~35 dead functions/classes** that are never called (many may not exist anymore)
 - **3 deprecated modules** still in active use (need migration)
 - **~50 modules** with `ignore_errors=true` in mypy (gradual strictness opportunity)
 
 ---
 
-## 1. Dead Code (High Priority)
+## ✅ Phase A: Safe Cleanup (COMPLETED)
+
+**Branch:** `refactor/2025-12-24/cleanup-phase-a`  
+**Commit:** `9debcdc4`  
+**Status:** Merged to main
+
+### Completed Actions:
+1. ✅ Removed ~15 "Phase X" references from comments
+2. ✅ Cleaned author headers (removed `(refactored)` suffix from 2 files)
+3. ✅ Removed dead commented import in `file_table_view.py`
+4. ✅ Simplified optimization comments (removed phase numbers)
+
+**Files changed:** 13 files  
+**Quality gates:** All passed (ruff ✓, mypy ✓, pytest 592+ ✓)
+
+---
+
+## ✅ Phase B: Duplicate Code Consolidation (COMPLETED)
+
+**Branch:** `refactor/2025-12-24/consolidate-phase-b`  
+**Commit:** `712ce382`  
+**Status:** Merged to main
+
+### Completed Actions:
+1. ✅ **Removed duplicate `normalize_path()` from `path_utils.py`**
+   - Kept canonical version in `path_normalizer.py` (20+ usages)
+   - Removed unused duplicate with different behavior (OS-native vs forward slashes)
+
+2. ✅ **Created `get_selected_row_set()` helper function**
+   - Replaced 12 instances of `{index.row() for index in selection_model.selectedRows()}`
+   - Added to `selection_provider.py`
+   - Updated 6 files: `selection_mixin.py`, `file_table_view.py`, `selection_manager.py`, etc.
+
+3. ✅ Fixed `test_path_utils.py` to use correct import
+4. ✅ Removed unused `os` import from `path_utils.py`
+
+**Files changed:** 6 files  
+**Quality gates:** All passed (ruff 11 fixes ✓, mypy ✓, pytest 592+ ✓)
+
+---
+
+## 1. Dead Code (Remaining - Low Priority)
 
 ### 1.1 Definitely Unused Functions
 
@@ -131,7 +173,7 @@ These reference completed refactoring phases and should be simplified:
 
 ---
 
-## 3. Deprecated Modules Still in Use
+## 3. Deprecated Modules Still in Use (Remaining - Medium Priority)
 
 ### 3.1 theme_engine.py
 
@@ -196,44 +238,19 @@ DEPRECATED: These helper functions delegate to ThemeManager.
 
 ---
 
-## 4. Duplicate Code Patterns
+## 4. Other Cleanup Opportunities (Remaining - Low Priority)
 
-### 4.1 validate_rotation() — HIGH PRIORITY
+### 4.1 validate_rotation() Consolidation
 
 **Files:**
 - `oncutf/utils/metadata_validators.py` (lines 16-61)
 - `oncutf/domain/metadata_field_validators.py` (lines 222-270)
 
-**Issue:** Two different rotation validators with different signatures:
-```python
-# metadata_validators.py
-def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
-
-# metadata_field_validators.py (MetadataFieldValidators class)
-@staticmethod
-def validate_rotation(value: str) -> tuple[bool, str]:
-```
+**Issue:** Two different rotation validators with different signatures.
 
 **Action:** Consolidate into single function; update callers.
 
-### 4.2 normalize_path() — HIGH PRIORITY
-
-**Files:**
-- `oncutf/utils/path_normalizer.py` (lines 16-54)
-- `oncutf/utils/path_utils.py` (lines 219-245)
-
-**Issue:** Two functions with same name but different behavior:
-```python
-# path_normalizer.py — returns forward slashes
-normalized = normalized.replace("\\", "/")
-
-# path_utils.py — returns OS-native slashes
-return os.path.normpath(normalized)
-```
-
-**Action:** Keep `path_normalizer.normalize_path()` as canonical; deprecate `path_utils.normalize_path()` or rename it.
-
-### 4.3 format_file_size() — MEDIUM PRIORITY
+### 4.2 format_file_size() Consolidation
 
 **Files:**
 - `oncutf/utils/file_size_formatter.py` — `FileSizeFormatter.format_size()`
@@ -269,34 +286,7 @@ selected_rows = {index.row() for index in selection_model.selectedRows()}
 ```python
 def get_selected_row_set(selection_model: QItemSelectionModel) -> set[int]:
     return {index.row() for index in selection_model.selectedRows()}
-```
-
-### 4.6 History Dialog Setup — LOW PRIORITY
-
-**Files:**
-- `oncutf/ui/widgets/rename_history_dialog.py` (lines 70-100)
-- `oncutf/ui/widgets/metadata_history_dialog.py` (lines 84-130)
-
-**Issue:** Nearly identical dialog structure (title, info label, splitter, operations table, details panel, buttons).
-
-**Action:** Extract `BaseHistoryDialog` class.
-
----
-
-## 5. Deprecated Methods in metadata_module_widget.py
-
-After 2025-12-24 refactoring, 18+ methods were deprecated:
-
-| Lines | Methods | Deprecated Comment |
-|-------|---------|-------------------|
-| 168-169 | `_on_category_changed()` | Use `CategoryManager.on_category_changed()` |
-| 191-192 | `update_options()` | Use `CategoryManager.update_options()` |
-| 218-219 | `_populate_file_dates()` | Use `CategoryManager.populate_file_dates()` |
-| 258-259 | `_calculate_hashes_for_files()` | Use `HashHandler._calculate_hashes_for_files()` |
-| 272-273 | `_group_metadata_keys()` | Use `MetadataKeysHandler._group_metadata_keys()` |
-| 280-281 | `_classify_metadata_key()` | Use `MetadataKeysHandler._classify_metadata_key()` |
-| 324-341 | `format_metadata_key_name()`, `_format_field_name()`, `_format_camel_case()` | Use `FieldFormatter` methods |
-| 505-568 | Multiple hash/category methods | Delegates to specialized handlers |
+```3 History Dialog Base Class Extraction| Delegates to specialized handlers |
 | 626-659 | Multiple styling methods | Use `StylingHandler` methods |
 
 **Action:** Verify no external dependencies use these directly, then remove.
@@ -310,7 +300,7 @@ After 2025-12-24 refactoring, 18+ methods were deprecated:
 - **~50 modules** with `ignore_errors=true`
 - **2,815 typing issues** (ANN rules)
 - **100+ `# type: ignore`** comments
-
+Type Safety Improvements (Remaining - Medium Priority)
 ### 6.2 Typing Issues Breakdown (from ruff ANN)
 
 | Rule | Count | Description |
@@ -360,7 +350,7 @@ ignore_errors = false
 
 ---
 
-## 7. Ruff Rules to Consider Enabling
+## 8. Ruff Rules to Consider Enabling (Remaining - Low Priority)
 
 | Rule | Current Violations | Impact |
 |------|-------------------|--------|
@@ -371,30 +361,17 @@ ignore_errors = false
 
 ---
 
-## 8. Action Plan
+## 9. Remaining Action Plan
 
-### Phase A: Safe Cleanup (No Behavior Change)
+### ~~Phase A: Safe Cleanup~~ ✅ COMPLETED
 
-**Estimated effort:** 2-3 hours
+**Branch:** `refactor/2025-12-24/cleanup-phase-a` (merged to main)
 
-1. Remove ~50 "Phase X" comments
-2. Remove dead import comments
-3. Clean author headers (`(refactored)` suffix)
-4. Remove definitely dead code:
-   - `FileSizeCalculator` class
-   - Unused `multiscreen_helper.py` functions
-   - Unused `progress_manager_factory.py` functions
+### ~~Phase B: Duplicate Code Consolidation~~ ✅ COMPLETED
 
-### Phase B: Duplicate Code Consolidation
+**Branch:** `refactor/2025-12-24/consolidate-phase-b` (merged to main)
 
-**Estimated effort:** 4-6 hours
-
-1. Consolidate `validate_rotation()` functions
-2. Consolidate/clarify `normalize_path()` functions
-3. Unify file size formatting
-4. Extract `get_selected_row_set()` helper
-
-### Phase C: Type Safety Improvements
+### Phase C: Type Safety Improvements (NEXT)
 
 **Estimated effort:** 4-6 hours
 
@@ -412,13 +389,22 @@ ignore_errors = false
 3. Assess and remove `MetadataWaitingDialog` if no longer needed
 4. Remove deprecated wrapper methods from `metadata_module_widget.py`
 
+### Phase E: Additional Cleanup (Optional)
+
+**Estimated effort:** Variable
+
+1. Remove dead code from Section 1 (verify usages first)
+2. Remove legacy methods from Section 2
+3. Consolidate `validate_rotation()` and `format_file_size()`
+4. Extract `BaseHistoryDialog` class
+
 ---
 
-## 9. Quality Gates
+## 10. Quality Gates
 
 After each phase:
 
-```bash
+```b1sh
 ruff check .           # Must pass with 0 errors
 mypy .                 # Check for regressions
 pytest                 # All 592+ tests must pass

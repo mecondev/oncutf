@@ -347,18 +347,11 @@ class HashOperationsManager:
             file_path: Path to the file
             hash_value: Calculated hash value (optional, for backward compatibility)
 
+        Note:
+            Hash is already stored in cache by calculate_hash() — no need to store again
+
         """
         try:
-            # Store hash in persistent cache if provided (safe in main thread)
-            if hash_value:
-                try:
-                    from oncutf.core.hash.hash_manager import HashManager
-
-                    hm = HashManager()
-                    hm.store_hash(file_path, hash_value)
-                except Exception as e:
-                    logger.warning("[HashManager] Failed to store hash for %s: %s", file_path, e)
-
             # Find FileItem in model
             if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
                 return

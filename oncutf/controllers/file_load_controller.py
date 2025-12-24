@@ -337,7 +337,7 @@ class FileLoadController:
             return 0
 
         try:
-            count = len(self._file_store.get_all_files())
+            count = len(self._file_store.get_loaded_files())
             logger.debug(
                 "[FileLoadController] Current file count: %d", count, extra={"dev_only": True}
             )
@@ -357,7 +357,7 @@ class FileLoadController:
             return False
 
         try:
-            return self._context.get_recursive_mode()
+            return self._context.is_recursive_mode()
         except Exception:
             return False
 

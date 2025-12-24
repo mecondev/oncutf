@@ -161,8 +161,7 @@ class MetadataController:
         """
         if file_items is None:
             # Get all files from file store
-            file_model = self._app_context.file_store
-            file_items = [file_model.item_at(i) for i in range(file_model.rowCount())]
+            file_items = self._app_context.file_store.get_loaded_files()
 
         logger.info(
             "[MetadataController] reload_metadata for %d items (extended=%s)",

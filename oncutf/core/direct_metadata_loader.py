@@ -498,17 +498,7 @@ class DirectMetadataLoader(QObject):
         hash_key = f"hash_{file_path}"
         self._currently_loading.discard(hash_key)
 
-        # Store hash if provided (safe in main thread)
-        if hash_value:
-            try:
-                from oncutf.core.hash.hash_manager import HashManager
-
-                hm = HashManager()
-                hm.store_hash(file_path, hash_value)
-            except Exception as e:
-                logger.warning(
-                    "[DirectMetadataLoader] Failed to store hash for %s: %s", file_path, e
-                )
+        # Note: Hash is already stored in cache by calculate_hash() — no need to store again
 
         # Update file table icons
         if self.parent_window and hasattr(self.parent_window, "file_model"):

@@ -358,21 +358,13 @@ class UnifiedMetadataManager(QObject):
         # Progress handler manages this via connected signals
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
-        """Handle individual file hash calculated."""
+        """Handle individual file hash calculated.
+
+        Note:
+            Hash is already stored in cache by calculate_hash() — no need to store again
+
+        """
         self._currently_loading.discard(file_path)
-
-        if hash_value:
-            try:
-                from oncutf.core.hash.hash_manager import HashManager
-
-                hm = HashManager()
-                hm.store_hash(file_path, hash_value)
-            except Exception:
-                logger.warning(
-                    "[UnifiedMetadataManager] Failed to store hash for %s",
-                    file_path,
-                    exc_info=True,
-                )
 
         # Progressive UI update
         if self.parent_window and hasattr(self.parent_window, "file_model"):
