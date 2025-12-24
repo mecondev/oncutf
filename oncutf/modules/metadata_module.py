@@ -6,7 +6,7 @@ Date: 2025-05-06
 This module provides logic for extracting metadata fields (such as creation date,
 modification date, or EXIF tag) to include in renamed filenames.
 
-Refactored in Phase 3 (Dec 2025) to delegate extraction logic to MetadataExtractor domain layer.
+Refactored in Dec 2025 to delegate extraction logic to MetadataExtractor domain layer.
 """
 
 import os

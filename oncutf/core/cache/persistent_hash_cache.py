@@ -18,7 +18,7 @@ from oncutf.utils.path_normalizer import normalize_path
 logger = get_cached_logger(__name__)
 
 # Maximum memory cache size to prevent unbounded growth
-# Increased from 1000 to 2000 for better hit rate (Phase 3 optimization)
+# Increased from 1000 to 2000 for better hit rate
 # Hash values are small (~100B each), so 2000 entries = ~200KB
 MAX_MEMORY_CACHE_SIZE = 2000
 

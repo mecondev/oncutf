@@ -164,28 +164,28 @@ class MetadataTreeView(
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTextElideMode(Qt.TextElideMode.ElideRight)
 
-        # Controller for layered architecture (Phase 4 refactoring)
+        # Controller for layered architecture
         self._controller = controller
         if self._controller is None:
             # Lazy initialization - create controller on first use
             self._lazy_init_controller()
 
-        # Drag handler for drag & drop operations (Phase 2 refactoring)
+        # Drag handler for drag & drop operations
         self._drag_handler = MetadataTreeDragHandler(self)
 
-        # View configuration handler (Phase 2 refactoring)
+        # View configuration handler
         self._view_config = MetadataTreeViewConfig(self)
 
-        # Search handler (Phase 3 refactoring)
+        # Search handler
         self._search_handler = MetadataTreeSearchHandler(self)
 
-        # Selection handler (Phase 4 refactoring)
+        # Selection handler
         self._selection_handler = MetadataTreeSelectionHandler(self)
 
-        # Modifications handler (Phase 5 refactoring)
+        # Modifications handler
         self._modifications_handler = MetadataTreeModificationsHandler(self)
 
-        # Cache handler (Phase 6 refactoring)
+        # Cache handler
         self._cache_handler = MetadataTreeCacheHandler(self)
 
         # Unified placeholder helper
@@ -278,7 +278,7 @@ class MetadataTreeView(
         logger.debug("[MetadataTree] Local shortcuts setup: F5=refresh", extra={"dev_only": True})
 
     def _lazy_init_controller(self) -> None:
-        """Lazy initialization of controller layer (Phase 4 refactoring)."""
+        """Lazy initialization of controller layer."""
         try:
             from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
             from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
@@ -799,7 +799,7 @@ class MetadataTreeView(
             # Try to determine file path for scroll position memory
             self._set_current_file_from_metadata(metadata)
 
-            # Use controller for building tree model (Phase 4 refactoring)
+            # Use controller for building tree model
             # All business logic (display data prep, extended key detection)
             # is handled by the service layer
             if self._controller is None:
