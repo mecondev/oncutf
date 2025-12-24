@@ -22,8 +22,8 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 try:
     from PyQt5.QtWidgets import QApplication, QTreeView
 
+    from oncutf.core.theme_manager import get_theme_manager
     from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
-    from oncutf.utils.theme_engine import ThemeEngine
 
     PYQT5_AVAILABLE = True
 except ImportError:
@@ -48,8 +48,8 @@ class TestHierarchicalComboBox:
 
     @pytest.fixture
     def theme_engine(self):
-        """Create a ThemeEngine instance for testing."""
-        return ThemeEngine()
+        """Create a ThemeManager instance for testing."""
+        return get_theme_manager()
 
     @pytest.fixture
     def sample_metadata_groups(self):

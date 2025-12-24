@@ -174,10 +174,10 @@ class PreviewTablesView(QWidget):
             table.verticalHeader().setVisible(False)  # type: ignore
             table.horizontalHeader().setVisible(False)  # type: ignore
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
-            # Set row height from theme engine
-            from oncutf.utils.theme_engine import ThemeEngine
+            # Set row height from theme manager
+            from oncutf.core.theme_manager import get_theme_manager
 
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore
             # Set minimum height for proper placeholder centering
             table.setMinimumHeight(200)
@@ -203,10 +203,10 @@ class PreviewTablesView(QWidget):
         # Set background color to match main application
         bg_color = get_theme_color("button_disabled_bg")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
-        # Use same row height from theme engine
-        from oncutf.utils.theme_engine import ThemeEngine
+        # Use same row height from theme manager
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.icon_table.verticalHeader().setDefaultSectionSize(
             theme.get_constant("table_row_height")
         )

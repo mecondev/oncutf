@@ -37,9 +37,9 @@ class OriginalNameWidget(BaseRenameModule):
         self.label = QLabel("Uses the original filename")
         # Apply theme-aware styling instead of hard-coded color
         try:
-            from oncutf.utils.theme_engine import ThemeEngine
+            from oncutf.core.theme_manager import get_theme_manager
 
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             secondary_color = theme.get_color("text_secondary")
             self.label.setStyleSheet(f"color: {secondary_color}; font-style: italic;")
         except Exception:

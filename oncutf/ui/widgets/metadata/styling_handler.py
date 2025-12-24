@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.theme_engine import ThemeEngine
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_widget import MetadataWidget
@@ -57,7 +57,7 @@ class StylingHandler:
     def apply_combo_theme_styling(self) -> None:
         """Apply theme styling to combo boxes and ensure inheritance."""
         try:
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             logger.debug(
                 "[MetadataWidget] Theme inheritance ensured for combo boxes",
                 extra={"dev_only": True},

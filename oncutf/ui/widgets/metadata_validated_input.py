@@ -298,9 +298,9 @@ class MetadataRotationComboBox(QComboBox):
         self.currentTextChanged.connect(self._on_selection_changed)
 
         # Set fixed height to match other input widgets
-        from oncutf.utils.theme_engine import ThemeEngine
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
 
     def _on_selection_changed(self, _text: str) -> None:

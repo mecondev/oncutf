@@ -22,8 +22,8 @@ try:
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication, QTreeView
 
+    from oncutf.core.theme_manager import get_theme_manager
     from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
-    from oncutf.utils.theme_engine import ThemeEngine
 
     PYQT5_AVAILABLE = True
 except ImportError:
@@ -48,8 +48,8 @@ class TestMetadataTreeView:
 
     @pytest.fixture
     def theme_engine(self):
-        """Create a ThemeEngine instance for testing."""
-        return ThemeEngine()
+        """Create a ThemeManager instance for testing."""
+        return get_theme_manager()
 
     @pytest.fixture
     def tree_view(self, qapp, theme_engine, qtbot):  # noqa: ARG002

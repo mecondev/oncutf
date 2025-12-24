@@ -34,7 +34,7 @@ from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.theme import get_qcolor, get_theme_color
 
 if TYPE_CHECKING:
-    from oncutf.utils.theme_engine import ThemeEngine
+    from oncutf.core.theme_manager import ThemeManager
 
 logger = get_cached_logger(__name__)
 
@@ -42,7 +42,7 @@ logger = get_cached_logger(__name__)
 class ComboBoxItemDelegate(QStyledItemDelegate):
     """Custom delegate to render QComboBox dropdown items with theme and proper states."""
 
-    def __init__(self, parent: QWidget | None = None, theme: "ThemeEngine | None" = None) -> None:
+    def __init__(self, parent: QWidget | None = None, theme: "ThemeManager | None" = None) -> None:
         super().__init__(parent)
         self.theme = theme
 
@@ -283,7 +283,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 class TreeViewItemDelegate(QStyledItemDelegate):
     """Custom delegate for TreeView items that properly handles background painting."""
 
-    def __init__(self, parent: QWidget | None = None, theme: "ThemeEngine | None" = None) -> None:
+    def __init__(self, parent: QWidget | None = None, theme: "ThemeManager | None" = None) -> None:
         super().__init__(parent)
         self.theme = theme
         self.hovered_index: QModelIndex | None = None

@@ -33,7 +33,6 @@ from oncutf.ui.main_window import MainWindow
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 from oncutf.utils.fonts import _get_inter_fonts
 from oncutf.utils.logger_setup import ConfigureLogger
-from oncutf.utils.theme_engine import ThemeEngine
 
 
 # Calculate the user config directory for logs
@@ -198,16 +197,13 @@ def main() -> int:
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
 
-        # Initialize theme manager (new token-based system)
-        theme_mgr = get_theme_manager()
+        # Initialize theme manager (singleton)
+        theme_manager = get_theme_manager()
         logger.debug(
             "ThemeManager initialized with theme: %s",
-            theme_mgr.get_current_theme(),
+            theme_manager.get_current_theme(),
             extra={"dev_only": True},
         )
-
-        # Initialize theme engine
-        theme_manager = ThemeEngine()
 
         # Configure default services for dependency injection
         logger.debug("Configuring default services...", extra={"dev_only": True})
@@ -282,21 +278,13 @@ def main() -> int:
                 init_state["min_time_elapsed"] = True
                 check_and_show_main()
 
-            def _apply_theme_to_app(qapp, legacy_theme_manager, token_theme_manager, win):
+            def _apply_theme_to_app(qapp, theme_manager, win):
                 """Apply theme to application and window (called before updates enabled)."""
-                # Apply programmatic theme (legacy system)
-                legacy_theme_manager.apply_complete_theme(qapp, win)
-
-                # Apply ThemeManager QSS template on top (new token-based system)
-                qss_content = token_theme_manager.get_qss()
-                current_style = qapp.styleSheet()
-                combined_style = (
-                    current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
-                )
-                qapp.setStyleSheet(combined_style)
+                # Apply complete theme (programmatic + QSS template)
+                theme_manager.apply_complete_theme(qapp, win)
                 logger.debug(
-                    "[Theme] Applied theme (%d chars QSS)",
-                    len(qss_content),
+                    "[Theme] Applied complete theme (%s)",
+                    theme_manager.get_current_theme(),
                     extra={"dev_only": True},
                 )
 
@@ -310,9 +298,7 @@ def main() -> int:
                 try:
                     # Create MainWindow with theme callback (must be in main thread)
                     window = MainWindow(
-                        theme_callback=lambda w: _apply_theme_to_app(
-                            app, theme_manager, theme_mgr, w
-                        )
+                        theme_callback=lambda w: _apply_theme_to_app(app, theme_manager, w)
                     )
                     init_state["window"] = window
 
