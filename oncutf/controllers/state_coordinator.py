@@ -4,7 +4,6 @@ Author: Michael Economou
 Date: 2025-12-16
 
 Central coordinator for state changes with signal-based notifications.
-Part of Phase 2: State Management Fix.
 """
 
 from __future__ import annotations

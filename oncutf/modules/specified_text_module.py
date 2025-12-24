@@ -92,9 +92,9 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Apply theme-aware consistent styling with Inter fonts
         try:
-            from oncutf.utils.theme_engine import ThemeEngine
+            from oncutf.core.theme_manager import get_theme_manager
 
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             menu_style = f"""
                 QMenu {{
                     background-color: {theme.get_color("tooltip_background")};

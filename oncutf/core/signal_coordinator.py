@@ -5,8 +5,6 @@ Date: 2025-11-21
 
 Centralized signal connection management for the application.
 Handles all signal-slot connections in a structured, maintainable way.
-
-Phase 3 of Application Context Migration: UI Component Separation
 """
 
 from typing import TYPE_CHECKING

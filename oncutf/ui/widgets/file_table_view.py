@@ -32,6 +32,7 @@ from oncutf.core.pyqt_imports import (
     QTimer,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.placeholder_helper import create_placeholder_helper
@@ -100,10 +101,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Additional settings to prevent text wrapping
         self.setTextElideMode(Qt.ElideRight)  # Elide text with ... instead of wrapping
-        # Row height from theme engine
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        # Row height from theme manager
+        theme = get_theme_manager()
         self.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
         # Force single-line text display
@@ -298,10 +297,8 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if hasattr(self.horizontalHeader(), "setWordWrap"):
             self.horizontalHeader().setWordWrap(False)
 
-        # Set fixed row height to prevent expansion (from theme engine)
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        # Set fixed row height to prevent expansion (from theme manager)
+        theme = get_theme_manager()
         row_height = theme.get_constant("table_row_height")
         self.verticalHeader().setDefaultSectionSize(row_height)
         self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
@@ -909,7 +906,9 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Simple sync: update SelectionStore with current Qt selection
         selection_model = self.selectionModel()
         if selection_model is not None:
-            selected_rows = {index.row() for index in selection_model.selectedRows()}
+            from oncutf.utils.selection_provider import get_selected_row_set
+
+            selected_rows = get_selected_row_set(selection_model)
             self._update_selection_store(
                 selected_rows, emit_signal=False
             )  # Don't emit signal on focus
@@ -1040,7 +1039,9 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if selection_store:
             self._legacy_selection_mode = False
             # Sync current selection to SelectionStore
-            current_selection = {index.row() for index in self.selectionModel().selectedRows()}  # type: ignore[union-attr]
+            from oncutf.utils.selection_provider import get_selected_row_set
+
+            current_selection = get_selected_row_set(self.selectionModel())  # type: ignore[arg-type]
             selection_store.set_selected_rows(current_selection, emit_signal=False)
             if hasattr(self, "anchor_row") and self.anchor_row is not None:
                 selection_store.set_anchor_row(self.anchor_row, emit_signal=False)

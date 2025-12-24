@@ -693,6 +693,10 @@ THEME_TOKENS = {
         "button_pressed_text": "#0d1321",  # Match ThemeEngine button_text_pressed
         "button_disabled_bg": "#1a1a1a",
         "button_disabled_text": "#555555",
+        # ===== Component-Specific: ComboBoxes =====
+        "combo_dropdown_background": "#181818",  # Backwards compatibility with ThemeEngine
+        "combo_item_background_hover": "#3e5c76",  # Backwards compatibility
+        "combo_item_background_selected": "#748cab",  # Backwards compatibility
         # ===== Component-Specific: Inputs =====
         "input_bg": "#2a2a2a",
         "input_text": "#f0ebd8",

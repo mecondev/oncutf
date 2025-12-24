@@ -122,9 +122,9 @@ class FinalTransformContainer(QWidget):
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(116)  # Reduced by 10px
         # Use theme constant for combo height
-        from oncutf.utils.theme_engine import ThemeEngine
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.case_combo.setFixedHeight(theme.get_constant("combo_height"))
         # Ensure combo box drops down instead of popping up
         self.case_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)

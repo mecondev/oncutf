@@ -29,6 +29,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.modules.counter_module import CounterModule
 from oncutf.ui.widgets.metadata_widget import MetadataWidget
 from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
@@ -97,10 +98,8 @@ class RenameModuleWidget(QWidget):
         self.main_layout.setContentsMargins(2, 2, 2, 2)  # 2px margins around the plate
         self.main_layout.setSpacing(0)
 
-        # Get colors from theme engine
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        # Get colors from theme manager
+        theme = get_theme_manager()
         app_background = theme.get_color("background")  # Main app background
         drag_handle_background = theme.get_color("module_drag_handle")
 
@@ -178,9 +177,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
         # Use theme constant for combo height
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.type_combo.setFixedHeight(theme.get_constant("combo_height"))
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 

@@ -128,9 +128,9 @@ class MetadataEditDialog(QDialog):
         # Hints label (right under the input field)
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        from oncutf.utils.theme import get_theme_color
+        from oncutf.core.theme_manager import get_theme_manager
 
-        muted_color = get_theme_color("text")
+        muted_color = get_theme_manager().get_color("text")
         self._apply_info_label_style(muted_color, opacity="0.7")
         layout.addWidget(self.info_label)
 

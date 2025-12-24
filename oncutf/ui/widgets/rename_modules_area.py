@@ -22,6 +22,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 from oncutf.utils.logger_factory import get_cached_logger
@@ -333,9 +334,7 @@ class RenameModulesArea(QWidget):
         indicator.setFixedHeight(4)  # Slightly thinner
 
         # Get hover color from theme and convert to rgba for alpha channel
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         hover_color = theme.colors.get("button_background_hover", "#3e5c76")
 
         indicator.setStyleSheet(
@@ -475,9 +474,7 @@ class RenameModulesArea(QWidget):
         placeholder.setFixedHeight(module.height())
 
         # Get pressed color from theme for placeholder (lighter appearance)
-        from oncutf.utils.theme_engine import ThemeEngine
-
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         pressed_color = theme.colors.get("button_background_pressed", "#748cab")
 
         placeholder.setStyleSheet(

@@ -19,7 +19,6 @@ from .final_transform_container import FinalTransformContainer
 from .interactive_header import InteractiveHeader
 from .metadata_edit_dialog import MetadataEditDialog
 from .metadata_tree_view import MetadataTreeView
-from .metadata_waiting_dialog import MetadataWaitingDialog
 from .metadata_widget import MetadataWidget
 from .metadata_worker import MetadataWorker
 from .name_transform_widget import NameTransformWidget
@@ -53,7 +52,6 @@ __all__ = [
     "BulkRotationDialog",
     "DateTimeEditDialog",
     "RenameHistoryDialog",
-    "MetadataWaitingDialog",
     "CustomFileSystemModel",
     "FinalTransformContainer",
     "NameTransformWidget",

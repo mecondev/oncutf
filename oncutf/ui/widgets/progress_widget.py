@@ -94,9 +94,9 @@ class ProgressWidget(QWidget):
 
         # Get default colors from theme if not provided
         if bar_color is None or bar_bg_color is None:
-            from oncutf.utils.theme_engine import ThemeEngine
+            from oncutf.core.theme_manager import get_theme_manager
 
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             bar_color = bar_color or theme.colors.get("accent_color", "#748cab")
             bar_bg_color = bar_bg_color or theme.colors.get("disabled_background", "#181818")
 

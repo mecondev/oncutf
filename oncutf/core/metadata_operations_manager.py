@@ -4,7 +4,6 @@ Author: Michael Economou
 Date: 2025-06-15
 
 Manages metadata-related operations for file metadata export, field editing, and compatibility checks.
-Extracted from EventHandlerManager as part of Phase 3 refactoring.
 
 Features:
 - Metadata export to JSON/Markdown formats

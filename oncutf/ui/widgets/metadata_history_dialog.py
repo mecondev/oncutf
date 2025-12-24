@@ -145,10 +145,10 @@ class MetadataHistoryDialog(QDialog):
         self.operations_table.setShowGrid(False)
         self.operations_table.verticalHeader().setVisible(False)
 
-        # Set row height from theme engine
-        from oncutf.utils.theme_engine import ThemeEngine
+        # Set row height from theme manager
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.operations_table.verticalHeader().setDefaultSectionSize(
             theme.get_constant("table_row_height")
         )

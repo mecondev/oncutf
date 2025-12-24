@@ -22,9 +22,9 @@ from oncutf.core.pyqt_imports import (
     Qt,
     QTableView,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.ui_delegates import FileTableHoverDelegate
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.theme import get_theme_color
 
 logger = get_cached_logger(__name__)
 
@@ -78,15 +78,16 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         is_hovered = row == hovered_row
 
         # Determine background color (same logic as FileTableHoverDelegate)
+        theme = get_theme_manager()
         background_color = None
         if is_selected and is_hovered:
-            background_color = QColor(get_theme_color("selected_hover"))
+            background_color = QColor(theme.get_color("selected_hover"))
         elif is_selected:
-            background_color = QColor(get_theme_color("table_selection_bg"))
+            background_color = QColor(theme.get_color("table_selection_bg"))
         elif is_hovered:
             background_color = self.hover_color
         elif row % 2 == 1:
-            background_color = QColor(get_theme_color("table_alternate"))
+            background_color = QColor(theme.get_color("table_alternate"))
 
         # Paint background if needed
         if background_color:

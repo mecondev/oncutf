@@ -22,13 +22,13 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.theme_engine import ThemeEngine
 from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
@@ -102,7 +102,7 @@ class CounterModule(BaseRenameModule):
         input_field.setValidator(validator)
 
         # Buttons with icons
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         button_size = theme.get_constant("button_height")
 
         btn_minus = QPushButton()

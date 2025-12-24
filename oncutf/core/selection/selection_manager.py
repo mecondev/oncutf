@@ -184,10 +184,10 @@ class SelectionManager:
                 file_table_view.blockSignals(True)
 
             try:
+                from oncutf.utils.selection_provider import get_selected_row_set
+
                 selection_model = file_table_view.selectionModel()
-                current_selected = set()
-                if selection_model:
-                    current_selected = {idx.row() for idx in selection_model.selectedRows()}
+                current_selected = get_selected_row_set(selection_model)
 
                 # Uncheck all selected, check all unselected
                 for row, file in enumerate(file_model.files):

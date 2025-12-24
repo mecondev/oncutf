@@ -254,7 +254,7 @@ class ApplicationService:
     # =====================================
 
     def rename_files(self):
-        """Execute batch rename using RenameController (Phase 1C)."""
+        """Execute batch rename using RenameController."""
         try:
             # Get selected files and rename data
             selected_files = self.get_selected_files()

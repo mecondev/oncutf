@@ -27,10 +27,10 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.placeholder_helper import create_placeholder_helper
-from oncutf.utils.theme import get_theme_color
 from oncutf.utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
 from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
 
@@ -174,10 +174,10 @@ class PreviewTablesView(QWidget):
             table.verticalHeader().setVisible(False)  # type: ignore
             table.horizontalHeader().setVisible(False)  # type: ignore
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
-            # Set row height from theme engine
-            from oncutf.utils.theme_engine import ThemeEngine
+            # Set row height from theme manager
+            from oncutf.core.theme_manager import get_theme_manager
 
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore
             # Set minimum height for proper placeholder centering
             table.setMinimumHeight(200)
@@ -201,12 +201,12 @@ class PreviewTablesView(QWidget):
         self.icon_table.setShowGrid(False)
         self.icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         # Set background color to match main application
-        bg_color = get_theme_color("button_disabled_bg")
+        bg_color = get_theme_manager().get_color("button_disabled_bg")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
-        # Use same row height from theme engine
-        from oncutf.utils.theme_engine import ThemeEngine
+        # Use same row height from theme manager
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         self.icon_table.verticalHeader().setDefaultSectionSize(
             theme.get_constant("table_row_height")
         )
@@ -594,9 +594,7 @@ class PreviewTablesView(QWidget):
         icon_width, icon_height = PREVIEW_INDICATOR_SIZE
 
         # Get muted text color from theme
-        from oncutf.utils.theme import get_theme_color
-
-        muted_color = get_theme_color("text_muted")
+        muted_color = get_theme_manager().get_color("text_muted")
 
         status_msg = (
             f"<img src='{icon_paths['valid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"

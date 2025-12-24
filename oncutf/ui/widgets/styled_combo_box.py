@@ -9,9 +9,9 @@ Provides consistent styling and proper delegate setup.
 
 from PyQt5.QtWidgets import QComboBox, QWidget
 
+from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.theme_engine import ThemeEngine
 
 logger = get_cached_logger(__name__)
 
@@ -40,7 +40,7 @@ class StyledComboBox(QComboBox):
     def _setup_delegate(self) -> None:
         """Setup the item delegate for proper dropdown styling."""
         try:
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             delegate = ComboBoxItemDelegate(self, theme)
             self.setItemDelegate(delegate)
             logger.debug("ComboBoxItemDelegate set successfully")
@@ -50,7 +50,7 @@ class StyledComboBox(QComboBox):
     def _apply_theme(self) -> None:
         """Apply theme-aware styling."""
         try:
-            theme = ThemeEngine()
+            theme = get_theme_manager()
             combo_height = theme.get_constant("combo_height")
             self.setFixedHeight(combo_height)
             logger.debug("Theme applied: height=%d", combo_height)

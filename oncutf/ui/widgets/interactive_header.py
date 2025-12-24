@@ -103,9 +103,9 @@ class InteractiveHeader(QHeaderView):
 
         menu = QMenu(self)
         # Apply theme styling
-        from oncutf.utils.theme_engine import ThemeEngine
+        from oncutf.core.theme_manager import get_theme_manager
 
-        theme = ThemeEngine()
+        theme = get_theme_manager()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
 
         # Add sorting options for columns > 0
