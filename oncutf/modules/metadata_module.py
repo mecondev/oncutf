@@ -247,19 +247,6 @@ class MetadataModule:
             return base_name
 
     @staticmethod
-    def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
-        """DEPRECATED: Hash calculation is handled manually by the user.
-        Kept for backward compatibility.
-        """
-        return False
-
-    @staticmethod
-    def _start_hash_calculation(file_path: str, hash_type: str) -> None:
-        """DEPRECATED: Hash calculation is handled manually by the user.
-        Kept for backward compatibility.
-        """
-
-    @staticmethod
     def is_effective(data: dict) -> bool:
         """Check if module is effective (will produce output).
 

@@ -218,7 +218,7 @@ class CounterModule(BaseRenameModule):
     def apply_from_data(
         data: dict, _file_item, index: int = 0, _metadata_cache: dict | None = None
     ) -> str:
-        """Applies a counter-based transformation using the given config and index.
+        """Applies counter-based formatting using the given config and index.
 
         Parameters
         ----------

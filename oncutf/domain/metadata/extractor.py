@@ -196,7 +196,7 @@ class MetadataExtractor:
                 "last_modified_iso_time": "%Y-%m-%d_%H-%M",
                 "last_modified_eu_time": "%d-%m-%Y_%H-%M",
                 "last_modified_compact": "%y%m%d_%H%M",
-                "last_modified": "%Y-%m-%d",  # Legacy support
+                "last_modified": "%Y-%m-%d",
             }
 
             date_format = format_map.get(field, "%y%m%d")
@@ -300,7 +300,7 @@ class MetadataExtractor:
                 category="metadata_keys",
             )
 
-        # Legacy field mappings
+        # Handle creation_date field mapping
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")
             if value:

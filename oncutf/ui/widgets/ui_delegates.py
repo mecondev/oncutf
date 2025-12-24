@@ -320,7 +320,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         return False
 
     def update_hover_row(self, row: int) -> None:
-        """Deprecated method, kept for compatibility."""
+        """Update hover row state (no-op, kept for compatibility)."""
 
     def _log_guard_warning(self, message: str) -> None:
         """Log guard-triggered warnings only once per delegate instance."""

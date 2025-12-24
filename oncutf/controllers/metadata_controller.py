@@ -395,10 +395,9 @@ class MetadataController:
             if not selected_files:
                 return []
 
-            # TODO: Implement get_common_fields in StructuredMetadataManager
-            # For now, return empty list as this method doesn't exist yet
+            # Common fields feature not currently supported
             logger.debug(
-                "[MetadataController] get_common_fields not yet implemented for %d files",
+                "[MetadataController] get_common_fields not supported for %d files",
                 len(selected_files),
             )
 
