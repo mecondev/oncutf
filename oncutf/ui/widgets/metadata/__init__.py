@@ -10,5 +10,12 @@ from oncutf.ui.widgets.metadata.category_manager import CategoryManager
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
 from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
+from oncutf.ui.widgets.metadata.styling_handler import StylingHandler
 
-__all__ = ["CategoryManager", "FieldFormatter", "HashHandler", "MetadataKeysHandler"]
+__all__ = [
+    "CategoryManager",
+    "FieldFormatter",
+    "HashHandler",
+    "MetadataKeysHandler",
+    "StylingHandler",
+]
