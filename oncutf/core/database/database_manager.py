@@ -681,7 +681,7 @@ class DatabaseManager:
                 )
 
                 # Process results
-                results = {}
+                results: dict[str, dict[str, Any] | None] = {}
                 for file_path in file_paths:
                     results[file_path] = None
 
@@ -878,7 +878,11 @@ class DatabaseManager:
     # =====================================
 
     def create_metadata_category(
-        self, category_name: str, display_name: str, description: str = None, sort_order: int = 0
+        self,
+        category_name: str,
+        display_name: str,
+        description: str | None = None,
+        sort_order: int = 0,
     ) -> int | None:
         """Create a new metadata category."""
         try:
@@ -927,7 +931,7 @@ class DatabaseManager:
         data_type: str = "text",
         is_editable: bool = False,
         is_searchable: bool = True,
-        display_format: str = None,
+        display_format: str | None = None,
         sort_order: int = 0,
     ) -> int | None:
         """Create a new metadata field."""
@@ -958,7 +962,7 @@ class DatabaseManager:
             logger.error("[DatabaseManager] Error creating metadata field '%s': %s", field_key, e)
             return None
 
-    def get_metadata_fields(self, category_id: int = None) -> list[dict[str, Any]]:
+    def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
         try:
             with self._get_connection() as conn:
@@ -1165,7 +1169,7 @@ class DatabaseManager:
                 return True
 
             # Create default categories
-            category_mapping = {}
+            category_mapping: dict[str, int | None] = {}
 
             # Basic File Information
             cat_id = self.create_metadata_category(

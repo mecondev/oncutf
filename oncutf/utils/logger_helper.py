@@ -18,7 +18,9 @@ while still allowing them to be stored in file logs.
 
 import logging
 import re
+from collections.abc import Callable
 from functools import partial
+from typing import Any
 
 from oncutf.config import SHOW_DEV_ONLY_IN_CONSOLE
 
@@ -43,7 +45,7 @@ def safe_text(text: str) -> str:
     return pattern.sub(lambda m: replacements[m.group(0)], text)
 
 
-def safe_log(logger_func, message: str, *args, **kwargs):
+def safe_log(logger_func: Callable[..., Any], message: str, *args: Any, **kwargs: Any) -> None:
     """Logs a message using the given logger function (e.g. logger.info),
     falling back to ASCII-safe output if UnicodeEncodeError occurs.
 
@@ -53,22 +55,19 @@ def safe_log(logger_func, message: str, *args, **kwargs):
 
     """
     try:
-        if not isinstance(message, str):
-            message = repr(message)
         logger_func(message, *args, **kwargs)
     except UnicodeEncodeError:
         logger_func(safe_text(str(message)), *args, **kwargs)
 
 
-def patch_logger_safe_methods(logger: logging.Logger):
-    """Replaces logger's logging methods with safe_log-wrapped versions.
-    """
+def patch_logger_safe_methods(logger: logging.Logger) -> None:
+    """Replaces logger's logging methods with safe_log-wrapped versions."""
     for method_name in ["debug", "info", "warning", "error", "critical"]:
         orig_func = getattr(logger, method_name)
         setattr(logger, method_name, partial(safe_log, orig_func))
 
 
-def get_logger(name: str = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Returns a logger with the given name, delegating to the root logger for output.
     Patches logging methods to avoid UnicodeEncodeError.
 
@@ -93,7 +92,7 @@ def get_logger(name: str = None) -> logging.Logger:
     # Patch logger methods for safe Unicode handling
     if not getattr(logger, "_patched_for_safe_log", False):
         patch_logger_safe_methods(logger)
-        logger._patched_for_safe_log = True
+        logger._patched_for_safe_log = True  # type: ignore[attr-defined]
 
     return logger
 
@@ -109,7 +108,7 @@ class DevOnlyFilter(logging.Filter):
 try:
     from oncutf.utils.logger_factory import LoggerFactory
 
-    def get_cached_logger(name: str = None) -> logging.Logger:
+    def get_cached_logger(name: str | None = None) -> logging.Logger:
         """Performance-optimized logger with caching.
         Falls back to regular get_logger if factory unavailable.
 
@@ -124,5 +123,5 @@ try:
 
 except ImportError:
     # Fallback if logger_factory not available
-    def get_cached_logger(name: str = None) -> logging.Logger:
+    def get_cached_logger(name: str | None = None) -> logging.Logger:
         return get_logger(name)

@@ -97,8 +97,7 @@ class InteractiveHeader(QHeaderView):
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, position):
-        """Show unified right-click context menu for header with sorting and column visibility options.
-        """
+        """Show unified right-click context menu for header with sorting and column visibility options."""
         logical_index = self.logicalIndexAt(position)
 
         menu = QMenu(self)
@@ -136,8 +135,7 @@ class InteractiveHeader(QHeaderView):
         menu.exec_(self.mapToGlobal(position))
 
     def _sort(self, column: int, order: Qt.SortOrder) -> None:
-        """Calls MainWindow.sort_by_column() with forced order from context menu.
-        """
+        """Calls MainWindow.sort_by_column() with forced order from context menu."""
         main_window = self._get_main_window_via_context()
         if main_window and hasattr(main_window, "sort_by_column"):
             main_window.sort_by_column(column, force_order=order)
@@ -164,8 +162,10 @@ class InteractiveHeader(QHeaderView):
                     continue  # Skip non-removable columns like filename
                 column_items.append((column_key, column_config))
 
-            # Sort by title alphabetically
-            column_items.sort(key=lambda x: x[1]["title"])
+            # Sort by title alphabetically (cast to str for type safety)
+            from typing import cast
+
+            column_items.sort(key=lambda x: cast("str", x[1]["title"]))
 
             for column_key, column_config in column_items:
                 action = QAction(column_config["title"], columns_menu)

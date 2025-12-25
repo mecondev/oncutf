@@ -64,7 +64,7 @@ class ServiceRegistry:
         """Reset the singleton instance (useful for testing)."""
         cls._instance = None
 
-    def register(self, protocol: type[T], implementation: T) -> None:
+    def register(self, protocol: type[Any], implementation: Any) -> None:
         """Register a service implementation for a protocol.
 
         Args:
@@ -79,7 +79,7 @@ class ServiceRegistry:
             type(implementation).__name__,
         )
 
-    def register_factory(self, protocol: type[T], factory: type[T] | Any) -> None:
+    def register_factory(self, protocol: type[Any], factory: Any) -> None:
         """Register a factory for lazy instantiation.
 
         The factory will be called to create the service on first access.
@@ -96,7 +96,7 @@ class ServiceRegistry:
             protocol.__name__,
         )
 
-    def get(self, protocol: type[T]) -> T | None:
+    def get(self, protocol: type[Any]) -> Any | None:
         """Get a service implementation for a protocol.
 
         Args:
@@ -109,7 +109,7 @@ class ServiceRegistry:
         # Check direct registrations first
         if protocol in self._services:
             service: Any = self._services[protocol]
-            return service  # type: ignore[no-any-return]
+            return service
 
         # Check factories
         if protocol in self._factories:
@@ -122,12 +122,12 @@ class ServiceRegistry:
                 protocol.__name__,
                 type(implementation).__name__,
             )
-            return implementation  # type: ignore[no-any-return]
+            return implementation
 
         logger.warning("No service registered for: %s", protocol.__name__)
         return None
 
-    def get_required(self, protocol: type[T]) -> T:
+    def get_required(self, protocol: type[Any]) -> Any:
         """Get a service implementation, raising if not found.
 
         Args:
@@ -232,8 +232,8 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
     )
 
     # Register default implementations using factories for lazy init
-    registry.register_factory(MetadataServiceProtocol, ExifToolService)  # type: ignore[type-abstract]
-    registry.register_factory(HashServiceProtocol, HashService)  # type: ignore[type-abstract]
-    registry.register_factory(FilesystemServiceProtocol, FilesystemService)  # type: ignore[type-abstract]
+    registry.register_factory(MetadataServiceProtocol, ExifToolService)
+    registry.register_factory(HashServiceProtocol, HashService)
+    registry.register_factory(FilesystemServiceProtocol, FilesystemService)
 
     logger.debug("Default services configured")

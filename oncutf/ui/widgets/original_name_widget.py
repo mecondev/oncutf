@@ -61,7 +61,6 @@ class OriginalNameWidget(BaseRenameModule):
         self._last_value = str(self.get_data())
 
     @staticmethod
-    def is_effective(_data: dict) -> bool:
-        """The original name module is always effective because it produces output.
-        """
+    def is_effective_data(_data: dict) -> bool:
+        """The original name module is always effective because it produces output."""
         return True

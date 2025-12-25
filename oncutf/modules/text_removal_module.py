@@ -9,11 +9,11 @@ with case-sensitive or case-insensitive matching.
 """
 
 from __future__ import annotations
-from typing import Any
 
 import logging
 import re
 from dataclasses import dataclass
+from typing import Any
 
 from oncutf.core.pyqt_imports import (
     QCheckBox,
@@ -59,7 +59,7 @@ class TextRemovalModule(BaseRenameModule):
         self._sample_text = "example_file_name"
         self.setup_ui()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Setup the user interface for text removal."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -137,7 +137,7 @@ class TextRemovalModule(BaseRenameModule):
 
         self._update_preview()
 
-    def _on_setting_changed(self):
+    def _on_setting_changed(self) -> None:
         """Handle any setting change with debounced preview update."""
         text = self.text_input.text()
         logger.debug("[TextRemoval] Setting changed, text: '%s'", text, extra={"dev_only": True})
@@ -152,7 +152,7 @@ class TextRemovalModule(BaseRenameModule):
 
         self.updated.emit(self)
 
-    def _update_preview(self):
+    def _update_preview(self) -> None:
         """Update the preview label with highlighted matches."""
         pattern = self.text_input.text()
         position = self.position_combo.currentText()
@@ -190,7 +190,7 @@ class TextRemovalModule(BaseRenameModule):
         for match in sorted(matches, key=lambda m: m.start):
             if match.start > last_end:
                 parts.append(
-                    f'<span style="color: #333;">{self._html_escape(text[last_end:match.start])}</span>'
+                    f'<span style="color: #333;">{self._html_escape(text[last_end : match.start])}</span>'
                 )
 
             parts.append(
@@ -354,7 +354,7 @@ class TextRemovalModule(BaseRenameModule):
         return "".join(result_parts)
 
     @staticmethod
-    def is_effective(data: dict[str, Any]) -> bool:
+    def is_effective_data(data: dict[str, Any]) -> bool:
         """Check if this module configuration is effective.
 
         Args:
@@ -413,7 +413,7 @@ class TextRemovalModule(BaseRenameModule):
 
         """
         data = self.get_data()
-        if not self.is_effective(data):
+        if not self.is_effective():
             return file_item.filename
 
         return self.apply_from_data(data, file_item, index, metadata_cache)

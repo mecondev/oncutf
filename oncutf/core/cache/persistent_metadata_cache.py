@@ -11,6 +11,7 @@ and separation of concerns.
 
 import time
 from collections import OrderedDict
+from typing import Any, Union
 
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -52,7 +53,7 @@ class MetadataEntry:
 
     def __init__(
         self,
-        data: dict,
+        data: dict[str, Any],
         is_extended: bool = False,
         timestamp: float | None = None,
         modified: bool = False,
@@ -62,7 +63,7 @@ class MetadataEntry:
         self.timestamp = timestamp or time.time()
         self.modified = modified
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Returns a copy of the raw metadata dictionary."""
         return self.data.copy()
 
@@ -105,7 +106,11 @@ class PersistentMetadataCache:
         return normalize_path(file_path)
 
     def set(
-        self, file_path: str, metadata: dict, is_extended: bool = False, modified: bool = False
+        self,
+        file_path: str,
+        metadata: dict[str, Any],
+        is_extended: bool = False,
+        modified: bool = False,
     ) -> None:
         """Store metadata for a file with database persistence."""
         norm_path = self._normalize_path(file_path)
@@ -147,7 +152,7 @@ class PersistentMetadataCache:
                 e,
             )
 
-    def get(self, file_path: str) -> dict:
+    def get(self, file_path: str) -> dict[str, Any]:
         """Get metadata for file."""
         norm_path = self._normalize_path(file_path)
         try:
@@ -168,7 +173,7 @@ class PersistentMetadataCache:
             )
             return {}
 
-    def get_entry(self, path: str):
+    def get_entry(self, path: str) -> MetadataEntry | None:
         """Get the MetadataEntry for a file if available."""
         norm_path = self._normalize_path(path)
 
@@ -234,7 +239,7 @@ class PersistentMetadataCache:
 
         # Normalize all paths
         norm_paths = [self._normalize_path(path) for path in file_paths]
-        result = {}
+        result: dict[str, MetadataEntry | None] = {}
         paths_to_query = []
 
         # Check memory cache first
@@ -303,7 +308,7 @@ class PersistentMetadataCache:
             )
             return False
 
-    def add(self, file_path: str, metadata: dict, is_extended: bool = False):
+    def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False):
         """Add metadata (alias for set for backward compatibility).
 
         Args:
@@ -314,7 +319,7 @@ class PersistentMetadataCache:
         """
         self.set(file_path, metadata, is_extended=is_extended)
 
-    def update(self, other: dict):
+    def update(self, other: dict[str, Any]):
         """Update cache with another dictionary.
 
         Args:
@@ -349,7 +354,7 @@ class PersistentMetadataCache:
         logger.debug("[PersistentMetadataCache] Removed from memory cache: %s", file_path)
         return True
 
-    def get_cache_stats(self) -> dict:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache performance statistics."""
         total_requests = self._cache_hits + self._cache_misses
         hit_rate = (self._cache_hits / total_requests * 100) if total_requests > 0 else 0
@@ -372,7 +377,7 @@ class PersistentMetadataCache:
         return 0
 
     # Dictionary-like interface for backward compatibility
-    def __getitem__(self, file_path: str) -> dict:
+    def __getitem__(self, file_path: str) -> dict[str, Any]:
         return self.get(file_path)
 
     def __contains__(self, file_path: str) -> bool:
@@ -387,10 +392,12 @@ class PersistentMetadataCache:
 # Global Instance Management
 # =====================================
 
-_persistent_metadata_cache_instance = None
+_persistent_metadata_cache_instance: Union[PersistentMetadataCache, "DummyMetadataCache", None] = (
+    None
+)
 
 
-def get_persistent_metadata_cache() -> PersistentMetadataCache:
+def get_persistent_metadata_cache() -> Union[PersistentMetadataCache, "DummyMetadataCache"]:
     """Get global persistent metadata cache instance."""
     global _persistent_metadata_cache_instance
     logger.debug(
@@ -435,8 +442,37 @@ class DummyMetadataCache:
     def has(self, _file_path: str) -> bool:
         return False
 
-    def get(self, _file_path: str) -> dict:
+    def get(self, _file_path: str) -> dict[str, Any]:
         return {}
 
-    def set(self, _file_path: str, _metadata: dict, **kwargs) -> None:
+    def set(self, _file_path: str, _metadata: dict[str, Any], **kwargs) -> None:
         pass
+
+    def get_entry(self, path: str) -> MetadataEntry | None:
+        return None
+
+    def get_entries_batch(self, file_paths: list[str]) -> dict[str, MetadataEntry | None]:
+        return {normalize_path(p): None for p in file_paths}
+
+    def _normalize_path(self, path: str) -> str:
+        return normalize_path(path)
+
+    def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False) -> None:
+        pass
+
+    def update(self, other: dict[str, Any]):
+        pass
+
+    def clear(self):
+        pass
+
+    def remove(self, file_path: str) -> bool:
+        return True
+
+    def get_cache_stats(self) -> dict[str, Any]:
+        return {
+            "memory_entries": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "hit_rate_percent": 0.0,
+        }

@@ -14,10 +14,12 @@ Features:
 - Error handling per file (failures don't stop the batch)
 """
 
+import subprocess
 import threading
 import traceback
 from collections.abc import Callable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.exiftool_wrapper import ExifToolWrapper
@@ -43,7 +45,7 @@ class ParallelMetadataLoader:
     - Large batches (50+ files): 5-10x faster
     """
 
-    def __init__(self, max_workers: int = None):
+    def __init__(self, max_workers: int | None = None):
         """Initialize parallel metadata loader.
 
         Args:
@@ -62,7 +64,9 @@ class ParallelMetadataLoader:
         self.max_workers = max_workers
         self._exiftool_wrapper = ExifToolWrapper()
         self._cancelled = False
-        self._active_processes = []  # Track active subprocess for cancellation
+        self._active_processes: list[
+            subprocess.Popen[str]
+        ] = []  # Track active subprocess for cancellation
         self._process_lock = threading.Lock()
 
         logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
@@ -71,10 +75,10 @@ class ParallelMetadataLoader:
         self,
         items: list[FileItem],
         use_extended: bool = False,
-        progress_callback: Callable[[int, int, FileItem, dict], None] | None = None,
+        progress_callback: Callable[[int, int, FileItem, dict[str, Any]], None] | None = None,
         completion_callback: Callable[[], None] | None = None,
         cancellation_check: Callable[[], bool] | None = None,
-    ) -> list[tuple[FileItem, dict]]:
+    ) -> list[tuple[FileItem, dict[str, Any]]]:
         """Load metadata for multiple files in parallel.
 
         Args:
@@ -95,7 +99,7 @@ class ParallelMetadataLoader:
         self._cancelled = False
 
         total_files = len(items)
-        results = {}  # file_path -> (item, metadata)
+        results: dict[str, tuple[FileItem, dict[str, Any]]] = {}  # file_path -> (item, metadata)
         completed = 0
 
         logger.info(
@@ -237,7 +241,7 @@ class ParallelMetadataLoader:
 
         return ordered_results
 
-    def _load_single_file_safe(self, item: FileItem, use_extended: bool) -> dict:
+    def _load_single_file_safe(self, item: FileItem, use_extended: bool) -> dict[str, Any]:
         """Load metadata for a single file with error handling.
 
         This runs in a worker thread and should not raise exceptions.
@@ -317,7 +321,7 @@ class ParallelMetadataLoader:
 
 
 def update_file_item_metadata(
-    item: FileItem, metadata: dict, parent_window, metadata_cache, use_extended: bool
+    item: FileItem, metadata: dict[str, Any], parent_window, metadata_cache, use_extended: bool
 ) -> None:
     """Update FileItem with metadata and emit UI signals.
 

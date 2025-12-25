@@ -10,6 +10,7 @@ Enhanced with better metadata grouping and extended metadata indicators.
 """
 
 import re
+from typing import Any
 
 from oncutf.config import METADATA_ICON_COLORS
 from oncutf.core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt
@@ -160,7 +161,7 @@ def classify_key(key: str) -> str:
     return "Other"
 
 
-def create_item(text: str, alignment=None, icon_name: str | None = None) -> QStandardItem:
+def create_item(text: str, alignment: Any = None, icon_name: str | None = None) -> QStandardItem:
     """Create a QStandardItem with given text, alignment, and optional icon."""
     item = QStandardItem(text)
     if alignment is None:
@@ -182,7 +183,7 @@ def create_item(text: str, alignment=None, icon_name: str | None = None) -> QSta
     return item
 
 
-def get_hidden_fields_for_level(level: str = "essential") -> set:
+def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
     """Get the set of fields to hide based on the display level.
 
     Args:
@@ -427,9 +428,9 @@ def get_hidden_fields_for_level(level: str = "essential") -> set:
 
 
 def build_metadata_tree_model(
-    metadata: dict,
-    modified_keys: set = None,
-    extended_keys: set = None,
+    metadata: dict[str, Any],
+    modified_keys: set[str] | None = None,
+    extended_keys: set[str] | None = None,
     _display_level: str = "all",
 ) -> QStandardItemModel:
     """Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
@@ -461,7 +462,7 @@ def build_metadata_tree_model(
     model.setHorizontalHeaderLabels(["Key", "Value"])
     root_item = model.invisibleRootItem()
 
-    grouped = {}
+    grouped: dict[str, list[tuple[str, Any]]] = {}
 
     for key, value in metadata.items():
         # Skip internal markers
@@ -472,7 +473,7 @@ def build_metadata_tree_model(
         grouped.setdefault(group, []).append((key, value))
 
     # Sort groups with File Info first, then alphabetically
-    def group_sort_key(group_name):
+    def group_sort_key(group_name: str) -> tuple[int, str]:
         if group_name == "File Info":
             return (0, "File Info")  # Always first
         elif group_name == "Other":

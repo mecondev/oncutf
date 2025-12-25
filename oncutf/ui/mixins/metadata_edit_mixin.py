@@ -352,7 +352,7 @@ class MetadataEditMixin:
                 from oncutf.core.metadata_commands import EditMetadataFieldCommand
 
                 command_manager = get_metadata_command_manager()
-                if command_manager and EditMetadataFieldCommand:
+                if command_manager:
                     # Create command for each file to modify
                     for file_item in files_to_modify:
                         command = EditMetadataFieldCommand(
@@ -499,7 +499,7 @@ class MetadataEditMixin:
                 command_manager = get_metadata_command_manager()
                 metadata_cache = self._get_metadata_cache()
 
-                if command_manager and EditMetadataFieldCommand:
+                if command_manager:
                     # Create command for each selected file
                     for file_path in result_files:
                         # Find the file item

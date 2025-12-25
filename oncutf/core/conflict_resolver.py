@@ -47,8 +47,8 @@ class UndoStack:
     """Simple undo stack for operations."""
 
     def __init__(self, max_size: int = 100):
-        self.stack = deque(maxlen=max_size)
-        self.redo_stack = deque(maxlen=max_size)
+        self.stack: deque[ConflictOperation] = deque(maxlen=max_size)
+        self.redo_stack: deque[ConflictOperation] = deque(maxlen=max_size)
 
     def push(self, operation: ConflictOperation) -> None:
         """Push operation to undo stack."""
@@ -81,7 +81,7 @@ class UndoStack:
 class ConflictResolver:
     """Simple but reliable conflict resolver."""
 
-    def __init__(self, backup_dir: str = None):
+    def __init__(self, backup_dir: str | None = None):
         if backup_dir is None:
             backup_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "backups")
 
@@ -89,7 +89,7 @@ class ConflictResolver:
         os.makedirs(backup_dir, exist_ok=True)
 
         self.undo_stack = UndoStack()
-        self.conflict_log = []
+        self.conflict_log: list[Any] = []
         self.resolution_strategies = {
             "timestamp": self._resolve_with_timestamp,
             "number": self._resolve_with_number,
@@ -231,26 +231,39 @@ class ConflictResolver:
 
         try:
             # Reverse the operation
-            if operation.operation_type == "rename":
+            if operation and operation.operation_type == "rename":
                 if os.path.exists(operation.new_path):
                     os.rename(operation.new_path, operation.old_path)
                 elif operation.backup_path and os.path.exists(operation.backup_path):
                     # Restore from backup
                     shutil.copy2(operation.backup_path, operation.old_path)
 
-            return ConflictResolution(
-                original_path=operation.new_path,
-                resolved_path=operation.old_path,
-                resolution_type="undo",
-                backup_created=False,
-                success=True,
-            )
+            if (
+                operation
+            ):  # Added check for operation before accessing its attributes for the return value
+                return ConflictResolution(
+                    original_path=operation.new_path,
+                    resolved_path=operation.old_path,
+                    resolution_type="undo",
+                    backup_created=False,
+                    success=True,
+                )
+            else:
+                # Should not happen if can_undo() was true, but for safety
+                return ConflictResolution(
+                    original_path="",
+                    resolved_path="",
+                    resolution_type="undo_error",
+                    backup_created=False,
+                    success=False,
+                    error_message="No operation to undo or operation was None",
+                )
 
         except Exception as e:
             logger.error("[ConflictResolver] Undo failed: %s", e)
             return ConflictResolution(
-                original_path=operation.new_path,
-                resolved_path=operation.old_path,
+                original_path=operation.new_path if operation else "",
+                resolved_path=operation.old_path if operation else "",
                 resolution_type="undo_error",
                 backup_created=False,
                 success=False,

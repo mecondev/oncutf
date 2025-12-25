@@ -216,7 +216,12 @@ class RenameModulesArea(QWidget):
             extra={"dev_only": True},
         )
 
-        return self.module_widgets
+        return [
+            m.current_module_widget
+            for m in self.module_widgets
+            if hasattr(m, "current_module_widget")
+            and isinstance(m.current_module_widget, BaseRenameModule)
+        ]
 
     def set_theme(self, theme: str):
         """Change the theme for the rename modules area.

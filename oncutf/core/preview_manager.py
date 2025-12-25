@@ -114,7 +114,7 @@ class PreviewManager:
         self.preview_map = {file.filename: file for file in selected_files}
 
         if is_noop:
-            if not all_modules and not NameTransformModule.is_effective(post_transform):
+            if not all_modules and not NameTransformModule.is_effective_data(post_transform):
                 # No modules at all - show empty preview
                 self.update_preview_tables_from_pairs([])
                 return [], False
@@ -142,7 +142,7 @@ class PreviewManager:
             if module_widget.is_effective():
                 is_noop = False
                 break
-        if NameTransformModule.is_effective(post_transform):
+        if NameTransformModule.is_effective_data(post_transform):
             is_noop = False
         return is_noop
 
@@ -157,7 +157,7 @@ class PreviewManager:
         name_pairs = []
 
         # Performance optimization: Pre-compute common values
-        has_name_transform = NameTransformModule.is_effective(post_transform)
+        has_name_transform = NameTransformModule.is_effective_data(post_transform)
 
         for idx, file in enumerate(selected_files):
             try:

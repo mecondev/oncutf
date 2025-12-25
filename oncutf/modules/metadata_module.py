@@ -11,6 +11,7 @@ Refactored in Dec 2025 to delegate extraction logic to MetadataExtractor domain 
 
 import os
 from pathlib import Path
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 
@@ -46,7 +47,10 @@ class MetadataModule:
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item: FileItem, _index: int = 0, metadata_cache: dict | None = None
+        data: dict[str, Any],
+        file_item: FileItem,
+        _index: int = 0,
+        metadata_cache: dict[str, Any] | None = None,
     ) -> str:
         """Apply metadata extraction using MetadataExtractor domain logic.
 
@@ -124,7 +128,9 @@ class MetadataModule:
         return result.value
 
     @staticmethod
-    def _get_metadata_dict(path: str, metadata_cache: dict | None = None) -> dict:
+    def _get_metadata_dict(
+        path: str, metadata_cache: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Get metadata dict from cache or persistent cache.
 
         Args:
@@ -146,12 +152,7 @@ class MetadataModule:
                         entry = persistent_cache.get_entry(path)
                         metadata = getattr(entry, "data", {}) or {}
                     else:
-                        try:
-                            metadata = persistent_cache.get(path)  # type: ignore
-                            if metadata is None:
-                                metadata = {}
-                        except TypeError:
-                            metadata = {}
+                        metadata = persistent_cache.get(path) or {}
                 except Exception as e:
                     logger.debug(
                         "[DEBUG] [MetadataModule] persistent cache lookup failed: %s",
@@ -167,29 +168,17 @@ class MetadataModule:
                 extra={"dev_only": True},
             )
         else:
-            # Use provided cache
-            try:
-                if hasattr(metadata_cache, "get_entry"):
-                    entry = metadata_cache.get_entry(path)
-                    metadata = getattr(entry, "data", {}) or {}
-                elif isinstance(metadata_cache, dict):
-                    metadata = metadata_cache.get(path, {})
-                elif hasattr(metadata_cache, "get"):
-                    try:
-                        metadata = metadata_cache.get(path)  # type: ignore
-                        if metadata is None:
-                            metadata = {}
-                    except TypeError:
-                        metadata = {}
-                else:
-                    metadata = {}
-            except Exception as e:
-                logger.debug(
-                    "[DEBUG] [MetadataModule] Provided cache lookup failed: %s",
-                    e,
-                    extra={"dev_only": True},
-                )
-                metadata = {}
+            # Use provided cache - single linear initialization
+            metadata = {}  # Already defined above, no type annotation needed
+            if metadata_cache is not None and isinstance(path, str) and path:
+                try:
+                    metadata = metadata_cache.get(path) or {}
+                except Exception as e:
+                    logger.debug(
+                        "[DEBUG] [MetadataModule] Provided cache lookup failed: %s",
+                        e,
+                        extra={"dev_only": True},
+                    )
             logger.debug(
                 "[DEBUG] [MetadataModule] Using provided cache, has_metadata: %s",
                 bool(metadata),
@@ -247,22 +236,14 @@ class MetadataModule:
             return base_name
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
-        """Check if module is effective (will produce output).
-
-        Args:
-            data: Configuration dict with 'field' and 'category'
-
-        Returns:
-            True if module will produce output
-
-        """
+    def is_effective_data(data: dict[str, Any]) -> bool:
+        """Returns True if any transformation is active."""
         field = data.get("field")
         category = data.get("category", "file_dates")
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_")  # type: ignore
+            return bool(field and field.startswith("hash_"))
 
         # For other categories, any field is effective
         return bool(field)

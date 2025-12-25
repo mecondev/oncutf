@@ -21,6 +21,7 @@ is now cleanly separated into focused modules.
 import contextlib
 import os
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -30,6 +31,9 @@ from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
 from oncutf.utils.path_utils import paths_equal
+
+if TYPE_CHECKING:
+    from oncutf.utils.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -65,6 +69,7 @@ class UnifiedMetadataManager(QObject):
         self.force_extended_metadata = False
         self._metadata_cancelled = False
         self._save_cancelled = False
+        self._hash_progress_dialog: ProgressDialog | None = None
 
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
@@ -151,7 +156,7 @@ class UnifiedMetadataManager(QObject):
     # Cache Methods - Delegate to MetadataCacheService
     # =========================================================================
 
-    def check_cached_metadata(self, file_item: FileItem) -> dict | None:
+    def check_cached_metadata(self, file_item: FileItem) -> dict[str, Any] | None:
         """Delegate to cache_service."""
         return self._cache_service.check_cached_metadata(file_item)
 
@@ -172,15 +177,15 @@ class UnifiedMetadataManager(QObject):
     # =========================================================================
 
     def get_enhanced_metadata(
-        self, file_item: FileItem, folder_files: list[str] = None
-    ) -> dict | None:
+        self, file_item: FileItem, folder_files: list[str] | None = None
+    ) -> dict[str, Any] | None:
         """Delegate to companion_handler."""
         base_metadata = self.check_cached_metadata(file_item)
         return self._companion_handler.get_enhanced_metadata(file_item, base_metadata, folder_files)
 
     def _enhance_metadata_with_companions(
-        self, file_item: FileItem, base_metadata: dict, all_files: list[FileItem]
-    ) -> dict:
+        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+    ) -> dict[str, Any]:
         """Delegate to companion_handler."""
         return self._companion_handler.enhance_metadata_with_companions(
             file_item, base_metadata, all_files
@@ -243,9 +248,9 @@ class UnifiedMetadataManager(QObject):
     # Main Loading Methods - Delegate to MetadataLoader
     # =========================================================================
 
-    def load_metadata_streaming(self, items: list[FileItem], use_extended: bool = False):
+    def load_metadata_streaming(self, items: list[FileItem], use_extended: bool = False) -> None:
         """Delegate to loader."""
-        return self._loader.load_metadata_streaming(items, use_extended)
+        self._loader.load_metadata_streaming(items, use_extended)
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
@@ -314,8 +319,8 @@ class UnifiedMetadataManager(QObject):
                     )
                 )
                 self._hash_worker.size_progress.connect(
-                    lambda processed, total: self._hash_progress_dialog.update_size_progress(
-                        processed, total
+                    lambda processed, total: self._hash_progress_dialog.update_progress(
+                        processed_bytes=processed, total_bytes=total
                     )
                 )
 
@@ -340,15 +345,18 @@ class UnifiedMetadataManager(QObject):
         self._hash_worker = ParallelHashWorker(parent=self.parent_window)
         self._hash_worker.setup_checksum_calculation(file_paths)
 
-        self._hash_worker.file_hash_calculated.connect(
+        from typing import cast
+
+        from PyQt5.QtCore import Qt
+
+        cast("Any", self._hash_worker.file_hash_calculated).connect(
             self._on_file_hash_calculated, Qt.QueuedConnection
         )
-        self._hash_worker.finished_processing.connect(
+        cast("Any", self._hash_worker.finished_processing).connect(
             lambda _: self._on_hash_finished(), Qt.QueuedConnection
         )
-        self._hash_worker.progress_updated.connect(
-            lambda current, total, _: self._on_hash_progress(current, total),
-            Qt.QueuedConnection,
+        cast("Any", self._hash_worker.progress_updated).connect(
+            lambda current, total, _: self._on_hash_progress(current, total), Qt.QueuedConnection
         )
 
         self._hash_worker.start()
@@ -440,7 +448,10 @@ class UnifiedMetadataManager(QObject):
         return self._writer.save_all_modified_metadata(is_exit_save)
 
     def _save_metadata_files(
-        self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False
+        self,
+        files_to_save: list[FileItem],
+        all_modifications: dict[str, dict[str, Any]],
+        is_exit_save: bool = False,
     ) -> None:
         """Save metadata files using ExifTool."""
         if not files_to_save:
@@ -537,7 +548,9 @@ class UnifiedMetadataManager(QObject):
         if success_count > 0:
             self._record_save_command(files_to_save, failed_files, all_modifications)
 
-    def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
+    def _get_modified_metadata_for_file(
+        self, file_path: str, all_modified_metadata: dict[str, dict[str, Any]]
+    ) -> dict[str, Any]:
         """Get modified metadata for a specific file."""
         if file_path in all_modified_metadata:
             return all_modified_metadata[file_path]
@@ -550,7 +563,9 @@ class UnifiedMetadataManager(QObject):
                 return value
         return {}
 
-    def _update_file_after_save(self, file_item, saved_metadata: dict = None):
+    def _update_file_after_save(
+        self, file_item: FileItem, saved_metadata: dict[str, Any] | None = None
+    ):
         """Update file item after successful metadata save."""
         # Clear staged changes
         try:
@@ -569,12 +584,14 @@ class UnifiedMetadataManager(QObject):
 
         # Update modification time
         with contextlib.suppress(Exception):
-            file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
+            file_item.modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)
 
-    def _update_caches_after_save(self, file_item, saved_metadata: dict):
+    def _update_caches_after_save(
+        self, file_item: FileItem, saved_metadata: dict[str, Any]
+    ) -> None:
         """Update UI and persistent caches after save."""
         # Update UI cache
         if hasattr(self.parent_window, "metadata_cache"):
@@ -602,7 +619,7 @@ class UnifiedMetadataManager(QObject):
                 "[UnifiedMetadataManager] Failed to update persistent cache", exc_info=True
             )
 
-    def _update_nested_metadata(self, data: dict, key_path: str, value: str):
+    def _update_nested_metadata(self, data: dict[str, Any], key_path: str, value: str) -> None:
         """Update nested metadata structure."""
         if "/" in key_path or ":" in key_path:
             sep = "/" if "/" in key_path else ":"
@@ -620,7 +637,7 @@ class UnifiedMetadataManager(QObject):
         else:
             data[key_path] = value
 
-    def _refresh_display_if_current(self, file_item):
+    def _refresh_display_if_current(self, file_item: FileItem) -> None:
         """Refresh metadata display if file is currently shown."""
         if not hasattr(self.parent_window, "metadata_tree_view"):
             return
@@ -633,7 +650,13 @@ class UnifiedMetadataManager(QObject):
                     display_data["FileName"] = file_item.filename
                     tree.display_metadata(display_data, context="after_save")
 
-    def _show_save_results(self, success_count, failed_files, files_to_save, was_cancelled=False):
+    def _show_save_results(
+        self,
+        success_count: int,
+        failed_files: list[str],
+        files_to_save: list[FileItem],
+        was_cancelled: bool = False,
+    ) -> None:
         """Show results of metadata save operation."""
         total_files = len(files_to_save)
 
@@ -684,14 +707,19 @@ class UnifiedMetadataManager(QObject):
                     f"Files: {', '.join(failed_files[:5])}{'...' if len(failed_files) > 5 else ''}",
                 )
 
-    def _record_save_command(self, files_to_save, failed_files, all_modifications):
+    def _record_save_command(
+        self,
+        files_to_save: list[FileItem],
+        failed_files: list[str],
+        all_modifications: dict[str, dict[str, Any]],
+    ) -> None:
         """Record save command for undo/redo."""
         try:
             from oncutf.core.metadata_command_manager import get_metadata_command_manager
             from oncutf.core.metadata_commands import SaveMetadataCommand
 
             command_manager = get_metadata_command_manager()
-            if command_manager and SaveMetadataCommand:
+            if command_manager:
                 successful_files = []
                 successful_metadata = {}
 
@@ -716,11 +744,11 @@ class UnifiedMetadataManager(QObject):
     # Structured Metadata Integration - Delegate to StructuredMetadataManager
     # =========================================================================
 
-    def get_structured_metadata(self, file_path: str) -> dict:
+    def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Delegate to structured manager."""
         return self.structured.get_structured_metadata(file_path)
 
-    def process_and_store_metadata(self, file_path: str, raw_metadata: dict) -> bool:
+    def process_and_store_metadata(self, file_path: str, raw_metadata: dict[str, Any]) -> bool:
         """Delegate to structured manager."""
         return self.structured.process_and_store_metadata(file_path, raw_metadata)
 
@@ -736,11 +764,11 @@ class UnifiedMetadataManager(QObject):
         """Delegate to structured manager."""
         return self.structured.add_custom_field(field_key, field_name, category, **kwargs)
 
-    def get_available_categories(self) -> list[dict]:
+    def get_available_categories(self) -> list[dict[str, Any]]:
         """Delegate to structured manager."""
         return self.structured.get_available_categories()
 
-    def get_available_fields(self, category: str | None = None) -> list[dict]:
+    def get_available_fields(self, category: str | None = None) -> list[dict[str, Any]]:
         """Delegate to structured manager."""
         return self.structured.get_available_fields(category)
 

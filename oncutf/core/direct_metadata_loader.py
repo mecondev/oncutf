@@ -14,6 +14,8 @@ Features:
 - Simple, clean architecture
 """
 
+from typing import Any
+
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from oncutf.models.file_item import FileItem
@@ -41,11 +43,16 @@ class DirectMetadataLoader(QObject):
     loading_started = pyqtSignal(str)  # file_path
     loading_finished = pyqtSignal()
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         super().__init__(parent_window)
-        self.parent_window = parent_window
+        self.parent_window: Any = parent_window
         self._cache_helper: MetadataCacheHelper | None = None
         self._currently_loading: set[str] = set()
+        self._progress_dialog: Any = None
+        self._metadata_worker: Any = None
+        self._metadata_thread: Any = None
+        self._hash_worker: Any = None
+        self._hash_thread: Any = None
 
         logger.info("[DirectMetadataLoader] Initialized - no automatic loading")
 
@@ -55,7 +62,7 @@ class DirectMetadataLoader(QObject):
             self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
             logger.debug("[DirectMetadataLoader] Cache helper initialized")
 
-    def check_cached_metadata(self, file_item: FileItem) -> dict | None:
+    def check_cached_metadata(self, file_item: FileItem) -> dict[str, Any] | None:
         """Check if metadata exists in cache without loading.
 
         Args:
@@ -244,7 +251,6 @@ class DirectMetadataLoader(QObject):
         # Set up worker
         self._metadata_worker.file_path = [f.full_path for f in files]
         self._metadata_worker.use_extended = use_extended
-        self._metadata_worker.main_window = self.parent_window
 
         # Connect progress signals
         if hasattr(self, "_progress_dialog") and self._progress_dialog:
@@ -368,9 +374,7 @@ class DirectMetadataLoader(QObject):
             # Fallback to loading without progress dialog
             self._start_hash_loading(files, source)
 
-    def _start_hash_loading_with_progress(
-        self, files: list[FileItem], source: str
-    ) -> None:  # noqa: ARG002
+    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:  # noqa: ARG002
         """Start hash loading with progress tracking."""
         from oncutf.core.hash.hash_worker import HashWorker
 
@@ -380,13 +384,12 @@ class DirectMetadataLoader(QObject):
 
         # Set up worker
         file_paths = [f.full_path for f in files]
-        self._hash_worker.set_files(file_paths)
-        self._hash_worker.main_window = self.parent_window
+        self._hash_worker.setup_checksum_calculation(file_paths)
 
         # Connect progress signals
         if hasattr(self, "_progress_dialog") and self._progress_dialog:
-            self._hash_worker.progress.connect(
-                lambda current, total: self._on_hash_progress(current, total)
+            self._hash_worker.progress_updated.connect(
+                lambda current, total, _filename: self._on_hash_progress(current, total)
             )
             self._hash_worker.size_progress.connect(
                 lambda processed, total: self._on_hash_size_progress(processed, total)
@@ -398,7 +401,7 @@ class DirectMetadataLoader(QObject):
 
         # Move worker to thread and start
         self._hash_worker.moveToThread(self._hash_thread)
-        self._hash_thread.started.connect(self._hash_worker.run_batch)
+        self._hash_thread.started.connect(self._hash_worker.run)
         self._hash_worker.finished.connect(self._hash_thread.quit)
         self._hash_worker.finished.connect(self._hash_worker.deleteLater)
         self._hash_thread.finished.connect(self._hash_thread.deleteLater)
@@ -459,10 +462,9 @@ class DirectMetadataLoader(QObject):
         # Create worker and thread
         self._hash_thread = QThread()
         self._hash_worker = HashWorker(
-            file_paths=[f.full_path for f in files],
-            hash_cache=self.parent_window.hash_cache,
             parent=self.parent_window,
         )
+        self._hash_worker.setup_checksum_calculation([f.full_path for f in files])
 
         # Move worker to thread
         self._hash_worker.moveToThread(self._hash_thread)

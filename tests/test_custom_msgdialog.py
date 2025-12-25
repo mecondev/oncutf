@@ -64,7 +64,8 @@ from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
 @pytest.mark.skipif("CI" in os.environ, reason="Fails on CI due to GUI")
 def test_esc_key_triggers_cancel(qtbot) -> None:  # noqa: ARG001
-    dlg = CustomMessageDialog.show_waiting(None, "Reading metadata…")
+    parent = QWidget()
+    dlg = CustomMessageDialog.show_waiting(parent, "Reading metadata…")
     qtbot.addWidget(dlg)
     assert dlg.isVisible(), "Dialog should be visible initially"
 
@@ -76,11 +77,13 @@ def test_esc_key_triggers_cancel(qtbot) -> None:  # noqa: ARG001
 
 
 def test_progress_updates_correctly(qtbot) -> None:  # noqa: ARG001
-    dlg = CustomMessageDialog.show_waiting(None, "Loading...")
+    parent = QWidget()
+    dlg = CustomMessageDialog.show_waiting(parent, "Loading...")
     qtbot.addWidget(dlg)
     dlg.set_progress_range(10)
     dlg.set_progress(5)
 
+    assert dlg.progress_bar is not None
     assert dlg.progress_bar.value() == 5
     assert dlg.progress_bar.maximum() == 10
 
@@ -126,7 +129,8 @@ def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:  # noq
 
 
 def test_waiting_dialog_is_application_modal(qtbot) -> None:  # noqa: ARG001
-    dlg = CustomMessageDialog.show_waiting(None, "Working...")
+    parent = QWidget()
+    dlg = CustomMessageDialog.show_waiting(parent, "Working...")
     qtbot.addWidget(dlg)
 
     assert dlg.isModal()
@@ -135,17 +139,21 @@ def test_waiting_dialog_is_application_modal(qtbot) -> None:  # noqa: ARG001
 
 def test_escape_triggers_callback_and_close(qtbot) -> None:  # noqa: ARG001
     # Create the dialog
-    dlg = CustomMessageDialog.show_waiting(None, "Reading...")
-    qtbot.addWidget(dlg)
+    parent = QWidget()
+    dlg = CustomMessageDialog.show_waiting(parent, "Reading...")
+    # qtbot.addWidget(dlg) - Skip adding to qtbot since we explicitly close it and it might be deleted on close
 
     # Track whether reject() was called (close via Esc)
     rejected = {"called": False}
 
-    def fake_reject():
+    # Use monkeypatch instead of direct assignment
+    def fake_reject(*_):
         rejected["called"] = True
         dlg.close()
 
-    dlg.reject = fake_reject
+    import types
+
+    dlg.reject = types.MethodType(fake_reject, dlg)  # type: ignore[method-assign]
 
     qtbot.keyPress(dlg, Qt.Key_Escape)
     qtbot.wait(1200)

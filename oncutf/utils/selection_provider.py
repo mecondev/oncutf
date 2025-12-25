@@ -350,7 +350,7 @@ def get_single_selected_file(parent_window: Any) -> FileItem | None:
     return SelectionProvider.get_single_selected_file(parent_window)
 
 
-def get_selected_row_set(selection_model) -> set[int]:
+def get_selected_row_set(selection_model: Any) -> set[int]:
     """Get set of selected row indices from a selection model.
 
     This helper function eliminates duplicate code pattern appearing 12+ times

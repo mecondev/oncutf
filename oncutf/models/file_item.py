@@ -14,6 +14,7 @@ Classes:
 
 import os
 from datetime import datetime
+from typing import Any
 
 # Initialize Logger
 from oncutf.utils.logger_factory import get_cached_logger
@@ -34,11 +35,12 @@ class FileItem:
         self.filename = os.path.basename(path)  # Just the filename
         self.name = self.filename  # Keep for compatibility
         self.size = 0  # Will be updated later if needed
-        self.metadata = {}  # Will store file metadata
+        self.metadata: dict[str, Any] = {}  # Will store file metadata
         self.metadata_status = (
             "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
         )
         self.checked = False  # Selection state for UI
+        self.hash_value: str | None = None  # SHA256 hash for file integrity
 
         # Load saved color tag from database (hex color or "none")
         # Import here to avoid circular imports and initialization issues

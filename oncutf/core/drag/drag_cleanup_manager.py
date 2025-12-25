@@ -11,7 +11,7 @@ This manager centralizes drag cleanup operations including:
 - Cursor management
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from oncutf.config import STATUS_COLORS
 from oncutf.core.drag.drag_manager import DragManager
@@ -198,7 +198,7 @@ class DragCleanupManager:
         """
         return QApplication.overrideCursor() is not None
 
-    def get_drag_cleanup_status(self) -> dict:
+    def get_drag_cleanup_status(self) -> dict[str, Any]:
         """Get current drag cleanup status.
 
         Returns:

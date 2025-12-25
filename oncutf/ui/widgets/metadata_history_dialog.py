@@ -271,7 +271,9 @@ class MetadataHistoryDialog(QDialog):
                         "status": (
                             "Can Undo"
                             if cmd["can_undo"]
-                            else "Can Redo" if cmd["can_redo"] else "Done"
+                            else "Can Redo"
+                            if cmd["can_redo"]
+                            else "Done"
                         ),
                         "type": "metadata",
                         "data": cmd,
@@ -292,7 +294,10 @@ class MetadataHistoryDialog(QDialog):
                 )
 
             # Sort by timestamp (most recent first)
-            all_operations.sort(key=lambda x: x["timestamp"], reverse=True)
+            # Cast timestamp to float for sorting (timestamps are numeric)
+            from typing import cast
+
+            all_operations.sort(key=lambda x: cast("float", x["timestamp"]), reverse=True)
 
             # Populate table
             self.operations_table.setRowCount(len(all_operations))

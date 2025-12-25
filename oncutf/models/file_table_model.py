@@ -12,6 +12,7 @@ Classes:
 """
 
 from datetime import datetime
+from typing import Any
 
 from oncutf.core.application_context import get_app_context
 from oncutf.core.pyqt_imports import (
@@ -46,11 +47,11 @@ class FileTableModel(QAbstractTableModel):
 
     sort_changed = pyqtSignal()  # Emitted when sort() is called
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         super().__init__()
         logger.debug("FileTableModel __init__ called", extra={"dev_only": True})
-        self.parent_window = parent_window
-        self.files = []
+        self.parent_window: Any = parent_window
+        self.files: list[FileItem] = []
         self._direct_loader = None
         self._cache_helper = None
 
@@ -64,14 +65,14 @@ class FileTableModel(QAbstractTableModel):
         # Tooltip cache to avoid repeated get_entry() calls on hover
         self._tooltip_cache: dict[str, str] = {}  # full_path -> tooltip
 
-    def _load_default_visible_columns(self) -> list:
+    def _load_default_visible_columns(self) -> list[str]:
         """Load default visible columns configuration using UnifiedColumnService."""
         from oncutf.core.unified_column_service import get_column_service
 
         service = get_column_service()
         return service.get_visible_columns()
 
-    def _create_column_mapping(self) -> dict:
+    def _create_column_mapping(self) -> dict[int, str]:
         """Create mapping from column index to column key using UnifiedColumnService."""
         from oncutf.core.unified_column_service import get_column_service
 
@@ -84,7 +85,7 @@ class FileTableModel(QAbstractTableModel):
         )
         return mapping
 
-    def update_visible_columns(self, visible_columns: list) -> None:
+    def update_visible_columns(self, visible_columns: list[str]) -> None:
         logger.debug(
             "[FileTableModel] update_visible_columns called with: %s",
             visible_columns,
@@ -189,7 +190,7 @@ class FileTableModel(QAbstractTableModel):
                 extra={"dev_only": True},
             )
 
-    def _handle_reset_model(self, visible_columns: list) -> None:
+    def _handle_reset_model(self, visible_columns: list[str]) -> None:
         """Handle column changes using resetModel - safe but less efficient."""
         logger.debug("[FileTableModel] Using resetModel for column changes")
 
@@ -217,7 +218,9 @@ class FileTableModel(QAbstractTableModel):
 
         self.endResetModel()
 
-    def _handle_single_column_addition(self, new_visible_columns: list, added_column: str) -> None:
+    def _handle_single_column_addition(
+        self, new_visible_columns: list[str], added_column: str
+    ) -> None:
         """Handle adding a single column efficiently."""
         logger.debug("[FileTableModel] Adding single column: %s", added_column)
 
@@ -258,7 +261,9 @@ class FileTableModel(QAbstractTableModel):
             logger.exception("[FileTableModel] Error in _handle_single_column_addition")
             raise  # Re-raise to trigger fallback
 
-    def _handle_single_column_removal(self, new_visible_columns: list, removed_column: str) -> None:
+    def _handle_single_column_removal(
+        self, new_visible_columns: list[str], removed_column: str
+    ) -> None:
         """Handle removing a single column efficiently."""
         logger.debug("[FileTableModel] Removing single column: %s", removed_column)
 
@@ -306,7 +311,7 @@ class FileTableModel(QAbstractTableModel):
             logger.exception("[FileTableModel] Error in _handle_single_column_removal")
             raise  # Re-raise to trigger fallback
 
-    def get_visible_columns(self) -> list:
+    def get_visible_columns(self) -> list[str]:
         return self._visible_columns.copy()
 
     def debug_column_state(self) -> None:
@@ -370,7 +375,7 @@ class FileTableModel(QAbstractTableModel):
         hash_value = get_hash_for_file(file_path)
         return hash_value if hash_value else ""
 
-    def _get_unified_tooltip(self, file) -> str:
+    def _get_unified_tooltip(self, file: Any) -> str:
         """Get unified tooltip for all columns showing metadata and hash status.
 
         Uses tooltip cache to avoid repeated get_entry() calls on hover events.
@@ -482,7 +487,7 @@ class FileTableModel(QAbstractTableModel):
         count = len(self.files)
         return count
 
-    def _get_column_data(self, file, column_key: str, role: int):
+    def _get_column_data(self, file: Any, column_key: str, role: int) -> Any:
         """Get data for a specific column key."""
         if role == Qt.DisplayRole:
             if column_key == "filename":
@@ -561,14 +566,14 @@ class FileTableModel(QAbstractTableModel):
 
         return QVariant()
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:  # type: ignore[override]
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
         if not index.isValid() or index.row() >= len(self.files):
             return QVariant()
         if index.column() == 0:
             # Status column logic...
             file = self.files[index.row()]
             if role == Qt.DisplayRole:
-                return ""
+                return QVariant()
             if role == Qt.DecorationRole:
                 # Determine metadata status
                 metadata_status = "none"
@@ -600,11 +605,11 @@ class FileTableModel(QAbstractTableModel):
 
                 # Create and return combined icon
                 icon = self._create_combined_icon(metadata_status, hash_status)
-                return icon
+                return QVariant(icon)
             if role == Qt.CheckStateRole:
-                return Qt.Checked if file.checked else Qt.Unchecked
+                return QVariant(Qt.Checked if file.checked else Qt.Unchecked)
             if role == Qt.ToolTipRole:
-                return self._get_unified_tooltip(file)
+                return QVariant(self._get_unified_tooltip(file))
             return QVariant()
         col_key = self._column_mapping.get(index.column())
         if not col_key:
@@ -612,11 +617,11 @@ class FileTableModel(QAbstractTableModel):
         file = self.files[index.row()]
         if role == Qt.ToolTipRole:
             # Return unified tooltip for all columns
-            return self._get_unified_tooltip(file)
+            return QVariant(self._get_unified_tooltip(file))
         result = self._get_column_data(file, col_key, role)
         return result
 
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore[override]
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.EditRole) -> bool:
         if not index.isValid() or not self.files:
             return False
 
@@ -661,9 +666,9 @@ class FileTableModel(QAbstractTableModel):
 
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # type: ignore[override]
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         if not index.isValid() or not self.files:
-            return Qt.NoItemFlags
+            return Qt.ItemFlags(Qt.NoItemFlags)
 
         base_flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
@@ -673,7 +678,9 @@ class FileTableModel(QAbstractTableModel):
 
         return base_flags
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore[override]
+    def headerData(
+        self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole
+    ) -> Any:
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
                 return ""  # Don't display title in status column
@@ -705,7 +712,7 @@ class FileTableModel(QAbstractTableModel):
                 return ""
         return super().headerData(section, orientation, role)
 
-    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore[override]
+    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:
         if not self.files:
             return
 

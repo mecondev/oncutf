@@ -46,7 +46,7 @@ MODULE_TYPE_MAP = {
 
 # Performance optimization: Module result cache
 _module_cache: dict = {}
-_cache_timestamp = 0
+_cache_timestamp: float = 0.0
 _cache_validity_duration = 0.05  # 50ms cache validity
 
 
@@ -159,9 +159,6 @@ def calculate_scope_aware_index(
         except Exception as e:
             logger.warning("[PreviewEngine] Error calculating filegroup index: %s, using global", e)
             return global_index
-
-    # Fallback
-    return global_index
 
 
 def apply_rename_modules(

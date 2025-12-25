@@ -59,7 +59,7 @@ class FileSignature:
     quick_signature: str  # size_filename for fast lookups
 
     @classmethod
-    def create(cls, file_path: str, content_hash: str = None) -> "FileSignature":
+    def create(cls, file_path: str, content_hash: str | None = None) -> "FileSignature":
         """Create file signature from path"""
         path = Path(file_path)
         size = path.stat().st_size if path.exists() else 0
@@ -122,6 +122,7 @@ class FileValidationManager:
             # Default for unknown types
             "default": 12 * 3600,  # 12 hours
         }
+        self._results: dict[str, Any] = {}
 
         # File type classifications
         self.file_types = {
@@ -185,7 +186,7 @@ class FileValidationManager:
         }
 
         # User preferences cache
-        self.user_preferences = {}
+        self.user_preferences: dict[str, Any] = {}
 
         logger.debug("[FileValidationManager] Initialized with balanced settings")
 
@@ -199,7 +200,7 @@ class FileValidationManager:
 
         return "default"
 
-    def calculate_smart_ttl(self, file_path: str, file_size: int = None) -> int:
+    def calculate_smart_ttl(self, file_path: str, file_size: int | None = None) -> int:
         """Calculate smart TTL based on file characteristics."""
         category = self.get_file_type_category(file_path)
         base_ttl = self.ttl_settings[category]
@@ -218,7 +219,9 @@ class FileValidationManager:
 
         return base_ttl
 
-    def validate_file_medium_accuracy(self, file_path: str, cached_data: dict) -> ValidationResult:
+    def validate_file_medium_accuracy(
+        self, file_path: str, cached_data: dict[str, Any]
+    ) -> ValidationResult:
         """Validate file using medium accuracy (mtime + size).
         Balanced approach for archival applications.
         """
@@ -265,7 +268,7 @@ class FileValidationManager:
                 confidence=0.1,
             )
 
-    def find_moved_file_by_content(self, target_signature: FileSignature) -> dict | None:
+    def find_moved_file_by_content(self, target_signature: FileSignature) -> dict[str, Any] | None:
         """Find moved file using content-based identification.
         Critical for archival applications where files are moved at OS level.
         """
@@ -331,7 +334,9 @@ class FileValidationManager:
 
         return None
 
-    def identify_file_with_content_fallback(self, file_path: str) -> tuple[dict | None, bool]:
+    def identify_file_with_content_fallback(
+        self, file_path: str
+    ) -> tuple[dict[str, Any] | None, bool]:
         """Identify file using hybrid approach: path-based first, then content-based.
         Returns (file_record, was_moved).
         """

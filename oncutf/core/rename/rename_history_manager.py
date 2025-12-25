@@ -13,9 +13,12 @@ Features:
 - Integration with existing rename workflow
 """
 
+from __future__ import annotations
+
 import os
 import uuid
 from datetime import datetime
+from typing import Any, Protocol
 
 from oncutf.core.database.database_manager import get_database_manager
 from oncutf.utils.logger_factory import get_cached_logger
@@ -23,9 +26,17 @@ from oncutf.utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
+class RenameHistoryDB(Protocol):
+    """Protocol for database operations needed by rename history manager."""
+
+    def record_rename_operation(self, *args: Any, **kwargs: Any) -> bool: ...
+    def get_operation_details(self, operation_id: str) -> list[dict[str, Any]] | None: ...
+    def cleanup_orphaned_records(self) -> int: ...
+    def get_database_stats(self) -> dict[str, Any]: ...
+
+
 class RenameOperation:
-    """Represents a single rename operation within a batch.
-    """
+    """Represents a single rename operation within a batch."""
 
     def __init__(self, old_path: str, new_path: str, old_filename: str, new_filename: str):
         self.old_path = old_path
@@ -38,15 +49,14 @@ class RenameOperation:
 
 
 class RenameBatch:
-    """Represents a batch of rename operations that can be undone as a unit.
-    """
+    """Represents a batch of rename operations that can be undone as a unit."""
 
     def __init__(
         self,
         operation_id: str,
         operations: list[RenameOperation],
-        modules_data: list[dict] | None = None,
-        post_transform_data: dict | None = None,
+        modules_data: list[dict[str, Any]] | None = None,
+        post_transform_data: dict[str, Any] | None = None,
         timestamp: str | None = None,
     ):
         self.operation_id = operation_id
@@ -71,14 +81,16 @@ class RenameHistoryManager:
 
     def __init__(self):
         """Initialize rename history manager with database backend."""
-        self._db_manager = get_database_manager()
+        from typing import cast
+
+        self._db_manager: RenameHistoryDB = cast("RenameHistoryDB", get_database_manager())
         logger.info("[RenameHistoryManager] Initialized with database backend")
 
     def record_rename_batch(
         self,
         renames: list[tuple[str, str]],
-        modules_data: list[dict] | None = None,
-        post_transform_data: dict | None = None,
+        modules_data: list[dict[str, Any]] | None = None,
+        post_transform_data: dict[str, Any] | None = None,
     ) -> str:
         """Record a batch rename operation for future undo.
 
@@ -117,7 +129,7 @@ class RenameHistoryManager:
             logger.error("[RenameHistoryManager] Error recording rename batch: %s", e)
             return ""
 
-    def get_recent_operations(self, limit: int = 20) -> list[dict]:
+    def get_recent_operations(self, limit: int = 20) -> list[dict[str, Any]]:
         """Get recent rename operations for undo menu.
 
         Args:
@@ -361,7 +373,7 @@ class RenameHistoryManager:
             logger.error("[RenameHistoryManager] Error during history cleanup: %s", e)
             return 0
 
-    def get_history_stats(self) -> dict:
+    def get_history_stats(self) -> dict[str, Any]:
         """Get statistics about rename history.
 
         Returns:

@@ -27,7 +27,7 @@ _locale_initialized = False
 _locale_setup_attempted = False
 
 
-def _ensure_locale_setup():
+def _ensure_locale_setup() -> bool:
     """Ensure locale is set up only once globally."""
     global _locale_initialized, _locale_setup_attempted
 
@@ -59,8 +59,7 @@ def _ensure_locale_setup():
 
 
 class FileSizeFormatter:
-    """Cross-platform file size formatter with configurable units and locale support.
-    """
+    """Cross-platform file size formatter with configurable units and locale support."""
 
     # Unit definitions
     BINARY_UNITS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
@@ -70,8 +69,11 @@ class FileSizeFormatter:
     LEGACY_BINARY_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]  # Using KB instead of KiB
 
     def __init__(
-        self, use_binary: bool = None, use_locale: bool = None, use_legacy_labels: bool = True
-    ):
+        self,
+        use_binary: bool | None = None,
+        use_locale: bool | None = None,
+        use_legacy_labels: bool = True,
+    ) -> None:
         """Initialize the formatter.
 
         Args:

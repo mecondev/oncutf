@@ -80,7 +80,7 @@ class TestRestoreLastSessionWorkflow:
 
         assert result["success"] is True
         assert result["folder_restored"] is False
-        assert result["folder_path"] is None
+        assert result["folder_path"] == ""
         assert result["files_loaded"] == 0
         assert result["metadata_loaded"] == 0
         assert len(result["errors"]) == 0
@@ -91,7 +91,7 @@ class TestRestoreLastSessionWorkflow:
 
         assert result["success"] is False
         assert result["folder_restored"] is False
-        assert result["folder_path"] is None
+        assert result["folder_path"] == ""
         assert result["files_loaded"] == 0
         assert len(result["errors"]) == 1
         assert "no longer exists" in result["errors"][0]
@@ -117,7 +117,7 @@ class TestRestoreLastSessionWorkflow:
         # Check path components exist (cross-platform)
         path_str = str(call_args[0][0])
         assert "test" in path_str and "folder" in path_str
-        assert call_args[1]["merge"] is False
+        assert call_args[1]["merge_mode"] is False
         assert call_args[1]["recursive"] is False
 
         # Verify result
@@ -154,7 +154,7 @@ class TestRestoreLastSessionWorkflow:
         # Verify MetadataController was called
         metadata.load_metadata.assert_called_once()
         meta_call_args = metadata.load_metadata.call_args
-        assert meta_call_args[1]["items"] == [mock_file1, mock_file2]
+        assert meta_call_args[1]["file_items"] == [mock_file1, mock_file2]
         assert meta_call_args[1]["use_extended"] is False
         assert meta_call_args[1]["source"] == "session_restore"
 
@@ -222,7 +222,9 @@ class TestRestoreLastSessionWorkflow:
         mock_exists.return_value = True
 
         result = controller.restore_last_session_workflow(
-            last_folder="/test/folder", sort_column=2, sort_order=1  # Descending
+            last_folder="/test/folder",
+            sort_column=2,
+            sort_order=1,  # Descending
         )
 
         assert result["success"] is True

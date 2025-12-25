@@ -8,6 +8,7 @@ Module for applying original name transformations.
 """
 
 import os
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger
@@ -23,7 +24,10 @@ class OriginalNameModule:
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item: FileItem, _index: int = 0, _metadata_cache: dict = None
+        data: dict[str, Any],
+        file_item: FileItem,
+        _index: int = 0,
+        _metadata_cache: dict[str, Any] | None = None,
     ) -> str:
         """Applies original filename with optional Greeklish transformation.
         Case and separator transformations are handled by NameTransformModule.
@@ -60,6 +64,7 @@ class OriginalNameModule:
         return base_name
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
-        # Only effective if Greeklish is enabled, otherwise it's just the original name
-        return data.get("greeklish", False)
+    def is_effective_data(data: dict[str, Any]) -> bool:
+        """The original name module is always effective because it produces output."""
+        _ = data
+        return True

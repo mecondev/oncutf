@@ -11,7 +11,7 @@ Note: PyQt5 type hints are not fully supported by static type checkers.
 Many of the linter warnings are false positives and can be safely ignored.
 """
 
-# type: ignore (PyQt5 attributes not recognized by linter)
+# type: ignore[attr-defined]
 
 from contextlib import suppress
 from datetime import datetime

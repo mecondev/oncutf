@@ -22,7 +22,7 @@ Classes:
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from oncutf.core.pyqt_imports import Qt
 from oncutf.utils.logger_factory import get_cached_logger
@@ -62,7 +62,7 @@ class ColumnConfig:
             ColumnAlignment.CENTER: Qt.AlignCenter,
             ColumnAlignment.RIGHT: Qt.AlignRight | Qt.AlignVCenter,
         }
-        return alignment_map[self.alignment]
+        return alignment_map[self.alignment]  # type: ignore[return-value]
 
 
 class UnifiedColumnService:
@@ -72,14 +72,14 @@ class UnifiedColumnService:
     replacing the complex multi-layer approach with a simple, cached service.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the service with empty cache."""
         self._config_cache: dict[str, ColumnConfig] | None = None
         self._visible_columns_cache: list[str] | None = None
         self._column_mapping_cache: dict[int, str] | None = None
         self._user_settings_cache: dict[str, Any] | None = None
 
-    def _get_main_window(self):
+    def _get_main_window(self) -> Any:
         """Get main window using multiple fallback methods."""
         # Method 1: Try application context
         try:
@@ -97,8 +97,8 @@ class UnifiedColumnService:
             from oncutf.core.pyqt_imports import QApplication
 
             app = QApplication.instance()
-            if app:
-                for widget in app.allWidgets():
+            if app and hasattr(app, "allWidgets"):
+                for widget in cast("Any", app).allWidgets():
                     if widget.__class__.__name__ == "MainWindow":
                         return widget
         except (ImportError, AttributeError, RuntimeError):
@@ -119,6 +119,7 @@ class UnifiedColumnService:
         if self._config_cache is None:
             self._load_configuration()
 
+        assert self._config_cache is not None
         return self._config_cache.get(column_key)
 
     def get_all_columns(self) -> dict[str, ColumnConfig]:
@@ -126,6 +127,7 @@ class UnifiedColumnService:
         if self._config_cache is None:
             self._load_configuration()
 
+        assert self._config_cache is not None
         return self._config_cache.copy()
 
     def get_visible_columns(self) -> list[str]:
@@ -133,6 +135,7 @@ class UnifiedColumnService:
         if self._visible_columns_cache is None:
             self._compute_visible_columns()
 
+        assert self._visible_columns_cache is not None
         return self._visible_columns_cache.copy()
 
     def get_column_mapping(self) -> dict[int, str]:
@@ -145,6 +148,7 @@ class UnifiedColumnService:
         if self._column_mapping_cache is None:
             self._compute_column_mapping()
 
+        assert self._column_mapping_cache is not None
         return self._column_mapping_cache.copy()
 
     def get_column_width(self, column_key: str) -> int:
@@ -231,11 +235,11 @@ class UnifiedColumnService:
 
                 config = ColumnConfig(
                     key=key,
-                    title=raw_config["title"],
-                    default_visible=raw_config["default_visible"],
-                    removable=raw_config["removable"],
-                    width=raw_config["width"],
-                    min_width=raw_config["min_width"],
+                    title=str(raw_config.get("title", key)),
+                    default_visible=bool(raw_config.get("default_visible", True)),
+                    removable=bool(raw_config.get("removable", True)),
+                    width=int(cast("Any", raw_config.get("width", 100))),
+                    min_width=int(cast("Any", raw_config.get("min_width", 50))),
                     alignment=alignment,
                 )
 
@@ -256,7 +260,11 @@ class UnifiedColumnService:
         user_settings = self._get_user_settings()
         column_visibility = user_settings.get("file_table_columns", {})
 
-        visible_columns = []
+        visible_columns: list[str] = []
+
+        if self._config_cache is None:
+            self._visible_columns_cache = []
+            return
 
         for key, config in self._config_cache.items():
             # Use user setting if available, otherwise use default
@@ -270,6 +278,8 @@ class UnifiedColumnService:
 
         config_order = list(FILE_TABLE_COLUMN_CONFIG.keys())
         visible_columns.sort(key=lambda x: config_order.index(x) if x in config_order else 999)
+
+        self._visible_columns_cache = visible_columns
 
         self._visible_columns_cache = visible_columns
         logger.debug("[UnifiedColumnService] Computed visible columns: %s", visible_columns)

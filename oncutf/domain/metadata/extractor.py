@@ -91,7 +91,7 @@ class MetadataExtractor:
             from oncutf.services.registry import get_service_registry
 
             registry = get_service_registry()
-            return registry.get(MetaProto)  # type: ignore[type-abstract]
+            return registry.get(MetaProto)
         except ImportError:
             logger.debug("ServiceRegistry not available, using fallback")
             return None
@@ -103,7 +103,7 @@ class MetadataExtractor:
             from oncutf.services.registry import get_service_registry
 
             registry = get_service_registry()
-            return registry.get(HashProto)  # type: ignore[type-abstract]
+            return registry.get(HashProto)
         except ImportError:
             logger.debug("ServiceRegistry not available, using fallback")
             return None

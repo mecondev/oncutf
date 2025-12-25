@@ -17,6 +17,7 @@ Functions:
 import os
 import platform
 from collections.abc import Callable
+from typing import Any
 
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -105,8 +106,8 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
 
 def build_rename_plan(
-    _file_items: list[object], preview_pairs: list[tuple[str, str]], folder_path: str
-) -> list[dict]:
+    _file_items: list[Any], preview_pairs: list[tuple[str, str]], folder_path: str
+) -> list[dict[str, Any]]:
     """Builds a plan of rename operations with conflict detection.
 
     Args:
@@ -150,8 +151,8 @@ def build_rename_plan(
 
 
 def resolve_rename_conflicts(
-    plan: list[dict], ask_user_callback: Callable[[str, str], tuple[str, bool]]
-) -> list[dict]:
+    plan: list[dict[str, Any]], ask_user_callback: Callable[[str, str], tuple[str, bool]]
+) -> list[dict[str, Any]]:
     """Resolves rename conflicts by prompting the user.
 
     Args:
@@ -189,7 +190,7 @@ def resolve_rename_conflicts(
     return resolved_plan
 
 
-def execute_rename_plan(plan: list[dict]) -> int:
+def execute_rename_plan(plan: list[dict[str, Any]]) -> int:
     """Executes the rename plan based on resolved actions.
 
     Args:
@@ -224,7 +225,7 @@ def execute_rename_plan(plan: list[dict]) -> int:
 
 
 def get_preview_pairs(
-    file_items: list[object], rename_function: Callable[[object], str]
+    file_items: list[Any], rename_function: Callable[[Any], str]
 ) -> list[tuple[str, str]]:
     """Generates preview name pairs (old, new) for the selected files using rename logic.
 

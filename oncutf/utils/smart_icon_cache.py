@@ -24,7 +24,15 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from oncutf.config import ICON_SIZES
-from oncutf.core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
+from oncutf.core.pyqt_imports import (
+    QIcon,
+    QObject,
+    QPixmap,
+    QSize,
+    Qt,
+    QTimer,
+    pyqtSignal,
+)
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -71,7 +79,9 @@ class SmartIconCache(QObject):
     cache_miss = pyqtSignal(str)  # cache_key
     cache_evicted = pyqtSignal(str)  # cache_key
 
-    def __init__(self, max_entries: int = 500, max_memory_mb: float = 50.0, parent=None):
+    def __init__(
+        self, max_entries: int = 500, max_memory_mb: float = 50.0, parent: QObject | None = None
+    ) -> None:
         """Initialize smart icon cache.
 
         Args:
@@ -142,7 +152,7 @@ class SmartIconCache(QObject):
             "[SmartIconCache] Initialized with %d entries, %dMB limit", max_entries, max_memory_mb
         )
 
-    def get_icon(self, name: str, size: QSize = None, theme: str = None) -> QIcon:
+    def get_icon(self, name: str, size: QSize | None = None, theme: str | None = None) -> QIcon:
         """Get icon from cache or load it.
 
         Args:
@@ -195,8 +205,8 @@ class SmartIconCache(QObject):
                     # Scale to desired size with smooth transformation
                     scaled_pixmap = pixmap.scaled(
                         size,
-                        aspectRatioMode=1,  # Qt.KeepAspectRatio
-                        transformMode=1,  # Qt.SmoothTransformation
+                        aspectRatioMode=Qt.KeepAspectRatio,
+                        transformMode=Qt.SmoothTransformation,
                     )
                     icon = QIcon(scaled_pixmap)
                     logger.debug(
@@ -237,7 +247,7 @@ class SmartIconCache(QObject):
 
         return None
 
-    def _store_icon(self, cache_key: str, icon: QIcon, name: str, size: QSize, theme: str):
+    def _store_icon(self, cache_key: str, icon: QIcon, name: str, size: QSize, theme: str) -> None:
         """Store icon in cache."""
         try:
             # Calculate approximate memory size
@@ -263,7 +273,7 @@ class SmartIconCache(QObject):
         pixels = size.width() * size.height()
         return pixels * 4 + 1024  # Add 1KB overhead
 
-    def _evict_if_needed(self):
+    def _evict_if_needed(self) -> None:
         """Evict entries if cache limits are exceeded."""
         # Check entry count limit
         while len(self._cache) > self.max_entries:
@@ -275,7 +285,7 @@ class SmartIconCache(QObject):
             self._evict_oldest()
             current_memory_mb = self.get_memory_usage_mb()
 
-    def _evict_oldest(self):
+    def _evict_oldest(self) -> None:
         """Evict the least recently used entry."""
         if self._cache:
             cache_key, entry = self._cache.popitem(last=False)
@@ -283,7 +293,7 @@ class SmartIconCache(QObject):
             self.cache_evicted.emit(cache_key)
             logger.debug("[SmartIconCache] Evicted: %s", cache_key)
 
-    def preload_common_icons(self, theme: str = None):
+    def preload_common_icons(self, theme: str | None = None) -> None:
         """Preload commonly used icons."""
         if theme is None:
             theme = self._current_theme
@@ -300,7 +310,7 @@ class SmartIconCache(QObject):
 
         logger.info("[SmartIconCache] Preloaded %d icons", self._preloads)
 
-    def set_theme(self, theme: str):
+    def set_theme(self, theme: str) -> None:
         """Set current theme and optionally preload icons."""
         if theme != self._current_theme:
             logger.info(
@@ -316,7 +326,7 @@ class SmartIconCache(QObject):
             # Preload icons for new theme
             self.preload_common_icons(theme)
 
-    def _clear_theme_cache(self, old_theme: str):
+    def _clear_theme_cache(self, old_theme: str) -> None:
         """Clear cache entries for a specific theme."""
         with self._lock:
             keys_to_remove = []
@@ -359,7 +369,7 @@ class SmartIconCache(QObject):
                 "current_theme": self._current_theme,
             }
 
-    def _perform_cleanup(self):
+    def _perform_cleanup(self) -> None:
         """Perform periodic cleanup."""
         try:
             current_time = time.time()
@@ -386,7 +396,7 @@ class SmartIconCache(QObject):
         except Exception as e:
             logger.error("[SmartIconCache] Error during cleanup: %s", e)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all cached icons."""
         with self._lock:
             self._cache.clear()
@@ -396,7 +406,7 @@ class SmartIconCache(QObject):
             self._preloads = 0
             logger.info("[SmartIconCache] Cache cleared")
 
-    def remove_icon(self, name: str, size: QSize = None, theme: str = None) -> bool:
+    def remove_icon(self, name: str, size: QSize | None = None, theme: str | None = None) -> bool:
         """Remove specific icon from cache."""
         if size is None:
             size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
@@ -411,7 +421,7 @@ class SmartIconCache(QObject):
                 return True
             return False
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown icon cache."""
         if self._cleanup_timer.isActive():
             self._cleanup_timer.stop()
@@ -442,16 +452,16 @@ def initialize_smart_icon_cache(
 
 
 # Convenience functions for easy integration
-def get_cached_icon(name: str, size: QSize = None, theme: str = None) -> QIcon:
+def get_cached_icon(name: str, size: QSize | None = None, theme: str | None = None) -> QIcon:
     """Get icon using the global smart cache."""
     return get_smart_icon_cache().get_icon(name, size, theme)
 
 
-def preload_icons(theme: str = None):
+def preload_icons(theme: str | None = None) -> None:
     """Preload common icons using the global smart cache."""
     get_smart_icon_cache().preload_common_icons(theme)
 
 
-def set_icon_theme(theme: str):
+def set_icon_theme(theme: str) -> None:
     """Set icon theme using the global smart cache."""
     get_smart_icon_cache().set_theme(theme)

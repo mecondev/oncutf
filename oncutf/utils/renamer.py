@@ -19,8 +19,10 @@ validator (object): Object to validate filename text.
 
 import os
 from collections.abc import Callable
+from typing import Any
 
 from oncutf.core.pyqt_imports import QWidget
+from oncutf.core.type_aliases import MetadataCacheProtocol, MetadataDict
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
 
@@ -51,12 +53,12 @@ class Renamer:
     def __init__(
         self,
         files: list[FileItem],
-        modules_data: list[dict],
-        metadata_cache: dict,
-        post_transform: dict | None = None,
+        modules_data: list[dict[str, Any]],
+        metadata_cache: MetadataCacheProtocol,
+        post_transform: dict[str, Any] | None = None,
         parent: QWidget | None = None,
-        conflict_callback: Callable[[QWidget, str], str] | None = None,
-        validator: object | None = None,
+        conflict_callback: Callable[[QWidget | None, str], str] | None = None,
+        validator: Callable[[str], tuple[bool, str | None]] | None = None,
     ) -> None:
         """Initializes the Renamer with required inputs for batch renaming.
 
@@ -113,7 +115,7 @@ class Renamer:
                 new_basename = new_name
 
             # Apply name transform (case, separator) to basename only - same logic as preview
-            if NameTransformModule.is_effective(self.post_transform):
+            if NameTransformModule.is_effective_data(self.post_transform):
                 new_basename = NameTransformModule.apply_from_data(
                     self.post_transform, new_basename
                 )
@@ -132,15 +134,16 @@ class Renamer:
         # Step 3: Apply rename for each file
         for file in self.files:
             src = file.full_path
-            if src is None:
-                logger.error("File %s has no full_path", file.filename)
-                results.append(RenameResult("", "", success=False, error="No full path"))
-                continue
+            # full_path is non-optional, no need for None check
 
             dst = os.path.join(os.path.dirname(src), old_to_new[src])
             new_filename = os.path.basename(dst)
 
             # Validation
+            if self.validator is None:
+                results.append(RenameResult(src, dst, success=False, error="Validator missing"))
+                continue
+
             is_valid, error_msg = self.validator(new_filename)
             if not is_valid:
                 logger.warning("Invalid filename: %s - %s", new_filename, error_msg)
@@ -152,6 +155,13 @@ class Renamer:
                 if skip_all:
                     results.append(
                         RenameResult(src, dst, success=False, skip_reason="conflict (skip all)")
+                    )
+                    continue
+
+                if self.conflict_callback is None:
+                    # Default behavior if no callback: skip
+                    results.append(
+                        RenameResult(src, dst, success=False, skip_reason="conflict (no callback)")
                     )
                     continue
 
@@ -231,7 +241,7 @@ class Renamer:
                 if result.success:
                     # Check if metadata exists for the old path
                     metadata = self.metadata_cache.get(result.old_path)
-                    if metadata and isinstance(metadata, dict):
+                    if metadata:
                         clean_meta = filter_metadata_safe(metadata)
                         clean_meta["FileName"] = os.path.basename(result.new_path)
                         self.metadata_cache.set(result.new_path, clean_meta)
@@ -253,7 +263,7 @@ class Renamer:
         return results
 
 
-def filter_metadata_safe(metadata: dict) -> dict:
+def filter_metadata_safe(metadata: MetadataDict) -> MetadataDict:
     """Returns a shallow copy of metadata with only JSON-safe primitive fields.
     Excludes objects like preview_map, Qt instances, and recursive structures.
 

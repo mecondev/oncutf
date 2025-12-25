@@ -14,7 +14,6 @@ from typing import Any
 
 from oncutf.core.pyqt_imports import (
     QAction,
-    QApplication,
     QMenu,
     Qt,
     QVBoxLayout,
@@ -33,8 +32,7 @@ logger = get_cached_logger(__name__)
 
 
 class SpecifiedTextModule(BaseRenameModule):
-    """A module for inserting user-defined text in filenames.
-    """
+    """A module for inserting user-defined text in filenames."""
 
     updated = pyqtSignal(object)
 
@@ -42,7 +40,7 @@ class SpecifiedTextModule(BaseRenameModule):
         super().__init__(parent)
 
         # Store reference to current file for "Original Name" feature
-        self._current_file = None
+        self._current_file: Any | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
@@ -189,9 +187,8 @@ class SpecifiedTextModule(BaseRenameModule):
         menu.exec_(global_pos)
 
     def _insert_original_name(self) -> None:
-        """Insert the original filename (without extension) at the current cursor position.
-        """
-        if not self._current_file:
+        """Insert the original filename (without extension) at the current cursor position."""
+        if self._current_file is None:
             return
 
         # Get the original filename without extension
@@ -248,7 +245,15 @@ class SpecifiedTextModule(BaseRenameModule):
                 self.text_input.setProperty("info", False)
 
         # Force style update
-        style = QApplication.instance().style()
+        from typing import cast
+
+        from PyQt5.QtWidgets import QApplication
+
+        app_instance = QApplication.instance()
+        if app_instance is None:
+            return
+        app = cast("QApplication", app_instance)
+        style = app.style()
         if style:
             style.unpolish(self.text_input)
             style.polish(self.text_input)
@@ -292,7 +297,9 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.clear()
         self.text_input.reset_validation_state()  # Reset ValidatedLineEdit state
 
-    def apply(self, file_item: Any, index: int = 0, metadata_cache: dict[str, Any] | None = None) -> str:
+    def apply(
+        self, file_item: Any, index: int = 0, metadata_cache: dict[str, Any] | None = None
+    ) -> str:
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
@@ -328,5 +335,5 @@ class SpecifiedTextModule(BaseRenameModule):
         return text
 
     @staticmethod
-    def is_effective(data: dict[str, Any]) -> bool:
+    def is_effective_data(data: dict[str, Any]) -> bool:
         return bool(data.get("text", ""))

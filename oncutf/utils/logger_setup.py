@@ -22,8 +22,7 @@ from oncutf.utils.logger_file_helper import add_file_handler
 
 
 def safe_text(text: str) -> str:
-    """Replaces unsupported Unicode characters with ASCII-safe alternatives.
-    """
+    """Replaces unsupported Unicode characters with ASCII-safe alternatives."""
     replacements = {
         "\u2192": "->",  # → Right arrow
         "\u2014": "--",  # — em dash
@@ -35,8 +34,7 @@ def safe_text(text: str) -> str:
 
 
 def safe_log(logger_func, message: str):
-    """Wrapper for logger functions that catches encoding issues and falls back to ASCII.
-    """
+    """Wrapper for logger functions that catches encoding issues and falls back to ASCII."""
     try:
         logger_func(message)
     except UnicodeEncodeError:
@@ -134,8 +132,11 @@ class ConfigureLogger:
         """Sets up console handler with UTF-8-safe formatting and DevOnlyFilter."""
         console_handler = logging.StreamHandler(sys.stdout)
 
+        from io import TextIOWrapper
+
         with contextlib.suppress(Exception):
-            console_handler.stream.reconfigure(encoding="utf-8")
+            if isinstance(console_handler.stream, TextIOWrapper):
+                console_handler.stream.reconfigure(encoding="utf-8")
 
         console_handler.setLevel(level)
 

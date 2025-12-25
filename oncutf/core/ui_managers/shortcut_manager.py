@@ -14,7 +14,7 @@ Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 """
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import Qt
 from oncutf.utils.logger_factory import get_cached_logger
@@ -46,8 +46,7 @@ class ShortcutManager:
         logger.debug("[ShortcutManager] Initialized", extra={"dev_only": True})
 
     def clear_file_table_shortcut(self) -> None:
-        """Clear file table triggered by Shift+Escape shortcut.
-        """
+        """Clear file table triggered by Shift+Escape shortcut."""
         logger.info("[MainWindow] CLEAR TABLE: Shift+Escape key pressed")
 
         if not self.main_window.file_model.files:
@@ -79,8 +78,7 @@ class ShortcutManager:
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 
     def undo_metadata_operation(self) -> None:
-        """Undo the last metadata operation triggered by Ctrl+Z shortcut.
-        """
+        """Undo the last metadata operation triggered by Ctrl+Z shortcut."""
         logger.info("[MainWindow] UNDO: Ctrl+Z key pressed")
 
         try:
@@ -122,8 +120,7 @@ class ShortcutManager:
                 )
 
     def redo_metadata_operation(self) -> None:
-        """Redo the last undone metadata operation triggered by Ctrl+Shift+Z shortcut.
-        """
+        """Redo the last undone metadata operation triggered by Ctrl+Shift+Z shortcut."""
         logger.info("[MainWindow] REDO: Ctrl+Shift+Z key pressed")
 
         try:
@@ -165,8 +162,7 @@ class ShortcutManager:
                 )
 
     def show_history_dialog(self) -> None:
-        """Show the command history dialog triggered by Ctrl+Shift+Z shortcut.
-        """
+        """Show the command history dialog triggered by Ctrl+Shift+Z shortcut."""
         logger.info("[MainWindow] HISTORY: Ctrl+Shift+Z key pressed")
 
         try:
@@ -187,8 +183,7 @@ class ShortcutManager:
                 )
 
     def show_rename_history_dialog(self) -> None:
-        """Show the rename history dialog.
-        """
+        """Show the rename history dialog."""
         logger.info("[MainWindow] RENAME_HISTORY: Showing rename history dialog")
 
         try:
@@ -349,8 +344,7 @@ class ShortcutManager:
                 )
 
     def auto_color_by_folder_shortcut(self) -> None:
-        """Auto-color files by folder triggered by Ctrl+Shift+C shortcut.
-        """
+        """Auto-color files by folder triggered by Ctrl+Shift+C shortcut."""
         logger.info("[MainWindow] AUTO_COLOR: Ctrl+Shift+C key pressed")
 
         if hasattr(self.main_window, "auto_color_by_folder"):
@@ -358,7 +352,7 @@ class ShortcutManager:
         else:
             logger.warning("[MainWindow] AUTO_COLOR: Method not found in main window")
 
-    def get_shortcut_status(self) -> dict:
+    def get_shortcut_status(self) -> dict[str, Any]:
         """Get current shortcut and initialization status.
 
         Returns:

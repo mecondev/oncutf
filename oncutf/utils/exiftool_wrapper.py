@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import threading
+from typing import Any
 
 # Initialize Logger
 from oncutf.utils.logger_factory import get_cached_logger
@@ -50,7 +51,7 @@ class ExifToolWrapper:
         with contextlib.suppress(Exception):
             self.close()
 
-    def get_metadata(self, file_path: str, use_extended: bool = False) -> dict:
+    def get_metadata(self, file_path: str, use_extended: bool = False) -> dict[str, Any]:
         """Get metadata for a single file using exiftool.
 
         Args:
@@ -69,7 +70,9 @@ class ExifToolWrapper:
             logger.error("[ExifToolWrapper] Error getting metadata for %s: %s", file_path, e)
             return {}
 
-    def _get_metadata_with_exiftool(self, file_path: str, use_extended: bool = False) -> dict:
+    def _get_metadata_with_exiftool(
+        self, file_path: str, use_extended: bool = False
+    ) -> dict[str, Any]:
         """Execute exiftool command and parse results."""
         logger.info(
             "[ExifToolWrapper] _get_metadata_with_exiftool: use_extended=%s for %s",
@@ -85,9 +88,8 @@ class ExifToolWrapper:
             )  # Convert None to empty dict for consistency
         return result if result is not None else {}
 
-    def _get_metadata_fast(self, file_path: str) -> dict | None:
-        """Execute ExifTool with standard options for fast metadata extraction.
-        """
+    def _get_metadata_fast(self, file_path: str) -> dict[str, Any] | None:
+        """Execute ExifTool with standard options for fast metadata extraction."""
         # Normalize path for Windows compatibility
         from oncutf.utils.path_normalizer import normalize_path
 
@@ -147,7 +149,8 @@ class ExifToolWrapper:
             self._consecutive_errors += 1
             return None
 
-    def _parse_json_output(self, output: str) -> dict | None:
+    @staticmethod
+    def _parse_json_output(output: str) -> dict[str, Any] | None:
         """Parse exiftool JSON output and return metadata dictionary."""
         try:
             if not output.strip():
@@ -173,7 +176,9 @@ class ExifToolWrapper:
             logger.error("[ExifToolWrapper] Error parsing output: %s", e)
             return None
 
-    def get_metadata_batch(self, file_paths: list[str], use_extended: bool = False) -> list[dict]:
+    def get_metadata_batch(
+        self, file_paths: list[str], use_extended: bool = False
+    ) -> list[dict[str, Any]]:
         """Load metadata for multiple files in a single ExifTool call (10x faster than individual calls).
 
         Args:
@@ -236,7 +241,7 @@ class ExifToolWrapper:
             logger.error("[ExifToolWrapper] Batch metadata error: %s", e)
             return [{} for _ in file_paths]
 
-    def _get_metadata_extended(self, file_path: str) -> dict | None:
+    def _get_metadata_extended(self, file_path: str) -> dict[str, Any] | None:
         """Uses a one-shot subprocess call with -ee for extended metadata.
         Parses and merges embedded entries, marks result as extended.
         """
@@ -370,7 +375,7 @@ class ExifToolWrapper:
             logger.error("[ExtendedReader] Failed to read extended metadata: %s", e)
             return None
 
-    def write_metadata(self, file_path: str, metadata_changes: dict) -> bool:
+    def write_metadata(self, file_path: str, metadata_changes: dict[str, Any]) -> bool:
         """Writes metadata changes to a file using exiftool.
 
         Args:
@@ -532,7 +537,7 @@ class ExifToolWrapper:
             except Exception:
                 pass
         finally:
-            self.process = None
+            self.process = None  # type: ignore[assignment]
             logger.debug("[ExifToolWrapper] ExifTool wrapper closed", extra={"dev_only": True})
 
     @staticmethod
@@ -541,7 +546,7 @@ class ExifToolWrapper:
         try:
             import time
 
-            import psutil  # type: ignore
+            import psutil
 
             exiftool_processes = []
             for proc in psutil.process_iter(["pid", "name", "cmdline"]):
@@ -631,7 +636,7 @@ class ExifToolWrapper:
         """
         return self._last_error
 
-    def health_check(self) -> dict[str, any]:
+    def health_check(self) -> dict[str, Any]:
         """Perform comprehensive health check.
 
         Returns:
@@ -652,34 +657,33 @@ class ExifToolWrapper:
                 process_status = (
                     "running" if is_process_alive else f"terminated (code: {poll_result})"
                 )
-            else:
-                process_status = "not initialized"
+            # Removed unreachable else branch per mypy analysis
         except Exception as e:
             process_status = f"error: {e}"
 
-            return {
-                "healthy": self.is_healthy(),
-                "process_alive": is_process_alive,
-                "process_status": process_status,
-                "last_error": self._last_error,
-                "consecutive_errors": self._consecutive_errors,
-                "last_check": self._last_health_check,
-            }
+        return {
+            "healthy": self.is_healthy(),
+            "process_alive": is_process_alive,
+            "process_status": process_status,
+            "last_error": self._last_error,
+            "consecutive_errors": self._consecutive_errors,
+            "last_check": self._last_health_check,
+        }
 
-        @staticmethod
-        def cleanup_orphaned_processes() -> None:
-            """Clean up orphaned ExifTool processes."""
-            try:
-                ExifToolWrapper.force_cleanup_all_exiftool_processes()
-            except Exception as e:
-                if "exiftool" in str(e).lower():
-                    logger.warning(
-                        "[ExifToolWrapper] Error during ExifTool cleanup: %s",
-                        e,
-                        extra={"dev_only": True},
-                    )
-                else:
-                    logger.debug(
-                        "[ExifToolWrapper] No ExifTool processes to clean up",
-                        extra={"dev_only": True},
-                    )
+    @staticmethod
+    def cleanup_orphaned_processes() -> None:
+        """Clean up orphaned ExifTool processes."""
+        try:
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        except Exception as e:
+            if "exiftool" in str(e).lower():
+                logger.warning(
+                    "[ExifToolWrapper] Error during ExifTool cleanup: %s",
+                    e,
+                    extra={"dev_only": True},
+                )
+            else:
+                logger.debug(
+                    "[ExifToolWrapper] No ExifTool processes to clean up",
+                    extra={"dev_only": True},
+                )

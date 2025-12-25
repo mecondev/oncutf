@@ -41,20 +41,21 @@ class MetadataEntry:
     modified: bool = False
     timestamp: float = field(default_factory=time.time)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate metadata after initialization."""
-        # Ensure data is a dict
-        if not isinstance(self.data, dict):
+        # Ensure data is a dict (defensive check)
+        data_view: Any = self.data
+        if not isinstance(data_view, dict):
             logger.warning(
                 "[MetadataEntry] Invalid data type: %s, converting to dict",
-                type(self.data),
+                type(data_view),
             )
             self.data = {}
 
         # Clean internal markers from data if present
         self._clean_internal_markers()
 
-    def _clean_internal_markers(self):
+    def _clean_internal_markers(self) -> None:
         """Remove internal markers like __extended__, __modified__ from data."""
         markers = ["__extended__", "__modified__"]
         for marker in markers:

@@ -229,6 +229,56 @@ class CustomMessageDialog(QDialog):
         dlg.exec_()
 
     @staticmethod
+    def show_warning(parent: QWidget | None, title: str, message: str) -> None:
+        """Show a warning dialog with an OK button.
+
+        Parameters
+        ----------
+        parent : QWidget | None
+            Parent widget
+        title : str
+            Dialog title
+        message : str
+            Warning message
+
+        Returns
+        -------
+        None
+
+        """
+        dlg = CustomMessageDialog(title, message, ["OK"], parent)
+        if parent:
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
+            ensure_dialog_on_parent_screen(dlg, parent)
+        dlg.exec_()
+
+    @staticmethod
+    def show_error(parent: QWidget | None, title: str, message: str) -> None:
+        """Show an error dialog with an OK button.
+
+        Parameters
+        ----------
+        parent : QWidget | None
+            Parent widget
+        title : str
+            Dialog title
+        message : str
+            Error message
+
+        Returns
+        -------
+        None
+
+        """
+        dlg = CustomMessageDialog(title, message, ["OK"], parent)
+        if parent:
+            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
+            ensure_dialog_on_parent_screen(dlg, parent)
+        dlg.exec_()
+
+    @staticmethod
     def unsaved_changes(
         parent: QWidget,
         title: str = "Unsaved Changes",
@@ -269,7 +319,7 @@ class CustomMessageDialog(QDialog):
             "Cancel": "cancel",
         }
 
-        return button_map.get(dlg.selected, "cancel")
+        return button_map.get(dlg.selected or "cancel", "cancel")
 
     def set_progress(self, value: int, total: int = None):
         """Updates the progress bar with the current progress value.
@@ -332,7 +382,7 @@ class CustomMessageDialog(QDialog):
             "Cancel": "cancel",
         }
 
-        return label_map.get(dlg.selected, "cancel")  # fallback = cancel
+        return label_map.get(dlg.selected or "cancel", "cancel")  # fallback = cancel
 
     def set_message(self, msg: str) -> None:
         """Updates the dialog's label with the given message.
@@ -376,8 +426,7 @@ class CustomMessageDialog(QDialog):
         return dlg
 
     def set_progress_range(self, total: int) -> None:
-        """Sets the progress bar range to (0, total).
-        """
+        """Sets the progress bar range to (0, total)."""
         if self.progress_bar:
             self.progress_bar.setRange(0, total)
             self.progress_bar.setValue(0)
@@ -418,8 +467,7 @@ class CustomMessageDialog(QDialog):
         return buttons.get(selected, "cancel"), apply_to_all
 
     def closeEvent(self, event):
-        """Handles window close (X) button by treating it as 'Cancel'.
-        """
+        """Handles window close (X) button by treating it as 'Cancel'."""
         self.selected = "Cancel"
         event.accept()
 

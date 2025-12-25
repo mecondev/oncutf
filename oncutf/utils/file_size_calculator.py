@@ -10,13 +10,14 @@ Used by progress dialogs to show size information during operations.
 
 import os
 from pathlib import Path
+from typing import Any
 
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-def calculate_files_total_size(file_items: list) -> int:
+def calculate_files_total_size(file_items: list[Any]) -> int:
     """Calculate total size of a list of file items with optimized caching.
 
     Args:
@@ -65,7 +66,7 @@ def calculate_files_total_size(file_items: list) -> int:
     return total_size
 
 
-def calculate_processed_size(file_items: list, current_index: int) -> int:
+def calculate_processed_size(file_items: list[Any], current_index: int) -> int:
     """Calculate size of files processed so far.
 
     Args:

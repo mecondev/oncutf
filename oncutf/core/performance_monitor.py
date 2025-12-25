@@ -42,10 +42,10 @@ class PerformanceStats:
     error_count: int = 0
 
     # Recent performance (last 10 operations)
-    recent_durations: deque = field(default_factory=lambda: deque(maxlen=10))
-    recent_file_counts: deque = field(default_factory=lambda: deque(maxlen=10))
+    recent_durations: deque[float] = field(default_factory=lambda: deque(maxlen=10))
+    recent_file_counts: deque[int] = field(default_factory=lambda: deque(maxlen=10))
 
-    def update(self, metric: "PerformanceMetric"):
+    def update(self, metric: "PerformanceMetric") -> None:
         """Update stats with new metric."""
         self.total_operations += 1
         self.total_duration += metric.duration
@@ -68,7 +68,7 @@ class PerformanceStats:
 class PerformanceMonitor:
     """Performance monitor for UnifiedRenameEngine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: list[PerformanceMetric] = []
         self.stats_by_operation: dict[str, PerformanceStats] = defaultdict(PerformanceStats)
         self.operation_timers: dict[str, float] = {}
@@ -168,25 +168,26 @@ class PerformanceMonitor:
 
     def get_performance_summary(self) -> dict[str, Any]:
         """Get comprehensive performance summary."""
+        stats = self.get_stats()
         return {
-            "total_operations": self.total_operations,
-            "average_time": self.get_average_time(),
-            "peak_time": self.peak_time,
-            "total_time": self.total_time,
-            "operation_counts": dict(self.operation_counts),
-            "recent_operations": self.recent_operations[-10:],  # Last 10 operations
+            "total_operations": stats.total_operations,
+            "average_time": stats.average_duration,
+            "total_time": stats.total_duration,
+            "total_files": stats.total_files,
+            "success_rate": stats.success_rate,
+            "error_count": stats.error_count,
         }
 
 
 class PerformanceDecorator:
     """Decorator for automatic performance monitoring."""
 
-    def __init__(self, monitor: PerformanceMonitor, operation_name: str):
+    def __init__(self, monitor: PerformanceMonitor, operation_name: str) -> None:
         self.monitor = monitor
         self.operation_name = operation_name
 
-    def __call__(self, func):
-        def wrapper(*args, **kwargs):
+    def __call__(self, func: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Start timing
             self.monitor.start_operation(self.operation_name)
 
@@ -228,6 +229,6 @@ def get_performance_monitor() -> PerformanceMonitor:
     return _performance_monitor
 
 
-def monitor_performance(operation_name: str):
+def monitor_performance(operation_name: str) -> Any:
     """Decorator for monitoring function performance."""
     return PerformanceDecorator(get_performance_monitor(), operation_name)

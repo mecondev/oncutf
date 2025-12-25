@@ -11,7 +11,7 @@ This manager centralizes initialization and setup operations including:
 - Status and display management
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -85,7 +85,7 @@ class InitializationManager:
         except Exception as e:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
-    def _on_files_changed(self, files: list) -> None:
+    def _on_files_changed(self, files: list[str]) -> None:
         """Handle files changed from ApplicationContext.
 
         This is called when FileStore updates its internal state (e.g., after USB unmount).
@@ -151,7 +151,7 @@ class InitializationManager:
             extra={"dev_only": True},
         )
 
-    def get_initialization_status(self) -> dict:
+    def get_initialization_status(self) -> dict[str, Any]:
         """Get current initialization status.
 
         Returns:

@@ -35,7 +35,7 @@ class InterFonts:
         "display_semibold": 600,
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.loaded_fonts: dict[str, int] = {}
         self.font_families: dict[str, str] = {}
         self._load_fonts_from_resources()
@@ -276,7 +276,7 @@ class InterFonts:
 inter_fonts = None
 
 
-def _get_inter_fonts():
+def _get_inter_fonts() -> InterFonts:
     """Get or create the global Inter fonts instance"""
     global inter_fonts
     if inter_fonts is None:

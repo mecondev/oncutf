@@ -9,6 +9,7 @@ Date: 2025-06-15
 """
 
 import os
+from typing import Any
 
 from oncutf.core.pyqt_imports import QModelIndex, Qt
 from oncutf.models.file_item import FileItem
@@ -83,7 +84,7 @@ class ApplicationService:
         return self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear)
 
     def load_single_item_from_drop(
-        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
     ) -> None:
         """Load single item from drop via FileLoadManager."""
         self.main_window.file_load_manager.load_single_item_from_drop(path, modifiers)
@@ -204,7 +205,10 @@ class ApplicationService:
     # =====================================
 
     def sort_by_column(
-        self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
+        self,
+        column: int,
+        order: Qt.SortOrder | None = None,
+        force_order: Qt.SortOrder | None = None,
     ) -> None:
         """Sort by column via TableManager."""
         self.main_window.table_manager.sort_by_column(column, order, force_order)
@@ -212,6 +216,37 @@ class ApplicationService:
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """Prepare file table via TableManager."""
         self.main_window.table_manager.prepare_file_table(file_items)
+
+    def _show_hash_results(self, hash_results: dict[str, str], was_cancelled: bool) -> None:
+        """Show hash calculation results."""
+        # This method is intended to be called by the hash calculation process
+        # It's not directly part of the ApplicationService public API but is used internally
+        # by the event handler manager.
+        if was_cancelled:
+            self.main_window.status_manager.set_validation_status(
+                "Hash calculation cancelled.", validation_type="warning", auto_reset=True
+            )
+            return
+
+        successful_hashes = {k: v for k, v in hash_results.items() if v != "Error"}
+        failed_hashes = {k: v for k, v in hash_results.items() if v == "Error"}
+
+        if successful_hashes:
+            self.main_window.status_manager.set_validation_status(
+                f"Calculated {len(successful_hashes)} hashes successfully.",
+                validation_type="success",
+                auto_reset=True,
+            )
+        if failed_hashes:
+            self.main_window.status_manager.set_validation_status(
+                f"Failed to calculate {len(failed_hashes)} hashes.",
+                validation_type="error",
+                auto_reset=True,
+            )
+        if not successful_hashes and not failed_hashes:
+            self.main_window.status_manager.set_validation_status(
+                "No hashes calculated.", validation_type="info", auto_reset=True
+            )
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """Clear file table via TableManager."""
@@ -244,6 +279,20 @@ class ApplicationService:
     def invert_selection(self) -> None:
         """Invert selection via SelectionManager."""
         self.main_window.selection_manager.invert_selection()
+
+    def _handle_compare_external(self, selected_files: list[FileItem]) -> None:
+        """Handle comparing selected files with external files."""
+        if not selected_files:
+            logger.info("[ApplicationService] No files selected for external comparison.")
+            self.main_window.status_manager.set_selection_status(
+                "No files selected for external comparison",
+                selected_count=0,
+                total_count=0,
+                auto_reset=True,
+            )
+            return
+
+        self.main_window.event_handler_manager.compare_ops.handle_compare_external(selected_files)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """Update preview from selection via SelectionManager."""
@@ -408,7 +457,9 @@ class ApplicationService:
         self.main_window.event_handler_manager.handle_table_context_menu(position)
 
     def handle_file_double_click(
-        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self,
+        index: QModelIndex,
+        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
     ) -> None:
         """Handle file double click via EventHandlerManager."""
         self.main_window.event_handler_manager.handle_file_double_click(index, modifiers)
@@ -457,7 +508,7 @@ class ApplicationService:
         """Get modifier flags via UtilityManager."""
         return self.main_window.utility_manager.get_modifier_flags()
 
-    def get_selected_rows_files(self) -> list:
+    def get_selected_rows_files(self) -> list[FileItem]:
         """Get selected rows as files via UtilityManager."""
         return self.main_window.utility_manager.get_selected_rows_files()
 
@@ -524,6 +575,29 @@ class ApplicationService:
 
         return []
 
+    def _check_files_have_hashes(self, files: list[FileItem] | None = None) -> bool:
+        """Check if all provided files already have hashes.
+
+        Args:
+            files: A list of FileItem objects to check. If None, checks all files in the model.
+
+        Returns:
+            True if all files have hashes, False otherwise.
+        """
+        files_to_check = files if files is not None else self.main_window.file_model.files
+
+        if not files_to_check:
+            return True  # No files to check, so implicitly all have hashes
+
+        from typing import cast
+
+
+        for file_item in files_to_check:
+            fi = cast("FileItem", file_item)
+            if not fi.hash_value:
+                return False
+        return True
+
     def confirm_large_files(self, files: list[FileItem]) -> bool:
         """Confirm large files via FileValidationManager and DialogManager."""
         from oncutf.core.file_validation_manager import OperationType
@@ -543,6 +617,15 @@ class ApplicationService:
 
         return True  # No confirmation needed
 
+    def _get_file_type_field_support(
+        self, file_item: FileItem, metadata: dict[str, Any]
+    ) -> set[str]:
+        """Determine which metadata fields are supported for a given file type.
+
+        This method is intended to be called by the metadata manager.
+        """
+        return self.main_window.metadata_manager.get_file_type_field_support(file_item, metadata)
+
     def prompt_file_conflict(self, target_path: str) -> str:
         """Prompt file conflict via DialogManager."""
         old_name = os.path.basename(target_path)
@@ -550,7 +633,7 @@ class ApplicationService:
         result = self.main_window.dialog_manager.prompt_file_conflict(old_name, new_name)
         return "overwrite" if result else "cancel"
 
-    def validate_operation_for_user(self, files: list[str], operation_type: str) -> dict:
+    def confirm_operation_for_user(self, files: list[str], operation_type: str) -> dict[str, Any]:
         """Validate operation for user via FileValidationManager."""
         from oncutf.core.file_validation_manager import OperationType
 
@@ -566,7 +649,7 @@ class ApplicationService:
         operation = operation_map.get(operation_type, OperationType.FILE_LOADING)
         return self.main_window.file_validation_manager.validate_operation_batch(files, operation)
 
-    def identify_moved_files(self, file_paths: list[str]) -> dict:
+    def identify_moved_files(self, file_paths: list[str]) -> dict[str, Any]:
         """Identify moved files via FileValidationManager."""
         moved_files = {}
 
@@ -613,6 +696,10 @@ class ApplicationService:
         return self.main_window.file_operations_manager.should_skip_folder_reload(
             folder_path, self.main_window.current_folder_path, force
         )
+
+    def _is_video_file(self, file_item: FileItem, metadata: dict[str, Any]) -> bool:
+        """Check if the given file item is a video file based on its metadata."""
+        return self.main_window.metadata_manager.is_video_file(file_item, metadata)
 
     def has_deep_content(self, folder_path: str) -> bool:
         """Check if folder has deep content."""
@@ -675,7 +762,7 @@ def get_application_service(main_window=None) -> ApplicationService | None:
     return _application_service_instance
 
 
-def initialize_application_service(main_window) -> ApplicationService:
+def initialize_application_service(main_window: Any) -> ApplicationService | None:
     """Initialize the global application service.
 
     Args:

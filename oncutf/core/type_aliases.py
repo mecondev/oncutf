@@ -18,7 +18,21 @@ from typing import Any, Protocol, runtime_checkable
 MetadataDict = dict[str, Any]
 
 # The metadata cache - mapping of normalized file path to metadata dict
-MetadataCache = dict[str, MetadataDict]
+MetadataCacheMap = dict[str, MetadataDict]
+MetadataCache = MetadataCacheMap  # Alias for backward compatibility
+
+
+@runtime_checkable
+class MetadataCacheProtocol(Protocol):
+    """Protocol for metadata cache providers (e.g. PersistentMetadataCache)."""
+
+    def get(self, file_path: str) -> MetadataDict:
+        """Get metadata for a file."""
+        ...
+
+    def set(self, file_path: str, metadata: MetadataDict, **kwargs: Any) -> None:
+        """Store metadata for a file."""
+        ...
 
 
 # =============================================================================

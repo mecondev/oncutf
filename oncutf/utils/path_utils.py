@@ -15,6 +15,9 @@ When frozen (compiled to exe), this module uses sys._MEIPASS to locate bundled r
 
 import sys
 from pathlib import Path
+from typing import Any, TypeVar
+
+T = TypeVar("T")
 
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -256,7 +259,9 @@ def paths_equal(path1: str, path2: str) -> bool:
         return norm1 == norm2
 
 
-def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path") -> object | None:
+def find_file_by_path[T](
+    files: list[T], target_path: str, path_attr: str = "full_path"
+) -> T | None:
     """Find a file object in a list by comparing paths with normalization.
 
     Args:
@@ -285,7 +290,7 @@ def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path
     return None
 
 
-def find_parent_with_attribute(widget, attribute_name: str):
+def find_parent_with_attribute(widget: Any, attribute_name: str) -> Any:
     """Unified function to find parent widget with specific attribute.
 
     Args:
@@ -306,3 +311,25 @@ def find_parent_with_attribute(widget, attribute_name: str):
         parent = parent.parent() if hasattr(parent, "parent") else None
 
     return None
+
+
+def get_user_data_dir(app_name: str = "oncutf") -> Path:
+    """Return a platform-appropriate user data directory.
+
+    This is used for caches, databases, and persistent user data.
+
+    Args:
+        app_name: Application name used for directory naming.
+
+    Returns:
+        Path to the user data directory.
+    """
+    if sys.platform.startswith("win"):
+        base = Path.home() / "AppData" / "Local"
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        # Linux / Unix
+        base = Path.home() / ".local" / "share"
+
+    return base / app_name

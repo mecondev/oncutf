@@ -23,7 +23,7 @@ class LRUCache:
 
     def __init__(self, maxsize: int = 1000):
         self.maxsize = maxsize
-        self.cache = OrderedDict()
+        self.cache: OrderedDict[str, Any] = OrderedDict()
         self.hits = 0
         self.misses = 0
 
@@ -74,11 +74,11 @@ class LRUCache:
 class DiskCache:
     """Simple disk cache for large datasets."""
 
-    def __init__(self, cache_dir: str = None):
+    def __init__(self, cache_dir: str | None = None):
         if cache_dir is None:
             cache_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "cache")
 
-        self.cache_dir = cache_dir
+        self.cache_dir: str = cache_dir
         os.makedirs(cache_dir, exist_ok=True)
 
         self.hits = 0
@@ -216,7 +216,7 @@ class AdvancedCacheManager:
             "overall_hit_rate": (memory_stats["hit_rate"] + disk_stats["hit_rate"]) / 2,
         }
 
-    def smart_invalidation(self, changed_files: list) -> None:
+    def smart_invalidation(self, changed_files: list[str]) -> None:
         """Smart cache invalidation for changed files."""
         if not changed_files:
             return
@@ -236,8 +236,10 @@ class AdvancedCacheManager:
         # Invalidate matching cache entries
         invalidated_count = 0
         for pattern in patterns:
-            if self.memory_cache.get(pattern) is not None:
-                self.memory_cache.cache.pop(pattern, None)
+            # check the actual internal cache keys
+            keys_to_remove = [k for k in self.memory_cache.cache if pattern in k]
+            for k in keys_to_remove:
+                self.memory_cache.cache.pop(k, None)
                 invalidated_count += 1
 
         if invalidated_count > 0:

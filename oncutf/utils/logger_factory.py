@@ -26,7 +26,7 @@ class LoggerFactory:
     _global_level: int | None = None
 
     @classmethod
-    def get_logger(cls, name: str = None) -> logging.Logger:
+    def get_logger(cls, name: str | None = None) -> logging.Logger:
         """Get or create a cached logger for the given name.
 
         Args:
@@ -40,8 +40,11 @@ class LoggerFactory:
         if name is None:
             import inspect
 
-            frame = inspect.currentframe().f_back
-            name = frame.f_globals.get("__name__", "unknown")
+            frame = inspect.currentframe()
+            if frame and frame.f_back:
+                name = frame.f_back.f_globals.get("__name__", "unknown")
+            else:
+                name = "unknown"
 
         # Thread-safe cache lookup
         with cls._lock:
@@ -89,7 +92,7 @@ class LoggerFactory:
             cls._loggers.clear()
 
     @classmethod
-    def get_cached_names(cls) -> list:
+    def get_cached_names(cls) -> list[str]:
         """Get list of all cached logger names.
 
         Returns:
@@ -100,7 +103,7 @@ class LoggerFactory:
 
 
 # Convenience function - maintains backward compatibility
-def get_cached_logger(name: str = None) -> logging.Logger:
+def get_cached_logger(name: str | None = None) -> logging.Logger:
     """Convenience function for getting cached logger.
 
     Args:

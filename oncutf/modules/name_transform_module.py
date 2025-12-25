@@ -7,6 +7,8 @@ modules/name_transform_module.py
 Applies case and separator transformations to a given base name.
 """
 
+from typing import Any
+
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.transform_utils import apply_transform
 
@@ -14,11 +16,10 @@ logger = get_cached_logger(__name__)
 
 
 class NameTransformModule:
-    """Logic component (non-UI) for applying case and separator transformations.
-    """
+    """Logic component (non-UI) for applying case and separator transformations."""
 
     @staticmethod
-    def apply_from_data(data: dict, base_name: str) -> str:
+    def apply_from_data(data: dict[str, Any], base_name: str) -> str:
         """Applies transformation options to the given base name.
 
         Args:
@@ -62,9 +63,8 @@ class NameTransformModule:
         return base_name
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
-        """Returns True if any transformation is active.
-        """
+    def is_effective_data(data: dict[str, Any]) -> bool:
+        """Returns True if any transformation is active."""
         return (
             data.get("case", "original") != "original"
             or data.get("separator", "as-is") != "as-is"

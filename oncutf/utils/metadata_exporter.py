@@ -26,7 +26,7 @@ class MetadataExporter:
     Supports JSON, Markdown, and CSV with proper grouping and branding.
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         self.parent_window = parent_window
         self.app_name = APP_NAME
         self.app_version = f"v{APP_VERSION}"
@@ -220,10 +220,10 @@ class MetadataExporter:
 
                             if extended_count > 0:
                                 f.write(
-                                    f"## {group_name} [Extended] ({total_count} keys, {extended_count} extended)\n\n"
+                                    f"<h2> {group_name} [Extended] ({total_count} keys, {extended_count} extended)\n\n"
                                 )
                             else:
-                                f.write(f"## {group_name} ({total_count} keys)\n\n")
+                                f.write(f"<h2> {group_name} ({total_count} keys)\n\n")
 
                             # Write metadata items (no bold formatting, no colons)
                             for key, value in group_data.get("items", {}).items():
@@ -349,7 +349,7 @@ class MetadataExporter:
 
     def _group_metadata(self, metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:
         """Group metadata by categories with extended key detection."""
-        grouped = defaultdict(
+        grouped: dict[str, dict[str, Any]] = defaultdict(
             lambda: {"items": {}, "extended_keys": set(), "total_count": 0, "extended_count": 0}
         )
 

@@ -189,7 +189,9 @@ class MetadataFieldMapper:
         return ""
 
     @classmethod
-    def _format_value_for_display(cls, field_key: str, _metadata_key: str, raw_value: Any) -> str:
+    def _format_value_for_display(
+        cls, field_key: str, _metadata_key: str | None, raw_value: Any
+    ) -> str:
         """Format metadata value for compact display in file table columns.
 
         Args:

@@ -93,18 +93,18 @@ class TestTextRemovalModule:
         assert result == "document_copy.txt"  # Unchanged
 
     def test_is_effective(self):
-        """Test is_effective method."""
+        """Test is_effective_data method."""
         # Effective - has text to remove
         data = {"text_to_remove": "_copy"}
-        assert TextRemovalModule.is_effective(data)
+        assert TextRemovalModule.is_effective_data(data)
 
         # Not effective - empty text
         data = {"text_to_remove": ""}
-        assert not TextRemovalModule.is_effective(data)
+        assert not TextRemovalModule.is_effective_data(data)
 
         # Not effective - only spaces
         data = {"text_to_remove": "   "}
-        assert not TextRemovalModule.is_effective(data)
+        assert not TextRemovalModule.is_effective_data(data)
 
     def test_no_extension(self):
         """Test with filename without extension."""

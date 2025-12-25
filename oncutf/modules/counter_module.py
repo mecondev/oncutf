@@ -8,6 +8,8 @@ into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
 
+from typing import Any
+
 from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QComboBox,
@@ -92,7 +94,7 @@ class CounterModule(BaseRenameModule):
         # Label with fixed width and right alignment
         label = QLabel(label_text)
         label.setFixedWidth(self.LABEL_WIDTH)
-        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # Input field with integer validator
         input_field = QLineEdit(str(initial_value))
@@ -148,11 +150,11 @@ class CounterModule(BaseRenameModule):
         row_layout = QHBoxLayout()
         row_layout.setContentsMargins(2, 2, 2, 2)
         row_layout.setSpacing(6)
-        row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
-        row_layout.addWidget(input_field, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(label, 0, Qt.AlignVCenter)
+        row_layout.addWidget(input_field, 0, Qt.AlignVCenter)
         row_layout.addSpacing(4)  # Extra space before buttons
-        row_layout.addWidget(btn_minus, 0, Qt.AlignVCenter)  # type: ignore
-        row_layout.addWidget(btn_plus, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(btn_minus, 0, Qt.AlignVCenter)
+        row_layout.addWidget(btn_plus, 0, Qt.AlignVCenter)
         row_layout.addStretch()
 
         return input_field, row_layout
@@ -164,7 +166,7 @@ class CounterModule(BaseRenameModule):
         # Label with fixed width and right alignment
         label = QLabel("Counter Scope")
         label.setFixedWidth(self.LABEL_WIDTH)
-        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # ComboBox for scope selection
         self.scope_combo = QComboBox()
@@ -192,13 +194,13 @@ class CounterModule(BaseRenameModule):
         row_layout = QHBoxLayout()
         row_layout.setContentsMargins(2, 2, 2, 2)
         row_layout.setSpacing(6)
-        row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
-        row_layout.addWidget(self.scope_combo, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(label, 0, Qt.AlignVCenter)
+        row_layout.addWidget(self.scope_combo, 0, Qt.AlignVCenter)
         row_layout.addStretch()
 
         return row_layout
 
-    def get_data(self) -> dict:
+    def get_data(self) -> dict[str, Any]:
         """Returns the current configuration of the counter module.
 
         :return: dict with counter info including scope
@@ -211,12 +213,15 @@ class CounterModule(BaseRenameModule):
             "scope": self.scope_combo.currentData() or CounterScope.PER_FOLDER.value,
         }
 
-    def apply(self, file_item, index=0, metadata_cache=None) -> str:
+    def apply(self, file_item: Any, index: int = 0, metadata_cache: Any = None) -> str:
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
     def apply_from_data(
-        data: dict, _file_item, index: int = 0, _metadata_cache: dict | None = None
+        data: dict[str, Any],
+        _file_item: Any,
+        index: int = 0,
+        _metadata_cache: dict[str, Any] | None = None,
     ) -> str:
         """Applies counter-based formatting using the given config and index.
 
@@ -267,5 +272,5 @@ class CounterModule(BaseRenameModule):
             return "####"
 
     @staticmethod
-    def is_effective(_data: dict) -> bool:
+    def is_effective_data(_data: dict[str, Any]) -> bool:
         return True

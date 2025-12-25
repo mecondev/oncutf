@@ -55,7 +55,7 @@ class TestMetadataEntryCreation:
 
     def test_invalid_data_type(self):
         """Test handling of invalid data type."""
-        entry = MetadataEntry(data="not a dict")  # type: ignore
+        entry = MetadataEntry(data="not a dict")
         assert entry.data == {}
 
 

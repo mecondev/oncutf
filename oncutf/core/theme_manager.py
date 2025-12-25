@@ -19,7 +19,7 @@ Architecture:
 - Emits signals when theme changes for dynamic UI updates
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
@@ -48,11 +48,11 @@ class ThemeManager(QObject):
     # Signal emitted when theme changes (emits new theme name)
     theme_changed = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize ThemeManager with default dark theme."""
         super().__init__()
         self._current_theme = "dark"
-        self._theme_tokens = {}
+        self._theme_tokens: dict[str, dict[str, str]] = {}
         self._qss_cache = ""
         self._load_theme_tokens()
         logger.debug("[ThemeManager] Initialized with dark theme", extra={"dev_only": True})
@@ -127,7 +127,7 @@ class ThemeManager(QObject):
         return theme_colors[token]
 
     @property
-    def colors(self) -> dict:
+    def colors(self) -> dict[str, Any]:
         """Get all color tokens for current theme.
 
         Returns:
@@ -194,7 +194,7 @@ class ThemeManager(QObject):
             logger.error("[ThemeManager] Error rendering QSS template: %s", e)
             return ""
 
-    def apply_theme(self, app) -> None:
+    def apply_theme(self, app: Any) -> None:
         """Apply current theme to QApplication.
 
         Sets the global application stylesheet.
@@ -240,7 +240,7 @@ class ThemeManager(QObject):
             )
             return 0
 
-    def get_font_sizes(self) -> dict:
+    def get_font_sizes(self) -> dict[str, str]:
         """Get font size definitions for the current theme.
 
         Returns:
@@ -258,7 +258,7 @@ class ThemeManager(QObject):
         }
 
     @property
-    def fonts(self) -> dict:
+    def fonts(self) -> dict[str, str]:
         """Get fonts configuration.
 
         Returns:
@@ -268,7 +268,7 @@ class ThemeManager(QObject):
         return self.get_font_sizes()
 
     @property
-    def constants(self) -> dict:
+    def constants(self) -> dict[str, int]:
         """Get layout/sizing constants.
 
         Returns:
@@ -281,7 +281,7 @@ class ThemeManager(QObject):
             "combo_height": self.get_constant("combo_height"),
         }
 
-    def apply_complete_theme(self, app, main_window=None) -> None:
+    def apply_complete_theme(self, app: Any, main_window: Any = None) -> None:
         """Apply complete theming to the entire application.
 
         Args:

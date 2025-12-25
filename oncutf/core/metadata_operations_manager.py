@@ -15,13 +15,15 @@ Features:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
+from typing import TYPE_CHECKING, Any
+
+from oncutf.models.file_item import FileItem
+from oncutf.utils.file_status_helpers import has_metadata
+from oncutf.utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
-
-from oncutf.utils.file_status_helpers import has_metadata
-from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -43,12 +45,12 @@ class MetadataOperationsManager:
             parent_window: Reference to the main window for accessing models, views, and managers
 
         """
-        self.parent_window = parent_window
+        self.parent_window: Any = parent_window
         logger.debug("MetadataOperationsManager initialized", extra={"dev_only": True})
 
     # ===== Public Interface Methods =====
 
-    def handle_export_metadata(self, file_items: list, scope: str) -> None:
+    def handle_export_metadata(self, file_items: list[FileItem], scope: str) -> None:
         """Handle metadata export dialog and process.
 
         Args:
@@ -58,7 +60,7 @@ class MetadataOperationsManager:
         """
         self._handle_export_metadata(file_items, scope)
 
-    def handle_metadata_field_edit(self, selected_files: list, field_name: str) -> None:
+    def handle_metadata_field_edit(self, selected_files: list[FileItem], field_name: str) -> None:
         """Handle metadata field editing for selected files.
 
         Args:
@@ -68,7 +70,9 @@ class MetadataOperationsManager:
         """
         self._handle_metadata_field_edit(selected_files, field_name)
 
-    def check_metadata_field_compatibility(self, selected_files: list, field_name: str) -> bool:
+    def check_metadata_field_compatibility(
+        self, selected_files: list[FileItem], field_name: str
+    ) -> bool:
         """Check if all selected files support a specific metadata field.
 
         Args:
@@ -81,7 +85,7 @@ class MetadataOperationsManager:
         """
         return self._check_metadata_field_compatibility(selected_files, field_name)
 
-    def check_selected_files_have_metadata(self, selected_files: list) -> bool:
+    def check_selected_files_have_metadata(self, selected_files: list[FileItem]) -> bool:
         """Check if any of the selected files have metadata.
 
         Args:
@@ -111,7 +115,11 @@ class MetadataOperationsManager:
 
     # ===== Metadata Export =====
 
-    def _handle_export_metadata(self, file_items: list, scope: str) -> None:
+    def _handle_export_metadata(
+        self,
+        file_items: list[FileItem],
+        scope: str,  # noqa: ARG002
+    ) -> None:
         """Handle metadata export dialog and process."""
         from PyQt5.QtWidgets import (
             QComboBox,
@@ -159,7 +167,7 @@ class MetadataOperationsManager:
         # Show dialog
         dialog.exec_()
 
-    def _execute_export(self, dialog, format_combo, file_items: list, scope: str) -> None:
+    def _execute_export(self, dialog, format_combo, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
         from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
@@ -171,7 +179,10 @@ class MetadataOperationsManager:
         from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
 
         output_dir = get_existing_directory_on_parent_screen(
-            dialog, f"Select Export Directory - {scope.title()} Files", "", QFileDialog.ShowDirsOnly
+            dialog,
+            f"Select Export Directory - {scope.title()} Files",
+            "",
+            QFileDialog.Options(QFileDialog.ShowDirsOnly),
         )
 
         if not output_dir:
@@ -213,7 +224,7 @@ class MetadataOperationsManager:
 
     # ===== Metadata Field Editing =====
 
-    def _handle_metadata_field_edit(self, selected_files: list, field_name: str) -> None:
+    def _handle_metadata_field_edit(self, selected_files: list[FileItem], field_name: str) -> None:
         """Handle metadata field editing for selected files.
 
         Args:
@@ -293,7 +304,7 @@ class MetadataOperationsManager:
                 f"An error occurred during {field_name} editing: {str(e)}",
             )
 
-    def _get_current_field_value(self, file_item, field_name: str) -> str:
+    def _get_current_field_value(self, file_item: FileItem, field_name: str) -> str:
         """Get the current value of a metadata field for a file.
 
         Args:
@@ -332,7 +343,21 @@ class MetadataOperationsManager:
             logger.debug("[MetadataEdit] Error getting current %s value: %s", field_name, e)
             return ""
 
-    def _get_field_standards_for_reading(self, field_name: str) -> list:
+    def _get_supported_standards(self, file_path: str) -> list[str]:
+        """Get supported metadata standards for a file extension."""
+        ext = os.path.splitext(file_path)[1].lower()
+        image_exts = [".jpg", ".jpeg", ".png", ".tiff", ".webp", ".heic"]
+        video_exts = [".mp4", ".mov", ".avi", ".mkv", ".m4v"]
+
+        standards: list[str] = []
+        if ext in image_exts:
+            standards.extend(["XMP", "EXIF", "IPTC"])
+        elif ext in video_exts:
+            standards.extend(["XMP", "QuickTime"])
+        # Add more conditions for other file types if needed
+        return standards
+
+    def _get_field_standards_for_reading(self, field_name: str) -> list[str]:
         """Get the metadata standards for reading a field (in priority order)."""
         field_standards = {
             "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription"],
@@ -345,7 +370,7 @@ class MetadataOperationsManager:
         return field_standards.get(field_name, [])
 
     def _apply_metadata_field_changes(
-        self, files_to_modify: list, field_name: str, new_value: str
+        self, files_to_modify: list[FileItem], field_name: str, new_value: str
     ) -> None:
         """Apply metadata field changes to files by updating the metadata tree view.
         This ensures the changes are properly tracked and can be saved later.
@@ -386,7 +411,7 @@ class MetadataOperationsManager:
             len(files_to_modify),
         )
 
-    def _get_preferred_field_standard(self, file_item, field_name: str) -> str | None:
+    def _get_preferred_field_standard(self, file_item: FileItem, field_name: str) -> str | None:
         """Get the preferred metadata standard for a field based on file type and existing metadata.
 
         Args:
@@ -466,7 +491,9 @@ class MetadataOperationsManager:
 
     # ===== Field Compatibility Detection =====
 
-    def _check_metadata_field_compatibility(self, selected_files: list, field_name: str) -> bool:
+    def _check_metadata_field_compatibility(
+        self, selected_files: list[FileItem], field_name: str
+    ) -> bool:
         """Check if all selected files support a specific metadata field.
         Uses exiftool metadata to determine compatibility.
 
@@ -621,7 +648,7 @@ class MetadataOperationsManager:
 
     # ===== File Type Detection =====
 
-    def _get_file_type_field_support(self, file_item, metadata: dict) -> set:
+    def _get_file_type_field_support(self, file_item, metadata: dict[str, Any]) -> set[str]:
         """Determine which metadata fields a file type supports based on its metadata.
 
         Args:
@@ -664,7 +691,7 @@ class MetadataOperationsManager:
             # Return basic fields as fallback
             return {"Title", "Description", "Keywords"}
 
-    def _is_image_file(self, file_item, metadata: dict) -> bool:
+    def _is_image_file(self, file_item, metadata: dict[str, Any]) -> bool:
         """Check if file is an image based on metadata and extension."""
         # Check metadata for image indicators
         if any(key.startswith(("EXIF:", "JFIF:", "PNG:", "GIF:")) for key in metadata):
@@ -691,7 +718,7 @@ class MetadataOperationsManager:
 
         return False
 
-    def _is_video_file(self, file_item, metadata: dict) -> bool:
+    def _is_video_file(self, file_item, metadata: dict[str, Any]) -> bool:
         """Check if file is a video based on metadata and extension."""
         # Check metadata for video indicators
         if any(key.startswith(("QuickTime:", "Matroska:", "RIFF:", "MPEG:")) for key in metadata):
@@ -716,7 +743,7 @@ class MetadataOperationsManager:
 
         return False
 
-    def _is_audio_file(self, file_item, metadata: dict) -> bool:
+    def _is_audio_file(self, file_item, metadata: dict[str, Any]) -> bool:
         """Check if file is an audio file based on metadata and extension."""
         # Check metadata for audio indicators
         if any(key.startswith(("ID3:", "FLAC:", "Vorbis:", "APE:")) for key in metadata):
@@ -729,7 +756,7 @@ class MetadataOperationsManager:
 
         return False
 
-    def _is_document_file(self, file_item, metadata: dict) -> bool:
+    def _is_document_file(self, file_item, metadata: dict[str, Any]) -> bool:
         """Check if file is a document based on metadata and extension."""
         # Check metadata for document indicators
         if any(key.startswith(("PDF:", "XMP-pdf:", "XMP-x:")) for key in metadata):

@@ -12,6 +12,8 @@ Features:
 - Standard Qt model interface
 """
 
+from typing import Any
+
 from oncutf.core.pyqt_imports import (
     QAbstractTableModel,
     Qt,
@@ -24,10 +26,12 @@ logger = get_cached_logger(__name__)
 class ResultsTableModel(QAbstractTableModel):
     """Custom model for results table with two columns."""
 
-    def __init__(self, data: dict | None = None, parent=None):
+    def __init__(self, data: dict[str, Any] | None = None, parent=None):
         """Initialize the results table model."""
         super().__init__(parent)
-        self._model_data = list((data or {}).items())  # Store as list of tuples for O(1) access
+        self._model_data: list[tuple[str, Any]] = list(
+            (data or {}).items()
+        )  # Store as list of tuples for O(1) access
         self.left_header = "Item"
         self.right_header = "Value"
 
@@ -79,7 +83,7 @@ class ResultsTableModel(QAbstractTableModel):
         self.right_header = right_header
         self.headerDataChanged.emit(Qt.Horizontal, 0, 1)
 
-    def set_data(self, data: dict):
+    def set_data(self, data: dict[str, Any]):
         """Replace all data and refresh view."""
         self.beginResetModel()
         self._model_data = list(data.items())

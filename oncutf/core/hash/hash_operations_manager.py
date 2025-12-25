@@ -15,12 +15,13 @@ Features:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
 from oncutf.config import STATUS_COLORS
+from oncutf.models.file_item import FileItem
 from oncutf.utils.file_status_helpers import has_hash
 from oncutf.utils.logger_factory import get_cached_logger
 
@@ -45,15 +46,15 @@ class HashOperationsManager:
             parent_window: Reference to the main window for accessing models, views, and managers
 
         """
-        self.parent_window = parent_window
-        self.hash_worker = None
-        self.hash_dialog = None
+        self.parent_window: Any = parent_window
+        self.hash_worker: Any = None
+        self.hash_dialog: Any = None
         self._operation_cancelled = False  # Track if operation was cancelled
         logger.debug("HashOperationsManager initialized", extra={"dev_only": True})
 
     # ===== Public Interface Methods =====
 
-    def handle_find_duplicates(self, selected_files: list | None) -> None:
+    def handle_find_duplicates(self, selected_files: list[FileItem] | None) -> None:
         """Handle duplicate file detection.
 
         Searches for files with identical CRC32 hashes within the selected files
@@ -65,7 +66,7 @@ class HashOperationsManager:
         """
         self._handle_find_duplicates(selected_files)
 
-    def handle_compare_external(self, selected_files: list) -> None:
+    def handle_compare_external(self, selected_files: list[FileItem]) -> None:
         """Handle comparison of selected files with an external folder.
 
         Args:
@@ -74,7 +75,7 @@ class HashOperationsManager:
         """
         self._handle_compare_external(selected_files)
 
-    def handle_calculate_hashes(self, selected_files: list) -> None:
+    def handle_calculate_hashes(self, selected_files: list[FileItem]) -> None:
         """Handle calculating and displaying checksums for selected files.
 
         Args:
@@ -83,7 +84,7 @@ class HashOperationsManager:
         """
         self._handle_calculate_hashes(selected_files)
 
-    def check_files_have_hashes(self, files: list | None = None) -> bool:
+    def check_files_have_hashes(self, files: list[FileItem] | None = None) -> bool:
         """Check if specified files or all files have hash values.
 
         Args:
@@ -95,7 +96,7 @@ class HashOperationsManager:
         """
         return self._check_files_have_hashes(files)
 
-    def get_files_without_hashes(self) -> list:
+    def get_files_without_hashes(self) -> list[FileItem]:
         """Get list of files that don't have hash values yet.
 
         Returns:
@@ -113,7 +114,7 @@ class HashOperationsManager:
 
     # ===== Hash Operation Workflow =====
 
-    def _handle_find_duplicates(self, selected_files: list | None) -> None:
+    def _handle_find_duplicates(self, selected_files: list[FileItem] | None) -> None:
         """Handle duplicate file detection in selected or all files.
 
         Args:
@@ -153,7 +154,7 @@ class HashOperationsManager:
     def _start_hash_operation(
         self,
         operation: str,
-        file_paths: list,
+        file_paths: list[str],
         external_folder: str | None = None,
     ) -> None:
         """Start a hash operation using a worker thread with progress dialog.
@@ -206,42 +207,54 @@ class HashOperationsManager:
         # Use QueuedConnection to ensure UI updates happen in main thread
         from oncutf.core.pyqt_imports import Qt
 
-        self.hash_worker.progress_updated.connect(
-            self._on_hash_progress_updated, Qt.QueuedConnection
-        )
-        self.hash_worker.size_progress.connect(self._on_size_progress_updated, Qt.QueuedConnection)
-        self.hash_worker.file_hash_calculated.connect(
-            self._on_file_hash_calculated, Qt.QueuedConnection
-        )
+        # Connect progress signals
+        if self.hash_worker:
+            self.hash_worker.progress_updated.connect(
+                self._update_operation_progress, Qt.QueuedConnection
+            )
+            self.hash_worker.size_progress.connect(
+                self._update_operation_size_progress, Qt.QueuedConnection
+            )
+            self.hash_worker.file_hash_calculated.connect(
+                self._on_file_hash_calculated, Qt.QueuedConnection
+            )
 
         # Connect signals for results
-        self.hash_worker.duplicates_found.connect(self._on_duplicates_found, Qt.QueuedConnection)
-        self.hash_worker.comparison_result.connect(self._on_comparison_result, Qt.QueuedConnection)
-        self.hash_worker.checksums_calculated.connect(
-            self._on_checksums_calculated, Qt.QueuedConnection
-        )
-
-        # Connect signals for completion/error
-        # Use the worker's `finished_processing` (bool) signal so the handler
-        # receives the success flag. Do not connect QThread.finished here
-        # because it emits no arguments and would cause a TypeError.
-        if hasattr(self.hash_worker, "finished_processing"):
-            self.hash_worker.finished_processing.connect(
-                self._on_hash_operation_finished, Qt.QueuedConnection
+        if self.hash_worker:
+            self.hash_worker.duplicates_found.connect(
+                self._on_duplicates_found, Qt.QueuedConnection
             )
-        else:
-            # Fallback: connect QThread.finished with a wrapper that passes True
-            self.hash_worker.finished.connect(
-                lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection
+            self.hash_worker.comparison_result.connect(
+                self._on_comparison_result, Qt.QueuedConnection
+            )
+            self.hash_worker.checksums_calculated.connect(
+                self._on_checksums_calculated, Qt.QueuedConnection
             )
 
-        self.hash_worker.error_occurred.connect(self._on_hash_operation_error, Qt.QueuedConnection)
+            # Connect signals for completion/error
+            # Use the worker's `finished_processing` (bool) signal so the handler
+            # receives the success flag. Do not connect QThread.finished here
+            # because it emits no arguments and would cause a TypeError.
+            if hasattr(self.hash_worker, "finished_processing"):
+                self.hash_worker.finished_processing.connect(
+                    self._on_hash_operation_finished, Qt.QueuedConnection
+                )
+            else:
+                # Fallback: connect QThread.finished with a wrapper that passes True
+                self.hash_worker.finished.connect(
+                    lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection
+                )
+
+            self.hash_worker.error_occurred.connect(
+                self._on_hash_operation_error, Qt.QueuedConnection
+            )
 
         # Create progress dialog
         self._create_hash_progress_dialog(operation, len(file_paths))
 
         # Start worker
-        self.hash_worker.start()
+        if self.hash_worker:
+            self.hash_worker.start()
 
         logger.info(
             "[HashManager] Started hash operation: %s for %d files",
@@ -286,7 +299,7 @@ class HashOperationsManager:
                 "Hash operation cancelled", color=STATUS_COLORS["no_action"], auto_reset=True
             )
 
-    def _on_hash_progress_updated(self, current: int, total: int, message: str) -> None:
+    def _update_operation_progress(self, current: int, total: int, message: str) -> None:
         """Handle hash calculation progress updates.
 
         Args:
@@ -299,7 +312,7 @@ class HashOperationsManager:
             self.hash_dialog.set_count(current, total)
             self.hash_dialog.set_status(message)
 
-    def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
+    def _update_operation_size_progress(self, current_bytes: int, total_bytes: int) -> None:
         """Handle file size progress updates (for large files).
 
         Args:
@@ -323,7 +336,7 @@ class HashOperationsManager:
                         # Initialize size-based tracking
                         self.hash_dialog.start_progress_tracking(total_bytes)
                         # Ensure progress widget is in size mode
-                        if hasattr(wt, "set_progress_mode"):
+                        if wt is not None and hasattr(wt, "set_progress_mode"):
                             wt.set_progress_mode("size")
 
                 # Update unified progress dialog with cumulative sizes
@@ -378,15 +391,15 @@ class HashOperationsManager:
 
     # ===== Result Handlers =====
 
-    def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
+    def _on_duplicates_found(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
         """Handle duplicates found result."""
-        self._show_duplicates_results(duplicates, scope)
+        self._show_duplicate_results(duplicates, scope)
 
-    def _on_comparison_result(self, results: dict, external_folder: str) -> None:
+    def _on_comparison_result(self, results: dict[str, Any], external_folder: str) -> None:
         """Handle comparison result."""
         self._show_comparison_results(results, external_folder)
 
-    def _on_checksums_calculated(self, hash_results: dict) -> None:
+    def _on_checksums_calculated(self, hash_results: dict[str, dict[str, str]]) -> None:
         """Handle checksums calculated result."""
         # Force restore cursor before showing results dialog
         from oncutf.utils.cursor_helper import force_restore_cursor
@@ -460,7 +473,7 @@ class HashOperationsManager:
 
     # ===== UI Display Methods =====
 
-    def _show_duplicates_results(self, duplicates: dict, scope: str) -> None:
+    def _show_duplicate_results(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
         """Show duplicate detection results to the user.
 
         Args:
@@ -518,7 +531,7 @@ class HashOperationsManager:
             duplicate_groups,
         )
 
-    def _show_comparison_results(self, results: dict, external_folder: str) -> None:
+    def _show_comparison_results(self, results: dict[str, Any], external_folder: str) -> None:
         """Show external folder comparison results to the user.
 
         Args:
@@ -592,7 +605,9 @@ class HashOperationsManager:
             differences,
         )
 
-    def _show_hash_results(self, hash_results: dict, was_cancelled: bool = False) -> None:
+    def _show_hash_results(
+        self, hash_results: dict[str, dict[str, str]], was_cancelled: bool = False
+    ) -> None:
         """Show checksum calculation results to the user.
 
         Args:
@@ -650,7 +665,7 @@ class HashOperationsManager:
 
     # ===== Entry Point Handlers =====
 
-    def _handle_compare_external(self, selected_files: list) -> None:
+    def _handle_compare_external(self, selected_files: list[FileItem]) -> None:
         """Handle comparison of selected files with an external folder.
 
         Args:
@@ -703,7 +718,7 @@ class HashOperationsManager:
                 self.parent_window, "Error", f"Failed to start external comparison: {str(e)}"
             )
 
-    def _handle_calculate_hashes(self, selected_files: list) -> None:
+    def _handle_calculate_hashes(self, selected_files: list[FileItem]) -> None:
         """Handle calculating and displaying checksums for selected files.
 
         Args:
@@ -726,7 +741,7 @@ class HashOperationsManager:
             # Multiple files - use worker thread with progress dialog
             self._start_hash_operation("checksums", file_paths)
 
-    def _calculate_single_file_hash_fast(self, file_item) -> None:
+    def _calculate_single_file_hash_fast(self, file_item: FileItem) -> None:
         """Calculate hash for a single small file using wait cursor (fast, no cancellation).
 
         Args:
@@ -746,7 +761,11 @@ class HashOperationsManager:
                     hash_results[file_item.full_path] = file_hash
 
             # Show results after cursor is restored
-            self._show_hash_results(hash_results)
+            # Wrap flat dict into nested structure expected by _show_hash_results
+            wrapped_results: dict[str, dict[str, str]] = {
+                path: {"hash": hash_val} for path, hash_val in hash_results.items()
+            }
+            self._show_hash_results(wrapped_results)
 
         except Exception as e:
             logger.error("[HashManager] Error calculating checksum: %s", e)
@@ -758,7 +777,7 @@ class HashOperationsManager:
 
     # ===== Status Check Methods =====
 
-    def _check_files_have_hashes(self, files: list | None = None) -> bool:
+    def _check_files_have_hashes(self, files: list[FileItem] | None = None) -> bool:
         """Check if any of the specified files have hash values.
 
         Args:
@@ -783,6 +802,6 @@ class HashOperationsManager:
         # Check if any file has a hash
         return any(self._file_has_hash(file_item) for file_item in files)
 
-    def _file_has_hash(self, file_item) -> bool:
+    def _file_has_hash(self, file_item: FileItem) -> bool:
         """Check if a specific file has a hash value."""
         return has_hash(file_item.full_path)

@@ -60,7 +60,7 @@ class MockValidationResult:
         invalid_count: int = 0,
         duplicate_count: int = 0,
         unchanged_count: int = 0,
-        items: list = None,
+        items: list[Any] | None = None,
     ):
         self.has_errors = has_errors
         self.valid_count = valid_count
@@ -88,7 +88,7 @@ class MockExecutionResult:
         renamed_count: int = 0,
         failed_count: int = 0,
         skipped_count: int = 0,
-        results: list = None,
+        results: list[Any] | None = None,
     ):
         self.renamed_count = renamed_count
         self.failed_count = failed_count

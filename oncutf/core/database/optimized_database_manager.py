@@ -288,7 +288,11 @@ class OptimizedDatabaseManager(QObject):
             self.connection_pool.return_connection(conn)
 
     def execute_query(
-        self, query: str, params: tuple = (), fetch_all: bool = True, use_prepared: bool = True
+        self,
+        query: str,
+        params: tuple[Any, ...] = (),
+        fetch_all: bool = True,
+        use_prepared: bool = True,
     ) -> list[sqlite3.Row] | None:
         """Execute a SELECT query with optimization.
 
@@ -331,7 +335,9 @@ class OptimizedDatabaseManager(QObject):
             logger.error("[OptimizedDatabaseManager] Params: %s", params)
             return None
 
-    def execute_update(self, query: str, params: tuple = (), use_prepared: bool = True) -> bool:
+    def execute_update(
+        self, query: str, params: tuple[Any, ...] = (), use_prepared: bool = True
+    ) -> bool:
         """Execute an INSERT/UPDATE/DELETE query.
 
         Args:
@@ -371,7 +377,7 @@ class OptimizedDatabaseManager(QObject):
             return False
 
     def execute_batch(
-        self, query: str, params_list: list[tuple], use_transaction: bool = True
+        self, query: str, params_list: list[tuple[Any, ...]], use_transaction: bool = True
     ) -> bool:
         """Execute batch operations for better performance.
 
@@ -446,7 +452,7 @@ class OptimizedDatabaseManager(QObject):
     def get_query_stats(self) -> dict[str, Any]:
         """Get query execution statistics."""
         with self._stats_lock:
-            stats = {
+            stats: dict[str, Any] = {
                 "total_queries": len(self._query_stats),
                 "total_executions": sum(s.execution_count for s in self._query_stats.values()),
                 "total_time": sum(s.total_time for s in self._query_stats.values()),
@@ -486,7 +492,11 @@ class OptimizedDatabaseManager(QObject):
 
             # Sort by specified metric
             if sort_by in ["total_time", "avg_time", "executions", "max_time"]:
-                queries.sort(key=lambda x: x[sort_by], reverse=True)
+
+                def sort_key(x: dict[str, Any]) -> Any:
+                    return x[sort_by]
+
+                queries.sort(key=sort_key, reverse=True)
 
             return queries[:limit]
 

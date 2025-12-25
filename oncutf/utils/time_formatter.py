@@ -21,24 +21,25 @@ logger = get_cached_logger(__name__)
 
 
 class TimeTracker:
-    """Tracks progress timing and calculates estimates.
-    """
+    """Tracks progress timing and calculates estimates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the time tracker."""
-        self.start_time = None
-        self.last_update_time = None
-        self.progress_history = []  # List of (timestamp, progress_percent) tuples
+        self.start_time: float | None = None
+        self.last_update_time: float | None = None
+        self.progress_history: list[
+            tuple[float, float]
+        ] = []  # List of (timestamp, progress_percent) tuples
         self.max_history_size = 10  # Keep last 10 measurements for smoothing
 
-    def start(self):
+    def start(self) -> None:
         """Start timing."""
         self.start_time = time.time()
         self.last_update_time = self.start_time
         self.progress_history = [(self.start_time, 0.0)]
         logger.debug("[TimeTracker] Started timing")
 
-    def update_progress(self, current: int, total: int):
+    def update_progress(self, current: int, total: int) -> None:
         """Update progress and calculate estimates."""
         if self.start_time is None:
             self.start()
@@ -151,22 +152,21 @@ def format_time_range(elapsed: float, estimated_total: float | None = None) -> s
 
 
 class ProgressEstimator:
-    """Combines time tracking with size tracking for comprehensive progress estimation.
-    """
+    """Combines time tracking with size tracking for comprehensive progress estimation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the progress estimator."""
         self.time_tracker = TimeTracker()
         self.total_size = 0
         self.processed_size = 0
 
-    def start(self, total_size: int = 0):
+    def start(self, total_size: int = 0) -> None:
         """Start tracking progress."""
         self.time_tracker.start()
         self.total_size = total_size
         self.processed_size = 0
 
-    def update(self, current_item: int, total_items: int, current_size: int = 0):
+    def update(self, current_item: int, total_items: int, current_size: int = 0) -> None:
         """Update progress with both item count and size information.
 
         Args:
@@ -227,7 +227,7 @@ class ProgressEstimator:
         elapsed, estimated = self.get_time_info()
         return format_time_range(elapsed, estimated)
 
-    def get_progress_summary(self) -> dict:
+    def get_progress_summary(self) -> dict[str, float | int | str | None]:
         """Get comprehensive progress summary.
 
         Returns:

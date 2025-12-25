@@ -48,16 +48,16 @@ class WorkerTask:
     """Represents a worker task."""
 
     task_id: str
-    function: Callable
-    args: tuple
-    kwargs: dict
+    function: Callable[..., Any]
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
     priority: TaskPriority = TaskPriority.NORMAL
     created_at: float = field(default_factory=time.time)
     started_at: float | None = None
     completed_at: float | None = None
     result: Any = None
     error: Exception | None = None
-    callback: Callable | None = None
+    callback: Callable[..., Any] | None = None
 
     @property
     def is_completed(self) -> bool:
@@ -101,7 +101,10 @@ class PriorityQueue:
 
     def __init__(self):
         """Initialize priority queue."""
-        self._queues: dict[TaskPriority, deque] = {priority: deque() for priority in TaskPriority}
+
+        self._queues: dict[TaskPriority, deque[WorkerTask]] = {
+            priority: deque() for priority in TaskPriority
+        }
         self._lock = threading.RLock()
         self._size = 0
 
@@ -280,7 +283,9 @@ class ThreadPoolManager(QObject):
     task_failed = pyqtSignal(str, str)  # task_id, error_message
     pool_resized = pyqtSignal(int)  # new_size
 
-    def __init__(self, min_threads: int = 2, max_threads: int = None, parent=None):
+    def __init__(
+        self, min_threads: int = 2, max_threads: int | None = None, parent: QObject | None = None
+    ):
         """Initialize thread pool manager.
 
         Args:
@@ -332,11 +337,11 @@ class ThreadPoolManager(QObject):
     def submit_task(
         self,
         task_id: str,
-        function: Callable,
-        args: tuple = (),
-        kwargs: dict = None,
+        function: Callable[..., Any],
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
         priority: TaskPriority = TaskPriority.NORMAL,
-        callback: Callable | None = None,
+        callback: Callable[..., Any] | None = None,
     ) -> bool:
         """Submit a task for execution.
 
@@ -476,10 +481,22 @@ class ThreadPoolManager(QObject):
                 self.task_completed.emit(task_id, result)
 
     def _on_task_failed(self, task_id: str, error_message: str):
-        """Handle task failure."""
+        """Handle task failure and update health tracking."""
         with QMutexLocker(self._mutex):
             self._failed_tasks += 1
             self.task_failed.emit(task_id, error_message)
+
+            # Health tracking
+            self._failed_tasks_count += 1
+            self._last_error = f"Task {task_id}: {error_message}"
+
+            # Mark as unhealthy if too many failures
+            if self._failed_tasks_count > 10:
+                self._is_healthy = False
+                logger.warning(
+                    "[ThreadPoolManager] Marked as unhealthy after %d failures",
+                    self._failed_tasks_count,
+                )
 
     def _monitor_pool(self):
         """Monitor pool performance and adjust as needed."""
@@ -567,7 +584,7 @@ class ThreadPoolManager(QObject):
         """
         return self._last_error
 
-    def health_check(self) -> dict[str, any]:
+    def health_check(self) -> dict[str, Any]:
         """Perform comprehensive health check.
 
         Returns:
@@ -585,19 +602,6 @@ class ThreadPoolManager(QObject):
             "failed_tasks": self._failed_tasks_count,
             "last_error": self._last_error,
         }
-
-    def _on_task_failed(self, task_id: str, error: str):
-        """Handle task failure for health tracking."""
-        self._failed_tasks_count += 1
-        self._last_error = f"Task {task_id}: {error}"
-
-        # Mark as unhealthy if too many failures
-        if self._failed_tasks_count > 10:
-            self._is_healthy = False
-            logger.warning(
-                "[ThreadPoolManager] Marked as unhealthy after %d failures",
-                self._failed_tasks_count,
-            )
 
     def shutdown(self):
         """Shutdown thread pool manager."""
@@ -629,7 +633,9 @@ def get_thread_pool_manager() -> ThreadPoolManager:
     return _thread_pool_manager_instance
 
 
-def initialize_thread_pool(min_threads: int = 2, max_threads: int = None) -> ThreadPoolManager:
+def initialize_thread_pool(
+    min_threads: int = 2, max_threads: int | None = None
+) -> ThreadPoolManager:
     """Initialize thread pool manager."""
     global _thread_pool_manager_instance
     _thread_pool_manager_instance = ThreadPoolManager(min_threads, max_threads)
@@ -639,11 +645,11 @@ def initialize_thread_pool(min_threads: int = 2, max_threads: int = None) -> Thr
 # Convenience functions
 def submit_task(
     task_id: str,
-    function: Callable,
-    args: tuple = (),
-    kwargs: dict = None,
+    function: Callable[..., Any],
+    args: tuple[Any, ...] = (),
+    kwargs: dict[str, Any] | None = None,
     priority: TaskPriority = TaskPriority.NORMAL,
-    callback: Callable | None = None,
+    callback: Callable[..., None] | None = None,
 ) -> bool:
     """Submit task using global thread pool."""
     return get_thread_pool_manager().submit_task(

@@ -30,7 +30,7 @@ class MetadataFieldMappingHelper:
     AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg"}
 
     # Field mapping for write operations (maps generic field -> file-specific field)
-    WRITE_FIELD_MAPPING = {
+    WRITE_FIELD_MAPPING: dict[str, dict[str, str | None]] = {
         # Rotation/Orientation handling
         "Rotation": {
             "image": "EXIF:Orientation",  # JPEG, TIFF use EXIF:Orientation

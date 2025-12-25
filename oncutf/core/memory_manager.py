@@ -42,7 +42,7 @@ class CacheEntry:
     creation_time: float = field(default_factory=time.time)
     size_bytes: int = 0
 
-    def touch(self):
+    def touch(self) -> None:
         """Update access statistics."""
         self.access_count += 1
         self.last_access = time.time()
@@ -194,7 +194,7 @@ class MemoryManager(QObject):
     memory_warning = pyqtSignal(float)  # memory_usage_percent
     cache_cleaned = pyqtSignal(int)  # cleaned_entries_count
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         """Initialize memory manager."""
         super().__init__(parent)
 
@@ -206,7 +206,7 @@ class MemoryManager(QObject):
 
         # Cache registry
         self._registered_caches: dict[str, Any] = {}
-        self._cleanup_callbacks: list[Callable] = []
+        self._cleanup_callbacks: list[Callable[[], None]] = []
 
         # Statistics
         self._cleanup_count = 0
@@ -231,7 +231,7 @@ class MemoryManager(QObject):
         self._registered_caches[name] = cache_object
         logger.debug("[MemoryManager] Registered cache: %s", name)
 
-    def register_cleanup_callback(self, callback: Callable) -> None:
+    def register_cleanup_callback(self, callback: Callable[[], None]) -> None:
         """Register a cleanup callback function.
 
         Args:
@@ -384,7 +384,7 @@ class MemoryManager(QObject):
             "cleanup_interval": self.cleanup_interval_seconds,
         }
 
-    def configure(self, **kwargs) -> None:
+    def configure(self, **kwargs: Any) -> None:
         """Configure memory manager settings."""
         for key, value in kwargs.items():
             if hasattr(self, key):
@@ -414,7 +414,7 @@ def get_memory_manager() -> MemoryManager:
     return _memory_manager_instance
 
 
-def initialize_memory_manager(**config) -> MemoryManager:
+def initialize_memory_manager(**config: Any) -> MemoryManager:
     """Initialize memory manager with configuration."""
     global _memory_manager_instance
     _memory_manager_instance = MemoryManager()

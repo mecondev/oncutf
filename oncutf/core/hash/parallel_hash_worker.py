@@ -25,6 +25,7 @@ Architecture:
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 from oncutf.core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
@@ -102,7 +103,7 @@ class ParallelHashWorker(QThread):
         self._cumulative_processed_bytes = 0
 
         # Thread-safe result storage
-        self._results: dict = {}
+        self._results: dict[str, Any] = {}
         self._errors: list[tuple[str, str]] = []  # (file_path, error_msg)
 
         # Cache statistics
@@ -110,9 +111,9 @@ class ParallelHashWorker(QThread):
         self._cache_misses = 0
 
         # Batch operations support
-        self._batch_manager = None
+        self._batch_manager: Any = None
         self._enable_batching = True
-        self._batch_operations: list[dict] = []
+        self._batch_operations: list[dict[str, Any]] = []
 
     def enable_batch_operations(self, enabled: bool = True) -> None:
         """Enable or disable batch operations optimization."""
@@ -345,7 +346,7 @@ class ParallelHashWorker(QThread):
             # Execute operation with parallel workers
             if operation_type == "duplicates":
                 self._find_duplicates_parallel(file_paths)
-            elif operation_type == "compare":
+            elif operation_type == "compare" and external_folder:
                 self._compare_external_parallel(file_paths, external_folder)
             elif operation_type == "checksums":
                 self._calculate_checksums_parallel(file_paths)
@@ -377,7 +378,7 @@ class ParallelHashWorker(QThread):
 
     def _calculate_checksums_parallel(self, file_paths: list[str]) -> None:
         """Calculate checksums using parallel workers."""
-        hash_results = {}
+        hash_results: dict[str, str] = {}
         total_files = len(file_paths)
 
         self.status_updated.emit("Calculating CRC32 checksums (parallel)...")
@@ -508,7 +509,7 @@ class ParallelHashWorker(QThread):
                 file_pairs.append((file_path, None))
 
         # Process pairs in parallel
-        def process_pair(pair: tuple[str, str | None]) -> tuple[str, dict]:
+        def process_pair(pair: tuple[str, str | None]) -> tuple[str, dict[str, Any]]:
             source_path, external_path = pair
 
             if external_path is None:

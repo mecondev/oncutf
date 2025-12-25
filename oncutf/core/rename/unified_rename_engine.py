@@ -14,7 +14,10 @@ import os
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
 
 from oncutf.config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
 from oncutf.core.batch_processor import BatchProcessorFactory
@@ -176,11 +179,11 @@ class ExecutionResult:
     skipped_count: int = 0
     conflicts_count: int = 0
 
-    def __post_init__(self):
-        self.success_count = sum(1 for item in self.items if item.success)  # type: ignore
-        self.error_count = sum(1 for item in self.items if not item.success and item.error_message)  # type: ignore
-        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)  # type: ignore
-        self.conflicts_count = sum(1 for item in self.items if item.is_conflict)  # type: ignore
+    def __post_init__(self) -> None:
+        self.success_count = sum(1 for item in self.items if item.success)
+        self.error_count = sum(1 for item in self.items if not item.success and item.error_message)
+        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)
+        self.conflicts_count = sum(1 for item in self.items if item.is_conflict)
 
 
 @dataclass
@@ -352,7 +355,7 @@ class SmartCacheManager:
     during rapid UI interactions while keeping memory usage minimal.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._preview_cache: dict[str, tuple[PreviewResult, float]] = {}
         self._validation_cache: dict[str, tuple[ValidationResult, float]] = {}
         self._execution_cache: dict[str, tuple[ExecutionResult, float]] = {}
@@ -492,7 +495,10 @@ class UnifiedPreviewManager:
         return result
 
     def _generate_cache_key(
-        self, files: list[FileItem], modules_data: list[dict], post_transform: dict
+        self,
+        files: list[FileItem],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
     ) -> str:
         """Create a stable cache key for the preview parameters.
 
@@ -530,7 +536,7 @@ class UnifiedPreviewManager:
         from oncutf.modules.name_transform_module import NameTransformModule
 
         name_pairs = []
-        has_name_transform = NameTransformModule.is_effective(post_transform)
+        has_name_transform = NameTransformModule.is_effective_data(post_transform)
 
         for idx, file in enumerate(files):
             try:
@@ -743,7 +749,7 @@ class UnifiedValidationManager:
 
     def _generate_validation_cache_key(self, preview_pairs: list[tuple[str, str]]) -> str:
         """Generate cache key for validation results."""
-        return hash(tuple(preview_pairs))
+        return str(hash(tuple(preview_pairs)))
 
     def _validate_filename(self, filename: str) -> tuple[bool, str]:
         """Validate `filename` and return (is_valid, error_message).
@@ -776,8 +782,8 @@ class UnifiedExecutionManager:
         self,
         files: list[FileItem],
         new_names: list[str],
-        conflict_callback: Callable | None = None,
-        validator: object | None = None,
+        conflict_callback: Callable[[list[FileItem], list[str]], dict[str, str]] | None = None,
+        validator: Any | None = None,
     ) -> ExecutionResult:
         """Attempt to rename `files` to `new_names`.
 
@@ -914,7 +920,7 @@ class UnifiedExecutionManager:
         self, files: list[FileItem], new_names: list[str]
     ) -> list[ExecutionItem]:
         """Build execution plan for companion files that should be renamed alongside main files."""
-        companion_items = []
+        companion_items: list[ExecutionItem] = []
 
         if not files:
             return companion_items
@@ -1152,8 +1158,8 @@ class UnifiedRenameEngine(QObject):
         self,
         files: list[FileItem],
         new_names: list[str],
-        conflict_callback: Callable | None = None,
-        validator: object | None = None,
+        conflict_callback: Callable[[list[FileItem], list[str]], dict[str, str]] | None = None,
+        validator: Any | None = None,
     ) -> ExecutionResult:
         """Execute rename with unified system."""
         result = self.execution_manager.execute_rename(
@@ -1188,7 +1194,10 @@ class UnifiedRenameEngine(QObject):
 
     def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics."""
-        return self.performance_monitor.get_stats()
+        from dataclasses import asdict
+
+        stats = self.performance_monitor.get_stats()
+        return asdict(stats)
 
     def clear_performance_metrics(self) -> None:
         """Clear performance metrics."""
@@ -1224,7 +1233,9 @@ class UnifiedRenameEngine(QObject):
         """Clear conflict resolution history."""
         self.conflict_resolver.clear_history()
 
-    def batch_process_files(self, files: list[FileItem], processor_func: Callable) -> list[Any]:
+    def batch_process_files(
+        self, files: list[FileItem], processor_func: Callable[[list[FileItem]], Any]
+    ) -> list[Any]:
         """Process files in batches using the provided function.
 
         The processor_func should accept a list of FileItem objects and return

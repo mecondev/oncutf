@@ -243,7 +243,7 @@ class StructuredMetadataManager:
             )
             return None
 
-    def get_available_fields(self, category_name: str = None) -> list[dict[str, Any]]:
+    def get_available_fields(self, category_name: str | None = None) -> list[dict[str, Any]]:
         """Get available metadata fields, optionally filtered by category.
 
         Args:
@@ -289,7 +289,7 @@ class StructuredMetadataManager:
         data_type: str = "text",
         is_editable: bool = True,
         is_searchable: bool = True,
-        display_format: str = None,
+        display_format: str | None = None,
     ) -> bool:
         """Add a custom metadata field.
 

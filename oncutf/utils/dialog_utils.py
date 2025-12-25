@@ -58,7 +58,9 @@ def show_dialog_smooth(dialog: QWidget) -> None:
     schedule_ui_update(dialog.show, delay=1)  # 1ms delay allows layout to complete
 
 
-def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
+def show_info_message(
+    parent: QWidget | None, title: str, message: str, *, details: str | None = None
+) -> None:
     """Show an information message dialog.
 
     Args:
@@ -69,7 +71,10 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     """
     from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
 
-    CustomMessageDialog.information(parent, title, message)
+    if details:
+        CustomMessageDialog.information(parent, title, message, details=details)
+    else:
+        CustomMessageDialog.information(parent, title, message)
 
 
 def show_error_message(parent: QWidget | None, title: str, message: str) -> None:

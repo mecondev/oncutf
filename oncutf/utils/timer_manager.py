@@ -12,6 +12,7 @@ import threading
 import weakref
 from collections.abc import Callable
 from enum import Enum
+from typing import Any
 
 from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
@@ -68,7 +69,7 @@ class TimerManager(QObject):
 
         # Active timers tracking
         self._active_timers: dict[str, QTimer] = {}
-        self._timer_callbacks: dict[str, Callable] = {}
+        self._timer_callbacks: dict[str, Callable[[], None]] = {}
         self._timer_types: dict[str, TimerType] = {}
 
         # Performance tracking
@@ -76,7 +77,7 @@ class TimerManager(QObject):
         self._completed_timers = 0
 
         # Cleanup tracking
-        self._cleanup_refs: set[weakref.ref] = set()
+        self._cleanup_refs: set[weakref.ref[QObject]] = set()
 
         # Health tracking
         self._last_error: str | None = None
@@ -88,7 +89,7 @@ class TimerManager(QObject):
 
     def schedule(
         self,
-        callback: Callable,
+        callback: Callable[[], None],
         delay: int | None = None,
         priority: TimerPriority = TimerPriority.NORMAL,
         timer_type: TimerType = TimerType.GENERIC,
@@ -339,7 +340,7 @@ class TimerManager(QObject):
         """
         return self._last_error
 
-    def health_check(self) -> dict[str, any]:
+    def health_check(self) -> dict[str, Any]:
         """Perform comprehensive health check.
 
         Returns:
@@ -370,14 +371,18 @@ def get_timer_manager() -> TimerManager:
 
 
 # Convenience functions for common operations
-def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: str | None = None) -> str:
+def schedule_ui_update(
+    callback: Callable[[], None], delay: int = 15, timer_id: str | None = None
+) -> str:
     """Schedule a UI update operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.NORMAL, TimerType.UI_UPDATE, timer_id
     )
 
 
-def schedule_drag_cleanup(callback: Callable, delay: int = 50, timer_id: str | None = None) -> str:
+def schedule_drag_cleanup(
+    callback: Callable[[], None], delay: int = 50, timer_id: str | None = None
+) -> str:
     """Schedule a drag cleanup operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.LOW, TimerType.DRAG_CLEANUP, timer_id
@@ -385,7 +390,7 @@ def schedule_drag_cleanup(callback: Callable, delay: int = 50, timer_id: str | N
 
 
 def schedule_selection_update(
-    callback: Callable, delay: int = 15, timer_id: str | None = None
+    callback: Callable[[], None], delay: int = 15, timer_id: str | None = None
 ) -> str:
     """Schedule a selection update operation."""
     return get_timer_manager().schedule(
@@ -394,7 +399,7 @@ def schedule_selection_update(
 
 
 def schedule_metadata_load(
-    callback: Callable, delay: int = 100, timer_id: str | None = None
+    callback: Callable[[], None], delay: int = 100, timer_id: str | None = None
 ) -> str:
     """Schedule a metadata loading operation."""
     return get_timer_manager().schedule(
@@ -402,7 +407,9 @@ def schedule_metadata_load(
     )
 
 
-def schedule_scroll_adjust(callback: Callable, delay: int = 10, timer_id: str | None = None) -> str:
+def schedule_scroll_adjust(
+    callback: Callable[[], None], delay: int = 10, timer_id: str | None = None
+) -> str:
     """Schedule a scroll adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.SCROLL_ADJUST, timer_id
@@ -410,7 +417,7 @@ def schedule_scroll_adjust(callback: Callable, delay: int = 10, timer_id: str | 
 
 
 def schedule_preview_update(
-    callback: Callable, delay: int = 300, timer_id: str | None = None
+    callback: Callable[[], None], delay: int = 300, timer_id: str | None = None
 ) -> str:
     """Schedule a preview update operation with debounce."""
     return get_timer_manager().schedule(
@@ -418,14 +425,18 @@ def schedule_preview_update(
     )
 
 
-def schedule_resize_adjust(callback: Callable, delay: int = 10, timer_id: str | None = None) -> str:
+def schedule_resize_adjust(
+    callback: Callable[[], None], delay: int = 10, timer_id: str | None = None
+) -> str:
     """Schedule a resize adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.RESIZE_ADJUST, timer_id
     )
 
 
-def schedule_dialog_close(callback: Callable, delay: int = 500, timer_id: str | None = None) -> str:
+def schedule_dialog_close(
+    callback: Callable[[], None], delay: int = 500, timer_id: str | None = None
+) -> str:
     """Schedule a dialog close operation with delay."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.DELAYED, TimerType.GENERIC, timer_id

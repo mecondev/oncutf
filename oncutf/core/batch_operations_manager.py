@@ -36,7 +36,7 @@ class BatchOperation:
     operation_type: str  # 'metadata_set', 'hash_store', 'db_query', etc.
     key: str  # Primary key for the operation
     data: Any  # Operation data
-    callback: Callable | None = None  # Optional callback after operation
+    callback: Callable[..., None] | None = None  # Optional callback after operation
     timestamp: datetime = field(default_factory=datetime.now)
     priority: int = 50  # Lower number = higher priority
 
@@ -60,7 +60,7 @@ class BatchOperationsManager:
     based on size thresholds, time intervals, or manual triggers.
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any | None = None) -> None:
         self.parent_window = parent_window
 
         # Batch storage by operation type
@@ -76,11 +76,11 @@ class BatchOperationsManager:
         self._stats = BatchStats()
 
         # Auto-flush timer
-        self._flush_timer = None
+        self._flush_timer: threading.Timer | None = None
         self._last_flush_time = time.time()
 
         # Operation handlers
-        self._operation_handlers = {
+        self._operation_handlers: dict[str, Callable[[list[BatchOperation]], None]] = {
             "metadata_set": self._handle_metadata_batch,
             "hash_store": self._handle_hash_batch,
             "db_query": self._handle_db_batch,
@@ -93,9 +93,9 @@ class BatchOperationsManager:
     def queue_metadata_set(
         self,
         file_path: str,
-        metadata: dict,
+        metadata: dict[str, Any],
         is_extended: bool = False,
-        callback: Callable | None = None,
+        callback: Callable[..., Any] | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a metadata cache set operation for batching."""
@@ -113,7 +113,7 @@ class BatchOperationsManager:
         file_path: str,
         hash_value: str,
         algorithm: str = "crc32",
-        callback: Callable | None = None,
+        callback: Callable[..., Any] | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a hash cache store operation for batching."""
@@ -130,8 +130,8 @@ class BatchOperationsManager:
         self,
         query_type: str,
         query: str,
-        params: tuple = (),
-        callback: Callable | None = None,
+        params: tuple[Any, ...] = (),
+        callback: Callable[..., Any] | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a database query for batching."""
@@ -149,7 +149,7 @@ class BatchOperationsManager:
         operation_type: str,
         file_path: str,
         data: Any = None,
-        callback: Callable | None = None,
+        callback: Callable[..., Any] | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a file I/O operation for batching."""
@@ -295,7 +295,7 @@ class BatchOperationsManager:
             for operation in batch:
                 if operation.callback:
                     try:
-                        operation.callback(error=e)
+                        operation.callback(success=False, error=e)
                     except Exception as callback_error:
                         logger.error("[BatchOps] Callback error: %s", callback_error)
         finally:
@@ -315,8 +315,8 @@ class BatchOperationsManager:
         success_count = 0
 
         # Group operations by extended flag for better batching
-        extended_ops = []
-        regular_ops = []
+        extended_ops: list[BatchOperation] = []
+        regular_ops: list[BatchOperation] = []
 
         for op in operations:
             if op.data.get("is_extended", False):
@@ -426,7 +426,7 @@ class BatchOperationsManager:
         success_count = 0
 
         # Group operations by query type for better batching
-        query_groups = defaultdict(list)
+        query_groups: defaultdict[str, list[BatchOperation]] = defaultdict(list)
         for op in operations:
             query_type = op.data["query_type"]
             query_groups[query_type].append(op)
@@ -464,8 +464,8 @@ class BatchOperationsManager:
     def _handle_file_io_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of file I/O operations."""
         # Group by operation type
-        read_ops = []
-        write_ops = []
+        read_ops: list[BatchOperation] = []
+        write_ops: list[BatchOperation] = []
 
         for op in operations:
             op_type = op.data["operation_type"]
@@ -488,8 +488,9 @@ class BatchOperationsManager:
 
         for operation in operations:
             try:
-                file_path = operation.data["file_path"]
-                op_type = operation.data["operation_type"]
+                file_path: str = operation.data["file_path"]
+                op_type: str = operation.data["operation_type"]
+                result: Any = None
 
                 if op_type == "read":
                     with open(file_path, "rb") as f:
@@ -583,7 +584,10 @@ class BatchOperationsManager:
             return {batch_type: len(ops) for batch_type, ops in self._batches.items() if ops}
 
     def set_config(
-        self, max_batch_size: int = None, max_batch_age: float = None, auto_flush: bool = None
+        self,
+        max_batch_size: int | None = None,
+        max_batch_age: float | None = None,
+        auto_flush: bool | None = None,
     ) -> None:
         """Configure batch operation parameters."""
         if max_batch_size is not None:
@@ -623,7 +627,7 @@ class BatchOperationsManager:
 _global_batch_manager: BatchOperationsManager | None = None
 
 
-def get_batch_manager(parent_window=None) -> BatchOperationsManager:
+def get_batch_manager(parent_window: Any = None) -> BatchOperationsManager:
     """Get or create the global batch operations manager."""
     global _global_batch_manager
 

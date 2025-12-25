@@ -11,13 +11,10 @@ This manager centralizes rename operations including:
 - Module dividers management
 """
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logger_factory import get_cached_logger
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -32,14 +29,14 @@ class RenameManager:
     - Rename-related UI updates
     """
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: Any):
         """Initialize the RenameManager.
 
         Args:
             main_window: Reference to the main window instance
 
         """
-        self.main_window = main_window
+        self.main_window: Any = main_window
         self.pending_completion_dialog = None
         logger.debug("[RenameManager] Initialized", extra={"dev_only": True})
 
@@ -130,6 +127,7 @@ class RenameManager:
                             return
 
                         logger.info("[RenameManager] Starting safe post-rename workflow")
+                        self._results: dict[str, Any] = {}
                         self._execute_post_rename_workflow_safe(checked_paths)
                     except Exception as e:
                         logger.exception(
@@ -187,7 +185,7 @@ class RenameManager:
 
             # Schedule state restoration after folder load completes
             def restore_state():
-                """Restore UI state after folder reload."""
+                """Restore UI state after reload."""
                 logger.debug("[RenameManager] restore_state function called")
                 try:
                     if not self.main_window or not hasattr(self.main_window, "file_model"):
@@ -413,13 +411,12 @@ class RenameManager:
         self.main_window.file_table_view.viewport().update()
 
     def update_module_dividers(self) -> None:
-        """Updates the visibility of module dividers based on module position.
-        """
+        """Updates the visibility of module dividers based on module position."""
         for index, module in enumerate(self.main_window.rename_modules):
             if hasattr(module, "divider"):
                 module.divider.setVisible(index > 0)
 
-    def get_rename_data(self) -> dict:
+    def get_rename_data(self) -> dict[str, Any]:
         """Get current rename data from modules area.
 
         Returns:

@@ -421,15 +421,14 @@ class MetadataWidget(QWidget):
             self.emit_if_changed()
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
-        """The metadata module is effective if it has a valid field for the selected category.
-        """
+    def is_effective_data(data: dict) -> bool:
+        """The metadata module is effective if it has a valid field for the selected category."""
         field = data.get("field")
         category = data.get("category", "file_dates")
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_")  # type: ignore
+            return bool(field and field.startswith("hash_"))
 
         # For other categories, any field is effective
         return bool(field)

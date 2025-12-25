@@ -30,7 +30,7 @@ class MetadataCacheHelper:
 
     def __init__(
         self,
-        metadata_cache: dict | None = None,
+        metadata_cache: dict[str, Any] | None = None,
         parent_window: QWidget | None = None,
     ) -> None:
         """Initialize with a metadata cache instance.
@@ -44,7 +44,7 @@ class MetadataCacheHelper:
         self.parent_window = parent_window
 
     def get_metadata_for_file(
-        self, file_item, fallback_to_file_item: bool = True
+        self, file_item: Any, fallback_to_file_item: bool = True
     ) -> dict[str, Any]:
         """Unified metadata retrieval for a file with path normalization.
 
@@ -70,17 +70,17 @@ class MetadataCacheHelper:
                     cache_entry = self.metadata_cache.get_entry(normalized_path)
                     if cache_entry and hasattr(cache_entry, "data"):
                         # Return data even if it's an empty dict (valid metadata state)
-                        return cache_entry.data
+                        return cache_entry.data if cache_entry.data else {}
 
                 # Fallback to get() method
                 if hasattr(self.metadata_cache, "get"):
                     metadata = self.metadata_cache.get(normalized_path)
                     if metadata is not None:  # Allow empty dict
-                        return metadata
+                        return metadata if metadata else {}
 
             # Fallback to file item metadata
             if fallback_to_file_item and hasattr(file_item, "metadata") and file_item.metadata:
-                return file_item.metadata
+                return file_item.metadata if file_item.metadata else {}
 
             return {}
 
@@ -92,7 +92,7 @@ class MetadataCacheHelper:
             )
             return {}
 
-    def get_cache_entry_for_file(self, file_item):
+    def get_cache_entry_for_file(self, file_item: Any) -> Any:
         """Get cache entry object for a file with path normalization.
 
         Args:
@@ -122,8 +122,12 @@ class MetadataCacheHelper:
             return None
 
     def set_metadata_for_file(
-        self, file_item, metadata: dict[str, Any], is_extended: bool = False, modified: bool = False
-    ):
+        self,
+        file_item: Any,
+        metadata: dict[str, Any],
+        is_extended: bool = False,
+        modified: bool = False,
+    ) -> None:
         """Unified metadata storage for a file with path normalization.
 
         Args:
@@ -156,7 +160,7 @@ class MetadataCacheHelper:
                 e,
             )
 
-    def has_metadata(self, file_item, extended: bool = None) -> bool:
+    def has_metadata(self, file_item: Any, extended: bool | None = None) -> bool:
         """Check if a file has metadata with path normalization.
 
         Args:
@@ -182,7 +186,7 @@ class MetadataCacheHelper:
                 # Check specific type if requested
                 if extended is not None:
                     if hasattr(cache_entry, "is_extended"):
-                        return cache_entry.is_extended == extended
+                        return bool(cache_entry.is_extended == extended)
                     else:
                         # Fallback to marker checking
                         has_extended_marker = "__extended__" in cache_entry.data
@@ -216,7 +220,7 @@ class MetadataCacheHelper:
             )
             return False
 
-    def get_metadata_value(self, file_item, key_path: str, default: Any = None) -> Any:
+    def get_metadata_value(self, file_item: Any, key_path: str, default: Any = None) -> Any:
         """Get a specific metadata value by key path with path normalization.
 
         Args:
@@ -247,7 +251,7 @@ class MetadataCacheHelper:
             # Simple key
             return metadata.get(key_path, default)
 
-    def set_metadata_value(self, file_item, key_path: str, new_value: Any) -> bool:
+    def set_metadata_value(self, file_item: Any, key_path: str, new_value: Any) -> bool:
         """Set a specific metadata value by key path with path normalization.
 
         Args:
@@ -326,7 +330,7 @@ class MetadataCacheHelper:
             )
             return False
 
-    def is_metadata_modified(self, file_item) -> bool:
+    def is_metadata_modified(self, file_item: Any) -> bool:
         """Check if metadata for a file has been modified with path normalization.
 
         Args:
@@ -340,7 +344,7 @@ class MetadataCacheHelper:
             cache_entry = self.get_cache_entry_for_file(file_item)
 
             if cache_entry and hasattr(cache_entry, "modified"):
-                return cache_entry.modified
+                return bool(cache_entry.modified)
 
             return False
 
@@ -353,7 +357,9 @@ class MetadataCacheHelper:
             return False
 
 
-def get_metadata_cache_helper(parent_window=None, metadata_cache=None) -> MetadataCacheHelper:
+def get_metadata_cache_helper(
+    parent_window: Any = None, metadata_cache: dict[str, Any] | None = None
+) -> MetadataCacheHelper:
     """Factory function to create MetadataCacheHelper with automatic cache detection.
 
     Args:

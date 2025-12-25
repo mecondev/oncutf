@@ -14,6 +14,7 @@ Features:
 """
 
 from collections.abc import Callable
+from typing import Any
 
 from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -72,7 +73,7 @@ class ProgressDialog(QDialog):
         self,
         parent: QWidget | None = None,
         operation_type: str = "metadata_basic",
-        cancel_callback: Callable | None = None,
+        cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
         is_exit_save: bool = False,
     ) -> None:
@@ -161,7 +162,7 @@ class ProgressDialog(QDialog):
 
         logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: Any) -> None:
         """Handle ESC key for cancellation with improved responsiveness and save protection."""
         key = event.key()
 
@@ -246,7 +247,7 @@ class ProgressDialog(QDialog):
         # Close dialog
         self.reject()
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: Any) -> None:
         """Handle dialog close event with proper cleanup."""
         if not self._is_cancelling:
             self._restore_cursors()
@@ -337,10 +338,10 @@ class ProgressDialog(QDialog):
         elif total_files > 0:
             self.set_progress(file_count, total_files)
 
-    def get_progress_summary(self) -> dict:
+    def get_progress_summary(self) -> dict[str, Any]:
         """Get comprehensive progress summary (enhanced widget only)."""
         if hasattr(self.waiting_widget, "get_progress_summary"):
-            return self.waiting_widget.get_progress_summary()
+            return self.waiting_widget.get_progress_summary()  # type: ignore[no-any-return]
         return {}
 
     @classmethod
@@ -348,7 +349,7 @@ class ProgressDialog(QDialog):
         cls,
         parent: QWidget | None = None,
         is_extended: bool = False,
-        cancel_callback: Callable | None = None,
+        cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":
@@ -388,7 +389,7 @@ class ProgressDialog(QDialog):
     def create_file_loading_dialog(
         cls,
         parent: QWidget | None = None,
-        cancel_callback: Callable | None = None,
+        cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
     ) -> "ProgressDialog":
         """Create a progress dialog for file loading operations.
@@ -413,7 +414,7 @@ class ProgressDialog(QDialog):
     def create_hash_dialog(
         cls,
         parent: QWidget | None = None,
-        cancel_callback: Callable | None = None,
+        cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 
@@ -38,8 +39,16 @@ class FileGroup:
 
     def __post_init__(self) -> None:
         """Validate FileGroup after creation."""
-        if not isinstance(self.source_path, Path):
-            self.source_path = Path(self.source_path)
+        # Defensive check for runtime; cast to Any to bypass MyPy "unreachable"
+        path_view: Any = self.source_path
+        if not isinstance(path_view, Path):
+            self.source_path = Path(path_view)
+        # Ensure metadata is a dict (defensive check)
+        metadata_view: Any = self.metadata
+        if not isinstance(metadata_view, dict):
+            # If metadata is not a dict, convert it to an empty dict to maintain type consistency.
+            # A warning could be logged here if a logger was available.
+            self.metadata = {}
 
     @property
     def file_count(self) -> int:

@@ -33,11 +33,13 @@ except Exception as e:
     logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: %s", e)
     raise
 
+from typing import Any
+
 from oncutf.utils.path_normalizer import normalize_path
 
 
 # --- Metadata helpers ---
-def get_metadata_for_file(file_path: str | Path) -> dict | None:
+def get_metadata_for_file(file_path: str | Path) -> dict[str, Any] | None:
     """Return metadata dict for file, or None if not found."""
     cache = get_persistent_metadata_cache()
     norm_path = normalize_path(file_path)

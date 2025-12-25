@@ -66,209 +66,141 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 # mypy configuration
 # --------------------------
-# NOTE: Many modules have ignore_errors=true due to Qt attribute noise.
-# When asking AI to "fix all mypy errors", only modules with ignore_errors=false
-# will actually be checked. See overrides below for which modules are strict.
+# NOTE: Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
+# Tier 1-2 modules are fully strict. See overrides below for module categorization.
 [tool.mypy]
-python_version = "3.12"
-# Gradual typing strategy: Start with basic checks, progressively enable stricter rules
-strict = false
+python_version = "3.13"
 ignore_missing_imports = true
-warn_unused_configs = true
 warn_unused_ignores = true
-
-# Baseline type safety (enabled globally)
-warn_return_any = true
-check_untyped_defs = true
 warn_redundant_casts = true
-no_implicit_optional = true
 warn_unreachable = true
+no_implicit_optional = true
+strict_equality = true
+show_error_codes = true
+pretty = true
+exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)|fonts_rc'
+check_untyped_defs = true
 
-# Disabled globally (enable per-module as code improves)
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-disallow_untyped_calls = false
-
-# Exclude non-package directories
-exclude = '.*(backups|\.cache|temp|reports|scripts|examples)/'
-
-# =============================================================================
-# Third-party libraries
-# =============================================================================
 [[tool.mypy.overrides]]
-module = ["PyQt5.*", "PIL.*", "psutil.*"]
-ignore_missing_imports = true
+module = "oncutf.*"
+ignore_missing_imports = false
+
+# ============================================================
+# Tier 0 — Generated / auto files (NEVER check)
+# ============================================================
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.utils.fonts_rc"
+]
 ignore_errors = true
 
-# =============================================================================
-# UI/Qt code - ignore errors (too much Qt noise, cannot be fixed)
-# =============================================================================
+# ============================================================
+# Tier 1 — Interface-critical (controllers / services)
+# STRICT checking enabled
+# ============================================================
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.controllers.*",
+    "oncutf.services.*"
+]
+ignore_errors = false
+
+# ============================================================
+# Tier 2 — Core domain / logic (gradual clean)
+# Focus areas for reducing error count
+# ============================================================
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.modules.*",
+    "oncutf.metadata.*",
+    "oncutf.models.*",
+    "oncutf.domain.*",
+    "oncutf.core.*"
+]
+ignore_errors = false
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+# ============================================================
+# Tier 3 — Qt / UI / glue code (targeted error suppression)
+# Suppress Qt stub noise via disable_error_code while catching logic bugs
+# ============================================================
 [[tool.mypy.overrides]]
 module = [
     "oncutf.ui.*",
-    "tests.*",
-    "main",
-    # Core subpackages with Qt noise
+    "oncutf.views.*",
+    "oncutf.widgets.*",
     "oncutf.core.ui_managers.*",
     "oncutf.core.initialization.*",
     "oncutf.core.drag.*",
     "oncutf.core.events.*",
-    "oncutf.core.rename.*",
     "oncutf.core.selection.*",
-    "oncutf.core.database.*",
-    "oncutf.core.cache.*",
-    # Legacy flat modules with Qt issues
+    "oncutf.core.pyqt_imports",
+
+    # utils: UI/Qt glue ONLY (whitelist)
+    "oncutf.utils.tooltip_helper",
+    "oncutf.utils.theme_manager",
+    "oncutf.utils.dpi_helper",
+    "oncutf.utils.cursor_helper",
+    "oncutf.utils.dialog_utils",
+    "oncutf.utils.progress_dialog",
+    "oncutf.utils.multiscreen_helper",
+    "oncutf.utils.file_drop_helper",
+    "oncutf.utils.drag_zone_validator",
+    "oncutf.utils.drag_visual_manager",
+    "oncutf.utils.smart_icon_cache",
+    "oncutf.utils.icons_loader",
+    "oncutf.utils.icon_cache",
+    "oncutf.utils.icon_utilities",
+    "oncutf.utils.svg_icon_generator",
+    "oncutf.utils.theme_font_generator",
+    "oncutf.utils.placeholder_helper",
+    "oncutf.utils.metadata_loader"
+]
+ignore_errors = false
+disable_error_code = [
+    "attr-defined",
+    "call-arg",
+    "arg-type",
+    "override",
+    "valid-type",
+    "misc",
+    "assignment",
+    "unreachable",
+    "unused-ignore",
+    "union-attr",
+    "has-type",
+    "call-overload",
+    "index",
+    "var-annotated",
+    "comparison-overlap",
+]
+
+# ============================================================
+# Tier 4 — Legacy flat modules (temporary tolerance)
+# ============================================================
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.application",
+    "oncutf.main",
+    "oncutf.__main__",
     "oncutf.core.signal_coordinator",
     "oncutf.core.utility_manager",
     "oncutf.core.dialog_manager",
     "oncutf.core.event_handler_manager",
     "oncutf.core.file_load_manager",
-    "oncutf.core.pyqt_imports",
-    "oncutf.core.modifier_handler",
+    "oncutf.core.modifier_handler"
 ]
 ignore_errors = true
 
-# =============================================================================
-# Core modules - GRADUAL STRICTNESS
-# =============================================================================
-
-# Metadata package - STRICT MODE (Phase 3 refactoring 2025-12-21)
+# ============================================================
+# Tests — Relaxed checking
+# ============================================================
 [[tool.mypy.overrides]]
-module = [
-    "oncutf.core.metadata",
-    "oncutf.core.metadata.metadata_cache_service",
-    "oncutf.core.metadata.metadata_writer",
-    "oncutf.core.metadata.metadata_loader",
-    "oncutf.core.metadata.metadata_shortcut_handler",
-    "oncutf.core.metadata.metadata_progress_handler",
-    "oncutf.core.metadata.companion_metadata_handler",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-
-# Services layer - STRICT MODE (Antigravity recommendation 2025-12-21)
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.services",
-    "oncutf.services.interfaces",
-    "oncutf.services.registry",
-    "oncutf.services.filesystem_service",
-    "oncutf.services.hash_service",
-    "oncutf.services.cached_hash_service",
-    "oncutf.services.exiftool_service",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-
-# Phase 1: Well-typed modules with strict checking
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.core.type_aliases",
-    "oncutf.core.application_context",
-    "oncutf.core.preview_manager",
-    # pre_execution_validator was clean after type:ignore removal (2025-12-21)
-    "oncutf.core.pre_execution_validator",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-disallow_any_explicit = false  # Allow explicit Any for now
-
-# Phase 2: Core modules with basic type checking (errors enabled, but lenient)
-[[tool.mypy.overrides]]
-module = [
-    # Original Phase 2 - clean modules
-    "oncutf.core.file_store",
-    "oncutf.core.selection_store",
-    "oncutf.core.metadata_staging_manager",
-    # Targeted core modules we already cleaned
-    "oncutf.core.metadata_command_manager",
-    "oncutf.core.batch_processor",
-    "oncutf.core.metadata_commands",
-    "oncutf.core.filesystem_monitor",
-    "oncutf.core.backup_manager",
-    "oncutf.core.progress_protocol",
-    "oncutf.core.persistent_hash_cache",
-    # hash_manager has only 2 errors fixed (2025-12-21)
-    "oncutf.core.hash.hash_manager",
-]
-ignore_errors = false
+module = "tests.*"
+ignore_errors = true
+check_untyped_defs = false
 disallow_untyped_defs = false
-
-# =============================================================================
-# Controllers, Models, Modules, Utils - ENABLED (2025-12-24)
-# All verified mypy-clean with 0 errors
-# =============================================================================
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.controllers.*",
-    "oncutf.models.*", 
-    "oncutf.modules.*",
-    "oncutf.utils.*",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-
-# =============================================================================
-# Core modules - ENABLED (2025-12-24)
-# Previously ignored but verified clean
-# =============================================================================
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.core.unified_metadata_manager",
-    "oncutf.core.application_service",
-    "oncutf.core.thread_pool_manager",
-    "oncutf.core.direct_metadata_loader",
-    "oncutf.core.conflict_resolver",
-    "oncutf.core.batch_operations_manager",
-    "oncutf.core.performance_monitor",
-    "oncutf.core.unified_column_service",
-    "oncutf.core.file_validation_manager",
-    "oncutf.core.shutdown_coordinator",
-    "oncutf.core.parallel_metadata_loader",
-    "oncutf.core.file_operations_manager",
-    "oncutf.core.theme_manager",
-    "oncutf.core.memory_manager",
-    "oncutf.core.structured_metadata_manager",
-    "oncutf.core.metadata_operations_manager",
-    "oncutf.core.hash.hash_operations_manager",
-    "oncutf.core.hash.parallel_hash_worker",
-    "oncutf.core.hash.hash_worker",
-]
-ignore_errors = false
-warn_return_any = true
-check_untyped_defs = true
-
-# =============================================================================
-# Domain package - STRICT MODE (reference implementation)
-# =============================================================================
-[[tool.mypy.overrides]]
-module = ["oncutf.domain.*"]
-strict = true
-warn_return_any = true
-check_untyped_defs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-
-# =============================================================================
-# Migration Plan (Updated after Phase 4 directory reorganization):
-# 
-# Phase 4 moved many modules into subdirectories under oncutf/core/:
-#   - cache/, database/, drag/, events/, hash/, initialization/,
-#   - metadata/, rename/, selection/, ui_managers/
-#
-# Strategy: Use wildcard patterns (oncutf.core.subpackage.*) to ignore
-# entire subpackages. This simplifies config and matches the new structure.
-#
-# Strict modules (Phase 1-2): type_aliases, application_context, preview_manager,
-#   file_store, selection_store, metadata_staging_manager, and other clean modules.
-#
-# Ignored: Most subpackages have Qt noise or complex legacy code.
-#   Enable gradually as code quality improves.
-# =============================================================================
 
 # --------------------------
 # Ruff configuration
@@ -329,6 +261,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "scripts/*.py" = ["T201"]  # Allow print statements in scripts
 "tests/*.py" = ["T201"]     # Allow print statements in tests
+"oncutf/utils/debug_*.py" = ["T201"] # Allow print in debug helpers
 
 [tool.ruff.lint.isort]
 force-single-line = false

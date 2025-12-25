@@ -59,10 +59,10 @@ class ConfigCategory[T]:
         self._data.update(data)
 
 
-class WindowConfig(ConfigCategory):
+class WindowConfig(ConfigCategory[Any]):
     """Window-specific configuration category for GUI applications."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         defaults = {
             "geometry": None,  # No default geometry - will trigger smart sizing
             "window_state": "normal",
@@ -82,10 +82,10 @@ class WindowConfig(ConfigCategory):
         super().__init__("window", defaults)
 
 
-class FileHashConfig(ConfigCategory):
+class FileHashConfig(ConfigCategory[Any]):
     """File hash tracking configuration category."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         defaults = {
             "enabled": True,
             "algorithm": "CRC32",
@@ -111,10 +111,10 @@ class FileHashConfig(ConfigCategory):
         return hashes.get(filepath)
 
 
-class AppConfig(ConfigCategory):
+class AppConfig(ConfigCategory[Any]):
     """General application configuration category."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         defaults = {
             "theme": "dark",
             "language": "en",
@@ -138,11 +138,11 @@ class AppConfig(ConfigCategory):
         self.set("recent_folders", recent)
 
 
-class DialogsConfig(ConfigCategory):
+class DialogsConfig(ConfigCategory[Any]):
     """Configuration for dialog windows (geometry, column widths, etc.)."""
 
-    def __init__(self):
-        defaults = {}
+    def __init__(self) -> None:
+        defaults: dict[str, Any] = {}
         super().__init__("dialogs", defaults)
 
 
@@ -156,7 +156,7 @@ class JSONConfigManager:
         self.backup_file = self.config_dir / "config.json.bak"
 
         self._lock = threading.RLock()
-        self._categories: dict[str, ConfigCategory] = {}
+        self._categories: dict[str, ConfigCategory[Any]] = {}
 
         # Auto-save with dirty flag (reduces disk I/O)
         self._dirty = False
@@ -184,20 +184,20 @@ class JSONConfigManager:
             base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
             return os.path.join(base_dir, self.app_name)
 
-    def register_category(self, category: ConfigCategory) -> None:
+    def register_category(self, category: ConfigCategory[Any]) -> None:
         """Register a configuration category."""
         with self._lock:
             self._categories[category.name] = category
 
     def get_category(
         self, category_name: str, create_if_not_exists: bool = False
-    ) -> ConfigCategory | None:
+    ) -> ConfigCategory[Any] | None:
         """Get configuration category by name."""
         category = self._categories.get(category_name)
         if not category and create_if_not_exists:
             # Dynamically create a generic category if it doesn't exist
             logger.debug("Category '%s' not found, creating it dynamically.", category_name)
-            new_category = ConfigCategory(category_name, {})
+            new_category: ConfigCategory[Any] = ConfigCategory(category_name, {})
             self.register_category(new_category)
             return new_category
         return category
@@ -494,7 +494,7 @@ def get_app_config_manager() -> JSONConfigManager:
     return _global_manager
 
 
-def load_config() -> dict:
+def load_config() -> dict[str, Any]:
     """Load configuration from JSON file and return as dictionary."""
     try:
         config_manager = get_app_config_manager()
@@ -508,7 +508,7 @@ def load_config() -> dict:
         return {}
 
 
-def save_config(config_data: dict) -> bool:
+def save_config(config_data: dict[str, Any]) -> bool:
     """Save configuration dictionary to JSON file."""
     try:
         config_manager = get_app_config_manager()

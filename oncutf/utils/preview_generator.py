@@ -10,6 +10,7 @@ Date: 2025-05-06
 
 from typing import Any
 
+from oncutf.core.type_aliases import MetadataCacheProtocol
 from oncutf.models.file_item import FileItem
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.modules.original_name_module import OriginalNameModule
@@ -22,7 +23,7 @@ logger = get_cached_logger(__name__)
 def generate_preview_names(
     files: list[FileItem],
     modules_data: list[dict[str, Any]],
-    metadata_cache: dict[str, dict[str, Any]] | None = None,
+    metadata_cache: MetadataCacheProtocol | dict[str, dict[str, Any]] | None = None,
 ) -> tuple[list[tuple[str, str]], bool, str]:
     """Generate new filenames based on rename modules for a list of files.
 
@@ -97,7 +98,19 @@ def generate_preview_names(
             elif module_type == "metadata":
                 # Use MetadataModule for consistency with preview engine
                 try:
-                    result = MetadataModule.apply_from_data(module, file, index, metadata_cache)
+                    # Resolve metadata for this specific file from cache
+                    metadata_for_file: dict[str, Any] | None = None
+                    if metadata_cache is not None:
+                        file_key = getattr(file, "full_path", None)
+                        if not isinstance(file_key, str) or not file_key:
+                            metadata_for_file = None
+                        elif isinstance(metadata_cache, dict):
+                            metadata_for_file = metadata_cache.get(file_key)
+                        else:
+                            # Protocol method
+                            metadata_for_file = metadata_cache.get(file_key)
+
+                    result = MetadataModule.apply_from_data(module, file, index, metadata_for_file)
                     logger.debug(
                         "[PreviewGen] Metadata result: '%s'",
                         result,

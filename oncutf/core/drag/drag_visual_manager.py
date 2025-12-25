@@ -289,7 +289,7 @@ class DragVisualManager:
 
         return self._create_composite_cursor(base_icon, action_icons)
 
-    def _create_composite_cursor(self, base_icon: str, action_icons: list) -> QCursor:
+    def _create_composite_cursor(self, base_icon: str, action_icons: list[str]) -> QCursor:
         """Create a composite cursor with base + action icons and text label.
 
         Args:

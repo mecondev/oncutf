@@ -26,7 +26,6 @@ MainWindowController coordinates complex workflows that span multiple domains.
 
 import logging
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -124,11 +123,11 @@ class MainWindowController:
         """
         logger.info("[MainWindowController] Starting session restoration workflow")
 
-        errors = []
+        errors: list[str] = []
         result = {
             "success": False,
             "folder_restored": False,
-            "folder_path": None,
+            "folder_path": "",
             "files_loaded": 0,
             "metadata_loaded": 0,
             "sort_column": sort_column,
@@ -156,9 +155,9 @@ class MainWindowController:
 
         # Step 2: Load files via FileLoadController
         try:
-            folder_path = Path(last_folder)
+            folder_path_str = str(last_folder)
             load_result = self._file_load_controller.load_folder(
-                folder_path, merge=False, recursive=recursive
+                folder_path_str, merge_mode=False, recursive=recursive
             )
 
             if not load_result.get("success", False):
@@ -194,7 +193,7 @@ class MainWindowController:
 
                 if loaded_files:
                     metadata_result = self._metadata_controller.load_metadata(
-                        items=loaded_files, use_extended=False, source="session_restore"
+                        file_items=loaded_files, use_extended=False, source="session_restore"
                     )
 
                     if metadata_result.get("success", False):
@@ -294,7 +293,7 @@ class MainWindowController:
             update_progress("Creating database backup...", 0.2)
             if hasattr(main_window, "backup_manager") and main_window.backup_manager:
                 try:
-                    main_window.backup_manager.create_backup(reason="auto")  # type: ignore
+                    main_window.backup_manager.create_backup(reason="auto")
                     result["backup_created"] = True
                     logger.info("[Shutdown] Database backup created")
                 except Exception as e:
@@ -318,7 +317,7 @@ class MainWindowController:
             if hasattr(main_window, "batch_manager") and main_window.batch_manager:
                 try:
                     if hasattr(main_window.batch_manager, "flush_operations"):
-                        main_window.batch_manager.flush_operations()  # type: ignore
+                        main_window.batch_manager.flush_operations()
                         result["operations_flushed"] = True
                         logger.info("[Shutdown] Batch operations flushed")
                 except Exception as e:
@@ -330,7 +329,7 @@ class MainWindowController:
             update_progress("Cleaning up drag operations...", 0.5)
             if hasattr(main_window, "drag_manager") and main_window.drag_manager:
                 try:
-                    main_window.drag_manager.force_cleanup()  # type: ignore
+                    main_window.drag_manager.force_cleanup()
                     logger.info("[Shutdown] Drag manager cleaned up")
                 except Exception as e:
                     error_msg = f"Drag cleanup failed: {e}"
@@ -341,7 +340,7 @@ class MainWindowController:
             update_progress("Closing dialogs...", 0.6)
             if hasattr(main_window, "dialog_manager") and main_window.dialog_manager:
                 try:
-                    main_window.dialog_manager.cleanup()  # type: ignore
+                    main_window.dialog_manager.cleanup()
                     logger.info("[Shutdown] All dialogs closed")
                 except Exception as e:
                     error_msg = f"Dialog cleanup failed: {e}"

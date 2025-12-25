@@ -36,7 +36,7 @@ class SelectionManager:
         self._last_selected_rows = None
         self._last_preview_update_time = 0
 
-    def _get_cache_helper(self) -> MetadataCacheHelper:
+    def _get_cache_helper(self) -> MetadataCacheHelper | None:
         """Get or create the MetadataCacheHelper instance."""
         if self._cache_helper is None and self.parent_window:
             metadata_cache = getattr(self.parent_window, "metadata_cache", None)
@@ -45,8 +45,7 @@ class SelectionManager:
         return self._cache_helper
 
     def select_all_rows(self) -> None:
-        """Selects all rows in the file table efficiently with wait cursor.
-        """
+        """Selects all rows in the file table efficiently with wait cursor."""
         if not self.parent_window:
             return
 
@@ -110,8 +109,7 @@ class SelectionManager:
                     file_table_view.blockSignals(False)
 
     def clear_all_selection(self) -> None:
-        """Clears all selection in the file table.
-        """
+        """Clears all selection in the file table."""
         if not self.parent_window:
             return
 

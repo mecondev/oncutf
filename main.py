@@ -19,6 +19,7 @@ import platform
 import signal
 import sys
 import time
+from typing import Any
 
 # Add the project root to the path FIRST - before any local imports
 # Normalize the path for Windows compatibility
@@ -156,8 +157,8 @@ def main() -> int:
             logger.info("File system encoding: %s", sys.getfilesystemencoding())
 
         # Enable High DPI support before creating QApplication
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore[attr-defined]
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore[attr-defined]
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
         # Create application
         app = QApplication(sys.argv)
@@ -233,7 +234,7 @@ def main() -> int:
             )
 
             # Initialize state for dual-flag synchronization
-            init_state = {
+            init_state: dict[str, Any] = {
                 "worker_ready": False,
                 "min_time_elapsed": False,
                 "worker_results": None,

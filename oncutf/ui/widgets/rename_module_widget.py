@@ -291,8 +291,7 @@ class RenameModuleWidget(QWidget):
         self.updated.emit(self)
 
     def get_data(self) -> dict:
-        """Return the current module data.
-        """
+        """Return the current module data."""
         if self.current_module_widget and hasattr(self.current_module_widget, "get_data"):
             data = self.current_module_widget.get_data()
         else:
@@ -311,19 +310,17 @@ class RenameModuleWidget(QWidget):
         return data
 
     def is_effective(self) -> bool:
-        """Determines if this module is effectively doing something, by checking its data.
-        """
+        """Determines if this module is effectively doing something, by checking its data."""
         if not self.current_module_widget:
             logger.warning("[ModuleWidget] No module loaded for widget!")
             return False  # No module loaded
 
         data = self.get_data()
 
-        # Try to access the class method `is_effective(data)` safely
+        # Try to access the class method `is_effective_data(data)` safely
         module_class = type(self.current_module_widget)
-        if hasattr(module_class, "is_effective"):
-            return module_class.is_effective(data)  # type: ignore[attr-defined]
-            # return self.module.is_effective(self.get_data())
+        if hasattr(module_class, "is_effective_data"):
+            return module_class.is_effective_data(data)  # type: ignore[attr-defined]
         return False
 
     # Drag & Drop functionality

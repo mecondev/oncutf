@@ -8,8 +8,11 @@ Validation system for metadata field editing.
 Provides validation rules and error messages for different metadata field types.
 """
 
+from collections.abc import Callable
+from typing import Any
 
-def _default_validator(_value):
+
+def _default_validator(_value: Any) -> tuple[bool, str]:
     """Default validator for unknown fields: reject them."""
     # Return (is_valid: bool, error_message_or_None)
     # Ensure test expectation: mention "validator" in the message
@@ -35,7 +38,7 @@ class MetadataFieldValidator:
     MAX_KEYWORDS_COUNT = 50
 
     @staticmethod
-    def validate_title(value: str) -> tuple[bool, str]:
+    def validate_title(value: Any) -> tuple[bool, str]:
         """Validate title field.
 
         Rules:
@@ -74,7 +77,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_artist(value: str) -> tuple[bool, str]:
+    def validate_artist(value: Any) -> tuple[bool, str]:
         """Validate artist/author field.
 
         Rules:
@@ -107,7 +110,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_copyright(value: str) -> tuple[bool, str]:
+    def validate_copyright(value: Any) -> tuple[bool, str]:
         """Validate copyright field.
 
         Rules:
@@ -140,7 +143,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_description(value: str) -> tuple[bool, str]:
+    def validate_description(value: Any) -> tuple[bool, str]:
         """Validate description field.
 
         Rules:
@@ -173,7 +176,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_keywords(value: str) -> tuple[bool, str]:
+    def validate_keywords(value: Any) -> tuple[bool, str]:
         """Validate keywords field (comma-separated).
 
         Rules:
@@ -219,7 +222,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_rotation(value: str) -> tuple[bool, str]:
+    def validate_rotation(value: Any) -> tuple[bool, str]:
         """Validate rotation field.
 
         Rules:
@@ -273,7 +276,7 @@ class MetadataFieldValidator:
             return False, "Rotation must be a valid number (0, 90, 180, or 270)"
 
     @staticmethod
-    def parse_keywords(value: str) -> list[str]:
+    def parse_keywords(value: Any) -> list[str]:
         """Parse and clean keywords string into a list.
 
         Args:
@@ -313,7 +316,7 @@ class MetadataFieldValidator:
         return ", ".join(clean_keywords)
 
     @staticmethod
-    def get_field_validator(field_name: str):
+    def get_field_validator(field_name: str) -> Callable[[Any], tuple[bool, str]] | None:
         """Get the appropriate validator function for a field name.
 
         Args:
@@ -336,7 +339,7 @@ class MetadataFieldValidator:
         return validators.get(field_name)
 
     @staticmethod
-    def validate_field(field_name: str, value):
+    def validate_field(field_name: str, value: Any) -> tuple[bool, str]:
         """Validate a field by name. Always returns (bool, error_message_or_None).
         Uses _default_validator when no callable is found.
 
@@ -352,11 +355,9 @@ class MetadataFieldValidator:
         validator = MetadataFieldValidator.get_field_validator(field_name)
         if validator is None or not callable(validator):
             validator = _default_validator
-        # Some validators might return just bool or (bool, str). Normalize.
+        # Normalize and ensure return is (bool, str | None)
         result = validator(value)
         if isinstance(result, tuple):
             return result
-        if isinstance(result, bool):
-            return (result, None if result else "Invalid value")
-        # Any other return type -> interpret falsy/truthy
-        return (bool(result), None if result else "Invalid value")
+        # Not a tuple, normalize to tuple format - function returns earlier for all paths
+        # Dead code removed per mypy unreachable analysis

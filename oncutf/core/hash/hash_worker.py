@@ -23,11 +23,20 @@ worker.start()
 
 import os
 from pathlib import Path
+from typing import Any, Protocol
 
 from oncutf.core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+
+class HashStore(Protocol):
+    """Protocol for hash storage operations."""
+
+    def store_hash(self, file_path: str, hash_value: str, algorithm: str) -> None: ...
+    def get_cached_hash(self, file_path: str) -> str | None: ...
+    def calculate_hash(self, file_path: str, **kwargs: Any) -> str | None: ...
 
 
 class HashWorker(QThread):
@@ -67,9 +76,11 @@ class HashWorker(QThread):
         self.main_window = parent
 
         # Shared hash manager instance for better cache utilization
+        from typing import cast
+
         from oncutf.core.hash.hash_manager import HashManager
 
-        self._hash_manager = HashManager()
+        self._hash_manager: HashStore = cast("HashStore", HashManager())
 
         # Operation configuration
         self._operation_type = None  # "duplicates", "compare", "checksums"
@@ -237,7 +248,7 @@ class HashWorker(QThread):
             # Execute the appropriate operation
             if operation_type == "duplicates":
                 self._find_duplicates(file_paths)
-            elif operation_type == "compare":
+            elif operation_type == "compare" and external_folder:
                 self._compare_external(file_paths, external_folder)
             elif operation_type == "checksums":
                 self._calculate_checksums(file_paths)
@@ -409,7 +420,7 @@ class HashWorker(QThread):
 
     def _calculate_checksums(self, file_paths: list[str]) -> None:
         """Calculate checksums with file-by-file progress tracking and smart cache usage."""
-        hash_results = {}
+        hash_results: dict[str, str] = {}
         total_files = len(file_paths)
 
         self.status_updated.emit("Calculating CRC32 checksums...")
@@ -463,7 +474,7 @@ class HashWorker(QThread):
 
     def _find_duplicates(self, file_paths: list[str]) -> None:
         """Find duplicates with file-by-file progress tracking and smart cache usage."""
-        hash_to_files = {}  # Use more descriptive name
+        hash_to_files: dict[str, list[str]] = {}  # Use more descriptive name
         total_files = len(file_paths)
 
         self.status_updated.emit("Calculating CRC32 hashes for duplicate detection...")
@@ -536,7 +547,7 @@ class HashWorker(QThread):
 
     def _compare_external(self, file_paths: list[str], external_folder: str) -> None:
         """Compare files with external folder using file-by-file progress tracking."""
-        comparison_results = {}
+        comparison_results: dict[str, Any] = {}
         total_files = len(file_paths)
 
         self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
