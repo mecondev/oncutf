@@ -400,6 +400,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             # Paint background for each column's rect
             bg_rect = QRect(option.rect)
 
+            # Extend to left edge (x=0) for tree items to cover indentation
+            bg_rect.setLeft(0)
+
             # Extend to viewport right edge for the last column
             if index.column() == model.columnCount(index.parent()) - 1:
                 viewport = tree_view.viewport()
