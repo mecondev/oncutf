@@ -603,9 +603,9 @@ class FileTableModel(QAbstractTableModel):
                 # Determine hash status
                 hash_status = "hash" if self._has_hash_cached(file.full_path) else "none"
 
-                # Create and return combined icon
+                # Create and return combined icon (return directly, not wrapped in QVariant)
                 icon = self._create_combined_icon(metadata_status, hash_status)
-                return QVariant(icon)
+                return icon
             if role == Qt.CheckStateRole:
                 return QVariant(Qt.Checked if file.checked else Qt.Unchecked)
             if role == Qt.ToolTipRole:
