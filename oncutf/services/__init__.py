@@ -34,8 +34,6 @@ from oncutf.services.hash_service import HashService
 
 # Import protocols for convenient access
 from oncutf.services.interfaces import (
-    ConfigServiceProtocol,
-    DatabaseServiceProtocol,
     FilesystemServiceProtocol,
     HashServiceProtocol,
     MetadataServiceProtocol,
@@ -53,8 +51,6 @@ __all__ = [
     "MetadataServiceProtocol",
     "HashServiceProtocol",
     "FilesystemServiceProtocol",
-    "DatabaseServiceProtocol",
-    "ConfigServiceProtocol",
     # Implementations
     "ExifToolService",
     "HashService",

@@ -29,8 +29,6 @@ __all__ = [
     "MetadataServiceProtocol",
     "HashServiceProtocol",
     "FilesystemServiceProtocol",
-    "DatabaseServiceProtocol",
-    "ConfigServiceProtocol",
 ]
 
 
@@ -144,70 +142,6 @@ class FilesystemServiceProtocol(Protocol):
 
         Returns:
             Dictionary with file info (size, mtime, ctime, etc.).
-
-        """
-        ...
-
-
-@runtime_checkable
-class DatabaseServiceProtocol(Protocol):
-    """Protocol for database operations.
-
-    Implementations provide persistent storage for rename history,
-    metadata caching, and application state.
-    """
-
-    def store_rename(self, source: str, target: str, timestamp: float) -> None:
-        """Store a rename operation in history.
-
-        Args:
-            source: Original file path.
-            target: New file path.
-            timestamp: Unix timestamp of the operation.
-
-        """
-        ...
-
-    def get_rename_history(self, path: str) -> list[dict[str, Any]]:
-        """Get rename history for a file.
-
-        Args:
-            path: File path to lookup.
-
-        Returns:
-            List of rename operations involving this path.
-
-        """
-        ...
-
-
-@runtime_checkable
-class ConfigServiceProtocol(Protocol):
-    """Protocol for configuration access.
-
-    Implementations provide typed access to application configuration
-    with defaults and persistence.
-    """
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Get a configuration value.
-
-        Args:
-            key: Configuration key (dot-notation supported).
-            default: Default value if key not found.
-
-        Returns:
-            Configuration value or default.
-
-        """
-        ...
-
-    def set(self, key: str, value: Any) -> None:
-        """Set a configuration value.
-
-        Args:
-            key: Configuration key.
-            value: Value to set.
 
         """
         ...

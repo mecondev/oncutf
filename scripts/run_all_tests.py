@@ -202,7 +202,6 @@ class ComprehensiveTestRunner:
             imports_to_check = [
                 ("core.memory_manager", "MemoryManager"),
                 ("utils.smart_icon_cache", "SmartIconCache"),
-                ("core.optimized_database_manager", "OptimizedDatabaseManager"),
                 ("core.async_operations_manager", "AsyncOperationsManager"),
                 ("core.thread_pool_manager", "ThreadPoolManager"),
             ]
@@ -219,9 +218,6 @@ class ComprehensiveTestRunner:
                     elif class_name == "SmartIconCache":
                         instance = cls(max_entries=10, max_memory_mb=1.0)
                         instance.shutdown()
-                    elif class_name == "OptimizedDatabaseManager":
-                        # Skip instantiation for database (requires file)
-                        pass
                     elif class_name == "AsyncOperationsManager":
                         instance = cls(max_workers=2)
                         instance.shutdown()

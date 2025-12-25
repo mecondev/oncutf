@@ -13,8 +13,6 @@ from pathlib import Path
 from typing import Any
 
 from oncutf.services.interfaces import (
-    ConfigServiceProtocol,
-    DatabaseServiceProtocol,
     FilesystemServiceProtocol,
     HashServiceProtocol,
     MetadataServiceProtocol,
@@ -94,39 +92,3 @@ class TestFilesystemServiceProtocol:
 
         mock = MockFilesystemService()
         assert isinstance(mock, FilesystemServiceProtocol)
-
-
-class TestDatabaseServiceProtocol:
-    """Tests for DatabaseServiceProtocol."""
-
-    def test_mock_implementation_is_instance(self) -> None:
-        """Test that a mock class implementing the protocol is recognized."""
-
-        class MockDatabaseService:
-            def store_rename(self, source: str, target: str, timestamp: float) -> None:
-                _ = (source, target, timestamp)  # Used to satisfy protocol
-
-            def get_rename_history(self, path: str) -> list[dict[str, Any]]:
-                _ = path  # Used to satisfy protocol
-                return []
-
-        mock = MockDatabaseService()
-        assert isinstance(mock, DatabaseServiceProtocol)
-
-
-class TestConfigServiceProtocol:
-    """Tests for ConfigServiceProtocol."""
-
-    def test_mock_implementation_is_instance(self) -> None:
-        """Test that a mock class implementing the protocol is recognized."""
-
-        class MockConfigService:
-            def get(self, key: str, default: Any = None) -> Any:
-                _ = key  # Used to satisfy protocol
-                return default
-
-            def set(self, key: str, value: Any) -> None:
-                _ = (key, value)  # Used to satisfy protocol
-
-        mock = MockConfigService()
-        assert isinstance(mock, ConfigServiceProtocol)
