@@ -234,6 +234,11 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if not tooltip_text:
             return
 
+        # Convert QVariant to string if necessary
+        tooltip_text = str(tooltip_text) if tooltip_text else ""
+        if not tooltip_text:
+            return
+
         # Determine tooltip type based on content
         tooltip_type = TooltipType.INFO
         if "no metadata" in tooltip_text.lower() or "no hash" in tooltip_text.lower():

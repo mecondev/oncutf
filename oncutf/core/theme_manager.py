@@ -281,6 +281,48 @@ class ThemeManager(QObject):
             "combo_height": self.get_constant("combo_height"),
         }
 
+    def get_context_menu_stylesheet(self) -> str:
+        """Get QSS stylesheet specifically for context menus.
+
+        Returns:
+            QSS stylesheet string for context menus
+
+        """
+        # Return a lightweight stylesheet for context menus using current theme colors
+        try:
+            bg = self.get_color("background")
+            text = self.get_color("text")
+            hover = self.get_color("selected")
+            border = self.get_color("border")
+            disabled = self.get_color("disabled_text")
+
+            return f"""
+                QMenu {{
+                    background-color: {bg};
+                    color: {text};
+                    border: 1px solid {border};
+                    padding: 4px;
+                }}
+                QMenu::item {{
+                    padding: 6px 24px 6px 12px;
+                    border-radius: 3px;
+                }}
+                QMenu::item:selected {{
+                    background-color: {hover};
+                }}
+                QMenu::item:disabled {{
+                    color: {disabled};
+                }}
+                QMenu::separator {{
+                    height: 1px;
+                    background: {border};
+                    margin: 4px 8px;
+                }}
+            """
+        except KeyError:
+            logger.warning("[ThemeManager] Failed to generate context menu stylesheet")
+            return ""
+
     def apply_complete_theme(self, app: Any, main_window: Any = None) -> None:
         """Apply complete theming to the entire application.
 
