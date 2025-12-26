@@ -95,16 +95,35 @@ QTreeView::item:selected {
     color: {{selected_text}};
 }
 
+QTreeView::item:selected:hover {
+    background-color: {{selected_hover}};
+    color: {{selected_text}};
+}
+
 QTreeView::branch {
     background-color: transparent;
 }
 
-QTreeView::branch:has-children:closed {
+QTreeView::branch:hover {
+    background-color: {{hover}};
+}
+
+QTreeView::branch:selected {
+    background-color: {{selected}};
+}
+
+QTreeView::branch:selected:hover {
+    background-color: {{selected_hover}};
+}
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
     image: url(resources/icons/chevron-right.png);
 }
 
-QTreeView::branch:has-children:open {
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
     image: url(resources/icons/chevron-down.png);
 }
@@ -354,6 +373,47 @@ QToolTip {
     border: 1px solid {{border}};
     padding: 4px 8px;
     border-radius: 4px;
+}
+
+/* ===== Custom Tooltip Widget (TooltipHelper) ===== */
+QLabel[class="DefaultTooltip"] {
+    background-color: {{tooltip_bg}};
+    color: {{tooltip_text}};
+    border: 1px solid {{tooltip_border}};
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+QLabel[class="InfoTooltip"] {
+    background-color: {{tooltip_info_bg}};
+    color: {{tooltip_info_text}};
+    border: 1px solid {{tooltip_info_border}};
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+QLabel[class="WarningTooltip"] {
+    background-color: {{tooltip_warning_bg}};
+    color: {{tooltip_warning_text}};
+    border: 1px solid {{tooltip_warning_border}};
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+QLabel[class="ErrorTooltip"] {
+    background-color: {{tooltip_error_bg}};
+    color: {{tooltip_error_text}};
+    border: 1px solid {{tooltip_error_border}};
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+QLabel[class="SuccessTooltip"] {
+    background-color: {{tooltip_success_bg}};
+    color: {{tooltip_success_text}};
+    border: 1px solid {{tooltip_success_border}};
+    padding: 6px 10px;
+    border-radius: 6px;
 }
 
 /* ===== QSplitter ===== */

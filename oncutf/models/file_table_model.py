@@ -607,17 +607,17 @@ class FileTableModel(QAbstractTableModel):
                 icon = self._create_combined_icon(metadata_status, hash_status)
                 return icon
             if role == Qt.CheckStateRole:
-                return QVariant(Qt.Checked if file.checked else Qt.Unchecked)
+                return Qt.Checked if file.checked else Qt.Unchecked
             if role == Qt.ToolTipRole:
-                return QVariant(self._get_unified_tooltip(file))
-            return QVariant()
+                return self._get_unified_tooltip(file)
+            return None
         col_key = self._column_mapping.get(index.column())
         if not col_key:
-            return QVariant()
+            return None
         file = self.files[index.row()]
         if role == Qt.ToolTipRole:
             # Return unified tooltip for all columns
-            return QVariant(self._get_unified_tooltip(file))
+            return self._get_unified_tooltip(file)
         result = self._get_column_data(file, col_key, role)
         return result
 

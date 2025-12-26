@@ -35,7 +35,6 @@ from oncutf.core.pyqt_imports import (
     QDragMoveEvent,
     QDropEvent,
     QModelIndex,
-    QPalette,
     QSortFilterProxyModel,
     QStandardItemModel,
     Qt,
@@ -334,6 +333,14 @@ class MetadataTreeView(
         """Configure standard tree view properties. Delegates to view config handler."""
         self._view_config.setup_tree_view_properties()
 
+        # Install custom delegate for full-row hover and consistent painting
+        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.widgets.ui_delegates import TreeViewItemDelegate
+
+        delegate = TreeViewItemDelegate(self, theme=get_theme_manager())
+        delegate.install_event_filter(self)
+        self.setItemDelegate(delegate)
+
     def _setup_icon_delegate(self) -> None:
         """Setup the icon delegate for selection-based icon changes."""
         # Icon delegate functionality removed for simplicity
@@ -598,25 +605,6 @@ class MetadataTreeView(
     def focusOutEvent(self, event):
         """Handle focus loss events."""
         super().focusOutEvent(event)
-
-    def drawBranches(self, painter, rect, index):
-        """Override to paint alternating row background in branch area before branches.
-
-        This ensures that the branch indicators (chevrons) are visible on top of
-        the alternating row background, fixing the Windows-specific rendering issue
-        where the branch area did not receive alternating colors.
-        """
-        if self.alternatingRowColors() and index.isValid():
-            # Paint alternating background in branch area
-            if index.row() % 2 == 1:
-                bg_color = self.palette().color(QPalette.ColorRole.AlternateBase)
-            else:
-                bg_color = self.palette().color(QPalette.ColorRole.Base)
-
-            painter.fillRect(rect, bg_color)
-
-        # Call base implementation to draw branch indicators (chevrons)
-        super().drawBranches(painter, rect, index)
 
     def mousePressEvent(self, event):
         """Handle mouse press events."""

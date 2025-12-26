@@ -28,7 +28,6 @@ from oncutf.core.pyqt_imports import (
     QHeaderView,
     QKeyEvent,
     QMouseEvent,
-    QPalette,
     Qt,
     QTreeView,
     pyqtSignal,
@@ -473,25 +472,6 @@ class FileTreeView(QTreeView):
     # =====================================
     # CUSTOM RENDERING
     # =====================================
-
-    def drawBranches(self, painter, rect, index):
-        """Override to paint alternating row background in branch area before branches.
-
-        This ensures that the branch indicators (chevrons) are visible on top of
-        the alternating row background, fixing the Windows-specific rendering issue
-        where the branch area did not receive alternating colors.
-        """
-        if self.alternatingRowColors() and index.isValid():
-            # Paint alternating background in branch area
-            if index.row() % 2 == 1:
-                bg_color = self.palette().color(QPalette.ColorRole.AlternateBase)
-            else:
-                bg_color = self.palette().color(QPalette.ColorRole.Base)
-
-            painter.fillRect(rect, bg_color)
-
-        # Call base implementation to draw branch indicators (chevrons)
-        super().drawBranches(painter, rect, index)
 
     # =====================================
     # CUSTOM SINGLE-ITEM DRAG IMPLEMENTATION

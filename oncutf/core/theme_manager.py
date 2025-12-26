@@ -183,6 +183,19 @@ class ThemeManager(QObject):
             # Replace theme_name placeholder
             template = template.replace("{{theme_name}}", self._current_theme)
 
+            # Resolve chevron icon paths to absolute file URLs to avoid CWD issues
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            icons_dir = os.path.join(project_root, "resources", "icons")
+            chevron_right = os.path.join(icons_dir, "chevron-right.png").replace("\\", "/")
+            chevron_down = os.path.join(icons_dir, "chevron-down.png").replace("\\", "/")
+
+            template = template.replace(
+                "url(resources/icons/chevron-right.png)", f"url({chevron_right})"
+            )
+            template = template.replace(
+                "url(resources/icons/chevron-down.png)", f"url({chevron_down})"
+            )
+
             logger.debug(
                 "[ThemeManager] Rendered QSS template (%d chars)",
                 len(template),

@@ -72,6 +72,10 @@ class MetadataTreeViewConfig:
         view.setDragDropMode(QAbstractItemView.DropOnly)
         view.setAlternatingRowColors(True)
 
+        # Use global theme manager for styling (handled by main.qss)
+        # Manual stylesheet injection removed to avoid path resolution issues
+        # and conflicts with the global theme manager.
+
     def detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content.
 
