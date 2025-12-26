@@ -32,7 +32,7 @@ from oncutf.core.pyqt_imports import (
     QTreeView,
     pyqtSignal,
 )
-from oncutf.ui.widgets.ui_delegates import TreeViewItemDelegate
+from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
 from oncutf.utils.drag_zone_validator import DragZoneValidator
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_scroll_adjust

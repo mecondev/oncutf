@@ -95,7 +95,7 @@ class TextRemovalModule(BaseRenameModule):
 
         # Apply theme styling
         from oncutf.core.theme_manager import get_theme_manager
-        from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
+        from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
 
         theme = get_theme_manager()
         self.position_combo.setFixedHeight(theme.get_constant("combo_height"))

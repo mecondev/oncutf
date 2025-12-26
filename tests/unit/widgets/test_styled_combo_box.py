@@ -6,8 +6,8 @@ Tests theme integration and delegate setup.
 import pytest
 from PyQt5.QtWidgets import QWidget
 
+from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.ui.widgets.ui_delegates import ComboBoxItemDelegate
 
 
 @pytest.fixture

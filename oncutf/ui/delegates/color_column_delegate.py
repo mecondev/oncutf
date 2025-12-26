@@ -23,7 +23,7 @@ from oncutf.core.pyqt_imports import (
     QTableView,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.ui.widgets.ui_delegates import FileTableHoverDelegate
+from oncutf.ui.delegates.ui_delegates import FileTableHoverDelegate
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

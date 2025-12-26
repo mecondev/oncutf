@@ -437,7 +437,7 @@ class UIManager:
 
         if METADATA_TREE_USE_CUSTOM_DELEGATE:
             # Install custom delegate to respect ForegroundRole for modified items
-            from oncutf.ui.widgets.ui_delegates import MetadataTreeItemDelegate
+            from oncutf.ui.delegates.ui_delegates import MetadataTreeItemDelegate
 
             metadata_delegate = MetadataTreeItemDelegate(self.parent_window.metadata_tree_view)
             self.parent_window.metadata_tree_view.setItemDelegate(metadata_delegate)

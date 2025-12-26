@@ -30,7 +30,6 @@ from .rename_history_dialog import RenameHistoryDialog
 from .rename_module_widget import RenameModuleWidget
 from .rename_modules_area import RenameModulesArea
 from .styled_combo_box import StyledComboBox
-from .ui_delegates import ComboBoxItemDelegate, FileTableHoverDelegate
 from .validated_line_edit import ValidatedLineEdit
 
 __all__ = [

@@ -335,7 +335,7 @@ class MetadataTreeView(
 
         # Install custom delegate for full-row hover and consistent painting
         from oncutf.core.theme_manager import get_theme_manager
-        from oncutf.ui.widgets.ui_delegates import TreeViewItemDelegate
+        from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
 
         delegate = TreeViewItemDelegate(self, theme=get_theme_manager())
         delegate.install_event_filter(self)
