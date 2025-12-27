@@ -60,7 +60,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         # Handle disabled item (grayout)
         if not (index.flags() & Qt.ItemFlag.ItemIsEnabled):
             option.palette.setBrush(
-                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
+                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text_disabled")))
             )
             option.font.setItalic(True)
             # Disabled items should not have hover/selected background
@@ -69,7 +69,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         elif option.state & QStyle.StateFlag.State_Selected:
             option.palette.setBrush(
                 QPalette.ColorRole.Text,
-                QBrush(QColor(self.theme.get_color("input_selection_text"))),
+                QBrush(QColor(self.theme.get_color("selected_text"))),
             )
             option.palette.setBrush(
                 QPalette.ColorRole.Highlight,

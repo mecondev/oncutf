@@ -94,9 +94,6 @@ class MetadataWidget(QWidget):
 
         self.setup_ui()
 
-        # Ensure theme inheritance for child widgets
-        self._ensure_theme_inheritance()
-
     def setup_ui(self) -> None:
         """Setup the UI components."""
         layout = QVBoxLayout()
@@ -140,7 +137,7 @@ class MetadataWidget(QWidget):
         layout.addLayout(options_row)
 
         # Connections (delegate setup handled by StyledComboBox)
-        self.category_combo.currentIndexChanged.connect(self._on_category_changed)
+        self.category_combo.currentIndexChanged.connect(self._category_manager.on_category_changed)
         self.category_combo.currentIndexChanged.connect(self._emit_settings_changed)
         # Use new confirmed-selection signal to avoid preview races
         self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)  # keep legacy
@@ -148,18 +145,19 @@ class MetadataWidget(QWidget):
         self.options_combo.selection_confirmed.connect(self._emit_settings_changed)
         logger.debug("Connected to hierarchical combo selection_confirmed signal")
 
-        # Initialize category availability
-        self.update_category_availability()
+        # Initialize category availability (via CategoryManager)
+        self._category_manager.update_category_availability()
 
         # Schedule options update (only if timer manager is available)
         try:
-            schedule_ui_update(self.update_options, 0)
+            schedule_ui_update(self._category_manager.update_options, 0)
         except Exception:
             # Fallback for testing or when timer manager is not available
-            self.update_options()
+            self._category_manager.update_options()
 
         self.setLayout(layout)
         logger.debug("MetadataWidget UI setup completed")
+
 
     def _emit_settings_changed(self) -> None:
         """Emit settings_changed signal on ANY user interaction.
@@ -170,9 +168,10 @@ class MetadataWidget(QWidget):
         try:
             config = self.get_data()
             logger.debug("Emitting settings_changed with config: %s", config)
+            # Emit settings_changed with config for new code
             self.settings_changed.emit(config)
-            # Also emit legacy 'updated' signal for backwards compatibility
-            self.updated.emit(config)
+            # Emit legacy 'updated' signal with self for backwards compatibility
+            self.updated.emit(self)
         except Exception as e:
             logger.warning("Error emitting settings_changed: %s", e)
 

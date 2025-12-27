@@ -117,7 +117,7 @@ class SpecifiedTextModule(BaseRenameModule):
                     color: {theme.get_color("input_selection_text")};
                 }}
                 QMenu::item:disabled {{
-                    color: {theme.get_color("disabled_text")};
+                    color: {theme.get_color("text_disabled")};
                 }}
                 QMenu::icon {{
                     padding-left: 6px;
@@ -289,8 +289,13 @@ class SpecifiedTextModule(BaseRenameModule):
 
         :return: A dictionary containing the type and the user-specified text.
         """
-        return {"type": "specified_text", "text": self.text_input.text()}
-
+        # Safety check: if widget was deleted, return empty text
+        try:
+            text = self.text_input.text() if self.text_input else ""
+        except RuntimeError:
+            # Widget was deleted
+            text = ""
+        return {"type": "specified_text", "text": text}
     def reset(self) -> None:
         self._has_had_content = False  # Reset tracking
         self._is_input_valid = True  # Reset validation state

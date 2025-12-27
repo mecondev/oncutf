@@ -119,13 +119,13 @@ class StylingHandler:
                 /* Force grayout for items without ItemIsEnabled flag */
                 QComboBox QAbstractItemView::item:!enabled {{
                     background-color: transparent !important;
-                    color: {theme.get_color("disabled_text")} !important;
+                    color: {theme.get_color("text_disabled")} !important;
                     opacity: 0.6 !important;
                 }}
 
                 QComboBox QAbstractItemView::item:!enabled:hover {{
                     background-color: transparent !important;
-                    color: {theme.get_color("disabled_text")} !important;
+                    color: {theme.get_color("text_disabled")} !important;
                 }}
             """
 

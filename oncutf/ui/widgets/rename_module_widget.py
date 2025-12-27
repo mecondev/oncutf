@@ -102,15 +102,17 @@ class RenameModuleWidget(QWidget):
         theme = get_theme_manager()
         app_background = theme.get_color("background")  # Main app background
         drag_handle_background = theme.get_color("module_drag_handle")
+        border_color = theme.get_color("border")
 
         # --- Main plate container ---
         self.plate_widget = QWidget()
         self.plate_widget.setObjectName("module_plate")
-        # Apply plate styling: app background, rounded corners
+        # Apply plate styling: app background, border, rounded corners
         self.plate_widget.setStyleSheet(
             f"""
             QWidget[objectName="module_plate"] {{
                 background-color: {app_background};
+                border: 1px solid {border_color};
                 border-radius: 8px;
             }}
         """
@@ -287,13 +289,19 @@ class RenameModuleWidget(QWidget):
             # Optional signal connection
             self.connect_signals_for_module(self.current_module_widget)
 
-        # Emit updated signal to refresh preview
-        self.updated.emit(self)
+        # Schedule preview update after module initialization completes
+        # Small delay ensures MetadataWidget's auto-selection has finished
+        from oncutf.utils.timer_manager import schedule_ui_update
+        schedule_ui_update(lambda: self.updated.emit(self), 50)
 
     def get_data(self) -> dict:
         """Return the current module data."""
         if self.current_module_widget and hasattr(self.current_module_widget, "get_data"):
-            data = self.current_module_widget.get_data()
+            try:
+                data = self.current_module_widget.get_data()
+            except RuntimeError:
+                # Widget was deleted
+                data = {}
         else:
             data = {}
 
@@ -392,14 +400,7 @@ class RenameModuleWidget(QWidget):
         shadow.setOffset(2, 2)
         self.setGraphicsEffect(shadow)
 
-        # Scale up slightly to show it's being dragged
-        self.setStyleSheet(
-            """
-            QWidget[objectName="RenameModuleWidget"] {
-                transform: scale(1.02);
-            }
-        """
-        )
+        # Note: QSS doesn't support CSS transform, using graphical effect only
 
         # Notify parent that dragging started - try different parent levels
         parent = self.parent()
@@ -416,7 +417,6 @@ class RenameModuleWidget(QWidget):
         # Restore normal appearance
         self.setWindowOpacity(1.0)
         self.setGraphicsEffect(None)  # Remove shadow
-        self.setStyleSheet("")  # Remove scale transform
         QApplication.restoreOverrideCursor()
 
         # Restore original position (remove horizontal offset)

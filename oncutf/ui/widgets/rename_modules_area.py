@@ -71,7 +71,16 @@ class RenameModulesArea(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # Theme styling is now handled by the global theme engine
+        # Add border to scroll area
+        theme = get_theme_manager()
+        border_color = theme.get_color("border")
+        self.scroll_area.setStyleSheet(f"""
+            QScrollArea#rename_modules_scroll {{
+                border: 1px solid {border_color};
+                border-radius: 4px;
+                background-color: transparent;
+            }}
+        """)
 
         self.scroll_content = QWidget()
         self.scroll_content.setObjectName("scroll_content_widget")
