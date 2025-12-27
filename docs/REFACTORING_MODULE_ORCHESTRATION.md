@@ -2,7 +2,7 @@
 
 **Author:** Michael Economou  
 **Date:** 2025-12-27  
-**Status:** Phase 2 Complete ✅ (911 tests passing)
+**Status:** Phase 3 Complete ✅ (916 tests passing, +5 new tests)
 
 ## Motivation
 
@@ -131,65 +131,60 @@ Prepare architecture for **node editor** implementation by separating:
 - ✅ **Incremental**: Phase 2.1 → 2.2 with separate commits
 - ✅ **Test coverage**: 911 tests passing throughout
 
-## Phase 3: Dynamic Module Discovery (NEXT)
+## Phase 3: Dynamic Module Discovery ✅ COMPLETE
 
-**Goal:** Remove hardcoded module registry, enable plugin architecture
+**Status:** All 916 tests passing (+5 new tests)  
+**Commits:** 
+- `bdde07ee` - Phase 3: Dynamic module discovery implementation
+- Documentation: `docs/PHASE3_SUMMARY.md`
 
-### Current State
+### Completed Tasks
 
-Module types hardcoded in `RenameModulesArea.__init__`:
-```python
-self.module_instances = {
-    "Specified Text": SpecifiedTextModule(),
-    "Counter": CounterModule(),
-    "Metadata": MetadataModule(),
-    # ... 8 more modules
-}
+1. ✅ **Implemented `ModuleOrchestrator.discover_modules()`**
+   - Auto-scan `oncutf/modules/` for `*_module.py` files
+   - Import and inspect classes for `apply_from_data()` method
+   - Extract metadata from class name, docstring, metadata dict
+   - Register all discovered modules automatically
+   - Skip `base_module.py` correctly
+
+2. ✅ **Removed hardcoded `module_instances` from `RenameModuleWidget`**
+   - Replaced with `_orchestrator` class variable (shared)
+   - Added `_build_module_instances_dict()` helper
+   - Added `_build_module_heights_dict()` helper
+   - Maintains backward compatibility (same dict structure)
+
+3. ✅ **Added comprehensive tests (5 new):**
+   - `test_discover_modules`: Verifies all core modules found
+   - `test_discovered_modules_have_metadata`: Validates completeness
+   - `test_all_discovered_modules_usable`: Pipeline integration test
+   - `test_module_discovery_count`: Ensures >= 6 modules
+   - `test_discovery_excludes_base_module`: Filter validation
+
+### Architecture Impact
+
+**Plugin Architecture Achieved:**
+```
+New Module Creation:
+1. Create oncutf/modules/my_module.py
+2. Implement apply_from_data(data, base_name)
+3. Run app → module auto-discovered ✨
+4. Appears in UI dropdown automatically
 ```
 
-**Problems:**
-- Adding modules requires editing UI code
-- No separation between module discovery and UI
-- Cannot dynamically load modules from plugins
+**No code changes needed to add modules!**
 
-### Proposed Changes
+**Benefits:**
+- ✅ True plugin system
+- ✅ No hardcoded registries
+- ✅ Single source of truth (module files)
+- ✅ Third-party plugin support ready
+- ✅ Cleaner UI (no module knowledge)
 
-1. **Move module registration to ModuleOrchestrator:**
-   ```python
-   # oncutf/controllers/module_orchestrator.py
-   @classmethod
-   def discover_modules(cls):
-       """Auto-discover modules in oncutf/modules/."""
-       # Scan for *_module.py files
-       # Import and register each module class
-   ```
+### Migration Strategy
 
-2. **Update RenameModulesArea to use orchestrator:**
-   ```python
-   def __init__(self):
-       self.orchestrator = ModuleOrchestrator()
-       self.orchestrator.discover_modules()  # Auto-register all
-       self._populate_module_menu()  # Build from orchestrator
-   ```
-
-3. **Benefits:**
-   - Drop new module file → automatically appears in UI
-   - Plugin architecture ready
-   - Cleaner UI layer (no module knowledge)
-
-### Tasks
-
-- [ ] Implement `ModuleOrchestrator.discover_modules()`
-- [ ] Remove `module_instances` dict from `RenameModulesArea`
-- [ ] Update `_populate_module_menu()` to use orchestrator
-- [ ] Add tests for module discovery
-- [ ] Document plugin API
-
-### Estimated Effort
-
-- 2-3 hours implementation
-- Low risk (orchestrator already exists)
-- All tests must pass
+- ✅ **Backward compatible**: Same UI, same module names
+- ✅ **Incremental**: Used temporary metadata dict
+- ✅ **Test coverage**: 916 tests passing throughout
 
 ---
 
@@ -197,7 +192,7 @@ self.module_instances = {
 
 ### Preparation Complete
 
-With orchestrator extracted and UI integrated:
+With orchestrator, drag manager, and plugin discovery:
 1. Implement node-based UI (separate package)
 2. Connect to same `ModuleOrchestrator`
 3. Reuse all module logic (`oncutf/modules/*.py`)
