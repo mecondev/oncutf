@@ -33,6 +33,7 @@ class StyledComboBox(QComboBox):
 
         """
         super().__init__(parent)
+        self.setMaxVisibleItems(20)  # Show up to 20 items without scrolling
         self._setup_delegate()
         self._apply_theme()
         logger.debug("StyledComboBox initialized")
@@ -70,13 +71,14 @@ class StyledComboBox(QComboBox):
                     color: {text};
                     border: 1px solid {border};
                     border-radius: 4px;
-                    padding: 2px 6px;
+                    padding: 3px 6px 3px 6px;
                 }}
                 QComboBox:hover {{
                     border-color: {hover_border};
                 }}
                 QComboBox:focus {{
                     border: 2px solid {focus_border};
+                    padding: 2px 5px 2px 5px;
                 }}
                 QComboBox::drop-down {{
                     border: none;

@@ -11,7 +11,6 @@ Uses BaseRenameModule to prevent duplicate emits.
 
 from oncutf.core.pyqt_imports import (
     QCheckBox,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     Qt,
@@ -19,6 +18,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.modules.base_module import BaseRenameModule  # Debounced signal base
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 
 
 class NameTransformWidget(BaseRenameModule):
@@ -63,14 +63,10 @@ class NameTransformWidget(BaseRenameModule):
         case_label = QLabel("Case:")
         case_label.setFixedWidth(self.LABEL_WIDTH)
         case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.case_combo = QComboBox()
+        self.case_combo = StyledComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
-        # Use theme constant for combo height
-        from oncutf.core.theme_manager import get_theme_manager
-
-        theme = get_theme_manager()
-        self.case_combo.setFixedHeight(theme.get_constant("combo_height"))
+        # Theme styling is handled by StyledComboBox
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         case_layout.addWidget(case_label)
@@ -89,10 +85,10 @@ class NameTransformWidget(BaseRenameModule):
         sep_label = QLabel("Separator:")
         sep_label.setFixedWidth(self.LABEL_WIDTH)
         sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
-        self.sep_combo = QComboBox()
+        self.sep_combo = StyledComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
-        self.sep_combo.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
+        # Theme styling is handled by StyledComboBox
         self.sep_combo.currentIndexChanged.connect(self._on_value_change)
 
         sep_layout.addWidget(sep_label)

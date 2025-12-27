@@ -21,7 +21,6 @@ from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
 from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.pyqt_imports import (
     QColor,
-    QComboBox,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
@@ -34,6 +33,7 @@ from oncutf.core.theme_manager import get_theme_manager
 
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.timer_manager import schedule_ui_update
 
@@ -223,12 +223,10 @@ class RenameModuleWidget(QWidget):
         type_label = QLabel("Type:")
         type_label.setFixedWidth(self.LABEL_WIDTH)
         type_label.setAlignment(Qt.AlignVCenter)  # type: ignore
-        self.type_combo = QComboBox()
+        self.type_combo = StyledComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
-        # Use theme constant for combo height
-        theme = get_theme_manager()
-        self.type_combo.setFixedHeight(theme.get_constant("combo_height"))
+        # Theme styling is handled by StyledComboBox
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
         type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # type: ignore

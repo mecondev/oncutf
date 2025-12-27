@@ -12,7 +12,6 @@ from typing import Any
 
 from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
-    QComboBox,
     QHBoxLayout,
     QIntValidator,
     QLabel,
@@ -27,6 +26,7 @@ from oncutf.core.pyqt_imports import (
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
@@ -175,8 +175,7 @@ class CounterModule(BaseRenameModule):
         label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # ComboBox for scope selection
-        self.scope_combo = QComboBox()
-        self.scope_combo.setFixedWidth(150)
+        self.scope_combo = StyledComboBox()
 
         # Add scope options
         for scope in CounterScope:

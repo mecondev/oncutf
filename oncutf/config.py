@@ -756,7 +756,7 @@ THEME_TOKENS = {
         # These are stored as strings for now, will be accessed via get_constant()
         "table_row_height": "22",
         "button_height": "24",
-        "combo_height": "24",
+        "combo_height": "22",
     },
     "light": {
         # Placeholder for light theme - to be implemented later

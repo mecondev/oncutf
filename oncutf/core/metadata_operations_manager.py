@@ -122,13 +122,14 @@ class MetadataOperationsManager:
     ) -> None:
         """Handle metadata export dialog and process."""
         from PyQt5.QtWidgets import (
-            QComboBox,
             QDialog,
             QHBoxLayout,
             QLabel,
             QPushButton,
             QVBoxLayout,
         )
+
+        from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 
         # Create export dialog
         dialog = QDialog(self.parent_window)
@@ -142,7 +143,7 @@ class MetadataOperationsManager:
         format_layout = QHBoxLayout()
         format_layout.addWidget(QLabel("Export Format:"))
 
-        format_combo = QComboBox()
+        format_combo = StyledComboBox()
         format_combo.addItems(["JSON (Structured)", "Markdown (Human Readable)"])
         format_layout.addWidget(format_combo)
 

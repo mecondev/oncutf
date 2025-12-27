@@ -17,7 +17,6 @@ from typing import Any
 
 from oncutf.core.pyqt_imports import (
     QCheckBox,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -27,6 +26,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 
 logger = logging.getLogger(__name__)
 
@@ -92,20 +92,13 @@ class TextRemovalModule(BaseRenameModule):
 
         position_label = QLabel("From:")
         position_label.setFixedWidth(80)
-        self.position_combo = QComboBox()
+        self.position_combo = StyledComboBox()
         self.position_combo.addItems(
             ["End of name", "Start of name", "Anywhere (first)", "Anywhere (all)"]
         )
         self.position_combo.setCurrentText("End of name")
 
-        # Apply theme styling
-        from oncutf.core.theme_manager import get_theme_manager
-        from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
-
-        theme = get_theme_manager()
-        self.position_combo.setFixedHeight(theme.get_constant("combo_height"))
-        self.position_combo.setItemDelegate(ComboBoxItemDelegate(self.position_combo, theme))
-
+        # Theme styling is handled by StyledComboBox
         # Ensure combo box drops down instead of popping up
         self.position_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.position_combo.currentTextChanged.connect(self._on_setting_changed)

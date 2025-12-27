@@ -10,7 +10,6 @@ Uses a clean 3-column layout: Labels | Controls | Buttons
 
 from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QPainter,
@@ -23,6 +22,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.icons_loader import get_menu_icon
 from oncutf.utils.logger_factory import get_cached_logger
 from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
@@ -118,14 +118,10 @@ class FinalTransformContainer(QWidget):
         self.case_label.setFixedWidth(65)  # Increased by 20px
         self.case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
-        self.case_combo = QComboBox()
+        self.case_combo = StyledComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(116)  # Reduced by 10px
-        # Use theme constant for combo height
-        from oncutf.core.theme_manager import get_theme_manager
-
-        theme = get_theme_manager()
-        self.case_combo.setFixedHeight(theme.get_constant("combo_height"))
+        # Theme styling is handled by StyledComboBox
         # Ensure combo box drops down instead of popping up
         self.case_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
@@ -146,12 +142,10 @@ class FinalTransformContainer(QWidget):
         self.separator_label.setFixedWidth(65)
         self.separator_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
-        self.separator_combo = QComboBox()
+        self.separator_combo = StyledComboBox()
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.separator_combo.setFixedWidth(116)  # Reduced by 10px
-        self.separator_combo.setFixedHeight(
-            theme.get_constant("combo_height")
-        )  # Use theme constant
+        # Theme styling is handled by StyledComboBox
         # Ensure combo box drops down instead of popping up
         self.separator_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)

@@ -54,8 +54,8 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         # Use font from theme for absolute consistency
         option.font.setFamily(self.theme.fonts["base_family"])
         option.font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
-        # Height same as QComboBox fixedHeight (24px to match new height)
-        option.rect.setHeight(24)
+        # Height same as QComboBox from theme
+        option.rect.setHeight(self.theme.get_constant("combo_height"))
 
         # Handle disabled item (grayout)
         if not (index.flags() & Qt.ItemFlag.ItemIsEnabled):
@@ -231,10 +231,10 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 
                 if icon_size.width() > icon_size.height():
                     # Combined icon - use wider rect with minimal padding
-                    icon_rect = option.rect.adjusted(1, 2, -1, -2)
+                    icon_rect = option.rect.adjusted(1, 3, -1, -3)
                 else:
                     # Single icon - use square rect with normal padding
-                    icon_rect = option.rect.adjusted(2, 2, -2, -2)
+                    icon_rect = option.rect.adjusted(2, 3, -2, -3)
 
                 icon_data.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
 
@@ -256,7 +256,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             painter.save()
             painter.setPen(text_color)
 
-            text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
+            text_rect = option.rect.adjusted(4, 1, -4, -1)  # Horizontal and vertical padding for centering
 
             alignment = (
                 model.data(index, Qt.ItemDataRole.TextAlignmentRole)
@@ -337,16 +337,16 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
-        """Return size hint for items - make them same height as context menu items."""
+        """Return size hint for items - uses table_row_height from theme."""
         # Get the default size hint
         size = super().sizeHint(option, index)
 
-        # Set a consistent, compact height similar to context menu items
-        # Standard context menu items are usually around 22-24 pixels
-        compact_height = 24
+        # Set a consistent height from theme (same as table rows)
+        theme = get_theme_manager()
+        row_height = theme.get_constant("table_row_height")
 
-        # Keep the width but use compact height
-        size.setHeight(compact_height)
+        # Keep the width but use theme height
+        size.setHeight(row_height)
 
         return size
 
