@@ -22,6 +22,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
@@ -41,7 +42,12 @@ class RenameModulesArea(QWidget):
     """Main area that contains all rename modules and final transformation widget.
     Supports scrolling for large numbers of modules.
 
-    Now supports ApplicationContext for optimized access patterns while maintaining
+    Phase 2 Refactoring:
+    - Uses ModuleOrchestrator for module pipeline management
+    - Maintains backward compatible API (get_all_data returns same structure)
+    - Prepares for node editor by separating logic from UI
+    
+    Still supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
 
@@ -53,6 +59,10 @@ class RenameModulesArea(QWidget):
         self.module_widgets: list[RenameModuleWidget] = []
 
         self.setObjectName("RenameModulesArea")
+
+        # Initialize module orchestrator (Phase 2 refactoring)
+        self.orchestrator = ModuleOrchestrator()
+        logger.debug("[RenameModulesArea] ModuleOrchestrator initialized")
 
         # Initialize UnifiedRenameEngine
         self.rename_engine = None
@@ -211,8 +221,37 @@ class RenameModulesArea(QWidget):
     def get_all_data(self) -> dict:
         """Collects data from all modules.
         Note: post_transform data is now handled by FinalTransformContainer.
+        
+        Phase 2: Uses orchestrator for better architecture but maintains
+        backward compatible API.
         """
-        return {"modules": [m.to_dict() for m in self.module_widgets]}
+        # Sync orchestrator with current widget data
+        self._sync_orchestrator_from_widgets()
+        
+        # Use orchestrator to collect data (new approach)
+        return self.orchestrator.collect_all_data()
+    
+    def _sync_orchestrator_from_widgets(self) -> None:
+        """Sync orchestrator state with current widgets.
+        
+        This bridge method maintains backward compatibility during Phase 2
+        transition. Eventually widgets will be driven by orchestrator.
+        """
+        # Clear orchestrator and rebuild from widgets
+        self.orchestrator.clear_all_modules()
+        
+        for widget in self.module_widgets:
+            # Get widget data
+            data = widget.to_dict()
+            module_type = data.get("type", "")
+            
+            # Remove type from config (it's stored separately in orchestrator)
+            config = data.copy()
+            if "type" in config:
+                del config["type"]
+            
+            # Add to orchestrator
+            self.orchestrator.add_module(module_type, config)
 
     def get_all_module_instances(self) -> list[BaseRenameModule]:
         """Returns all current rename module widget instances.
