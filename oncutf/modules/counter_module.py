@@ -41,6 +41,12 @@ class CounterModule(BaseRenameModule):
     Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus]
     """
 
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Counter"
+    UI_ROWS = 3
+    DESCRIPTION = "Sequential numbering with custom start, step, and padding"
+    CATEGORY = "Numbering"
+
     updated = pyqtSignal(object)
 
     LABEL_WIDTH = 110  # pixels - increased by 10px for better text fit

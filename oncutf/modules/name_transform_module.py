@@ -18,6 +18,12 @@ logger = get_cached_logger(__name__)
 class NameTransformModule:
     """Logic component (non-UI) for applying case and separator transformations."""
 
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Name Transform"
+    UI_ROWS = 2
+    DESCRIPTION = "Apply case and separator transformations"
+    CATEGORY = "Transform"
+
     @staticmethod
     def apply_from_data(data: dict[str, Any], base_name: str) -> str:
         """Applies transformation options to the given base name.

@@ -67,14 +67,15 @@ class ModuleOrchestrator:
     def discover_modules(self) -> None:
         """Auto-discover and register all modules from oncutf/modules/.
         
-        Phase 3: Dynamic module discovery for plugin architecture.
+        Phase 3.1: Read metadata from class attributes instead of hardcoded dict.
         Scans oncutf/modules/ for *_module.py files and auto-registers classes
         that inherit from BaseRenameModule or have apply_from_data() method.
         
-        Module metadata extracted from:
-        - Class name (e.g., CounterModule → "Counter")
-        - Docstring (first line becomes description)
-        - Class attributes: DISPLAY_NAME, UI_ROWS
+        Module metadata extracted from class attributes:
+        - DISPLAY_NAME: UI label (fallback to class name)
+        - UI_ROWS: Number of UI rows (fallback to 1)
+        - DESCRIPTION: Module description (fallback to first docstring line)
+        - CATEGORY: Grouping for node editor (fallback to "Other")
         """
         import oncutf.modules
 
@@ -82,20 +83,6 @@ class ModuleOrchestrator:
         modules_path = Path(modules_package.__file__).parent
 
         logger.debug("[ModuleOrchestrator] Discovering modules in: %s", modules_path)
-
-        # Module metadata mapping (to preserve current behavior)
-        # TODO: Phase 3.1 - Extract this to module class attributes
-        module_metadata = {
-            "CounterModule": {"display_name": "Counter", "ui_rows": 3},
-            "MetadataModule": {"display_name": "Metadata", "ui_rows": 2},
-            "OriginalNameModule": {"display_name": "Original Name", "ui_rows": 1},
-            "TextRemovalModule": {
-                "display_name": "Remove Text from Original Name",
-                "ui_rows": 2,
-            },
-            "SpecifiedTextModule": {"display_name": "Specified Text", "ui_rows": 1},
-            "NameTransformModule": {"display_name": "Name Transform", "ui_rows": 2},
-        }
 
         discovered_count = 0
 
@@ -115,16 +102,17 @@ class ModuleOrchestrator:
                         continue
 
                     class_name = obj.__name__
-                    metadata = module_metadata.get(class_name, {})
 
-                    # Extract display name from class name (e.g., CounterModule → Counter)
-                    display_name = metadata.get(
-                        "display_name", class_name.replace("Module", "")
+                    # Phase 3.1: Read metadata from class attributes
+                    display_name = getattr(
+                        obj, "DISPLAY_NAME", class_name.replace("Module", "")
                     )
+                    ui_rows = getattr(obj, "UI_ROWS", 1)
+                    category = getattr(obj, "CATEGORY", "Other")
 
-                    # Get description from docstring
-                    description = ""
-                    if obj.__doc__:
+                    # Get description from class attribute or docstring
+                    description = getattr(obj, "DESCRIPTION", "")
+                    if not description and obj.__doc__:
                         description = obj.__doc__.strip().split("\n")[0]
 
                     # Register the module
@@ -133,16 +121,18 @@ class ModuleOrchestrator:
                         display_name=display_name,
                         module_class=obj,
                         ui_widget_class=obj,  # Most modules are both logic + UI
-                        ui_rows=metadata.get("ui_rows", 1),
+                        ui_rows=ui_rows,
                         description=description,
                     )
 
                     self.register_module(descriptor)
                     discovered_count += 1
                     logger.debug(
-                        "[ModuleOrchestrator] Discovered: %s (%s)",
+                        "[ModuleOrchestrator] Discovered: %s (%s) - Category: %s, Rows: %d",
                         display_name,
                         class_name,
+                        category,
+                        ui_rows,
                     )
 
             except Exception as e:

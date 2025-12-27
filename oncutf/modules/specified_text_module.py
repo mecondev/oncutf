@@ -34,6 +34,12 @@ logger = get_cached_logger(__name__)
 class SpecifiedTextModule(BaseRenameModule):
     """A module for inserting user-defined text in filenames."""
 
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Specified Text"
+    UI_ROWS = 1
+    DESCRIPTION = "Insert custom text into filename"
+    CATEGORY = "Text"
+
     updated = pyqtSignal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:

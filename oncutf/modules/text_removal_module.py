@@ -48,9 +48,14 @@ class TextRemovalModule(BaseRenameModule):
     - From the start of the filename
     - First occurrence anywhere in the filename
     - All occurrences anywhere in the filename
-
     It supports both case-sensitive and case-insensitive matching.
     """
+
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Remove Text from Original Name"
+    UI_ROWS = 2
+    DESCRIPTION = "Remove text patterns from original filename"
+    CATEGORY = "Text"
 
     def __init__(self, parent: QWidget | None = None):
         """Initialize the text removal module."""

@@ -22,6 +22,12 @@ class OriginalNameModule:
     Used during rename preview and execution.
     """
 
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Original Name"
+    UI_ROWS = 1
+    DESCRIPTION = "Keep original filename with optional transformations"
+    CATEGORY = "Text"
+
     @staticmethod
     def apply_from_data(
         data: dict[str, Any],

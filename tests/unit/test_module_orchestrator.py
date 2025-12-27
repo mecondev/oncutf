@@ -295,3 +295,87 @@ class TestModuleDiscovery:
         
         assert "base" not in names
         assert "base_module" not in names
+
+
+class TestClassLevelMetadata:
+    """Test Phase 3.1: Class-level metadata attributes."""
+
+    def test_modules_have_display_name(self):
+        """Test all modules have DISPLAY_NAME attribute."""
+        from oncutf.modules.counter_module import CounterModule
+        from oncutf.modules.metadata_module import MetadataModule
+        from oncutf.modules.specified_text_module import SpecifiedTextModule
+
+        assert hasattr(CounterModule, "DISPLAY_NAME")
+        assert CounterModule.DISPLAY_NAME == "Counter"
+        
+        assert hasattr(MetadataModule, "DISPLAY_NAME")
+        assert MetadataModule.DISPLAY_NAME == "Metadata"
+        
+        assert hasattr(SpecifiedTextModule, "DISPLAY_NAME")
+        assert SpecifiedTextModule.DISPLAY_NAME == "Specified Text"
+
+    def test_modules_have_ui_rows(self):
+        """Test all modules have UI_ROWS attribute."""
+        from oncutf.modules.counter_module import CounterModule
+        from oncutf.modules.original_name_module import OriginalNameModule
+
+        assert hasattr(CounterModule, "UI_ROWS")
+        assert CounterModule.UI_ROWS == 3
+        
+        assert hasattr(OriginalNameModule, "UI_ROWS")
+        assert OriginalNameModule.UI_ROWS == 1
+
+    def test_modules_have_category(self):
+        """Test all modules have CATEGORY attribute."""
+        from oncutf.modules.counter_module import CounterModule
+        from oncutf.modules.metadata_module import MetadataModule
+        from oncutf.modules.specified_text_module import SpecifiedTextModule
+
+        assert hasattr(CounterModule, "CATEGORY")
+        assert CounterModule.CATEGORY == "Numbering"
+        
+        assert hasattr(MetadataModule, "CATEGORY")
+        assert MetadataModule.CATEGORY == "Metadata"
+        
+        assert hasattr(SpecifiedTextModule, "CATEGORY")
+        assert SpecifiedTextModule.CATEGORY == "Text"
+
+    def test_modules_have_description(self):
+        """Test all modules have DESCRIPTION attribute."""
+        from oncutf.modules.counter_module import CounterModule
+        from oncutf.modules.text_removal_module import TextRemovalModule
+
+        assert hasattr(CounterModule, "DESCRIPTION")
+        assert "numbering" in CounterModule.DESCRIPTION.lower()
+        
+        assert hasattr(TextRemovalModule, "DESCRIPTION")
+        assert "remove" in TextRemovalModule.DESCRIPTION.lower()
+
+    def test_orchestrator_uses_class_metadata(self):
+        """Test orchestrator reads metadata from class attributes."""
+        orch = ModuleOrchestrator()
+        
+        # Get Counter module descriptor
+        counter_desc = orch.get_module_descriptor("counter")
+        assert counter_desc is not None
+        
+        # Verify metadata comes from class attributes
+        from oncutf.modules.counter_module import CounterModule
+        assert counter_desc.display_name == CounterModule.DISPLAY_NAME
+        assert counter_desc.ui_rows == CounterModule.UI_ROWS
+
+    def test_all_discovered_modules_have_metadata(self):
+        """Test all discovered modules have required metadata."""
+        orch = ModuleOrchestrator()
+        
+        for descriptor in orch.get_available_modules():
+            # All should have display_name
+            assert descriptor.display_name, f"Module {descriptor.name} missing display_name"
+            
+            # All should have ui_rows >= 1
+            assert descriptor.ui_rows >= 1, f"Module {descriptor.name} has invalid ui_rows"
+            
+            # All should have module_class with required method
+            assert hasattr(descriptor.module_class, "apply_from_data"), \
+                f"Module {descriptor.name} missing apply_from_data method"

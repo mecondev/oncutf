@@ -26,6 +26,12 @@ class MetadataModule:
     Uses MetadataExtractor for actual extraction logic.
     """
 
+    # Phase 3.1: Module metadata for auto-discovery
+    DISPLAY_NAME = "Metadata"
+    UI_ROWS = 2
+    DESCRIPTION = "Extract file metadata (dates, hash, EXIF)"
+    CATEGORY = "Metadata"
+
     @staticmethod
     def clean_metadata_value(value: str) -> str:
         """Clean metadata value for filename safety by replacing problematic characters.
