@@ -17,6 +17,7 @@ Features:
 """
 
 from oncutf.config import ICON_SIZES
+from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
 from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,
@@ -52,6 +53,11 @@ class RenameModuleWidget(QWidget):
     """Container widget that hosts all rename modules and a fixed post-processing section.
     Provides a structured area for inserting, configuring, and removing rename logic modules.
 
+    Phase 2 Refactoring:
+    - Uses ModuleDragDropManager for drag & drop state management
+    - Separated drag logic from UI rendering
+    - Maintains backward compatible signals and API
+    
     Now supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
@@ -60,6 +66,9 @@ class RenameModuleWidget(QWidget):
     updated = pyqtSignal(QWidget)
 
     LABEL_WIDTH = 80  # Consistent label width for alignment
+    
+    # Shared drag manager for all instances (drag state is per-widget but manager is shared)
+    _drag_manager = ModuleDragDropManager()
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -153,9 +162,8 @@ class RenameModuleWidget(QWidget):
         self.drag_handle.enterEvent = self.drag_handle_enter
         self.drag_handle.leaveEvent = self.drag_handle_leave
 
-        # Drag state
-        self.drag_start_position = None
-        self.is_dragging = False
+        # Drag state now managed by ModuleDragDropManager (Phase 2)
+        # No local state needed - all in manager
 
         plate_layout.addWidget(self.drag_handle)
 
@@ -331,25 +339,23 @@ class RenameModuleWidget(QWidget):
             return module_class.is_effective_data(data)  # type: ignore[attr-defined]
         return False
 
-    # Drag & Drop functionality
+    # Drag & Drop functionality (Phase 2: Using ModuleDragDropManager)
     def drag_handle_enter(self, _event):
         """Handle mouse enter on drag handle - change cursor."""
-        from oncutf.core.pyqt_imports import QCursor
-
-        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))  # type: ignore
+        if not self._drag_manager.is_dragging:
+            self._drag_manager.set_hover_cursor()
 
     def drag_handle_leave(self, _event):
         """Handle mouse leave on drag handle - restore cursor."""
-        if not self.is_dragging:
-            QApplication.restoreOverrideCursor()
+        if not self._drag_manager.is_dragging:
+            self._drag_manager.restore_cursor()
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
         if event.button() == Qt.LeftButton:  # type: ignore
-            self.drag_start_position = event.pos()
-            from oncutf.core.pyqt_imports import QCursor
-
-            QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))  # type: ignore
+            global_pos = (event.globalPos().x(), event.globalPos().y())
+            self._drag_manager.start_drag(self, global_pos)
+            self._drag_manager.set_drag_cursor()
             event.accept()
 
     def drag_handle_mouse_move(self, event):
@@ -357,20 +363,15 @@ class RenameModuleWidget(QWidget):
         if not (event.buttons() & Qt.LeftButton):  # type: ignore
             return
 
-        if not self.drag_start_position:
-            return
-
-        # Check if we've moved far enough to start dragging
-        if (
-            event.pos() - self.drag_start_position
-        ).manhattanLength() < QApplication.startDragDistance():
-            return
-
-        if not self.is_dragging:
+        global_pos = (event.globalPos().x(), event.globalPos().y())
+        
+        # Check if drag threshold crossed (manager handles 5px threshold)
+        if self._drag_manager.update_drag(global_pos):
+            # Drag just started - begin visual feedback
             self.start_drag()
-
+        
         # Update module position to follow mouse during drag
-        if self.is_dragging:
+        if self._drag_manager.is_dragging:
             self.update_drag_position(event.globalPos())
 
         event.accept()
@@ -378,17 +379,16 @@ class RenameModuleWidget(QWidget):
     def drag_handle_mouse_release(self, event):
         """Handle mouse release on drag handle - end dragging."""
         if event.button() == Qt.LeftButton:
-            if self.is_dragging:
+            if self._drag_manager.is_dragging:
                 self.end_drag()
             else:
-                QApplication.restoreOverrideCursor()
-            self.drag_start_position = None
+                # Was a click, not a drag - restore cursor
+                self._drag_manager.restore_cursor()
+            self._drag_manager.end_drag()
             event.accept()
 
     def start_drag(self):
-        """Start the drag operation."""
-        self.is_dragging = True
-
+        """Start the drag operation - visual feedback only (state managed by ModuleDragDropManager)."""
         # Enhanced visual feedback during dragging
         self.setWindowOpacity(0.8)
         self.raise_()
@@ -411,13 +411,11 @@ class RenameModuleWidget(QWidget):
             parent = parent.parent()
 
     def end_drag(self):
-        """End the drag operation."""
-        self.is_dragging = False
-
+        """End the drag operation - visual cleanup only (state managed by ModuleDragDropManager)."""
         # Restore normal appearance
         self.setWindowOpacity(1.0)
         self.setGraphicsEffect(None)  # Remove shadow
-        QApplication.restoreOverrideCursor()
+        self._drag_manager.restore_cursor()
 
         # Restore original position (remove horizontal offset)
         if self.parent():
@@ -443,7 +441,7 @@ class RenameModuleWidget(QWidget):
 
     def update_drag_position(self, global_pos):
         """Update module position during drag to follow mouse with horizontal movement."""
-        if not self.is_dragging:
+        if not self._drag_manager.is_dragging:
             return
 
         # Get mouse position relative to parent widget
