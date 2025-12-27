@@ -11,8 +11,13 @@ Responsibilities:
 - Module instance management (current modules in pipeline)
 - Data collection and serialization
 - Validation
+- Dynamic module discovery (Phase 3)
 """
 
+import importlib
+import inspect
+import pkgutil
+from pathlib import Path
 from typing import Any
 
 from oncutf.models.file_item import FileItem
@@ -57,68 +62,99 @@ class ModuleOrchestrator:
         """Initialize orchestrator with module registry."""
         self._module_registry: dict[str, ModuleDescriptor] = {}
         self._module_instances: list[dict[str, Any]] = []
-        self._register_core_modules()
+        self.discover_modules()  # Auto-discover modules (Phase 3)
 
-    def _register_core_modules(self) -> None:
-        """Register core module types with lazy UI imports."""
-        # Lazy imports to avoid circular dependencies
-        from oncutf.modules.specified_text_module import SpecifiedTextModule
-        from oncutf.modules.text_removal_module import TextRemovalModule
+    def discover_modules(self) -> None:
+        """Auto-discover and register all modules from oncutf/modules/.
+        
+        Phase 3: Dynamic module discovery for plugin architecture.
+        Scans oncutf/modules/ for *_module.py files and auto-registers classes
+        that inherit from BaseRenameModule or have apply_from_data() method.
+        
+        Module metadata extracted from:
+        - Class name (e.g., CounterModule → "Counter")
+        - Docstring (first line becomes description)
+        - Class attributes: DISPLAY_NAME, UI_ROWS
+        """
+        import oncutf.modules
 
-        # Register pure logic modules
-        self.register_module(
-            ModuleDescriptor(
-                name="counter",
-                display_name="Counter",
-                module_class=CounterModule,
-                ui_widget_class=CounterModule,  # CounterModule is both logic + UI
-                ui_rows=3,
-                description="Sequential numbering",
-            )
-        )
+        modules_package = oncutf.modules
+        modules_path = Path(modules_package.__file__).parent
 
-        self.register_module(
-            ModuleDescriptor(
-                name="metadata",
-                display_name="Metadata",
-                module_class=MetadataModule,
-                ui_widget_class=None,  # Will be set via lazy import
-                ui_rows=2,
-                description="Extract file metadata (dates, hash, EXIF)",
-            )
-        )
+        logger.debug("[ModuleOrchestrator] Discovering modules in: %s", modules_path)
 
-        self.register_module(
-            ModuleDescriptor(
-                name="original_name",
-                display_name="Original Name",
-                module_class=OriginalNameModule,
-                ui_widget_class=None,  # Will be set via lazy import
-                ui_rows=1,
-                description="Keep original filename",
-            )
-        )
+        # Module metadata mapping (to preserve current behavior)
+        # TODO: Phase 3.1 - Extract this to module class attributes
+        module_metadata = {
+            "CounterModule": {"display_name": "Counter", "ui_rows": 3},
+            "MetadataModule": {"display_name": "Metadata", "ui_rows": 2},
+            "OriginalNameModule": {"display_name": "Original Name", "ui_rows": 1},
+            "TextRemovalModule": {
+                "display_name": "Remove Text from Original Name",
+                "ui_rows": 2,
+            },
+            "SpecifiedTextModule": {"display_name": "Specified Text", "ui_rows": 1},
+            "NameTransformModule": {"display_name": "Name Transform", "ui_rows": 2},
+        }
 
-        self.register_module(
-            ModuleDescriptor(
-                name="text_removal",
-                display_name="Remove Text from Original Name",
-                module_class=TextRemovalModule,
-                ui_widget_class=TextRemovalModule,
-                ui_rows=2,
-                description="Remove text patterns from filename",
-            )
-        )
+        discovered_count = 0
 
-        self.register_module(
-            ModuleDescriptor(
-                name="specified_text",
-                display_name="Specified Text",
-                module_class=SpecifiedTextModule,
-                ui_widget_class=SpecifiedTextModule,
-                ui_rows=1,
-                description="Insert custom text",
-            )
+        # Scan all *_module.py files
+        for _importer, module_name, _is_pkg in pkgutil.iter_modules([str(modules_path)]):
+            if not module_name.endswith("_module") or module_name == "base_module":
+                continue
+
+            try:
+                # Import module
+                full_module_name = f"oncutf.modules.{module_name}"
+                module = importlib.import_module(full_module_name)
+
+                # Find classes with apply_from_data method
+                for _name, obj in inspect.getmembers(module, inspect.isclass):
+                    if not hasattr(obj, "apply_from_data"):
+                        continue
+
+                    class_name = obj.__name__
+                    metadata = module_metadata.get(class_name, {})
+
+                    # Extract display name from class name (e.g., CounterModule → Counter)
+                    display_name = metadata.get(
+                        "display_name", class_name.replace("Module", "")
+                    )
+
+                    # Get description from docstring
+                    description = ""
+                    if obj.__doc__:
+                        description = obj.__doc__.strip().split("\n")[0]
+
+                    # Register the module
+                    descriptor = ModuleDescriptor(
+                        name=module_name.replace("_module", ""),
+                        display_name=display_name,
+                        module_class=obj,
+                        ui_widget_class=obj,  # Most modules are both logic + UI
+                        ui_rows=metadata.get("ui_rows", 1),
+                        description=description,
+                    )
+
+                    self.register_module(descriptor)
+                    discovered_count += 1
+                    logger.debug(
+                        "[ModuleOrchestrator] Discovered: %s (%s)",
+                        display_name,
+                        class_name,
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    "[ModuleOrchestrator] Failed to discover module %s: %s",
+                    module_name,
+                    e,
+                )
+
+        logger.info(
+            "[ModuleOrchestrator] Module discovery complete: %d modules registered",
+            discovered_count,
         )
 
     def register_module(self, descriptor: ModuleDescriptor) -> None:

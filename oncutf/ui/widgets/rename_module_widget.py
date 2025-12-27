@@ -18,6 +18,7 @@ Features:
 
 from oncutf.config import ICON_SIZES
 from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
+from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,
@@ -69,6 +70,65 @@ class RenameModuleWidget(QWidget):
     
     # Shared drag manager for all instances (drag state is per-widget but manager is shared)
     _drag_manager = ModuleDragDropManager()
+    
+    # Shared orchestrator for module discovery (Phase 3)
+    _orchestrator = ModuleOrchestrator()
+
+    @classmethod
+    def _build_module_instances_dict(cls) -> dict[str, type]:
+        """Build module instances dict from orchestrator (Phase 3: Dynamic discovery).
+        
+        Returns:
+            Dict mapping display names to module classes
+        """
+        # Special UI widgets that wrap logic modules
+        from oncutf.ui.widgets.metadata_widget import MetadataWidget
+        from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
+
+        module_instances = {}
+        
+        for descriptor in cls._orchestrator.get_available_modules():
+            # Special cases: UI widgets that wrap logic modules
+            if descriptor.display_name == "Metadata":
+                module_instances[descriptor.display_name] = MetadataWidget
+            elif descriptor.display_name == "Original Name":
+                module_instances[descriptor.display_name] = OriginalNameWidget
+            else:
+                # Use the module class directly (it's both logic + UI)
+                module_instances[descriptor.display_name] = descriptor.module_class
+        
+        return module_instances
+
+    @classmethod
+    def _build_module_heights_dict(cls) -> dict[str, int]:
+        """Build module heights dict from orchestrator metadata (Phase 3).
+        
+        Returns:
+            Dict mapping display names to UI heights in pixels
+        """
+        # Height calculation: base_height + (ui_rows * row_height) + padding
+        BASE_HEIGHT = 28  # Label + combo
+        ROW_HEIGHT = 24   # Per content row
+        PADDING = 6       # Top + bottom padding
+        
+        heights = {}
+        for descriptor in cls._orchestrator.get_available_modules():
+            calculated_height = BASE_HEIGHT + (descriptor.ui_rows * ROW_HEIGHT) + PADDING
+            
+            # Apply manual overrides for specific modules (backward compatibility)
+            overrides = {
+                "Counter": 88,          # Needs extra space for focus border
+                "Metadata": 66,         # Reduced row spacing
+                "Original Name": 34,    # Minimal padding
+                "Remove Text from Original Name": 64,  # Two rows
+                "Specified Text": 37,   # Prevent clipping
+            }
+            
+            heights[descriptor.display_name] = overrides.get(
+                descriptor.display_name, calculated_height
+            )
+        
+        return heights
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -80,25 +140,9 @@ class RenameModuleWidget(QWidget):
         # Set transparent background to avoid white borders around rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
 
-        # Lazy import to avoid circular import
-        from oncutf.modules.specified_text_module import SpecifiedTextModule
-        from oncutf.modules.text_removal_module import TextRemovalModule
-
-        self.module_instances = {
-            "Counter": CounterModule,
-            "Metadata": MetadataWidget,
-            "Original Name": OriginalNameWidget,
-            "Remove Text from Original Name": TextRemovalModule,
-            "Specified Text": SpecifiedTextModule,
-        }
-
-        self.module_heights = {
-            "Counter": 88,  # Increased: 4px more space to prevent focus border clipping
-            "Metadata": 66,  # Reduced: 8px less space due to reduced row spacing
-            "Original Name": 34,  # Reduced: just one line with minimal padding
-            "Remove Text from Original Name": 64,  # Two rows: text input + options
-            "Specified Text": 37,  # Increased: 3px more space to prevent clipping
-        }
+        # Phase 3: Get module instances from orchestrator (replacing hardcoded dict)
+        self.module_instances = self._build_module_instances_dict()
+        self.module_heights = self._build_module_heights_dict()
 
         self.current_module_widget = None
 

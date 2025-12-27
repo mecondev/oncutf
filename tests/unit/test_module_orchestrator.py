@@ -237,3 +237,61 @@ class TestModuleOrchestrator:
         idx = orch.add_module("custom", {"test": "value"})
         assert idx == 0
         assert orch.get_module_at(0)["type"] == "custom"
+
+
+class TestModuleDiscovery:
+    """Test Phase 3: Dynamic module discovery."""
+
+    def test_discover_modules(self):
+        """Test auto-discovery finds all modules."""
+        orch = ModuleOrchestrator()
+        
+        # Should discover core modules
+        modules = orch.get_available_modules()
+        display_names = [m.display_name for m in modules]
+        
+        assert "Counter" in display_names
+        assert "Metadata" in display_names
+        assert "Original Name" in display_names
+        assert "Specified Text" in display_names
+        assert "Remove Text from Original Name" in display_names
+        assert "Name Transform" in display_names
+
+    def test_discovered_modules_have_metadata(self):
+        """Test discovered modules have proper metadata."""
+        orch = ModuleOrchestrator()
+        
+        counter_desc = orch.get_module_descriptor("counter")
+        assert counter_desc is not None
+        assert counter_desc.display_name == "Counter"
+        assert counter_desc.ui_rows == 3
+        assert counter_desc.module_class is not None
+        assert hasattr(counter_desc.module_class, "apply_from_data")
+
+    def test_all_discovered_modules_usable(self):
+        """Test all discovered modules can be added to pipeline."""
+        orch = ModuleOrchestrator()
+        
+        for descriptor in orch.get_available_modules():
+            idx = orch.add_module(descriptor.name, {})
+            assert idx >= 0, f"Failed to add module: {descriptor.display_name}"
+        
+        # Should have added all modules
+        assert orch.get_module_count() == len(orch.get_available_modules())
+
+    def test_module_discovery_count(self):
+        """Test expected number of modules discovered."""
+        orch = ModuleOrchestrator()
+        modules = orch.get_available_modules()
+        
+        # Should discover at least 6 modules (can be more if new ones added)
+        # Counter, Metadata, Original Name, Specified Text, Text Removal, Name Transform
+        assert len(modules) >= 6, f"Expected >= 6 modules, found {len(modules)}"
+
+    def test_discovery_excludes_base_module(self):
+        """Test discovery skips base_module.py."""
+        orch = ModuleOrchestrator()
+        names = [m.name for m in orch.get_available_modules()]
+        
+        assert "base" not in names
+        assert "base_module" not in names
