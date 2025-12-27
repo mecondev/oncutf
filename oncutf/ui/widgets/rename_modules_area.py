@@ -12,6 +12,7 @@ Now supports ApplicationContext for optimized access patterns.
 """
 
 import oncutf.config
+from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.pyqt_imports import (
     QCursor,
     QFrame,
@@ -22,7 +23,6 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
@@ -46,7 +46,7 @@ class RenameModulesArea(QWidget):
     - Uses ModuleOrchestrator for module pipeline management
     - Maintains backward compatible API (get_all_data returns same structure)
     - Prepares for node editor by separating logic from UI
-    
+
     Still supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
@@ -221,35 +221,35 @@ class RenameModulesArea(QWidget):
     def get_all_data(self) -> dict:
         """Collects data from all modules.
         Note: post_transform data is now handled by FinalTransformContainer.
-        
+
         Phase 2: Uses orchestrator for better architecture but maintains
         backward compatible API.
         """
         # Sync orchestrator with current widget data
         self._sync_orchestrator_from_widgets()
-        
+
         # Use orchestrator to collect data (new approach)
         return self.orchestrator.collect_all_data()
-    
+
     def _sync_orchestrator_from_widgets(self) -> None:
         """Sync orchestrator state with current widgets.
-        
+
         This bridge method maintains backward compatibility during Phase 2
         transition. Eventually widgets will be driven by orchestrator.
         """
         # Clear orchestrator and rebuild from widgets
         self.orchestrator.clear_all_modules()
-        
+
         for widget in self.module_widgets:
             # Get widget data
             data = widget.to_dict()
             module_type = data.get("type", "")
-            
+
             # Remove type from config (it's stored separately in orchestrator)
             config = data.copy()
             if "type" in config:
                 del config["type"]
-            
+
             # Add to orchestrator
             self.orchestrator.add_module(module_type, config)
 

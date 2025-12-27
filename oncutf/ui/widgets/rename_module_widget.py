@@ -20,7 +20,6 @@ from oncutf.config import ICON_SIZES
 from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
 from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.core.pyqt_imports import (
-    QApplication,
     QColor,
     QComboBox,
     QGraphicsDropShadowEffect,
@@ -32,9 +31,6 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.modules.counter_module import CounterModule
-from oncutf.ui.widgets.metadata_widget import MetadataWidget
-from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
@@ -58,7 +54,7 @@ class RenameModuleWidget(QWidget):
     - Uses ModuleDragDropManager for drag & drop state management
     - Separated drag logic from UI rendering
     - Maintains backward compatible signals and API
-    
+
     Now supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
@@ -67,17 +63,17 @@ class RenameModuleWidget(QWidget):
     updated = pyqtSignal(QWidget)
 
     LABEL_WIDTH = 80  # Consistent label width for alignment
-    
+
     # Shared drag manager for all instances (drag state is per-widget but manager is shared)
     _drag_manager = ModuleDragDropManager()
-    
+
     # Shared orchestrator for module discovery (Phase 3)
     _orchestrator = ModuleOrchestrator()
 
     @classmethod
     def _build_module_instances_dict(cls) -> dict[str, type]:
         """Build module instances dict from orchestrator (Phase 3: Dynamic discovery).
-        
+
         Returns:
             Dict mapping display names to module classes
         """
@@ -85,8 +81,8 @@ class RenameModuleWidget(QWidget):
         from oncutf.ui.widgets.metadata_widget import MetadataWidget
         from oncutf.ui.widgets.original_name_widget import OriginalNameWidget
 
-        module_instances = {}
-        
+        module_instances: dict[str, type] = {}
+
         for descriptor in cls._orchestrator.get_available_modules():
             # Special cases: UI widgets that wrap logic modules
             if descriptor.display_name == "Metadata":
@@ -96,25 +92,25 @@ class RenameModuleWidget(QWidget):
             else:
                 # Use the module class directly (it's both logic + UI)
                 module_instances[descriptor.display_name] = descriptor.module_class
-        
+
         return module_instances
 
     @classmethod
     def _build_module_heights_dict(cls) -> dict[str, int]:
         """Build module heights dict from orchestrator metadata (Phase 3).
-        
+
         Returns:
             Dict mapping display names to UI heights in pixels
         """
         # Height calculation: base_height + (ui_rows * row_height) + padding
-        BASE_HEIGHT = 28  # Label + combo
-        ROW_HEIGHT = 24   # Per content row
-        PADDING = 6       # Top + bottom padding
-        
+        base_height = 28  # Label + combo
+        row_height = 24   # Per content row
+        padding = 6       # Top + bottom padding
+
         heights = {}
         for descriptor in cls._orchestrator.get_available_modules():
-            calculated_height = BASE_HEIGHT + (descriptor.ui_rows * ROW_HEIGHT) + PADDING
-            
+            calculated_height = base_height + (descriptor.ui_rows * row_height) + padding
+
             # Apply manual overrides for specific modules (backward compatibility)
             overrides = {
                 "Counter": 88,          # Needs extra space for focus border
@@ -123,11 +119,11 @@ class RenameModuleWidget(QWidget):
                 "Remove Text from Original Name": 64,  # Two rows
                 "Specified Text": 37,   # Prevent clipping
             }
-            
+
             heights[descriptor.display_name] = overrides.get(
                 descriptor.display_name, calculated_height
             )
-        
+
         return heights
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
@@ -408,12 +404,12 @@ class RenameModuleWidget(QWidget):
             return
 
         global_pos = (event.globalPos().x(), event.globalPos().y())
-        
+
         # Check if drag threshold crossed (manager handles 5px threshold)
         if self._drag_manager.update_drag(global_pos):
             # Drag just started - begin visual feedback
             self.start_drag()
-        
+
         # Update module position to follow mouse during drag
         if self._drag_manager.is_dragging:
             self.update_drag_position(event.globalPos())

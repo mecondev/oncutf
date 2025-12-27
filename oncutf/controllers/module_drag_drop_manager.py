@@ -15,7 +15,7 @@ logger = get_cached_logger(__name__)
 
 class ModuleDragDropManager:
     """Manages drag & drop state and operations for module reordering.
-    
+
     Separated from UI widget to enable different UI implementations
     (current widget-based vs future node editor).
     """
@@ -29,7 +29,7 @@ class ModuleDragDropManager:
 
     def start_drag(self, widget: QWidget, global_pos: tuple[int, int]) -> None:
         """Initiate drag tracking.
-        
+
         Args:
             widget: Widget being dragged
             global_pos: Initial mouse position (x, y)
@@ -41,10 +41,10 @@ class ModuleDragDropManager:
 
     def update_drag(self, global_pos: tuple[int, int]) -> bool:
         """Update drag state based on mouse movement.
-        
+
         Args:
             global_pos: Current mouse position (x, y)
-            
+
         Returns:
             True if drag started (crossed threshold)
         """
@@ -69,7 +69,7 @@ class ModuleDragDropManager:
 
     def end_drag(self) -> QWidget | None:
         """End drag operation and return dragged widget.
-        
+
         Returns:
             Widget that was being dragged, or None
         """
@@ -77,10 +77,10 @@ class ModuleDragDropManager:
         self._dragged_widget = None
         self._drag_start_position = None
         self._is_dragging = False
-        
+
         if widget:
             logger.debug("[DragDropManager] Drag ended")
-        
+
         return widget
 
     def cancel_drag(self) -> None:
@@ -92,7 +92,7 @@ class ModuleDragDropManager:
     @property
     def is_dragging(self) -> bool:
         """Check if currently dragging.
-        
+
         Returns:
             True if drag in progress
         """
@@ -101,7 +101,7 @@ class ModuleDragDropManager:
     @property
     def dragged_widget(self) -> QWidget | None:
         """Get widget being dragged.
-        
+
         Returns:
             Dragged widget or None
         """
@@ -110,12 +110,12 @@ class ModuleDragDropManager:
     @staticmethod
     def set_drag_cursor() -> None:
         """Set cursor to indicate dragging."""
-        QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))  # type: ignore
+        QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
 
     @staticmethod
     def set_hover_cursor() -> None:
         """Set cursor to indicate drag handle hover."""
-        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))  # type: ignore
+        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
 
     @staticmethod
     def restore_cursor() -> None:

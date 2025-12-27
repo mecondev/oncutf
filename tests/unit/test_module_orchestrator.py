@@ -6,7 +6,6 @@ Date: 2025-12-27
 Tests the module pipeline management logic independently of UI.
 """
 
-import pytest
 
 from oncutf.controllers.module_orchestrator import ModuleDescriptor, ModuleOrchestrator
 from oncutf.modules.counter_module import CounterModule
@@ -245,11 +244,11 @@ class TestModuleDiscovery:
     def test_discover_modules(self):
         """Test auto-discovery finds all modules."""
         orch = ModuleOrchestrator()
-        
+
         # Should discover core modules
         modules = orch.get_available_modules()
         display_names = [m.display_name for m in modules]
-        
+
         assert "Counter" in display_names
         assert "Metadata" in display_names
         assert "Original Name" in display_names
@@ -260,7 +259,7 @@ class TestModuleDiscovery:
     def test_discovered_modules_have_metadata(self):
         """Test discovered modules have proper metadata."""
         orch = ModuleOrchestrator()
-        
+
         counter_desc = orch.get_module_descriptor("counter")
         assert counter_desc is not None
         assert counter_desc.display_name == "Counter"
@@ -271,11 +270,11 @@ class TestModuleDiscovery:
     def test_all_discovered_modules_usable(self):
         """Test all discovered modules can be added to pipeline."""
         orch = ModuleOrchestrator()
-        
+
         for descriptor in orch.get_available_modules():
             idx = orch.add_module(descriptor.name, {})
             assert idx >= 0, f"Failed to add module: {descriptor.display_name}"
-        
+
         # Should have added all modules
         assert orch.get_module_count() == len(orch.get_available_modules())
 
@@ -283,7 +282,7 @@ class TestModuleDiscovery:
         """Test expected number of modules discovered."""
         orch = ModuleOrchestrator()
         modules = orch.get_available_modules()
-        
+
         # Should discover at least 6 modules (can be more if new ones added)
         # Counter, Metadata, Original Name, Specified Text, Text Removal, Name Transform
         assert len(modules) >= 6, f"Expected >= 6 modules, found {len(modules)}"
@@ -292,7 +291,7 @@ class TestModuleDiscovery:
         """Test discovery skips base_module.py."""
         orch = ModuleOrchestrator()
         names = [m.name for m in orch.get_available_modules()]
-        
+
         assert "base" not in names
         assert "base_module" not in names
 
@@ -308,10 +307,10 @@ class TestClassLevelMetadata:
 
         assert hasattr(CounterModule, "DISPLAY_NAME")
         assert CounterModule.DISPLAY_NAME == "Counter"
-        
+
         assert hasattr(MetadataModule, "DISPLAY_NAME")
         assert MetadataModule.DISPLAY_NAME == "Metadata"
-        
+
         assert hasattr(SpecifiedTextModule, "DISPLAY_NAME")
         assert SpecifiedTextModule.DISPLAY_NAME == "Specified Text"
 
@@ -322,7 +321,7 @@ class TestClassLevelMetadata:
 
         assert hasattr(CounterModule, "UI_ROWS")
         assert CounterModule.UI_ROWS == 3
-        
+
         assert hasattr(OriginalNameModule, "UI_ROWS")
         assert OriginalNameModule.UI_ROWS == 1
 
@@ -334,10 +333,10 @@ class TestClassLevelMetadata:
 
         assert hasattr(CounterModule, "CATEGORY")
         assert CounterModule.CATEGORY == "Numbering"
-        
+
         assert hasattr(MetadataModule, "CATEGORY")
         assert MetadataModule.CATEGORY == "Metadata"
-        
+
         assert hasattr(SpecifiedTextModule, "CATEGORY")
         assert SpecifiedTextModule.CATEGORY == "Text"
 
@@ -348,18 +347,18 @@ class TestClassLevelMetadata:
 
         assert hasattr(CounterModule, "DESCRIPTION")
         assert "numbering" in CounterModule.DESCRIPTION.lower()
-        
+
         assert hasattr(TextRemovalModule, "DESCRIPTION")
         assert "remove" in TextRemovalModule.DESCRIPTION.lower()
 
     def test_orchestrator_uses_class_metadata(self):
         """Test orchestrator reads metadata from class attributes."""
         orch = ModuleOrchestrator()
-        
+
         # Get Counter module descriptor
         counter_desc = orch.get_module_descriptor("counter")
         assert counter_desc is not None
-        
+
         # Verify metadata comes from class attributes
         from oncutf.modules.counter_module import CounterModule
         assert counter_desc.display_name == CounterModule.DISPLAY_NAME
@@ -368,14 +367,14 @@ class TestClassLevelMetadata:
     def test_all_discovered_modules_have_metadata(self):
         """Test all discovered modules have required metadata."""
         orch = ModuleOrchestrator()
-        
+
         for descriptor in orch.get_available_modules():
             # All should have display_name
             assert descriptor.display_name, f"Module {descriptor.name} missing display_name"
-            
+
             # All should have ui_rows >= 1
             assert descriptor.ui_rows >= 1, f"Module {descriptor.name} has invalid ui_rows"
-            
+
             # All should have module_class with required method
             assert hasattr(descriptor.module_class, "apply_from_data"), \
                 f"Module {descriptor.name} missing apply_from_data method"

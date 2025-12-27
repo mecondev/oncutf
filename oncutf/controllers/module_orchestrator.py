@@ -20,11 +20,6 @@ import pkgutil
 from pathlib import Path
 from typing import Any
 
-from oncutf.models.file_item import FileItem
-from oncutf.modules.base_module import BaseRenameModule
-from oncutf.modules.counter_module import CounterModule
-from oncutf.modules.metadata_module import MetadataModule
-from oncutf.modules.original_name_module import OriginalNameModule
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -52,7 +47,7 @@ class ModuleDescriptor:
 
 class ModuleOrchestrator:
     """Orchestrates rename modules without UI dependencies.
-    
+
     This controller manages the module pipeline, providing clean separation
     between business logic and UI. Designed to work with both current widget-based
     UI and future node editor implementations.
@@ -66,11 +61,11 @@ class ModuleOrchestrator:
 
     def discover_modules(self) -> None:
         """Auto-discover and register all modules from oncutf/modules/.
-        
+
         Phase 3.1: Read metadata from class attributes instead of hardcoded dict.
         Scans oncutf/modules/ for *_module.py files and auto-registers classes
         that inherit from BaseRenameModule or have apply_from_data() method.
-        
+
         Module metadata extracted from class attributes:
         - DISPLAY_NAME: UI label (fallback to class name)
         - UI_ROWS: Number of UI rows (fallback to 1)
@@ -149,7 +144,7 @@ class ModuleOrchestrator:
 
     def register_module(self, descriptor: ModuleDescriptor) -> None:
         """Register a module type.
-        
+
         Args:
             descriptor: Module metadata
         """
@@ -158,10 +153,10 @@ class ModuleOrchestrator:
 
     def get_module_descriptor(self, name: str) -> ModuleDescriptor | None:
         """Get module descriptor by name.
-        
+
         Args:
             name: Module internal name
-            
+
         Returns:
             ModuleDescriptor or None if not found
         """
@@ -169,7 +164,7 @@ class ModuleOrchestrator:
 
     def get_available_modules(self) -> list[ModuleDescriptor]:
         """Get all available module types.
-        
+
         Returns:
             List of module descriptors
         """
@@ -177,7 +172,7 @@ class ModuleOrchestrator:
 
     def get_display_names(self) -> list[str]:
         """Get display names for UI combo boxes.
-        
+
         Returns:
             List of display names
         """
@@ -187,11 +182,11 @@ class ModuleOrchestrator:
         self, name: str, config: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Create a new module instance with configuration.
-        
+
         Args:
             name: Module type name
             config: Optional configuration dict
-            
+
         Returns:
             Module instance data
         """
@@ -210,11 +205,11 @@ class ModuleOrchestrator:
 
     def add_module(self, name: str, config: dict[str, Any] | None = None) -> int:
         """Add a module to the pipeline.
-        
+
         Args:
             name: Module type name
             config: Optional configuration
-            
+
         Returns:
             Index of added module
         """
@@ -229,10 +224,10 @@ class ModuleOrchestrator:
 
     def remove_module(self, index: int) -> bool:
         """Remove a module from the pipeline.
-        
+
         Args:
             index: Module index
-            
+
         Returns:
             True if removed successfully
         """
@@ -248,11 +243,11 @@ class ModuleOrchestrator:
 
     def reorder_module(self, from_index: int, to_index: int) -> bool:
         """Reorder a module in the pipeline.
-        
+
         Args:
             from_index: Current index
             to_index: Target index
-            
+
         Returns:
             True if reordered successfully
         """
@@ -274,7 +269,7 @@ class ModuleOrchestrator:
 
     def get_module_count(self) -> int:
         """Get number of modules in pipeline.
-        
+
         Returns:
             Module count
         """
@@ -282,10 +277,10 @@ class ModuleOrchestrator:
 
     def get_module_at(self, index: int) -> dict[str, Any] | None:
         """Get module instance at index.
-        
+
         Args:
             index: Module index
-            
+
         Returns:
             Module instance or None
         """
@@ -295,7 +290,7 @@ class ModuleOrchestrator:
 
     def collect_all_data(self) -> dict[str, Any]:
         """Collect data from all modules for rename engine.
-        
+
         Returns:
             Dict with 'modules' list
         """
@@ -309,10 +304,10 @@ class ModuleOrchestrator:
 
     def validate_module(self, index: int) -> tuple[bool, str]:
         """Validate module configuration.
-        
+
         Args:
             index: Module index
-            
+
         Returns:
             (is_valid, error_message)
         """

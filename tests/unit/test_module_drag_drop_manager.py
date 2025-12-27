@@ -6,7 +6,6 @@ Date: 2025-12-27
 Tests drag & drop state management independently of UI.
 """
 
-import pytest
 
 from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
 
