@@ -2,7 +2,7 @@
 
 **Author:** Michael Economou  
 **Date:** 2025-12-27  
-**Status:** Phase 1 Complete
+**Status:** Phase 2 Complete ✅ (911 tests passing)
 
 ## Motivation
 
@@ -82,36 +82,122 @@ Prepare architecture for **node editor** implementation by separating:
 ✅ **Maintainable**: Single responsibility per class  
 ✅ **Extensible**: Easy to add new module types  
 
-## Phase 2: UI Integration (NEXT)
+## Phase 2: UI Integration ✅ COMPLETE
 
-### Tasks
+**Status:** All 911 tests passing  
+**Commits:** 
+- `f5a8c2e0` - Phase 2.1: RenameModulesArea integration
+- `35c7be3d` - Phase 2.2: RenameModuleWidget integration
+- `9c77e868` - Documentation (PHASE2_SUMMARY.md)
 
-1. **Refactor `RenameModuleWidget`**
-   - Remove hardcoded module registry → Use `ModuleOrchestrator`
-   - Remove drag state → Use `ModuleDragDropManager`
-   - Reduce to ~200 lines (pure UI container)
+### Completed Tasks
 
-2. **Refactor `RenameModulesArea`**
-   - Use orchestrator for `get_all_data()`
-   - Delegate reordering to orchestrator
-   - Remove duplicate logic
+1. ✅ **RenameModulesArea Integration (Phase 2.1)**
+   - Added `self.orchestrator = ModuleOrchestrator()` in `__init__`
+   - Refactored `get_all_data()` to delegate to `orchestrator.collect_all_data()`
+   - Added `_sync_orchestrator_from_widgets()` bridge for gradual migration
+   - Updated `get_module_count()` and `get_modules()` to use orchestrator
+   - **Backward compatible:** Same return types, same API
 
-3. **Update tests**
-   - Test orchestrator independently
-   - Test drag manager independently
-   - UI tests become simpler
+2. ✅ **RenameModuleWidget Integration (Phase 2.2)**
+   - Removed local drag state (`drag_start_position`, `is_dragging`)
+   - Added `_drag_manager = ModuleDragDropManager()` as class variable
+   - Updated all drag handlers to use manager:
+     - `drag_handle_mouse_press` → `manager.start_drag()`
+     - `drag_handle_mouse_move` → `manager.update_drag()`
+     - `drag_handle_mouse_release` → `manager.end_drag()`
+   - Simplified `start_drag()`/`end_drag()` to visual feedback only
+   - **Backward compatible:** Same drag behavior, same threshold (5px)
+
+3. ✅ **Documentation**
+   - Created `docs/PHASE2_SUMMARY.md` with detailed changes
+   - Documented architecture improvements
+   - Recorded metrics: ~70 lines refactored, 2 hours effort
+
+### Architecture Impact
+
+**Before Phase 2:**
+- 473-line `RenameModulesArea` mixing UI + data collection
+- 479-line `RenameModuleWidget` mixing UI + drag state
+
+**After Phase 2:**
+- Clean delegation to `ModuleOrchestrator` for data collection
+- Shared `ModuleDragDropManager` for drag state
+- UI widgets focus on presentation only
 
 ### Migration Strategy
 
-- **Backward compatible**: Keep existing APIs
-- **Incremental**: One responsibility at a time
-- **Test coverage**: Maintain 592+ tests passing
+- ✅ **Backward compatible**: All existing APIs unchanged
+- ✅ **Incremental**: Phase 2.1 → 2.2 with separate commits
+- ✅ **Test coverage**: 911 tests passing throughout
 
-## Phase 3: Node Editor (FUTURE)
+## Phase 3: Dynamic Module Discovery (NEXT)
+
+**Goal:** Remove hardcoded module registry, enable plugin architecture
+
+### Current State
+
+Module types hardcoded in `RenameModulesArea.__init__`:
+```python
+self.module_instances = {
+    "Specified Text": SpecifiedTextModule(),
+    "Counter": CounterModule(),
+    "Metadata": MetadataModule(),
+    # ... 8 more modules
+}
+```
+
+**Problems:**
+- Adding modules requires editing UI code
+- No separation between module discovery and UI
+- Cannot dynamically load modules from plugins
+
+### Proposed Changes
+
+1. **Move module registration to ModuleOrchestrator:**
+   ```python
+   # oncutf/controllers/module_orchestrator.py
+   @classmethod
+   def discover_modules(cls):
+       """Auto-discover modules in oncutf/modules/."""
+       # Scan for *_module.py files
+       # Import and register each module class
+   ```
+
+2. **Update RenameModulesArea to use orchestrator:**
+   ```python
+   def __init__(self):
+       self.orchestrator = ModuleOrchestrator()
+       self.orchestrator.discover_modules()  # Auto-register all
+       self._populate_module_menu()  # Build from orchestrator
+   ```
+
+3. **Benefits:**
+   - Drop new module file → automatically appears in UI
+   - Plugin architecture ready
+   - Cleaner UI layer (no module knowledge)
+
+### Tasks
+
+- [ ] Implement `ModuleOrchestrator.discover_modules()`
+- [ ] Remove `module_instances` dict from `RenameModulesArea`
+- [ ] Update `_populate_module_menu()` to use orchestrator
+- [ ] Add tests for module discovery
+- [ ] Document plugin API
+
+### Estimated Effort
+
+- 2-3 hours implementation
+- Low risk (orchestrator already exists)
+- All tests must pass
+
+---
+
+## Phase 4: Node Editor (FUTURE)
 
 ### Preparation Complete
 
-With orchestrator extracted:
+With orchestrator extracted and UI integrated:
 1. Implement node-based UI (separate package)
 2. Connect to same `ModuleOrchestrator`
 3. Reuse all module logic (`oncutf/modules/*.py`)
@@ -124,13 +210,15 @@ With orchestrator extracted:
 - Connections = Data flow
 - Same data collection interface (`collect_all_data()`)
 
+---
+
 ## File Organization
 
 ```
 oncutf/
 ├── controllers/
-│   ├── module_orchestrator.py         # NEW: Pipeline management
-│   ├── module_drag_drop_manager.py    # NEW: Drag state
+│   ├── module_orchestrator.py         # ✅ NEW: Pipeline management
+│   ├── module_drag_drop_manager.py    # ✅ NEW: Drag state
 │   ├── file_load_controller.py        # Existing
 │   ├── metadata_controller.py         # Existing
 │   └── rename_controller.py           # Existing
@@ -139,8 +227,8 @@ oncutf/
 │   ├── metadata_module.py
 │   └── ...
 └── ui/widgets/
-    ├── rename_module_widget.py        # TO REFACTOR: Pure UI
-    └── rename_modules_area.py         # TO REFACTOR: Use orchestrator
+    ├── rename_module_widget.py        # ✅ REFACTORED: Using ModuleDragDropManager
+    └── rename_modules_area.py         # ✅ REFACTORED: Using ModuleOrchestrator
 ```
 
 ## Design Decisions
