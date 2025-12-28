@@ -651,6 +651,7 @@ THEME_TOKENS = {
         "text_secondary": "#888888",
         "text_tertiary": "#666666",
         "text_disabled": "#555555",
+        "disabled_text": "#888888",  # Alias for text_secondary (for backwards compatibility)
         "text_muted": "#888888",  # Muted UI text (companion files, etc.)
         "metadata_group_text": "#ddd6ba",  # Metadata tree root group headers (dimmed for hierarchy)
         # ===== Interactive States =====
