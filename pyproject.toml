@@ -90,7 +90,7 @@ ignore_missing_imports = false
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.utils.fonts_rc"
+    "oncutf.utils.ui.fonts_rc"
 ]
 ignore_errors = true
 
@@ -137,25 +137,24 @@ module = [
     "oncutf.core.selection.*",
     "oncutf.core.pyqt_imports",
 
-    # utils: UI/Qt glue ONLY (whitelist)
-    "oncutf.utils.tooltip_helper",
-    "oncutf.utils.theme_manager",
-    "oncutf.utils.dpi_helper",
-    "oncutf.utils.cursor_helper",
-    "oncutf.utils.dialog_utils",
-    "oncutf.utils.progress_dialog",
-    "oncutf.utils.multiscreen_helper",
-    "oncutf.utils.file_drop_helper",
-    "oncutf.utils.drag_zone_validator",
-    "oncutf.utils.drag_visual_manager",
-    "oncutf.utils.smart_icon_cache",
-    "oncutf.utils.icons_loader",
-    "oncutf.utils.icon_cache",
-    "oncutf.utils.icon_utilities",
-    "oncutf.utils.svg_icon_generator",
-    "oncutf.utils.theme_font_generator",
-    "oncutf.utils.placeholder_helper",
-    "oncutf.utils.metadata_loader"
+    # utils: UI/Qt glue ONLY (whitelist) - updated paths for new structure
+    "oncutf.utils.ui.tooltip_helper",
+    "oncutf.utils.ui.dpi_helper",
+    "oncutf.utils.ui.cursor_helper",
+    "oncutf.utils.ui.dialog_utils",
+    "oncutf.utils.ui.progress_dialog",
+    "oncutf.utils.ui.multiscreen_helper",
+    "oncutf.utils.ui.file_drop_helper",
+    "oncutf.utils.ui.drag_zone_validator",
+    "oncutf.utils.ui.smart_icon_cache",
+    "oncutf.utils.ui.icons_loader",
+    "oncutf.utils.ui.icon_cache",
+    "oncutf.utils.ui.icon_utilities",
+    "oncutf.utils.ui.svg_icon_generator",
+    "oncutf.utils.ui.theme_font_generator",
+    "oncutf.utils.ui.placeholder_helper",
+    "oncutf.utils.ui.combo_popup_helper",
+    "oncutf.utils.metadata.loader"
 ]
 ignore_errors = false
 disable_error_code = [

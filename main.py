@@ -173,14 +173,14 @@ def main() -> int:
             logger.warning("Could not get locale: %s", e)
 
         # Initialize DPI helper early
-        from oncutf.utils.dpi_helper import get_dpi_helper, log_dpi_info
+        from oncutf.utils.ui.dpi_helper import get_dpi_helper, log_dpi_info
 
         get_dpi_helper()  # Initialize but don't store
         log_dpi_info()
 
         # Log font sizes for debugging
         try:
-            from oncutf.utils.theme_font_generator import get_ui_font_sizes
+            from oncutf.utils.ui.theme_font_generator import get_ui_font_sizes
 
             font_sizes = get_ui_font_sizes()
             logger.debug("Applied font sizes: %s", font_sizes, extra={"dev_only": True})
@@ -214,7 +214,7 @@ def main() -> int:
         logger.info("Default services configured")
 
         # Create custom splash screen
-        from oncutf.utils.path_utils import get_images_dir
+        from oncutf.utils.filesystem.path_utils import get_images_dir
 
         splash_path = get_images_dir() / "splash.png"
         logger.debug("Loading splash screen from: %s", splash_path, extra={"dev_only": True})
@@ -332,7 +332,7 @@ def main() -> int:
             logger.debug("[Init] Background worker thread started", extra={"dev_only": True})
 
             # Schedule minimum splash time callback
-            from oncutf.utils.timer_manager import TimerType, get_timer_manager
+            from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
             get_timer_manager().schedule(
                 on_min_time_elapsed, delay=SPLASH_SCREEN_DURATION, timer_type=TimerType.GENERIC
@@ -371,7 +371,7 @@ def main() -> int:
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
         try:
-            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
@@ -428,7 +428,7 @@ def main() -> int:
         logger.exception("Fatal error in main: %s", str(e))
         # Emergency cleanup on crash
         try:
-            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
         except Exception:
