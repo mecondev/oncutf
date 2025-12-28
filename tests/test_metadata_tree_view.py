@@ -227,13 +227,18 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return the current value
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # Mock direct loader
         mock_direct_loader = MagicMock()
         tree_view._direct_loader = mock_direct_loader
 
-        # Mock update methods
-        tree_view._update_tree_item_value = MagicMock()
-        tree_view.mark_as_modified = MagicMock()
+        # Mock update methods on behavior
+        tree_view._edit_behavior._update_tree_item_value = MagicMock()
+        tree_view._edit_behavior.mark_as_modified = MagicMock()
 
         # Mock signal
         tree_view.value_edited = MagicMock()
@@ -248,10 +253,10 @@ class TestMetadataTreeViewRotation:
         )
 
         # Verify tree was updated
-        tree_view._update_tree_item_value.assert_called_once_with("EXIF:Orientation", "0")
+        tree_view._edit_behavior._update_tree_item_value.assert_called_once_with("EXIF:Orientation", "0")
 
         # Verify modified state was set
-        tree_view.mark_as_modified.assert_called_once_with("EXIF:Orientation")
+        tree_view._edit_behavior.mark_as_modified.assert_called_once_with("EXIF:Orientation")
 
         # Verify signal was emitted with old value
         tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "3")
@@ -267,13 +272,18 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return None for non-existent value
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value=None)
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # Mock direct loader
         mock_direct_loader = MagicMock()
         tree_view._direct_loader = mock_direct_loader
 
-        # Mock update methods
-        tree_view._update_tree_item_value = MagicMock()
-        tree_view.mark_as_modified = MagicMock()
+        # Mock update methods on behavior
+        tree_view._edit_behavior._update_tree_item_value = MagicMock()
+        tree_view._edit_behavior.mark_as_modified = MagicMock()
 
         # Mock signal
         tree_view.value_edited = MagicMock()
@@ -301,6 +311,11 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return "0" (already at zero)
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value="0")
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # Mock direct loader (should not be called)
         mock_direct_loader = MagicMock()
         tree_view._direct_loader = mock_direct_loader
@@ -322,19 +337,24 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return "3"
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # Make direct loader fail
         mock_direct_loader = MagicMock()
         mock_direct_loader.set_metadata_value.side_effect = Exception("Direct loader failed")
         tree_view._direct_loader = mock_direct_loader
 
-        # Mock fallback method
-        tree_view._fallback_set_rotation_to_zero = MagicMock()
+        # Mock fallback method on behavior
+        tree_view._edit_behavior._fallback_set_rotation_to_zero = MagicMock()
 
         # Call the method
         tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called with current value
-        tree_view._fallback_set_rotation_to_zero.assert_called_once_with(
+        tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(
             "EXIF:Orientation", "0", "3"
         )
 
@@ -346,13 +366,18 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=None)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return None for empty cache
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value=None)
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # Mock direct loader
         mock_direct_loader = MagicMock()
         tree_view._direct_loader = mock_direct_loader
 
-        # Mock update methods
-        tree_view._update_tree_item_value = MagicMock()
-        tree_view.mark_as_modified = MagicMock()
+        # Mock update methods on behavior
+        tree_view._edit_behavior._update_tree_item_value = MagicMock()
+        tree_view._edit_behavior.mark_as_modified = MagicMock()
 
         # Mock signal
         tree_view.value_edited = MagicMock()
@@ -375,16 +400,21 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
+        # Mock cache helper to return "3"
+        mock_cache_helper = MagicMock()
+        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
+        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
+
         # No direct loader
         tree_view._direct_loader = None
 
-        # Mock fallback method
-        tree_view._fallback_set_rotation_to_zero = MagicMock()
+        # Mock fallback method on behavior
+        tree_view._edit_behavior._fallback_set_rotation_to_zero = MagicMock()
 
         # Call the method
         tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called
-        tree_view._fallback_set_rotation_to_zero.assert_called_once_with(
+        tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(
             "EXIF:Orientation", "0", "3"
         )
