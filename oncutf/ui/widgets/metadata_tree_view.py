@@ -1141,13 +1141,13 @@ class MetadataTreeView(
             normalized_path = normalize_path(file_item.full_path)
 
             # Check if we have stale modifications
-            if self._path_in_dict(normalized_path, self.modified_items_per_file):
+            if self._scroll_behavior._path_in_dict(normalized_path, self.modified_items_per_file):
                 logger.debug(
                     "[MetadataTree] Clearing stale modifications for %s on metadata display",
                     file_item.filename,
                     extra={"dev_only": True},
                 )
-                self._remove_from_path_dict(normalized_path, self.modified_items_per_file)
+                self._scroll_behavior._remove_from_path_dict(normalized_path, self.modified_items_per_file)
                 # Also clear current modifications if this is the current file
                 if paths_equal(normalized_path, self._current_file_path):
                     self.modified_items.clear()
