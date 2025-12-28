@@ -20,10 +20,10 @@ from oncutf.config import (
 from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
 from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.companion_files_helper import CompanionFilesHelper
-from oncutf.utils.cursor_helper import force_restore_cursor, wait_cursor
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import get_timer_manager
+from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import get_timer_manager
+from oncutf.utils.ui.cursor_helper import force_restore_cursor, wait_cursor
 
 logger = get_cached_logger(__name__)
 
@@ -97,7 +97,7 @@ class FileLoadManager:
         end_drag_visual()
 
         # Clear drag zone validator for all possible sources
-        from oncutf.utils.drag_zone_validator import DragZoneValidator
+        from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 
         DragZoneValidator.clear_initial_drag_widget("file_tree")
         DragZoneValidator.clear_initial_drag_widget("file_table")
@@ -506,7 +506,7 @@ class FileLoadManager:
             self.parent_window.update_files_label()
 
         # Schedule next batch (5ms delay to allow UI updates)
-        from oncutf.utils.timer_manager import TimerType, get_timer_manager
+        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
         get_timer_manager().schedule(
             self._process_next_batch,

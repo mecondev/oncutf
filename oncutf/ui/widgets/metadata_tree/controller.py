@@ -27,7 +27,7 @@ from oncutf.ui.widgets.metadata_tree.model import (
     TreeNodeData,
 )
 from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.metadata_staging_manager import MetadataStagingManager

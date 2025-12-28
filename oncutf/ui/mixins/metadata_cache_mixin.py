@@ -9,8 +9,8 @@ from typing import Any
 
 from PyQt5.QtCore import Qt
 
-from oncutf.utils.logger_helper import get_logger
-from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.logging.logger_helper import get_logger
 
 logger = get_logger(__name__)
 

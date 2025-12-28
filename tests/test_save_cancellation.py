@@ -217,7 +217,7 @@ class TestSaveCancellation:
         # Mock progress dialog and other dependencies
         # Note: ProgressDialog is imported inside the function, so we patch the source module
         with (
-            patch("oncutf.utils.progress_dialog.ProgressDialog") as mock_dialog_class,
+            patch("oncutf.utils.ui.progress_dialog.ProgressDialog") as mock_dialog_class,
             patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"),
             patch("oncutf.core.pyqt_imports.QMessageBox"),
         ):

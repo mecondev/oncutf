@@ -90,7 +90,7 @@ class CustomSplashScreen(QSplashScreen):
             painter.setPen(QPen(Qt.white))  # type: ignore
 
             # Use our custom InterDisplay-SemiBold for title
-            from oncutf.utils.fonts import get_inter_font
+            from oncutf.utils.ui.fonts import get_inter_font
 
             try:
                 font = get_inter_font("titles", 24)  # Uses InterDisplay-SemiBold
@@ -124,7 +124,7 @@ class CustomSplashScreen(QSplashScreen):
         """Center the splash screen on the screen, considering saved main window position and multi-monitor setup."""
         try:
             # Try to get the saved main window position from config
-            from oncutf.utils.json_config_manager import get_app_config_manager
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
             config_manager = get_app_config_manager()
             window_config = config_manager.get_category("window")
@@ -314,7 +314,7 @@ class CustomSplashScreen(QSplashScreen):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Set up fonts using our custom font system
-        from oncutf.utils.fonts import get_inter_font
+        from oncutf.utils.ui.fonts import get_inter_font
 
         try:
             version_font = get_inter_font("base", 11)  # Uses Inter-Regular

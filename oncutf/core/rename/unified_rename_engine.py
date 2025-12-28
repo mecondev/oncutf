@@ -26,8 +26,8 @@ from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.models.file_item import FileItem
-from oncutf.utils.companion_files_helper import CompanionFilesHelper
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -606,7 +606,7 @@ class UnifiedPreviewManager:
             all_files: Full file list (for scope-aware counters)
 
         """
-        from oncutf.utils.preview_engine import apply_rename_modules
+        from oncutf.utils.naming.preview_engine import apply_rename_modules
 
         # Check if this file has required data for modules
         for module_data in modules_data:
@@ -679,7 +679,7 @@ class UnifiedPreviewManager:
         Falls back to permissive behaviour if the validator import fails.
         """
         try:
-            from oncutf.utils.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
             return is_valid_filename_text(basename)
         except ImportError:
@@ -757,7 +757,7 @@ class UnifiedValidationManager:
         The implementation delegates to :mod:`utils.filename_validator`.
         """
         try:
-            from oncutf.utils.filename_validator import validate_filename_part
+            from oncutf.utils.naming.filename_validator import validate_filename_part
 
             basename = os.path.splitext(filename)[0]
             is_valid, error = validate_filename_part(basename)
@@ -997,7 +997,7 @@ class UnifiedExecutionManager:
         moves.
         """
         try:
-            from oncutf.utils.rename_logic import is_case_only_change, safe_case_rename
+            from oncutf.utils.naming.rename_logic import is_case_only_change, safe_case_rename
 
             old_name = os.path.basename(item.old_path)
             new_name = os.path.basename(item.new_path)

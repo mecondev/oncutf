@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.utils.file_status_helpers import batch_hash_status
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_ui_update
+from oncutf.utils.filesystem.file_status_helpers import batch_hash_status
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_widget import MetadataWidget

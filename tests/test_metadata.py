@@ -10,7 +10,7 @@ Tests work cross-platform with Greek characters and Windows/Linux paths.
 import warnings
 
 from oncutf.modules.metadata_module import MetadataModule
-from oncutf.utils.path_normalizer import normalize_path
+from oncutf.utils.filesystem.path_normalizer import normalize_path
 from tests.mocks import MockFileItem
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")

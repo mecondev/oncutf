@@ -22,11 +22,11 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.validated_line_edit import ValidatedLineEdit
-from oncutf.utils.filename_validator import validate_filename_part
-from oncutf.utils.icons_loader import get_menu_icon
 
 # initialize logger
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.naming.filename_validator import validate_filename_part
+from oncutf.utils.ui.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

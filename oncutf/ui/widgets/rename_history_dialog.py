@@ -31,8 +31,8 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.rename.rename_history_manager import get_rename_history_manager
 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -63,7 +63,7 @@ class RenameHistoryDialog(QDialog):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
-        from oncutf.utils.multiscreen_helper import position_dialog_relative_to_parent
+        from oncutf.utils.ui.multiscreen_helper import position_dialog_relative_to_parent
 
         position_dialog_relative_to_parent(self)
 
@@ -362,7 +362,7 @@ def show_rename_history_dialog(parent: QWidget | None = None) -> None:
 
     # Ensure proper positioning on multiscreen setups before showing
     if parent:
-        from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
+        from oncutf.utils.ui.multiscreen_helper import ensure_dialog_on_parent_screen
 
         ensure_dialog_on_parent_screen(dialog, parent)
 

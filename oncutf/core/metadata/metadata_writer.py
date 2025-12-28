@@ -22,11 +22,11 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject
 
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.path_normalizer import normalize_path
+from oncutf.utils.filesystem.path_normalizer import normalize_path
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -53,7 +53,7 @@ class MetadataWriter(QObject):
     def exiftool_wrapper(self) -> ExifToolWrapper:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
-            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
             self._exiftool_wrapper = ExifToolWrapper()
         return self._exiftool_wrapper
@@ -246,7 +246,7 @@ class MetadataWriter(QObject):
         import contextlib
 
         from oncutf.core.pyqt_imports import QApplication
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         if not files_to_save:
             return
@@ -266,7 +266,7 @@ class MetadataWriter(QObject):
 
         try:
             if save_mode == "multiple_files_dialog":
-                from oncutf.utils.progress_dialog import ProgressDialog
+                from oncutf.utils.ui.progress_dialog import ProgressDialog
 
                 cancel_callback = self.request_save_cancel if not is_exit_save else None
                 _loading_dialog = ProgressDialog(

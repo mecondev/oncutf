@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from oncutf.services.interfaces import MetadataServiceProtocol
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -50,7 +50,7 @@ class ExifToolService:
         """Lazy initialization of ExifToolWrapper."""
         if self._wrapper is None:
             try:
-                from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
                 self._wrapper = ExifToolWrapper()
                 logger.debug("ExifToolWrapper initialized successfully")

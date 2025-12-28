@@ -19,7 +19,7 @@ from oncutf.config import (
 )
 from oncutf.core.pyqt_imports import QKeyEvent
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.tooltip_helper import TooltipHelper
+from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +279,7 @@ class BaseValidatedInput:
     def _apply_temporary_error_style(self) -> None:
         """Apply temporary error styling for blocked characters."""
         try:
-            from oncutf.utils.timer_manager import schedule_ui_update
+            from oncutf.utils.shared.timer_manager import schedule_ui_update
 
             # Apply error style immediately - red border only
             theme = get_theme_manager()

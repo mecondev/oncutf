@@ -18,7 +18,7 @@ from oncutf.config import INVALID_FILENAME_MARKER
 from oncutf.core.rename.rename_manager import RenameManager
 from oncutf.models.file_item import FileItem
 from oncutf.modules.specified_text_module import SpecifiedTextModule
-from oncutf.utils.filename_validator import is_validation_error_marker
+from oncutf.utils.naming.filename_validator import is_validation_error_marker
 from tests.mocks import MockFileItem
 
 
@@ -66,7 +66,7 @@ class TestRenameIntegration:
         checked_paths = {"/test/folder/file1.txt", "/test/folder/file2.txt"}
 
         # Mock the timer manager
-        with patch("oncutf.utils.timer_manager.get_timer_manager") as mock_timer_manager:
+        with patch("oncutf.utils.shared.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -180,7 +180,7 @@ class TestRenameIntegration:
         rename_manager = RenameManager(mock_main_window)
 
         # Mock the timer manager
-        with patch("oncutf.utils.timer_manager.get_timer_manager") as mock_timer_manager:
+        with patch("oncutf.utils.shared.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 

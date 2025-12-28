@@ -19,8 +19,8 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_field_validators import MetadataFieldValidator
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.field_validators import MetadataFieldValidator
 
 logger = get_cached_logger(__name__)
 
@@ -82,14 +82,14 @@ class MetadataEditDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label with DPI awareness."""
-        from oncutf.utils.fonts import get_inter_css_weight, get_inter_family
+        from oncutf.utils.ui.fonts import get_inter_css_weight, get_inter_family
 
         font_family = get_inter_family("base")
         font_weight = get_inter_css_weight("base")
 
         # Get DPI-aware font size
         try:
-            from oncutf.utils.theme_font_generator import get_ui_font_sizes
+            from oncutf.utils.ui.theme_font_generator import get_ui_font_sizes
 
             font_size = get_ui_font_sizes()["small"]
         except ImportError:

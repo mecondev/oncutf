@@ -20,8 +20,8 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import logging
 import os
 
-from oncutf.utils.init_logging import init_logging
-from oncutf.utils.logger_file_helper import add_file_handler
+from oncutf.utils.logging.init_logging import init_logging
+from oncutf.utils.logging.logger_file_helper import add_file_handler
 
 
 # Clean log files (for test only)

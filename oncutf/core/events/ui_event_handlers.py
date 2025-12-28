@@ -12,8 +12,8 @@ from __future__ import annotations
 from typing import Any
 
 from oncutf.core.pyqt_imports import QModelIndex
-from oncutf.utils.cursor_helper import wait_cursor
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.cursor_helper import wait_cursor
 
 logger = get_cached_logger(__name__)
 

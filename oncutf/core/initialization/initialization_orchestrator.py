@@ -10,10 +10,10 @@ Separates initialization logic from MainWindow class to reduce complexity.
 from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import Qt, QTimer
-from oncutf.utils.icon_cache import load_preview_status_icons, prepare_status_icons
-from oncutf.utils.icon_utilities import create_colored_icon
-from oncutf.utils.icons_loader import icons_loader, load_metadata_icons
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.icon_cache import load_preview_status_icons, prepare_status_icons
+from oncutf.utils.ui.icon_utilities import create_colored_icon
+from oncutf.utils.ui.icons_loader import icons_loader, load_metadata_icons
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
@@ -188,7 +188,7 @@ class InitializationOrchestrator:
         from oncutf.core.ui_managers.ui_manager import UIManager
         from oncutf.core.ui_managers.window_config_manager import WindowConfigManager
         from oncutf.core.utility_manager import UtilityManager
-        from oncutf.utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         # Initialize all managers
         self.window.dialog_manager = DialogManager()
@@ -288,7 +288,7 @@ class InitializationOrchestrator:
         from oncutf.core.application_service import initialize_application_service
         from oncutf.core.shutdown_coordinator import get_shutdown_coordinator
         from oncutf.core.signal_coordinator import SignalCoordinator
-        from oncutf.utils.timer_manager import schedule_resize_adjust
+        from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
         # Load and apply window configuration
         self.window.window_config_manager.load_window_config()

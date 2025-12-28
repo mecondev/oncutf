@@ -10,7 +10,7 @@ import pytest
 
 from oncutf.models.counter_scope import CounterScope
 from oncutf.models.file_item import FileItem
-from oncutf.utils.preview_engine import apply_rename_modules, calculate_scope_aware_index
+from oncutf.utils.naming.preview_engine import apply_rename_modules, calculate_scope_aware_index
 
 
 class TestPerFileGroupScope:
@@ -203,7 +203,7 @@ class TestPerFileGroupScope:
 
     def test_per_filegroup_fallback_without_all_files(self, multi_folder_files):
         """Test PER_FILEGROUP fallback to global index when all_files is None."""
-        from oncutf.utils import preview_engine
+        from oncutf.utils.naming import preview_engine
 
         preview_engine._module_cache.clear()
 
@@ -234,7 +234,7 @@ class TestPerFileGroupScope:
 
     def test_per_filegroup_vs_per_folder_same_result(self, multi_folder_files):
         """Test that PER_FILEGROUP and PER_FOLDER produce same results (default grouping)."""
-        from oncutf.utils import preview_engine
+        from oncutf.utils.naming import preview_engine
 
         per_folder_results = []
         per_filegroup_results = []

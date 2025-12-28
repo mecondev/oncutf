@@ -30,11 +30,11 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_status_helpers import get_hash_for_file, has_hash
-from oncutf.utils.icons_loader import load_metadata_icons
+from oncutf.utils.filesystem.file_status_helpers import get_hash_for_file, has_hash
 
 # initialize logger
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.icons_loader import load_metadata_icons
 
 logger = get_cached_logger(__name__)
 
@@ -513,7 +513,9 @@ class FileTableModel(QAbstractTableModel):
                         entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                         if entry and hasattr(entry, "data") and entry.data:
                             # Use centralized metadata field mapper
-                            from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
+                            from oncutf.utils.metadata.field_mapper import (
+                                MetadataFieldMapper,
+                            )
 
                             value = MetadataFieldMapper.get_metadata_value(entry.data, column_key)
                             return value
@@ -529,7 +531,7 @@ class FileTableModel(QAbstractTableModel):
                 if hasattr(file, "metadata") and file.metadata:
                     try:
                         # Use centralized metadata field mapper for fallback too
-                        from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
+                        from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
 
                         value = MetadataFieldMapper.get_metadata_value(file.metadata, column_key)
                         if value:
@@ -763,7 +765,7 @@ class FileTableModel(QAbstractTableModel):
                     if entry and hasattr(entry, "data") and entry.data:
                         # Map column keys to metadata keys (using actual EXIF/QuickTime keys)
                         # Use centralized metadata field mapper for sorting
-                        from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
+                        from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
 
                         # Get possible metadata keys for this column
                         possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(column_key)

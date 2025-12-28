@@ -33,9 +33,9 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
-from oncutf.utils.drag_zone_validator import DragZoneValidator
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_scroll_adjust
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
+from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 
 logger = get_cached_logger(__name__)
 
@@ -344,7 +344,7 @@ class FileTreeView(QTreeView):
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
         try:
-            from oncutf.utils.icons_loader import get_menu_icon
+            from oncutf.utils.ui.icons_loader import get_menu_icon
 
             # Try to load custom icons (skip if not found)
             try:
@@ -621,7 +621,7 @@ class FileTreeView(QTreeView):
         # Block drag on mount points and root drives to prevent UI freeze
         import os
 
-        from oncutf.utils.folder_counter import is_mount_point_or_root
+        from oncutf.utils.filesystem.folder_counter import is_mount_point_or_root
 
         if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
             logger.warning(
@@ -669,7 +669,7 @@ class FileTreeView(QTreeView):
 
         # For folders, schedule async count update (hybrid approach)
         if is_folder:
-            from oncutf.utils.timer_manager import schedule_ui_update
+            from oncutf.utils.shared.timer_manager import schedule_ui_update
 
             schedule_ui_update(lambda: self._update_folder_count(clicked_path), delay=10)
 
@@ -682,7 +682,7 @@ class FileTreeView(QTreeView):
 
         # Start drag feedback timer for real-time visual updates using timer_manager
         if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
-            from oncutf.utils.timer_manager import cancel_timer
+            from oncutf.utils.shared.timer_manager import cancel_timer
 
             cancel_timer(self._drag_feedback_timer_id)
 
@@ -697,7 +697,7 @@ class FileTreeView(QTreeView):
 
     def _start_drag_feedback_loop(self):
         """Start repeated drag feedback updates using timer_manager"""
-        from oncutf.utils.timer_manager import schedule_ui_update
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
 
         if self._is_dragging:
             self._update_drag_feedback()
@@ -840,7 +840,7 @@ class FileTreeView(QTreeView):
 
         # Stop and cleanup drag feedback timer
         if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
-            from oncutf.utils.timer_manager import cancel_timer
+            from oncutf.utils.shared.timer_manager import cancel_timer
 
             cancel_timer(self._drag_feedback_timer_id)
             self._drag_feedback_timer_id = None
@@ -921,7 +921,7 @@ class FileTreeView(QTreeView):
             return
 
         from oncutf.core.drag.drag_visual_manager import update_source_info
-        from oncutf.utils.folder_counter import count_folder_contents
+        from oncutf.utils.filesystem.folder_counter import count_folder_contents
 
         # Check if we're in recursive mode (Ctrl pressed)
         modifiers = QApplication.keyboardModifiers()
@@ -977,7 +977,7 @@ class FileTreeView(QTreeView):
         """Check if path is valid for dragging"""
         if os.path.isdir(path):
             # Block dragging of mount points and root drives to prevent UI freeze
-            from oncutf.utils.folder_counter import is_mount_point_or_root
+            from oncutf.utils.filesystem.folder_counter import is_mount_point_or_root
 
             if is_mount_point_or_root(path):
                 logger.warning(
@@ -1055,7 +1055,7 @@ class FileTreeView(QTreeView):
 
     def _refresh_tree_view(self) -> None:
         """Refresh the tree view by refreshing the underlying model."""
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[FileTreeView] F5 pressed - refreshing tree view")
 
@@ -1228,8 +1228,8 @@ class FileTreeView(QTreeView):
 
     def _on_item_expanded(self, _index):
         """Handle item expansion with wait cursor for better UX"""
-        from oncutf.utils.cursor_helper import wait_cursor
-        from oncutf.utils.timer_manager import schedule_ui_update
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         def show_wait_cursor():
             """Show wait cursor briefly during folder expansion"""

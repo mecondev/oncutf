@@ -22,7 +22,7 @@ Architecture:
 from typing import Any, Optional
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

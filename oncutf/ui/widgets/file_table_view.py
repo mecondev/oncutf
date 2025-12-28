@@ -34,12 +34,12 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.placeholder_helper import create_placeholder_helper
-from oncutf.utils.timer_manager import (
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import (
     schedule_ui_update,
 )
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -170,7 +170,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
 
         # Ensure header visibility is set correctly from the start
         # This will be called again after model is set, but ensures initial state
-        from oncutf.utils.timer_manager import schedule_ui_update
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
 
         schedule_ui_update(self._update_header_visibility, delay=100)
 
@@ -382,12 +382,12 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             if model.columnCount() > 0:
                 # Check and fix column widths if needed (only when model is set)
                 # Delay this check to ensure model is fully initialized
-                from oncutf.utils.timer_manager import schedule_ui_update
+                from oncutf.utils.shared.timer_manager import schedule_ui_update
 
                 schedule_ui_update(self._check_and_fix_column_widths, delay=50)
                 self._configure_columns()
             else:
-                from oncutf.utils.timer_manager import schedule_ui_update
+                from oncutf.utils.shared.timer_manager import schedule_ui_update
 
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
@@ -898,7 +898,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from oncutf.utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 
@@ -911,7 +911,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Simple sync: update SelectionStore with current Qt selection
         selection_model = self.selectionModel()
         if selection_model is not None:
-            from oncutf.utils.selection_provider import get_selected_row_set
+            from oncutf.utils.ui.selection_provider import get_selected_row_set
 
             selected_rows = get_selected_row_set(selection_model)
             self._update_selection_store(
@@ -933,7 +933,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from oncutf.utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 
@@ -952,7 +952,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 self.viewport().update(row_rect)
 
         # Hide any active tooltips
-        from oncutf.utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
         TooltipHelper.clear_tooltips_for_widget(self)
 
@@ -1044,7 +1044,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if selection_store:
             self._legacy_selection_mode = False
             # Sync current selection to SelectionStore
-            from oncutf.utils.selection_provider import get_selected_row_set
+            from oncutf.utils.ui.selection_provider import get_selected_row_set
 
             current_selection = get_selected_row_set(self.selectionModel())  # type: ignore[arg-type]
             selection_store.set_selected_rows(current_selection, emit_signal=False)

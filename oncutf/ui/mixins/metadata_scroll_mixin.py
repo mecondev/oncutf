@@ -12,8 +12,8 @@ Date: 2025-12-08
 
 from typing import Any
 
-from oncutf.utils.path_utils import paths_equal
-from oncutf.utils.timer_manager import schedule_ui_update
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 
 class MetadataScrollMixin:
@@ -147,7 +147,7 @@ class MetadataScrollMixin:
         self._save_current_file_state()
 
         # Update current file (normalize for consistent cache lookups)
-        from oncutf.utils.path_normalizer import normalize_path
+        from oncutf.utils.filesystem.path_normalizer import normalize_path
 
         previous_file_path = self._current_file_path
         self._current_file_path = normalize_path(file_path) if file_path else None

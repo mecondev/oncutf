@@ -12,7 +12,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING
 
 from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_widget import MetadataWidget
@@ -233,7 +233,7 @@ class MetadataKeysHandler:
         keys = set()
         for file_item in selected_files:
             # Use the same path normalization as batch_metadata_status
-            from oncutf.utils.path_normalizer import normalize_path
+            from oncutf.utils.filesystem.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
             # Support multiple cache types: persistent cache (get_entry) or dict-like

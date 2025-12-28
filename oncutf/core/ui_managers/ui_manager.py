@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING
 
 from oncutf.core.config_imports import *
 from oncutf.core.pyqt_imports import *
-from oncutf.utils.icons_loader import get_app_icon, get_menu_icon
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_selection_update, schedule_ui_update
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_selection_update, schedule_ui_update
+from oncutf.utils.ui.icons_loader import get_app_icon, get_menu_icon
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 # Lazy imports: Heavy widget imports moved inside methods to speed up startup
 # These are only needed during UI setup, not module initialization
@@ -370,7 +370,7 @@ class UIManager:
         self.parent_window.metadata_search_field.setEnabled(False)  # Initially disabled
 
         # Add search icon as QAction (always last)
-        from oncutf.utils.path_utils import get_icons_dir
+        from oncutf.utils.filesystem.path_utils import get_icons_dir
 
         search_icon_path = get_icons_dir() / "feather_icons" / "search_dark.svg"
         self.parent_window.search_action = QAction(
@@ -790,7 +790,7 @@ class UIManager:
         """Refresh file table (F5) - reloads files and clears selection for better UX.
         Shows status message.
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[FileTable] F5 pressed - refreshing file table")
 

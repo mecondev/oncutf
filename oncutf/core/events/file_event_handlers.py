@@ -14,7 +14,7 @@ from typing import Any
 
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
 from oncutf.core.pyqt_imports import QApplication
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -41,7 +41,7 @@ class FileEventHandlers:
         - Shift: Merge + shallow (skip metadata)
         - Ctrl+Shift: Merge + recursive (skip metadata)
         """
-        from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.utils.ui.multiscreen_helper import get_existing_directory_on_parent_screen
 
         folder_path = get_existing_directory_on_parent_screen(
             self.parent_window,

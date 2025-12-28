@@ -10,10 +10,10 @@ Handles file table selection operations, preview updates, and metadata synchroni
 
 import time
 
-from oncutf.utils.cursor_helper import wait_cursor
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
-from oncutf.utils.timer_manager import schedule_metadata_load
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
+from oncutf.utils.shared.timer_manager import schedule_metadata_load
+from oncutf.utils.ui.cursor_helper import wait_cursor
 
 logger = get_cached_logger(__name__)
 
@@ -182,7 +182,7 @@ class SelectionManager:
                 file_table_view.blockSignals(True)
 
             try:
-                from oncutf.utils.selection_provider import get_selected_row_set
+                from oncutf.utils.ui.selection_provider import get_selected_row_set
 
                 selection_model = file_table_view.selectionModel()
                 current_selected = get_selected_row_set(selection_model)

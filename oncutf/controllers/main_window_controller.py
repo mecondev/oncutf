@@ -279,7 +279,7 @@ class MainWindowController:
             # Step 1: Save configuration (10%)
             update_progress("Saving configuration...", 0.1)
             try:
-                from oncutf.utils.json_config_manager import get_app_config_manager
+                from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
                 get_app_config_manager().save_immediate()
                 result["config_saved"] = True

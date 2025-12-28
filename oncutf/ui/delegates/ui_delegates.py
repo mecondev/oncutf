@@ -28,7 +28,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.theme_manager import ThemeManager
@@ -182,7 +182,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def leaveEvent(self, event) -> None:  # noqa: ARG002
         """Handle mouse leave events to hide tooltips."""
         # Hide any active tooltips when mouse leaves the delegate
-        from oncutf.utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):
@@ -207,7 +207,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def focusOutEvent(self, event) -> None:  # noqa: ARG002
         """Handle focus loss events to hide tooltips."""
         # Hide any active tooltips when focus is lost
-        from oncutf.utils.tooltip_helper import TooltipHelper
+        from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):

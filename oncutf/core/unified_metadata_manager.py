@@ -27,13 +27,13 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.cursor_helper import wait_cursor
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
-from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
+from oncutf.utils.ui.cursor_helper import wait_cursor
 
 if TYPE_CHECKING:
-    from oncutf.utils.progress_dialog import ProgressDialog
+    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -117,7 +117,7 @@ class UnifiedMetadataManager(QObject):
     def exiftool_wrapper(self):
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
-            from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
             self._exiftool_wrapper = ExifToolWrapper()
             logger.debug(
@@ -306,7 +306,7 @@ class UnifiedMetadataManager(QObject):
             def cancel_hash_loading():
                 self._cancel_current_loading()
 
-            from oncutf.utils.progress_dialog import ProgressDialog
+            from oncutf.utils.ui.progress_dialog import ProgressDialog
 
             self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
                 self.parent_window, cancel_callback=cancel_hash_loading
@@ -472,7 +472,7 @@ class UnifiedMetadataManager(QObject):
 
         try:
             if save_mode == "multiple_files_dialog":
-                from oncutf.utils.progress_dialog import ProgressDialog
+                from oncutf.utils.ui.progress_dialog import ProgressDialog
 
                 cancel_callback = self.request_save_cancel if not is_exit_save else None
                 _loading_dialog = ProgressDialog(
@@ -555,7 +555,7 @@ class UnifiedMetadataManager(QObject):
         if file_path in all_modified_metadata:
             return all_modified_metadata[file_path]
 
-        from oncutf.utils.path_normalizer import normalize_path
+        from oncutf.utils.filesystem.path_normalizer import normalize_path
 
         normalized = normalize_path(file_path)
         for key, value in all_modified_metadata.items():

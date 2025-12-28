@@ -296,7 +296,7 @@ class TestRestoreLastSessionWorkflow:
 class TestCoordinateShutdownWorkflow:
     """Test coordinate_shutdown_workflow orchestration method."""
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_successful_shutdown_all_steps(self, mock_config_manager, controller):
         """Test successful shutdown with all cleanup steps."""
         # Mock config manager
@@ -335,7 +335,7 @@ class TestCoordinateShutdownWorkflow:
         assert len(result["errors"]) == 0
         assert result["summary"] == {"test": "summary"}
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_shutdown_with_missing_managers(self, mock_config_manager, controller):
         """Test shutdown handles missing optional managers gracefully."""
         config_mgr = MagicMock()
@@ -360,7 +360,7 @@ class TestCoordinateShutdownWorkflow:
         assert result["backup_created"] is False  # Manager was None
         assert result["coordinator_success"] is True
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_shutdown_config_save_failure(self, mock_config_manager, controller):
         """Test shutdown handles config save failure."""
         config_mgr = MagicMock()
@@ -381,7 +381,7 @@ class TestCoordinateShutdownWorkflow:
         # Overall success depends on coordinator
         assert result["coordinator_success"] is True
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_shutdown_progress_callback(self, mock_config_manager, controller):
         """Test shutdown calls progress callback correctly."""
         config_mgr = MagicMock()
@@ -408,7 +408,7 @@ class TestCoordinateShutdownWorkflow:
         assert progress_calls[-1][1] == 1.0  # Last update at 100%
         assert result["success"] is True
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_shutdown_coordinator_failure(self, mock_config_manager, controller):
         """Test shutdown handles coordinator failure."""
         config_mgr = MagicMock()
@@ -426,7 +426,7 @@ class TestCoordinateShutdownWorkflow:
         assert result["success"] is False  # Overall failure
         assert result["summary"] == {"error": "failed"}
 
-    @patch("oncutf.utils.json_config_manager.get_app_config_manager")
+    @patch("oncutf.utils.shared.json_config_manager.get_app_config_manager")
     def test_shutdown_unexpected_exception(self, mock_config_manager, controller):
         """Test shutdown handles unexpected exceptions."""
         config_mgr = MagicMock()

@@ -19,14 +19,14 @@ from typing import Any
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_status_helpers import (
+from oncutf.utils.filesystem.file_status_helpers import (
     get_hash_for_file,
     get_metadata_for_file,
     has_hash,
     has_metadata,
 )
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 
 logger = get_cached_logger(__name__)
 
@@ -193,7 +193,7 @@ class DirectMetadataLoader(QObject):
     ) -> None:
         """Show progress dialog for metadata loading."""
         try:
-            from oncutf.utils.progress_dialog import ProgressDialog
+            from oncutf.utils.ui.progress_dialog import ProgressDialog
 
             # Create cancel callback
             def cancel_metadata_loading():
@@ -218,7 +218,7 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog.start_progress_tracking(total_size)
 
             # Show dialog
-            from oncutf.utils.dialog_utils import show_dialog_smooth
+            from oncutf.utils.ui.dialog_utils import show_dialog_smooth
 
             show_dialog_smooth(self._progress_dialog)
 
@@ -238,7 +238,7 @@ class DirectMetadataLoader(QObject):
     ) -> None:
         """Start metadata loading with progress tracking."""
         from oncutf.ui.widgets.metadata_worker import MetadataWorker
-        from oncutf.utils.metadata_loader import MetadataLoader
+        from oncutf.utils.metadata.loader import MetadataLoader
 
         # Create worker and thread
         self._metadata_thread = QThread()
@@ -339,7 +339,7 @@ class DirectMetadataLoader(QObject):
     def _show_hash_progress_dialog(self, files: list[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
-            from oncutf.utils.progress_dialog import ProgressDialog
+            from oncutf.utils.ui.progress_dialog import ProgressDialog
 
             # Create cancel callback
             def cancel_hash_loading():
@@ -362,7 +362,7 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog.start_progress_tracking(total_size)
 
             # Show dialog
-            from oncutf.utils.dialog_utils import show_dialog_smooth
+            from oncutf.utils.ui.dialog_utils import show_dialog_smooth
 
             show_dialog_smooth(self._progress_dialog)
 
@@ -425,7 +425,7 @@ class DirectMetadataLoader(QObject):
     ) -> None:
         """Start metadata loading in background thread."""
         from oncutf.ui.widgets.metadata_worker import MetadataWorker
-        from oncutf.utils.metadata_loader import MetadataLoader
+        from oncutf.utils.metadata.loader import MetadataLoader
 
         # Create worker and thread
         self._metadata_thread = QThread()

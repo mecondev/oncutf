@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.core.type_aliases import MetadataCache
 from oncutf.models.file_item import FileItem
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.file_store import FileStore

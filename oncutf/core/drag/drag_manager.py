@@ -8,8 +8,8 @@ Date: 2025-05-31
 """
 
 from oncutf.core.pyqt_imports import QApplication, QEvent, QObject, Qt, QTimer
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_drag_cleanup
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_drag_cleanup
 
 logger = get_cached_logger(__name__)
 

@@ -19,11 +19,11 @@ import contextlib
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
-    from oncutf.utils.progress_dialog import ProgressDialog
+    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -81,7 +81,7 @@ class MetadataProgressHandler:
             ProgressDialog instance
 
         """
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         self._metadata_progress_dialog = ProgressDialog.create_metadata_dialog(
             self._parent_window,
@@ -109,8 +109,8 @@ class MetadataProgressHandler:
         """
         try:
             from oncutf.core.pyqt_imports import QApplication
-            from oncutf.utils.dialog_utils import show_dialog_smooth
-            from oncutf.utils.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.ui.dialog_utils import show_dialog_smooth
 
             # Create dialog
             dialog = self.create_metadata_progress_dialog(is_extended, cancel_callback)
@@ -163,7 +163,7 @@ class MetadataProgressHandler:
             ProgressDialog instance
 
         """
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
             self._parent_window,
@@ -188,7 +188,7 @@ class MetadataProgressHandler:
         """
         try:
             from oncutf.core.pyqt_imports import QApplication
-            from oncutf.utils.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
 
             # Create dialog
             dialog = self.create_hash_progress_dialog(cancel_callback)

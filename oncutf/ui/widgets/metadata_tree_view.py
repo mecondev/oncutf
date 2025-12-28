@@ -52,11 +52,11 @@ from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeMo
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
-from oncutf.utils.path_utils import find_parent_with_attribute, paths_equal
-from oncutf.utils.placeholder_helper import create_placeholder_helper
-from oncutf.utils.timer_manager import schedule_scroll_adjust
+from oncutf.utils.filesystem.path_utils import find_parent_with_attribute, paths_equal
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
+from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
+from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
 
 # ApplicationContext integration
 try:
@@ -1053,7 +1053,7 @@ class MetadataTreeView(
     def _on_refresh_shortcut(self) -> None:
         """Handle F5 shortcut press - refresh metadata with status message.
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[MetadataTree] F5 pressed - refreshing metadata")
 
@@ -1124,7 +1124,7 @@ class MetadataTreeView(
 
             # CRITICAL: Clear any stale modifications for this file when displaying fresh metadata
             # This prevents showing [MODIFIED] for fields that were never actually saved
-            from oncutf.utils.path_normalizer import normalize_path
+            from oncutf.utils.filesystem.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
 

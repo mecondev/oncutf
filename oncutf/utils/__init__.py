@@ -5,8 +5,8 @@ Date: 2025-05-09
 
 """
 
-# SVG Icon System
-from .svg_icon_generator import (
+# SVG Icon System (from ui subdirectory)
+from .ui.svg_icon_generator import (
     SVGIconGenerator,
     generate_hash_icon,
     generate_metadata_icons,

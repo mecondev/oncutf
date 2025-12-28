@@ -28,8 +28,8 @@ from oncutf.ui.widgets.metadata.hash_handler import HashHandler
 from oncutf.ui.widgets.metadata.metadata_keys_handler import MetadataKeysHandler
 from oncutf.ui.widgets.metadata.styling_handler import StylingHandler
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_ui_update
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
 try:

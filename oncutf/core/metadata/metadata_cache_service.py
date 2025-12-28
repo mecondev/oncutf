@@ -18,14 +18,14 @@ from __future__ import annotations
 from typing import Any
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_status_helpers import (
+from oncutf.utils.filesystem.file_status_helpers import (
     get_hash_for_file,
     get_metadata_for_file,
     has_hash,
     has_metadata,
 )
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 
 logger = get_cached_logger(__name__)
 

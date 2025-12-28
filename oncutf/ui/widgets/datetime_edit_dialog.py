@@ -24,8 +24,8 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 

@@ -34,8 +34,8 @@ from oncutf.core.theme_manager import get_theme_manager
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_ui_update
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
 try:
@@ -173,7 +173,7 @@ class RenameModuleWidget(QWidget):
         plate_layout.setSpacing(0)
 
         # --- Drag Handle Area ---
-        from oncutf.utils.icons_loader import get_menu_icon
+        from oncutf.utils.ui.icons_loader import get_menu_icon
 
         self.drag_handle = QLabel()
         self.drag_handle.setFixedWidth(30)
@@ -337,7 +337,7 @@ class RenameModuleWidget(QWidget):
 
         # Schedule preview update after module initialization completes
         # Small delay ensures MetadataWidget's auto-selection has finished
-        from oncutf.utils.timer_manager import schedule_ui_update
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
         schedule_ui_update(lambda: self.updated.emit(self), 50)
 
     def get_data(self) -> dict:
@@ -458,7 +458,7 @@ class RenameModuleWidget(QWidget):
         # Restore original position (remove horizontal offset)
         if self.parent():
             # Get the correct position from the layout
-            from oncutf.utils.timer_manager import schedule_ui_update
+            from oncutf.utils.shared.timer_manager import schedule_ui_update
 
             schedule_ui_update(self.restore_original_position, 10)
 
