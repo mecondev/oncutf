@@ -167,7 +167,7 @@ class ShortcutManager:
 
         try:
             # Show the metadata history dialog
-            from oncutf.ui.widgets.metadata_history_dialog import show_metadata_history_dialog
+            from oncutf.ui.dialogs.metadata_history_dialog import show_metadata_history_dialog
 
             show_metadata_history_dialog(self.main_window)
 
@@ -188,7 +188,7 @@ class ShortcutManager:
 
         try:
             # Show the rename history dialog
-            from oncutf.ui.widgets.rename_history_dialog import show_rename_history_dialog
+            from oncutf.ui.dialogs.rename_history_dialog import show_rename_history_dialog
 
             show_rename_history_dialog(self.main_window)
 
@@ -300,7 +300,7 @@ class ShortcutManager:
                 )
 
             # Get or create the results table dialog with hash data
-            from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog
+            from oncutf.ui.dialogs.results_table_dialog import ResultsTableDialog
 
             if (
                 not hasattr(self.main_window, "results_dialog")

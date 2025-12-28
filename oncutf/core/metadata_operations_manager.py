@@ -250,7 +250,7 @@ class MetadataOperationsManager:
                 current_value = self._get_current_field_value(selected_files[0], field_name) or ""
 
             # Import and show the metadata edit dialog
-            from oncutf.ui.widgets.metadata_edit_dialog import MetadataEditDialog
+            from oncutf.ui.dialogs.metadata_edit_dialog import MetadataEditDialog
 
             success, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
                 parent=self.parent_window,

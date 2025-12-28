@@ -624,7 +624,7 @@ class ContextMenuHandlers:
                 return
 
         try:
-            from oncutf.ui.widgets.bulk_rotation_dialog import BulkRotationDialog
+            from oncutf.ui.dialogs.bulk_rotation_dialog import BulkRotationDialog
 
             final_files = BulkRotationDialog.get_bulk_rotation_choice(
                 self.parent_window, files_to_process, self.parent_window.metadata_cache
@@ -681,7 +681,7 @@ class ContextMenuHandlers:
             'cancel': Cancel operation
 
         """
-        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         message_parts = []
         if with_metadata_count > 0:

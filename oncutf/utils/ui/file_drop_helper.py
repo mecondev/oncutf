@@ -62,7 +62,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
     """Show a custom dialog asking if the user wants a recursive scan for the folder.
     Returns True if the user selects Yes.
     """
-    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     folder_name = os.path.basename(folder_path)
     message = f"Do you want to import files from all subfolders of '{folder_name}' as well?"
@@ -78,7 +78,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
 def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=None) -> None:
     """Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
     """
-    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     skipped_count = len(rejected)
     if skipped_count == 0:
