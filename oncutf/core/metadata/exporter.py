@@ -15,8 +15,8 @@ from datetime import datetime
 from typing import Any
 
 from oncutf.config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT
+from oncutf.core.metadata.tree_model_builder import classify_key
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.tree_model_builder import classify_key
 
 logger = get_cached_logger(__name__)
 

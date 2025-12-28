@@ -327,7 +327,7 @@ class MetadataExtractor:
 
         # Try centralized field mapper
         try:
-            from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
+            from oncutf.core.metadata.field_mapper import MetadataFieldMapper
 
             if MetadataFieldMapper.has_field_mapping(field):
                 possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(field)

@@ -405,7 +405,7 @@ class ExifToolWrapper:
             cmd = ["exiftool", "-overwrite_original"]
 
             # Use the centralized metadata field mapping helper
-            from oncutf.utils.metadata.field_mapping_helper import MetadataFieldMappingHelper
+            from oncutf.core.metadata.field_mapping_helper import MetadataFieldMappingHelper
 
             # Prepare metadata changes using the field mapping helper
             prepared_changes = MetadataFieldMappingHelper.prepare_metadata_for_write(

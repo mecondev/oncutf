@@ -279,7 +279,7 @@ class MetadataController:
 
         try:
             # Use MetadataExporter class
-            from oncutf.utils.metadata.exporter import MetadataExporter
+            from oncutf.core.metadata.exporter import MetadataExporter
 
             exporter = MetadataExporter()
             success = exporter.export_files(

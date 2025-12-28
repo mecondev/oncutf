@@ -513,7 +513,7 @@ class FileTableModel(QAbstractTableModel):
                         entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                         if entry and hasattr(entry, "data") and entry.data:
                             # Use centralized metadata field mapper
-                            from oncutf.utils.metadata.field_mapper import (
+                            from oncutf.core.metadata.field_mapper import (
                                 MetadataFieldMapper,
                             )
 
@@ -531,7 +531,7 @@ class FileTableModel(QAbstractTableModel):
                 if hasattr(file, "metadata") and file.metadata:
                     try:
                         # Use centralized metadata field mapper for fallback too
-                        from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
+                        from oncutf.core.metadata.field_mapper import MetadataFieldMapper
 
                         value = MetadataFieldMapper.get_metadata_value(file.metadata, column_key)
                         if value:
@@ -765,7 +765,7 @@ class FileTableModel(QAbstractTableModel):
                     if entry and hasattr(entry, "data") and entry.data:
                         # Map column keys to metadata keys (using actual EXIF/QuickTime keys)
                         # Use centralized metadata field mapper for sorting
-                        from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
+                        from oncutf.core.metadata.field_mapper import MetadataFieldMapper
 
                         # Get possible metadata keys for this column
                         possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(column_key)
