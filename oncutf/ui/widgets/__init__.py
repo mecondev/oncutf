@@ -23,9 +23,9 @@ from .file_table_view import FileTableView
 from .file_tree_view import FileTreeView
 from .final_transform_container import FinalTransformContainer
 from .interactive_header import InteractiveHeader
-from .metadata_tree_view import MetadataTreeView
+from .metadata_tree.view import MetadataTreeView
+from .metadata_tree.worker import MetadataWorker
 from .metadata_widget import MetadataWidget
-from .metadata_worker import MetadataWorker
 from .name_transform_widget import NameTransformWidget
 from .original_name_widget import OriginalNameWidget
 from .preview_tables_view import PreviewTablesView

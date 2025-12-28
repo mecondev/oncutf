@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Protocol
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QItemSelection
+    from oncutf.core.pyqt_imports import QItemSelection, QModelIndex, Qt
     from oncutf.core.selection.selection_store import SelectionStore
 
 logger = get_cached_logger(__name__)
@@ -47,6 +47,18 @@ class SelectableWidget(Protocol):
 
     def viewport(self):
         """Return the viewport widget."""
+        ...
+
+    def visualRect(self, index: QModelIndex):
+        """Return visual rectangle for index."""
+        ...
+
+    def clearSelection(self) -> None:
+        """Clear selection."""
+        ...
+
+    def keyboardModifiers(self):
+        """Get current keyboard modifiers."""
         ...
 
 
@@ -81,6 +93,8 @@ class SelectionBehavior:
         self._selection_store = selection_store
         self._anchor_row: int | None = None
         self._processing_selection_change = False
+        self._ensuring_selection = False
+        self._manual_anchor_index: QModelIndex | None = None
 
     def _setup(self) -> None:
         """Set up behavior-specific initialization."""
@@ -276,6 +290,316 @@ class SelectionBehavior:
         inverted = all_rows - current_selection
 
         self.update_selection_store(inverted, emit_signal=True)
+
+    def ensure_anchor_or_select(
+        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers
+    ) -> None:
+        """Handle selection logic with anchor and modifier support.
+
+        Implements Windows Explorer-like selection behavior:
+        - No modifier: Clear and select
+        - Shift: Range selection from anchor to clicked
+        - Ctrl: Toggle selection of clicked item
+
+        Args:
+            index: QModelIndex of clicked item
+            modifiers: Qt keyboard modifiers (Shift, Ctrl, etc.)
+        """
+        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel, Qt
+
+        # Add protection against infinite loops
+        if self._ensuring_selection:
+            logger.debug(
+                "[SelectionBehavior] ensure_anchor_or_select already running, skipping"
+            )
+            return
+
+        self._ensuring_selection = True
+        try:
+            sm = self._widget.selectionModel()
+            model = self._widget.model()
+            if sm is None or model is None:
+                return
+
+            if modifiers & Qt.ShiftModifier:
+                # Check if we're clicking on an already selected item
+                selected_indexes = sm.selectedRows()
+                current_selection = {idx.row() for idx in selected_indexes}
+                clicked_row = index.row()
+
+                # If clicking on an already selected item, don't change selection
+                if clicked_row in current_selection:
+                    # Just update the current index without changing selection
+                    sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                else:
+                    # Normal Shift+Click behavior for unselected items
+                    if self._manual_anchor_index is None:
+                        # If no anchor exists, use the first selected item as anchor
+                        if selected_indexes:
+                            self._manual_anchor_index = selected_indexes[0]
+                    else:
+                        self._manual_anchor_index = index
+
+                    # Create selection from anchor to current index
+                    selection = QItemSelection(self._manual_anchor_index, index)
+                    # Block signals to prevent metadata flickering during selection changes
+                    self._widget.blockSignals(True)
+                    try:
+                        # Use ClearAndSelect to replace existing selection with the range
+                        sm.select(
+                            selection,
+                            QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+                        )
+                        sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                    finally:
+                        self._widget.blockSignals(False)
+
+                # Update SelectionStore to match Qt selection model
+                if self.selection_store:
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    self.selection_store.set_selected_rows(
+                        current_qt_selection, emit_signal=False
+                    )
+                    if self._manual_anchor_index:
+                        self.selection_store.set_anchor_row(
+                            self._manual_anchor_index.row(), emit_signal=False
+                        )
+
+                # Force visual update
+                left = model.index(index.row(), 0)
+                right = model.index(index.row(), model.columnCount() - 1)
+                self._widget.viewport().update(
+                    self._widget.visualRect(left).united(self._widget.visualRect(right))
+                )
+
+            elif modifiers & Qt.ControlModifier:
+                self._manual_anchor_index = index
+                row = index.row()
+
+                # Get current selection state before making changes
+                was_selected = sm.isSelected(index)
+
+                # Toggle selection in Qt selection model
+                if was_selected:
+                    sm.select(index, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
+                else:
+                    sm.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+                # Set current index without clearing selection
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+
+                # Update SelectionStore to match Qt selection model
+                if self.selection_store:
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    self.selection_store.set_selected_rows(
+                        current_qt_selection, emit_signal=False
+                    )
+                    self.selection_store.set_anchor_row(row, emit_signal=False)
+
+                # Force visual update
+                left = model.index(row, 0)
+                right = model.index(row, model.columnCount() - 1)
+                self._widget.viewport().update(
+                    self._widget.visualRect(left).united(self._widget.visualRect(right))
+                )
+
+            else:
+                self._manual_anchor_index = index
+                sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+
+                # Update SelectionStore to match Qt selection model
+                if self.selection_store:
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
+                    self.selection_store.set_selected_rows(current_qt_selection, emit_signal=False)
+                    self.selection_store.set_anchor_row(index.row(), emit_signal=False)
+
+                # Force visual update
+                left = model.index(index.row(), 0)
+                right = model.index(index.row(), model.columnCount() - 1)
+                self._widget.viewport().update(
+                    self._widget.visualRect(left).united(self._widget.visualRect(right))
+                )
+
+        finally:
+            self._ensuring_selection = False
+
+    def select_rows_range(self, start_row: int, end_row: int) -> None:
+        """Select a range of rows efficiently using batch selection.
+
+        Args:
+            start_row: Starting row index
+            end_row: Ending row index (inclusive)
+        """
+        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
+
+        self._widget.blockSignals(True)
+        selection_model = self._widget.selectionModel()
+        model = self._widget.model()
+
+        if selection_model is None or model is None:
+            self._widget.blockSignals(False)
+            return
+
+        if hasattr(model, "index") and hasattr(model, "columnCount"):
+            # Ensure we always select from lower to higher row number
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            top_left = model.index(min_row, 0)
+            bottom_right = model.index(max_row, model.columnCount() - 1)
+            selection = QItemSelection(top_left, bottom_right)
+            selection_model.select(
+                selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
+            )
+
+        self._widget.blockSignals(False)
+
+        if hasattr(self._widget, "viewport"):
+            self._widget.viewport().update()
+
+        if model is not None:
+            # Ensure we always create range from lower to higher
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            selected_rows = set(range(min_row, max_row + 1))
+            self.update_selection_store(selected_rows, emit_signal=True)
+
+    def select_dropped_files(self, file_paths: list[str] | None = None) -> None:
+        """Select specific files that were just dropped/loaded in the table.
+
+        Args:
+            file_paths: List of file paths to select (None = select all)
+        """
+        from oncutf.core.pyqt_imports import QItemSelection, Qt
+
+        model = self._widget.model()
+        if not model or not hasattr(model, "files"):
+            logger.error("[SelectionBehavior] No model or model has no files attribute")
+            return
+
+        if not file_paths:
+            # Fallback: select all files if no specific paths provided
+            row_count = len(model.files)
+            if row_count == 0:
+                logger.debug(
+                    "[SelectionBehavior] No files in model - returning early",
+                    extra={"dev_only": True},
+                )
+                return
+            logger.debug(
+                "[SelectionBehavior] Fallback: selecting all %d files",
+                row_count,
+                extra={"dev_only": True},
+            )
+            self.select_rows_range(0, row_count - 1)
+            return
+
+        # Select specific files based on their paths
+        rows_to_select = []
+        for i, file_item in enumerate(model.files):
+            if file_item.full_path in file_paths:
+                rows_to_select.append(i)
+
+        if not rows_to_select:
+            logger.debug(
+                "[SelectionBehavior] No matching files found", extra={"dev_only": True}
+            )
+            return
+
+        # Clear existing selection first only if there are modifiers
+        if self._widget.keyboardModifiers() != Qt.NoModifier:
+            self._widget.clearSelection()
+
+        # Select the specific rows ALL AT ONCE using range selection
+        selection_model = self._widget.selectionModel()
+        if not selection_model:
+            logger.error("[SelectionBehavior] No selection model available")
+            return
+
+        self._widget.blockSignals(True)
+
+        # Create a single selection for all rows
+        full_selection = QItemSelection()
+
+        for row in rows_to_select:
+            if 0 <= row < len(model.files):
+                left_index = model.index(row, 0)
+                right_index = model.index(row, model.columnCount() - 1)
+                if left_index.isValid() and right_index.isValid():
+                    row_selection = QItemSelection(left_index, right_index)
+                    full_selection.merge(row_selection, selection_model.Select)
+
+        # Apply the entire selection at once
+        if not full_selection.isEmpty():
+            selection_model.select(full_selection, selection_model.Select)
+
+        self._widget.blockSignals(False)
+
+        # Update selection store
+        selected_rows = set(rows_to_select)
+        self.update_selection_store(selected_rows, emit_signal=True)
+
+        # Update UI
+        if hasattr(self._widget, "viewport"):
+            self._widget.viewport().update()
+
+    def sync_selection_safely(self) -> None:
+        """Sync selection state with SelectionStore.
+
+        This is typically called when selection needs to be synchronized
+        with external components.
+        """
+        # Sync with SelectionStore if available
+        if self.selection_store:
+            selected_indexes = self._widget.selectionModel().selectedRows()
+            current_qt_selection = {idx.row() for idx in selected_indexes}
+            self.selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
+            return
+
+        # Fallback: try parent window sync method
+        parent = getattr(self._widget, "window", lambda: None)()
+        if parent and hasattr(parent, "sync_selection_to_checked"):
+            from oncutf.core.pyqt_imports import QItemSelection
+
+            selection = self._widget.selectionModel().selection()
+            parent.sync_selection_to_checked(selection, QItemSelection())
+
+    def handle_selection_changed(
+        self, selected: QItemSelection, deselected: QItemSelection
+    ) -> None:
+        """Handle Qt selectionChanged signal.
+
+        This should be called from the widget's selectionChanged override.
+
+        Args:
+            selected: Newly selected items
+            deselected: Newly deselected items
+        """
+        # SIMPLIFIED: Only essential protection against infinite loops
+        if self._processing_selection_change:
+            return
+
+        self._processing_selection_change = True
+        try:
+            selection_model = self._widget.selectionModel()
+            if selection_model is not None:
+                selected_indexes = selection_model.selectedRows()
+                selected_rows = {idx.row() for idx in selected_indexes}
+
+                # OPTIMIZED: Only check for critical cases that need special handling
+                if not selected_rows and hasattr(self._widget, "_is_dragging"):
+                    is_dragging = getattr(self._widget, "_is_dragging", False)
+                    if is_dragging:
+                        return
+
+                # CRITICAL: Update SelectionStore with emit_signal=True to trigger preview update
+                self.update_selection_store(selected_rows, emit_signal=True)
+
+            # Update viewport
+            if hasattr(self._widget, "viewport"):
+                self._widget.viewport().update()
+        finally:
+            self._processing_selection_change = False
 
     def cleanup(self) -> None:
         """Clean up behavior resources.

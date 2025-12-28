@@ -347,7 +347,7 @@ class UIManager:
     def setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""
         # Lazy import: Only load when setting up right panel
-        from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+        from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
@@ -418,7 +418,7 @@ class UIManager:
         )
 
         # QSortFilterProxyModel for the metadata tree
-        from oncutf.ui.widgets.metadata_tree_view import MetadataProxyModel
+        from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel
 
         self.parent_window.metadata_proxy_model = MetadataProxyModel()
         self.parent_window.metadata_proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)

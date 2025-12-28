@@ -237,13 +237,13 @@ class DirectMetadataLoader(QObject):
         source: str,  # noqa: ARG002
     ) -> None:
         """Start metadata loading with progress tracking."""
-        from oncutf.ui.widgets.metadata_worker import MetadataWorker
-        from oncutf.utils.metadata.loader import MetadataLoader
+        from oncutf.ui.widgets.metadata_tree.worker import MetadataWorker
+        from oncutf.utils.metadata.exiftool_adapter import ExifToolMetadataAdapter
 
         # Create worker and thread
         self._metadata_thread = QThread()
         self._metadata_worker = MetadataWorker(
-            reader=MetadataLoader(),
+            reader=ExifToolMetadataAdapter(),
             metadata_cache=self.parent_window.metadata_cache,
             parent=None,  # No parent to avoid moveToThread issues
         )
@@ -424,13 +424,13 @@ class DirectMetadataLoader(QObject):
         self, files: list[FileItem], use_extended: bool, _source: str
     ) -> None:
         """Start metadata loading in background thread."""
-        from oncutf.ui.widgets.metadata_worker import MetadataWorker
-        from oncutf.utils.metadata.loader import MetadataLoader
+        from oncutf.ui.widgets.metadata_tree.worker import MetadataWorker
+        from oncutf.utils.metadata.exiftool_adapter import ExifToolMetadataAdapter
 
         # Create worker and thread
         self._metadata_thread = QThread()
         self._metadata_worker = MetadataWorker(
-            reader=MetadataLoader(),
+            reader=ExifToolMetadataAdapter(),
             metadata_cache=self.parent_window.metadata_cache,
             parent=self.parent_window,
         )

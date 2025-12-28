@@ -154,7 +154,7 @@ module = [
     "oncutf.utils.ui.theme_font_generator",
     "oncutf.utils.ui.placeholder_helper",
     "oncutf.utils.ui.combo_popup_helper",
-    "oncutf.utils.metadata.loader"
+    "oncutf.utils.metadata.exiftool_adapter"
 ]
 ignore_errors = false
 disable_error_code = [

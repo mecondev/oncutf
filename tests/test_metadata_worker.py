@@ -12,7 +12,7 @@ import warnings
 import pytest
 from PyQt5.QtCore import QCoreApplication
 
-from oncutf.ui.widgets.metadata_worker import MetadataWorker
+from oncutf.ui.widgets.metadata_tree.worker import MetadataWorker
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 warnings.filterwarnings("ignore", category=DeprecationWarning)

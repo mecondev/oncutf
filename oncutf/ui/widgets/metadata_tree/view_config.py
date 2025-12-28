@@ -28,7 +28,7 @@ from oncutf.core.pyqt_imports import (
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
 logger = get_cached_logger(__name__)
 

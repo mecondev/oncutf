@@ -15,7 +15,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
 # Unified metadata manager integration
 try:

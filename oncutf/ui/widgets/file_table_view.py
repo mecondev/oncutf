@@ -210,6 +210,9 @@ class FileTableView(QTableView):
         self._drag_drop_behavior = DragDropBehavior(self)
         self._column_mgmt_behavior = ColumnManagementBehavior(self)
 
+        # Register shutdown hook for column save
+        self._column_mgmt_behavior.register_shutdown_hook()
+
     def eventFilter(self, obj, event):
         """Event filter for custom tooltips on table cells"""
         if obj == self.viewport():
@@ -848,18 +851,9 @@ class FileTableView(QTableView):
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
         # SIMPLIFIED: No longer needed - selection is cleared during column updates
 
-        # Handle column management shortcuts (from config)
-
-        # Check for Ctrl+T (auto-fit) or Ctrl+Shift+T (reset)
-        if event.key() == Qt.Key_T:
-            if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-                # Ctrl+Shift+T: Reset column widths to default
-                self._reset_columns_to_default()
-                event.accept()
-                return
-            elif event.modifiers() == Qt.ControlModifier:
-                # Ctrl+T: Auto-fit columns to content
-                self._auto_fit_columns_to_content()
+        # Handle column management shortcuts (delegate to behavior)
+        if hasattr(self, "_column_mgmt_behavior"):
+            if self._column_mgmt_behavior.handle_keyboard_shortcut(event.key(), event.modifiers()):
                 event.accept()
                 return
 
@@ -1157,7 +1151,24 @@ class FileTableView(QTableView):
         """Delegate to ColumnManagementBehavior (legacy compatibility)."""
         # This is called during __init__ before behaviors exist
         # Return empty dict and let behavior handle it after initialization
+        if hasattr(self, "_column_mgmt_behavior"):
+            return self._column_mgmt_behavior.load_column_visibility_config()
         return {}
+
+    def _set_column_alignment(self, column_index: int, alignment: str) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        if hasattr(self, "_column_mgmt_behavior"):
+            self._column_mgmt_behavior._set_column_alignment(column_index, alignment)
+
+    def _sync_view_model_columns(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        if hasattr(self, "_column_mgmt_behavior"):
+            self._column_mgmt_behavior.sync_view_model_columns()
+
+    def _toggle_column_visibility(self, column_key: str) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        if hasattr(self, "_column_mgmt_behavior"):
+            self._column_mgmt_behavior.toggle_column_visibility(column_key)
 
     def _update_header_visibility(self) -> None:
         """Delegate to ColumnManagementBehavior."""
@@ -1221,109 +1232,31 @@ class FileTableView(QTableView):
         return self._selection_behavior.get_anchor_row()
 
     def _sync_selection_safely(self) -> None:
-        """Sync selection between Qt model and SelectionStore."""
-        # Get current Qt selection
-        selection_model = self.selectionModel()
-        if not selection_model:
-            return
-
-        selected_indexes = selection_model.selectedRows()
-        selected_rows = {idx.row() for idx in selected_indexes}
-
-        # Update store
-        if self._selection_behavior.selection_store:
-            self._selection_behavior.selection_store.set_selected_rows(selected_rows, emit_signal=True)
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.sync_selection_safely()
 
     def _update_selection_store(self, selected_rows: set[int], emit_signal: bool = True) -> None:
-        """Update selection store."""
+        """Delegate to SelectionBehavior."""
         self._selection_behavior.update_selection_store(selected_rows, emit_signal=emit_signal)
 
     def select_rows_range(self, start_row: int, end_row: int) -> None:
-        """Select a range of rows efficiently using batch selection.
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.select_rows_range(start_row, end_row)
 
-        Args:
-            start_row: Starting row index
-            end_row: Ending row index (inclusive)
+    def select_dropped_files(self, file_paths: list[str] | None = None) -> None:
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.select_dropped_files(file_paths)
 
-        """
-        self.blockSignals(True)
-        selection_model = self.selectionModel()
-        model = self.model()
-
-        if selection_model is None or model is None:
-            self.blockSignals(False)
-            return
-
-        if hasattr(model, "index") and hasattr(model, "columnCount"):
-            # Ensure we always select from lower to higher row number
-            min_row = min(start_row, end_row)
-            max_row = max(start_row, end_row)
-
-            from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
-
-            top_left = model.index(min_row, 0)
-            bottom_right = model.index(max_row, model.columnCount() - 1)
-            selection = QItemSelection(top_left, bottom_right)
-            selection_model.select(
-                selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
-            )
-
-        self.blockSignals(False)
-
-        if hasattr(self, "viewport"):
-            self.viewport().update()
-
-        if model is not None:
-            # Ensure we always create range from lower to higher
-            min_row = min(start_row, end_row)
-            max_row = max(start_row, end_row)
-            selected_rows = set(range(min_row, max_row + 1))
-            self._update_selection_store(selected_rows, emit_signal=True)
+    def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.ensure_anchor_or_select(index, modifiers)
 
     def selectionChanged(self, selected, deselected) -> None:
-        """Override Qt's selectionChanged to update SelectionStore.
-
-        This ensures our application state stays in sync with Qt's selection model.
-
-        Args:
-            selected: QItemSelection of newly selected items
-            deselected: QItemSelection of newly deselected items
-
-        """
-        # Protection against infinite loops
-        if self._processing_selection_change:
-            return
-
-        self._processing_selection_change = True
-        try:
-            super().selectionChanged(selected, deselected)
-
-            from oncutf.utils.ui.selection_provider import get_selected_row_set
-
-            selection_model = self.selectionModel()
-            if selection_model is not None:
-                selected_rows = get_selected_row_set(selection_model)
-
-                # Don't update during drag operations
-                if not selected_rows and self._drag_drop_behavior.is_dragging:
-                    return
-
-                # Update SelectionStore with emit_signal=True to trigger preview update
-                self._update_selection_store(selected_rows, emit_signal=True)
-
-            if hasattr(self, "context_focused_row") and self.context_focused_row is not None:
-                self.context_focused_row = None
-
-            if hasattr(self, "viewport"):
-                self.viewport().update()
-        finally:
-            self._processing_selection_change = False
-
-    # Note: _get_selection_store() already defined earlier in file (line 297)
-    # No delegation needed - uses existing implementation
+        """Override to delegate to SelectionBehavior."""
+        self._selection_behavior.handle_selection_changed(selected, deselected)
 
     # =====================================
-    # Column Management Methods
+    # Cleanup & Lifecycle
     # =====================================
 
     def _restore_pending_selection(self) -> None:

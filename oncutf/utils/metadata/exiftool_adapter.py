@@ -1,18 +1,22 @@
-"""Module: metadata_loader.py
+"""Module: exiftool_adapter.py
 
 Author: Michael Economou
 Date: 2025-05-22
 
-Updated: 2025-05-23
-This module defines the MetadataLoader class, responsible for loading media metadata
-via ExifTool in the oncutf application. It supports both fast and extended scanning modes
-and integrates with the application's metadata caching infrastructure.
+Updated: 2025-12-29
+This module defines the ExifToolMetadataAdapter class, a low-level adapter for loading
+media metadata via ExifTool in the oncutf application. It supports both fast and extended
+scanning modes and integrates with the application's metadata caching infrastructure.
+
 Features:
 - Uses persistent ExifTool (-stay_open True) for fast metadata extraction
 - Supports extended scanning with -ee for embedded streams
 - Can skip previously loaded metadata intelligently
 - Thread-safe cancellation for subprocess calls
 - Interoperable with MetadataEntry-based cache
+
+Note: This is a low-level ExifTool adapter. For high-level orchestration,
+use core.metadata.metadata_loader.MetadataLoader instead.
 """
 
 import subprocess
@@ -26,8 +30,13 @@ from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 logger = get_cached_logger(__name__)
 
 
-class MetadataLoader:
-    """Provides a unified interface for loading metadata using ExifTool.
+class ExifToolMetadataAdapter:
+    """Low-level adapter for loading metadata using ExifTool.
+
+    Provides direct ExifTool integration with support for both fast and extended
+    scanning. This is a low-level component - for orchestration use
+    core.metadata.metadata_loader.MetadataLoader instead.
+
     Supports both fast and extended scanning, with smart caching and reuse.
     """
 

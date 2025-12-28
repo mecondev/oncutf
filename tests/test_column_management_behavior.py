@@ -1,9 +1,9 @@
-"""Module: test_column_management_mixin.py
+"""Module: test_column_management_behavior.py
 
 Author: Michael Economou
-Date: 2025-12-09
+Date: 2025-12-29
 
-Unit tests for ColumnManagementMixin functionality.
+Unit tests for ColumnManagementBehavior functionality.
 
 Tests cover:
 - Column visibility management (add/remove/toggle)
@@ -11,6 +11,8 @@ Tests cover:
 - Auto-fit logic
 - Configuration defaults
 - Edge cases and error handling
+
+Migrated from test_column_management_mixin.py to test the composition-based behavior.
 """
 
 from unittest.mock import Mock
@@ -18,7 +20,7 @@ from unittest.mock import Mock
 import pytest
 
 from oncutf.core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
-from oncutf.ui.mixins.column_management_mixin import ColumnManagementMixin
+from oncutf.ui.behaviors.column_management_behavior import ColumnManagementBehavior
 
 
 class MockTableModel(QAbstractTableModel):
@@ -47,14 +49,27 @@ class MockTableModel(QAbstractTableModel):
             self._visible_columns[column] = visible
 
 
-class TableViewWithMixin(QTableView, ColumnManagementMixin):
-    """Test table view with ColumnManagementMixin."""
+class TableViewWithBehavior(QTableView):
+    """Test table view with ColumnManagementBehavior (composition pattern)."""
 
     def __init__(self):
         super().__init__()
         self._column_config = {}
         self._visibility_config = {}
         self._column_widths = {}
+
+        # Initialize behavior via composition
+        self._column_mgmt = ColumnManagementBehavior(self)
+
+    def is_empty(self) -> bool:
+        """Check if table is empty."""
+        if not self.model():
+            return True
+        return self.model().rowCount() == 0
+
+    def _get_main_window(self):
+        """Mock: return None for testing."""
+        return None
 
     def _load_column_width(self, section):
         """Mock: load column width from config."""
@@ -85,7 +100,7 @@ class TableViewWithMixin(QTableView, ColumnManagementMixin):
 @pytest.fixture
 def table_view():
     """Create a test table view with model."""
-    view = TableViewWithMixin()
+    view = TableViewWithBehavior()
     model = MockTableModel()
     view.setModel(model)
 
@@ -121,8 +136,8 @@ class TestAddColumn:
         """Test adding a new column."""
         initial_count = table_view.model().columnCount()
 
-        # Mock the add_column method
-        table_view.add_column = Mock()
+        # Mock the add_column method on behavior
+        table_view._column_mgmt.add_column = Mock()
 
         # Simulate adding a column
         table_view.model()._columns.append("custom")
@@ -162,8 +177,8 @@ class TestRemoveColumn:
         col_to_remove = 1  # "size"
         col_name = table_view.model()._columns[col_to_remove]
 
-        # Mock remove
-        table_view.remove_column = Mock()
+        # Mock remove on behavior
+        table_view._column_mgmt.remove_column = Mock()
 
         # Simulate removal
         table_view.model()._columns.pop(col_to_remove)
@@ -311,12 +326,12 @@ class TestAutoFit:
 
     def test_auto_fit_basic(self, table_view):
         """Test auto-fit calculates reasonable widths."""
-        # Mock auto_fit
-        table_view.auto_fit_columns_to_content = Mock()
+        # Mock auto_fit on behavior
+        table_view._column_mgmt.auto_fit_columns_to_content = Mock()
 
-        table_view.auto_fit_columns_to_content()
+        table_view._column_mgmt.auto_fit_columns_to_content()
 
-        table_view.auto_fit_columns_to_content.assert_called_once()
+        table_view._column_mgmt.auto_fit_columns_to_content.assert_called_once()
 
     def test_auto_fit_respects_constraints(self, table_view):
         """Test auto-fit respects min/max width constraints."""
@@ -348,11 +363,11 @@ class TestResetToDefaults:
         for i in range(table_view.model().columnCount()):
             table_view.setColumnWidth(i, 250)
 
-        # Mock reset
-        table_view._reset_columns_to_default = Mock()
-        table_view._reset_columns_to_default()
+        # Mock reset on behavior
+        table_view._column_mgmt.reset_column_widths_to_defaults = Mock()
+        table_view._column_mgmt.reset_column_widths_to_defaults()
 
-        table_view._reset_columns_to_default.assert_called_once()
+        table_view._column_mgmt.reset_column_widths_to_defaults.assert_called_once()
 
     def test_reset_restores_visibility(self, table_view):
         """Test reset restores all columns visible."""
@@ -378,11 +393,11 @@ class TestRefreshAfterModelChange:
 
     def test_refresh_after_model_change(self, table_view):
         """Test refresh updates columns properly."""
-        table_view.refresh_columns_after_model_change = Mock()
+        table_view._column_mgmt.refresh_columns_after_model_change = Mock()
 
-        table_view.refresh_columns_after_model_change()
+        table_view._column_mgmt.refresh_columns_after_model_change()
 
-        table_view.refresh_columns_after_model_change.assert_called_once()
+        table_view._column_mgmt.refresh_columns_after_model_change.assert_called_once()
 
     def test_refresh_with_new_model(self, table_view):
         """Test refresh works with new model assigned."""
@@ -416,20 +431,20 @@ class TestEdgeCases:
 
     def test_remove_column_invalid_index(self, table_view):
         """Test removing column with invalid index."""
-        table_view.remove_column = Mock()
+        table_view._column_mgmt.remove_column = Mock()
 
         # Should handle gracefully
-        table_view.remove_column(999)
+        table_view._column_mgmt.remove_column("invalid_column")
 
-        table_view.remove_column.assert_called_once_with(999)
+        table_view._column_mgmt.remove_column.assert_called_once_with("invalid_column")
 
     def test_toggle_visibility_nonexistent_column(self, table_view):
         """Test toggling visibility of non-existent column."""
-        table_view.toggle_column_visibility = Mock()
+        table_view._column_mgmt.toggle_column_visibility = Mock()
 
-        table_view.toggle_column_visibility("nonexistent")
+        table_view._column_mgmt.toggle_column_visibility("nonexistent")
 
-        table_view.toggle_column_visibility.assert_called_once_with("nonexistent")
+        table_view._column_mgmt.toggle_column_visibility.assert_called_once_with("nonexistent")
 
     def test_width_persistence_negative_width(self, table_view):
         """Test saving negative width (mock doesn't validate)."""
@@ -544,6 +559,37 @@ class TestPerformanceIntegration:
 
         for col_idx, width in widths.items():
             assert table_view.columnWidth(col_idx) == width
+
+
+# ==========================================
+# Test: Behavior-Specific Features
+# ==========================================
+
+
+class TestBehaviorFeatures:
+    """Tests for ColumnManagementBehavior-specific features."""
+
+    def test_behavior_attached(self, table_view):
+        """Test behavior is properly attached to widget."""
+        assert hasattr(table_view, "_column_mgmt")
+        assert isinstance(table_view._column_mgmt, ColumnManagementBehavior)
+
+    def test_behavior_has_widget_reference(self, table_view):
+        """Test behavior maintains widget reference."""
+        assert table_view._column_mgmt._widget is table_view
+
+    def test_keyboard_shortcut_handler_exists(self, table_view):
+        """Test keyboard shortcut handler method exists."""
+        assert hasattr(table_view._column_mgmt, "handle_keyboard_shortcut")
+
+    def test_shutdown_hook_methods_exist(self, table_view):
+        """Test shutdown hook methods exist."""
+        assert hasattr(table_view._column_mgmt, "register_shutdown_hook")
+        assert hasattr(table_view._column_mgmt, "unregister_shutdown_hook")
+
+    def test_force_save_method_exists(self, table_view):
+        """Test force_save_column_changes method exists."""
+        assert hasattr(table_view._column_mgmt, "force_save_column_changes")
 
 
 if __name__ == "__main__":

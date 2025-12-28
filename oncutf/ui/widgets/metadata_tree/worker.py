@@ -25,7 +25,7 @@ from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
-from oncutf.utils.metadata.loader import MetadataLoader
+from oncutf.utils.metadata.exiftool_adapter import ExifToolMetadataAdapter
 
 logger = get_cached_logger(__name__)
 
@@ -35,7 +35,7 @@ class MetadataWorker(QObject):
     Emits progress and result signals and supports graceful cancellation.
 
     Attributes:
-        reader (MetadataLoader): The metadata reader instance.
+        reader (ExifToolMetadataAdapter): The low-level ExifTool adapter instance.
         metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
@@ -130,8 +130,10 @@ class MetadataWorker(QObject):
 
         # Ensure we have a reader if not provided
         if not self.reader:
-            logger.debug("[Worker] Creating MetadataLoader for worker", extra={"dev_only": True})
-            self.reader = MetadataLoader()
+            logger.debug(
+                "[Worker] Creating ExifToolMetadataAdapter for worker", extra={"dev_only": True}
+            )
+            self.reader = ExifToolMetadataAdapter()
 
         # Ensure we have cache helper if not provided
         if not self._cache_helper and not self.metadata_cache:

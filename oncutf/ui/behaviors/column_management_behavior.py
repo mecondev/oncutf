@@ -102,6 +102,7 @@ class ColumnManagementBehavior:
         self._configuring_columns = False
         self._header_resize_connected = False
         self._column_alignments: dict[int, int] = {}
+        self._shutdown_hook_registered = False
 
     # =====================================
     # Public API - Configuration
@@ -708,3 +709,199 @@ class ColumnManagementBehavior:
     def _clear_selection_for_column_update(self, force_emit_signal: bool = False) -> None:
         """Clear selection before column update."""
         # This method can be overridden or connected to widget's selection clearing
+
+    def _set_column_alignment(self, column_index: int, alignment: str) -> None:
+        """Set text alignment for a specific column.
+
+        Args:
+            column_index: Column index
+            alignment: Alignment string ('left', 'right', 'center')
+        """
+        from oncutf.core.pyqt_imports import Qt
+
+        if not self._widget.model():
+            return
+
+        # Map alignment strings to Qt constants
+        alignment_map = {
+            "left": Qt.AlignLeft | Qt.AlignVCenter,
+            "right": Qt.AlignRight | Qt.AlignVCenter,
+            "center": Qt.AlignCenter,
+        }
+
+        qt_alignment = alignment_map.get(alignment, Qt.AlignLeft | Qt.AlignVCenter)
+        self._column_alignments[column_index] = qt_alignment
+
+        logger.debug(
+            "[ColumnManagement] Set alignment for column %d to %s",
+            column_index,
+            alignment,
+        )
+
+    def load_column_visibility_config(self) -> dict[str, bool]:
+        """Load column visibility configuration from config.
+
+        Returns:
+            dict: Column visibility state (column_key -> visible)
+        """
+        try:
+            # Try main config system first
+            main_window = self._widget._get_main_window()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                saved_visibility = window_config.get("file_table_columns", {})
+
+                if saved_visibility:
+                    logger.debug(
+                        "[ColumnVisibility] Loaded from main config: %s",
+                        saved_visibility,
+                    )
+                    # Ensure we have all columns from config
+                    from oncutf.core.ui_managers import get_column_service
+
+                    service = get_column_service()
+                    complete_visibility = {}
+                    for key, cfg in service.get_all_columns().items():
+                        complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
+                    return complete_visibility
+
+            # Fallback to old method
+            from oncutf.utils.shared.json_config_manager import load_config
+
+            config = load_config()
+            saved_visibility = config.get("file_table_columns", {})
+
+            if saved_visibility:
+                from oncutf.core.ui_managers import get_column_service
+
+                service = get_column_service()
+                complete_visibility = {}
+                for key, cfg in service.get_all_columns().items():
+                    complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
+                return complete_visibility
+
+        except Exception as e:
+            logger.warning("[ColumnVisibility] Error loading config: %s", e)
+
+        # Return default configuration
+        from oncutf.core.ui_managers import get_column_service
+
+        service = get_column_service()
+        return {key: cfg.default_visible for key, cfg in service.get_all_columns().items()}
+
+    def sync_view_model_columns(self) -> None:
+        """Ensure view and model have synchronized column visibility."""
+        model = self._widget.model()
+        if not model or not hasattr(model, "get_visible_columns"):
+            logger.debug(
+                "[ColumnSync] No model or model doesn't support get_visible_columns"
+            )
+            return
+
+        try:
+            # Ensure we have complete visibility state
+            if not self._visible_columns:
+                logger.warning("[ColumnSync] _visible_columns not initialized, reloading")
+                self._visible_columns = self.load_column_visibility_config()
+
+            # Get current state from both view and model
+            view_visible = [key for key, visible in self._visible_columns.items() if visible]
+            model_visible = model.get_visible_columns()
+
+            logger.debug("[ColumnSync] View visible: %s", view_visible)
+            logger.debug("[ColumnSync] Model visible: %s", model_visible)
+
+            # If they differ, update model to match view
+            if view_visible != model_visible:
+                logger.info("[ColumnSync] Syncing model columns to match view")
+                if hasattr(model, "set_visible_columns"):
+                    model.set_visible_columns(view_visible)
+
+        except Exception as e:
+            logger.error("[ColumnSync] Error syncing columns: %s", e)
+
+    def toggle_column_visibility(self, column_key: str) -> None:
+        """Toggle visibility of a column.
+
+        Args:
+            column_key: Column key to toggle
+        """
+        if not self._visible_columns:
+            self._visible_columns = self.load_column_visibility_config()
+
+        current_visibility = self._visible_columns.get(column_key, False)
+        new_visibility = not current_visibility
+
+        if new_visibility:
+            self.add_column(column_key)
+        else:
+            self.remove_column(column_key)
+
+        logger.info(
+            "[ColumnManagement] Toggled %s visibility: %s -> %s",
+            column_key,
+            current_visibility,
+            new_visibility,
+        )
+
+    def register_shutdown_hook(self) -> None:
+        """Register shutdown hook to save pending changes on app exit."""
+        if self._shutdown_hook_registered:
+            return
+
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            if hasattr(context, "register_shutdown_callback"):
+                context.register_shutdown_callback(self.force_save_column_changes)
+                self._shutdown_hook_registered = True
+                logger.debug("[ColumnManagement] Registered shutdown hook")
+        except Exception as e:
+            logger.warning("[ColumnManagement] Failed to register shutdown hook: %s", e)
+
+    def unregister_shutdown_hook(self) -> None:
+        """Unregister shutdown hook."""
+        if not self._shutdown_hook_registered:
+            return
+
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            if hasattr(context, "unregister_shutdown_callback"):
+                context.unregister_shutdown_callback(self.force_save_column_changes)
+                self._shutdown_hook_registered = False
+                logger.debug("[ColumnManagement] Unregistered shutdown hook")
+        except Exception as e:
+            logger.warning("[ColumnManagement] Failed to unregister shutdown hook: %s", e)
+
+    def handle_keyboard_shortcut(self, key: int, modifiers) -> bool:
+        """Handle keyboard shortcuts for column management.
+
+        Args:
+            key: Qt key code
+            modifiers: Qt keyboard modifiers
+
+        Returns:
+            bool: True if shortcut was handled, False otherwise
+        """
+        from oncutf.core.pyqt_imports import Qt
+
+        # Check for Ctrl+T (auto-fit) or Ctrl+Shift+T (reset)
+        if key == Qt.Key_T:
+            if modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
+                # Ctrl+Shift+T: Reset column widths to default
+                self.reset_column_widths_to_defaults()
+                return True
+            elif modifiers == Qt.ControlModifier:
+                # Ctrl+T: Auto-fit columns to content
+                self.auto_fit_columns_to_content()
+                return True
+
+        return False
+
+
+__all__ = ["ColumnManagementBehavior", "ColumnManageableWidget"]
+

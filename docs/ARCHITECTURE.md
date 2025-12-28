@@ -1,15 +1,14 @@
 # OnCutF Architecture Guide
 
-**Last Updated:** 2025-12-20  
+**Last Updated:** 2025-12-29  
 **Status:** Phase 7 (Final Polish) - Documentation Cleanup ⚡
 
 ---
 
 ## Quick Navigation
 
-- **[Master Plan](2025_12_19.md)** — Current status and next steps
-- **[Roadmap](ROADMAP.md)** — Development phases and progress
-- **Archived docs** — See `_archive/refactor-runs/` for historical phase details
+- **[Documentation Index](README.md)** — All available documentation
+- **Archived docs** — See `_archive/` for historical phase details
 
 ---
 
@@ -21,11 +20,11 @@
 ┌─────────────────────────────────────┐
 │        UI Layer (PyQt5)             │
 ├─────────────────────────────────────┤
-│  Main Window > Widgets > Mixins     │
+│  Main Window > Widgets > Behaviors  │
 │  ├── FileTableView (976 LOC)        │
 │  ├── MetadataTreeView (1768 LOC)    │
 │  ├── RenameModulesArea              │
-│  └── Mixins: Selection, DragDrop... │
+│  └── Behaviors: Selection, DragDrop...│
 │                                     │
 │            ↓ delegates to           │
 │                                     │
@@ -63,12 +62,12 @@
 | Component | Files | LOC | Purpose |
 |-----------|-------|-----|---------|
 | **Controllers (Phase 1)** | 4 | 1217 | UI ↔ Business logic separation |
-| **FileTableView** | 1 + 3 mixins | 976 | Display files with columns |
-| **MetadataTreeView** | 1 + 4 mixins | 1768 | Edit file metadata |
+| **FileTableView** | 1 + 3 behaviors | 976 | Display files with columns |
+| **MetadataTreeView** | 1 + 4 behaviors | 1768 | Edit file metadata |
 | **UnifiedRenameEngine** | 1 | ~400 | Orchestrate rename preview/validation/execution |
 | **UnifiedMetadataManager** | 1 | ~300 | Metadata loading & caching |
 | **Domain Models** | 4 dataclasses | ~500 | Type-safe data structures |
-| **Mixins** | 7+ files | ~2500 | UI behavior decomposition |
+| **Behaviors** | 7+ files | ~2500 | UI behavior decomposition |
 | **Managers** | 30+ | ~8000 | Application-level coordination |
 | **Utilities** | 53 | ~5000 | Helpers & common functions |
 
@@ -140,10 +139,10 @@
 ### Phase 0: Widget Decomposition ✅
 - **FileTableView:** 2715 → 976 LOC (-64%)
   - Extracted: Column management (34 methods)
-  - Created: `ColumnManagementMixin` (1179 LOC)
+  - Created: `ColumnManagementBehavior` (composition-based)
 
 - **MetadataTreeView:** 3102 → 1768 LOC (-43%)
-  - Extracted: 4 specialized mixins
+  - Extracted: 4 specialized behaviors
   - Improved: Testability and maintainability
 
 ### Domain Models ✅
@@ -174,14 +173,22 @@ oncutf/
 │   ├── main_window.py               # Primary UI (delegates to controllers)
 │   ├── widgets/                     # UI components
 │   │   ├── file_table_view.py       # Main file table (976 LOC)
-│   │   ├── metadata_tree_view.py    # Metadata editor (1768 LOC)
+│   │   ├── metadata_tree/           # Metadata tree package
+│   │   │   ├── view.py              # Tree view (1768 LOC)
+│   │   │   ├── worker.py            # Background worker
+│   │   │   └── ... (handlers)       # 
 │   │   ├── rename_modules_area.py   # Rename config
 │   │   └── ... (30+ other widgets)
-│   └── mixins/                      # Behavior mixins
-│       ├── selection_mixin.py
-│       ├── drag_drop_mixin.py
-│       ├── column_management_mixin.py
-│       └── ... (4+ more)
+│   ├── behaviors/                   # Behavior composition
+│   │   ├── selection_behavior.py
+│   │   ├── drag_drop_behavior.py
+│   │   ├── column_management_behavior.py
+│   │   └── ... (4+ more)
+│   ├── services/                    # UI-layer services
+│   │   ├── dialog_manager.py
+│   │   └── utility_manager.py
+│   └── dialogs/                     # Dialog widgets
+│       └── ... (various dialogs)
 │
 ├── controllers/                     # Controllers Layer (NEW Phase 1)
 │   ├── __init__.py                  # Exports all controllers
@@ -216,7 +223,9 @@ oncutf/
 ├── utils/                           # Utilities
 │   ├── selection_provider.py        # Unified selection interface
 │   ├── filename_validator.py
-│   ├── metadata_loader.py
+│   ├── metadata/
+│   │   ├── exiftool_adapter.py      # Low-level ExifTool wrapper
+│   │   └── cache_helper.py          # Cache utilities
 │   ├── icon_cache.py
 │   └── ... (50+ helpers)
 │
@@ -280,16 +289,16 @@ selection = context.selection_store.get_selected_files()
 context.metadata_manager.load_metadata(files)
 ```
 
-### 3. Mixin-based Composition
-Widget behavior decomposed into mixins:
+### 3. Behavior-based Composition
+Widget behavior decomposed into composable behaviors:
 ```python
-class FileTableView(
-    QTableView,
-    SelectionMixin,          # Selection handling
-    DragDropMixin,           # Drag/drop support
-    ColumnManagementMixin    # Column config
-):
-    pass
+class FileTableView(QTableView):
+    def __init__(self):
+        super().__init__()
+        # Composition pattern with behaviors
+        self._selection_behavior = SelectionBehavior(self)
+        self._drag_drop_behavior = DragDropBehavior(self)
+        self._column_mgmt_behavior = ColumnManagementBehavior(self)
 ```
 
 ### 4. Domain Models (Dataclasses)
@@ -324,8 +333,6 @@ Multi-layer caching:
 - **L1:** Python dict (LRU, fast, volatile)
 - **L2:** SQLite (persistent, indexed)
 - **L3:** File system (original data)
-
-See [Cache Strategy](architecture/cache_strategy.md) for details.
 
 ---
 
@@ -367,7 +374,7 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
    - `ApplicationContext` → `SelectionStore` → Widget mixins
 
 6. **Understand caching:**
-   - See [Cache Strategy](architecture/cache_strategy.md)
+   - See persistence layer in `core/database/` and `core/cache/`
 
 ### Code Reading Tips
 
@@ -375,7 +382,7 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
 - Then `ui/main_window.py` (primary UI, delegates to controllers)
 - **NEW:** Check `controllers/` for business logic orchestration
 - Then specific managers/widgets as needed
-- Use mixin files to understand widget behavior
+- Use behavior files to understand widget behavior
 - Check `models/` for data structures
 - See `tests/test_*_controller.py` for usage examples
 
@@ -412,12 +419,12 @@ See [Cache Strategy](architecture/cache_strategy.md) for details.
 
 ## Next Steps
 
-See [ROADMAP.md](ROADMAP.md) for detailed roadmap:
+For detailed development plans, see documentation in `docs/` folder:
 
-- **Phase 2:** State Management Fix (consolidate FileStore, fix counter conflicts)
-- **Phase 3:** UI/UX Improvements (splash screen, progress indicators)
-- **Phase 4:** Core Logic Improvements (optimize metadata, caching)
-- **Phase 5:** Final Polish (performance profiling, documentation)
+- State Management improvements
+- UI/UX enhancements  
+- Core logic optimizations
+- Final polish and performance tuning
 
 ---
 
@@ -425,11 +432,143 @@ See [ROADMAP.md](ROADMAP.md) for detailed roadmap:
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [2025_12_19.md](2025_12_19.md) | Master plan and current status | ✅ Active |
-| [ROADMAP.md](ROADMAP.md) | Development roadmap and phases | ✅ Active |
 | [README.md](README.md) | Documentation index | ✅ Active |
+| [PHASE5_SUMMARY.md](PHASE5_SUMMARY.md) | Phase 5 summary | ✅ Reference |
 
-Historical phase execution plans are archived in `_archive/refactor-runs/`.
+Historical phase execution plans are archived in `_archive/`.
+
+---
+
+## Naming Guidelines: Controllers, Services, Managers
+
+**Problem:** The codebase has grown to include `*_controller.py`, `*_service.py`, and `*_manager.py` scattered across different layers (`controllers/`, `services/`, `core/`, `core/ui_managers/`). Without clear rules, this becomes confusing and inconsistent.
+
+**Solution:** Use these strict naming and placement rules going forward:
+
+### 1. **Controllers** (`controllers/`)
+**Purpose:** UI/application flow orchestration  
+**Responsibilities:**
+- Handle user actions (button clicks, menu selections)
+- Connect UI signals to business logic
+- Coordinate between multiple core services/managers
+- No direct UI manipulation (delegate to UI layer)
+- No direct external I/O (delegate to services)
+
+**Examples:**
+- `controllers/file_load_controller.py` — Handles file loading workflow triggered by user
+- `controllers/rename_controller.py` — Orchestrates rename preview → validation → execution
+- `controllers/metadata_controller.py` — Manages metadata loading requests from UI
+
+**Naming rule:** `<feature>_controller.py` in `controllers/`
+
+---
+
+### 2. **Services** (`services/`)
+**Purpose:** Adapters to external world (I/O boundaries)  
+**Responsibilities:**
+- Filesystem operations (read/write files, directories)
+- External tool integration (ExifTool, hash calculators)
+- Database operations (SQLite reads/writes)
+- Network I/O (if any)
+- Pure I/O adapters with minimal business logic
+
+**Examples:**
+- `services/filesystem_service.py` — File system operations (list files, check existence)
+- `services/exiftool_service.py` — ExifTool wrapper for metadata extraction
+- `services/hash_service.py` — File hash computation
+
+**Naming rule:** `<domain>_service.py` in `services/`
+
+**Anti-pattern:** Don't put orchestration or stateful coordination in services. Services should be thin I/O adapters.
+
+---
+
+### 3. **Managers** (`core/`)
+**Purpose:** Stateful orchestration + feature-specific coordination  
+**Responsibilities:**
+- Manage application state for a specific feature
+- Coordinate multiple operations within a domain
+- Cache management and invalidation
+- Event/signal coordination
+- Workflow orchestration (multi-step operations)
+
+**Examples:**
+- `core/metadata/unified_manager.py` — Orchestrates metadata loading, caching, companion files
+- `core/metadata/staging_manager.py` — Manages staged metadata changes before write
+- `core/backup_manager.py` — Coordinates backup creation/restoration
+- `core/ui_managers/status_manager.py` — Manages status bar state and messages
+- `core/batch/operations_manager.py` — Batches operations for performance
+
+**Naming rule:** `<feature>_manager.py` in `core/<domain>/` or `core/ui_managers/`
+
+**Special case - UI Managers:** Put UI-specific managers in `core/ui_managers/` (e.g., `status_manager.py`, `window_config_manager.py`, `column_manager.py`). These manage UI state but are NOT controllers (they don't handle user actions).
+
+---
+
+### 4. **Utils** (`utils/`)
+**Purpose:** Stateless, reusable helper functions  
+**Responsibilities:**
+- Pure functions (no side effects)
+- Data transformation and formatting
+- Path normalization, validation
+- Small composable utilities
+- No I/O, no state, no signals
+
+**Examples:**
+- `utils/path_normalizer.py` — Path string manipulation
+- `utils/logger_factory.py` — Logger creation
+- `utils/cursor_helper.py` — Wait cursor context manager
+- `utils/metadata/cache_helper.py` — Cache key generation (no I/O)
+
+**Naming rule:** `<domain>_<purpose>.py` in `utils/<domain>/`
+
+**Anti-pattern:** Don't put I/O or orchestration in utils. If it touches files/DB/network → `services/`. If it coordinates → `core/`.
+
+---
+
+### Quick Decision Tree
+
+```
+Does it handle user actions or UI flow?
+  ├─ YES → Controller (controllers/)
+  └─ NO  ↓
+
+Does it perform I/O (files, DB, external tools)?
+  ├─ YES → Service (services/)
+  └─ NO  ↓
+
+Does it manage state or coordinate multiple operations?
+  ├─ YES → Manager (core/)
+  └─ NO  ↓
+
+Is it a pure helper function?
+  └─ YES → Util (utils/)
+```
+
+---
+
+### Examples in Current Codebase
+
+✅ **Good (follows rules):**
+- `controllers/file_load_controller.py` — UI flow orchestration
+- `services/exiftool_service.py` — External tool adapter
+- `core/metadata/unified_manager.py` — Stateful metadata orchestration
+- `utils/path_normalizer.py` — Pure path helper
+
+⚠️ **Legacy (grandfathered, don't replicate):**
+- `core/ui_managers/*` — UI managers (should ideally be in controllers or separate layer, but kept for historical reasons)
+- Some `*_manager.py` scattered in `core/` root — Should be in feature folders like `core/<domain>/`
+
+---
+
+### Migration Strategy
+
+**For new code:** Follow the rules above strictly.
+
+**For existing code:** 
+- Don't rename unless it causes real confusion
+- Document exceptions in this file
+- Refactor opportunistically (when touching the file anyway)
 
 ---
 
@@ -472,7 +611,7 @@ To avoid architectural confusion, follow these rules when placing code:
 
 ### Known Technical Debt
 
-- **Metadata loader duplication:** Both `utils/metadata/loader.py` and `core/metadata/metadata_loader.py` exist. The former is a low-level ExifTool wrapper still used by legacy code (`direct_metadata_loader.py`, `metadata_worker.py`). The latter is the modern orchestration layer. Future refactor: consolidate into a single abstraction with clear ExifTool wrapper vs orchestrator separation.
+- **Metadata loader separation:** `utils/metadata/exiftool_adapter.py` is the low-level ExifTool wrapper, while `core/metadata/metadata_loader.py` is the orchestration layer. The separation is now clear with proper naming (adapter vs loader).
 
 ---
 
@@ -481,7 +620,7 @@ To avoid architectural confusion, follow these rules when placing code:
 When modifying architecture:
 
 1. **Use controllers for orchestration** — Don't put business logic in UI
-2. **Keep mixins focused** — One responsibility per mixin
+2. **Keep behaviors focused** — One responsibility per behavior
 3. **Use domain models** — Don't pass dicts around
 4. **Test new code** — Especially business logic in controllers
 5. **Document changes** — Update this file if needed
@@ -490,4 +629,4 @@ When modifying architecture:
 
 ---
 
-*Last Updated: 2025-12-28*
+*Last Updated: 2025-12-29 — Added "Naming Guidelines: Controllers, Services, Managers" section*

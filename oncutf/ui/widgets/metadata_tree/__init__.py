@@ -61,15 +61,15 @@ from oncutf.ui.widgets.metadata_tree.service import (
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 
 # MetadataTreeView is imported lazily to avoid circular imports
-# (metadata_tree_view.py imports from this package)
+# (view.py imports from this package)
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
 
 def __getattr__(name: str):
     """Lazy import for MetadataTreeView to avoid circular imports."""
     if name == "MetadataTreeView":
-        from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView
+        from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
         return MetadataTreeView
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
