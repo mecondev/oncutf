@@ -21,6 +21,7 @@ Available Behaviors:
 - SelectionBehavior: Row selection with anchor handling
 - DragDropBehavior: Drag-and-drop operations with visual feedback
 - ColumnManagementBehavior: Column width/visibility management with delayed save
+- MetadataScrollBehavior: Scroll position memory per file with expand/collapse state
 
 Usage Example:
 --------------
@@ -132,6 +133,10 @@ from oncutf.ui.behaviors.column_management_behavior import (
     ColumnManagementBehavior,
 )
 from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior, DraggableWidget
+from oncutf.ui.behaviors.metadata_scroll_behavior import (
+    MetadataScrollBehavior,
+    ScrollableTreeWidget,
+)
 from oncutf.ui.behaviors.selection_behavior import SelectableWidget, SelectionBehavior
 
 __all__ = [
@@ -139,8 +144,10 @@ __all__ = [
     "SelectableWidget",
     "DraggableWidget",
     "ColumnManageableWidget",
+    "ScrollableTreeWidget",
     # Concrete behaviors
     "SelectionBehavior",
     "DragDropBehavior",
     "ColumnManagementBehavior",
+    "MetadataScrollBehavior",
 ]
