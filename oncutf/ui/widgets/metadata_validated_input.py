@@ -13,10 +13,10 @@ Contains:
 
 import logging
 
+from oncutf.core.metadata.field_validators import MetadataFieldValidator
 from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
-from oncutf.utils.metadata.field_validators import MetadataFieldValidator
 
 logger = logging.getLogger(__name__)
 

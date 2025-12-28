@@ -193,7 +193,7 @@ class MetadataOperationsManager:
 
         # Perform export
         try:
-            from oncutf.utils.metadata.exporter import MetadataExporter
+            from oncutf.core.metadata.exporter import MetadataExporter
 
             exporter = MetadataExporter(self.parent_window)
 

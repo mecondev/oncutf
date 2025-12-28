@@ -22,7 +22,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from oncutf.utils.metadata.field_validators import MetadataFieldValidator
+from oncutf.core.metadata.field_validators import MetadataFieldValidator
 
 
 class TestMetadataFieldValidator:

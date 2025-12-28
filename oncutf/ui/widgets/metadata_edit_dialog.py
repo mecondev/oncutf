@@ -8,6 +8,7 @@ Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
+from oncutf.core.metadata.field_validators import MetadataFieldValidator
 from oncutf.core.pyqt_imports import (
     QCheckBox,
     QDialog,
@@ -20,7 +21,6 @@ from oncutf.core.pyqt_imports import (
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.field_validators import MetadataFieldValidator
 
 logger = get_cached_logger(__name__)
 
