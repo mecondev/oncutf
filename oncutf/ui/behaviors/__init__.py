@@ -23,6 +23,7 @@ Available Behaviors:
 - ColumnManagementBehavior: Column width/visibility management with delayed save
 - MetadataScrollBehavior: Scroll position memory per file with expand/collapse state
 - MetadataCacheBehavior: Metadata cache interaction with lazy loading and icon updates
+- MetadataContextMenuBehavior: Context menu operations with column management
 
 Usage Example:
 --------------
@@ -138,6 +139,10 @@ from oncutf.ui.behaviors.metadata_cache_behavior import (
     CacheableWidget,
     MetadataCacheBehavior,
 )
+from oncutf.ui.behaviors.metadata_context_menu_behavior import (
+    ContextMenuWidget,
+    MetadataContextMenuBehavior,
+)
 from oncutf.ui.behaviors.metadata_scroll_behavior import (
     MetadataScrollBehavior,
     ScrollableTreeWidget,
@@ -151,10 +156,12 @@ __all__ = [
     "ColumnManageableWidget",
     "ScrollableTreeWidget",
     "CacheableWidget",
+    "ContextMenuWidget",
     # Concrete behaviors
     "SelectionBehavior",
     "DragDropBehavior",
     "ColumnManagementBehavior",
     "MetadataScrollBehavior",
     "MetadataCacheBehavior",
+    "MetadataContextMenuBehavior",
 ]

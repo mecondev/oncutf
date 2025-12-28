@@ -35,6 +35,7 @@ from oncutf.core.pyqt_imports import (
     QDragMoveEvent,
     QDropEvent,
     QModelIndex,
+    QPoint,
     QSortFilterProxyModel,
     QStandardItemModel,
     Qt,
@@ -43,8 +44,8 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.ui.behaviors.metadata_cache_behavior import MetadataCacheBehavior
+from oncutf.ui.behaviors.metadata_context_menu_behavior import MetadataContextMenuBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
-from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
@@ -133,7 +134,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
 
 
 class MetadataTreeView(
-    MetadataEditMixin, MetadataContextMenuMixin, QTreeView
+    MetadataEditMixin, QTreeView
 ):
     """Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -200,7 +201,7 @@ class MetadataTreeView(
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_context_menu)
+        self.customContextMenuRequested.connect(self._show_context_menu_delegated)
         self._current_menu = None
 
         # Track if we're in placeholder mode
@@ -226,6 +227,9 @@ class MetadataTreeView(
 
         # Cache interaction behavior (replaces MetadataCacheMixin)
         self._cache_behavior = MetadataCacheBehavior(self)
+
+        # Context menu behavior (replaces MetadataContextMenuMixin)
+        self._context_menu_behavior = MetadataContextMenuBehavior(self)
 
         # Unified placeholder helper (replaces old QLabel/QPixmap approach)
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -555,6 +559,31 @@ class MetadataTreeView(
 
         """
         return self._cache_behavior.try_lazy_metadata_loading(file_item, context)
+
+    # =====================================
+    # Context Menu Methods (delegate to behavior)
+    # =====================================
+
+    def _show_context_menu_delegated(self, position: QPoint) -> None:
+        """Show context menu at position.
+        Delegates to context menu behavior.
+
+        Args:
+            position: Position where the context menu should appear
+
+        """
+        self._context_menu_behavior.show_context_menu(position)
+
+    # Keep public alias for backward compatibility
+    def show_context_menu(self, position: QPoint) -> None:
+        """Show context menu at position (public API).
+        Delegates to context menu behavior.
+
+        Args:
+            position: Position where the context menu should appear
+
+        """
+        self._context_menu_behavior.show_context_menu(position)
 
     def _remove_metadata_from_cache(self, metadata: dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
