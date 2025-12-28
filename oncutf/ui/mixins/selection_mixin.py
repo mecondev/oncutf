@@ -53,8 +53,28 @@ class SelectionMixin:
     - self.keyboardModifiers() - Get keyboard modifiers
     """
 
+    def _ensure_selection_mixin_attrs(self) -> None:
+        """Ensure required attributes exist with default values.
+
+        This provides defensive initialization to prevent AttributeError
+        if mixin methods are called before parent class __init__ completes.
+        """
+        if not hasattr(self, "selected_rows"):
+            self.selected_rows = set()
+        if not hasattr(self, "anchor_row"):
+            self.anchor_row = None
+        if not hasattr(self, "_legacy_selection_mode"):
+            self._legacy_selection_mode = True
+        if not hasattr(self, "_manual_anchor_index"):
+            self._manual_anchor_index = None
+        if not hasattr(self, "_processing_selection_change"):
+            self._processing_selection_change = False
+        if not hasattr(self, "_ensuring_selection"):
+            self._ensuring_selection = False
+
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
+        self._ensure_selection_mixin_attrs()
         try:
             context = get_app_context()
             return context.selection_store

@@ -72,8 +72,34 @@ class DragDropMixin:
     - self._force_cursor_cleanup() - Force cursor cleanup
     """
 
+    def _ensure_drag_drop_mixin_attrs(self) -> None:
+        """Ensure required attributes exist with default values.
+
+        This provides defensive initialization to prevent AttributeError
+        if mixin methods are called before parent class __init__ completes.
+        """
+        if not hasattr(self, "_is_dragging"):
+            self._is_dragging = False
+        if not hasattr(self, "_drag_data"):
+            self._drag_data = None
+        if not hasattr(self, "_drag_feedback_timer_id"):
+            self._drag_feedback_timer_id = None
+        if not hasattr(self, "_drag_end_time"):
+            self._drag_end_time = 0.0
+        if not hasattr(self, "_successful_metadata_drop"):
+            self._successful_metadata_drop = False
+        if not hasattr(self, "_preserve_selection_for_drag"):
+            self._preserve_selection_for_drag = False
+        if not hasattr(self, "_clicked_on_selected"):
+            self._clicked_on_selected = False
+        if not hasattr(self, "_clicked_index"):
+            self._clicked_index = None
+        if not hasattr(self, "_legacy_selection_mode"):
+            self._legacy_selection_mode = True
+
     def _start_custom_drag(self):
         """Start custom drag operation with enhanced visual feedback."""
+        self._ensure_drag_drop_mixin_attrs()
         if self._is_dragging:
             return
 

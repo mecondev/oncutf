@@ -42,12 +42,30 @@ class ColumnManagementMixin:
     - self.resizeColumnToContents(index) - method to auto-resize
     """
 
+    def _ensure_column_mixin_attrs(self) -> None:
+        """Ensure required attributes exist with default values.
+
+        This provides defensive initialization to prevent AttributeError
+        if mixin methods are called before parent class __init__ completes.
+        """
+        if not hasattr(self, "_visible_columns"):
+            self._visible_columns = {}
+        if not hasattr(self, "_config_save_timer"):
+            self._config_save_timer = None
+        if not hasattr(self, "_pending_column_changes"):
+            self._pending_column_changes = {}
+        if not hasattr(self, "_programmatic_resize"):
+            self._programmatic_resize = False
+        if not hasattr(self, "_configuring_columns"):
+            self._configuring_columns = False
+
     # =====================================
     # Column Configuration & Setup
     # =====================================
 
     def _ensure_all_columns_proper_width(self) -> None:
         """Ensure all visible columns have proper width to minimize text elision."""
+        self._ensure_column_mixin_attrs()
         try:
             if not self.model():
                 return
@@ -87,6 +105,7 @@ class ColumnManagementMixin:
 
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
+        self._ensure_column_mixin_attrs()
         if not self.model() or self.model().columnCount() == 0:
             return
         header = self.horizontalHeader()
@@ -94,7 +113,7 @@ class ColumnManagementMixin:
             return
 
         # Prevent recursive calls during column configuration
-        if hasattr(self, "_configuring_columns") and self._configuring_columns:
+        if self._configuring_columns:
             return
 
         self._configuring_columns = True

@@ -433,6 +433,49 @@ Historical phase execution plans are archived in `_archive/refactor-runs/`.
 
 ---
 
+## Layering Rules
+
+### Core vs Utils Separation
+
+To avoid architectural confusion, follow these rules when placing code:
+
+**`oncutf/core/*`** — Business logic, orchestration, workflows:
+- Metadata loading orchestration (workflows, cache coordination)
+- File operations (rename validation, execution, rollback)
+- Services that bind to application state or managers
+- Domain-specific logic with side effects (I/O, signals, threading)
+- **Example:** `core/metadata/metadata_loader.py` (orchestrates parallel loading)
+
+**`oncutf/utils/*`** — Pure helpers, formatters, small composable functions:
+- Path normalization, filename validation
+- Metadata formatting/parsing (no I/O)
+- Logging factories, cursor helpers
+- Reusable functions without side effects or state dependencies
+- **Example:** `utils/metadata/cache_helper.py` (pure cache key generation)
+
+**When in doubt:** If it coordinates multiple services or performs I/O → `core/`. If it's a stateless helper → `utils/`.
+
+### UI Organization
+
+**`oncutf/ui/dialogs/*`** — All dialog widgets:
+- Progress dialogs, confirmation dialogs, input dialogs
+- Self-contained UI units with their own lifecycle
+- **No exceptions:** All dialog widgets belong here (not in `ui/widgets/` or elsewhere)
+
+**`oncutf/ui/services/*`** — UI-layer helpers and managers:
+- `dialog_manager.py` (dialog creation/coordination)
+- `utility_manager.py` (UI utilities)
+- Column managers, splitter managers, shortcut managers
+- **Rule:** UI "managers" live under `ui/services/`, NOT `core/`
+
+**`oncutf/core/*`** — Business logic only (no UI-specific code)
+
+### Known Technical Debt
+
+- **Metadata loader duplication:** Both `utils/metadata/loader.py` and `core/metadata/metadata_loader.py` exist. The former is a low-level ExifTool wrapper still used by legacy code (`direct_metadata_loader.py`, `metadata_worker.py`). The latter is the modern orchestration layer. Future refactor: consolidate into a single abstraction with clear ExifTool wrapper vs orchestrator separation.
+
+---
+
 ## Contributing
 
 When modifying architecture:
@@ -443,7 +486,8 @@ When modifying architecture:
 4. **Test new code** — Especially business logic in controllers
 5. **Document changes** — Update this file if needed
 6. **Consider impact** — Check for ripple effects
+7. **Follow layering rules** — See section above for core/utils/ui boundaries
 
 ---
 
-*Last Updated: 2025-12-21*
+*Last Updated: 2025-12-28*
