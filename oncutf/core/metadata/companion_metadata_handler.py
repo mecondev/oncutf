@@ -20,10 +20,10 @@ from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.models.file_item import FileItem
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.utils.companion_files_helper import CompanionFilesHelper
+    from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 
 logger = get_cached_logger(__name__)
 
@@ -45,7 +45,7 @@ class CompanionMetadataHandler:
     def companion_helper(self) -> type[CompanionFilesHelper]:
         """Lazy-initialized CompanionFilesHelper."""
         if self._companion_helper is None:
-            from oncutf.utils.companion_files_helper import CompanionFilesHelper
+            from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 
             self._companion_helper = CompanionFilesHelper
         return self._companion_helper

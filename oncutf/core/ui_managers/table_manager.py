@@ -11,7 +11,7 @@ preparation, and selection management.
 
 from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -219,7 +219,7 @@ class TableManager:
         common_keys = None
 
         for file in selected_files:
-            from oncutf.utils.metadata_cache_helper import get_metadata_cache_helper
+            from oncutf.utils.metadata.cache_helper import get_metadata_cache_helper
 
             cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
             metadata = cache_helper.get_metadata_for_file(file)

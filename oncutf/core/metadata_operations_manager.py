@@ -19,8 +19,8 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_status_helpers import has_metadata
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.filesystem.file_status_helpers import has_metadata
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
@@ -177,7 +177,7 @@ class MetadataOperationsManager:
         format_type = format_map.get(format_combo.currentIndex(), "json")
 
         # Get output directory
-        from oncutf.utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.utils.ui.multiscreen_helper import get_existing_directory_on_parent_screen
 
         output_dir = get_existing_directory_on_parent_screen(
             dialog,
@@ -193,7 +193,7 @@ class MetadataOperationsManager:
 
         # Perform export
         try:
-            from oncutf.utils.metadata_exporter import MetadataExporter
+            from oncutf.utils.metadata.exporter import MetadataExporter
 
             exporter = MetadataExporter(self.parent_window)
 
@@ -288,7 +288,7 @@ class MetadataOperationsManager:
 
         except ImportError as e:
             logger.error("[MetadataEdit] Failed to import MetadataEditDialog: %s", e)
-            from oncutf.utils.dialog_utils import show_error_message
+            from oncutf.utils.ui.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -297,7 +297,7 @@ class MetadataOperationsManager:
             )
         except Exception as e:
             logger.exception("[MetadataEdit] Unexpected error during %s editing: %s", field_name, e)
-            from oncutf.utils.dialog_utils import show_error_message
+            from oncutf.utils.ui.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,

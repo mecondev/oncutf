@@ -14,7 +14,7 @@ This manager centralizes rename operations including:
 from typing import Any
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -46,7 +46,7 @@ class RenameManager:
         This method handles the complete rename workflow including validation,
         execution, folder reload, and state restoration.
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         with wait_cursor():
             selected_files = self.main_window.get_selected_files()
@@ -112,7 +112,11 @@ class RenameManager:
             # Execute post-rename workflow with safe delayed execution
             if renamed_count > 0:
                 # Use TimerManager for safe delayed execution to avoid Qt object lifecycle issues
-                from oncutf.utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+                from oncutf.utils.shared.timer_manager import (
+                    TimerPriority,
+                    TimerType,
+                    get_timer_manager,
+                )
 
                 def safe_post_rename_workflow():
                     """Safe wrapper for post-rename workflow with error handling."""
@@ -230,7 +234,7 @@ class RenameManager:
                         if completion_dialog:
                             logger.debug("[RenameManager] Executing pending completion dialog")
                             # Schedule the dialog with a small delay to ensure UI is fully updated
-                            from oncutf.utils.timer_manager import (
+                            from oncutf.utils.shared.timer_manager import (
                                 TimerPriority,
                                 TimerType,
                                 get_timer_manager,
@@ -259,7 +263,11 @@ class RenameManager:
 
             # Schedule state restoration with a small delay
             logger.debug("[RenameManager] Scheduling restore_state function")
-            from oncutf.utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+            from oncutf.utils.shared.timer_manager import (
+                TimerPriority,
+                TimerType,
+                get_timer_manager,
+            )
 
             get_timer_manager().schedule(
                 restore_state,

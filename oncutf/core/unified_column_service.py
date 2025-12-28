@@ -25,7 +25,7 @@ from enum import Enum
 from typing import Any, cast
 
 from oncutf.core.pyqt_imports import Qt
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -312,7 +312,7 @@ class UnifiedColumnService:
                     )
                 else:
                     # Fallback to direct JSON loading
-                    from oncutf.utils.json_config_manager import load_config
+                    from oncutf.utils.shared.json_config_manager import load_config
 
                     config = load_config()
                     self._user_settings_cache = config.get("window", {})
@@ -348,7 +348,7 @@ class UnifiedColumnService:
                 )
             else:
                 # Fallback to direct JSON saving
-                from oncutf.utils.json_config_manager import load_config, save_config
+                from oncutf.utils.shared.json_config_manager import load_config, save_config
 
                 config = load_config()
                 config["window"] = settings

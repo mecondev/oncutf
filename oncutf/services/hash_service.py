@@ -23,7 +23,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from oncutf.services.interfaces import HashServiceProtocol
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

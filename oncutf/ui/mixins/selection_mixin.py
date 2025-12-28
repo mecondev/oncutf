@@ -20,7 +20,7 @@ from oncutf.core.pyqt_imports import (
     QModelIndex,
     Qt,
 )
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -136,7 +136,7 @@ class SelectionMixin:
             return selection_store.get_selected_rows()
         else:
             # Fallback: get from Qt selection model (more reliable than legacy)
-            from oncutf.utils.selection_provider import get_selected_row_set
+            from oncutf.utils.ui.selection_provider import get_selected_row_set
 
             selection_model = self.selectionModel()
             qt_selection = get_selected_row_set(selection_model)
@@ -153,7 +153,7 @@ class SelectionMixin:
             Set of currently selected row indices
 
         """
-        from oncutf.utils.selection_provider import get_selected_row_set
+        from oncutf.utils.ui.selection_provider import get_selected_row_set
 
         selection_model = self.selectionModel()
         return get_selected_row_set(selection_model)
@@ -213,7 +213,7 @@ class SelectionMixin:
 
             if modifiers & Qt.ShiftModifier:
                 # Check if we're clicking on an already selected item
-                from oncutf.utils.selection_provider import get_selected_row_set
+                from oncutf.utils.ui.selection_provider import get_selected_row_set
 
                 current_selection = get_selected_row_set(sm)
                 clicked_row = index.row()
@@ -248,7 +248,7 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    from oncutf.utils.selection_provider import get_selected_row_set
+                    from oncutf.utils.ui.selection_provider import get_selected_row_set
 
                     current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(
@@ -283,7 +283,7 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    from oncutf.utils.selection_provider import get_selected_row_set
+                    from oncutf.utils.ui.selection_provider import get_selected_row_set
 
                     current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(
@@ -304,7 +304,7 @@ class SelectionMixin:
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    from oncutf.utils.selection_provider import get_selected_row_set
+                    from oncutf.utils.ui.selection_provider import get_selected_row_set
 
                     current_qt_selection = get_selected_row_set(sm)
                     selection_store.set_selected_rows(current_qt_selection, emit_signal=False)
@@ -336,7 +336,7 @@ class SelectionMixin:
         try:
             super().selectionChanged(selected, deselected)  # type: ignore
 
-            from oncutf.utils.selection_provider import get_selected_row_set
+            from oncutf.utils.ui.selection_provider import get_selected_row_set
 
             selection_model = self.selectionModel()
             if selection_model is not None:
@@ -478,7 +478,7 @@ class SelectionMixin:
         with external components (e.g., checked files in parent window).
         """
         # First, try to sync with SelectionStore if available
-        from oncutf.utils.selection_provider import get_selected_row_set
+        from oncutf.utils.ui.selection_provider import get_selected_row_set
 
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:

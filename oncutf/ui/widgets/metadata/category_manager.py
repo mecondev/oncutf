@@ -16,9 +16,9 @@ from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.widgets.metadata.hash_handler import HASH_OPTIONS_DATA
-from oncutf.utils.file_status_helpers import batch_metadata_status
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_ui_update
+from oncutf.utils.filesystem.file_status_helpers import batch_metadata_status
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_widget import MetadataWidget

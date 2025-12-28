@@ -28,11 +28,14 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.filename_validator import get_validation_error_message, is_validation_error_marker
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.placeholder_helper import create_placeholder_helper
-from oncutf.utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.naming.filename_validator import (
+    get_validation_error_message,
+    is_validation_error_marker,
+)
+from oncutf.utils.shared.timer_manager import schedule_scroll_adjust, schedule_ui_update
+from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -66,7 +69,7 @@ class PreviewTableWidget(QTableWidget):
                 # Check if this is a validation error case
                 if is_validation_error_marker(item.text()):
                     # Show enhanced error tooltip
-                    from oncutf.utils.tooltip_helper import TooltipHelper
+                    from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
                     error_msg = "Invalid filename - contains validation errors"
                     TooltipHelper.show_error_tooltip(self, error_msg)
@@ -263,7 +266,7 @@ class PreviewTablesView(QWidget):
     def _on_refresh_shortcut_pressed(self) -> None:
         """Handle F5 shortcut press - refresh preview with status message.
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[PreviewTables] F5 pressed - refreshing preview")
 
@@ -522,7 +525,7 @@ class PreviewTablesView(QWidget):
             else:
                 # Check if filename is valid
                 try:
-                    from oncutf.utils.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
                     basename, _ = os.path.splitext(new_name)
                     if is_valid_filename_text(basename):
@@ -574,7 +577,7 @@ class PreviewTablesView(QWidget):
 
         import os
 
-        from oncutf.utils.filename_validator import validate_filename_part
+        from oncutf.utils.naming.filename_validator import validate_filename_part
 
         basename = os.path.splitext(new_name)[0]
         is_valid, _ = validate_filename_part(basename)

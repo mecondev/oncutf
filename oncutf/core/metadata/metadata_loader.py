@@ -23,15 +23,15 @@ from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.core.pyqt_imports import QApplication, Qt
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
     from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
     from oncutf.models.file_item import FileItem
-    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -91,7 +91,7 @@ class MetadataLoader:
         if self._exiftool_getter:
             return self._exiftool_getter()
         # Fallback: create new instance
-        from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+        from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
         return ExifToolWrapper()
 
@@ -256,7 +256,7 @@ class MetadataLoader:
             paths = [item.full_path for item in items]
             cache_entries = self._parent_window.metadata_cache.get_entries_batch(paths)
 
-        from oncutf.utils.path_normalizer import normalize_path
+        from oncutf.utils.filesystem.path_normalizer import normalize_path
 
         for item in items:
             norm_path = normalize_path(item.full_path)
@@ -317,7 +317,7 @@ class MetadataLoader:
             metadata_tree_view: Reference to metadata tree view for display
 
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         with wait_cursor():
             try:
@@ -398,9 +398,9 @@ class MetadataLoader:
             logger.info("[MetadataLoader] Metadata loading cancelled by user")
 
         # Create progress dialog
-        from oncutf.utils.dialog_utils import show_dialog_smooth
-        from oncutf.utils.file_size_calculator import calculate_files_total_size
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+        from oncutf.utils.ui.dialog_utils import show_dialog_smooth
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         loading_dialog = ProgressDialog.create_metadata_dialog(
             self._parent_window,
@@ -653,7 +653,7 @@ class MetadataLoader:
 
         This is a fallback when no companion handler is injected.
         """
-        from oncutf.utils.companion_files_helper import CompanionFilesHelper
+        from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 
         try:
             # Get folder files for companion detection

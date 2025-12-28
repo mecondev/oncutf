@@ -23,9 +23,9 @@ from oncutf.core.batch_operations_manager import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
-from oncutf.utils.metadata_loader import MetadataLoader
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
+from oncutf.utils.metadata.loader import MetadataLoader
 
 logger = get_cached_logger(__name__)
 
@@ -85,7 +85,7 @@ class MetadataWorker(QObject):
         # Initialize cache helper if not provided
         if not self.metadata_cache and reader:
             try:
-                from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
+                from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 
                 self._cache_helper = MetadataCacheHelper()
             except ImportError:

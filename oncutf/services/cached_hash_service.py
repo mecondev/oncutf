@@ -13,7 +13,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.cache.persistent_hash_cache import PersistentHashCache

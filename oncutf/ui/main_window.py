@@ -29,7 +29,7 @@ from oncutf.core.pyqt_imports import *
 from oncutf.models.file_item import FileItem
 
 # Utility functions and helpers
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 # UI widgets and custom components
 
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
             # Show warning dialog if files already have colors
             if files_with_colors:
                 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
-                from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+                from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
                 total_selected = len(self.file_model.files)
                 count_with_colors = len(files_with_colors)
@@ -264,7 +264,7 @@ class MainWindow(QMainWindow):
                 )
 
             # Execute command with wait cursor
-            from oncutf.utils.cursor_helper import wait_cursor
+            from oncutf.utils.ui.cursor_helper import wait_cursor
 
             with wait_cursor():
                 success = command.execute()
@@ -885,7 +885,7 @@ class MainWindow(QMainWindow):
             new_width = self.width()
 
             # Use SplitterManager to update splitter sizes
-            from oncutf.utils.timer_manager import schedule_resize_adjust
+            from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
             def update_splitters():
                 self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
@@ -936,7 +936,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "file_table_view") or not self.file_table_view.model():
             return
 
-        from oncutf.utils.timer_manager import schedule_resize_adjust
+        from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
         def refresh():
             # Reset manual column preference for auto-sizing
@@ -1002,7 +1002,7 @@ class MainWindow(QMainWindow):
 
         # Save configuration immediately before shutdown
         try:
-            from oncutf.utils.json_config_manager import get_app_config_manager
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
@@ -1017,7 +1017,7 @@ class MainWindow(QMainWindow):
 
     def _start_coordinated_shutdown(self):
         """Start the coordinated shutdown process using ShutdownCoordinator."""
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         try:
             # Use wait cursor for the entire shutdown process (simpler than dialog)
@@ -1250,7 +1250,7 @@ class MainWindow(QMainWindow):
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
         from oncutf.ui.widgets.metadata_waiting_dialog import OperationDialog
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         # Find and close any active progress dialogs
         dialogs_closed = 0
@@ -1391,7 +1391,7 @@ class MainWindow(QMainWindow):
         """Register all concurrent components with shutdown coordinator."""
         try:
             # Register timer manager
-            from oncutf.utils.timer_manager import get_timer_manager
+            from oncutf.utils.shared.timer_manager import get_timer_manager
 
             timer_mgr = get_timer_manager()
             self.shutdown_coordinator.register_timer_manager(timer_mgr)
@@ -1411,7 +1411,7 @@ class MainWindow(QMainWindow):
 
             # Register ExifTool wrapper (get active instance if any)
             try:
-                from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
                 if ExifToolWrapper._instances:  # type: ignore[attr-defined]

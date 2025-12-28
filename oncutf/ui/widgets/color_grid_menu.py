@@ -29,8 +29,8 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.tooltip_helper import TooltipHelper
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
 logger = get_cached_logger(__name__)
 
@@ -215,7 +215,7 @@ class ColorGridMenu(QWidget):
 
         """
         from oncutf.config import COLOR_PICKER_IMAGE
-        from oncutf.utils.path_utils import get_resource_path
+        from oncutf.utils.filesystem.path_utils import get_resource_path
 
         picker_btn = QToolButton()
         picker_btn.setObjectName("pickerButton")

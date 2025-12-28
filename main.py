@@ -32,8 +32,8 @@ from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.main_window import MainWindow
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
-from oncutf.utils.fonts import _get_inter_fonts
-from oncutf.utils.logger_setup import ConfigureLogger
+from oncutf.utils.logging.logger_setup import ConfigureLogger
+from oncutf.utils.ui.fonts import _get_inter_fonts
 
 
 # Calculate the user config directory for logs
@@ -75,7 +75,7 @@ def cleanup_on_exit() -> None:
 
     try:
         # Save configuration immediately before exit
-        from oncutf.utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         get_app_config_manager().save_immediate()
         logger.info("Configuration saved immediately before exit")
@@ -83,7 +83,7 @@ def cleanup_on_exit() -> None:
         logger.warning("Error saving configuration during cleanup: %s", e)
 
     try:
-        from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+        from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("Emergency ExifTool cleanup completed")

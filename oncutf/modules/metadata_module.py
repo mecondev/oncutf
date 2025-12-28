@@ -16,7 +16,7 @@ from typing import Any
 from oncutf.models.file_item import FileItem
 
 # initialize logger
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -97,7 +97,7 @@ class MetadataModule:
             return "invalid"
 
         # Get file path
-        from oncutf.utils.path_normalizer import normalize_path
+        from oncutf.utils.filesystem.path_normalizer import normalize_path
 
         path = file_item.full_path
         if not path:
@@ -228,7 +228,7 @@ class MetadataModule:
             str: Hash value or original name if not available
 
         """
-        from oncutf.utils.file_status_helpers import get_hash_for_file
+        from oncutf.utils.filesystem.file_status_helpers import get_hash_for_file
 
         try:
             hash_value = get_hash_for_file(file_path, hash_type)

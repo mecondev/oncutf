@@ -17,7 +17,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import Qt
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow

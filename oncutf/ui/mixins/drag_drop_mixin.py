@@ -29,9 +29,9 @@ from oncutf.core.pyqt_imports import (
     QMouseEvent,
     Qt,
 )
-from oncutf.utils.file_drop_helper import extract_file_paths
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import cancel_timer, schedule_ui_update
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
+from oncutf.utils.ui.file_drop_helper import extract_file_paths
 
 logger = get_cached_logger(__name__)
 
@@ -367,7 +367,7 @@ class DragDropMixin:
 
     def _get_parent_with_metadata_tree(self):
         """Find parent window that has metadata_tree_view attribute."""
-        from oncutf.utils.path_utils import find_parent_with_attribute
+        from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 
         return find_parent_with_attribute(self, "metadata_tree_view")
 

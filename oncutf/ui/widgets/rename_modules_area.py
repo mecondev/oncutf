@@ -26,8 +26,8 @@ from oncutf.core.pyqt_imports import (
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.timer_manager import schedule_scroll_adjust
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 
 # ApplicationContext integration
 try:
@@ -108,7 +108,7 @@ class RenameModulesArea(QWidget):
 
         # Use centralized timer manager for debouncing
         # This replaces the local QTimer with a managed timer that handles cleanup
-        from oncutf.utils.timer_manager import schedule_preview_update
+        from oncutf.utils.shared.timer_manager import schedule_preview_update
 
         self._schedule_preview_update = schedule_preview_update
         self._preview_timer_id = f"preview_debounce_{id(self)}"

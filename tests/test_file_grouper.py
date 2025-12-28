@@ -9,7 +9,7 @@ Tests for file_grouper utility functions.
 import pytest
 
 from oncutf.models.file_item import FileItem
-from oncutf.utils.file_grouper import (
+from oncutf.utils.filesystem.file_grouper import (
     calculate_filegroup_counter_index,
     get_file_group_index,
     group_files_by_companion,

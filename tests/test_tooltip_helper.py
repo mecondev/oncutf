@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 import pytest
 from PyQt5.QtWidgets import QLabel
 
-from oncutf.utils.tooltip_helper import (
+from oncutf.utils.ui.tooltip_helper import (
     CustomTooltip,
     TooltipHelper,
     TooltipType,

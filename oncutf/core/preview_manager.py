@@ -15,8 +15,8 @@ from typing import Any
 from oncutf.core.type_aliases import MetadataCache, NamePairsList
 from oncutf.models.file_item import FileItem
 from oncutf.modules.name_transform_module import NameTransformModule
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.preview_engine import apply_rename_modules
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.naming.preview_engine import apply_rename_modules
 
 logger = get_cached_logger(__name__)
 
@@ -205,7 +205,7 @@ class PreviewManager:
     def _is_valid_filename_text(self, basename: str) -> bool:
         """Validate filename text."""
         try:
-            from oncutf.utils.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
             return is_valid_filename_text(basename)
         except ImportError:
@@ -229,7 +229,7 @@ class PreviewManager:
         self.clear_cache()
 
         # Clear module cache
-        from oncutf.utils.preview_engine import clear_module_cache
+        from oncutf.utils.naming.preview_engine import clear_module_cache
 
         clear_module_cache()
 

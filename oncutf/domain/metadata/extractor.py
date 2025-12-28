@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 # Initialize logger
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.services.interfaces import HashServiceProtocol, MetadataServiceProtocol
@@ -132,7 +132,7 @@ class MetadataExtractor:
             file_path = Path(file_path)
 
         # Normalize path for Windows compatibility
-        from oncutf.utils.path_normalizer import normalize_path
+        from oncutf.utils.filesystem.path_normalizer import normalize_path
 
         normalized_path = normalize_path(str(file_path))
         file_path = Path(normalized_path)
@@ -327,7 +327,7 @@ class MetadataExtractor:
 
         # Try centralized field mapper
         try:
-            from oncutf.utils.metadata_field_mapper import MetadataFieldMapper
+            from oncutf.utils.metadata.field_mapper import MetadataFieldMapper
 
             if MetadataFieldMapper.has_field_mapping(field):
                 possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(field)
@@ -407,7 +407,7 @@ class MetadataExtractor:
 
         # Try validation if available
         try:
-            from oncutf.utils.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
             if is_valid_filename_text(cleaned):
                 return cleaned
@@ -416,8 +416,8 @@ class MetadataExtractor:
 
         # Try more aggressive cleaning if validation failed
         try:
-            from oncutf.utils.filename_validator import clean_filename_text
-            from oncutf.utils.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.filename_validator import clean_filename_text
+            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
             alt_cleaned = clean_filename_text(cleaned)
             if is_valid_filename_text(alt_cleaned):

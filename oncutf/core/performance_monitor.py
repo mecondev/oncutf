@@ -12,7 +12,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

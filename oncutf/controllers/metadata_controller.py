@@ -279,7 +279,7 @@ class MetadataController:
 
         try:
             # Use MetadataExporter class
-            from oncutf.utils.metadata_exporter import MetadataExporter
+            from oncutf.utils.metadata.exporter import MetadataExporter
 
             exporter = MetadataExporter()
             success = exporter.export_files(
@@ -361,7 +361,7 @@ class MetadataController:
         # Check if file has metadata in cache
         # Try to get metadata manager which has the cache
         try:
-            from oncutf.utils.path_normalizer import normalize_path
+            from oncutf.utils.filesystem.path_normalizer import normalize_path
 
             metadata_manager = self._app_context.get_manager("metadata")
             norm_path = normalize_path(file_item.full_path)

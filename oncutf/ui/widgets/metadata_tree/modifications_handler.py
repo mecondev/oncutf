@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.path_utils import paths_equal
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_tree_view import MetadataTreeView

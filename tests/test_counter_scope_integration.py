@@ -15,7 +15,7 @@ import pytest
 
 from oncutf.models.counter_scope import CounterScope
 from oncutf.models.file_item import FileItem
-from oncutf.utils.preview_engine import apply_rename_modules, calculate_scope_aware_index
+from oncutf.utils.naming.preview_engine import apply_rename_modules, calculate_scope_aware_index
 
 
 class TestCounterScopeIntegration:
@@ -266,7 +266,7 @@ class TestCounterScopeIntegration:
     def test_counter_without_all_files_falls_back_to_global(self, sample_files):
         """Test that counter without all_files parameter falls back to global index."""
         # Clear module cache to avoid interference from previous tests
-        from oncutf.utils import preview_engine
+        from oncutf.utils.naming import preview_engine
 
         preview_engine._module_cache.clear()
 

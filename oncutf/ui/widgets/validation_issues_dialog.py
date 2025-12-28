@@ -20,7 +20,7 @@ from oncutf.core.pyqt_imports import (
     QVBoxLayout,
 )
 from oncutf.models.validation_result import ValidationIssueType
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.models.validation_result import ValidationResult

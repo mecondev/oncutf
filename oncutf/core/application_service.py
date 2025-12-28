@@ -13,7 +13,7 @@ from typing import Any
 
 from oncutf.core.pyqt_imports import QModelIndex, Qt
 from oncutf.models.file_item import FileItem
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -146,7 +146,7 @@ class ApplicationService:
 
         if not hash_analysis["enable_selected"]:
             # All files already have hashes
-            from oncutf.utils.dialog_utils import show_info_message
+            from oncutf.utils.ui.dialog_utils import show_info_message
 
             # Combine message with details
             message = (
@@ -180,7 +180,7 @@ class ApplicationService:
 
         if not hash_analysis["enable_selected"]:
             # All files already have hashes
-            from oncutf.utils.dialog_utils import show_info_message
+            from oncutf.utils.ui.dialog_utils import show_info_message
 
             show_info_message(
                 self.main_window,

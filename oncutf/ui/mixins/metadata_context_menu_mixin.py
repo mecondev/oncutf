@@ -12,7 +12,7 @@ Extracted from MetadataTreeView as part of decomposition effort.
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QAction, QMenu
 
-from oncutf.utils.logger_helper import get_logger
+from oncutf.utils.logging.logger_helper import get_logger
 
 logger = get_logger(__name__)
 
@@ -258,7 +258,7 @@ class MetadataContextMenuMixin:
 
         """
         try:
-            from oncutf.utils.icons_loader import get_menu_icon
+            from oncutf.utils.ui.icons_loader import get_menu_icon
 
             return get_menu_icon(icon_name)
         except ImportError:

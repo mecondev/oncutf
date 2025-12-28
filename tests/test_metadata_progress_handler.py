@@ -22,7 +22,7 @@ class TestProgressDialogCreation:
     def test_create_metadata_dialog_calls_factory(self) -> None:
         """create_metadata_progress_dialog should call ProgressDialog factory."""
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -44,7 +44,7 @@ class TestProgressDialogCreation:
     def test_create_hash_dialog_calls_factory(self) -> None:
         """create_hash_progress_dialog should call ProgressDialog factory."""
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -171,7 +171,7 @@ class TestShowDialogMethods:
     def test_show_metadata_dialog_returns_dialog(self) -> None:
         """show_metadata_progress_dialog should return a dialog."""
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -188,7 +188,7 @@ class TestShowDialogMethods:
     def test_show_hash_dialog_returns_dialog(self) -> None:
         """show_hash_progress_dialog should return a dialog."""
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.progress_dialog import ProgressDialog
+        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 

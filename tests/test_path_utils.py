@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-from oncutf.utils import path_utils
-from oncutf.utils.path_normalizer import normalize_path
+from oncutf.utils.filesystem import path_utils
+from oncutf.utils.filesystem.path_normalizer import normalize_path
 
 
 def test_normalize_and_paths_equal():

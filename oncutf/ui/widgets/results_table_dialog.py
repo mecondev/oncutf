@@ -48,7 +48,7 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.results_table_model import ResultsTableModel
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -250,7 +250,7 @@ class ResultsTableDialog(QDialog):
 
     def _load_geometry(self):
         """Load persistent geometry and column widths from user config."""
-        from oncutf.utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
@@ -349,7 +349,7 @@ class ResultsTableDialog(QDialog):
             return
 
         if logical_index == 0:
-            from oncutf.utils.json_config_manager import get_app_config_manager
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
             config_manager = get_app_config_manager()
             dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
@@ -391,7 +391,7 @@ class ResultsTableDialog(QDialog):
 
     def closeEvent(self, event):
         """Save geometry when dialog closes."""
-        from oncutf.utils.json_config_manager import get_app_config_manager
+        from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)

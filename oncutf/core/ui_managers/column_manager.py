@@ -37,7 +37,7 @@ from oncutf.core.pyqt_imports import (
     QTreeView,
     QWidget,
 )
-from oncutf.utils.logger_helper import get_cached_logger
+from oncutf.utils.logging.logger_helper import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -428,7 +428,7 @@ class ColumnManager:
                         )
 
             # Fallback to old config system
-            from oncutf.utils.json_config_manager import load_config
+            from oncutf.utils.shared.json_config_manager import load_config
 
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})

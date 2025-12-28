@@ -13,7 +13,7 @@ This manager centralizes initialization and setup operations including:
 
 from typing import TYPE_CHECKING, Any
 
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
@@ -92,7 +92,7 @@ class InitializationManager:
         We update the UI here - FileStore has already been updated.
         Also clears stale selections and preview data.
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)

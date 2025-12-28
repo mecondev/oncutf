@@ -9,7 +9,7 @@ Cross-platform metadata module tests - Windows/Linux/Greek compatible.
 import warnings
 
 from oncutf.modules.metadata_module import MetadataModule
-from oncutf.utils.path_normalizer import normalize_path
+from oncutf.utils.filesystem.path_normalizer import normalize_path
 from tests.mocks import MockFileItem
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")

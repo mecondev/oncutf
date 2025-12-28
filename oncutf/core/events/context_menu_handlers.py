@@ -19,10 +19,10 @@ from typing import TYPE_CHECKING, Any
 from oncutf.config import STATUS_COLORS
 from oncutf.core.pyqt_imports import QAction, QMenu
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.utils.file_status_helpers import has_hash, has_metadata
-from oncutf.utils.logger_factory import get_cached_logger
-from oncutf.utils.path_utils import paths_equal
-from oncutf.utils.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.filesystem.file_status_helpers import has_hash, has_metadata
+from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
@@ -78,7 +78,7 @@ class ContextMenuHandlers:
                     )
                     return
 
-        from oncutf.utils.icons_loader import get_menu_icon
+        from oncutf.utils.ui.icons_loader import get_menu_icon
 
         # Helper function to create actions with shortcuts
         def create_action_with_shortcut(
@@ -642,7 +642,7 @@ class ContextMenuHandlers:
 
         except ImportError as e:
             logger.error("[BulkRotation] Failed to import BulkRotationDialog: %s", e)
-            from oncutf.utils.dialog_utils import show_error_message
+            from oncutf.utils.ui.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -651,7 +651,7 @@ class ContextMenuHandlers:
             )
         except Exception as e:
             logger.exception("[BulkRotation] Unexpected error: %s", e)
-            from oncutf.utils.dialog_utils import show_error_message
+            from oncutf.utils.ui.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -699,7 +699,7 @@ class ContextMenuHandlers:
         dlg = CustomMessageDialog("Load Metadata First?", message, buttons, self.parent_window)
 
         if self.parent_window:
-            from oncutf.utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.utils.ui.multiscreen_helper import ensure_dialog_on_parent_screen
 
             ensure_dialog_on_parent_screen(dlg, self.parent_window)
 
@@ -867,7 +867,7 @@ class ContextMenuHandlers:
 
         except Exception as e:
             logger.exception("[BulkRotation] Error applying rotation: %s", e)
-            from oncutf.utils.dialog_utils import show_error_message
+            from oncutf.utils.ui.dialog_utils import show_error_message
 
             show_error_message(
                 self.parent_window, "Error", f"Failed to apply rotation changes: {str(e)}"
@@ -1148,7 +1148,7 @@ class ContextMenuHandlers:
 
     def _file_has_metadata_type(self, file_item: FileItem, extended: bool) -> bool:
         """Check if a file has the specified type of metadata (basic or extended)."""
-        from oncutf.utils.metadata_cache_helper import get_metadata_cache_helper
+        from oncutf.utils.metadata.cache_helper import get_metadata_cache_helper
 
         cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
         return cache_helper.has_metadata(file_item, extended=extended)

@@ -23,7 +23,7 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
-from oncutf.utils.logger_factory import get_cached_logger
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -177,7 +177,7 @@ class HierarchicalComboBox(QComboBox):
             self.hidePopup()
 
             # Start short timed blocker to avoid immediate re-open mouse press race
-            from oncutf.utils.timer_manager import TimerType, get_timer_manager
+            from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
             self._closing_popup = True
             get_timer_manager().schedule(
@@ -335,7 +335,7 @@ class HierarchicalComboBox(QComboBox):
 
         # Select first item if available and requested
         if first_item and auto_select_first:
-            from oncutf.utils.timer_manager import TimerType, get_timer_manager
+            from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
             index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
