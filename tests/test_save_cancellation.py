@@ -79,7 +79,7 @@ class TestSaveCancellation:
 
         # Mock CustomMessageDialog from widgets
         with patch(
-            "oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"
+            "oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"
         ) as mock_dialog_class:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
@@ -106,7 +106,7 @@ class TestSaveCancellation:
         # Mock both CustomMessageDialog and QMessageBox
         with (
             patch(
-                "oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"
+                "oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"
             ) as mock_custom_dialog,
             patch("oncutf.core.pyqt_imports.QMessageBox") as mock_msgbox,
         ):
@@ -218,7 +218,7 @@ class TestSaveCancellation:
         # Note: ProgressDialog is imported inside the function, so we patch the source module
         with (
             patch("oncutf.utils.ui.progress_dialog.ProgressDialog") as mock_dialog_class,
-            patch("oncutf.ui.widgets.custom_message_dialog.CustomMessageDialog"),
+            patch("oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"),
             patch("oncutf.core.pyqt_imports.QMessageBox"),
         ):
             mock_dialog = MagicMock()

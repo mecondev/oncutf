@@ -546,7 +546,7 @@ class RenameController:
 
         """
         try:
-            from oncutf.ui.widgets.validation_issues_dialog import (
+            from oncutf.ui.dialogs.validation_issues_dialog import (
                 ValidationIssuesDialog,
             )
 

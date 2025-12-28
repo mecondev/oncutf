@@ -213,7 +213,7 @@ class HashHandler:
             calculation_type: Type of calculation ("hash" or "metadata")
         """
         try:
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             # Create dialog message based on calculation type
             file_count = len(files_needing_calculation)

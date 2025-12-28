@@ -69,7 +69,7 @@ def show_info_message(
         message: Message to display
 
     """
-    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     if details:
         CustomMessageDialog.information(parent, title, message, details=details)
@@ -86,7 +86,7 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
         message: Message to display
 
     """
-    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     CustomMessageDialog.information(parent, title, message)
 
@@ -103,6 +103,6 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
         bool: True if Yes was clicked, False if No was clicked
 
     """
-    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     return CustomMessageDialog.question(parent, title, message)

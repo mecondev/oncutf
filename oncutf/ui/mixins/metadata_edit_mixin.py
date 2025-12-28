@@ -334,7 +334,7 @@ class MetadataEditMixin:
         normalized_key_path = self._normalize_metadata_field_name(key_path)
 
         # Import dialog here to avoid circular imports
-        from oncutf.ui.widgets.metadata_edit_dialog import MetadataEditDialog
+        from oncutf.ui.dialogs.metadata_edit_dialog import MetadataEditDialog
 
         # Use the static method from MetadataEditDialog
         accepted, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
@@ -461,7 +461,7 @@ class MetadataEditMixin:
             saved_path: Saved selection path for restoration
 
         """
-        from oncutf.ui.widgets.datetime_edit_dialog import DateTimeEditDialog
+        from oncutf.ui.dialogs.datetime_edit_dialog import DateTimeEditDialog
 
         # Get selected files
         selected_files = self._get_current_selection()
@@ -904,7 +904,7 @@ class MetadataEditMixin:
     def _show_history_dialog(self) -> None:
         """Show metadata history dialog."""
         try:
-            from oncutf.ui.widgets.metadata_history_dialog import MetadataHistoryDialog
+            from oncutf.ui.dialogs.metadata_history_dialog import MetadataHistoryDialog
 
             dialog = MetadataHistoryDialog(self)
             dialog.exec_()

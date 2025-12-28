@@ -673,7 +673,7 @@ class UnifiedMetadataManager(QObject):
                 self.parent_window.status_bar.showMessage(message, 5000 if success_count else 3000)
 
             if self.parent_window:
-                from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
                 msg_parts = ["Save operation cancelled by user."]
                 if success_count > 0:

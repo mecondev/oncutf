@@ -453,7 +453,7 @@ class HashOperationsManager:
             self.hash_dialog.close()
 
         # Show error message
-        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.information(
             self.parent_window, "Error", f"Hash operation failed: {error_message}"
@@ -482,7 +482,7 @@ class HashOperationsManager:
 
         """
         if not duplicates:
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
                 self.parent_window,
@@ -511,7 +511,7 @@ class HashOperationsManager:
             message_lines.append("")
 
         # Show results dialog
-        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.information(
             self.parent_window, "Duplicate Detection Results", "\n".join(message_lines)
@@ -540,7 +540,7 @@ class HashOperationsManager:
 
         """
         if not results:
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
                 self.parent_window,
@@ -578,7 +578,7 @@ class HashOperationsManager:
                     message_lines.append(f"  • {filename}")
 
         # Show results dialog
-        from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.information(
             self.parent_window, "External Comparison Results", "\n".join(message_lines)
@@ -616,7 +616,7 @@ class HashOperationsManager:
 
         """
         if not hash_results:
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             if was_cancelled:
                 CustomMessageDialog.information(
@@ -636,7 +636,7 @@ class HashOperationsManager:
             return
 
         # Show results in the new table dialog
-        from oncutf.ui.widgets.results_table_dialog import ResultsTableDialog
+        from oncutf.ui.dialogs.results_table_dialog import ResultsTableDialog
 
         ResultsTableDialog.show_hash_results(
             parent=self.parent_window, hash_results=hash_results, was_cancelled=was_cancelled
@@ -712,7 +712,7 @@ class HashOperationsManager:
 
         except Exception as e:
             logger.error("[HashManager] Error setting up external comparison: %s", e)
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
                 self.parent_window, "Error", f"Failed to start external comparison: {str(e)}"
@@ -769,7 +769,7 @@ class HashOperationsManager:
 
         except Exception as e:
             logger.error("[HashManager] Error calculating checksum: %s", e)
-            from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
                 self.parent_window, "Error", f"Failed to calculate checksum: {str(e)}"

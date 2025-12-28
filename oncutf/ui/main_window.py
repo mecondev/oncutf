@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         - Operation details (timestamp, type, affected files)
         """
         try:
-            from oncutf.ui.widgets.metadata_history_dialog import MetadataHistoryDialog
+            from oncutf.ui.dialogs.metadata_history_dialog import MetadataHistoryDialog
 
             dialog = MetadataHistoryDialog(self)
             dialog.exec_()
@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
 
             # Show warning dialog if files already have colors
             if files_with_colors:
-                from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
                 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
                 total_selected = len(self.file_model.files)
@@ -988,7 +988,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     logger.error("[CloseEvent] Failed to save metadata before closing: %s", e)
                     # Show error but continue closing anyway
-                    from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog
+                    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
                     CustomMessageDialog.information(
                         self,
@@ -1249,7 +1249,7 @@ class MainWindow(QMainWindow):
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
-        from oncutf.ui.widgets.metadata_waiting_dialog import OperationDialog
+        from oncutf.ui.dialogs.metadata_waiting_dialog import OperationDialog
         from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         # Find and close any active progress dialogs

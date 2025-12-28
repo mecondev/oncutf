@@ -263,7 +263,7 @@ class DragManager(QObject):
                     )
 
                     # Check if OperationDialog is active
-                    from oncutf.ui.widgets.metadata_waiting_dialog import OperationDialog
+                    from oncutf.ui.dialogs.metadata_waiting_dialog import OperationDialog
 
                     active_dialogs = [
                         w
