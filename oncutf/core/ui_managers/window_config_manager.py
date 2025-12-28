@@ -103,6 +103,8 @@ class WindowConfigManager:
                 splitter_states["horizontal"] = self.main_window.horizontal_splitter.sizes()
             if hasattr(self.main_window, "vertical_splitter"):
                 splitter_states["vertical"] = self.main_window.vertical_splitter.sizes()
+            if hasattr(self.main_window, "lower_section_splitter"):
+                splitter_states["lower_section"] = self.main_window.lower_section_splitter.sizes()
             window_config.set("splitter_states", splitter_states)
 
             # Save other window-related settings
@@ -244,6 +246,16 @@ class WindowConfigManager:
                 logger.debug(
                     "[Config] Applied vertical splitter: %s",
                     splitter_states["vertical"],
+                    extra={"dev_only": True},
+                )
+
+            if "lower_section" in splitter_states and hasattr(
+                self.main_window, "lower_section_splitter"
+            ):
+                self.main_window.lower_section_splitter.setSizes(splitter_states["lower_section"])
+                logger.debug(
+                    "[Config] Applied lower section splitter: %s",
+                    splitter_states["lower_section"],
                     extra={"dev_only": True},
                 )
 
