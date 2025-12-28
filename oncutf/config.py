@@ -757,6 +757,7 @@ THEME_TOKENS = {
         "table_row_height": "22",
         "button_height": "24",
         "combo_height": "22",
+        "combo_item_height": "22",  # Height for dropdown items (same as table rows)
     },
     "light": {
         # Placeholder for light theme - to be implemented later

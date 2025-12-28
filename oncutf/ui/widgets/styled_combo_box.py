@@ -4,13 +4,15 @@ Author: Michael Economou
 Date: December 18, 2025
 
 StyledComboBox - QComboBox with automatic theme integration.
-Provides consistent styling and proper delegate setup.
+Thin wrapper that sets up delegate and applies theme styling.
+Popup sizing logic is delegated to combo_popup_helper for reusability.
 """
 
 from PyQt5.QtWidgets import QComboBox, QWidget
 
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
+from oncutf.ui.utils.combo_popup_helper import apply_combo_popup_metrics, prepare_combo_popup
 from oncutf.utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -33,26 +35,45 @@ class StyledComboBox(QComboBox):
 
         """
         super().__init__(parent)
-        self.setMaxVisibleItems(20)  # Show up to 20 items without scrolling
+        self.setMaxVisibleItems(10)
+        self.setProperty("variant", "styled")  # For potential QSS targeting
+
         self._setup_delegate()
+        self._configure_view()
         self._apply_theme()
+
         logger.debug("StyledComboBox initialized")
+
+    def _configure_view(self) -> None:
+        """Configure the popup view (alternating rows, etc.)."""
+        view = self.view()
+        if view is not None:
+            # Enable alternating rows (delegate will paint them)
+            view.setAlternatingRowColors(True)
+
+    def showPopup(self) -> None:
+        """Show popup with proper sizing and frameless appearance.
+
+        Uses combo_popup_helper to prevent Qt internal scroller artifacts
+        and remove frame borders.
+        """
+        prepare_combo_popup(self)
+        apply_combo_popup_metrics(self, pre_show=True)
+        super().showPopup()
+        apply_combo_popup_metrics(self, pre_show=False)
 
     def _setup_delegate(self) -> None:
         """Setup the item delegate for proper dropdown styling."""
-        try:
-            theme = get_theme_manager()
-            delegate = ComboBoxItemDelegate(self, theme)
-            self.setItemDelegate(delegate)
-            logger.debug("ComboBoxItemDelegate set successfully")
-        except Exception as e:
-            logger.warning("Failed to set ComboBoxItemDelegate: %s", e)
+        theme = get_theme_manager()
+        delegate = ComboBoxItemDelegate(self, theme)
+        self.setItemDelegate(delegate)
 
     def _apply_theme(self) -> None:
         """Apply theme-aware styling."""
         try:
             theme = get_theme_manager()
             combo_height = theme.get_constant("combo_height")
+            item_height = theme.get_constant("combo_item_height")
             self.setFixedHeight(combo_height)
 
             # Apply inline stylesheet for proper styling
@@ -62,8 +83,7 @@ class StyledComboBox(QComboBox):
             focus_border = theme.get_color("input_focus_border")
             hover_border = theme.get_color("outline")
             menu_bg = theme.get_color("menu_background")
-            selected_bg = theme.get_color("selected")
-            selected_text = theme.get_color("selected_text")
+
 
             self.setStyleSheet(f"""
                 QComboBox {{
@@ -87,9 +107,16 @@ class StyledComboBox(QComboBox):
                 QComboBox QAbstractItemView {{
                     background-color: {menu_bg};
                     color: {text};
-                    selection-background-color: {selected_bg};
-                    selection-color: {selected_text};
-                    border: 1px solid {border};
+                    border: 0px;
+                    outline: 0px;
+                }}
+                QComboBox QFrame {{
+                    border: 0px;
+                }}
+                QComboBox QAbstractItemView::item {{
+                    min-height: {item_height}px;
+                    padding: 0px 8px;
+                    border: none;
                 }}
             """)
 

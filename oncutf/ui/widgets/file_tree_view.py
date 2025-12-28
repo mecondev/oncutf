@@ -106,9 +106,41 @@ class FileTreeView(QTreeView):
         self._last_monitored_path: str | None = None
 
         # Install custom tree view delegate for consistent hover/selection behavior
-        self._delegate = TreeViewItemDelegate(self)
+        from oncutf.core.theme_manager import get_theme_manager
+
+        theme = get_theme_manager()
+        self._delegate = TreeViewItemDelegate(self, theme=theme)
         self.setItemDelegate(self._delegate)
         self._delegate.install_event_filter(self)
+
+        # Apply tree view QSS for consistent hover/selection colors
+        self._apply_tree_styling(theme)
+
+    def _apply_tree_styling(self, theme) -> None:
+        """Apply consistent hover/selection styling to match file table."""
+        text = theme.get_color("text")
+        hover_bg = theme.get_color("table_hover_bg")
+        selected_bg = theme.get_color("selected")
+        selected_text = theme.get_color("selected_text")
+        selected_hover_bg = theme.get_color("selected_hover")
+        bg_alternate = theme.get_color("background_alternate")
+
+        self.setStyleSheet(f"""
+            QTreeView::item:hover:!selected {{
+                background-color: {hover_bg};
+            }}
+            QTreeView::item:selected:!hover {{
+                background-color: {selected_bg};
+                color: {text};
+            }}
+            QTreeView::item:selected:hover {{
+                background-color: {selected_hover_bg};
+                color: {selected_text};
+            }}
+            QTreeView {{
+                alternate-background-color: {bg_alternate};
+            }}
+        """)
 
     def showEvent(self, event) -> None:
         """Handle show event - setup filesystem monitor when widget becomes visible."""

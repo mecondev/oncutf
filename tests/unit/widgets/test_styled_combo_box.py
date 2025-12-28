@@ -77,8 +77,8 @@ class TestStyledComboBoxTheme:
         height = combo.height()
         # Height should be set (either from theme or fallback)
         assert height > 0
-        # Typical combo height should be between 24 and 48 pixels
-        assert 24 <= height <= 48
+        # Typical combo height should be between 20 and 48 pixels (theme sets 22px)
+        assert 20 <= height <= 48
 
     def test_fixed_height(self, qtbot):
         """Test that height is fixed (not resizable)."""

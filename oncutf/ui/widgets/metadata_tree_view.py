@@ -335,11 +335,41 @@ class MetadataTreeView(
 
         # Install custom delegate for full-row hover and consistent painting
         from oncutf.core.theme_manager import get_theme_manager
-        from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
+        from oncutf.ui.delegates.ui_delegates import MetadataTreeItemDelegate
 
-        delegate = TreeViewItemDelegate(self, theme=get_theme_manager())
+        theme = get_theme_manager()
+        delegate = MetadataTreeItemDelegate(self, theme=theme)
         delegate.install_event_filter(self)
         self.setItemDelegate(delegate)
+
+        # Apply tree view QSS for consistent hover/selection colors
+        self._apply_tree_styling(theme)
+
+    def _apply_tree_styling(self, theme) -> None:
+        """Apply consistent hover/selection styling to match file table."""
+        text = theme.get_color("text")
+        hover_bg = theme.get_color("table_hover_bg")
+        selected_bg = theme.get_color("selected")
+        selected_text = theme.get_color("selected_text")
+        selected_hover_bg = theme.get_color("selected_hover")
+        bg_alternate = theme.get_color("background_alternate")
+
+        self.setStyleSheet(f"""
+            QTreeView::item:hover:!selected {{
+                background-color: {hover_bg};
+            }}
+            QTreeView::item:selected:!hover {{
+                background-color: {selected_bg};
+                color: {text};
+            }}
+            QTreeView::item:selected:hover {{
+                background-color: {selected_hover_bg};
+                color: {selected_text};
+            }}
+            QTreeView {{
+                alternate-background-color: {bg_alternate};
+            }}
+        """)
 
     def _setup_icon_delegate(self) -> None:
         """Setup the icon delegate for selection-based icon changes."""

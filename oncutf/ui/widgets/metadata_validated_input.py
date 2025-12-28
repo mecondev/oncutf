@@ -13,8 +13,9 @@ Contains:
 
 import logging
 
-from oncutf.core.pyqt_imports import QComboBox, QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
+from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
+from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.metadata_field_validators import MetadataFieldValidator
 
 logger = logging.getLogger(__name__)
@@ -261,13 +262,14 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         self.update_validation_state(self.text())
 
 
-class MetadataRotationComboBox(QComboBox):
+class MetadataRotationComboBox(StyledComboBox):
     """Specialized combo box for rotation values.
 
     Features:
     - Predefined rotation values (0°, 90°, 180°, 270°)
     - Automatic validation (always valid since values are predefined)
     - Compatible interface with other metadata input widgets
+    - Automatic theme integration via StyledComboBox
     """
 
     # Signal emitted when validation state changes (always True for combo box)
@@ -296,12 +298,6 @@ class MetadataRotationComboBox(QComboBox):
 
         # Connect signals
         self.currentTextChanged.connect(self._on_selection_changed)
-
-        # Set fixed height to match other input widgets
-        from oncutf.core.theme_manager import get_theme_manager
-
-        theme = get_theme_manager()
-        self.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
 
     def _on_selection_changed(self, _text: str) -> None:
         """Handle selection changes - always emit valid state."""

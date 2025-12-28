@@ -14,12 +14,10 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QEvent, QModelIndex
 
 from oncutf.core.pyqt_imports import (
-    QBrush,
     QColor,
     QCursor,
     QIcon,
     QPainter,
-    QPalette,
     QPen,
     QStyle,
     QStyledItemDelegate,
@@ -39,13 +37,98 @@ logger = get_cached_logger(__name__)
 
 
 class ComboBoxItemDelegate(QStyledItemDelegate):
-    """Custom delegate to render QComboBox dropdown items with theme and proper states."""
+    """Custom delegate to render QComboBox dropdown items with theme and proper states.
+
+    This delegate fully paints item backgrounds including alternating row colors,
+    hover, and selection states. It ensures proper rendering on all platforms and
+    DPI scaling scenarios.
+    """
 
     def __init__(self, parent: QWidget | None = None, theme: "ThemeManager | None" = None) -> None:
         super().__init__(parent)
         self.theme = theme
 
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        """Paint combobox item with alternating backgrounds and state-aware colors.
+
+        Paint order:
+        1. Fill background (alternating, hover, or selected)
+        2. Draw text with appropriate foreground color
+
+        This ensures no gaps and proper alternating rows even with custom QSS.
+        """
+        if not self.theme:
+            # Fallback to default painting if no theme available
+            super().paint(painter, option, index)
+            return
+
+        painter.save()
+
+        # --- Determine background and text colors based on state ---
+        is_enabled = index.flags() & Qt.ItemFlag.ItemIsEnabled
+        is_selected = option.state & QStyle.StateFlag.State_Selected
+        is_hovered = option.state & QStyle.StateFlag.State_MouseOver
+        is_odd_row = index.row() % 2 == 1
+
+        # Background color logic with proper priority:
+        # 1. Selected + Hover (highest priority)
+        # 2. Selected (no hover)
+        # 3. Hover (no selection)
+        # 4. Alternating rows (normal state)
+        # 5. Regular background (even rows, normal state)
+
+        if not is_enabled:
+            # Disabled items: use transparent background, dimmed text
+            bg_color = QColor("transparent")
+            text_color = QColor(self.theme.get_color("text_disabled"))
+        elif is_selected and is_hovered:
+            # Selected + Hover: light blue background, dark text
+            bg_color = QColor(self.theme.get_color("selected_hover"))
+            text_color = QColor(self.theme.get_color("selected_text"))
+        elif is_selected:
+            # Selected only: medium blue background, light text
+            bg_color = QColor(self.theme.get_color("selected"))
+            text_color = QColor(self.theme.get_color("text"))  # Light text on selected
+        elif is_hovered:
+            # Hover only (not selected): dark blue background, light text
+            bg_color = QColor(self.theme.get_color("table_hover_bg"))
+            text_color = QColor(self.theme.get_color("text"))
+        elif is_odd_row:
+            # Odd rows: alternating background for visual separation
+            bg_color = QColor(self.theme.get_color("background_lighter"))
+            text_color = QColor(self.theme.get_color("text"))
+        else:
+            # Even rows: regular menu background
+            bg_color = QColor(self.theme.get_color("menu_background"))
+            text_color = QColor(self.theme.get_color("text"))
+
+        # --- Paint background (fill entire rect to avoid gaps) ---
+        painter.fillRect(option.rect, bg_color)
+
+        # --- Paint text ---
+        painter.setPen(text_color)
+
+        # Use theme font for consistency
+        font = painter.font()
+        font.setFamily(self.theme.fonts["base_family"])
+        font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
+        if not is_enabled:
+            font.setItalic(True)
+        painter.setFont(font)
+
+        # Draw text with padding (matches QSS padding: 0px 8px)
+        text_rect = option.rect.adjusted(8, 0, -8, 0)
+        text = index.data(Qt.ItemDataRole.DisplayRole) or ""
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text)
+
+        painter.restore()
+
     def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        """Initialize style option with theme fonts.
+
+        Note: Background colors are now handled in paint(), so we don't set
+        palette brushes here. This method only configures fonts.
+        """
         super().initStyleOption(option, index)
 
         if not self.theme:
@@ -54,43 +137,25 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         # Use font from theme for absolute consistency
         option.font.setFamily(self.theme.fonts["base_family"])
         option.font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
-        # Height same as QComboBox from theme
-        option.rect.setHeight(self.theme.get_constant("combo_height"))
 
-        # Handle disabled item (grayout)
+        # Italic for disabled items
         if not (index.flags() & Qt.ItemFlag.ItemIsEnabled):
-            option.palette.setBrush(
-                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text_disabled")))
-            )
             option.font.setItalic(True)
-            # Disabled items should not have hover/selected background
-            option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
-        # Handle selected/hover colors for enabled items
-        elif option.state & QStyle.StateFlag.State_Selected:
-            option.palette.setBrush(
-                QPalette.ColorRole.Text,
-                QBrush(QColor(self.theme.get_color("selected_text"))),
-            )
-            option.palette.setBrush(
-                QPalette.ColorRole.Highlight,
-                QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
-            )
-        elif option.state & QStyle.StateFlag.State_MouseOver:
-            option.palette.setBrush(
-                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
-            )
-            option.palette.setBrush(
-                QPalette.ColorRole.Highlight,
-                QBrush(
-                    QColor(self.theme.get_color("table_hover_bg"))
-                ),  # Use same hover color as file table
-            )
-        else:
-            # Normal state
-            option.palette.setBrush(
-                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("text")))
-            )
-            option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
+
+    def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
+        """Return proper size hint for dropdown items to prevent overlap.
+
+        This ensures each item has sufficient height in the dropdown menu.
+        """
+        # Get the default size hint
+        size = super().sizeHint(option, index)
+
+        # Set consistent height from theme (using combo_item_height for dropdown items)
+        if self.theme:
+            item_height = self.theme.get_constant("combo_item_height")
+            size.setHeight(item_height)
+
+        return size
 
 
 class FileTableHoverDelegate(QStyledItemDelegate):
