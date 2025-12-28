@@ -42,8 +42,8 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.ui.behaviors.metadata_cache_behavior import MetadataCacheBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
-from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
 from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
@@ -133,7 +133,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
 
 
 class MetadataTreeView(
-    MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView
+    MetadataEditMixin, MetadataContextMenuMixin, QTreeView
 ):
     """Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -223,6 +223,9 @@ class MetadataTreeView(
 
         # Scroll position behavior (replaces MetadataScrollMixin)
         self._scroll_behavior = MetadataScrollBehavior(self)
+
+        # Cache interaction behavior (replaces MetadataCacheMixin)
+        self._cache_behavior = MetadataCacheBehavior(self)
 
         # Unified placeholder helper (replaces old QLabel/QPixmap approach)
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -521,48 +524,37 @@ class MetadataTreeView(
         """Get current selection via parent traversal. Delegates to selection handler."""
         return self._selection_handler.get_current_selection()
 
+    # =====================================
+    # Cache Interaction Methods (delegate to behavior)
+    # =====================================
+
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """Update the metadata value in the cache to persist changes.
+        Delegates to cache behavior.
         """
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            return
+        self._cache_behavior.update_metadata_in_cache(key_path, new_value)
 
-        file_item = selected_files[0]
-        cache_helper = self._get_cache_helper()
-        if cache_helper:
-            # Try to set metadata value - will fail if metadata not in cache
-            if not cache_helper.set_metadata_value(file_item, key_path, new_value):
-                # Failed to set metadata - show error and abort
-                logger.error(
-                    "[MetadataTree] Cannot edit %s for %s - metadata not loaded",
-                    key_path,
-                    file_item.filename,
-                )
-                from oncutf.core.pyqt_imports import QMessageBox
+    def _update_file_icon_status(self) -> None:
+        """Update the file icon in the file table to reflect modified status.
+        Delegates to cache behavior.
+        """
+        self._cache_behavior.update_file_icon_status()
 
-                parent_window = self._get_parent_with_file_table()
-                if parent_window:
-                    QMessageBox.warning(
-                        parent_window,
-                        "Metadata Not Loaded",
-                        f"Cannot edit metadata for {file_item.filename}.\n\n"
-                        "Please load metadata first:\n"
-                        "• Right-click → Read Fast Metadata, or\n"
-                        "• Right-click → Read Extended Metadata",
-                    )
-                return
+    def _try_lazy_metadata_loading(
+        self, file_item: Any, context: str = ""
+    ) -> dict[str, Any] | None:
+        """Try to load metadata using simple fallback loading.
+        Delegates to cache behavior.
 
-            # Mark the entry as modified
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-            if cache_entry:
-                cache_entry.modified = True
+        Args:
+            file_item: FileItem to load metadata for
+            context: Context string for logging
 
-            # Mark file item as modified
-            file_item.metadata_status = "modified"
+        Returns:
+            dict | None: Metadata if available, None if not cached
 
-        # Trigger UI update
-        self._update_file_icon_status()
+        """
+        return self._cache_behavior.try_lazy_metadata_loading(file_item, context)
 
     def _remove_metadata_from_cache(self, metadata: dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
