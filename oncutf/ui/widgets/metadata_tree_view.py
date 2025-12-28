@@ -42,10 +42,10 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
 from oncutf.ui.mixins.metadata_cache_mixin import MetadataCacheMixin
 from oncutf.ui.mixins.metadata_context_menu_mixin import MetadataContextMenuMixin
 from oncutf.ui.mixins.metadata_edit_mixin import MetadataEditMixin
-from oncutf.ui.mixins.metadata_scroll_mixin import MetadataScrollMixin
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
@@ -133,7 +133,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
 
 
 class MetadataTreeView(
-    MetadataScrollMixin, MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView
+    MetadataCacheMixin, MetadataEditMixin, MetadataContextMenuMixin, QTreeView
 ):
     """Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
@@ -205,6 +205,7 @@ class MetadataTreeView(
 
         # Track if we're in placeholder mode
         self._is_placeholder_mode: bool = True
+        # (Note: also tracked in scroll behavior for scroll position management)
 
         # Toggle for metadata proxy usage (configurable for debugging)
         self._use_proxy = METADATA_TREE_USE_PROXY
@@ -220,14 +221,8 @@ class MetadataTreeView(
         self._current_tree_model: QStandardItemModel | None = None
         self._placeholder_model: QStandardItemModel | None = None
 
-        # Scroll position memory: {file_path: scroll_position}
-        self._scroll_positions: dict[str, int] = {}
-        self._current_file_path: str | None = None
-        self._current_display_data: dict[str, Any] = {}
-        self._pending_restore_timer_id: str | None = None
-
-        # Expanded items per file: {file_path: [expanded_item_paths]}
-        self._expanded_items_per_file: dict[str, list] = {}
+        # Scroll position behavior (replaces MetadataScrollMixin)
+        self._scroll_behavior = MetadataScrollBehavior(self)
 
         # Unified placeholder helper (replaces old QLabel/QPixmap approach)
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -414,9 +409,9 @@ class MetadataTreeView(
     def setModel(self, model: Any) -> None:
         """Override the setModel method to set minimum column widths after the model is set.
         """
-        # Cancel any pending restore operation
-        if self._pending_restore_timer_id is not None:
-            self._pending_restore_timer_id = None
+        # Cancel any pending restore operation (delegated to scroll behavior)
+        if self._scroll_behavior._pending_restore_timer_id is not None:
+            self._scroll_behavior._pending_restore_timer_id = None
 
         # First call the parent implementation
         super().setModel(model)
@@ -425,22 +420,32 @@ class MetadataTreeView(
         if model and self.header():
             is_placeholder = self._view_config.detect_placeholder_mode(model)
             self._is_placeholder_mode = is_placeholder
+            self._scroll_behavior.set_placeholder_mode(is_placeholder)
 
             if is_placeholder:
                 self._view_config.configure_placeholder_mode(model)
-                self._current_file_path = None  # No file selected
+                self._scroll_behavior._current_file_path = None  # No file selected
             else:
                 self._view_config.configure_normal_mode()
 
                 # For non-placeholder mode, immediately restore scroll position
                 # This prevents the "jump to 0 then scroll to final position" effect
-                if self._current_file_path and self._current_file_path in self._scroll_positions:
+                if (
+                    self._scroll_behavior._current_file_path
+                    and self._scroll_behavior._current_file_path
+                    in self._scroll_behavior._scroll_positions
+                ):
                     # Get the saved position
-                    saved_position = self._scroll_positions[self._current_file_path]
+                    saved_position = self._scroll_behavior._scroll_positions[
+                        self._scroll_behavior._current_file_path
+                    ]
 
                     # Schedule scroll position restoration
                     schedule_scroll_adjust(
-                        lambda: self._apply_scroll_position_immediately(saved_position), 0
+                        lambda: self._scroll_behavior._apply_scroll_position_immediately(
+                            saved_position
+                        ),
+                        0,
                     )
 
             # Update header visibility after mode configuration
@@ -485,13 +490,20 @@ class MetadataTreeView(
         self._view_config._force_style_update()
 
     # =====================================
-    # Scroll Position Memory
+    # Scroll Position Memory (delegated to MetadataScrollBehavior)
     # =====================================
-    # Helper methods for scroll position and file state (see mixin):
-    # set_current_file_path, _save_current_file_state,
-    # _load_file_state, _save_current_scroll_position,
-    # _restore_scroll_position_for_current_file, _smooth_scroll_to_position,
-    # clear_scroll_memory, restore_scroll_after_expand
+
+    def set_current_file_path(self, file_path: str) -> None:
+        """Set the current file path and manage scroll position restoration."""
+        self._scroll_behavior.set_current_file_path(file_path)
+
+    def clear_scroll_memory(self) -> None:
+        """Clear all saved scroll positions (useful when changing folders)."""
+        self._scroll_behavior.clear_scroll_memory()
+
+    def restore_scroll_after_expand(self) -> None:
+        """Trigger scroll position restore after expandAll() has completed."""
+        self._scroll_behavior.restore_scroll_after_expand()
 
     # =====================================
     # Context Menu & Actions

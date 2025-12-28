@@ -1258,9 +1258,9 @@ class FileTableView(QTableView):
             # Ensure we always select from lower to higher row number
             min_row = min(start_row, end_row)
             max_row = max(start_row, end_row)
-            
+
             from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
-            
+
             top_left = model.index(min_row, 0)
             bottom_right = model.index(max_row, model.columnCount() - 1)
             selection = QItemSelection(top_left, bottom_right)
