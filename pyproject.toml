@@ -184,8 +184,8 @@ module = [
     "oncutf.main",
     "oncutf.__main__",
     "oncutf.core.signal_coordinator",
-    "oncutf.core.utility_manager",
-    "oncutf.core.dialog_manager",
+    "oncutf.ui.services.utility_manager",
+    "oncutf.ui.services.dialog_manager",
     "oncutf.core.event_handler_manager",
     "oncutf.core.file_load_manager",
     "oncutf.core.modifier_handler"
