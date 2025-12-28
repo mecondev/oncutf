@@ -22,6 +22,7 @@ Available Behaviors:
 - DragDropBehavior: Drag-and-drop operations with visual feedback
 - ColumnManagementBehavior: Column width/visibility management with delayed save
 - MetadataScrollBehavior: Scroll position memory per file with expand/collapse state
+- MetadataCacheBehavior: Metadata cache interaction with lazy loading and icon updates
 
 Usage Example:
 --------------
@@ -133,6 +134,10 @@ from oncutf.ui.behaviors.column_management_behavior import (
     ColumnManagementBehavior,
 )
 from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior, DraggableWidget
+from oncutf.ui.behaviors.metadata_cache_behavior import (
+    CacheableWidget,
+    MetadataCacheBehavior,
+)
 from oncutf.ui.behaviors.metadata_scroll_behavior import (
     MetadataScrollBehavior,
     ScrollableTreeWidget,
@@ -145,9 +150,11 @@ __all__ = [
     "DraggableWidget",
     "ColumnManageableWidget",
     "ScrollableTreeWidget",
+    "CacheableWidget",
     # Concrete behaviors
     "SelectionBehavior",
     "DragDropBehavior",
     "ColumnManagementBehavior",
     "MetadataScrollBehavior",
+    "MetadataCacheBehavior",
 ]
