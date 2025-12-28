@@ -83,7 +83,7 @@ class ShortcutManager:
 
         try:
             # Get the metadata command manager
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 
@@ -125,7 +125,7 @@ class ShortcutManager:
 
         try:
             # Get the metadata command manager
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 
@@ -362,7 +362,7 @@ class ShortcutManager:
         # Get command manager status
         command_status = {}
         try:
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             command_status = {

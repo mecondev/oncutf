@@ -83,13 +83,13 @@ class RenameModuleWidget(QWidget):
 
         # Modules that are post-processing only (not selectable in rename modules)
         # NameTransformModule is used in post_transform area, not as a rename module
-        POST_PROCESSING_MODULES = {"Name Transform"}
+        post_processing_modules = {"Name Transform"}
 
         module_instances: dict[str, type] = {}
 
         for descriptor in cls._orchestrator.get_available_modules():
             # Skip post-processing modules (they're not selectable rename modules)
-            if descriptor.display_name in POST_PROCESSING_MODULES:
+            if descriptor.display_name in post_processing_modules:
                 continue
 
             # Special cases: UI widgets that wrap logic modules

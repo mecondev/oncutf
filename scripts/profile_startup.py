@@ -51,7 +51,7 @@ def measure_import_times() -> dict[str, float]:
         "oncutf.core.application_context",
         "oncutf.core.application_service",
         "oncutf.core.unified_rename_engine",
-        "oncutf.core.unified_metadata_manager",
+        "oncutf.core.metadata.unified_manager",
         "oncutf.ui",
         "oncutf.ui.main_window",
         "oncutf.services",

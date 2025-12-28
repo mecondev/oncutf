@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from oncutf.core.metadata_staging_manager import MetadataStagingManager
+from oncutf.core.metadata import MetadataStagingManager
 
 
 class TestMetadataStagingManager:

@@ -348,8 +348,8 @@ class MetadataEditMixin:
         if accepted and new_value != str(current_value):
             # Use command system for undo/redo support
             try:
-                from oncutf.core.metadata_command_manager import get_metadata_command_manager
-                from oncutf.core.metadata_commands import EditMetadataFieldCommand
+                from oncutf.core.metadata import get_metadata_command_manager
+                from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
                 command_manager = get_metadata_command_manager()
                 if command_manager:
@@ -411,7 +411,7 @@ class MetadataEditMixin:
             files_to_modify: List of file items to modify
 
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -493,8 +493,8 @@ class MetadataEditMixin:
 
             # Use command system for undo/redo support
             try:
-                from oncutf.core.metadata_command_manager import get_metadata_command_manager
-                from oncutf.core.metadata_commands import EditMetadataFieldCommand
+                from oncutf.core.metadata import get_metadata_command_manager
+                from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
                 command_manager = get_metadata_command_manager()
                 metadata_cache = self._get_metadata_cache()
@@ -632,7 +632,7 @@ class MetadataEditMixin:
             _current_value: Current value (unused in fallback)
 
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -689,7 +689,7 @@ class MetadataEditMixin:
                 self._update_tree_item_value(key_path, str(original_value))
 
                 # Remove from staging
-                from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+                from oncutf.core.metadata import get_metadata_staging_manager
 
                 staging_manager = get_metadata_staging_manager()
                 if (
@@ -727,7 +727,7 @@ class MetadataEditMixin:
             original_value: Original value to restore
 
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -846,7 +846,7 @@ class MetadataEditMixin:
     def _undo_metadata_operation(self) -> None:
         """Undo the last metadata operation from context menu."""
         try:
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 
@@ -875,7 +875,7 @@ class MetadataEditMixin:
     def _redo_metadata_operation(self) -> None:
         """Redo the last undone metadata operation from context menu."""
         try:
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 

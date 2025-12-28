@@ -538,7 +538,7 @@ class ApplicationService:
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
         """Confirm large folder via FileValidationManager and DialogManager."""
-        from oncutf.core.file_validation_manager import OperationType
+        from oncutf.core.file import OperationType
 
         # Use FileValidationManager for smart validation
         validation_result = self.main_window.file_validation_manager.validate_operation_batch(
@@ -555,7 +555,7 @@ class ApplicationService:
 
     def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
         """Check large files via FileValidationManager and DialogManager."""
-        from oncutf.core.file_validation_manager import OperationType
+        from oncutf.core.file import OperationType
 
         # Convert FileItems to paths for validation
         file_paths = [f.full_path for f in files if hasattr(f, "full_path")]
@@ -600,7 +600,7 @@ class ApplicationService:
 
     def confirm_large_files(self, files: list[FileItem]) -> bool:
         """Confirm large files via FileValidationManager and DialogManager."""
-        from oncutf.core.file_validation_manager import OperationType
+        from oncutf.core.file import OperationType
 
         if not files:
             return True
@@ -635,7 +635,7 @@ class ApplicationService:
 
     def confirm_operation_for_user(self, files: list[str], operation_type: str) -> dict[str, Any]:
         """Validate operation for user via FileValidationManager."""
-        from oncutf.core.file_validation_manager import OperationType
+        from oncutf.core.file import OperationType
 
         # Map string operation types to enum
         operation_map = {

@@ -51,7 +51,7 @@ class ContextMenuHandlers:
         self.hash_ops = HashOperationsManager(parent_window)
 
         # Delegate metadata operations to specialized manager
-        from oncutf.core.metadata_operations_manager import MetadataOperationsManager
+        from oncutf.core.metadata import MetadataOperationsManager
 
         self.metadata_ops = MetadataOperationsManager(parent_window)
 
@@ -407,7 +407,7 @@ class ContextMenuHandlers:
 
         # Enable/disable undo/redo based on command manager state
         try:
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             action_undo.setEnabled(command_manager.can_undo())

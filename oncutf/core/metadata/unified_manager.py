@@ -138,7 +138,7 @@ class UnifiedMetadataManager(QObject):
     def structured(self):
         """Lazy-initialized structured metadata manager."""
         if self._structured_manager is None:
-            from oncutf.core.structured_metadata_manager import StructuredMetadataManager
+            from oncutf.core.metadata.structured_manager import StructuredMetadataManager
 
             self._structured_manager = StructuredMetadataManager()
         return self._structured_manager
@@ -147,7 +147,7 @@ class UnifiedMetadataManager(QObject):
     def parallel_loader(self):
         """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
-            from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
+            from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
 
             self._parallel_loader = ParallelMetadataLoader()
         return self._parallel_loader
@@ -716,7 +716,7 @@ class UnifiedMetadataManager(QObject):
         """Record save command for undo/redo."""
         try:
             from oncutf.core.metadata.command_manager import get_metadata_command_manager
-            from oncutf.core.metadata_commands import SaveMetadataCommand
+            from oncutf.core.metadata.commands import SaveMetadataCommand
 
             command_manager = get_metadata_command_manager()
             if command_manager:

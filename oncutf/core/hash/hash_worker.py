@@ -223,7 +223,7 @@ class HashWorker(QThread):
             # Initialize batch manager if enabled
             if self._enable_batching:
                 try:
-                    from oncutf.core.batch_operations_manager import get_batch_manager
+                    from oncutf.core.batch import get_batch_manager
 
                     self._batch_manager = get_batch_manager(self.main_window)
                     logger.debug("[HashWorker] Batch operations manager initialized")

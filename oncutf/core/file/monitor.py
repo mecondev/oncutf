@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 from oncutf.core.pyqt_imports import QFileSystemWatcher, QObject, QTimer, pyqtSignal
 
 if TYPE_CHECKING:
-    from oncutf.core.file_store import FileStore
+    from oncutf.core.file.store import FileStore
 
 logger = logging.getLogger(__name__)
 

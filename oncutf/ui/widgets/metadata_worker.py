@@ -19,7 +19,7 @@ import os
 import threading
 import time
 
-from oncutf.core.batch_operations_manager import BatchOperationsManager
+from oncutf.core.batch import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup

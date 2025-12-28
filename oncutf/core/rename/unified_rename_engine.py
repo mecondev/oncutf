@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
 from oncutf.config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
-from oncutf.core.batch_processor import BatchProcessorFactory
+from oncutf.core.batch.processor import BatchProcessorFactory
 from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance

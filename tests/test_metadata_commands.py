@@ -19,8 +19,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from oncutf.core.metadata_command_manager import MetadataCommandManager
-from oncutf.core.metadata_commands import (
+from oncutf.core.metadata import MetadataCommandManager
+from oncutf.core.metadata.commands import (
     BatchMetadataCommand,
     EditMetadataFieldCommand,
     ResetMetadataFieldCommand,

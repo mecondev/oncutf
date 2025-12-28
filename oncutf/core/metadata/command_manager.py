@@ -20,7 +20,7 @@ from typing import Any, cast
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from oncutf.config import UNDO_REDO_SETTINGS
-from oncutf.core.metadata_commands import BatchMetadataCommand, MetadataCommand
+from oncutf.core.metadata.commands import BatchMetadataCommand, MetadataCommand
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

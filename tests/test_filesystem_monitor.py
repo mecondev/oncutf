@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from oncutf.core.filesystem_monitor import FilesystemMonitor
+from oncutf.core.file.monitor import FilesystemMonitor
 
 
 class TestFilesystemMonitor:

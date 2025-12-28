@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
-    from oncutf.core.structured_metadata_manager import StructuredMetadataManager
-    from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+    from oncutf.core.metadata import UnifiedMetadataManager
+    from oncutf.core.metadata.structured_manager import StructuredMetadataManager
     from oncutf.models.file_item import FileItem
 
 logger = logging.getLogger(__name__)

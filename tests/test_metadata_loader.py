@@ -170,7 +170,7 @@ class TestParallelLoaderProperty:
     def test_initializes_on_first_access(self) -> None:
         """Should initialize ParallelMetadataLoader on first access."""
         from oncutf.core.metadata.metadata_loader import MetadataLoader
-        from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
+        from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
 
         loader = MetadataLoader()
 

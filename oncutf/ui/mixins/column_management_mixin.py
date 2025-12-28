@@ -147,7 +147,7 @@ class ColumnManagementMixin:
                 visible_columns = self.model().get_visible_columns()
             else:
                 # Emergency fallback - load from service
-                from oncutf.core.unified_column_service import get_column_service
+                from oncutf.core.ui_managers import get_column_service
 
                 visible_columns = get_column_service().get_visible_columns()
                 logger.warning(
@@ -207,7 +207,7 @@ class ColumnManagementMixin:
 
     def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on its content type and configuration."""
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         service = get_column_service()
         column_config = service.get_column_config(column_key)
@@ -345,7 +345,7 @@ class ColumnManagementMixin:
         )
         try:
             # First, get the default width from UnifiedColumnService
-            from oncutf.core.unified_column_service import get_column_service
+            from oncutf.core.ui_managers import get_column_service
 
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
@@ -442,7 +442,7 @@ class ColumnManagementMixin:
         except Exception as e:
             logger.warning("[ColumnWidth] Failed to load column width for %s: %s", column_key, e)
             # Emergency fallback to UnifiedColumnService defaults
-            from oncutf.core.unified_column_service import get_column_service
+            from oncutf.core.ui_managers import get_column_service
 
             service = get_column_service()
             column_cfg = service.get_column_config(column_key)
@@ -632,7 +632,7 @@ class ColumnManagementMixin:
             return
 
         # Enforce minimum width immediately to prevent visual flickering
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         service = get_column_service()
         cfg = service.get_column_config(column_key)
@@ -743,7 +743,7 @@ class ColumnManagementMixin:
                         saved_visibility,
                     )
                     # Ensure we have all columns from config, not just saved ones
-                    from oncutf.core.unified_column_service import get_column_service
+                    from oncutf.core.ui_managers import get_column_service
 
                     service = get_column_service()
 
@@ -769,7 +769,7 @@ class ColumnManagementMixin:
                     saved_visibility,
                 )
                 # Ensure we have all columns from config, not just saved ones
-                from oncutf.core.unified_column_service import get_column_service
+                from oncutf.core.ui_managers import get_column_service
 
                 service = get_column_service()
 
@@ -787,7 +787,7 @@ class ColumnManagementMixin:
             logger.warning("[ColumnVisibility] Error loading config: %s", e)
 
         # Return default configuration
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         service = get_column_service()
 
@@ -887,7 +887,7 @@ class ColumnManagementMixin:
 
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
@@ -920,7 +920,7 @@ class ColumnManagementMixin:
         )
 
         # Verify we have all columns in visibility state
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         for key, cfg in get_column_service().get_all_columns().items():
             if key not in self._visible_columns:
@@ -948,7 +948,7 @@ class ColumnManagementMixin:
 
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         if column_key not in get_column_service().get_all_columns():
             logger.warning("Cannot add unknown column: %s", column_key)
@@ -1032,7 +1032,7 @@ class ColumnManagementMixin:
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
@@ -1148,7 +1148,7 @@ class ColumnManagementMixin:
         Restores all columns to config defaults with Interactive resize mode.
         """
         try:
-            from oncutf.core.unified_column_service import get_column_service
+            from oncutf.core.ui_managers import get_column_service
 
             visible_columns = []
             if hasattr(self.model(), "get_visible_columns"):
@@ -1204,7 +1204,7 @@ class ColumnManagementMixin:
 
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
-                from oncutf.core.unified_column_service import get_column_service
+                from oncutf.core.ui_managers import get_column_service
 
                 cfg = get_column_service().get_column_config(column_key)
 
@@ -1271,7 +1271,7 @@ class ColumnManagementMixin:
             suspicious_count = 0
             total_count = 0
 
-            from oncutf.core.unified_column_service import get_column_service
+            from oncutf.core.ui_managers import get_column_service
 
             for column_key, column_config in get_column_service().get_all_columns().items():
                 if getattr(column_config, "default_visible", False):

@@ -210,7 +210,7 @@ class TestSaveCancelIntegration:
         # We test this by checking the method signature directly
         import inspect
 
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         # Get the signature of save_all_modified_metadata
         sig = inspect.signature(UnifiedMetadataManager.save_all_modified_metadata)

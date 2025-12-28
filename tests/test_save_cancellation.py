@@ -14,7 +14,7 @@ class TestSaveCancellation:
 
     def test_save_cancelled_flag_initialization(self):
         """Test that _save_cancelled flag is initialized to False."""
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         assert hasattr(manager, "_save_cancelled")
@@ -22,7 +22,7 @@ class TestSaveCancellation:
 
     def test_request_save_cancel_sets_flag(self):
         """Test that request_save_cancel sets the cancellation flag."""
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         assert manager._save_cancelled is False
@@ -35,7 +35,7 @@ class TestSaveCancellation:
         from unittest.mock import MagicMock
 
         from oncutf.config import SAVE_OPERATION_SETTINGS
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         # Only test if cancellation is allowed
         if not SAVE_OPERATION_SETTINGS.get("ALLOW_CANCEL_NORMAL_SAVE", False):
@@ -57,7 +57,7 @@ class TestSaveCancellation:
 
     def test_no_cancel_callback_for_exit_saves(self):
         """Test that cancel callback is not provided for exit saves."""
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
 
@@ -71,7 +71,7 @@ class TestSaveCancellation:
         """Test that _show_save_results properly handles cancelled operations."""
         from unittest.mock import MagicMock, patch
 
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -97,7 +97,7 @@ class TestSaveCancellation:
         """Test that result messages distinguish between cancelled and failed operations."""
         from unittest.mock import MagicMock, patch
 
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -139,7 +139,7 @@ class TestSaveCancellation:
         """Test that cancellation flag is reset between save operations."""
         from unittest.mock import MagicMock
 
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
@@ -177,7 +177,7 @@ class TestSaveCancellation:
         """Test that cancellation during multi-file save stops processing remaining files."""
         from unittest.mock import MagicMock, patch
 
-        from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+        from oncutf.core.metadata import UnifiedMetadataManager
 
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()

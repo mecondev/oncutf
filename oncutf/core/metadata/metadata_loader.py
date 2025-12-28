@@ -29,7 +29,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-    from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
+    from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
     from oncutf.models.file_item import FileItem
     from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
@@ -99,7 +99,7 @@ class MetadataLoader:
     def parallel_loader(self) -> Any:
         """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
-            from oncutf.core.parallel_metadata_loader import ParallelMetadataLoader
+            from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
 
             self._parallel_loader = ParallelMetadataLoader()
             logger.debug(

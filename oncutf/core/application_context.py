@@ -19,7 +19,7 @@ from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.file_store import FileStore
+    from oncutf.core.file.store import FileStore
     from oncutf.core.selection.selection_store import SelectionStore
 
 logger = get_cached_logger(__name__)
@@ -81,7 +81,7 @@ class ApplicationContext(QObject):
         """
         if self._file_store is None:
             # Import here to avoid circular dependencies
-            from oncutf.core.file_store import FileStore
+            from oncutf.core.file.store import FileStore
 
             self._file_store = FileStore(parent=self)
             # Connect FileStore signals to ApplicationContext signals

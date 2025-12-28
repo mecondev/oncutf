@@ -154,7 +154,7 @@ class FileTreeView(QTreeView):
     def _setup_filesystem_monitor(self) -> None:
         """Setup comprehensive filesystem monitoring."""
         try:
-            from oncutf.core.filesystem_monitor import FilesystemMonitor
+            from oncutf.core.file.monitor import FilesystemMonitor
 
             # Get FileStore from parent window if available
             file_store = None

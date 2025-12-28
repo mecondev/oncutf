@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.core.metadata_commands import MetadataCommand
+from oncutf.core.metadata.commands import MetadataCommand
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.color_generator import ColorGenerator
 

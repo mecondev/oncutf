@@ -77,8 +77,8 @@ class InitializationOrchestrator:
         from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.database.database_manager import initialize_database
         from oncutf.core.drag.drag_manager import DragManager
-        from oncutf.core.file_operations_manager import FileOperationsManager
-        from oncutf.core.metadata_staging_manager import (
+        from oncutf.core.file import FileOperationsManager
+        from oncutf.core.metadata import (
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
@@ -121,8 +121,8 @@ class InitializationOrchestrator:
         - Icon maps and utilities
         - State tracking attributes
         """
+        from oncutf.core.metadata import get_unified_metadata_manager
         from oncutf.core.selection.selection_manager import SelectionManager
-        from oncutf.core.unified_metadata_manager import get_unified_metadata_manager
         from oncutf.models.file_table_model import FileTableModel
 
         # Thread attributes
@@ -176,8 +176,8 @@ class InitializationOrchestrator:
         from oncutf.controllers.metadata_controller import MetadataController
         from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.core.event_handler_manager import EventHandlerManager
-        from oncutf.core.file_load_manager import FileLoadManager
-        from oncutf.core.file_validation_manager import get_file_validation_manager
+        from oncutf.core.file import get_file_validation_manager
+        from oncutf.core.file.load_manager import FileLoadManager
         from oncutf.core.initialization.initialization_manager import InitializationManager
         from oncutf.core.rename.rename_manager import RenameManager
         from oncutf.core.ui_managers.column_manager import ColumnManager
@@ -301,7 +301,7 @@ class InitializationOrchestrator:
         # Initialize service layer and coordinators
         self.window.app_service = initialize_application_service(self.window)
 
-        from oncutf.core.batch_operations_manager import get_batch_manager
+        from oncutf.core.batch import get_batch_manager
 
         self.window.batch_manager = get_batch_manager(self.window)
 

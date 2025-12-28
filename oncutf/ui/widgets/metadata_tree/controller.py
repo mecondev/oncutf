@@ -30,7 +30,7 @@ from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.metadata_staging_manager import MetadataStagingManager
+    from oncutf.core.metadata import MetadataStagingManager
 
 logger = get_cached_logger(__name__)
 

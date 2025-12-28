@@ -66,8 +66,8 @@ except ImportError:
 
 # Command system integration
 try:
-    from oncutf.core.metadata_command_manager import get_metadata_command_manager
-    from oncutf.core.metadata_commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
+    from oncutf.core.metadata import get_metadata_command_manager
+    from oncutf.core.metadata.commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
 except ImportError:
     get_metadata_command_manager = None
     EditMetadataFieldCommand = None
@@ -75,7 +75,7 @@ except ImportError:
 
 # Unified metadata manager integration
 try:
-    from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+    from oncutf.core.metadata import UnifiedMetadataManager
 except ImportError:
     UnifiedMetadataManager = None
 
@@ -279,7 +279,7 @@ class MetadataTreeView(
     def _lazy_init_controller(self) -> None:
         """Lazy initialization of controller layer."""
         try:
-            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata import get_metadata_staging_manager
             from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
 
             staging_manager = get_metadata_staging_manager()
@@ -957,7 +957,7 @@ class MetadataTreeView(
                 return
 
             # Get staging manager for modified count
-            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata import get_metadata_staging_manager
 
             staging_manager = get_metadata_staging_manager()
 
@@ -1087,7 +1087,7 @@ class MetadataTreeView(
         self.clear_scroll_memory()
 
         # Clear all staged changes
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
         if staging_manager:

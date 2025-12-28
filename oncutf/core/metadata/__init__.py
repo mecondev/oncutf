@@ -15,11 +15,21 @@ This package contains all metadata-related functionality:
 - MetadataOperationsManager: Export, field editing, compatibility checks
 - MetadataStagingManager: Staged changes management (pending modifications)
 - UnifiedMetadataManager: Facade for all metadata operations
+- Commands: Command pattern implementations (MetadataCommand, EditMetadataFieldCommand, etc.)
 """
 
 from oncutf.core.metadata.command_manager import (
     MetadataCommandManager,
     get_metadata_command_manager,
+)
+
+# Command pattern classes
+from oncutf.core.metadata.commands import (
+    BatchMetadataCommand,
+    EditMetadataFieldCommand,
+    MetadataCommand,
+    ResetMetadataFieldCommand,
+    SaveMetadataCommand,
 )
 from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
@@ -31,6 +41,7 @@ from oncutf.core.metadata.operations_manager import MetadataOperationsManager
 from oncutf.core.metadata.staging_manager import (
     MetadataStagingManager,
     get_metadata_staging_manager,
+    set_metadata_staging_manager,
 )
 from oncutf.core.metadata.unified_manager import (
     UnifiedMetadataManager,
@@ -45,12 +56,19 @@ __all__ = [
     "MetadataShortcutHandler",
     "MetadataProgressHandler",
     "MetadataLoader",
-    # Managers (moved from core/ root)
+    # Managers
     "MetadataCommandManager",
     "get_metadata_command_manager",
     "MetadataOperationsManager",
     "MetadataStagingManager",
     "get_metadata_staging_manager",
+    "set_metadata_staging_manager",
     "UnifiedMetadataManager",
     "get_unified_metadata_manager",
+    # Command pattern
+    "MetadataCommand",
+    "EditMetadataFieldCommand",
+    "ResetMetadataFieldCommand",
+    "SaveMetadataCommand",
+    "BatchMetadataCommand",
 ]

@@ -514,8 +514,8 @@ class MetadataWriter(QObject):
     ) -> None:
         """Record save command for undo/redo."""
         try:
-            from oncutf.core.metadata_command_manager import get_metadata_command_manager
-            from oncutf.core.metadata_commands import SaveMetadataCommand
+            from oncutf.core.metadata import get_metadata_command_manager
+            from oncutf.core.metadata.commands import SaveMetadataCommand
 
             command_manager = get_metadata_command_manager()
             if command_manager:

@@ -33,7 +33,14 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.core.theme_manager import get_theme_manager
-from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
+
+# Mixins imported for backwards compatibility during migration
+# from oncutf.ui.mixins import ColumnManagementMixin, DragDropMixin, SelectionMixin
+from oncutf.ui.behaviors import (
+    ColumnManagementBehavior,
+    DragDropBehavior,
+    SelectionBehavior,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import (
     schedule_ui_update,
@@ -47,17 +54,23 @@ logger = get_cached_logger(__name__)
 SCROLLBAR_MARGIN = 40
 
 
-class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTableView):
+class FileTableView(QTableView):
     """Custom QTableView with Windows Explorer-like behavior.
 
     Features:
-    - Full-row selection with anchor handling (via SelectionMixin)
-    - Drag & drop support with custom MIME types (via DragDropMixin)
+    - Full-row selection with anchor handling (via SelectionBehavior)
+    - Drag & drop support with custom MIME types (via DragDropBehavior)
+    - Column width/visibility management (via ColumnManagementBehavior)
     - Fixed-width column management with delayed save (7 seconds)
     - Horizontal scrollbar appears when columns exceed viewport width
     - Hover highlighting and visual feedback
     - Unified placeholder management using PlaceholderHelper
     - Keyboard shortcuts for column management (Ctrl+T, Ctrl+Shift+T)
+
+    Architecture:
+    - Uses composition pattern with behavior classes (NEW)
+    - No longer inherits from mixins (MIGRATION COMPLETE)
+    - Behaviors: SelectionBehavior, DragDropBehavior, ColumnManagementBehavior
 
     Column Configuration:
     - Columns maintain their configured widths when adding/removing columns
@@ -132,7 +145,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
         # Custom drag state tracking (needed by existing drag implementation)
-        self._is_dragging = False
+        # Note: _is_dragging is now delegated to DragDropBehavior
         self._drag_data = None
         self._drag_feedback_timer = None
 
@@ -191,6 +204,11 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         self._tooltip_timer.timeout.connect(self._show_custom_tooltip)
         self._current_tooltip_index = QModelIndex()
         self.viewport().installEventFilter(self)
+
+        # Initialize behaviors (composition pattern)
+        self._selection_behavior = SelectionBehavior(self)
+        self._drag_drop_behavior = DragDropBehavior(self)
+        self._column_mgmt_behavior = ColumnManagementBehavior(self)
 
     def eventFilter(self, obj, event):
         """Event filter for custom tooltips on table cells"""
@@ -444,7 +462,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             return
 
         # Get visible columns list from column service
-        from oncutf.core.unified_column_service import get_column_service
+        from oncutf.core.ui_managers import get_column_service
 
         visible_columns_list = get_column_service().get_visible_columns()
         logger.info("[FileTableView] Visible columns list: %s", visible_columns_list)
@@ -764,7 +782,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
             self._drag_start_pos = None
 
             # If we were dragging, clean up
-            if self._is_dragging:
+            if self._drag_drop_behavior.is_dragging:
                 was_dragging = True
                 self._end_custom_drag()
 
@@ -804,12 +822,14 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
                 if start_index.isValid():
                     start_row = start_index.row()
                     if start_row in self._get_current_selection_safe():
+                        # Clear drag start position before starting drag
+                        self._drag_start_pos = None
                         # Start drag from selected item
                         self._start_custom_drag()
                         return
 
         # Skip hover updates if dragging (using Qt built-in drag now)
-        if self._is_dragging:
+        if self._drag_drop_behavior.is_dragging:
             return
 
         # Update hover highlighting (only when not dragging)
@@ -846,7 +866,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         # Note: Escape for drag cancel is now handled globally in ui_manager.py
 
         # Skip key handling during drag (using Qt built-in drag now)
-        if self._is_dragging:
+        if self._drag_drop_behavior.is_dragging:
             self._update_drag_feedback()
             return
 
@@ -865,7 +885,7 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
     def keyReleaseEvent(self, event) -> None:
         """Handle key release events, including modifier changes during drag."""
         # Skip key handling during drag (using Qt built-in drag now)
-        if self._is_dragging:
+        if self._drag_drop_behavior.is_dragging:
             self._update_drag_feedback()
             return
 
@@ -1099,6 +1119,208 @@ class FileTableView(SelectionMixin, DragDropMixin, ColumnManagementMixin, QTable
         if hasattr(self, "viewport"):
             self.viewport().update()  # type: ignore[union-attr]
         QApplication.processEvents()
+
+    # =====================================
+    # Behavior Delegation Methods
+    # =====================================
+
+    # Column Management Behavior delegation
+    def _configure_columns(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.configure_columns()
+
+    def _ensure_all_columns_proper_width(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.ensure_all_columns_proper_width()
+
+    def _reset_columns_to_default(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.reset_column_widths_to_defaults()
+
+    def _check_and_fix_column_widths(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.check_and_fix_column_widths()
+
+    def _auto_fit_columns_to_content(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.auto_fit_columns_to_content()
+
+    def add_column(self, column_key: str) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.add_column(column_key)
+
+    def remove_column(self, column_key: str) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.remove_column(column_key)
+
+    def _load_column_visibility_config(self) -> dict:
+        """Delegate to ColumnManagementBehavior (legacy compatibility)."""
+        # This is called during __init__ before behaviors exist
+        # Return empty dict and let behavior handle it after initialization
+        return {}
+
+    def _update_header_visibility(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        if hasattr(self, "_column_mgmt_behavior"):
+            self._column_mgmt_behavior._update_header_visibility()
+
+    def refresh_columns_after_model_change(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        self._column_mgmt_behavior.refresh_columns_after_model_change()
+
+    def _force_save_column_changes(self) -> None:
+        """Delegate to ColumnManagementBehavior."""
+        if hasattr(self, "_column_mgmt_behavior"):
+            self._column_mgmt_behavior.force_save_column_changes()
+
+    # Drag & Drop Behavior delegation
+    def _start_custom_drag(self) -> None:
+        """Delegate to DragDropBehavior."""
+        self._drag_drop_behavior.start_drag()
+
+    def _end_custom_drag(self) -> None:
+        """Delegate to DragDropBehavior."""
+        self._drag_drop_behavior.end_drag()
+
+    def _update_drag_feedback(self) -> None:
+        """Delegate to DragDropBehavior."""
+        self._drag_drop_behavior._update_drag_feedback()
+
+    def dragEnterEvent(self, event) -> None:
+        """Delegate to DragDropBehavior."""
+        if not self._drag_drop_behavior.handle_drag_enter(event):
+            super().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event) -> None:
+        """Delegate to DragDropBehavior."""
+        if not self._drag_drop_behavior.handle_drag_move(event):
+            super().dragMoveEvent(event)
+
+    def dropEvent(self, event) -> None:
+        """Delegate to DragDropBehavior."""
+        result = self._drag_drop_behavior.handle_drop(event)
+        if result:
+            dropped_paths, modifiers = result
+            self.files_dropped.emit(dropped_paths, modifiers)
+
+    # Selection Behavior delegation
+    def _get_current_selection(self) -> set[int]:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_current_selection()
+
+    def _get_current_selection_safe(self) -> set[int]:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_current_selection_safe()
+
+    def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.set_anchor_row(row)
+
+    def _get_anchor_row(self) -> int | None:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_anchor_row()
+
+    def _sync_selection_safely(self) -> None:
+        """Sync selection between Qt model and SelectionStore."""
+        # Get current Qt selection
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return
+
+        selected_indexes = selection_model.selectedRows()
+        selected_rows = {idx.row() for idx in selected_indexes}
+
+        # Update store
+        if self._selection_behavior.selection_store:
+            self._selection_behavior.selection_store.set_selected_rows(selected_rows, emit_signal=True)
+
+    def _update_selection_store(self, selected_rows: set[int], emit_signal: bool = True) -> None:
+        """Update selection store."""
+        self._selection_behavior.update_selection_store(selected_rows, emit_signal=emit_signal)
+
+    def select_rows_range(self, start_row: int, end_row: int) -> None:
+        """Select a range of rows efficiently using batch selection.
+
+        Args:
+            start_row: Starting row index
+            end_row: Ending row index (inclusive)
+
+        """
+        self.blockSignals(True)
+        selection_model = self.selectionModel()
+        model = self.model()
+
+        if selection_model is None or model is None:
+            self.blockSignals(False)
+            return
+
+        if hasattr(model, "index") and hasattr(model, "columnCount"):
+            # Ensure we always select from lower to higher row number
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            
+            from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
+            
+            top_left = model.index(min_row, 0)
+            bottom_right = model.index(max_row, model.columnCount() - 1)
+            selection = QItemSelection(top_left, bottom_right)
+            selection_model.select(
+                selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
+            )
+
+        self.blockSignals(False)
+
+        if hasattr(self, "viewport"):
+            self.viewport().update()
+
+        if model is not None:
+            # Ensure we always create range from lower to higher
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            selected_rows = set(range(min_row, max_row + 1))
+            self._update_selection_store(selected_rows, emit_signal=True)
+
+    def selectionChanged(self, selected, deselected) -> None:
+        """Override Qt's selectionChanged to update SelectionStore.
+
+        This ensures our application state stays in sync with Qt's selection model.
+
+        Args:
+            selected: QItemSelection of newly selected items
+            deselected: QItemSelection of newly deselected items
+
+        """
+        # Protection against infinite loops
+        if self._processing_selection_change:
+            return
+
+        self._processing_selection_change = True
+        try:
+            super().selectionChanged(selected, deselected)
+
+            from oncutf.utils.ui.selection_provider import get_selected_row_set
+
+            selection_model = self.selectionModel()
+            if selection_model is not None:
+                selected_rows = get_selected_row_set(selection_model)
+
+                # Don't update during drag operations
+                if not selected_rows and self._drag_drop_behavior.is_dragging:
+                    return
+
+                # Update SelectionStore with emit_signal=True to trigger preview update
+                self._update_selection_store(selected_rows, emit_signal=True)
+
+            if hasattr(self, "context_focused_row") and self.context_focused_row is not None:
+                self.context_focused_row = None
+
+            if hasattr(self, "viewport"):
+                self.viewport().update()
+        finally:
+            self._processing_selection_change = False
+
+    # Note: _get_selection_store() already defined earlier in file (line 297)
+    # No delegation needed - uses existing implementation
 
     # =====================================
     # Column Management Methods

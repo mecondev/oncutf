@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 # Unified metadata manager integration
 try:
-    from oncutf.core.unified_metadata_manager import UnifiedMetadataManager
+    from oncutf.core.metadata import UnifiedMetadataManager
 except ImportError:
     UnifiedMetadataManager = None
 

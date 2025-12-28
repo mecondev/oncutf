@@ -215,7 +215,7 @@ class MetadataTreeSelectionHandler:
 
         """
         # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 

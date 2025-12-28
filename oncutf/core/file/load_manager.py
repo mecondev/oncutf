@@ -142,7 +142,7 @@ class FileLoadManager:
             self._update_ui_with_files(all_file_paths, clear=clear)
 
     def load_single_item_from_drop(
-        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
     ) -> None:
         """Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
@@ -189,7 +189,7 @@ class FileLoadManager:
                 self._update_ui_with_files([path], clear=not merge_mode)
 
     def load_files_from_dropped_items(
-        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
     ) -> None:
         """Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.

@@ -271,7 +271,7 @@ class MainWindow(QMainWindow):
 
             if success:
                 # Add to command manager for undo/redo
-                from oncutf.core.metadata_command_manager import get_metadata_command_manager
+                from oncutf.core.metadata import get_metadata_command_manager
 
                 cmd_manager = get_metadata_command_manager()
                 cmd_manager._undo_stack.append(command)

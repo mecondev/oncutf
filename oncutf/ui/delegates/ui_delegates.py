@@ -79,7 +79,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
 
         if not is_enabled:
             # Disabled items: use alternate_row background, dimmed text
-            bg_color = QColor(self.theme.get_color("alternate_row"))
+            bg_color = QColor(self.theme.get_color("table_alternate_bg"))
             text_color = QColor(self.theme.get_color("text_disabled"))
         elif is_selected and is_hovered:
             # Selected + Hover: light blue background, dark text

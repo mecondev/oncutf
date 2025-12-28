@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
-    from oncutf.core.file_store import FileStore
+    from oncutf.core.file.store import FileStore
     from oncutf.core.preview_manager import PreviewManager
     from oncutf.core.rename.rename_manager import RenameManager
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine

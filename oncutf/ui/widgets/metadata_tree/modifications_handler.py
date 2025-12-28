@@ -40,7 +40,7 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -52,7 +52,7 @@ class MetadataTreeModificationsHandler:
     def clear_modifications(self) -> None:
         """Clear all modified metadata items for the current file.
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -73,7 +73,7 @@ class MetadataTreeModificationsHandler:
             file_path: Full path of the file to clear modifications for
 
         """
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -106,7 +106,7 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 
@@ -133,7 +133,7 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get staging manager
-        from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+        from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()
 

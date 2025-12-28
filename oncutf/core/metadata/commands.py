@@ -198,7 +198,7 @@ class EditMetadataFieldCommand(MetadataCommand):
                 return False
 
             # Stage the change using MetadataStagingManager
-            from oncutf.core.metadata_staging_manager import get_metadata_staging_manager
+            from oncutf.core.metadata import get_metadata_staging_manager
 
             staging_manager = get_metadata_staging_manager()
 
