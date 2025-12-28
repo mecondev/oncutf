@@ -493,8 +493,8 @@ class UIManager:
         self.parent_window.bottom_layout.setSpacing(0)
         self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)  # Add small top margin
 
-        content_layout = QHBoxLayout()
-        content_layout.setSpacing(5)
+        # Create horizontal splitter for lower section (rename modules vs preview)
+        self.parent_window.lower_section_splitter = QSplitter(Qt.Horizontal)  # type: ignore
 
         # === Left side: Two vertical containers ===
         left_container = QWidget()
@@ -516,6 +516,9 @@ class UIManager:
             parent=left_container
         )
         left_layout.addWidget(self.parent_window.final_transform_container)
+
+        # Set minimum width for left container
+        left_container.setMinimumWidth(LOWER_SECTION_MIN_SIZE)
 
         # === Right: Preview tables view ===
         self.parent_window.preview_tables_view = PreviewTablesView(parent=self.parent_window)
@@ -550,16 +553,27 @@ class UIManager:
         controls_layout.addStretch()
         controls_layout.addWidget(self.parent_window.rename_button)
 
-        # Create preview frame
+        # Create preview frame (right side of splitter)
         self.parent_window.preview_frame = QFrame()
         preview_layout = QVBoxLayout(self.parent_window.preview_frame)
         preview_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         preview_layout.addWidget(self.parent_window.preview_tables_view)
         preview_layout.addLayout(controls_layout)
 
-        content_layout.addWidget(left_container, stretch=1)
-        content_layout.addWidget(self.parent_window.preview_frame, stretch=3)
-        self.parent_window.bottom_layout.addLayout(content_layout)
+        # Set minimum width for preview frame
+        self.parent_window.preview_frame.setMinimumWidth(LOWER_SECTION_MIN_SIZE)
+
+        # Add widgets to splitter
+        self.parent_window.lower_section_splitter.addWidget(left_container)
+        self.parent_window.lower_section_splitter.addWidget(self.parent_window.preview_frame)
+
+        # Set initial sizes (50/50 split by default)
+        # Will be adjusted based on window width
+        self.parent_window.lower_section_splitter.setStretchFactor(0, 1)
+        self.parent_window.lower_section_splitter.setStretchFactor(1, 1)
+
+        # Add splitter to bottom layout
+        self.parent_window.bottom_layout.addWidget(self.parent_window.lower_section_splitter)
 
     def setup_footer(self) -> None:
         """Setup footer with version label."""
@@ -622,6 +636,9 @@ class UIManager:
         )
         self.parent_window.vertical_splitter.splitterMoved.connect(
             self.parent_window.splitter_manager.on_vertical_splitter_moved
+        )
+        self.parent_window.lower_section_splitter.splitterMoved.connect(
+            self.parent_window.splitter_manager.on_lower_section_splitter_moved
         )
         # Connect callbacks for both tree view and file table view
         self.parent_window.horizontal_splitter.splitterMoved.connect(
