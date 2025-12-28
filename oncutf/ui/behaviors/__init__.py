@@ -24,6 +24,7 @@ Available Behaviors:
 - MetadataScrollBehavior: Scroll position memory per file with expand/collapse state
 - MetadataCacheBehavior: Metadata cache interaction with lazy loading and icon updates
 - MetadataContextMenuBehavior: Context menu operations with column management
+- MetadataEditBehavior: Metadata editing with dialogs, undo/redo, and modification tracking
 
 Usage Example:
 --------------
@@ -143,6 +144,10 @@ from oncutf.ui.behaviors.metadata_context_menu_behavior import (
     ContextMenuWidget,
     MetadataContextMenuBehavior,
 )
+from oncutf.ui.behaviors.metadata_edit_behavior import (
+    EditableWidget,
+    MetadataEditBehavior,
+)
 from oncutf.ui.behaviors.metadata_scroll_behavior import (
     MetadataScrollBehavior,
     ScrollableTreeWidget,
@@ -157,6 +162,7 @@ __all__ = [
     "ScrollableTreeWidget",
     "CacheableWidget",
     "ContextMenuWidget",
+    "EditableWidget",
     # Concrete behaviors
     "SelectionBehavior",
     "DragDropBehavior",
@@ -164,4 +170,5 @@ __all__ = [
     "MetadataScrollBehavior",
     "MetadataCacheBehavior",
     "MetadataContextMenuBehavior",
+    "MetadataEditBehavior",
 ]
