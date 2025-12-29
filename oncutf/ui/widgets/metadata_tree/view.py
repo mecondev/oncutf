@@ -501,6 +501,19 @@ class MetadataTreeView(QTreeView):
     # Scroll Position Memory (delegated to MetadataScrollBehavior)
     # =====================================
 
+    @property
+    def _current_file_path(self) -> str | None:
+        """Get current file path from scroll behavior."""
+        return self._scroll_behavior._current_file_path
+
+    @_current_file_path.setter
+    def _current_file_path(self, value: str | None) -> None:
+        """Set current file path via scroll behavior."""
+        if value:
+            self._scroll_behavior.set_current_file_path(value)
+        else:
+            self._scroll_behavior._current_file_path = None
+
     def set_current_file_path(self, file_path: str) -> None:
         """Set the current file path and manage scroll position restoration."""
         self._scroll_behavior.set_current_file_path(file_path)
@@ -512,6 +525,22 @@ class MetadataTreeView(QTreeView):
     def restore_scroll_after_expand(self) -> None:
         """Trigger scroll position restore after expandAll() has completed."""
         self._scroll_behavior.restore_scroll_after_expand()
+
+    def _path_in_dict(self, path: str, path_dict: dict) -> bool:
+        """Check if path exists in dictionary (delegated to scroll behavior)."""
+        return self._scroll_behavior._path_in_dict(path, path_dict)
+
+    def _get_from_path_dict(self, path: str, path_dict: dict):
+        """Get value from path dictionary (delegated to scroll behavior)."""
+        return self._scroll_behavior._get_from_path_dict(path, path_dict)
+
+    def _set_in_path_dict(self, path: str, value, path_dict: dict) -> None:
+        """Set value in path dictionary (delegated to scroll behavior)."""
+        self._scroll_behavior._set_in_path_dict(path, value, path_dict)
+
+    def _remove_from_path_dict(self, path: str, path_dict: dict) -> bool:
+        """Remove path from dictionary (delegated to scroll behavior)."""
+        return self._scroll_behavior._remove_from_path_dict(path, path_dict)
 
     # =====================================
     # Context Menu & Actions
@@ -777,15 +806,71 @@ class MetadataTreeView(QTreeView):
         self._edit_behavior._fallback_edit_value(key_path, new_value, old_value, files_to_modify)
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
-        """Update tree item value display.
-        Placeholder method that can be mocked in tests.
+        """Update tree by refreshing the entire view with updated metadata.
 
         Args:
-            key_path: Metadata key path
+            key_path: Metadata key path (can be grouped like "File Info (12 fields)/Rotation")
             new_value: New value to display
 
         """
-        # Placeholder - actual tree updates happen via metadata reload
+        # Instead of trying to update individual items, refresh the whole tree
+        # This ensures consistent state and proper styling
+        logger.info(
+            "[MetadataTree] _update_tree_item_value called: key_path=%s, new_value=%s, current_file=%s",
+            key_path,
+            new_value,
+            self._current_file_path,
+        )
+
+        if not self._current_file_path:
+            logger.warning(
+                "[MetadataTree] No current file path, skipping tree refresh"
+            )
+            return
+
+        # Get current file's metadata from the persistent cache (preferred).
+        # Note: UnifiedMetadataManager facade does not expose a get_cache() API.
+        parent_window = self._get_parent_with_file_table()
+        cache_entry = None
+        if parent_window is not None and hasattr(parent_window, "metadata_cache"):
+            try:
+                cache_entry = parent_window.metadata_cache.get_entry(self._current_file_path)
+                logger.info(
+                    "[MetadataTree] Got cache entry: %s",
+                    "has data" if (cache_entry and hasattr(cache_entry, "data") and cache_entry.data) else "no data",
+                )
+            except Exception as e:
+                logger.warning(
+                    "[MetadataTree] Failed to read metadata_cache entry: %s",
+                    e,
+                )
+
+        # Fallback: reuse the last displayed metadata snapshot.
+        display_data = None
+        if cache_entry is not None and hasattr(cache_entry, "data") and cache_entry.data:
+            display_data = cache_entry.data
+            logger.info("[MetadataTree] Using cache_entry.data for refresh")
+        elif hasattr(self, "_current_display_data") and self._current_display_data:
+            display_data = dict(self._current_display_data)
+            logger.info("[MetadataTree] Using _current_display_data fallback for refresh")
+
+        if not display_data:
+            logger.warning(
+                "[MetadataTree] No metadata available for refresh: %s",
+                self._current_file_path,
+            )
+            return
+
+        # Refresh the tree with current metadata (service will apply staged changes).
+        logger.info("[MetadataTree] Calling display_metadata with context='after_edit'")
+        self.display_metadata(display_data, context="after_edit")
+
+        logger.debug(
+            "[MetadataTree] Refreshed tree after edit: %s = %s",
+            key_path,
+            new_value,
+            extra={"dev_only": True}
+        )
 
     def _remove_metadata_from_cache(self, metadata: dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
@@ -956,7 +1041,7 @@ class MetadataTreeView(QTreeView):
             return
 
         try:
-            # Render the metadata view
+            # Render the metadata view (service will apply staged changes)
             self._render_metadata_view(metadata, context=context)
 
             # Update information label
@@ -1059,9 +1144,15 @@ class MetadataTreeView(QTreeView):
                 self._lazy_init_controller()
 
             # Prepare minimal display state - service handles all the logic
+            # NOTE: Do NOT pass self.modified_items here. The service's _prepare_display_data
+            # will get modified_keys directly from the staging manager for the current file.
+            # Passing stale view-local modified_items causes "yellow everywhere" state leak.
             from oncutf.ui.widgets.metadata_tree.model import MetadataDisplayState
 
-            display_state = MetadataDisplayState(file_path=self._current_file_path)
+            display_state = MetadataDisplayState(
+                file_path=self._current_file_path,
+                modified_keys=set()  # Service will populate from staging manager
+            )
 
             # Pass __extended__ flag to display state for service to handle
             if metadata.get("__extended__"):

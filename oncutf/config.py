@@ -535,9 +535,9 @@ LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
 
 # Lower section splitter (rename modules vs preview)
 # Default: 50/50 split (equal space for both sides)
-# Minimum size before collapse: 150 pixels for both sides
 LOWER_SECTION_SPLIT_RATIO = [1, 1]  # Equal proportions (will be calculated based on window width)
-LOWER_SECTION_MIN_SIZE = 150  # Minimum pixels before panel collapses
+LOWER_SECTION_LEFT_MIN_SIZE = 300   # Minimum pixels for left panel (rename modules)
+LOWER_SECTION_RIGHT_MIN_SIZE = 500  # Minimum pixels for right panel (preview)
 
 # =====================================
 # STATUS BAR SETTINGS

@@ -116,8 +116,41 @@ class InitializationManager:
             if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                 self.main_window.update_preview_tables_from_pairs([])
 
-            # 3. Update table view (FileStore already updated)
-            self.main_window.file_table_view.prepare_table(files)
+            # 3. Apply companion file filtering (maintain state after refresh)
+            from oncutf.config import COMPANION_FILES_ENABLED, SHOW_COMPANION_FILES_IN_TABLE
+
+            filtered_files = files
+            if COMPANION_FILES_ENABLED and not SHOW_COMPANION_FILES_IN_TABLE:
+                try:
+                    from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+
+                    file_groups = CompanionFilesHelper.group_files_with_companions(
+                        [f.full_path if hasattr(f, 'full_path') else str(f) for f in files]
+                    )
+                    # Extract main files only
+                    companion_count = 0
+                    main_files = []
+                    for main_file, group_info in file_groups.items():
+                        # Find FileItem matching main_file
+                        for f in files:
+                            file_path = f.full_path if hasattr(f, 'full_path') else str(f)
+                            if file_path == main_file:
+                                main_files.append(f)
+                                break
+                        companion_count += len(group_info.get("companions", []))
+
+                    filtered_files = main_files
+                    if companion_count > 0:
+                        logger.info(
+                            "[MainWindow] Filtered out %d companion files after refresh. Showing %d main files.",
+                            companion_count,
+                            len(filtered_files),
+                        )
+                except Exception as e:
+                    logger.warning("[MainWindow] Error filtering companion files: %s", e)
+
+            # 4. Update table view (FileStore already updated)
+            self.main_window.file_table_view.prepare_table(filtered_files)
 
             # 4. Update placeholder visibility
             if files:

@@ -219,10 +219,12 @@ class MetadataTreeController:
             modified_font = QFont()
             modified_font.setBold(True)
             key_item.setFont(modified_font)
+            value_item.setFont(modified_font)
 
             # Yellow color from config
             modified_color = QColor(METADATA_ICON_COLORS["modified"])
             key_item.setForeground(modified_color)
+            value_item.setForeground(modified_color)
 
             # Tooltips
             key_item.setToolTip("Modified value")

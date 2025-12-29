@@ -60,6 +60,12 @@ class MetadataEditDialog(QDialog):
         # Set up dialog properties - simple modal dialog
         self.setModal(True)
 
+        # Set window title based on field type
+        if field_name == "Rotation":
+            self.setWindowTitle("Set Rotation")
+        else:
+            self.setWindowTitle(f"Edit {field_name}")
+
         # Adjust size based on mode and field type
         if self.is_multi_file:
             # Multi-file mode - taller for checkboxes
@@ -105,8 +111,13 @@ class MetadataEditDialog(QDialog):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(0)  # No default spacing - we'll control it manually
 
-        # Simple field label (e.g., "Title:", "Description:", etc.)
-        self.field_label = QLabel(f"{self.field_name}:")
+        # Field label - show filename for Rotation field, field name for others
+        if self.field_name == "Rotation":
+            # For rotation, always show the filename (single file context)
+            filename = self.selected_files[0].filename if self.selected_files else "file"
+            self.field_label = QLabel(filename)
+        else:
+            self.field_label = QLabel(f"{self.field_name}:")
         layout.addWidget(self.field_label)
 
         # Small space between label and checkboxes/input

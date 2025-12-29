@@ -110,19 +110,22 @@ class EditMetadataFieldCommand(MetadataCommand):
         new_value: Any,
         old_value: Any,
         metadata_tree_view: Any | None = None,
+        display_path: str | None = None,
     ):
         """Initialize edit metadata field command.
 
         Args:
             file_path: Path to the file
-            field_path: Path to the metadata field (e.g., "EXIF/Rotation")
+            field_path: Path to the metadata field for storage (e.g., "Rotation")
             new_value: New value to set
             old_value: Previous value (for undo)
             metadata_tree_view: Reference to the metadata tree view
+            display_path: Optional grouped path for tree display (e.g., "File Info (12 fields)/Rotation")
 
         """
         super().__init__(file_path)
         self.field_path = field_path
+        self.display_path = display_path or field_path  # Use field_path if no display_path given
         self.new_value = new_value
         self.old_value = old_value
         self.metadata_tree_view = metadata_tree_view
@@ -203,6 +206,7 @@ class EditMetadataFieldCommand(MetadataCommand):
             staging_manager = get_metadata_staging_manager()
 
             if staging_manager:
+                # Use field_path for staging (already normalized/clean)
                 staging_manager.stage_change(self.file_path, field_path, str(value))
                 logger.info(
                     "[EditMetadataFieldCommand] Staged change via command: %s = %s",
@@ -216,14 +220,18 @@ class EditMetadataFieldCommand(MetadataCommand):
                 # Fallback to old cache method
                 self.metadata_tree_view._update_metadata_in_cache(field_path, str(value))
 
-            # Update tree view display
-            self.metadata_tree_view._update_tree_item_value(field_path, str(value))
+            # Update tree view display using display_path (for grouped paths)
+            # CRITICAL: Set current file path before updating tree, otherwise refresh will fail
+            if hasattr(self.metadata_tree_view, "set_current_file_path"):
+                self.metadata_tree_view.set_current_file_path(self.file_path)
 
-            # Smart mark: checks if value differs from original
+            self.metadata_tree_view._update_tree_item_value(self.display_path, str(value))
+
+            # Smart mark: checks if value differs from original (use display_path for tree)
             if hasattr(self.metadata_tree_view, "smart_mark_modified"):
-                self.metadata_tree_view.smart_mark_modified(field_path, value)
+                self.metadata_tree_view.smart_mark_modified(self.display_path, value)
             elif hasattr(self.metadata_tree_view, "mark_as_modified"):
-                self.metadata_tree_view.mark_as_modified(field_path)  # Fallback
+                self.metadata_tree_view.mark_as_modified(self.display_path)  # Fallback
 
             # Update file icon status
             self.metadata_tree_view._update_file_icon_status()

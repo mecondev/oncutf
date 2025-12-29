@@ -234,17 +234,25 @@ class FileTreeView(QTreeView):
         """
         logger.debug("[FileTreeView] Directory changed: %s", dir_path, extra={"dev_only": True})
 
+        # TODO: Implement targeted refresh instead of full model reset
+        # Full refresh causes tree collapse which is disruptive during metadata saves
+        # For now, skip refresh - the FileStore already handles file updates
+        logger.debug(
+            "[FileTreeView] Skipping model refresh to preserve expanded state",
+            extra={"dev_only": True},
+        )
+
         # Refresh model if it supports refresh
-        model = self.model()
-        if model and hasattr(model, "refresh"):
-            try:
-                model.refresh()
-                logger.debug(
-                    "[FileTreeView] Model refreshed after directory change",
-                    extra={"dev_only": True},
-                )
-            except Exception as e:
-                logger.exception("[FileTreeView] Model refresh error: %s", e)
+        # model = self.model()
+        # if model and hasattr(model, "refresh"):
+        #     try:
+        #         model.refresh()
+        #         logger.debug(
+        #             "[FileTreeView] Model refreshed after directory change",
+        #             extra={"dev_only": True},
+        #         )
+        #     except Exception as e:
+        #         logger.exception("[FileTreeView] Model refresh error: %s", e)
 
     def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
         """Refresh tree when drives change.

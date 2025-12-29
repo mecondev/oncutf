@@ -104,6 +104,10 @@ class SplitterManager:
             extra={"dev_only": True},
         )
 
+        # Save splitter state immediately to preserve user's preference
+        if hasattr(self.parent_window, "window_config_manager"):
+            self.parent_window.window_config_manager.save_window_config()
+
         # Update any UI elements that need to respond to lower section width changes
         # (Currently no specific handling needed, but this is a hook for future enhancements)
 

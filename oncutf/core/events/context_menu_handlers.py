@@ -355,16 +355,37 @@ class ContextMenuHandlers:
             get_menu_icon("rotate-ccw"), "Set Rotation to 0", None
         )
         menu.addAction(action_set_rotation)
-        action_set_rotation.setEnabled(has_selection)
+
+        # Check if ANY selected file has rotation != 0
+        has_rotation_to_reset = False
+        if has_selection and hasattr(self.parent_window, "metadata_cache"):
+            for file_item in selected_files:
+                metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if metadata_entry and hasattr(metadata_entry, "data"):
+                    rotation = metadata_entry.data.get("rotation", "0")
+                    # Enable if rotation exists and is not "0" or 0
+                    if rotation and str(rotation) != "0":
+                        has_rotation_to_reset = True
+                        break
+
+        action_set_rotation.setEnabled(has_selection and has_rotation_to_reset)
 
         if has_selection:
             sel_count = len(selected_files)
-            rotation_tip = f"Reset rotation to 0 for {sel_count} selected file(s)"
-            if sel_count < total_files:
-                rotation_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-            TooltipHelper.setup_action_tooltip(
-                action_set_rotation, rotation_tip, TooltipType.INFO, menu
-            )
+            if has_rotation_to_reset:
+                rotation_tip = f"Reset rotation to 0 for {sel_count} selected file(s)"
+                if sel_count < total_files:
+                    rotation_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+                TooltipHelper.setup_action_tooltip(
+                    action_set_rotation, rotation_tip, TooltipType.INFO, menu
+                )
+            else:
+                TooltipHelper.setup_action_tooltip(
+                    action_set_rotation,
+                    "All selected files already have rotation = 0",
+                    TooltipType.INFO,
+                    menu,
+                )
         else:
             TooltipHelper.setup_action_tooltip(
                 action_set_rotation,

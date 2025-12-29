@@ -499,8 +499,8 @@ class UIManager:
         # === Left side: Two vertical containers ===
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(4)  # Back to original spacing
+        left_layout.setContentsMargins(0, 0, 4, 0)
+        left_layout.setSpacing(4)
 
         # Top container: Rename modules area (takes most space)
         self.parent_window.rename_modules_area = RenameModulesArea(
@@ -518,7 +518,7 @@ class UIManager:
         left_layout.addWidget(self.parent_window.final_transform_container)
 
         # Set minimum width for left container
-        left_container.setMinimumWidth(LOWER_SECTION_MIN_SIZE)
+        left_container.setMinimumWidth(LOWER_SECTION_LEFT_MIN_SIZE)
 
         # === Right: Preview tables view ===
         self.parent_window.preview_tables_view = PreviewTablesView(parent=self.parent_window)
@@ -556,21 +556,38 @@ class UIManager:
         # Create preview frame (right side of splitter)
         self.parent_window.preview_frame = QFrame()
         preview_layout = QVBoxLayout(self.parent_window.preview_frame)
-        preview_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        preview_layout.setContentsMargins(10, 0, 0, 0)  # Remove margins
         preview_layout.addWidget(self.parent_window.preview_tables_view)
         preview_layout.addLayout(controls_layout)
 
         # Set minimum width for preview frame
-        self.parent_window.preview_frame.setMinimumWidth(LOWER_SECTION_MIN_SIZE)
+        self.parent_window.preview_frame.setMinimumWidth(LOWER_SECTION_RIGHT_MIN_SIZE)
 
         # Add widgets to splitter
         self.parent_window.lower_section_splitter.addWidget(left_container)
         self.parent_window.lower_section_splitter.addWidget(self.parent_window.preview_frame)
 
-        # Set initial sizes (50/50 split by default)
-        # Will be adjusted based on window width
-        self.parent_window.lower_section_splitter.setStretchFactor(0, 1)
-        self.parent_window.lower_section_splitter.setStretchFactor(1, 1)
+        # Allow collapsible but respect minimum widths
+        # When collapsible is True, the splitter respects setMinimumWidth()
+        self.parent_window.lower_section_splitter.setCollapsible(0, True)
+        self.parent_window.lower_section_splitter.setCollapsible(1, True)
+
+        # Set initial sizes based on LOWER_SECTION_SPLIT_RATIO (50/50 split by default)
+        # This will be overridden by apply_loaded_config if saved state exists
+        total_ratio = sum(LOWER_SECTION_SPLIT_RATIO)
+        left_ratio = LOWER_SECTION_SPLIT_RATIO[0] / total_ratio
+        right_ratio = LOWER_SECTION_SPLIT_RATIO[1] / total_ratio
+
+        # Calculate based on actual window width
+        current_width = self.parent_window.width()
+        left_size = int(current_width * left_ratio)
+        right_size = int(current_width * right_ratio)
+
+        self.parent_window.lower_section_splitter.setSizes([left_size, right_size])
+
+        # Set stretch factors for proportional resizing
+        self.parent_window.lower_section_splitter.setStretchFactor(0, LOWER_SECTION_SPLIT_RATIO[0])
+        self.parent_window.lower_section_splitter.setStretchFactor(1, LOWER_SECTION_SPLIT_RATIO[1])
 
         # Add splitter to bottom layout
         self.parent_window.bottom_layout.addWidget(self.parent_window.lower_section_splitter)
