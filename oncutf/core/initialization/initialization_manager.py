@@ -107,7 +107,7 @@ class InitializationManager:
         # Show wait cursor during UI update (runs in main thread - visible to user)
         with wait_cursor():
             context = get_app_context()
-            
+
             # Check if rename is in progress (handled by RenameManager)
             # RenameManager handles state restoration with knowledge of name changes
             if hasattr(self.main_window, "last_action") and self.main_window.last_action == "rename":
@@ -130,7 +130,7 @@ class InitializationManager:
 
                 # 3. Update table view
                 self.main_window.file_table_view.prepare_table(files)
-                
+
                 # 4. Update placeholder visibility
                 if files:
                     self.main_window.file_table_view.set_placeholder_visible(False)
