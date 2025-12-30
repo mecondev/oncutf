@@ -123,8 +123,8 @@ class InitializationManager:
                 if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                     self.main_window.update_preview_tables_from_pairs([])
 
-                # 2. Update table view
-                self.main_window.file_table_view.prepare_table(files)
+                # 2. Update table view (preserve selection - RenameManager will restore)
+                self.main_window.file_table_view.prepare_table(files, preserve_selection=True)
 
                 # 3. Update placeholder visibility
                 if files:

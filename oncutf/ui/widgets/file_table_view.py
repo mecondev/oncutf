@@ -418,23 +418,31 @@ class FileTableView(QTableView):
     # Table Preparation & Management
     # =====================================
 
-    def prepare_table(self, file_items: list) -> None:
-        """Prepare the table for display with file items."""
+    def prepare_table(self, file_items: list, *, preserve_selection: bool = False) -> None:
+        """Prepare the table for display with file items.
+
+        Args:
+            file_items: List of FileItem objects to display
+            preserve_selection: If True, don't clear selections (used during rename restore)
+        """
         logger.debug(
-            "prepare_table called with %d items",
+            "prepare_table called with %d items (preserve_selection=%s)",
             len(file_items),
+            preserve_selection,
             extra={"dev_only": True},
         )
         self._has_manual_preference = False
         self._user_preferred_width = None
         for file_item in file_items:
             file_item.checked = False
-        self.clearSelection()
-        self.selected_rows.clear()
-        selection_store = self._get_selection_store()
-        if selection_store:
-            selection_store.clear_selection(emit_signal=False)
-            selection_store.set_anchor_row(None, emit_signal=False)
+
+        if not preserve_selection:
+            self.clearSelection()
+            self.selected_rows.clear()
+            selection_store = self._get_selection_store()
+            if selection_store:
+                selection_store.clear_selection(emit_signal=False)
+                selection_store.set_anchor_row(None, emit_signal=False)
         if self.model() and hasattr(self.model(), "set_files"):
             self.model().set_files(file_items)
         self.show()  # Ensure table is visible for column setup

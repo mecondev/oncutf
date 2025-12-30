@@ -245,6 +245,12 @@ class FileTreeView(QTreeView):
         if model and hasattr(model, "refresh"):
             try:
                 model.refresh()
+
+                # Reset root index after refresh to prevent "/" from appearing
+                import platform
+                root = "" if platform.system() == "Windows" else "/"
+                self.setRootIndex(model.index(root))
+
                 logger.debug(
                     "[FileTreeView] Model refreshed after directory change",
                     extra={"dev_only": True},
@@ -1222,6 +1228,11 @@ class FileTreeView(QTreeView):
                     expanded_paths = self._save_expanded_state()
 
                     model.refresh()
+
+                    # Reset root index after refresh to prevent "/" from appearing
+                    import platform
+                    root = "" if platform.system() == "Windows" else "/"
+                    self.setRootIndex(model.index(root))
 
                     # Restore expanded state first
                     if expanded_paths:
