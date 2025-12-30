@@ -302,11 +302,9 @@ class FileTreeView(QTreeView):
             # Replace the model
             self.setModel(new_model)
 
-            # Set root index
-            import platform
-
-            root = "" if platform.system() == "Windows" else "/"
-            self.setRootIndex(new_model.index(root))
+            # Set root index - always use empty string to show all drives/root folders
+            # This ensures consistent behavior: we don't show the "/" folder itself in the tree
+            self.setRootIndex(new_model.index(""))
 
             # Update parent window reference if available
             parent = self.parent()
@@ -448,6 +446,8 @@ class FileTreeView(QTreeView):
         """Configure header for optimal display"""
         header = self.header()
         if header:
+            # Hide header completely
+            header.setVisible(False)
             header.setStretchLastSection(False)
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
