@@ -109,7 +109,10 @@ class SelectionManager:
                     file_table_view.blockSignals(False)
 
     def clear_all_selection(self) -> None:
-        """Clears all selection in the file table."""
+        """Clears all selection in the file table.
+
+        Uses FileTableStateHelper for consistent state clearing.
+        """
         if not self.parent_window:
             return
 
@@ -124,37 +127,28 @@ class SelectionManager:
             logger.info("[ClearAll] All files already unselected. No action taken.")
             return
 
+        from oncutf.core.application_context import get_app_context
+        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
+
         with wait_cursor():
             # Clear cache to force update
             self.clear_preview_cache()
 
-            # PROTECTION: Block signals during checked state updates to prevent infinite loops
-            if file_table_view:
-                file_table_view.blockSignals(True)
+            # Use FileTableStateHelper for consistent state clearing
+            context = get_app_context()
+            metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
 
-            try:
-                selection_model = file_table_view.selectionModel()
-                if selection_model:
-                    selection_model.clearSelection()
+            if context:
+                FileTableStateHelper.clear_all_state(
+                    file_table_view, context, metadata_tree_view
+                )
 
-                for file in file_model.files:
-                    file.checked = False
-
-                file_table_view.viewport().update()
-
-                if hasattr(self.parent_window, "update_files_label"):
-                    self.parent_window.update_files_label()
-                if hasattr(self.parent_window, "request_preview_update"):
-                    self.parent_window.request_preview_update()
-
-                metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
-                if metadata_tree_view and hasattr(metadata_tree_view, "clear_view"):
-                    metadata_tree_view.clear_view()
-
-            finally:
-                # Restore signals
-                if file_table_view:
-                    file_table_view.blockSignals(False)
+            # Update labels
+            if hasattr(self.parent_window, "update_files_label"):
+                self.parent_window.update_files_label()
+            if hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
 
     def invert_selection(self) -> None:
         """Inverts the selection in the file table efficiently using select_rows_range helper.

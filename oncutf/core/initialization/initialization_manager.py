@@ -85,14 +85,20 @@ class InitializationManager:
         except Exception as e:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
-    def _on_files_changed(self, files: list[str]) -> None:
+    def _on_files_changed(self, files: list[Any]) -> None:
         """Handle files changed from ApplicationContext.
 
-        This is called when FileStore updates its internal state (e.g., after USB unmount).
+        This is called when FileStore updates its internal state (e.g., after rename/reload).
         We update the UI here - FileStore has already been updated.
-        Also clears stale selections and preview data.
+        Also preserves selection state for seamless UX during auto-refresh.
+
+        Args:
+            files: List of FileItem objects (not strings)
+
         """
+        from oncutf.core.application_context import get_app_context
         from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)
@@ -100,35 +106,51 @@ class InitializationManager:
 
         # Show wait cursor during UI update (runs in main thread - visible to user)
         with wait_cursor():
-            # Save current selection (as file paths) before clearing
-            saved_selection_paths = []
-            try:
-                # Get selected FileItems from model
-                file_table_model = self.main_window.file_table_view.model()
-                if file_table_model and hasattr(file_table_model, "file_items"):
-                    from oncutf.core.application_context import get_app_context
-
-                    context = get_app_context()
+            context = get_app_context()
+            
+            # Check if rename is in progress (handled by RenameManager)
+            # RenameManager handles state restoration with knowledge of name changes
+            if hasattr(self.main_window, "last_action") and self.main_window.last_action == "rename":
+                logger.info(
+                    "[InitializationManager] Skipping state save/restore (handled by RenameManager)"
+                )
+                # Just update table without saving/restoring state
+                # 1. Clear stale selections
+                try:
                     if context and context.selection_store:
-                        selected_rows = context.selection_store.get_selected_rows()
-                        for row in selected_rows:
-                            if 0 <= row < len(file_table_model.file_items):
-                                file_item = file_table_model.file_items[row]
-                                path = file_item.full_path if hasattr(file_item, "full_path") else str(file_item)
-                                saved_selection_paths.append(path)
+                        context.selection_store.clear_selection(emit_signal=False)
+                except Exception:
+                    pass
 
-                        logger.info(
-                            "[MainWindow] Saved %d selected file paths before refresh",
-                            len(saved_selection_paths),
-                        )
-            except Exception as e:
-                logger.warning("[MainWindow] Error saving selection: %s", e)
+                # 2. Clear preview cache
+                if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
+                    self.main_window.preview_manager.clear_all_caches()
+                if hasattr(self.main_window, "update_preview_tables_from_pairs"):
+                    self.main_window.update_preview_tables_from_pairs([])
+
+                # 3. Update table view
+                self.main_window.file_table_view.prepare_table(files)
+                
+                # 4. Update placeholder visibility
+                if files:
+                    self.main_window.file_table_view.set_placeholder_visible(False)
+                else:
+                    self.main_window.file_table_view.set_placeholder_visible(True)
+
+                # 5. Update UI labels
+                self.main_window.update_files_label()
+                return
+
+            # Save current file table state before refresh
+            # context is already defined above
+            if not context:
+                logger.warning("[MainWindow] No application context available")
+                return
+
+            state = FileTableStateHelper.save_state(self.main_window.file_table_view, context)
 
             # 1. Clear stale selections (files may no longer exist)
             try:
-                from oncutf.core.application_context import get_app_context
-
-                context = get_app_context()
                 if context and context.selection_store:
                     context.selection_store.clear_selection(emit_signal=False)
             except Exception:
@@ -176,49 +198,10 @@ class InitializationManager:
             # 4. Update table view (FileStore already updated)
             self.main_window.file_table_view.prepare_table(filtered_files)
 
-            # 5. Restore selection for files that still exist
-            if saved_selection_paths:
-                from oncutf.utils.shared.timer_manager import schedule_ui_update
-
-                def restore_selection():
-                    try:
-                        file_table_model = self.main_window.file_table_view.model()
-                        if not file_table_model or not hasattr(file_table_model, "file_items"):
-                            return
-
-                        from oncutf.core.application_context import get_app_context
-
-                        context = get_app_context()
-                        if not context or not context.selection_store:
-                            return
-
-                        # Find row indices for saved file paths
-                        rows_to_select = set()
-                        for row, file_item in enumerate(file_table_model.file_items):
-                            path = file_item.full_path if hasattr(file_item, "full_path") else str(file_item)
-                            if path in saved_selection_paths:
-                                rows_to_select.add(row)
-
-                        if rows_to_select:
-                            context.selection_store.set_selected_rows(
-                                rows_to_select, emit_signal=True, force_emit=True
-                            )
-                            logger.info(
-                                "[MainWindow] Restored %d/%d selected rows after refresh",
-                                len(rows_to_select),
-                                len(saved_selection_paths),
-                            )
-                        else:
-                            logger.warning(
-                                "[MainWindow] No selected files found after refresh (saved %d paths)",
-                                len(saved_selection_paths),
-                            )
-
-                    except Exception as e:
-                        logger.error("[MainWindow] Error restoring selection: %s", e)
-
-                # Restore selection after table has finished updating
-                schedule_ui_update(restore_selection, delay=100)
+            # 5. Restore file table state (selection, checked, scroll position)
+            FileTableStateHelper.restore_state(
+                self.main_window.file_table_view, context, state, delay_ms=100
+            )
 
             # 6. Update placeholder visibility
             if files:

@@ -821,16 +821,25 @@ class UIManager:
             self.parent_window.shortcuts.append(shortcut)
 
     def _refresh_file_table(self) -> None:
-        """Refresh file table (F5) - reloads files and clears selection for better UX.
-        Shows status message.
+        """Refresh file table (F5) - reloads files and clears ALL state for full reset.
+        Shows status message and wait cursor.
         """
+        from oncutf.core.application_context import get_app_context
         from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 
-        logger.info("[FileTable] F5 pressed - refreshing file table")
+        logger.info("[FileTable] F5 pressed - refreshing file table with full state reset")
 
         with wait_cursor():
-            # Clear selection for better UX
-            self.parent_window.clear_all_selection()
+            # Get metadata tree view for clearing
+            metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+
+            # Clear ALL state (selection, checked files, metadata tree, scroll position)
+            context = get_app_context()
+            if context:
+                FileTableStateHelper.clear_all_state(
+                    self.parent_window.file_table_view, context, metadata_tree_view
+                )
 
             # Reload files from current folder
             self.parent_window.force_reload()
