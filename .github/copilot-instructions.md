@@ -41,6 +41,10 @@ main.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
 
 **Rename modules** (`oncutf/modules/`): Pure composable name fragment generators.
 
+- Delegator methods marked as "Backward compatibility" are temporary.
+- New code MUST NOT use backward compatibility properties or methods.
+- Application Service layer is the canonical entry point for operations.
+
 ---
 
 ## Required helpers (use instead of raw Qt)
