@@ -418,11 +418,23 @@ class MetadataTreeService:
         if self._staging_manager and display_state.file_path:
             staged_changes = self._staging_manager.get_staged_changes(display_state.file_path)
 
+            logger.info(
+                "[MetadataTreeService] Applying staged changes for %s: %s",
+                display_state.file_path,
+                staged_changes,
+            )
+
             for key_path, value in staged_changes.items():
                 self._apply_staged_change(display_data, key_path, value)
 
             # Update modified keys in display state
             display_state.modified_keys = set(staged_changes.keys())
+        else:
+            logger.info(
+                "[MetadataTreeService] No staging manager (%s) or file_path (%s)",
+                self._staging_manager is not None,
+                display_state.file_path,
+            )
 
         # Cleanup empty groups
         self._cleanup_empty_groups(display_data, display_state)

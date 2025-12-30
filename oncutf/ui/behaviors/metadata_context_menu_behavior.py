@@ -251,6 +251,17 @@ class MetadataContextMenuBehavior:
         # Check if this field can be edited (standard metadata fields)
         is_editable_field = self._widget._is_editable_metadata_field(key_path)
 
+        # Debug logging
+        from oncutf.utils.logging.logger_factory import get_cached_logger
+        logger = get_cached_logger(__name__)
+        logger.debug(
+            "[MetadataMenu] key_path=%s, is_editable=%s, has_multi_sel=%s",
+            key_path,
+            is_editable_field,
+            has_multiple_selection,
+            extra={"dev_only": True}
+        )
+
         # Check if current file has modifications for this field
         has_modifications = False
         current_field_value = None
@@ -307,6 +318,15 @@ class MetadataContextMenuBehavior:
         edit_action.setIcon(self._get_menu_icon("edit"))
         edit_action.triggered.connect(lambda: self._widget.edit_value(key_path, value))
         edit_action.setEnabled(not has_multiple_selection and is_editable_field)
+
+        # Add tooltip to explain why it's disabled
+        if has_multiple_selection:
+            edit_action.setToolTip("Edit disabled: Multiple files selected")
+        elif not is_editable_field:
+            edit_action.setToolTip(f"Edit disabled: Field '{key_path}' is not editable")
+        else:
+            edit_action.setToolTip("Edit this metadata value")
+
         menu.addAction(edit_action)
 
         # Reset action - enabled for editable fields with modifications
@@ -328,9 +348,10 @@ class MetadataContextMenuBehavior:
             )
 
             # Enable only if: single selection + rotation field + current value is not "0"
-            is_zero_rotation = (
-                str(current_field_value) == "0" if current_field_value is not None else False
-            )
+            # Convert to string and strip whitespace for comparison
+            current_value_str = str(current_field_value).strip() if current_field_value is not None else ""
+            is_zero_rotation = current_value_str in {"0", ""}
+
             set_zero_enabled = not has_multiple_selection and not is_zero_rotation
             set_zero_action.setEnabled(set_zero_enabled)
 

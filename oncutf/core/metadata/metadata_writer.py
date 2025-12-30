@@ -78,8 +78,13 @@ class MetadataWriter(QObject):
         try:
             # Stage the change
             try:
-                staging_manager = self.parent_window.context.get_manager("metadata_staging")
-                staging_manager.stage_change(file_path, key_path, new_value)
+                if self.parent_window and hasattr(self.parent_window, "context"):
+                    staging_manager = self.parent_window.context.get_manager("metadata_staging")
+                    staging_manager.stage_change(file_path, key_path, new_value)
+                else:
+                    logger.warning(
+                        "[MetadataWriter] Parent window or context not available for staging"
+                    )
             except KeyError:
                 logger.warning(
                     "[MetadataWriter] MetadataStagingManager not found during set_metadata_value"

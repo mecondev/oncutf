@@ -275,6 +275,14 @@ class MetadataEditBehavior:
         # Normalize key path for comparison
         key_lower = key_path.lower().strip()
 
+        # If it's a grouped key path (e.g., "File Info (12 fields)/Rotation"),
+        # extract just the field name after the last separator (/ or \)
+        # Handle both Unix (/) and Windows (\) path separators
+        if "/" in key_lower or "\\" in key_lower:
+            # Replace backslashes with forward slashes for consistency
+            key_normalized = key_lower.replace("\\", "/")
+            key_lower = key_normalized.split("/")[-1].strip()
+
         return key_lower in editable_fields
 
     def _normalize_metadata_field_name(self, key_path: str) -> str:
@@ -477,21 +485,30 @@ class MetadataEditBehavior:
             logger.warning("No files selected for editing")
             return
 
+        # Extract clean field name from grouped path (e.g., "File Info (12 fields)/Rotation" -> "Rotation")
+        # Handle both Unix and Windows path separators
+        key_normalized = key_path.replace("\\", "/")
+        if "/" in key_normalized:
+            clean_field_name = key_normalized.split("/")[-1].strip()
+        else:
+            clean_field_name = key_path
+
+        # Normalize the field name for storage (e.g., "rotation" -> "Rotation")
+        normalized_field_path = self._normalize_metadata_field_name(clean_field_name)
+
         # Open basic text edit dialog
         from oncutf.ui.dialogs.metadata_edit_dialog import MetadataEditDialog
 
         dialog = MetadataEditDialog(
             parent=self._widget,  # type: ignore[arg-type]
-            title=f"Edit {key_path}",
-            field_name=key_path,
-            current_value=str(current_value) if current_value else "",
+            selected_files=selected_files,
+            metadata_cache=self._widget._get_metadata_cache(),
+            field_name=clean_field_name,  # For dialog display
+            field_value=str(current_value) if current_value else "",
         )
 
         if dialog.exec_():
-            new_value = dialog.get_value()
-
-            # Get metadata cache for command system
-            metadata_cache = self._widget._get_metadata_cache()
+            new_value = dialog.get_validated_value()
 
             # Use command system for undo/redo support
             try:
@@ -500,30 +517,50 @@ class MetadataEditBehavior:
 
                 command_manager = get_metadata_command_manager()
 
-                # Build list of files to modify
-                files_to_modify = list(selected_files)
+                # For single file selection (metadata tree context), use command system
+                if len(selected_files) == 1:
+                    file_item = selected_files[0]
 
-                # Create and execute command
-                command = EditMetadataFieldCommand(
-                    files=files_to_modify,
-                    key_path=key_path,
-                    new_value=new_value,
-                    old_value=current_value,
-                    metadata_cache=metadata_cache,
-                )
+                    # Create and execute command: normalized path for storage, original for tree display
+                    command = EditMetadataFieldCommand(
+                        file_path=file_item.full_path,
+                        field_path=normalized_field_path,  # Clean path for staging
+                        new_value=new_value,
+                        old_value=current_value,
+                        metadata_tree_view=self._widget,
+                        display_path=key_path,  # Original grouped path for tree updates
+                    )
 
-                command_manager.execute_command(command)
+                    command_manager.execute_command(command)
 
-                logger.info(
-                    "Edited %s metadata for %d files via command system",
-                    key_path,
-                    len(files_to_modify),
-                )
+                    logger.info(
+                        "Edited %s metadata for file %s via command system",
+                        normalized_field_path,
+                        file_item.filename,
+                    )
+                else:
+                    # Multi-file editing: execute command for each file
+                    for file_item in selected_files:
+                        command = EditMetadataFieldCommand(
+                            file_path=file_item.full_path,
+                            field_path=normalized_field_path,  # Clean path for staging
+                            new_value=new_value,
+                            old_value=current_value,
+                            metadata_tree_view=self._widget,
+                            display_path=key_path,  # Original grouped path for tree updates
+                        )
+                        command_manager.execute_command(command)
 
-                # Emit signal
+                    logger.info(
+                        "Edited %s metadata for %d files via command system",
+                        normalized_field_path,
+                        len(selected_files),
+                    )
+
+                # Emit signal with normalized path
                 if hasattr(self._widget, "value_edited"):
                     self._widget.value_edited.emit(
-                        key_path, new_value, str(current_value) if current_value else ""
+                        normalized_field_path, new_value, str(current_value) if current_value else ""
                     )
 
             except Exception as e:
@@ -531,11 +568,11 @@ class MetadataEditBehavior:
                     "Command system not available or failed, using fallback: %s",
                     e,
                 )
-                # Fallback to direct method
+                # Fallback to direct method with original path
                 files_to_modify = list(selected_files)
                 self._fallback_edit_value(key_path, new_value, current_value, files_to_modify)
 
-                # Emit signal
+                # Emit signal with original path
                 if hasattr(self._widget, "value_edited"):
                     self._widget.value_edited.emit(
                         key_path, new_value, str(current_value) if current_value else ""

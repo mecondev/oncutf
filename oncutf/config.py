@@ -533,6 +533,12 @@ SPLASH_SCREEN_DURATION = 2000
 TOP_BOTTOM_SPLIT_RATIO = [500, 400]
 LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
 
+# Lower section splitter (rename modules vs preview)
+# Default: 50/50 split (equal space for both sides)
+LOWER_SECTION_SPLIT_RATIO = [1, 1]  # Equal proportions (will be calculated based on window width)
+LOWER_SECTION_LEFT_MIN_SIZE = 300   # Minimum pixels for left panel (rename modules)
+LOWER_SECTION_RIGHT_MIN_SIZE = 500  # Minimum pixels for right panel (preview)
+
 # =====================================
 # STATUS BAR SETTINGS
 # =====================================
@@ -645,6 +651,7 @@ THEME_TOKENS = {
         "text_secondary": "#888888",
         "text_tertiary": "#666666",
         "text_disabled": "#555555",
+        "disabled_text": "#888888",  # Alias for text_secondary (for backwards compatibility)
         "text_muted": "#888888",  # Muted UI text (companion files, etc.)
         "metadata_group_text": "#ddd6ba",  # Metadata tree root group headers (dimmed for hierarchy)
         # ===== Interactive States =====

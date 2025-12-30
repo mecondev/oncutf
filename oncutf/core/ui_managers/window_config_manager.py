@@ -103,6 +103,8 @@ class WindowConfigManager:
                 splitter_states["horizontal"] = self.main_window.horizontal_splitter.sizes()
             if hasattr(self.main_window, "vertical_splitter"):
                 splitter_states["vertical"] = self.main_window.vertical_splitter.sizes()
+            if hasattr(self.main_window, "lower_section_splitter"):
+                splitter_states["lower_section"] = self.main_window.lower_section_splitter.sizes()
             window_config.set("splitter_states", splitter_states)
 
             # Save other window-related settings
@@ -144,6 +146,16 @@ class WindowConfigManager:
                     ),
                 }
                 window_config.set("column_states", column_states)
+
+            # Save file tree expanded state
+            if hasattr(self.main_window, "file_tree_view"):
+                expanded_paths = self.main_window.file_tree_view._save_expanded_state()
+                window_config.set("file_tree_expanded_paths", expanded_paths)
+                logger.debug(
+                    "[Config] Saved %d file tree expanded paths",
+                    len(expanded_paths),
+                    extra={"dev_only": True},
+                )
 
             # Mark dirty for debounced save
             self.config_manager.mark_dirty()
@@ -247,6 +259,16 @@ class WindowConfigManager:
                     extra={"dev_only": True},
                 )
 
+            if "lower_section" in splitter_states and hasattr(
+                self.main_window, "lower_section_splitter"
+            ):
+                self.main_window.lower_section_splitter.setSizes(splitter_states["lower_section"])
+                logger.debug(
+                    "[Config] Applied lower section splitter: %s",
+                    splitter_states["lower_section"],
+                    extra={"dev_only": True},
+                )
+
             # Store config values for later use
             self.main_window._last_folder_from_config = window_config.get("last_folder", "")
             self.main_window._recursive_mode_from_config = window_config.get(
@@ -266,6 +288,17 @@ class WindowConfigManager:
                             self.main_window.column_manager.load_column_state(
                                 table_type, state_data
                             )
+
+            # Restore file tree expanded state
+            if hasattr(self.main_window, "file_tree_view"):
+                expanded_paths = window_config.get("file_tree_expanded_paths", [])
+                if expanded_paths:
+                    self.main_window.file_tree_view._restore_expanded_state(expanded_paths)
+                    logger.debug(
+                        "[Config] Restored %d file tree expanded paths",
+                        len(expanded_paths),
+                        extra={"dev_only": True},
+                    )
 
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 

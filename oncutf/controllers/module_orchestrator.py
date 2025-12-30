@@ -53,6 +53,11 @@ class ModuleOrchestrator:
     UI and future node editor implementations.
     """
 
+    # Legacy module name mappings (old_name -> new_name)
+    LEGACY_NAME_MAP = {
+        "remove_text_from_original_name": "text_removal",
+    }
+
     def __init__(self):
         """Initialize orchestrator with module registry."""
         self._module_registry: dict[str, ModuleDescriptor] = {}
@@ -190,9 +195,19 @@ class ModuleOrchestrator:
         Returns:
             Module instance data
         """
+        # Handle legacy module names
+        original_name = name
+        if name in self.LEGACY_NAME_MAP:
+            name = self.LEGACY_NAME_MAP[name]
+            logger.info(
+                "[ModuleOrchestrator] Migrating legacy module name: %s -> %s",
+                original_name,
+                name,
+            )
+
         descriptor = self._module_registry.get(name)
         if not descriptor:
-            logger.warning("[ModuleOrchestrator] Unknown module type: %s", name)
+            logger.warning("[ModuleOrchestrator] Unknown module type: %s", original_name)
             return {}
 
         instance = {
@@ -211,9 +226,12 @@ class ModuleOrchestrator:
             config: Optional configuration
 
         Returns:
-            Index of added module
+            Index of added module, or -1 if module creation failed
         """
         instance = self.create_module_instance(name, config)
+        if not instance:
+            logger.error("[ModuleOrchestrator] Failed to create module: %s", name)
+            return -1
         self._module_instances.append(instance)
         logger.debug(
             "[ModuleOrchestrator] Added module: %s (total: %d)",
@@ -296,6 +314,10 @@ class ModuleOrchestrator:
         """
         modules_data = []
         for instance in self._module_instances:
+            # Skip invalid instances (missing 'type' key)
+            if not instance or "type" not in instance:
+                logger.warning("[ModuleOrchestrator] Skipping invalid module instance")
+                continue
             module_data = instance.get("config", {}).copy()
             module_data["type"] = instance["type"]
             modules_data.append(module_data)

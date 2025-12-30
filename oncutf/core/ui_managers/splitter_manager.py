@@ -88,6 +88,29 @@ class SplitterManager:
         if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
 
+    def on_lower_section_splitter_moved(self, pos: int, index: int) -> None:
+        """Handle lower section splitter movement (rename modules vs preview).
+        Updates UI elements that depend on horizontal space allocation in bottom section.
+
+        Args:
+            pos: New position of the splitter
+            index: Index of the splitter section that moved
+
+        """
+        logger.debug(
+            "[SplitterManager] Lower section moved: pos=%d, index=%d",
+            pos,
+            index,
+            extra={"dev_only": True},
+        )
+
+        # Save splitter state immediately to preserve user's preference
+        if hasattr(self.parent_window, "window_config_manager"):
+            self.parent_window.window_config_manager.save_window_config()
+
+        # Update any UI elements that need to respond to lower section width changes
+        # (Currently no specific handling needed, but this is a hook for future enhancements)
+
     def calculate_optimal_splitter_sizes(self, window_width: int) -> list[int]:
         """Calculate optimal splitter sizes based on window width with smart adaptation for wide screens.
 

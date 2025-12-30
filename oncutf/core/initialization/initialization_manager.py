@@ -85,14 +85,20 @@ class InitializationManager:
         except Exception as e:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
-    def _on_files_changed(self, files: list[str]) -> None:
+    def _on_files_changed(self, files: list[Any]) -> None:
         """Handle files changed from ApplicationContext.
 
-        This is called when FileStore updates its internal state (e.g., after USB unmount).
+        This is called when FileStore updates its internal state (e.g., after rename/reload).
         We update the UI here - FileStore has already been updated.
-        Also clears stale selections and preview data.
+        Also preserves selection state for seamless UX during auto-refresh.
+
+        Args:
+            files: List of FileItem objects (not strings)
+
         """
+        from oncutf.core.application_context import get_app_context
         from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)
@@ -100,11 +106,51 @@ class InitializationManager:
 
         # Show wait cursor during UI update (runs in main thread - visible to user)
         with wait_cursor():
+            context = get_app_context()
+            
+            # Check if rename is in progress (handled by RenameManager)
+            # RenameManager handles state restoration with knowledge of name changes
+            if hasattr(self.main_window, "last_action") and self.main_window.last_action == "rename":
+                logger.info(
+                    "[InitializationManager] Skipping state save/restore (handled by RenameManager)"
+                )
+                # Just update table without saving/restoring state
+                # 1. Clear stale selections
+                try:
+                    if context and context.selection_store:
+                        context.selection_store.clear_selection(emit_signal=False)
+                except Exception:
+                    pass
+
+                # 2. Clear preview cache
+                if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
+                    self.main_window.preview_manager.clear_all_caches()
+                if hasattr(self.main_window, "update_preview_tables_from_pairs"):
+                    self.main_window.update_preview_tables_from_pairs([])
+
+                # 3. Update table view
+                self.main_window.file_table_view.prepare_table(files)
+                
+                # 4. Update placeholder visibility
+                if files:
+                    self.main_window.file_table_view.set_placeholder_visible(False)
+                else:
+                    self.main_window.file_table_view.set_placeholder_visible(True)
+
+                # 5. Update UI labels
+                self.main_window.update_files_label()
+                return
+
+            # Save current file table state before refresh
+            # context is already defined above
+            if not context:
+                logger.warning("[MainWindow] No application context available")
+                return
+
+            state = FileTableStateHelper.save_state(self.main_window.file_table_view, context)
+
             # 1. Clear stale selections (files may no longer exist)
             try:
-                from oncutf.core.application_context import get_app_context
-
-                context = get_app_context()
                 if context and context.selection_store:
                     context.selection_store.clear_selection(emit_signal=False)
             except Exception:
@@ -116,16 +162,54 @@ class InitializationManager:
             if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                 self.main_window.update_preview_tables_from_pairs([])
 
-            # 3. Update table view (FileStore already updated)
-            self.main_window.file_table_view.prepare_table(files)
+            # 3. Apply companion file filtering (maintain state after refresh)
+            from oncutf.config import COMPANION_FILES_ENABLED, SHOW_COMPANION_FILES_IN_TABLE
 
-            # 4. Update placeholder visibility
+            filtered_files = files
+            if COMPANION_FILES_ENABLED and not SHOW_COMPANION_FILES_IN_TABLE:
+                try:
+                    from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+
+                    file_groups = CompanionFilesHelper.group_files_with_companions(
+                        [f.full_path if hasattr(f, 'full_path') else str(f) for f in files]
+                    )
+                    # Extract main files only
+                    companion_count = 0
+                    main_files = []
+                    for main_file, group_info in file_groups.items():
+                        # Find FileItem matching main_file
+                        for f in files:
+                            file_path = f.full_path if hasattr(f, 'full_path') else str(f)
+                            if file_path == main_file:
+                                main_files.append(f)
+                                break
+                        companion_count += len(group_info.get("companions", []))
+
+                    filtered_files = main_files
+                    if companion_count > 0:
+                        logger.info(
+                            "[MainWindow] Filtered out %d companion files after refresh. Showing %d main files.",
+                            companion_count,
+                            len(filtered_files),
+                        )
+                except Exception as e:
+                    logger.warning("[MainWindow] Error filtering companion files: %s", e)
+
+            # 4. Update table view (FileStore already updated)
+            self.main_window.file_table_view.prepare_table(filtered_files)
+
+            # 5. Restore file table state (selection, checked, scroll position)
+            FileTableStateHelper.restore_state(
+                self.main_window.file_table_view, context, state, delay_ms=100
+            )
+
+            # 6. Update placeholder visibility
             if files:
                 self.main_window.file_table_view.set_placeholder_visible(False)
             else:
                 self.main_window.file_table_view.set_placeholder_visible(True)
 
-            # 5. Update UI labels
+            # 7. Update UI labels
             self.main_window.update_files_label()
 
     def update_status_from_preview(self, status_html: str) -> None:

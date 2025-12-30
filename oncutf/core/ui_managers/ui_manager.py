@@ -493,14 +493,14 @@ class UIManager:
         self.parent_window.bottom_layout.setSpacing(0)
         self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)  # Add small top margin
 
-        content_layout = QHBoxLayout()
-        content_layout.setSpacing(5)
+        # Create horizontal splitter for lower section (rename modules vs preview)
+        self.parent_window.lower_section_splitter = QSplitter(Qt.Horizontal)  # type: ignore
 
         # === Left side: Two vertical containers ===
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(4)  # Back to original spacing
+        left_layout.setContentsMargins(0, 0, 4, 0)
+        left_layout.setSpacing(4)
 
         # Top container: Rename modules area (takes most space)
         self.parent_window.rename_modules_area = RenameModulesArea(
@@ -516,6 +516,9 @@ class UIManager:
             parent=left_container
         )
         left_layout.addWidget(self.parent_window.final_transform_container)
+
+        # Set minimum width for left container
+        left_container.setMinimumWidth(LOWER_SECTION_LEFT_MIN_SIZE)
 
         # === Right: Preview tables view ===
         self.parent_window.preview_tables_view = PreviewTablesView(parent=self.parent_window)
@@ -550,16 +553,44 @@ class UIManager:
         controls_layout.addStretch()
         controls_layout.addWidget(self.parent_window.rename_button)
 
-        # Create preview frame
+        # Create preview frame (right side of splitter)
         self.parent_window.preview_frame = QFrame()
         preview_layout = QVBoxLayout(self.parent_window.preview_frame)
-        preview_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        preview_layout.setContentsMargins(10, 0, 0, 0)  # Remove margins
         preview_layout.addWidget(self.parent_window.preview_tables_view)
         preview_layout.addLayout(controls_layout)
 
-        content_layout.addWidget(left_container, stretch=1)
-        content_layout.addWidget(self.parent_window.preview_frame, stretch=3)
-        self.parent_window.bottom_layout.addLayout(content_layout)
+        # Set minimum width for preview frame
+        self.parent_window.preview_frame.setMinimumWidth(LOWER_SECTION_RIGHT_MIN_SIZE)
+
+        # Add widgets to splitter
+        self.parent_window.lower_section_splitter.addWidget(left_container)
+        self.parent_window.lower_section_splitter.addWidget(self.parent_window.preview_frame)
+
+        # Allow collapsible but respect minimum widths
+        # When collapsible is True, the splitter respects setMinimumWidth()
+        self.parent_window.lower_section_splitter.setCollapsible(0, True)
+        self.parent_window.lower_section_splitter.setCollapsible(1, True)
+
+        # Set initial sizes based on LOWER_SECTION_SPLIT_RATIO (50/50 split by default)
+        # This will be overridden by apply_loaded_config if saved state exists
+        total_ratio = sum(LOWER_SECTION_SPLIT_RATIO)
+        left_ratio = LOWER_SECTION_SPLIT_RATIO[0] / total_ratio
+        right_ratio = LOWER_SECTION_SPLIT_RATIO[1] / total_ratio
+
+        # Calculate based on actual window width
+        current_width = self.parent_window.width()
+        left_size = int(current_width * left_ratio)
+        right_size = int(current_width * right_ratio)
+
+        self.parent_window.lower_section_splitter.setSizes([left_size, right_size])
+
+        # Set stretch factors for proportional resizing
+        self.parent_window.lower_section_splitter.setStretchFactor(0, LOWER_SECTION_SPLIT_RATIO[0])
+        self.parent_window.lower_section_splitter.setStretchFactor(1, LOWER_SECTION_SPLIT_RATIO[1])
+
+        # Add splitter to bottom layout
+        self.parent_window.bottom_layout.addWidget(self.parent_window.lower_section_splitter)
 
     def setup_footer(self) -> None:
         """Setup footer with version label."""
@@ -622,6 +653,9 @@ class UIManager:
         )
         self.parent_window.vertical_splitter.splitterMoved.connect(
             self.parent_window.splitter_manager.on_vertical_splitter_moved
+        )
+        self.parent_window.lower_section_splitter.splitterMoved.connect(
+            self.parent_window.splitter_manager.on_lower_section_splitter_moved
         )
         # Connect callbacks for both tree view and file table view
         self.parent_window.horizontal_splitter.splitterMoved.connect(
@@ -787,16 +821,25 @@ class UIManager:
             self.parent_window.shortcuts.append(shortcut)
 
     def _refresh_file_table(self) -> None:
-        """Refresh file table (F5) - reloads files and clears selection for better UX.
-        Shows status message.
+        """Refresh file table (F5) - reloads files and clears ALL state for full reset.
+        Shows status message and wait cursor.
         """
+        from oncutf.core.application_context import get_app_context
         from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 
-        logger.info("[FileTable] F5 pressed - refreshing file table")
+        logger.info("[FileTable] F5 pressed - refreshing file table with full state reset")
 
         with wait_cursor():
-            # Clear selection for better UX
-            self.parent_window.clear_all_selection()
+            # Get metadata tree view for clearing
+            metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+
+            # Clear ALL state (selection, checked files, metadata tree, scroll position)
+            context = get_app_context()
+            if context:
+                FileTableStateHelper.clear_all_state(
+                    self.parent_window.file_table_view, context, metadata_tree_view
+                )
 
             # Reload files from current folder
             self.parent_window.force_reload()
