@@ -290,7 +290,13 @@ class FileTreeView(QTreeView):
 
             # Create new model with same configuration
             new_model = CustomFileSystemModel()
-            new_model.setRootPath("")
+
+            # Set root path based on platform to match root index
+            # This prevents "/" from appearing as a node in Linux
+            import platform
+
+            root = "" if platform.system() == "Windows" else "/"
+            new_model.setRootPath(root)
 
             if file_filter is not None:
                 new_model.setFilter(file_filter)
@@ -305,9 +311,6 @@ class FileTreeView(QTreeView):
             # Set root index based on platform:
             # - Windows: empty root shows drives (C:, D:, etc)
             # - Linux: "/" root shows children (/bin, /boot, /etc) without showing "/" itself
-            import platform
-
-            root = "" if platform.system() == "Windows" else "/"
             self.setRootIndex(new_model.index(root))
 
             # Update parent window reference if available

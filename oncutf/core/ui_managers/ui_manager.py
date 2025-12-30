@@ -262,7 +262,12 @@ class UIManager:
         left_layout.addLayout(btn_layout)
 
         self.parent_window.dir_model = CustomFileSystemModel()
-        self.parent_window.dir_model.setRootPath("")
+
+        # Set root path based on platform:
+        # - Windows: empty root for drives
+        # - Linux: "/" root to show children without showing "/" itself
+        root = "" if platform.system() == "Windows" else "/"
+        self.parent_window.dir_model.setRootPath(root)
         self.parent_window.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
         # Adding filter for allowed file extensions
@@ -282,10 +287,7 @@ class UIManager:
         # Header configuration is now handled by FileTreeView._configure_header()
         # when setModel() is called
 
-        # Set root index based on platform:
-        # - Windows: empty root shows drives (C:, D:, etc)
-        # - Linux: "/" root shows children (/bin, /boot, /etc) without showing "/" itself
-        root = "" if platform.system() == "Windows" else "/"
+        # Set root index (root variable already computed above)
         self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(root))
 
         # Set minimum size for left panel and add to splitter
