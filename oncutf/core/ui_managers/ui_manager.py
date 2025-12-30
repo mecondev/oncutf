@@ -7,6 +7,7 @@ Manages UI setup and layout configuration for the main window.
 Handles widget initialization, signal connections, and layout management.
 """
 
+import platform
 from typing import TYPE_CHECKING
 
 from oncutf.core.config_imports import *
@@ -281,8 +282,11 @@ class UIManager:
         # Header configuration is now handled by FileTreeView._configure_header()
         # when setModel() is called
 
-        # Use empty root to show all drives/root folders without showing "/" itself
-        self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(""))
+        # Set root index based on platform:
+        # - Windows: empty root shows drives (C:, D:, etc)
+        # - Linux: "/" root shows children (/bin, /boot, /etc) without showing "/" itself
+        root = "" if platform.system() == "Windows" else "/"
+        self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(root))
 
         # Set minimum size for left panel and add to splitter
         self.parent_window.left_frame.setMinimumWidth(230)

@@ -302,9 +302,13 @@ class FileTreeView(QTreeView):
             # Replace the model
             self.setModel(new_model)
 
-            # Set root index - always use empty string to show all drives/root folders
-            # This ensures consistent behavior: we don't show the "/" folder itself in the tree
-            self.setRootIndex(new_model.index(""))
+            # Set root index based on platform:
+            # - Windows: empty root shows drives (C:, D:, etc)
+            # - Linux: "/" root shows children (/bin, /boot, /etc) without showing "/" itself
+            import platform
+
+            root = "" if platform.system() == "Windows" else "/"
+            self.setRootIndex(new_model.index(root))
 
             # Update parent window reference if available
             parent = self.parent()
