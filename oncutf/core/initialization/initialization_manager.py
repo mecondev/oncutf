@@ -108,14 +108,16 @@ class InitializationManager:
         with wait_cursor():
             context = get_app_context()
 
-            # Check if rename is in progress (handled by RenameManager)
-            # RenameManager handles state restoration with knowledge of name changes
-            if hasattr(self.main_window, "last_action") and self.main_window.last_action == "rename":
+            # Check if rename or metadata_save is in progress (handled by their respective managers)
+            # These operations manage state restoration with knowledge of the changes
+            last_action = getattr(self.main_window, "last_action", None)
+            if last_action in ("rename", "metadata_save"):
                 logger.info(
-                    "[InitializationManager] Skipping state management (handled by RenameManager)"
+                    "[InitializationManager] Skipping state management (handled by %s)",
+                    last_action,
                 )
-                # Just update table without interfering with RenameManager's state restoration
-                # Do NOT clear selections - RenameManager will restore them after debounce
+                # Just update table without interfering with state restoration
+                # Do NOT clear selections - the manager will handle state appropriately
 
                 # 1. Clear preview cache
                 if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:

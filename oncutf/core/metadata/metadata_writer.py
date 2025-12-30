@@ -269,6 +269,10 @@ class MetadataWriter(QObject):
             save_mode,
         )
 
+        # Set last_action to prevent file table selection clearing during auto-refresh
+        if hasattr(self.parent_window, "last_action"):
+            self.parent_window.last_action = "metadata_save"
+
         try:
             if save_mode == "multiple_files_dialog":
                 from oncutf.utils.ui.progress_dialog import ProgressDialog
@@ -339,6 +343,9 @@ class MetadataWriter(QObject):
         finally:
             if _loading_dialog:
                 _loading_dialog.close()
+            # Clear last_action after save completes
+            if hasattr(self.parent_window, "last_action"):
+                self.parent_window.last_action = None
 
         was_cancelled = self._save_cancelled
         self._show_save_results(success_count, failed_files, files_to_save, was_cancelled)
