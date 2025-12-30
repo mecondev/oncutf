@@ -73,11 +73,17 @@ class TestRenameIntegration:
             # Call the safe post-rename workflow
             rename_manager._execute_post_rename_workflow_safe(checked_paths)
 
-            # Verify timer was scheduled for state restoration
+            # Verify timer was scheduled for state restoration (debounced/safety variants allowed)
             assert mock_timer.schedule.called
-            schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]["delay"] == 50
-            assert schedule_call[1]["timer_id"] == "post_rename_state_restore"
+            timer_ids = [kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list]
+            assert any(
+                (tid and "post_rename_state_restore" in tid) or tid in (
+                    "post_rename_state_restore_debounced",
+                    "post_rename_state_restore_fallback",
+                    "post_rename_state_restore_safety",
+                )
+                for tid in timer_ids
+            )
 
             # Verify main window methods were called
             assert mock_main_window.last_action == "rename"

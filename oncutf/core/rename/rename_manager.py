@@ -323,7 +323,12 @@ class RenameManager:
                 get_timer_manager,
             )
 
-            context = get_app_context()
+            # get_app_context() may raise if the application context is not initialized
+            try:
+                context = get_app_context()
+            except Exception:
+                context = None
+
             file_store = getattr(context, "file_store", None) if context else None
             if not file_store or not hasattr(file_store, "files_loaded"):
                 logger.warning(

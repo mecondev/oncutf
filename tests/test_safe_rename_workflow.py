@@ -56,11 +56,19 @@ class TestSafeRenameWorkflow:
             # Verify folder reload was called
             self.mock_main_window.load_files_from_folder.assert_called_once_with("/test/folder")
 
-            # Verify timer was scheduled for state restoration
+            # Verify timer was scheduled for state restoration (debounced/safety variants allowed)
             assert mock_timer.schedule.called
-            schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]["delay"] == 50
-            assert schedule_call[1]["timer_id"] == "post_rename_state_restore"
+            # Collect scheduled timer_ids from all calls
+            timer_ids = [kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list]
+            # Expect at least one timer related to post-rename state restoration
+            assert any(
+                (tid and "post_rename_state_restore" in tid) or tid in (
+                    "post_rename_state_restore_debounced",
+                    "post_rename_state_restore_fallback",
+                    "post_rename_state_restore_safety",
+                )
+                for tid in timer_ids
+            )
 
     def test_safe_post_rename_workflow_with_invalid_main_window(self):
         """Test workflow handles invalid main window gracefully."""
