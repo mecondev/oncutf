@@ -112,32 +112,27 @@ class InitializationManager:
             # RenameManager handles state restoration with knowledge of name changes
             if hasattr(self.main_window, "last_action") and self.main_window.last_action == "rename":
                 logger.info(
-                    "[InitializationManager] Skipping state save/restore (handled by RenameManager)"
+                    "[InitializationManager] Skipping state management (handled by RenameManager)"
                 )
-                # Just update table without saving/restoring state
-                # 1. Clear stale selections
-                try:
-                    if context and context.selection_store:
-                        context.selection_store.clear_selection(emit_signal=False)
-                except Exception:
-                    pass
+                # Just update table without interfering with RenameManager's state restoration
+                # Do NOT clear selections - RenameManager will restore them after debounce
 
-                # 2. Clear preview cache
+                # 1. Clear preview cache
                 if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
                     self.main_window.preview_manager.clear_all_caches()
                 if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                     self.main_window.update_preview_tables_from_pairs([])
 
-                # 3. Update table view
+                # 2. Update table view
                 self.main_window.file_table_view.prepare_table(files)
 
-                # 4. Update placeholder visibility
+                # 3. Update placeholder visibility
                 if files:
                     self.main_window.file_table_view.set_placeholder_visible(False)
                 else:
                     self.main_window.file_table_view.set_placeholder_visible(True)
 
-                # 5. Update UI labels
+                # 4. Update UI labels
                 self.main_window.update_files_label()
                 return
 
