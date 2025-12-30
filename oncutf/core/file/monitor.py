@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import QFileSystemWatcher, QObject, QTimer, pyqtSignal
+from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
 if TYPE_CHECKING:
     from oncutf.core.file.store import FileStore
@@ -61,15 +62,15 @@ class FilesystemMonitor(QObject):
         self._drive_poll_timer.timeout.connect(self._poll_drives)
         self._current_drives: set[str] = set()
 
-        # Timer for debouncing change events
-        self._change_debounce_timer = QTimer()
-        self._change_debounce_timer.setSingleShot(True)
-        self._change_debounce_timer.setInterval(500)  # 500ms debounce
-        self._change_debounce_timer.timeout.connect(self._process_pending_changes)
+        # Debounce timer ID for change events (uses TimerManager)
+        self._debounce_timer_id: str | None = None
         self._pending_changes: set[str] = set()
 
         # Track loaded folders
         self._monitored_folders: set[str] = set()
+
+        # Pause flag for temporarily disabling auto-refresh (e.g., during metadata save)
+        self._paused = False
 
         # Callbacks for custom actions
         self._on_drive_change_callback: Callable[[list[str]], None] | None = None
@@ -92,7 +93,10 @@ class FilesystemMonitor(QObject):
     def stop(self) -> None:
         """Stop monitoring filesystem."""
         self._drive_poll_timer.stop()
-        self._change_debounce_timer.stop()
+        # Cancel debounce timer if active
+        if self._debounce_timer_id:
+            get_timer_manager().cancel(self._debounce_timer_id)
+            self._debounce_timer_id = None
         self._watcher.blockSignals(True)
         logger.info("[FilesystemMonitor] Stopped monitoring")
 
@@ -177,6 +181,31 @@ class FilesystemMonitor(QObject):
 
         """
         self._on_folder_change_callback = callback
+
+    def pause(self) -> None:
+        """Pause auto-refresh (e.g., during metadata save)."""
+        self._paused = True
+        # Cancel any pending debounce timer
+        if self._debounce_timer_id:
+            get_timer_manager().cancel(self._debounce_timer_id)
+            self._debounce_timer_id = None
+        self._pending_changes.clear()
+        logger.debug("[FilesystemMonitor] Paused", extra={"dev_only": True})
+
+    def resume(self) -> None:
+        """Resume auto-refresh after pause."""
+        self._paused = False
+        # Clear any pending changes that accumulated during pause
+        self._pending_changes.clear()
+        # Also cancel any debounce timer that might have been scheduled
+        if self._debounce_timer_id:
+            get_timer_manager().cancel(self._debounce_timer_id)
+            self._debounce_timer_id = None
+        logger.debug("[FilesystemMonitor] Resumed", extra={"dev_only": True})
+
+    def is_paused(self) -> bool:
+        """Check if monitoring is paused."""
+        return self._paused
 
     def _get_available_drives(self) -> set[str]:
         """Get currently available drives.
@@ -303,9 +332,18 @@ class FilesystemMonitor(QObject):
         # Add to pending changes
         self._pending_changes.add(path)
 
-        # Restart debounce timer
-        self._change_debounce_timer.stop()
-        self._change_debounce_timer.start()
+        # Schedule debounced processing via TimerManager
+        # Cancel existing timer and reschedule (debounce behavior)
+        timer_manager = get_timer_manager()
+        if self._debounce_timer_id:
+            timer_manager.cancel(self._debounce_timer_id)
+        self._debounce_timer_id = timer_manager.schedule(
+            self._process_pending_changes,
+            delay=500,
+            timer_type=TimerType.GENERIC,
+            timer_id="filesystem_monitor_debounce",
+            consolidate=False,
+        )
 
     def _on_file_changed(self, path: str) -> None:
         """Handle file changed signal.
@@ -319,6 +357,11 @@ class FilesystemMonitor(QObject):
 
     def _process_pending_changes(self) -> None:
         """Process pending directory changes after debounce."""
+        # Skip processing if paused
+        if self._paused:
+            self._pending_changes.clear()
+            return
+
         for path in self._pending_changes:
             logger.info("[FilesystemMonitor] Processing directory change: %s", path)
             self.directory_changed.emit(path)

@@ -510,6 +510,14 @@ class MetadataEditBehavior:
         if dialog.exec_():
             new_value = dialog.get_validated_value()
 
+            # Skip if value unchanged
+            if str(new_value) == str(current_value):
+                logger.debug(
+                    "Value unchanged for %s, skipping edit",
+                    clean_field_name,
+                )
+                return
+
             # Use command system for undo/redo support
             try:
                 from oncutf.core.metadata import get_metadata_command_manager

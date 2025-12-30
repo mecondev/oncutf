@@ -273,6 +273,28 @@ class MetadataWriter(QObject):
         if hasattr(self.parent_window, "last_action"):
             self.parent_window.last_action = "metadata_save"
 
+        # Pause filesystem monitoring to prevent auto-refresh during save
+        # We'll update icons manually for each file instead
+        filesystem_monitor = None
+        try:
+            # The FilesystemMonitor is created in FileTreeView (folder_tree)
+            if hasattr(self.parent_window, "folder_tree"):
+                filesystem_monitor = getattr(self.parent_window.folder_tree, "_filesystem_monitor", None)
+                if filesystem_monitor:
+                    logger.info("[MetadataWriter] Found filesystem_monitor from folder_tree")
+                else:
+                    logger.warning("[MetadataWriter] folder_tree exists but _filesystem_monitor is None")
+            else:
+                logger.warning("[MetadataWriter] parent_window has no folder_tree attribute")
+        except Exception as e:
+            logger.warning("[MetadataWriter] Could not get filesystem_monitor: %s", e)
+
+        if filesystem_monitor and hasattr(filesystem_monitor, "pause"):
+            filesystem_monitor.pause()
+            logger.info("[MetadataWriter] Paused filesystem monitoring during save")
+        else:
+            logger.warning("[MetadataWriter] Cannot pause - filesystem_monitor=%s", filesystem_monitor)
+
         try:
             if save_mode == "multiple_files_dialog":
                 from oncutf.utils.ui.progress_dialog import ProgressDialog
@@ -328,6 +350,8 @@ class MetadataWriter(QObject):
                         if success:
                             success_count += 1
                             self._update_file_after_save(file_item, modifications)
+                            # Update icon immediately for visual feedback
+                            self._update_file_icon(file_item)
                         else:
                             failed_files.append(file_item.filename)
 
@@ -343,6 +367,23 @@ class MetadataWriter(QObject):
         finally:
             if _loading_dialog:
                 _loading_dialog.close()
+            # Resume filesystem monitoring with delay to catch late events
+            # QFileSystemWatcher may send events slightly after the file write completes
+            if filesystem_monitor and hasattr(filesystem_monitor, "resume"):
+                from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+
+                def delayed_resume() -> None:
+                    if filesystem_monitor:
+                        filesystem_monitor.resume()
+                        logger.info("[MetadataWriter] Resumed filesystem monitoring after save (delayed)")
+
+                get_timer_manager().schedule(
+                    delayed_resume,
+                    delay=1000,  # 1 second delay to catch late events
+                    timer_type=TimerType.GENERIC,
+                    timer_id="metadata_save_resume",
+                    consolidate=False,
+                )
             # Clear last_action after save completes
             if hasattr(self.parent_window, "last_action"):
                 self.parent_window.last_action = None
@@ -459,6 +500,24 @@ class MetadataWriter(QObject):
                     display_data = dict(entry.data)
                     display_data["FileName"] = file_item.filename
                     tree.display_metadata(display_data, context="after_save")
+
+    def _update_file_icon(self, file_item: Any) -> None:
+        """Update the info icon in column 0 for a file after save.
+
+        This visually updates the icon from 'edited' to 'fast/extended' without
+        requiring a full table reload.
+        """
+        try:
+            from oncutf.ui.widgets.view_helpers import update_info_icon
+
+            if hasattr(self.parent_window, "file_table_view") and hasattr(self.parent_window, "file_model"):
+                update_info_icon(
+                    self.parent_window.file_table_view,
+                    self.parent_window.file_model,
+                    file_item.full_path,
+                )
+        except Exception as e:
+            logger.debug("[MetadataWriter] Could not update icon for %s: %s", file_item.filename, e)
 
     def _show_save_results(
         self,
