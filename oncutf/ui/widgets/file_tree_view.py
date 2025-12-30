@@ -27,6 +27,7 @@ from oncutf.core.pyqt_imports import (
     QEvent,
     QHeaderView,
     QKeyEvent,
+    QModelIndex,
     QMouseEvent,
     Qt,
     QTreeView,
@@ -234,25 +235,30 @@ class FileTreeView(QTreeView):
         """
         logger.debug("[FileTreeView] Directory changed: %s", dir_path, extra={"dev_only": True})
 
-        # TODO: Implement targeted refresh instead of full model reset
-        # Full refresh causes tree collapse which is disruptive during metadata saves
-        # For now, skip refresh - the FileStore already handles file updates
-        logger.debug(
-            "[FileTreeView] Skipping model refresh to preserve expanded state",
-            extra={"dev_only": True},
-        )
+        # Save state before refresh
+        expanded_paths = self._save_expanded_state()
+        selected_path = self.get_selected_path()
+        scroll_position = self.verticalScrollBar().value()
 
         # Refresh model if it supports refresh
-        # model = self.model()
-        # if model and hasattr(model, "refresh"):
-        #     try:
-        #         model.refresh()
-        #         logger.debug(
-        #             "[FileTreeView] Model refreshed after directory change",
-        #             extra={"dev_only": True},
-        #         )
-        #     except Exception as e:
-        #         logger.exception("[FileTreeView] Model refresh error: %s", e)
+        model = self.model()
+        if model and hasattr(model, "refresh"):
+            try:
+                model.refresh()
+                logger.debug(
+                    "[FileTreeView] Model refreshed after directory change",
+                    extra={"dev_only": True},
+                )
+            except Exception as e:
+                logger.exception("[FileTreeView] Model refresh error: %s", e)
+
+        # Restore state after model finishes loading (async)
+        # QFileSystemModel loads directories asynchronously, so we need a delay
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
+        schedule_ui_update(
+            lambda: self._restore_tree_state(expanded_paths, selected_path, scroll_position),
+            delay=100,
+        )
 
     def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
         """Refresh tree when drives change.
@@ -263,13 +269,15 @@ class FileTreeView(QTreeView):
         """
         logger.info("[FileTreeView] Drives changed, refreshing tree")
 
+        # Save state before refresh
+        expanded_paths = self._save_expanded_state()
+        selected_path = self.get_selected_path()
+        scroll_position = self.verticalScrollBar().value()
+
         old_model = self.model()
         if not old_model:
             logger.debug("[FileTreeView] No model to refresh", extra={"dev_only": True})
             return
-
-        # Get current selected path before refresh
-        current_path = self.get_selected_path()
 
         # Get the old model's configuration
         name_filters = old_model.nameFilters() if hasattr(old_model, "nameFilters") else []
@@ -318,12 +326,22 @@ class FileTreeView(QTreeView):
 
             logger.info("[FileTreeView] Model recreated successfully to reflect drive changes")
 
-            # Try to restore selection
-            if current_path and os.path.exists(current_path):
-                self.select_path(current_path)
+            # Restore state after model finishes loading (async)
+            # QFileSystemModel loads directories asynchronously, so we need a delay
+            from oncutf.utils.shared.timer_manager import schedule_ui_update
+            schedule_ui_update(
+                lambda: self._restore_tree_state(expanded_paths, selected_path, scroll_position),
+                delay=100,
+            )
 
         except Exception as e:
             logger.exception("[FileTreeView] Error recreating model: %s", e)
+            # Restore state even on error (with delay)
+            from oncutf.utils.shared.timer_manager import schedule_ui_update
+            schedule_ui_update(
+                lambda: self._restore_tree_state(expanded_paths, selected_path, scroll_position),
+                delay=100,
+            )
 
     def closeEvent(self, event) -> None:
         """Clean up resources before closing."""
@@ -508,6 +526,127 @@ class FileTreeView(QTreeView):
         if index.isValid():
             selection_model.clearSelection()
             selection_model.select(index, selection_model.Select | selection_model.Rows)
+
+    def _save_expanded_state(self) -> list[str]:
+        """Save currently expanded paths.
+
+        Returns:
+            List of file paths that are currently expanded
+
+        """
+        expanded_paths = []
+        model = self.model()
+
+        if not model or not hasattr(model, "filePath"):
+            return expanded_paths
+
+        def collect_expanded(parent_index: QModelIndex) -> None:
+            """Recursively collect expanded indices."""
+            row_count = model.rowCount(parent_index)
+            for row in range(row_count):
+                index = model.index(row, 0, parent_index)
+                if not index.isValid():
+                    continue
+
+                # Check if this index is expanded
+                if self.isExpanded(index):
+                    path = model.filePath(index)
+                    if path:
+                        expanded_paths.append(path)
+                        # Recurse into children
+                        collect_expanded(index)
+
+        # Start from root
+        import platform
+        root = "" if platform.system() == "Windows" else "/"
+        root_index = model.index(root)
+        collect_expanded(root_index)
+
+        logger.debug(
+            "[FileTreeView] Saved %d expanded paths",
+            len(expanded_paths),
+            extra={"dev_only": True},
+        )
+        return expanded_paths
+
+    def _restore_expanded_state(self, paths: list[str]) -> None:
+        """Restore expanded state from saved paths.
+
+        Args:
+            paths: List of file paths to expand
+
+        """
+        model = self.model()
+        if not model or not hasattr(model, "index"):
+            return
+
+        # Build complete set of paths including all parent directories
+        # This ensures we expand parents before children
+        all_paths_to_expand = set()
+
+        import platform
+        root = "" if platform.system() == "Windows" else "/"
+
+        for path in paths:
+            # Add the path itself
+            all_paths_to_expand.add(path)
+            # Add all parent paths including root
+            parent = os.path.dirname(path)
+            while parent and parent != root:
+                all_paths_to_expand.add(parent)
+                parent = os.path.dirname(parent)
+            # Add root if we have any paths
+            if path:
+                all_paths_to_expand.add(root)
+
+        # Sort by depth (shallow to deep) to ensure parents are expanded first
+        sorted_paths = sorted(all_paths_to_expand, key=lambda p: p.count(os.sep))
+
+        restored_count = 0
+        for path in sorted_paths:
+            # Get index for this path
+            index = model.index(path)
+            if index.isValid():
+                self.setExpanded(index, True)
+                restored_count += 1
+
+        logger.debug(
+            "[FileTreeView] Restored %d/%d expanded paths (including %d parents)",
+            restored_count,
+            len(paths),
+            len(all_paths_to_expand) - len(paths),
+            extra={"dev_only": True},
+        )
+
+    def _restore_tree_state(
+        self, expanded_paths: list[str], selected_path: str, scroll_position: int
+    ) -> None:
+        """Restore complete tree state: expanded paths, selection, and scroll position.
+
+        Args:
+            expanded_paths: List of paths that were expanded
+            selected_path: Path that was selected
+            scroll_position: Vertical scroll position
+
+        """
+        # First restore expanded state
+        self._restore_expanded_state(expanded_paths)
+
+        # Then restore selection
+        if selected_path and os.path.exists(selected_path):
+            self.select_path(selected_path)
+            logger.debug(
+                "[FileTreeView] Restored selection: %s", selected_path, extra={"dev_only": True}
+            )
+
+        # Finally restore scroll position
+        if scroll_position > 0:
+            self.verticalScrollBar().setValue(scroll_position)
+            logger.debug(
+                "[FileTreeView] Restored scroll position: %d",
+                scroll_position,
+                extra={"dev_only": True},
+            )
 
     # =====================================
     # CUSTOM RENDERING
@@ -1103,81 +1242,6 @@ class FileTreeView(QTreeView):
                     extra={"dev_only": True},
                 )
 
-    def _save_expanded_state(self) -> list[str]:
-        """Save the current expanded state of all nodes in the tree.
-
-        Returns:
-            List of file paths for all expanded nodes
-
-        """
-        expanded_paths = []
-        model = self.model()
-        if not model:
-            return expanded_paths
-
-        def collect_expanded(index):
-            """Recursively collect expanded node paths"""
-            if not index.isValid():
-                return
-
-            if self.isExpanded(index):
-                path = model.filePath(index)
-                if path:
-                    expanded_paths.append(path)
-
-            # Check all children
-            row_count = model.rowCount(index)
-            for row in range(row_count):
-                child_index = model.index(row, 0, index)
-                collect_expanded(child_index)
-
-        # Start from root
-        root_index = self.rootIndex()
-        if root_index.isValid():
-            collect_expanded(root_index)
-        else:
-            # If no root index, check all top-level items
-            row_count = model.rowCount()
-            for row in range(row_count):
-                top_index = model.index(row, 0)
-                collect_expanded(top_index)
-
-        logger.debug(
-            "[FileTreeView] Saved expanded state for %d nodes",
-            len(expanded_paths),
-            extra={"dev_only": True},
-        )
-        return expanded_paths
-
-    def _restore_expanded_state(self, expanded_paths: list[str]) -> None:
-        """Restore the expanded state of nodes from saved paths.
-
-        Args:
-            expanded_paths: List of file paths that should be expanded
-
-        """
-        if not expanded_paths:
-            return
-
-        model = self.model()
-        if not model:
-            return
-
-        restored = 0
-        for path in expanded_paths:
-            if os.path.exists(path):
-                index = model.index(path)
-                if index.isValid():
-                    self.setExpanded(index, True)
-                    restored += 1
-
-        logger.debug(
-            "[FileTreeView] Restored expanded state for %d/%d nodes",
-            restored,
-            len(expanded_paths),
-            extra={"dev_only": True},
-        )
-
     # =====================================
     # SPLITTER INTEGRATION (unchanged)
     # =====================================
@@ -1250,9 +1314,33 @@ class FileTreeView(QTreeView):
         schedule_ui_update(show_wait_cursor, delay=1)
         logger.debug("[FileTreeView] Item expanded with wait cursor", extra={"dev_only": True})
 
+        # Save expanded state to config
+        self._save_expanded_state_to_config()
+
     def _on_item_collapsed(self, _index):
         """Handle item collapse - no wait cursor needed as it's instant"""
         logger.debug("[FileTreeView] Item collapsed", extra={"dev_only": True})
+
+        # Save expanded state to config
+        self._save_expanded_state_to_config()
+
+    def _save_expanded_state_to_config(self) -> None:
+        """Save current expanded state to window config."""
+        # Find parent window with config manager
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, "window_config_manager"):
+                parent.window_config_manager.save_window_config()
+                logger.debug(
+                    "[FileTreeView] Expanded state saved to config", extra={"dev_only": True}
+                )
+                return
+            parent = parent.parent() if hasattr(parent, "parent") else None
+
+        logger.debug(
+            "[FileTreeView] No window_config_manager found, state not saved",
+            extra={"dev_only": True},
+        )
 
 
 # =====================================

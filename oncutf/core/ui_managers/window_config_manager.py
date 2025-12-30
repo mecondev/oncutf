@@ -147,6 +147,16 @@ class WindowConfigManager:
                 }
                 window_config.set("column_states", column_states)
 
+            # Save file tree expanded state
+            if hasattr(self.main_window, "file_tree_view"):
+                expanded_paths = self.main_window.file_tree_view._save_expanded_state()
+                window_config.set("file_tree_expanded_paths", expanded_paths)
+                logger.debug(
+                    "[Config] Saved %d file tree expanded paths",
+                    len(expanded_paths),
+                    extra={"dev_only": True},
+                )
+
             # Mark dirty for debounced save
             self.config_manager.mark_dirty()
 
@@ -278,6 +288,17 @@ class WindowConfigManager:
                             self.main_window.column_manager.load_column_state(
                                 table_type, state_data
                             )
+
+            # Restore file tree expanded state
+            if hasattr(self.main_window, "file_tree_view"):
+                expanded_paths = window_config.get("file_tree_expanded_paths", [])
+                if expanded_paths:
+                    self.main_window.file_tree_view._restore_expanded_state(expanded_paths)
+                    logger.debug(
+                        "[Config] Restored %d file tree expanded paths",
+                        len(expanded_paths),
+                        extra={"dev_only": True},
+                    )
 
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 
