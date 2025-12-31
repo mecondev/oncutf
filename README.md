@@ -172,7 +172,12 @@ oncutf/
 ├── main.py                  # Application entry point
 ├── config.py                # Global configuration constants
 ├── ui/                      # UI layer (PyQt5 widgets)
-│   └── main_window.py       # Main window wired to controllers
+│   ├── main_window.py       # Main window wired to controllers
+│   ├── behaviors/           # Reusable UI behaviors (column mgmt, drag feedback)
+│   ├── delegates/           # Custom item delegates (color, validation)
+│   ├── dialogs/             # Dialog windows (metadata edit, history)
+│   ├── services/            # UI-specific services
+│   └── widgets/             # Custom PyQt5 widgets
 ├── controllers/             # UI-agnostic orchestration layer
 │   ├── file_load_controller.py
 │   ├── metadata_controller.py
@@ -194,10 +199,9 @@ oncutf/
 ├── models/                  # Data models (FileItem, etc.)
 ├── modules/                 # Rename modules (composable steps)
 ├── services/                # Service protocols (DI support)
-├── widgets/                 # Custom PyQt5 widgets
 ├── utils/                   # Helper utilities
 ├── docs/                    # Documentation (see docs/README.md)
-├── tests/                   # Comprehensive test suite (866+ tests)
+├── tests/                   # Comprehensive test suite (939 tests)
 ├── scripts/                 # Tooling (profiling, maintenance)
 └── assets/resources/        # Icons, fonts, images
 ```
@@ -256,8 +260,8 @@ pytest tests/ -v
 
 **Current Status:**
 - **Ruff:** All checks passing
-- **MyPy:** Clean (0 errors, 300 source files)
-- **Pytest:** 866 tests passing
+- **MyPy:** Clean (0 errors, 330 source files)
+- **Pytest:** 939 tests passing
 
 ---
 
