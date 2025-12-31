@@ -69,7 +69,7 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # NOTE: Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
 # Tier 1-2 modules are fully strict. See overrides below for module categorization.
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.12"
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true

@@ -101,6 +101,9 @@ class FileTreeView(QTreeView):
         self._pending_select_path: str | None = None
         self._restore_in_progress = False
 
+        # Flag to prevent infinite loop during directory change refresh (Windows issue)
+        self._refresh_in_progress = False
+
         # Connect expand/collapse signals for wait cursor
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
@@ -238,6 +241,15 @@ class FileTreeView(QTreeView):
             dir_path: Path of changed directory
 
         """
+        # Prevent infinite loop if refresh triggers another directory change event
+        if self._refresh_in_progress:
+            logger.debug(
+                "[FileTreeView] Ignoring directory change during refresh: %s",
+                dir_path,
+                extra={"dev_only": True}
+            )
+            return
+
         logger.debug("[FileTreeView] Directory changed: %s", dir_path, extra={"dev_only": True})
 
         # Save state before refresh
@@ -249,6 +261,7 @@ class FileTreeView(QTreeView):
         model = self.model()
         if model and hasattr(model, "refresh"):
             try:
+                self._refresh_in_progress = True
                 model.refresh()
 
                 # Reset root index after refresh to prevent "/" from appearing
@@ -262,6 +275,8 @@ class FileTreeView(QTreeView):
                 )
             except Exception as e:
                 logger.exception("[FileTreeView] Model refresh error: %s", e)
+            finally:
+                self._refresh_in_progress = False
 
         # Restore state after model finishes loading (async)
         # QFileSystemModel loads directories asynchronously, so we need a delay
