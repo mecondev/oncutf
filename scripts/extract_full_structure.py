@@ -38,9 +38,16 @@ def get_docstring_snippet(file_path):
 
 
 def build_structure(path, prefix="", docstats=None, missing=None):
+    # Directories to exclude (based on .gitignore)
+    excluded_dirs = {
+        ".git", ".idea", ".vscode", "__pycache__", ".pytest_cache",
+        ".mypy_cache", ".ruff_cache", ".cursor", ".ai", "backups",
+        "temp", "venv", ".venv", "env", "build", "dist", "eggs",
+        "htmlcov", "logs", "tests", "scripts", "reports", "node_modules",
+    }
     lines = []
     for item in sorted(path.iterdir()):
-        if item.name.startswith(".") or item.name in {"__pycache__", "venv"}:
+        if item.name.startswith(".") or item.name in excluded_dirs:
             continue
         if item.is_dir():
             lines.append(f"{prefix} {item.name}/")

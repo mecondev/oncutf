@@ -27,7 +27,7 @@ from textwrap import shorten
 
 # --- Configuration ---------------------------------------------------------
 
-# Directories to ignore while walking
+# Directories to ignore while walking (based on .gitignore)
 IGNORED_DIRS = {
     ".git",
     ".idea",
@@ -35,12 +35,24 @@ IGNORED_DIRS = {
     "__pycache__",
     ".pytest_cache",
     ".mypy_cache",
+    ".ruff_cache",
+    ".cursor",
+    ".ai",
     "backups",
     "temp",
     "venv",
     ".venv",
-    ".cursor",
-    ".ai",
+    "env",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".eggs",
+    "htmlcov",
+    "logs",
+    "tests",
+    "scripts",
+    "reports",
+    "node_modules",
 }
 
 # File extensions to include

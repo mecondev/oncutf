@@ -58,20 +58,19 @@ EXCLUDED_DIRS = {
     ".ruff_cache",
     "build",
     "dist",
-    "*.egg-info",
     ".eggs",
     "backups",
     "htmlcov",
     "logs",
     "temp",
-    "output",
-    "dump",
     ".git",
     ".vscode",
     ".idea",
     ".cursor",
     "node_modules",
-    "reports",  # Auto-generated reports
+    "tests",
+    "scripts",
+    "reports",
 }
 
 # Files to always exclude (functional data, not documentation)
