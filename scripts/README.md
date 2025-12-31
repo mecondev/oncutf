@@ -92,11 +92,46 @@ Estimated cost:
 ### analyze_metadata_fields.py
 Analyzes metadata field usage across files in the project.
 
-### extract_docstrings.py
-Extracts and analyzes docstring coverage throughout the codebase.
+### generate_project_report.py
+**Unified project analysis tool** that generates comprehensive reports in two modes:
 
-### extract_full_structure.py
-Generates comprehensive codebase structure documentation.
+**Structure mode** - Full tree visualization with analysis:
+```bash
+python scripts/generate_project_report.py --mode structure
+```
+- Directory tree with indentation
+- Module docstrings (inline snippets)
+- Classes & functions listing per file
+- Line counts per file
+- Docstring coverage statistics
+- Missing docstrings report
+
+**Content mode** - AI-friendly context:
+```bash
+python scripts/generate_project_report.py --mode content
+```
+- Grouped by top-level directory
+- Module docstrings (first line)
+- Classes & functions listing
+- Line counts & totals
+- Optimized for AI assistants (Copilot, etc.)
+
+**Options:**
+```bash
+# Custom output path
+python scripts/generate_project_report.py --mode structure -o custom_report.md
+
+# Exclude directories (repeatable)
+python scripts/generate_project_report.py --mode structure --exclude tests --exclude scripts
+
+# Non-recursive (root only)
+python scripts/generate_project_report.py --mode structure --no-recursive
+
+# Custom docstring length (default: 300)
+python scripts/generate_project_report.py --mode content --max-doc-length 500
+```
+
+This script replaces the older `extract_docstrings.py`, `extract_full_structure.py`, and `generate_project_context.py` scripts.
 
 ### logger_analyzer.py
 Analyzes logging patterns, coverage, and usage.
