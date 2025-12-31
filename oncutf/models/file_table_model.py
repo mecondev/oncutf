@@ -74,7 +74,7 @@ class FileTableModel(QAbstractTableModel):
 
     def _create_column_mapping(self) -> dict[int, str]:
         """Create mapping from column index to column key based on internal visible columns.
-        
+
         Column 0 is reserved for status column, so visible columns start at index 1.
         """
         mapping = {}

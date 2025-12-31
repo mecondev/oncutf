@@ -253,14 +253,14 @@ class FileLoadManager:
                                 file_paths.append(full_path)
                             except Exception as e:
                                 logger.warning(
-                                    "[FileLoadManager] Error processing file %s: %s", 
-                                    filename, 
+                                    "[FileLoadManager] Error processing file %s: %s",
+                                    filename,
                                     e
                                 )
             except Exception as e:
                 logger.error(
-                    "[FileLoadManager] Error walking directory %s: %s", 
-                    folder_path, 
+                    "[FileLoadManager] Error walking directory %s: %s",
+                    folder_path,
                     e
                 )
         else:
@@ -272,15 +272,15 @@ class FileLoadManager:
                             file_paths.append(full_path)
             except OSError as e:
                 logger.error(
-                    "[FileLoadManager] Error listing directory %s: %s", 
-                    folder_path, 
+                    "[FileLoadManager] Error listing directory %s: %s",
+                    folder_path,
                     e
                 )
-        
+
         logger.info(
-            "[FileLoadManager] Found %d files in %s (recursive=%s)", 
-            len(file_paths), 
-            folder_path, 
+            "[FileLoadManager] Found %d files in %s (recursive=%s)",
+            len(file_paths),
+            folder_path,
             recursive
         )
         return file_paths

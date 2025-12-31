@@ -313,10 +313,10 @@ class ColumnManagementBehavior:
                 # Build ordered list based on config
                 config_order = list(FILE_TABLE_COLUMN_CONFIG.keys())
                 new_columns = current_columns.copy()
-                
+
                 # Find the right position to insert
                 insert_pos = len(new_columns)
-                for i, key in enumerate(config_order):
+                for _i, key in enumerate(config_order):
                     if key == column_key:
                         # Find the position after the last column that comes before this one
                         for j, existing_key in enumerate(new_columns):
@@ -326,16 +326,16 @@ class ColumnManagementBehavior:
                                     insert_pos = j
                                     break
                         break
-                
+
                 new_columns.insert(insert_pos, column_key)
-                
+
                 # Update internal tracking BEFORE updating model
                 self._visible_columns[column_key] = True
-                
+
                 # Sync widget's _visible_columns if it exists
                 if hasattr(self._widget, "_visible_columns"):
                     self._widget._visible_columns[column_key] = True
-                
+
                 # Update model with new columns list
                 if hasattr(self._widget.model(), "update_visible_columns"):
                     self._widget.model().update_visible_columns(new_columns)
@@ -366,14 +366,14 @@ class ColumnManagementBehavior:
             current_columns = self.get_visible_columns_list()
             if column_key in current_columns:
                 new_columns = [c for c in current_columns if c != column_key]
-                
+
                 # Update internal tracking BEFORE updating model
                 self._visible_columns[column_key] = False
-                
+
                 # Sync widget's _visible_columns if it exists
                 if hasattr(self._widget, "_visible_columns"):
                     self._widget._visible_columns[column_key] = False
-                
+
                 # Update model with new columns list
                 if hasattr(self._widget.model(), "update_visible_columns"):
                     self._widget.model().update_visible_columns(new_columns)
