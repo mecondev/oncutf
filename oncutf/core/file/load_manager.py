@@ -540,6 +540,7 @@ class FileLoadManager:
             delay=5,
             timer_type=TimerType.UI_UPDATE,
             timer_id="file_load_next_batch",
+            consolidate=False,  # Each batch must execute independently
         )
 
     def _refresh_ui_after_file_load(self) -> None:

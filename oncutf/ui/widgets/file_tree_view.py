@@ -96,6 +96,11 @@ class FileTreeView(QTreeView):
         self._drag_start_pos = None
         self._drag_feedback_timer_id = None
 
+        # Incremental state restoration tracking
+        self._pending_expand_paths: list[str] = []
+        self._pending_select_path: str | None = None
+        self._restore_in_progress = False
+
         # Connect expand/collapse signals for wait cursor
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
@@ -553,8 +558,17 @@ class FileTreeView(QTreeView):
         if not model or not hasattr(model, "filePath"):
             return expanded_paths
 
-        def collect_expanded(parent_index: QModelIndex) -> None:
-            """Recursively collect expanded indices."""
+        visited_paths = set()  # Prevent infinite recursion
+
+        def collect_expanded(parent_index: QModelIndex, depth: int = 0) -> None:
+            """Recursively collect expanded indices with protection against infinite loops."""
+            # Limit recursion depth to prevent stack overflow
+            if depth > 100:
+                logger.warning(
+                    "[FileTreeView] Maximum recursion depth reached in _save_expanded_state",
+                )
+                return
+
             row_count = model.rowCount(parent_index)
             for row in range(row_count):
                 index = model.index(row, 0, parent_index)
@@ -565,15 +579,20 @@ class FileTreeView(QTreeView):
                 if self.isExpanded(index):
                     path = model.filePath(index)
                     if path:
+                        # Prevent processing the same path twice (circular references)
+                        if path in visited_paths:
+                            continue
+                        visited_paths.add(path)
+
                         expanded_paths.append(path)
-                        # Recurse into children
-                        collect_expanded(index)
+                        # Recurse into children with increased depth
+                        collect_expanded(index, depth + 1)
 
         # Start from root
         import platform
         root = "" if platform.system() == "Windows" else "/"
         root_index = model.index(root)
-        collect_expanded(root_index)
+        collect_expanded(root_index, 0)
 
         logger.debug(
             "[FileTreeView] Saved %d expanded paths",
@@ -593,6 +612,14 @@ class FileTreeView(QTreeView):
         if not model or not hasattr(model, "index"):
             return
 
+        # Limit number of paths to restore to prevent performance issues
+        if len(paths) > 500:
+            logger.warning(
+                "[FileTreeView] Too many expanded paths (%d), limiting to 500",
+                len(paths),
+            )
+            paths = paths[:500]
+
         # Build complete set of paths including all parent directories
         # This ensures we expand parents before children
         all_paths_to_expand = set()
@@ -601,6 +628,10 @@ class FileTreeView(QTreeView):
         root = "" if platform.system() == "Windows" else "/"
 
         for path in paths:
+            # Skip invalid or non-existent paths early to avoid filesystem scans
+            if not path or not os.path.exists(path):
+                continue
+
             # Add the path itself
             all_paths_to_expand.add(path)
             # Add all parent paths including root
@@ -616,12 +647,29 @@ class FileTreeView(QTreeView):
         sorted_paths = sorted(all_paths_to_expand, key=lambda p: p.count(os.sep))
 
         restored_count = 0
-        for path in sorted_paths:
+        # Limit total expansion operations to prevent infinite loops
+        max_operations = 1000
+        for i, path in enumerate(sorted_paths):
+            if i >= max_operations:
+                logger.warning(
+                    "[FileTreeView] Reached maximum expansion operations (%d), stopping",
+                    max_operations,
+                )
+                break
+
             # Get index for this path
-            index = model.index(path)
-            if index.isValid():
-                self.setExpanded(index, True)
-                restored_count += 1
+            try:
+                index = model.index(path)
+                if index.isValid():
+                    self.setExpanded(index, True)
+                    restored_count += 1
+            except Exception as e:
+                logger.debug(
+                    "[FileTreeView] Failed to expand path %s: %s",
+                    path,
+                    e,
+                    extra={"dev_only": True},
+                )
 
         logger.debug(
             "[FileTreeView] Restored %d/%d expanded paths (including %d parents)",
@@ -1223,9 +1271,18 @@ class FileTreeView(QTreeView):
             model = self.model()
             if model and hasattr(model, "refresh"):
                 try:
-                    # Save current expanded state and selection
+                    # Save current selection and expanded state
                     current_path = self.get_selected_path()
                     expanded_paths = self._save_expanded_state()
+
+                    # Limit expanded paths to avoid performance issues
+                    if len(expanded_paths) > 100:
+                        logger.info(
+                            "[FileTreeView] Limiting expanded paths from %d to 100",
+                            len(expanded_paths),
+                        )
+                        # Keep only shallowest paths (sorted by depth)
+                        expanded_paths = sorted(expanded_paths, key=lambda p: p.count(os.sep))[:100]
 
                     model.refresh()
 
@@ -1234,13 +1291,8 @@ class FileTreeView(QTreeView):
                     root = "" if platform.system() == "Windows" else "/"
                     self.setRootIndex(model.index(root))
 
-                    # Restore expanded state first
-                    if expanded_paths:
-                        self._restore_expanded_state(expanded_paths)
-
-                    # Then restore selection if path still exists
-                    if current_path and os.path.exists(current_path):
-                        self.select_path(current_path)
+                    # Start incremental restoration (non-blocking)
+                    self._start_incremental_restore(expanded_paths, current_path)
 
                     logger.info("[FileTreeView] Tree view refreshed successfully")
 
@@ -1259,6 +1311,125 @@ class FileTreeView(QTreeView):
                     "[FileTreeView] No model or model does not support refresh",
                     extra={"dev_only": True},
                 )
+
+    def _start_incremental_restore(self, expanded_paths: list[str], selected_path: str | None) -> None:
+        """Start incremental restoration of tree state (non-blocking).
+
+        Args:
+            expanded_paths: Paths to expand incrementally
+            selected_path: Path to select after expansion complete
+        """
+        # Cancel any pending restore
+        if self._restore_in_progress:
+            from oncutf.utils.shared.timer_manager import get_timer_manager
+            get_timer_manager().cancel("tree_incremental_restore")
+
+        # Filter out non-existent paths early
+        import platform
+        root = "" if platform.system() == "Windows" else "/"
+
+        valid_paths = []
+        for path in expanded_paths:
+            if path and os.path.exists(path):
+                valid_paths.append(path)
+
+        # Build parent paths and sort by depth
+        all_paths_to_expand = set()
+        for path in valid_paths:
+            all_paths_to_expand.add(path)
+            parent = os.path.dirname(path)
+            while parent and parent != root:
+                all_paths_to_expand.add(parent)
+                parent = os.path.dirname(parent)
+
+        # Sort by depth (shallow first) to expand parents before children
+        self._pending_expand_paths = sorted(all_paths_to_expand, key=lambda p: p.count(os.sep))
+        self._pending_select_path = selected_path
+        self._restore_in_progress = True
+
+        logger.debug(
+            "[FileTreeView] Starting incremental restore of %d paths",
+            len(self._pending_expand_paths),
+            extra={"dev_only": True},
+        )
+
+        # Start the restoration process
+        self._process_next_restore_batch()
+
+    def _process_next_restore_batch(self) -> None:
+        """Process next batch of paths to expand (called via timer)."""
+        if not self._restore_in_progress or not self._pending_expand_paths:
+            # Restoration complete - restore selection if needed
+            self._restore_in_progress = False
+            if self._pending_select_path and os.path.exists(self._pending_select_path):
+                try:
+                    self.select_path(self._pending_select_path)
+                    logger.debug(
+                        "[FileTreeView] Restored selection: %s",
+                        self._pending_select_path,
+                        extra={"dev_only": True},
+                    )
+                except Exception as e:
+                    logger.debug(
+                        "[FileTreeView] Failed to restore selection: %s",
+                        e,
+                        extra={"dev_only": True},
+                    )
+            self._pending_select_path = None
+            logger.debug(
+                "[FileTreeView] Incremental restore complete",
+                extra={"dev_only": True},
+            )
+            return
+
+        # Take next batch (10 paths at a time to keep UI responsive)
+        batch_size = 10
+        batch = self._pending_expand_paths[:batch_size]
+        self._pending_expand_paths = self._pending_expand_paths[batch_size:]
+
+        # Expand batch
+        model = self.model()
+        if model:
+            for path in batch:
+                try:
+                    index = model.index(path)
+                    if index.isValid():
+                        self.setExpanded(index, True)
+                except Exception as e:
+                    logger.debug(
+                        "[FileTreeView] Failed to expand %s: %s",
+                        path,
+                        e,
+                        extra={"dev_only": True},
+                    )
+
+        # Schedule next batch (20ms delay to keep UI responsive)
+        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+
+        get_timer_manager().schedule(
+            self._process_next_restore_batch,
+            delay=20,
+            timer_type=TimerType.UI_UPDATE,
+            timer_id="tree_incremental_restore",
+            consolidate=False,
+        )
+
+    def _restore_selection_after_refresh(self, path: str) -> None:
+        """Restore selection after tree refresh (called via timer)."""
+        try:
+            if path and os.path.exists(path):
+                self.select_path(path)
+                logger.debug(
+                    "[FileTreeView] Restored selection after refresh: %s",
+                    path,
+                    extra={"dev_only": True},
+                )
+        except Exception as e:
+            logger.debug(
+                "[FileTreeView] Failed to restore selection: %s",
+                e,
+                extra={"dev_only": True},
+            )
 
     # =====================================
     # SPLITTER INTEGRATION (unchanged)
