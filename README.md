@@ -154,6 +154,8 @@ python3.12 main.py
 - **Ctrl+M**: Load basic metadata for selected files
 - **Ctrl+Shift+M**: Load extended metadata for selected files
 - **Ctrl+H**: Calculate hash checksums for selected files
+- **Ctrl+T**: Auto-fit columns to content
+- **Ctrl+Shift+T**: Reset columns to default widths
 
 **Drag & Drop Modifiers:**
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
