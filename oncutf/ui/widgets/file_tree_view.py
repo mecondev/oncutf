@@ -1256,10 +1256,8 @@ class FileTreeView(QTreeView):
         if self._is_dragging:
             self._update_drag_feedback()
 
-        # Handle F5 refresh - on some Linux systems, F5 is remapped to F6 key code
-        is_f5_refresh = event.key() in (Qt.Key_F5, Qt.Key_F6)
-        
-        if is_f5_refresh:
+        # Handle F5 refresh
+        if event.key() == Qt.Key_F5:
             self._refresh_tree_view()
             event.accept()
             return

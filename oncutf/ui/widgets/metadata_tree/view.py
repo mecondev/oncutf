@@ -268,16 +268,19 @@ class MetadataTreeView(QTreeView):
 
     def _setup_shortcuts(self) -> None:
         """Setup local keyboard shortcuts for metadata tree."""
-        from oncutf.core.pyqt_imports import QKeySequence, QShortcut
-
-        # F5: Refresh metadata from current selection
-        # F5 refresh shortcut for metadata tree
-        self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
-        self._refresh_shortcut.activated.connect(self._on_refresh_shortcut)
-
+        # F5 refresh is now handled via keyPressEvent to avoid QShortcut priority issues
         # Note: Global undo/redo (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) are registered in MainWindow
         # Context menu still provides Undo/Redo actions for mouse-based access.
-        logger.debug("[MetadataTree] Local shortcuts setup: F5=refresh", extra={"dev_only": True})
+
+    def keyPressEvent(self, event):
+        """Handle keyboard events for F5 refresh."""
+        # Handle F5 refresh
+        if event.key() == Qt.Key_F5:
+            self._on_refresh_shortcut()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
 
     def _lazy_init_controller(self) -> None:
         """Lazy initialization of controller layer."""

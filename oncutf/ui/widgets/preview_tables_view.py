@@ -248,15 +248,17 @@ class PreviewTablesView(QWidget):
 
     def _setup_shortcuts(self):
         """Setup local keyboard shortcuts for preview tables."""
-        from oncutf.core.pyqt_imports import QKeySequence, QShortcut
+        # F5 refresh is now handled via keyPressEvent to avoid QShortcut priority issues
 
-        # F5: Refresh preview (recalculate from current selection)
-        # F5 refresh shortcut for preview tables
-        self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
-        self._refresh_shortcut.activated.connect(self._on_refresh_shortcut_pressed)
-        logger.debug(
-            "[PreviewTablesView] Local shortcuts setup: F5=refresh", extra={"dev_only": True}
-        )
+    def keyPressEvent(self, event):
+        """Handle keyboard events for F5 refresh."""
+        # Handle F5 refresh
+        if event.key() == Qt.Key_F5:
+            self._on_refresh_shortcut_pressed()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
 
     def _on_refresh_requested(self):
         """Handle F5 refresh request by emitting signal to parent."""
