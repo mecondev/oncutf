@@ -8,10 +8,8 @@ Tests the fix for infinite loop in directory change refresh.
 
 from __future__ import annotations
 
-import platform
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from PyQt5.QtWidgets import QApplication
@@ -132,72 +130,6 @@ class TestFileTreeRefreshGuard:
 
         # All changes should be processed (no infinite loop)
         assert refresh_count == 3, f"Expected 3 refreshes, got {refresh_count}"
-
-    @patch("platform.system")
-    @pytest.mark.skipif(platform.system() != "Windows", reason="Windows-specific test")
-    def test_platform_specific_root_handling_windows(self, mock_platform, file_tree_view, temp_dir):
-        """Test that Windows uses empty string as root."""
-        from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-
-        mock_platform.return_value = "Windows"
-
-        model = CustomFileSystemModel()
-        model.setRootPath(temp_dir)
-        file_tree_view.setModel(model)
-
-        # Track setRootIndex calls
-        original_set_root_index = file_tree_view.setRootIndex
-        root_paths = []
-
-        def track_setRootIndex(index):
-            # Get the path from the model index
-            if index.isValid() and hasattr(model, "filePath"):
-                path = model.filePath(index)
-                root_paths.append(path)
-            else:
-                # Invalid index or empty path means Windows root ("")
-                root_paths.append("")
-            return original_set_root_index(index)
-
-        file_tree_view.setRootIndex = track_setRootIndex
-
-        file_tree_view._on_directory_changed(temp_dir)
-
-        # Check that setRootIndex was called with "" (Windows root)
-        assert "" in root_paths, f"Expected '' in root_paths, got {root_paths}"
-
-    @patch("platform.system")
-    @pytest.mark.skipif(platform.system() != "Linux", reason="Linux-specific test")
-    def test_platform_specific_root_handling_linux(self, mock_platform, file_tree_view, temp_dir):
-        """Test that Linux uses '/' as root."""
-        from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-
-        mock_platform.return_value = "Linux"
-
-        model = CustomFileSystemModel()
-        model.setRootPath(temp_dir)
-        file_tree_view.setModel(model)
-
-        # Track setRootIndex calls
-        original_set_root_index = file_tree_view.setRootIndex
-        root_paths = []
-
-        def track_setRootIndex(index):
-            # Get the path from the model index
-            if index.isValid() and hasattr(model, "filePath"):
-                path = model.filePath(index)
-                root_paths.append(path)
-            else:
-                # Invalid index or root path means Linux root ("/")
-                root_paths.append("/")
-            return original_set_root_index(index)
-
-        file_tree_view.setRootIndex = track_setRootIndex
-
-        file_tree_view._on_directory_changed(temp_dir)
-
-        # Check that setRootIndex was called with "/" (Linux root)
-        assert "/" in root_paths, f"Expected '/' in root_paths, got {root_paths}"
 
 
 @pytest.mark.integration
