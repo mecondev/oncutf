@@ -201,7 +201,8 @@ class AutoColorByFolderCommand(MetadataCommand):
         folder_groups: dict[str, list[FileItem]] = {}
 
         for file_item in self.file_items:
-            folder_path = str(Path(file_item.path).parent)
+            # Normalize path to use forward slashes consistently (cross-platform)
+            folder_path = str(Path(file_item.path).parent).replace("\\", "/")
 
             if folder_path not in folder_groups:
                 folder_groups[folder_path] = []

@@ -304,9 +304,41 @@ class ColumnManagementBehavior:
             # Clear selection
             self._clear_selection_for_column_update()
 
-            # Add to model
-            if hasattr(self._widget.model(), "add_column"):
-                self._widget.model().add_column(column_key)
+            # Get current visible columns and add the new one
+            current_columns = self.get_visible_columns_list()
+            if column_key not in current_columns:
+                # Determine position based on column config order
+                from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+
+                # Build ordered list based on config
+                config_order = list(FILE_TABLE_COLUMN_CONFIG.keys())
+                new_columns = current_columns.copy()
+                
+                # Find the right position to insert
+                insert_pos = len(new_columns)
+                for i, key in enumerate(config_order):
+                    if key == column_key:
+                        # Find the position after the last column that comes before this one
+                        for j, existing_key in enumerate(new_columns):
+                            if existing_key in config_order:
+                                existing_pos = config_order.index(existing_key)
+                                if existing_pos > config_order.index(column_key):
+                                    insert_pos = j
+                                    break
+                        break
+                
+                new_columns.insert(insert_pos, column_key)
+                
+                # Update internal tracking BEFORE updating model
+                self._visible_columns[column_key] = True
+                
+                # Sync widget's _visible_columns if it exists
+                if hasattr(self._widget, "_visible_columns"):
+                    self._widget._visible_columns[column_key] = True
+                
+                # Update model with new columns list
+                if hasattr(self._widget.model(), "update_visible_columns"):
+                    self._widget.model().update_visible_columns(new_columns)
 
             # Ensure proper width
             from oncutf.utils.shared.timer_manager import schedule_ui_update
@@ -330,9 +362,21 @@ class ColumnManagementBehavior:
             # Clear selection
             self._clear_selection_for_column_update()
 
-            # Remove from model
-            if hasattr(self._widget.model(), "remove_column"):
-                self._widget.model().remove_column(column_key)
+            # Get current visible columns and remove the specified one
+            current_columns = self.get_visible_columns_list()
+            if column_key in current_columns:
+                new_columns = [c for c in current_columns if c != column_key]
+                
+                # Update internal tracking BEFORE updating model
+                self._visible_columns[column_key] = False
+                
+                # Sync widget's _visible_columns if it exists
+                if hasattr(self._widget, "_visible_columns"):
+                    self._widget._visible_columns[column_key] = False
+                
+                # Update model with new columns list
+                if hasattr(self._widget.model(), "update_visible_columns"):
+                    self._widget.model().update_visible_columns(new_columns)
 
             # Save visibility config
             self._save_column_visibility_config()
@@ -404,6 +448,10 @@ class ColumnManagementBehavior:
 
         if COLUMN_RESIZE_BEHAVIOR.get("PRESERVE_USER_WIDTHS", True):
             self._schedule_column_save(column_key, new_size)
+
+        # Update scrollbar visibility after column resize
+        if hasattr(self._widget, "_update_scrollbar_visibility"):
+            self._widget._update_scrollbar_visibility()
 
     def handle_column_moved(
         self, logical_index: int, old_visual_index: int, new_visual_index: int
@@ -655,21 +703,30 @@ class ColumnManagementBehavior:
     def _save_column_visibility_config(self) -> None:
         """Save column visibility configuration."""
         try:
-            visible_columns = self.get_visible_columns_list()
+            # Build visibility dict from internal tracking
+            visibility_dict = self._visible_columns.copy()
 
             main_window = self._widget._get_main_window()
             if main_window and hasattr(main_window, "window_config_manager"):
                 config_manager = main_window.window_config_manager.config_manager
                 window_config = config_manager.get_category("window")
-                window_config.set("file_table_visible_columns", visible_columns)
+                window_config.set("file_table_columns", visibility_dict)
                 config_manager.mark_dirty()
             else:
                 from oncutf.utils.shared.json_config_manager import load_config, save_config
 
                 config = load_config()
-                config["file_table_visible_columns"] = visible_columns
+                if "window" not in config:
+                    config["window"] = {}
+                config["window"]["file_table_columns"] = visibility_dict
                 save_config(config)
 
+            # Invalidate column service cache so it picks up the new settings
+            from oncutf.core.ui_managers import get_column_service
+            service = get_column_service()
+            service.invalidate_cache()
+
+            visible_columns = self.get_visible_columns_list()
             logger.info("Saved column visibility config: %s", visible_columns)
 
         except Exception as e:

@@ -243,10 +243,26 @@ class FileLoadManager:
         """
         file_paths = []
         if recursive:
-            for root, _, filenames in os.walk(folder_path):
-                for filename in filenames:
-                    if self._is_allowed_extension(filename):
-                        file_paths.append(os.path.join(root, filename))
+            try:
+                for root, _, filenames in os.walk(folder_path):
+                    for filename in filenames:
+                        if self._is_allowed_extension(filename):
+                            try:
+                                # Use normpath for cross-platform compatibility
+                                full_path = os.path.normpath(os.path.join(root, filename))
+                                file_paths.append(full_path)
+                            except Exception as e:
+                                logger.warning(
+                                    "[FileLoadManager] Error processing file %s: %s", 
+                                    filename, 
+                                    e
+                                )
+            except Exception as e:
+                logger.error(
+                    "[FileLoadManager] Error walking directory %s: %s", 
+                    folder_path, 
+                    e
+                )
         else:
             try:
                 for filename in os.listdir(folder_path):
@@ -254,8 +270,19 @@ class FileLoadManager:
                         full_path = os.path.join(folder_path, filename)
                         if os.path.isfile(full_path):
                             file_paths.append(full_path)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.error(
+                    "[FileLoadManager] Error listing directory %s: %s", 
+                    folder_path, 
+                    e
+                )
+        
+        logger.info(
+            "[FileLoadManager] Found %d files in %s (recursive=%s)", 
+            len(file_paths), 
+            folder_path, 
+            recursive
+        )
         return file_paths
 
     def _is_allowed_extension(self, path: str) -> bool:

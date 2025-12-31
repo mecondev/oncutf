@@ -184,7 +184,9 @@ class MainWindow(QMainWindow):
 
             folders = set()
             for file_item in self.file_model.files:
-                folders.add(str(Path(file_item.path).parent))
+                # Normalize path to use forward slashes consistently (cross-platform)
+                folder_path = str(Path(file_item.path).parent).replace("\\", "/")
+                folders.add(folder_path)
 
             if len(folders) < 2:
                 logger.info(

@@ -241,7 +241,9 @@ class ContextMenuHandlers:
 
         folders = set()
         for file_item in self.parent_window.file_model.files:
-            folders.add(str(Path(file_item.path).parent))
+            # Normalize path to use forward slashes consistently (cross-platform)
+            folder_path = str(Path(file_item.path).parent).replace("\\", "/")
+            folders.add(folder_path)
 
         has_multiple_folders = len(folders) >= 2
         action_auto_color_folders.setEnabled(has_multiple_folders)

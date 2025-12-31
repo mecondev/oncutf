@@ -113,9 +113,9 @@ class InteractiveHeader(QHeaderView):
                 from oncutf.utils.ui.icons_loader import get_menu_icon
 
                 sort_asc = QAction("Sort Ascending", self)
-                sort_asc.setIcon(get_menu_icon("chevron-up"))
+                sort_asc.setIcon(get_menu_icon("chevron-down"))
                 sort_desc = QAction("Sort Descending", self)
-                sort_desc.setIcon(get_menu_icon("chevron-down"))
+                sort_desc.setIcon(get_menu_icon("chevron-up"))
             except ImportError:
                 sort_asc = QAction("Sort Ascending", self)
                 sort_desc = QAction("Sort Descending", self)
@@ -201,7 +201,10 @@ class InteractiveHeader(QHeaderView):
     def _get_file_table_view(self):
         """Get the file table view that this header belongs to."""
         # The header's parent should be the table view
-        return self.parent() if hasattr(self.parent(), "_visible_columns") else None
+        parent = self.parent()
+        if parent and hasattr(parent, "_toggle_column_visibility"):
+            return parent
+        return None
 
     def _toggle_column_visibility(self, column_key: str):
         """Toggle visibility of a specific column via the file table view."""

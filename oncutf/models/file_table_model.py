@@ -73,13 +73,15 @@ class FileTableModel(QAbstractTableModel):
         return service.get_visible_columns()
 
     def _create_column_mapping(self) -> dict[int, str]:
-        """Create mapping from column index to column key using UnifiedColumnService."""
-        from oncutf.core.ui_managers import get_column_service
-
-        service = get_column_service()
-        mapping = service.get_column_mapping()
+        """Create mapping from column index to column key based on internal visible columns.
+        
+        Column 0 is reserved for status column, so visible columns start at index 1.
+        """
+        mapping = {}
+        for i, column_key in enumerate(self._visible_columns):
+            mapping[i + 1] = column_key
         logger.debug(
-            "[ColumnMapping] Created mapping from service: %s",
+            "[ColumnMapping] Created mapping from visible columns: %s",
             mapping,
             extra={"dev_only": True},
         )
