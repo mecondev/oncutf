@@ -538,6 +538,11 @@ class UIManager:
             self.parent_window.request_preview_update
         )
 
+        # Connect F5 refresh request from file table view
+        self.parent_window.file_table_view.refresh_requested.connect(
+            self._refresh_file_table
+        )
+
         # Setup bottom controls
         controls_layout = QHBoxLayout()
         self.parent_window.status_label = QLabel("")

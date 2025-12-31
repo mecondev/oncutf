@@ -85,6 +85,7 @@ class FileTableView(QTableView):
     files_dropped = pyqtSignal(
         list, object
     )  # Emitted with list of dropped paths and keyboard modifiers
+    refresh_requested = pyqtSignal()  # Emitted when F5 pressed for full refresh
 
     def __init__(self, parent=None):
         """Initialize the file table view with all configurations."""
@@ -857,7 +858,11 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
-        # SIMPLIFIED: No longer needed - selection is cleared during column updates
+        # Handle F5 refresh (like FileTreeView does)
+        if event.key() == Qt.Key_F5:
+            self.refresh_requested.emit()
+            event.accept()
+            return
 
         # Handle column management shortcuts (delegate to behavior)
         if hasattr(self, "_column_mgmt_behavior"):
