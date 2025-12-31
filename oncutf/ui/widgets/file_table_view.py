@@ -858,8 +858,10 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
-        # Handle F5 refresh (like FileTreeView does)
-        if event.key() == Qt.Key_F5:
+        # Handle F5 refresh - on some Linux systems, F5 is remapped to F6 key code
+        is_f5_refresh = event.key() in (Qt.Key_F5, Qt.Key_F6)
+        
+        if is_f5_refresh:
             self.refresh_requested.emit()
             event.accept()
             return

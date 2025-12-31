@@ -774,10 +774,8 @@ class UIManager:
                 FILE_TABLE_SHORTCUTS["CALCULATE_HASH"],
                 self.parent_window.shortcut_calculate_hash_selected,
             ),
-            (
-                FILE_TABLE_SHORTCUTS["REFRESH"],
-                self._refresh_file_table,
-            ),  # F5: Reload files with deselect
+            # NOTE: REFRESH (F5) removed from QShortcut list - now handled via
+            # signal-based approach in FileTableView.keyPressEvent → refresh_requested signal
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
