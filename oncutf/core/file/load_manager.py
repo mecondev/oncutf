@@ -292,6 +292,79 @@ class FileLoadManager:
             ext = ext[1:]
         return ext in self.allowed_extensions
 
+    def get_file_items_from_folder(
+        self, folder_path: str, *, use_cache: bool = True, file_store=None
+    ) -> list[FileItem]:
+        """Scan folder and return FileItem objects (with caching support).
+
+        This method performs I/O operations to scan the filesystem.
+        Cache is stored in FileStore for state persistence.
+
+        Args:
+            folder_path: Absolute path to folder to scan
+            use_cache: Whether to use cached results if available
+            file_store: FileStore instance (optional, uses parent_window.context if not provided)
+
+        Returns:
+            List of FileItem objects for supported files
+
+        """
+        # Get FileStore instance
+        if not file_store:
+            if hasattr(self.parent_window, "context"):
+                file_store = self.parent_window.context.file_store
+            else:
+                file_store = None
+
+        # Check cache first (via FileStore)
+        if use_cache and file_store:
+            cached_files = file_store.get_cached_files(folder_path)
+            if cached_files is not None:
+                logger.debug(
+                    "[FileLoadManager] Using cached files for %s: %d items",
+                    folder_path,
+                    len(cached_files),
+                )
+                return cached_files
+
+        # Scan folder (I/O operation)
+        file_paths = []
+        try:
+            for filename in sorted(os.listdir(folder_path)):
+                if self._is_allowed_extension(filename):
+                    full_path = os.path.join(folder_path, filename)
+                    if os.path.isfile(full_path):
+                        file_paths.append(full_path)
+        except OSError as e:
+            logger.error(
+                "[FileLoadManager] Error scanning directory %s: %s",
+                folder_path,
+                e
+            )
+            return []
+
+        # Convert to FileItem objects
+        file_items = []
+        for file_path in file_paths:
+            try:
+                file_items.append(FileItem.from_path(file_path))
+            except OSError as e:
+                logger.warning(
+                    "[FileLoadManager] Could not create FileItem for %s: %s",
+                    os.path.basename(file_path),
+                    e
+                )
+                continue
+
+        # Cache results (via FileStore)
+        if use_cache and file_store:
+            file_store.set_cached_files(folder_path, file_items)
+
+        logger.info(
+            "[FileLoadManager] Scanned %s: %d files", folder_path, len(file_items)
+        )
+        return file_items
+
     def _filter_companion_files(self, file_paths: list[str]) -> list[str]:
         """Filter companion files based on configuration.
 
@@ -705,3 +778,85 @@ class FileLoadManager:
         """Clear the metadata operation flag."""
         self._metadata_operation_in_progress = False
         logger.debug("[FileLoadManager] Cleared metadata operation flag", extra={"dev_only": True})
+
+    def refresh_loaded_folders(
+        self, changed_folder: str | None = None, file_store=None
+    ) -> bool:
+        """Refresh files from loaded folders after filesystem changes.
+
+        I/O LAYER METHOD - Performs filesystem scanning to reload files.
+        Updates FileStore state with refreshed file list.
+
+        Args:
+            changed_folder: Specific folder that changed (optional)
+            file_store: FileStore instance to update (optional, uses parent_window if available)
+
+        Returns:
+            bool: True if files were refreshed
+
+        """
+        # Get FileStore instance
+        if not file_store:
+            if hasattr(self.parent_window, "file_store"):
+                file_store = self.parent_window.file_store
+            else:
+                logger.warning("[FileLoadManager] No FileStore available for refresh")
+                return False
+
+        loaded_files = file_store.get_loaded_files()
+        if not loaded_files:
+            logger.debug("[FileLoadManager] No files loaded, skipping refresh")
+            return False
+
+        # Get unique folders from loaded files
+        loaded_folders = set()
+        for file_item in loaded_files:
+            folder = os.path.dirname(file_item.full_path)
+            loaded_folders.add(folder)
+
+        # If specific folder given, check if it's relevant
+        if changed_folder:
+            changed_folder_norm = os.path.normpath(changed_folder)
+            if changed_folder_norm not in loaded_folders:
+                logger.debug(
+                    "[FileLoadManager] Changed folder not in loaded files: %s", changed_folder
+                )
+                return False
+
+            folders_to_refresh = {changed_folder_norm}
+        else:
+            folders_to_refresh = loaded_folders
+
+        logger.info(
+            "[FileLoadManager] Refreshing %d folder(s) after filesystem change",
+            len(folders_to_refresh),
+        )
+
+        # Invalidate cache for affected folders
+        for folder in folders_to_refresh:
+            file_store.invalidate_folder_cache(folder)
+
+        # Reload files from all loaded folders (I/O operation)
+        refreshed_files: list[FileItem] = []
+        for folder in loaded_folders:
+            # Skip folders that no longer exist (e.g., unmounted USB drives)
+            if not os.path.exists(folder):
+                logger.info(
+                    "[FileLoadManager] Folder no longer exists, removing its files: %s", folder
+                )
+                continue
+
+            try:
+                # Use get_file_items_from_folder for I/O (bypasses cache)
+                folder_files = self.get_file_items_from_folder(
+                    folder, use_cache=False, file_store=file_store
+                )
+                refreshed_files.extend(folder_files)
+            except Exception as e:
+                logger.error("[FileLoadManager] Error refreshing folder %s: %s", folder, e)
+
+        # Update FileStore state
+        file_store.set_loaded_files(refreshed_files)
+
+        logger.info("[FileLoadManager] Refreshed %d files", len(refreshed_files))
+        return True

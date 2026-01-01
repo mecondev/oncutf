@@ -287,10 +287,8 @@ class ApplicationContext(QObject):
         """Get performance metrics report."""
         base_metrics = self._performance_metrics.copy()
 
-        # Add FileStore metrics if available
-        if self._file_store is not None:
-            file_store_metrics = self._file_store.get_performance_stats()
-            base_metrics.update({f"filestore_{k}": v for k, v in file_store_metrics.items()})
+        # Note: FileStore is now state-only and doesn't track performance metrics
+        # Performance metrics come from FileLoadManager and other I/O managers
 
         return base_metrics
 
