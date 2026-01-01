@@ -338,6 +338,11 @@ class MetadataWidget(QWidget):
         return result
 
     def emit_if_changed(self) -> None:
+        """Emit settings_changed signal if the current configuration differs from last.
+
+        Compares current widget state with cached state and emits signal only
+        when values have actually changed to avoid unnecessary preview updates.
+        """
         # Log current combo box state
         if hasattr(self.options_combo, "get_current_data"):
             current_text = self.options_combo.get_current_text()

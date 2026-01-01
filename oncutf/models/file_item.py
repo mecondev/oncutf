@@ -28,6 +28,14 @@ class FileItem:
     """
 
     def __init__(self, path: str, extension: str, modified: datetime):
+        """Initialize a FileItem instance.
+
+        Args:
+            path: Full absolute path to the file
+            extension: File extension without leading dot (e.g., 'jpg', 'png')
+            modified: Last modification datetime of the file
+
+        """
         self.full_path = path  # Full absolute path
         self.path = path  # Keep for compatibility
         self.extension = extension
@@ -98,6 +106,12 @@ class FileItem:
 
     @property
     def has_metadata(self) -> bool:
+        """Check if the file has loaded metadata.
+
+        Returns:
+            True if metadata dict exists and is non-empty
+
+        """
         logger.debug(
             "[DEBUG] Checking has_metadata for %s | metadata: %s",
             self.filename,
@@ -115,6 +129,12 @@ class FileItem:
 
     @property
     def metadata_extended(self) -> bool:
+        """Check if extended (EXIF) metadata has been loaded.
+
+        Returns:
+            True if metadata dict contains __extended__ flag set to True
+
+        """
         return isinstance(self.metadata, dict) and self.metadata.get("__extended__") is True
 
     def _detect_size(self) -> int:

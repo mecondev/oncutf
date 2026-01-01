@@ -158,6 +158,12 @@ class CustomMessageDialog(QDialog):
         self.accept()
 
     def is_checkbox_checked(self) -> bool:
+        """Check if the 'Apply to all' checkbox is checked.
+
+        Returns:
+            True if checkbox exists and is checked, False otherwise
+
+        """
         return self.checkbox is not None and self.checkbox.isChecked()
 
     @staticmethod
@@ -432,6 +438,12 @@ class CustomMessageDialog(QDialog):
             self.progress_bar.setValue(0)
 
     def keyPressEvent(self, event):
+        """Handle key press events, especially Escape to cancel.
+
+        Args:
+            event: QKeyEvent containing the pressed key
+
+        """
         logger.warning("[CustomMessageDialog] keyPressEvent: %s", event.key())
         if event.key() == Qt.Key_Escape:
             self.set_message("Canceling metadata scan...")
@@ -472,6 +484,7 @@ class CustomMessageDialog(QDialog):
         event.accept()
 
     def reject(self):
+        """Handle dialog rejection (ESC or close button)."""
         logger.warning("[CustomMessageDialog] reject() CALLED via ESC or close")
         super().reject()
         self.close()

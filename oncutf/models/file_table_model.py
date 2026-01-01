@@ -48,6 +48,12 @@ class FileTableModel(QAbstractTableModel):
     sort_changed = pyqtSignal()  # Emitted when sort() is called
 
     def __init__(self, parent_window: Any = None) -> None:
+        """Initialize the FileTableModel.
+
+        Args:
+            parent_window: Reference to parent MainWindow (optional)
+
+        """
         super().__init__()
         logger.debug("FileTableModel __init__ called", extra={"dev_only": True})
         self.parent_window: Any = parent_window
@@ -87,6 +93,12 @@ class FileTableModel(QAbstractTableModel):
         return mapping
 
     def update_visible_columns(self, visible_columns: list[str]) -> None:
+        """Update the list of visible columns and refresh the model.
+
+        Args:
+            visible_columns: List of column keys to display (e.g., ['filename', 'extension'])
+
+        """
         logger.debug(
             "[FileTableModel] update_visible_columns called with: %s",
             visible_columns,
@@ -313,6 +325,12 @@ class FileTableModel(QAbstractTableModel):
             raise  # Re-raise to trigger fallback
 
     def get_visible_columns(self) -> list[str]:
+        """Get the current list of visible column keys.
+
+        Returns:
+            Copy of the visible columns list
+
+        """
         return self._visible_columns.copy()
 
     def debug_column_state(self) -> None:
@@ -348,6 +366,12 @@ class FileTableModel(QAbstractTableModel):
         )
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
+        """Return the number of columns in the model.
+
+        Returns:
+            Column count (1 for status + visible columns)
+
+        """
         count = len(self._visible_columns) + 1  # +1 for status column
         return count
 
@@ -485,6 +509,12 @@ class FileTableModel(QAbstractTableModel):
         return QIcon(pixmap)
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
+        """Return the number of rows (files) in the model.
+
+        Returns:
+            Number of files currently loaded
+
+        """
         count = len(self.files)
         return count
 

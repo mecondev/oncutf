@@ -20,11 +20,18 @@ class OriginalNameWidget(BaseRenameModule):
     """
 
     def __init__(self, parent=None) -> None:
+        """Initialize the OriginalNameWidget.
+
+        Args:
+            parent: Parent widget (optional)
+
+        """
         super().__init__(parent)
         self.setProperty("module", True)
         self.setup_ui()
 
     def setup_ui(self) -> None:
+        """Set up the widget's UI layout and components."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
         layout.setSpacing(0)  # Match final transformer spacing
@@ -54,9 +61,24 @@ class OriginalNameWidget(BaseRenameModule):
         self._last_value = str(self.get_data())
 
     def get_data(self) -> dict:
+        """Get the module configuration data.
+
+        Returns:
+            Dict with type='original_name' for this module
+
+        """
         return {"type": "original_name"}
 
     def set_data(self, _data: dict) -> None:
+        """Set the module configuration data.
+
+        Args:
+            _data: Configuration dict (ignored for this module)
+
+        Note:
+            This module has no configurable options, so data is ignored.
+
+        """
         # Nothing to set for original name module
         self._last_value = str(self.get_data())
 

@@ -821,6 +821,7 @@ class MainWindow(QMainWindow):
             from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
             def update_splitters():
+                """Update splitter proportions for new window width."""
                 self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
 
             # Schedule the update to avoid conflicts with other resize operations
@@ -830,6 +831,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, "file_table_view"):
 
                 def trigger_column_adjustment():
+                    """Trigger column width adjustment after splitter change."""
                     self.splitter_manager.trigger_column_adjustment_after_splitter_change()
 
                 # Schedule column adjustment after splitter update
@@ -872,6 +874,7 @@ class MainWindow(QMainWindow):
         from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
         def refresh():
+            """Refresh file table column widths after layout change."""
             # Reset manual column preference for auto-sizing
             if not getattr(self.file_table_view, "_recent_manual_resize", False):
                 self.file_table_view._has_manual_preference = False
