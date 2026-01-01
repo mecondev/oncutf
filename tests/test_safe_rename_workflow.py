@@ -18,8 +18,12 @@ class TestSafeRenameWorkflow:
         """Set up test fixtures."""
         # Create mock main window
         self.mock_main_window = MagicMock()
-        self.mock_main_window.current_folder_path = "/test/folder"
         self.mock_main_window.last_action = None
+
+        # Setup mock context
+        self.mock_context = MagicMock()
+        self.mock_context.get_current_folder.return_value = "/test/folder"
+        self.mock_main_window.context = self.mock_context
 
         # Setup file model
         self.mock_file_model = MagicMock()
@@ -79,9 +83,9 @@ class TestSafeRenameWorkflow:
         # Should not raise exception
         rename_manager._execute_post_rename_workflow_safe(checked_paths)
 
-        # Test with main window missing current_folder_path
+        # Test with main window missing context
         mock_main_window = MagicMock()
-        del mock_main_window.current_folder_path
+        del mock_main_window.context
 
         rename_manager = RenameManager(mock_main_window)
 
@@ -90,7 +94,7 @@ class TestSafeRenameWorkflow:
 
     def test_safe_post_rename_workflow_with_no_folder(self):
         """Test workflow handles missing folder path gracefully."""
-        self.mock_main_window.current_folder_path = None
+        self.mock_context.get_current_folder.return_value = None
         checked_paths = {"/test/folder/file1.txt"}
 
         # Should not raise exception and should return early

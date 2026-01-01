@@ -108,10 +108,9 @@ class WindowConfigManager:
             window_config.set("splitter_states", splitter_states)
 
             # Save other window-related settings
-            if hasattr(self.main_window, "current_folder_path"):
-                window_config.set("last_folder", self.main_window.current_folder_path or "")
-            if hasattr(self.main_window, "current_folder_is_recursive"):
-                window_config.set("recursive_mode", self.main_window.current_folder_is_recursive)
+            if hasattr(self.main_window, "context") and self.main_window.context:
+                window_config.set("last_folder", self.main_window.context.get_current_folder() or "")
+                window_config.set("recursive_mode", self.main_window.context.is_recursive_mode())
             if hasattr(self.main_window, "current_sort_column"):
                 window_config.set("sort_column", self.main_window.current_sort_column)
             if hasattr(self.main_window, "current_sort_order"):
