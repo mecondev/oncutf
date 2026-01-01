@@ -6,10 +6,9 @@ Date: 2025-05-06
 This module provides logic for extracting metadata fields (such as creation date,
 modification date, or EXIF tag) to include in renamed filenames.
 
-Refactored in Dec 2025 to delegate extraction logic to MetadataExtractor domain layer.
+Delegates extraction logic to MetadataExtractor domain layer.
 """
 
-import os
 from pathlib import Path
 from typing import Any
 
@@ -31,25 +30,6 @@ class MetadataModule:
     UI_ROWS = 2
     DESCRIPTION = "Extract file metadata (dates, hash, EXIF)"
     CATEGORY = "Metadata"
-
-    @staticmethod
-    def clean_metadata_value(value: str) -> str:
-        """Clean metadata value for filename safety by replacing problematic characters.
-
-        DEPRECATED: Use MetadataExtractor.clean_for_filename() instead.
-        Kept for backwards compatibility.
-
-        Args:
-            value (str): The raw metadata value
-
-        Returns:
-            str: Cleaned value safe for use in filenames
-
-        """
-        from oncutf.domain.metadata.extractor import MetadataExtractor
-
-        extractor = MetadataExtractor()
-        return extractor.clean_for_filename(value)
 
     @staticmethod
     def apply_from_data(
@@ -212,34 +192,6 @@ class MetadataModule:
         extractor = MetadataExtractor()
         extractor.clear_cache()
         logger.debug("[MetadataModule] Cache cleared")
-
-    @staticmethod
-    def _get_file_hash(file_path: str, hash_type: str) -> str:
-        """Get file hash using the hash cache.
-
-        DEPRECATED: Hash extraction is now handled by MetadataExtractor.
-        Kept for backwards compatibility.
-
-        Args:
-            file_path: Path to the file
-            hash_type: Type of hash (CRC32 only)
-
-        Returns:
-            str: Hash value or original name if not available
-
-        """
-        from oncutf.utils.filesystem.file_status_helpers import get_hash_for_file
-
-        try:
-            hash_value = get_hash_for_file(file_path, hash_type)
-            if hash_value:
-                return hash_value
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            return base_name
-        except Exception as e:
-            logger.warning("[MetadataModule] Error getting hash for %s: %s", file_path, e)
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            return base_name
 
     @staticmethod
     def is_effective_data(data: dict[str, Any]) -> bool:
