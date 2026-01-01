@@ -379,16 +379,16 @@ Examples:
 
   # Generate full structure report with tree and analysis
   %(prog)s --mode structure
-  
+
   # Generate AI context for the entire project
   %(prog)s --mode content
-  
+
   # Custom output location with excluded directories
   %(prog)s --mode structure -o analysis/project.md --exclude tests scripts
-  
+
   # Scan only top-level files (no recursion)
   %(prog)s --mode content --no-recursive
-  
+
   # Exclude multiple directories and adjust docstring preview length
   %(prog)s --mode structure \\
     --exclude tests htmlcov build \\

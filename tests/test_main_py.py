@@ -6,6 +6,8 @@ from types import ModuleType
 
 def test_app_paths_unix(monkeypatch, tmp_path):
     """Test AppPaths returns correct paths on Unix-like systems."""
+    import platform
+
     from oncutf.utils.paths import AppPaths
 
     # Reset cached paths
@@ -16,8 +18,13 @@ def test_app_paths_unix(monkeypatch, tmp_path):
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
         path = AppPaths.get_user_data_dir()
         assert "oncutf" in str(path)
+    elif platform.system() == "Darwin":
+        # On macOS, use Application Support directory (XDG_DATA_HOME not standard on macOS)
+        AppPaths.reset()
+        path = AppPaths.get_user_data_dir()
+        assert "Library/Application Support/oncutf" in str(path)
     else:
-        # On Unix, test XDG_DATA_HOME behavior
+        # On Linux, test XDG_DATA_HOME behavior
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_data"))
         AppPaths.reset()  # Reset again after env change
         path = AppPaths.get_user_data_dir()
