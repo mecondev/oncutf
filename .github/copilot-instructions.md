@@ -83,6 +83,23 @@ mypy .                   # Type check (many modules have ignore_errors=true)
 
 ---
 
+## Canonical sources (Single Source of Truth)
+
+| Domain | Canonical | Legacy/Supporting |
+|--------|-----------|-------------------|
+| **Rename Pipeline** | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
+| **Column Management** | `UnifiedColumnService` | `ColumnManager` (thin adapter) |
+| **UI Components** | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
+
+**Rules:**
+- All rename operations MUST go through `UnifiedRenameEngine`.
+- New UI code uses **Behaviors**, NOT Mixins.
+- New column logic goes in `UnifiedColumnService`.
+
+See [docs/REFACTORING_ROADMAP.md](../docs/REFACTORING_ROADMAP.md) for technical debt tracking.
+
+---
+
 ## Refactoring workflow
 
 When user approves refactoring:

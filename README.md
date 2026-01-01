@@ -271,6 +271,23 @@ See [TODO.md](TODO.md) for planned features and improvements:
 - Metadata database search functionality
 - Rename preview profiling
 
+See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical debt and planned refactoring.
+
+### Development Guidelines
+
+**Canonical Patterns (Single Source of Truth):**
+
+| Domain | Canonical | Legacy/Supporting |
+|--------|-----------|-------------------|
+| Rename Pipeline | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
+| Column Management | `UnifiedColumnService` | `ColumnManager` (thin adapter) |
+| UI Components | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
+
+**Rules:**
+- All rename operations go through `UnifiedRenameEngine`
+- New code uses Behaviors, not Mixins
+- New column logic goes in `UnifiedColumnService`
+
 ---
 
 ## Technical Highlights
