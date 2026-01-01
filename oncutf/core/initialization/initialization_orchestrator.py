@@ -75,7 +75,7 @@ class InitializationOrchestrator:
         from oncutf.core.backup_manager import get_backup_manager
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
         from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
-        from oncutf.core.database.database_manager import initialize_database
+        from oncutf.core.database import initialize_database
         from oncutf.core.drag.drag_manager import DragManager
         from oncutf.core.file import FileOperationsManager
         from oncutf.core.metadata import (
