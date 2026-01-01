@@ -237,9 +237,21 @@ class FileLoadManager:
             file_paths = self._get_files_from_folder(folder_path, recursive)
             self._update_ui_with_files(file_paths, clear=not merge_mode)
 
-    def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> list[str]:
-        """Get all valid files from folder.
-        Returns list of file paths.
+    def _get_files_from_folder(
+        self, folder_path: str, recursive: bool = False, *, sorted_output: bool = False
+    ) -> list[str]:
+        """Get all valid files from folder (I/O operation).
+
+        Core scanning method used by all folder loading operations.
+
+        Args:
+            folder_path: Path to folder to scan
+            recursive: Whether to scan subdirectories
+            sorted_output: Whether to sort results alphabetically
+
+        Returns:
+            List of file paths
+
         """
         file_paths = []
         if recursive:
@@ -277,6 +289,9 @@ class FileLoadManager:
                     e
                 )
 
+        if sorted_output:
+            file_paths.sort()
+
         logger.info(
             "[FileLoadManager] Found %d files in %s (recursive=%s)",
             len(file_paths),
@@ -299,6 +314,7 @@ class FileLoadManager:
 
         This method performs I/O operations to scan the filesystem.
         Cache is stored in FileStore for state persistence.
+        Delegates scanning to _get_files_from_folder() for consistency.
 
         Args:
             folder_path: Absolute path to folder to scan
@@ -327,21 +343,10 @@ class FileLoadManager:
                 )
                 return cached_files
 
-        # Scan folder (I/O operation)
-        file_paths = []
-        try:
-            for filename in sorted(os.listdir(folder_path)):
-                if self._is_allowed_extension(filename):
-                    full_path = os.path.join(folder_path, filename)
-                    if os.path.isfile(full_path):
-                        file_paths.append(full_path)
-        except OSError as e:
-            logger.error(
-                "[FileLoadManager] Error scanning directory %s: %s",
-                folder_path,
-                e
-            )
-            return []
+        # Scan folder using unified scanning method (I/O operation)
+        file_paths = self._get_files_from_folder(
+            folder_path, recursive=False, sorted_output=True
+        )
 
         # Convert to FileItem objects
         file_items = []
