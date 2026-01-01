@@ -10,6 +10,7 @@ Extracted from MetadataContextMenuMixin as part of composition-based refactoring
 
 Author: Michael Economou
 Date: December 28, 2025
+Updated: January 1, 2026 - Removed MetadataCacheHelper dependency
 """
 
 from typing import Any, Protocol
@@ -17,6 +18,7 @@ from typing import Any, Protocol
 from PyQt5.QtCore import QModelIndex, QPoint
 from PyQt5.QtWidgets import QAction, QMenu, QWidget
 
+from oncutf.utils.filesystem.file_status_helpers import get_metadata_value
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -96,15 +98,6 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             list[Any]: List of selected FileItem objects
-
-        """
-        ...
-
-    def _get_cache_helper(self) -> Any | None:
-        """Get the MetadataCacheHelper instance.
-
-        Returns:
-            MetadataCacheHelper | None: Cache helper if available
 
         """
         ...
@@ -282,12 +275,10 @@ class MetadataContextMenuBehavior:
             # Get current field value
             if selected_files:
                 file_item = selected_files[0]
-                # Use cache helper for unified access
-                cache_helper = self._widget._get_cache_helper()
-                if cache_helper:
-                    current_field_value = cache_helper.get_metadata_value(
-                        file_item, normalized_key_path
-                    )
+                # Get value from cache using file_status_helpers
+                current_field_value = get_metadata_value(
+                    file_item.full_path, normalized_key_path
+                )
 
                 # Fallback to file item metadata if not in cache
                 if (

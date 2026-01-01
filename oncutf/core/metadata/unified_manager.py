@@ -29,7 +29,6 @@ from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 from oncutf.utils.ui.cursor_helper import wait_cursor
 
 if TYPE_CHECKING:
@@ -62,7 +61,6 @@ class UnifiedMetadataManager(QObject):
         """Initialize UnifiedMetadataManager with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
-        self._cache_helper: MetadataCacheHelper | None = None
         self._currently_loading: set[str] = set()
 
         # State tracking
@@ -125,14 +123,6 @@ class UnifiedMetadataManager(QObject):
                 extra={"dev_only": True},
             )
         return self._exiftool_wrapper
-
-    def initialize_cache_helper(self) -> None:
-        """Initialize the cache helper if parent window is available."""
-        self._cache_service.initialize_cache_helper()
-        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            self._cache_helper = MetadataCacheHelper(
-                self.parent_window.metadata_cache, self.parent_window
-            )
 
     @property
     def structured(self):

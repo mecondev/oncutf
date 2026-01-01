@@ -1,7 +1,7 @@
 """Handler for metadata tree cache management.
 
 This module handles cache-related operations for the metadata tree view,
-including cache helper initialization and direct loader management.
+including direct loader management.
 
 Author: Michael Economou
 Date: 2025-12-24
@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
@@ -37,33 +36,6 @@ class MetadataTreeCacheHandler:
 
         """
         self._view = view
-
-    def initialize_cache_helper(self) -> None:
-        """Initialize the metadata cache helper."""
-        try:
-            # Use the persistent cache instance from parent window if available
-            parent_window = self._view._get_parent_with_file_table()
-            cache_instance = None
-            if parent_window and hasattr(parent_window, "metadata_cache"):
-                cache_instance = parent_window.metadata_cache
-
-            self._view._cache_helper = MetadataCacheHelper(cache_instance)
-            logger.debug(
-                "[MetadataTreeView] MetadataCacheHelper initialized (with persistent cache)",
-                extra={"dev_only": True},
-            )
-        except Exception as e:
-            logger.exception("[MetadataTreeView] Failed to initialize MetadataCacheHelper: %s", e)
-            self._view._cache_helper = None
-
-    def get_cache_helper(self) -> MetadataCacheHelper | None:
-        """Get the MetadataCacheHelper instance, initializing if needed."""
-        # Always check if we need to initialize or re-initialize (if cache backend is missing)
-        if self._view._cache_helper is None or (
-            self._view._cache_helper and self._view._cache_helper.metadata_cache is None
-        ):
-            self.initialize_cache_helper()
-        return self._view._cache_helper
 
     def initialize_direct_loader(self) -> None:
         """Initialize the direct metadata loader."""

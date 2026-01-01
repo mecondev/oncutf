@@ -139,7 +139,6 @@ class InitializationOrchestrator:
 
         # Metadata system
         self.window.metadata_manager = get_unified_metadata_manager(self.window)
-        self.window.metadata_manager.initialize_cache_helper()
         self.window.selection_manager = SelectionManager(parent_window=self.window)
 
         # Theme setup

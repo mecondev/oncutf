@@ -53,7 +53,6 @@ class FileTableModel(QAbstractTableModel):
         self.parent_window: Any = parent_window
         self.files: list[FileItem] = []
         self._direct_loader = None
-        self._cache_helper = None
 
         # Load icons for metadata status using the correct functions
         self.metadata_icons = load_metadata_icons()

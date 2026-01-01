@@ -21,6 +21,25 @@ Key capabilities:
 
 ---
 
+## Entry Point Guidelines
+
+### Recommended Entry Points
+
+| Use Case | Entry Point | Notes |
+|----------|-------------|-------|
+| **Simple cache checks** | `file_status_helpers` | `has_metadata()`, `get_metadata_for_file()`, `get_metadata_value()`, `set_metadata_value()` |
+| **Full loading operations** | `MetadataController` | UI-agnostic, for external callers |
+| **Qt-integrated operations** | `UnifiedMetadataManager` | Signals, progress dialogs |
+
+### Removed Entry Points
+
+| Entry Point | Status | Migration Path |
+|-------------|--------|----------------|
+| `MetadataCacheHelper` | ❌ Removed 2026-01-01 | Use `file_status_helpers` functions |
+| `DirectMetadataLoader` | ❌ Removed 2026-01-01 | Was dead code, use `UnifiedMetadataManager` |
+
+---
+
 ## Scope
 
 The Metadata Engine **owns**:
@@ -90,7 +109,6 @@ The Metadata Engine **does NOT own**:
 | `unified_metadata_manager.py` | Facade for all metadata operations |
 | `metadata_loader.py` | Orchestrates single/batch loading with progress |
 | `parallel_metadata_loader.py` | ThreadPoolExecutor for parallel extraction |
-| `direct_metadata_loader.py` | Simple on-demand loader (legacy) |
 | `metadata_staging_manager.py` | Tracks pending changes before save |
 | `companion_metadata_handler.py` | XMP/sidecar file merging |
 | `metadata_save_handler.py` | ExifTool write operations |
@@ -132,8 +150,7 @@ The Metadata Engine **does NOT own**:
 | File | Responsibility |
 |------|----------------|
 | `exiftool_wrapper.py` | Low-level exiftool subprocess wrapper |
-| `file_status_helpers.py` | Central helpers for metadata/hash checks |
-| `metadata_cache_helper.py` | Unified cache access with normalization |
+| `file_status_helpers.py` | **Recommended** — Central helpers for metadata/hash checks |
 
 ---
 
@@ -285,9 +302,8 @@ FileStore.get_loaded_files() — for "reload all" operations
 
 ```
 Rename modules access metadata via:
-  • file_item.metadata — direct dict access
-  • MetadataCacheHelper.get_metadata_for_file(file_item)
-  • UnifiedMetadataManager.check_cached_metadata(file_item)
+  • file_status_helpers.get_metadata_for_file(file_path) — recommended
+  • UnifiedMetadataManager.check_cached_metadata(file_item) — for FileItem objects
 
 Key metadata fields used:
   • EXIF:DateTimeOriginal, CreateDate, ModifyDate
@@ -437,27 +453,31 @@ if has_hash(file_path):
 
 **Recommendation**: Add `remove(path)` method for explicit invalidation.
 
-### 2. Multiple Entry Points
+### 2. ~~Multiple Entry Points~~ ✅ RESOLVED (2026-01-01)
 
-Metadata can be accessed via:
-- `UnifiedMetadataManager`
-- `MetadataCacheHelper`
-- `file_status_helpers`
-- Direct cache access
+~~Metadata can be accessed via multiple entry points.~~
 
-**Recommendation**: Consolidate to `UnifiedMetadataManager` as single source.
+**Resolution**:
+- `DirectMetadataLoader` removed (was dead code)
+- `MetadataCacheHelper` removed (consolidated into `file_status_helpers`)
+- Recommended entry points now clearly documented:
+  - `file_status_helpers` for simple sync checks (`get_metadata_value()`, `set_metadata_value()`, etc.)
+  - `UnifiedMetadataManager` for complex Qt-integrated operations
+  - `MetadataController` for UI-agnostic external access
 
-### 3. DirectMetadataLoader vs MetadataLoader
+### 3. ~~DirectMetadataLoader vs MetadataLoader~~ ✅ RESOLVED (2026-01-01)
 
-`DirectMetadataLoader` appears to be legacy; `MetadataLoader` is the current orchestrator. Both exist.
+~~Both loaders existed with unclear distinction.~~
 
-**Recommendation**: Mark `DirectMetadataLoader` as deprecated or remove.
+**Resolution**: `DirectMetadataLoader` removed — was never imported externally (dead code).
 
 ### 4. Manager vs Controller Distinction
 
-Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata loading. The boundary could be clearer.
+Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata loading.
 
-**Recommendation**: Document that Controller is for UI-agnostic access, Manager is for Qt-integrated operations.
+**Clarification**:
+- `MetadataController`: UI-agnostic entry point for external callers (tests, scripts)
+- `UnifiedMetadataManager`: Qt-integrated facade with signals and progress dialogs
 
 ---
 
@@ -470,7 +490,7 @@ Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata load
 | Parallel loading | ✅ ThreadPoolExecutor |
 | Hash computation | ✅ CRC32 with caching |
 | Metadata editing | ✅ Stage → Save workflow |
-| Architecture clarity | ⚠️ Multiple entry points |
+| Architecture clarity | ✅ Entry points consolidated |
 | Documentation | 📝 This document |
 
 The Metadata Engine is **production-ready** and provides:
@@ -478,3 +498,4 @@ The Metadata Engine is **production-ready** and provides:
 - Parallel extraction for batch operations
 - Persistent storage across application sessions
 - Full EXIF/XMP support via exiftool
+- Clear entry point guidelines (as of 2026-01-01)

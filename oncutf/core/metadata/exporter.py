@@ -328,14 +328,15 @@ class MetadataExporter:
             return None
 
     def _get_metadata_for_file(self, file_item: Any) -> dict[str, Any] | None:
-        """Get metadata for a file from cache or file item using unified cache helper."""
+        """Get metadata for a file from cache or file item using file_status_helpers."""
         try:
-            # Use MetadataCacheHelper for unified access
-            if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
+            # Use file_status_helpers for direct cache access
+            from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
 
-                cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
-                return cache_helper.get_metadata_for_file(file_item)
+            if hasattr(file_item, "full_path"):
+                metadata = get_metadata_for_file(file_item.full_path)
+                if metadata:
+                    return metadata
 
             # Fallback to file item metadata if no cache available
             if hasattr(file_item, "metadata") and file_item.metadata:

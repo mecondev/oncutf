@@ -223,9 +223,10 @@ oncutf/
 ├── utils/                           # Utilities
 │   ├── selection_provider.py        # Unified selection interface
 │   ├── filename_validator.py
+│   ├── filesystem/
+│   │   └── file_status_helpers.py   # Canonical metadata/hash cache access
 │   ├── metadata/
-│   │   ├── exiftool_adapter.py      # Low-level ExifTool wrapper
-│   │   └── cache_helper.py          # Cache utilities
+│   │   └── exiftool_adapter.py      # Low-level ExifTool wrapper
 │   ├── icon_cache.py
 │   └── ... (50+ helpers)
 │
@@ -518,7 +519,7 @@ Historical phase execution plans are archived in `_archive/`.
 - `utils/path_normalizer.py` — Path string manipulation
 - `utils/logger_factory.py` — Logger creation
 - `utils/cursor_helper.py` — Wait cursor context manager
-- `utils/metadata/cache_helper.py` — Cache key generation (no I/O)
+- `utils/filesystem/file_status_helpers.py` — Cache access helpers (uses ApplicationContext)
 
 **Naming rule:** `<domain>_<purpose>.py` in `utils/<domain>/`
 
@@ -590,7 +591,7 @@ To avoid architectural confusion, follow these rules when placing code:
 - Metadata formatting/parsing (no I/O)
 - Logging factories, cursor helpers
 - Reusable functions without side effects or state dependencies
-- **Example:** `utils/metadata/cache_helper.py` (pure cache key generation)
+- **Example:** `utils/filesystem/file_status_helpers.py` (cache access helpers)
 
 **When in doubt:** If it coordinates multiple services or performs I/O → `core/`. If it's a stateless helper → `utils/`.
 

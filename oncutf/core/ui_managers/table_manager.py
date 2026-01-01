@@ -219,10 +219,9 @@ class TableManager:
         common_keys = None
 
         for file in selected_files:
-            from oncutf.utils.metadata.cache_helper import get_metadata_cache_helper
+            from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
 
-            cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
-            metadata = cache_helper.get_metadata_for_file(file)
+            metadata = get_metadata_for_file(file.full_path) or {}
             keys = set(metadata.keys())
 
             if common_keys is None:
