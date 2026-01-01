@@ -20,7 +20,7 @@ from oncutf.core.pyqt_imports import QModelIndex
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.events.context_menu_handlers import ContextMenuHandlers
+    from oncutf.core.events.context_menu import ContextMenuHandlers
     from oncutf.core.events.file_event_handlers import FileEventHandlers
     from oncutf.core.events.ui_event_handlers import UIEventHandlers
 
@@ -74,7 +74,7 @@ class EventHandlerManager:
     def context_menu_handlers(self) -> ContextMenuHandlers:
         """Lazy-initialized context menu handlers."""
         if self._context_menu_handlers is None:
-            from oncutf.core.events.context_menu_handlers import ContextMenuHandlers
+            from oncutf.core.events.context_menu import ContextMenuHandlers
 
             self._context_menu_handlers = ContextMenuHandlers(self.parent_window)
         return self._context_menu_handlers

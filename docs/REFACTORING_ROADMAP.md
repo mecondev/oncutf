@@ -9,15 +9,15 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 
 ## 📊 Current Mega-Files (>700 lines)
 
-| File | Lines | Priority | Split Strategy |
-|------|-------|----------|----------------|
-| `metadata_tree/view.py` | 1670 | HIGH | Extract handlers → view_handlers.py |
-| `database_manager.py` | 1614 | HIGH | Split by table: hash_store, metadata_store, backup_store |
-| `main_window.py` | 1362 | MEDIUM | Already using controllers - continue delegation |
-| `context_menu_handlers.py` | 1288 | HIGH | Split by domain: metadata_menu, rename_menu, file_menu |
-| `unified_rename_engine.py` | 1258 | MEDIUM | Extract validators, conflict resolution |
-| `metadata_edit_behavior.py` | 1119 | LOW | Stable, well-tested |
-| `file_table_model.py` | 1081 | LOW | Stable, core functionality |
+| File | Lines | Priority | Status |
+|------|-------|----------|--------|
+| `metadata_tree/view.py` | 1670 | HIGH | ⏳ Planned |
+| `database_manager.py` | 1614 | HIGH | ⏳ Planned |
+| `main_window.py` | 1362 | MEDIUM | ⏳ Delegating |
+| ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
+| `unified_rename_engine.py` | 1258 | MEDIUM | ⏳ Planned |
+| `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
+| `file_table_model.py` | 1081 | LOW | ⏳ Stable |
 
 ---
 
@@ -66,20 +66,28 @@ class MyWidget(QWidget):
 
 ## 🔧 Planned Splits
 
-### Phase 1: Context Menu Handlers (EASY, HIGH VALUE)
+### ✅ Phase 1: Context Menu Handlers (COMPLETED)
 
-Current: `oncutf/core/events/context_menu_handlers.py` (1288 lines)
+**Original**: `oncutf/core/events/context_menu_handlers.py` (1289 lines)
 
-Split into:
+**Split into**:
 ```
 oncutf/core/events/context_menu/
-├── __init__.py          # Re-exports ContextMenuHandlers
-├── base.py              # ContextMenuHandlers class (delegator)
-├── metadata_menu.py     # Metadata-related actions
-├── rename_menu.py       # Rename-related actions
-├── hash_menu.py         # Hash/duplicate actions
-└── file_menu.py         # File operations
+├── __init__.py              # Re-exports ContextMenuHandlers (11 lines)
+├── base.py                  # Main menu builder (639 lines)
+├── metadata_handlers.py     # Metadata analysis (172 lines)
+├── hash_handlers.py         # Hash analysis (137 lines)
+├── rotation_handlers.py     # Rotation operations (360 lines)
+└── file_status.py           # File status utilities (153 lines)
 ```
+
+**Benefits:**
+- Each file focused on single domain
+- Easier to test individual components
+- Clear separation of concerns
+- Backward compatible (old imports still work)
+
+---
 
 ### Phase 2: Database Manager
 
@@ -138,6 +146,7 @@ oncutf/ui/widgets/metadata_tree/
 - [x] Add docstring to `models/__init__.py`
 - [x] Add docstring to `modules/__init__.py`
 - [x] Document canonical patterns (this file)
+- [x] **Phase 1: Split context_menu_handlers.py** (1289 → 6 files, all tests passing)
 
 ---
 
