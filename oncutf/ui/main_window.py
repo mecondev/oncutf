@@ -1,14 +1,15 @@
-"""main_window.py
+"""Module: main_window.py
 
 Author: Michael Economou
 Date: 2025-05-01
 
-This module defines the MainWindow class, which implements the primary user interface
-for the oncutf application. It includes logic for loading files from folders, launching
-metadata extraction in the background, and managing user interaction such as rename previews.
+Main application window for oncutf.
 
-Note: PyQt5 type hints are not fully supported by static type checkers.
-Many of the linter warnings are false positives and can be safely ignored.
+Provides the primary UI including:
+- File table for loaded files display
+- Metadata tree view
+- Rename modules panel
+- Folder tree navigation
 """
 
 # type: ignore[attr-defined]
@@ -113,43 +114,25 @@ class MainWindow(QMainWindow):
         self.app_service.force_drag_cleanup()
 
     def global_undo(self) -> None:
-        """Global undo handler (Ctrl+Z) - will call unified undo system.
+        """Global undo handler (Ctrl+Z).
 
-        TODO: Implement unified undo/redo system that handles:
-        - Rename operations
-        - Metadata edits
-        - Batch operations
-        All in a single chronological stack.
-
-        For now, this is a stub that logs the action.
+        Note: Unified undo/redo system not yet implemented.
         """
         logger.info("[MainWindow] Global Ctrl+Z pressed - Unified undo system not yet implemented")
-        # TODO: Call unified undo manager when implemented
 
     def global_redo(self) -> None:
-        """Global redo handler (Ctrl+Shift+Z) - will call unified redo system.
+        """Global redo handler (Ctrl+Shift+Z).
 
-        TODO: Implement unified undo/redo system that handles:
-        - Rename operations
-        - Metadata edits
-        - Batch operations
-        All in a single chronological stack.
-
-        For now, this is a stub that logs the action.
+        Note: Unified undo/redo system not yet implemented.
         """
         logger.info(
             "[MainWindow] Global Ctrl+Shift+Z pressed - Unified redo system not yet implemented"
         )
-        # TODO: Call unified undo manager when implemented
 
     def show_command_history(self) -> None:
-        """Show command history dialog (Ctrl+Y) - displays chronological undo/redo stack.
+        """Show command history dialog (Ctrl+Y).
 
-        Currently shows MetadataHistoryDialog (metadata operations only).
-        TODO: Implement unified command history dialog that shows:
-        - All operations in chronological order (rename + metadata + batch)
-        - Ability to jump to any point in history
-        - Operation details (timestamp, type, affected files)
+        Currently shows MetadataHistoryDialog for metadata operations.
         """
         try:
             from oncutf.ui.dialogs.metadata_history_dialog import MetadataHistoryDialog
@@ -356,55 +339,6 @@ class MainWindow(QMainWindow):
     def force_reload(self) -> None:
         """Force reload via Application Service."""
         self.app_service.force_reload()
-
-    # =====================================
-    # Backward Compatibility Properties
-    # =====================================
-
-    @property
-    def files(self) -> list:
-        """Backward compatibility property for accessing files.
-
-        Returns files from FileTableModel (which is the source of truth for UI display).
-        Use context.file_store.get_loaded_files() for centralized state access.
-        """
-        if hasattr(self, "file_model") and self.file_model:
-            return self.file_model.files
-        return []
-
-    @property
-    def current_folder_path(self) -> str | None:
-        """Backward compatibility property for current folder path.
-
-        Returns current folder from ApplicationContext.
-        """
-        if hasattr(self, "context") and self.context:
-            return self.context.get_current_folder()
-        return None
-
-    @current_folder_path.setter
-    def current_folder_path(self, value: str | None) -> None:
-        """Set current folder path via ApplicationContext."""
-        if hasattr(self, "context") and self.context:
-            # Preserve recursive mode when setting folder
-            recursive = self.context.is_recursive_mode()
-            self.context.set_current_folder(value, recursive)
-
-    @property
-    def current_folder_is_recursive(self) -> bool:
-        """Backward compatibility property for recursive mode flag.
-
-        Returns recursive mode from ApplicationContext.
-        """
-        if hasattr(self, "context") and self.context:
-            return self.context.is_recursive_mode()
-        return False
-
-    @current_folder_is_recursive.setter
-    def current_folder_is_recursive(self, value: bool) -> None:
-        """Set recursive mode via ApplicationContext."""
-        if hasattr(self, "context") and self.context:
-            self.context.set_recursive_mode(value)
 
     def handle_browse(self) -> None:
         """Handle browse via Application Service."""
@@ -663,12 +597,10 @@ class MainWindow(QMainWindow):
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """Check if folder reload should be skipped."""
-        # Legacy method - logic moved to Application Service
-        return folder_path == self.current_folder_path and not force
+        return folder_path == self.context.get_current_folder() and not force
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
-        """Get file items from folder."""
-        # Legacy method - logic moved to Application Service
+        """Get file items from folder via ApplicationService."""
         return self.app_service.get_file_items_from_folder(folder_path)
 
     def update_module_dividers(self) -> None:
@@ -767,8 +699,7 @@ class MainWindow(QMainWindow):
         self.window_config_manager.load_window_config()
 
     def _set_smart_default_geometry(self) -> None:
-        """Set smart default window geometry based on screen size and aspect ratio."""
-        # Legacy method - logic moved to WindowConfigManager
+        """Set smart default window geometry based on screen size."""
         if hasattr(self.window_config_manager, "set_smart_default_geometry"):
             self.window_config_manager.set_smart_default_geometry()  # type: ignore[union-attr]
 

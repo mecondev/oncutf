@@ -325,7 +325,7 @@ class ApplicationService:
                 modules_data=rename_data.get("modules", []),
                 post_transform=post_transform_data,
                 metadata_cache=self.main_window.metadata_cache,
-                current_folder=self.main_window.current_folder_path,
+                current_folder=self.main_window.context.get_current_folder(),
             )
 
             # Handle results
@@ -694,7 +694,7 @@ class ApplicationService:
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """Check if folder reload should be skipped."""
         return self.main_window.file_operations_manager.should_skip_folder_reload(
-            folder_path, self.main_window.current_folder_path, force
+            folder_path, self.main_window.context.get_current_folder(), force
         )
 
     def _is_video_file(self, file_item: FileItem, metadata: dict[str, Any]) -> bool:

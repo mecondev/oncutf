@@ -84,7 +84,8 @@ class UtilityManager:
         # Update current state of modifier keys
         self.main_window.modifier_state = QApplication.keyboardModifiers()
 
-        if not self.main_window.current_folder_path:
+        current_folder = self.main_window.context.get_current_folder()
+        if not current_folder:
             if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
                     "No folder loaded", success=False, auto_reset=True
@@ -108,7 +109,7 @@ class UtilityManager:
 
         logger.info(
             "[ForceReload] Reloading %s, skip_metadata=%s (use_extended=%s)",
-            self.main_window.current_folder_path,
+            current_folder,
             skip_metadata,
             use_extended,
         )
@@ -118,7 +119,7 @@ class UtilityManager:
 
         with wait_cursor():
             self.main_window.load_files_from_folder(
-                self.main_window.current_folder_path, force=True
+                current_folder, force=True
             )
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:

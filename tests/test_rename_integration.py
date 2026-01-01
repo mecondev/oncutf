@@ -54,10 +54,14 @@ class TestRenameIntegration:
         """Test that the safe post-rename workflow executes properly."""
         # Create mock main window
         mock_main_window = MagicMock()
-        mock_main_window.current_folder_path = "/test/folder"
         mock_main_window.last_action = None
         mock_main_window.file_model = MagicMock()
         mock_main_window.file_model.files = []
+
+        # Setup mock context
+        mock_context = MagicMock()
+        mock_context.get_current_folder.return_value = "/test/folder"
+        mock_main_window.context = mock_context
 
         # Create RenameManager instance
         rename_manager = RenameManager(mock_main_window)
@@ -163,9 +167,9 @@ class TestRenameIntegration:
         # Should not raise exception
         rename_manager._execute_post_rename_workflow_safe(checked_paths)
 
-        # Test with main window missing current_folder_path
+        # Test with main window missing context
         mock_main_window = MagicMock()
-        del mock_main_window.current_folder_path
+        del mock_main_window.context
 
         rename_manager = RenameManager(mock_main_window)
 

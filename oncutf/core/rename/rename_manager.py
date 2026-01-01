@@ -85,7 +85,7 @@ class RenameManager:
                 modules_data=modules_data,
                 post_transform=post_transform,
                 metadata_cache=self.main_window.metadata_cache,
-                current_folder_path=self.main_window.current_folder_path,
+                current_folder_path=self.main_window.context.get_current_folder(),
             )
         except Exception as e:
             logger.error("[RenameManager] Critical error during rename: %s", e)
@@ -203,11 +203,11 @@ class RenameManager:
         """
         try:
             # Validate main window state
-            if not self.main_window or not hasattr(self.main_window, "current_folder_path"):
+            if not self.main_window or not hasattr(self.main_window, "context"):
                 logger.warning("[RenameManager] Main window invalid, aborting post-rename workflow")
                 return
 
-            current_folder = self.main_window.current_folder_path
+            current_folder = self.main_window.context.get_current_folder()
             if not current_folder:
                 logger.warning("[RenameManager] No current folder, aborting post-rename workflow")
                 return
@@ -415,7 +415,7 @@ class RenameManager:
         """
         # Post-rename workflow
         self.main_window.last_action = "rename"
-        self.main_window.load_files_from_folder(self.main_window.current_folder_path)
+        self.main_window.load_files_from_folder(self.main_window.context.get_current_folder())
 
         # Restore checked state
         restored_count = self._restore_checked_state(checked_paths)
@@ -584,4 +584,4 @@ class RenameManager:
 
         """
         selected_files = self.get_selected_files_for_rename()
-        return len(selected_files) > 0 and bool(self.main_window.current_folder_path)
+        return len(selected_files) > 0 and bool(self.main_window.context.get_current_folder())
