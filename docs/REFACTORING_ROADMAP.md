@@ -15,7 +15,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 | ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phases 4A-C)** |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
-| `unified_rename_engine.py` | 1258 | MEDIUM | ⏳ Planned |
+| ~~`unified_rename_engine.py`~~ | ~~1258~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 5)** |
 | `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
 | `file_table_model.py` | 1081 | LOW | ⏳ Stable |
 
@@ -224,6 +224,35 @@ oncutf/ui/
 
 ---
 
+### ✅ Phase 5: Unified Rename Engine (COMPLETED)
+
+**Original**: `oncutf/core/rename/unified_rename_engine.py` (1258 lines)
+
+**Split into**:
+```
+oncutf/core/rename/
+├── __init__.py                 # Module exports (58 lines)
+├── unified_rename_engine.py    # Main orchestrator (244 lines, 81% reduction!)
+├── data_classes.py             # Result dataclasses (210 lines)
+├── query_managers.py           # BatchQueryManager + SmartCacheManager (205 lines)
+├── preview_manager.py          # UnifiedPreviewManager (295 lines)
+├── validation_manager.py       # UnifiedValidationManager (102 lines)
+├── execution_manager.py        # UnifiedExecutionManager (285 lines)
+└── state_manager.py            # RenameStateManager (59 lines)
+```
+
+**Benefits:**
+- **81% reduction** in main orchestrator (1258 → 244 lines)
+- Clear separation of concerns:
+  - Data classes isolated for reuse
+  - Preview, validation, execution managers independent
+  - State management decoupled
+- Backward compatible (all imports still work via __init__.py)
+- All tests passing
+- Ready for future extensibility (e.g., node editor integration)
+
+---
+
 ## 🚀 Node Editor Readiness
 
 ### Current Seams (already in place)
@@ -257,6 +286,7 @@ oncutf/ui/
 - [x] **Phase 4A: Split main_window.py** (1362 → 1065 lines + 3 handlers, all tests passing)
 - [x] **Phase 4B: Split main_window.py** (1065 → 987 lines + window_event_handler, all tests passing)
 - [x] **Phase 4C: Split main_window.py** (987 → 665 lines + shutdown_handler, all tests passing)
+- [x] **Phase 5: Split unified_rename_engine.py** (1258 → 244 lines + 6 modules, all tests passing)
 
 ---
 
