@@ -58,10 +58,10 @@ class DatabaseManager:
         if db_path:
             self.db_path = Path(db_path)
         else:
-            # Use user data directory
-            data_dir = self._get_user_data_directory()
-            data_dir.mkdir(parents=True, exist_ok=True)
-            self.db_path = data_dir / "oncutf_data.db"
+            # Use centralized path management
+            from oncutf.utils.paths import AppPaths
+
+            self.db_path = AppPaths.get_database_path()
 
         # Debug: Reset database if requested
         from oncutf.config import DEBUG_RESET_DATABASE
@@ -84,14 +84,6 @@ class DatabaseManager:
 
         self._initialize_database()
         logger.info("[DatabaseManager] Initialized with database: %s", self.db_path)
-
-    def _get_user_data_directory(self) -> Path:
-        """Get user data directory for storing database."""
-        if os.name == "nt":  # Windows
-            data_dir = Path.home() / "AppData" / "Local" / "oncutf"
-        else:  # Linux/macOS
-            data_dir = Path.home() / ".local" / "share" / "oncutf"
-        return data_dir
 
     @contextmanager
     def _get_connection(self):

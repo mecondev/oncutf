@@ -4,39 +4,49 @@ import sys
 from types import ModuleType
 
 
-def test_get_user_config_dir_unix(monkeypatch, tmp_path):
-    # Test non-Windows branch by setting XDG_CONFIG_HOME
-    # Import function first, then modify environment
-    from main import get_user_config_dir
+def test_app_paths_unix(monkeypatch, tmp_path):
+    """Test AppPaths returns correct paths on Unix-like systems."""
+    from oncutf.utils.paths import AppPaths
 
-    # On Windows, we can't truly test posix behavior without breaking pathlib
-    # Instead, test that XDG_CONFIG_HOME is respected when os.name != 'nt'
-    if os.name == "nt":
-        # On Windows, test Windows behavior with APPDATA
-        monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))
-        path = get_user_config_dir("myapp")
-        assert str(tmp_path / "appdata" / "myapp") == path
-    else:
-        # On Unix, test Unix behavior with XDG_CONFIG_HOME
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
-        path = get_user_config_dir("myapp")
-        assert str(tmp_path / "xdg" / "myapp") == path
-
-
-def test_get_user_config_dir_windows(monkeypatch, tmp_path):
-    # Test Windows branch by setting APPDATA
-    from main import get_user_config_dir
+    # Reset cached paths
+    AppPaths.reset()
 
     if os.name == "nt":
-        # On Windows, test APPDATA behavior
-        monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))
-        path = get_user_config_dir("oncutf")
-        assert str(tmp_path / "appdata" / "oncutf") == path
+        # On Windows, test LOCALAPPDATA behavior
+        monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
+        path = AppPaths.get_user_data_dir()
+        assert "oncutf" in str(path)
     else:
-        # On Unix, we can't test Windows behavior without breaking pathlib
-        # Test that function works with current OS
-        path = get_user_config_dir("oncutf")
-        assert "oncutf" in path
+        # On Unix, test XDG_DATA_HOME behavior
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_data"))
+        AppPaths.reset()  # Reset again after env change
+        path = AppPaths.get_user_data_dir()
+        assert str(tmp_path / "xdg_data" / "oncutf") == str(path)
+
+    # Cleanup
+    AppPaths.reset()
+
+
+def test_app_paths_windows(monkeypatch, tmp_path):
+    """Test AppPaths returns correct paths on Windows."""
+    from oncutf.utils.paths import AppPaths
+
+    # Reset cached paths
+    AppPaths.reset()
+
+    if os.name == "nt":
+        # On Windows, test LOCALAPPDATA behavior
+        monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
+        AppPaths.reset()
+        path = AppPaths.get_user_data_dir()
+        assert str(tmp_path / "localappdata" / "oncutf") == str(path)
+    else:
+        # On Unix, just verify function works
+        path = AppPaths.get_user_data_dir()
+        assert "oncutf" in str(path)
+
+    # Cleanup
+    AppPaths.reset()
 
 
 def test_cleanup_on_exit_calls_exiftool(monkeypatch):

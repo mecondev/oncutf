@@ -10,7 +10,6 @@ multiple configuration categories, automatic backups, and thread-safe operations
 """
 
 import json
-import os
 import shutil
 import threading
 from datetime import datetime
@@ -176,13 +175,10 @@ class JSONConfigManager:
         )
 
     def _get_default_config_dir(self) -> str:
-        """Get default configuration directory based on OS."""
-        if os.name == "nt":
-            base_dir = os.environ.get("APPDATA", os.path.expanduser("~"))
-            return os.path.join(base_dir, self.app_name)
-        else:
-            base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-            return os.path.join(base_dir, self.app_name)
+        """Get default configuration directory using centralized AppPaths."""
+        from oncutf.utils.paths import AppPaths
+
+        return str(AppPaths.get_user_data_dir())
 
     def register_category(self, category: ConfigCategory[Any]) -> None:
         """Register a configuration category."""
