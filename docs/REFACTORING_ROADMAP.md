@@ -17,7 +17,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`unified_rename_engine.py`~~ | ~~1258~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 5)** |
 | `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
-| `file_table_model.py` | 1081 | LOW | ⏳ Stable |
+| ~~`file_table_model.py`~~ | ~~1081~~ | ~~LOW~~ | ✅ **DONE (Phase 6)** |
 
 ---
 
@@ -253,6 +253,39 @@ oncutf/core/rename/
 
 ---
 
+### ✅ Phase 6: File Table Model (COMPLETED)
+
+**Original**: `oncutf/models/file_table_model.py` (1081 lines)
+
+**Split into**:
+```
+oncutf/models/file_table/
+├── __init__.py              # Module exports (31 lines)
+├── file_table_model.py      # Main orchestrator (301 lines, 72% reduction!)
+├── icon_manager.py          # Status icons and tooltips (190 lines)
+├── sort_manager.py          # File sorting logic (152 lines)
+├── column_manager.py        # Column visibility/mapping (350 lines)
+├── data_provider.py         # Qt model data interface (372 lines)
+└── file_operations.py       # File add/remove/refresh (226 lines)
+```
+
+**Backward Compatibility**:
+```
+oncutf/models/file_table_model.py  # Re-exports from file_table/ (14 lines)
+```
+
+**Benefits:**
+- **72% reduction** in main orchestrator (1081 → 301 lines)
+- Clear separation of concerns:
+  - Icon management isolated with caching
+  - Column management decoupled from Qt model
+  - Sorting logic with natural sort support
+  - Data provider handles all Qt roles
+- Backward compatible (old imports still work)
+- All 949 tests passing
+
+---
+
 ## 🚀 Node Editor Readiness
 
 ### Current Seams (already in place)
@@ -287,6 +320,7 @@ oncutf/core/rename/
 - [x] **Phase 4B: Split main_window.py** (1065 → 987 lines + window_event_handler, all tests passing)
 - [x] **Phase 4C: Split main_window.py** (987 → 665 lines + shutdown_handler, all tests passing)
 - [x] **Phase 5: Split unified_rename_engine.py** (1258 → 244 lines + 6 modules, all tests passing)
+- [x] **Phase 6: Split file_table_model.py** (1081 → 301 lines + 5 modules, all tests passing)
 
 ---
 
