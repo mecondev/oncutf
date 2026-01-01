@@ -12,7 +12,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 | File | Lines | Priority | Status |
 |------|-------|----------|--------|
 | `metadata_tree/view.py` | 1670 | HIGH | ⏳ Planned |
-| `database_manager.py` | 1614 | HIGH | ⏳ Planned |
+| ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
 | `main_window.py` | 1362 | MEDIUM | ⏳ Delegating |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
 | `unified_rename_engine.py` | 1258 | MEDIUM | ⏳ Planned |
@@ -89,7 +89,32 @@ oncutf/core/events/context_menu/
 
 ---
 
-### Phase 2: Database Manager
+### ✅ Phase 2: Database Manager (COMPLETED)
+
+**Original**: `oncutf/core/database/database_manager.py` (1614 lines)
+
+**Split into**:
+```
+oncutf/core/database/
+├── __init__.py              # Module exports
+├── database_manager.py      # Main orchestrator (407 lines - 75% reduction!)
+├── migrations.py            # Schema creation & migrations (520 lines)
+├── metadata_store.py        # Metadata operations (627 lines)
+├── path_store.py            # Path management (161 lines)
+├── hash_store.py            # Hash operations (161 lines)
+└── backup_store.py          # Rename history scaffold (40 lines)
+```
+
+**Benefits:**
+- Single responsibility per store
+- Orchestrator reduced by 75% (1614 → 407 lines)
+- Clear table ownership (path_store owns file_paths table, etc.)
+- Composition pattern (stores as dependencies)
+- All 949 tests passing
+
+---
+
+### Phase 3: Metadata Tree View
 
 Current: `oncutf/core/database/database_manager.py` (1614 lines)
 
@@ -147,6 +172,7 @@ oncutf/ui/widgets/metadata_tree/
 - [x] Add docstring to `modules/__init__.py`
 - [x] Document canonical patterns (this file)
 - [x] **Phase 1: Split context_menu_handlers.py** (1289 → 6 files, all tests passing)
+- [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
 
 ---
 

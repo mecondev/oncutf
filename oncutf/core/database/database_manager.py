@@ -1,55 +1,56 @@
 """Module: database_manager.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2026-01-01
 
-database_manager.py
-Enhanced database management with improved architecture.
-Separates concerns into dedicated tables while maintaining referential integrity.
-Architecture:
-- file_paths: Central table for file path management
-- file_metadata: Dedicated metadata storage
-- file_hashes: Dedicated hash storage
-- file_rename_history: Dedicated rename history
-- Future: file_thumbnails, file_tags, etc.
+Refactored database manager - orchestrates specialized store classes.
+
+This is the main entry point for database operations. It delegates to:
+- PathStore: file_paths table operations
+- MetadataStore: file_metadata, categories, fields, color tags
+- HashStore: file_hashes table operations
+- BackupStore: file_rename_history operations (TBD)
+- migrations: Schema creation and migration functions
+
+All public methods are preserved for backward compatibility.
 """
 
 import contextlib
-import json
-import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from oncutf.utils.filesystem.path_normalizer import normalize_path
+from oncutf.core.database.backup_store import BackupStore
+from oncutf.core.database.hash_store import HashStore
+from oncutf.core.database.metadata_store import MetadataStore
+from oncutf.core.database.migrations import create_indexes, create_schema, migrate_schema
+from oncutf.core.database.path_store import PathStore
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
 class DatabaseManager:
-    """Enhanced database management with improved separation of concerns.
+    """Enhanced database management with composition-based architecture.
 
-    Architecture:
-    - file_paths: Central registry of all file paths
-    - file_metadata: Metadata storage (references file_paths)
-    - file_hashes: Hash storage (references file_paths)
-    - file_rename_history: Rename history (references file_paths)
+    This orchestrator delegates to specialized store classes:
+    - PathStore: file_paths table
+    - MetadataStore: metadata, categories, fields, color tags
+    - HashStore: file hashes
+    - BackupStore: rename history (future)
 
     Benefits:
-    - Better separation of concerns
-    - Easier to add new features (thumbnails, tags, etc.)
-    - More maintainable and extensible
-    - Better performance with focused tables
+    - Single responsibility per store
+    - Easier testing and maintenance
+    - Clear separation of concerns
+    - Backward compatible API
     """
 
-    # Database schema version for migrations
     SCHEMA_VERSION = 4
 
     def __init__(self, db_path: str | None = None):
-        """Initialize database manager.
+        """Initialize database manager with store composition.
 
         Args:
             db_path: Optional custom database path
@@ -82,25 +83,24 @@ class DatabaseManager:
                 except Exception as e:
                     logger.error("[DEBUG] Failed to delete database: %s", e)
 
+        # Create connection first (stores need it)
+        self._conn = sqlite3.connect(
+            str(self.db_path), timeout=30.0, check_same_thread=False
+        )
+        self._conn.row_factory = sqlite3.Row
+        self._conn.execute("PRAGMA foreign_keys = ON")
+        self._conn.execute("PRAGMA journal_mode = WAL")
+        self._conn.execute("PRAGMA synchronous = NORMAL")
+        self._conn.execute("PRAGMA cache_size = -64000")  # 64MB cache
+        self._conn.execute("PRAGMA temp_store = MEMORY")
+
         self._initialize_database()
         logger.info("[DatabaseManager] Initialized with database: %s", self.db_path)
 
     @contextmanager
     def _get_connection(self):
-        """Get database connection with proper configuration."""
-        conn = None
-        try:
-            conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA foreign_keys = ON")
-            conn.execute("PRAGMA journal_mode = WAL")
-            conn.execute("PRAGMA synchronous = NORMAL")
-            conn.execute("PRAGMA cache_size = -64000")  # 64MB cache
-            conn.execute("PRAGMA temp_store = MEMORY")
-            yield conn
-        finally:
-            if conn:
-                conn.close()
+        """Get database connection (yields existing connection)."""
+        yield self._conn
 
     @contextlib.contextmanager
     def transaction(self):
@@ -112,1503 +112,305 @@ class DatabaseManager:
                 cursor.execute(...)
                 # Automatically commits on success, rolls back on exception
         """
-        with self._get_connection() as conn:
-            try:
-                yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
+        try:
+            yield self._conn
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
 
     def _initialize_database(self):
-        """Initialize database with schema."""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
+        """Initialize database schema and store instances."""
+        cursor = self._conn.cursor()
 
-            # Check current schema version
+        # Get current schema version
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'"
+        )
+        if not cursor.fetchone():
+            # New database - create schema
+            logger.info("[DatabaseManager] Creating new database schema")
+            create_schema(cursor)
+            create_indexes(cursor)
             cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schema_info (
-                    version INTEGER PRIMARY KEY,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """
+                "CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)"
             )
-
-            cursor.execute("SELECT version FROM schema_info ORDER BY version DESC LIMIT 1")
+            cursor.execute(
+                f"INSERT OR REPLACE INTO schema_version (version) VALUES ({self.SCHEMA_VERSION})"
+            )
+            self._conn.commit()
+        else:
+            # Existing database - check version and migrate if needed
+            cursor.execute("SELECT version FROM schema_version")
             row = cursor.fetchone()
-            current_version = row["version"] if row else 0
+            current_version = row[0] if row else 1
 
             if current_version < self.SCHEMA_VERSION:
-                if current_version == 0:
-                    self._create_schema_v2(cursor)
-                else:
-                    self._migrate_schema(cursor, current_version)
-
-                # Update schema version
+                logger.info(
+                    "[DatabaseManager] Migrating database from v%d to v%d",
+                    current_version,
+                    self.SCHEMA_VERSION,
+                )
+                migrate_schema(cursor, current_version, self.SCHEMA_VERSION)
+                create_indexes(cursor)
                 cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO schema_info (version, updated_at)
-                    VALUES (?, CURRENT_TIMESTAMP)
-                """,
-                    (self.SCHEMA_VERSION,),
+                    f"UPDATE schema_version SET version = {self.SCHEMA_VERSION}"
                 )
+                self._conn.commit()
 
-            self._create_indexes(cursor)
-            conn.commit()
+        # Initialize specialized stores (composition pattern)
+        self.path_store = PathStore(self._conn)
+        self.hash_store = HashStore(self._conn, self.path_store)
+        self.metadata_store = MetadataStore(self._conn, self.path_store)
+        self.backup_store = BackupStore(self._conn, self.path_store)
 
-        # Initialize default metadata schema after database setup
-        self.initialize_default_metadata_schema()
+        logger.debug("[DatabaseManager] Store instances initialized", extra={"dev_only": True})
 
-        logger.debug(
-            "[DatabaseManager] Schema initialized (version %d)",
-            self.SCHEMA_VERSION,
-            extra={"dev_only": True},
-        )
-
-    def _create_schema_v2(self, cursor: sqlite3.Cursor):
-        """Create the new v2 schema with separated tables."""
-        # 1. Central file paths table
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS file_paths (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_path TEXT NOT NULL UNIQUE,
-                filename TEXT NOT NULL,
-                file_size INTEGER,
-                modified_time TIMESTAMP,
-                color_tag TEXT DEFAULT 'none',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-        )
-
-        # 2. Dedicated metadata table
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS file_metadata (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                path_id INTEGER NOT NULL,
-                metadata_type TEXT NOT NULL DEFAULT 'fast',
-                metadata_json TEXT NOT NULL,
-                is_modified BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
-            )
-        """
-        )
-
-        # 3. Dedicated hash table
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS file_hashes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                path_id INTEGER NOT NULL,
-                algorithm TEXT NOT NULL DEFAULT 'CRC32',
-                hash_value TEXT NOT NULL,
-                file_size_at_hash INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
-            )
-        """
-        )
-
-        # 4. Dedicated rename history table
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS file_rename_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                operation_id TEXT NOT NULL,
-                path_id INTEGER NOT NULL,
-                old_path TEXT NOT NULL,
-                new_path TEXT NOT NULL,
-                old_filename TEXT NOT NULL,
-                new_filename TEXT NOT NULL,
-                operation_type TEXT NOT NULL DEFAULT 'rename',
-                modules_data TEXT,
-                post_transform_data TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
-            )
-        """
-        )
-
-        # 5. Metadata categories table for organizing metadata groups
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS metadata_categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                category_name TEXT NOT NULL UNIQUE,
-                display_name TEXT NOT NULL,
-                description TEXT,
-                sort_order INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-        )
-
-        # 6. Metadata fields table for individual metadata fields
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS metadata_fields (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                field_key TEXT NOT NULL UNIQUE,
-                field_name TEXT NOT NULL,
-                category_id INTEGER NOT NULL,
-                data_type TEXT NOT NULL DEFAULT 'text',
-                is_editable BOOLEAN DEFAULT FALSE,
-                is_searchable BOOLEAN DEFAULT TRUE,
-                display_format TEXT,
-                sort_order INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (category_id) REFERENCES metadata_categories (id) ON DELETE CASCADE
-            )
-        """
-        )
-
-        # 7. Structured metadata storage table
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS file_metadata_structured (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                path_id INTEGER NOT NULL,
-                field_id INTEGER NOT NULL,
-                field_value TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE,
-                FOREIGN KEY (field_id) REFERENCES metadata_fields (id) ON DELETE CASCADE,
-                UNIQUE(path_id, field_id)
-            )
-        """
-        )
-
-        logger.debug("[DatabaseManager] Schema v2 created")
-
-    def _migrate_schema(self, cursor: sqlite3.Cursor, from_version: int):
-        """Migrate from older schema versions."""
-        logger.info(
-            "[DatabaseManager] Migrating from version %d to %d",
-            from_version,
-            self.SCHEMA_VERSION,
-        )
-
-        # Migration from version 2 to 3: Add structured metadata tables
-        if from_version == 2 and self.SCHEMA_VERSION >= 3:
-            logger.info("[DatabaseManager] Adding structured metadata tables...")
-
-            # Add metadata categories table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS metadata_categories (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    category_name TEXT NOT NULL UNIQUE,
-                    display_name TEXT NOT NULL,
-                    description TEXT,
-                    sort_order INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """
-            )
-
-            # Add metadata fields table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS metadata_fields (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    field_key TEXT NOT NULL UNIQUE,
-                    field_name TEXT NOT NULL,
-                    category_id INTEGER NOT NULL,
-                    data_type TEXT NOT NULL DEFAULT 'text',
-                    is_editable BOOLEAN DEFAULT FALSE,
-                    is_searchable BOOLEAN DEFAULT TRUE,
-                    display_format TEXT,
-                    sort_order INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (category_id) REFERENCES metadata_categories (id) ON DELETE CASCADE
-                )
-            """
-            )
-
-            # Add structured metadata storage table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS file_metadata_structured (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    path_id INTEGER NOT NULL,
-                    field_id INTEGER NOT NULL,
-                    field_value TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE,
-                    FOREIGN KEY (field_id) REFERENCES metadata_fields (id) ON DELETE CASCADE,
-                    UNIQUE(path_id, field_id)
-                )
-            """
-            )
-
-            logger.info("[DatabaseManager] Structured metadata tables added successfully")
-
-        # Migration from version 3 to 4: Add color_tag column
-        if from_version == 3 and self.SCHEMA_VERSION >= 4:
-            logger.info("[DatabaseManager] Adding color_tag column to file_paths...")
-
-            # Add color_tag column
-            cursor.execute(
-                """
-                ALTER TABLE file_paths ADD COLUMN color_tag TEXT DEFAULT 'none'
-                """
-            )
-
-            logger.info("[DatabaseManager] color_tag column added successfully")
-
-    def _create_indexes(self, cursor: sqlite3.Cursor):
-        """Create database indexes for performance."""
-        indexes = [
-            # File paths indexes
-            "CREATE INDEX IF NOT EXISTS idx_file_paths_path ON file_paths (file_path)",
-            "CREATE INDEX IF NOT EXISTS idx_file_paths_filename ON file_paths (filename)",
-            # Metadata indexes
-            "CREATE INDEX IF NOT EXISTS idx_file_metadata_path_id ON file_metadata (path_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_metadata_type ON file_metadata (metadata_type)",
-            # Hash indexes
-            "CREATE INDEX IF NOT EXISTS idx_file_hashes_path_id ON file_hashes (path_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_hashes_algorithm ON file_hashes (algorithm)",
-            "CREATE INDEX IF NOT EXISTS idx_file_hashes_value ON file_hashes (hash_value)",
-            # Rename history indexes
-            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_operation_id ON file_rename_history (operation_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_path_id ON file_rename_history (path_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_created_at ON file_rename_history (created_at)",
-            # Metadata categories indexes
-            "CREATE INDEX IF NOT EXISTS idx_metadata_categories_name ON metadata_categories (category_name)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_categories_sort_order ON metadata_categories (sort_order)",
-            # Metadata fields indexes
-            "CREATE INDEX IF NOT EXISTS idx_metadata_fields_key ON metadata_fields (field_key)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_fields_category_id ON metadata_fields (category_id)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_fields_sort_order ON metadata_fields (sort_order)",
-            # Structured metadata indexes
-            "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_id ON file_metadata_structured (path_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_field_id ON file_metadata_structured (field_id)",
-            "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_field ON file_metadata_structured (path_id, field_id)",
-            # Composite indexes for faster common queries
-            "CREATE INDEX IF NOT EXISTS idx_metadata_path_type ON file_metadata (path_id, metadata_type)",
-            "CREATE INDEX IF NOT EXISTS idx_hashes_path_algo ON file_hashes (path_id, algorithm)",
-        ]
-
-        for index_sql in indexes:
-            cursor.execute(index_sql)
-
-        logger.debug("[DatabaseManager] Database indexes created", extra={"dev_only": True})
-
-    # =====================================
-    # File Path Management
-    # =====================================
+    # ====================================================================
+    # PathStore delegation (4 methods)
+    # ====================================================================
 
     def get_or_create_path_id(self, file_path: str) -> int:
-        """Get path_id for a file, creating record if needed.
-
-        This is the core method that ensures every file path has an ID.
-        All other operations use this ID to reference files.
-
-        Args:
-            file_path: Path to the file
-
-        Returns:
-            path_id for the file
-
-        """
-        norm_path = self._normalize_path(file_path)
-        filename = os.path.basename(norm_path)
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Try to get existing path_id
-            cursor.execute("SELECT id FROM file_paths WHERE file_path = ?", (norm_path,))
-            row = cursor.fetchone()
-            if row:
-                return row["id"]
-
-            # Create new path record
-            file_size = None
-            modified_time = None
-            try:
-                if os.path.exists(norm_path):
-                    stat = os.stat(norm_path)
-                    file_size = stat.st_size
-                    modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
-            except OSError:
-                pass
-
-            cursor.execute(
-                """
-                INSERT INTO file_paths
-                (file_path, filename, file_size, modified_time, updated_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-                (norm_path, filename, file_size, modified_time),
-            )
-
-            # Make sure to commit the transaction
-            conn.commit()
-
-            path_id = cursor.lastrowid
-            if path_id is None:
-                raise RuntimeError(f"Failed to create path record for: {norm_path}")
-
-            return path_id
-
-    def _normalize_path(self, file_path: str) -> str:
-        """Use the central normalize_path function."""
-        return normalize_path(file_path)
+        """Get or create path ID for a file path."""
+        return self.path_store.get_or_create_path_id(file_path)
 
     def get_path_id(self, file_path: str) -> int | None:
-        """Get path_id for a file without creating it."""
-        norm_path = self._normalize_path(file_path)
+        """Get path ID for a file path."""
+        return self.path_store.get_path_id(file_path)
 
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM file_paths WHERE file_path = ?", (norm_path,))
-            row = cursor.fetchone()
-            return row["id"] if row else None
+    def update_file_path(self, old_path: str, new_path: str) -> bool:
+        """Update file path after rename."""
+        return self.path_store.update_file_path(old_path, new_path)
 
-    # =====================================
-    # Metadata Management
-    # =====================================
+    def normalize_path(self, file_path: str) -> str:
+        """Normalize file path for database consistency."""
+        return self.path_store.normalize_path(file_path)
+
+    # ====================================================================
+    # HashStore delegation (4 methods)
+    # ====================================================================
+
+    def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
+        """Store hash value for a file."""
+        return self.hash_store.store_hash(file_path, hash_value, algorithm)
+
+    def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
+        """Get hash value for a file."""
+        return self.hash_store.get_hash(file_path, algorithm)
+
+    def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
+        """Check if file has a hash value."""
+        return self.hash_store.has_hash(file_path, algorithm)
+
+    def get_files_with_hash_batch(
+        self, file_paths: list[str], algorithm: str = "CRC32"
+    ) -> dict[str, str]:
+        """Get hash values for multiple files."""
+        return self.hash_store.get_files_with_hash_batch(file_paths, algorithm)
+
+    # ====================================================================
+    # MetadataStore delegation (15 methods)
+    # ====================================================================
 
     def store_metadata(
         self,
         file_path: str,
         metadata: dict[str, Any],
+        metadata_type: str = "basic",
         is_extended: bool = False,
-        is_modified: bool = False,
     ) -> bool:
         """Store metadata for a file."""
-        try:
-            path_id = self.get_or_create_path_id(file_path)
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Remove existing metadata for this path
-                cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
-
-                # Store new metadata
-                metadata_type = "extended" if is_extended else "fast"
-                metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
-
-                cursor.execute(
-                    """
-                    INSERT INTO file_metadata
-                    (path_id, metadata_type, metadata_json, is_modified)
-                    VALUES (?, ?, ?, ?)
-                """,
-                    (path_id, metadata_type, metadata_json, is_modified),
-                )
-
-                # Commit the transaction
-                conn.commit()
-
-                logger.debug(
-                    "[DatabaseManager] Stored %s metadata for: %s",
-                    metadata_type,
-                    os.path.basename(file_path),
-                )
-                return True
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error storing metadata for %s: %s", file_path, e)
-            return False
+        return self.metadata_store.store_metadata(
+            file_path, metadata, metadata_type, is_extended
+        )
 
     def batch_store_metadata(
         self,
-        metadata_items: list[tuple[str, dict[str, Any], bool, bool]],
+        file_metadata_list: list[tuple[str, dict[str, Any], str, bool]],
     ) -> int:
-        """Store metadata for multiple files in a single batch operation.
-
-        Args:
-            metadata_items: List of (file_path, metadata_dict, is_extended, is_modified) tuples
-
-        Returns:
-            Number of files successfully stored
-
-        """
-        if not metadata_items:
-            return 0
-
-        try:
-            success_count = 0
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                for file_path, metadata, is_extended, is_modified in metadata_items:
-                    try:
-                        path_id = self.get_or_create_path_id(file_path)
-
-                        # Remove existing metadata
-                        cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
-
-                        # Store new metadata
-                        metadata_type = "extended" if is_extended else "fast"
-                        metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
-
-                        cursor.execute(
-                            """
-                            INSERT INTO file_metadata
-                            (path_id, metadata_type, metadata_json, is_modified)
-                            VALUES (?, ?, ?, ?)
-                            """,
-                            (path_id, metadata_type, metadata_json, is_modified),
-                        )
-                        success_count += 1
-
-                    except Exception as e:
-                        logger.error(
-                            "[DatabaseManager] Error in batch storing metadata for %s: %s",
-                            file_path,
-                            e,
-                        )
-                        continue
-
-                # Commit all inserts in one transaction
-                conn.commit()
-
-                logger.debug(
-                    "[DatabaseManager] Batch stored metadata for %d/%d files",
-                    success_count,
-                    len(metadata_items),
-                )
-                return success_count
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error in batch store metadata: %s", e)
-            return 0
+        """Batch store metadata for multiple files."""
+        return self.metadata_store.batch_store_metadata(file_metadata_list)
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
-        """Retrieve metadata for a file."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return None
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT metadata_json, metadata_type, is_modified
-                    FROM file_metadata
-                    WHERE path_id = ?
-                    ORDER BY updated_at DESC
-                    LIMIT 1
-                """,
-                    (path_id,),
-                )
-
-                row = cursor.fetchone()
-                if not row:
-                    return None
-
-                metadata = json.loads(row["metadata_json"])
-
-                # Add metadata flags
-                if row["metadata_type"] == "extended":
-                    metadata["__extended__"] = True
-                if row["is_modified"]:
-                    metadata["__modified__"] = True
-
-                return metadata
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error retrieving metadata for %s: %s", file_path, e)
-            return None
+        """Get metadata for a file."""
+        return self.metadata_store.get_metadata(file_path)
 
     def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
-        """Retrieve metadata for multiple files in a single batch operation.
-
-        Args:
-            file_paths: List of file paths to get metadata for
-
-        Returns:
-            dict: Mapping of file_path -> metadata dict (or None if not found)
-
-        """
-        if not file_paths:
-            return {}
-
-        try:
-            # Get path IDs for all files
-            path_ids = {}
-            for file_path in file_paths:
-                path_id = self.get_path_id(file_path)
-                if path_id:
-                    path_ids[path_id] = file_path
-
-            if not path_ids:
-                return dict.fromkeys(file_paths)
-
-            # Batch query metadata
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Create placeholders for IN clause
-                placeholders = ",".join("?" * len(path_ids))
-
-                cursor.execute(
-                    f"""
-                    SELECT path_id, metadata_json, metadata_type, is_modified
-                    FROM file_metadata
-                    WHERE path_id IN ({placeholders})
-                    AND (path_id, updated_at) IN (
-                        SELECT path_id, MAX(updated_at)
-                        FROM file_metadata
-                        WHERE path_id IN ({placeholders})
-                        GROUP BY path_id
-                    )
-                    """,
-                    list(path_ids.keys()) * 2,  # placeholders appear twice in query
-                )
-
-                # Process results
-                results: dict[str, dict[str, Any] | None] = {}
-                for file_path in file_paths:
-                    results[file_path] = None
-
-                for row in cursor.fetchall():
-                    file_path = path_ids[row["path_id"]]
-                    metadata = json.loads(row["metadata_json"])
-
-                    # Add metadata flags
-                    if row["metadata_type"] == "extended":
-                        metadata["__extended__"] = True
-                    if row["is_modified"]:
-                        metadata["__modified__"] = True
-
-                    results[file_path] = metadata
-
-                return results
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error in batch metadata retrieval: %s", e)
-            return dict.fromkeys(file_paths)
+        """Get metadata for multiple files."""
+        return self.metadata_store.get_metadata_batch(file_paths)
 
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
-        """Check if file has metadata stored."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return False
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                if metadata_type:
-                    cursor.execute(
-                        """
-                        SELECT 1 FROM file_metadata
-                        WHERE path_id = ? AND metadata_type = ?
-                        LIMIT 1
-                    """,
-                        (path_id, metadata_type),
-                    )
-                else:
-                    cursor.execute(
-                        """
-                        SELECT 1 FROM file_metadata
-                        WHERE path_id = ?
-                        LIMIT 1
-                    """,
-                        (path_id,),
-                    )
-
-                return cursor.fetchone() is not None
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error checking metadata for %s: %s", file_path, e)
-            return False
-
-    # =====================================
-    # Hash Management
-    # =====================================
-
-    def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
-        """Store file hash."""
-        try:
-            path_id = self.get_or_create_path_id(file_path)
-
-            # Get current file size
-            file_size = None
-            try:
-                if os.path.exists(file_path):
-                    file_size = os.path.getsize(file_path)
-            except OSError:
-                pass
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Remove existing hash for this path and algorithm
-                cursor.execute(
-                    """
-                    DELETE FROM file_hashes
-                    WHERE path_id = ? AND algorithm = ?
-                """,
-                    (path_id, algorithm),
-                )
-
-                # Store new hash
-                cursor.execute(
-                    """
-                    INSERT INTO file_hashes
-                    (path_id, algorithm, hash_value, file_size_at_hash)
-                    VALUES (?, ?, ?, ?)
-                """,
-                    (path_id, algorithm, hash_value, file_size),
-                )
-
-                # Commit the transaction
-                conn.commit()
-
-                logger.debug(
-                    "[DatabaseManager] Stored %s hash for: %s",
-                    algorithm,
-                    os.path.basename(file_path),
-                )
-                return True
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error storing hash for %s: %s", file_path, e)
-            return False
-
-    def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
-        """Retrieve file hash."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return None
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT hash_value FROM file_hashes
-                    WHERE path_id = ? AND algorithm = ?
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                """,
-                    (path_id, algorithm),
-                )
-
-                row = cursor.fetchone()
-                return row["hash_value"] if row else None
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error retrieving hash for %s: %s", file_path, e)
-            return None
-
-    def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
-        """Check if hash exists for a file."""
-        norm_path = self._normalize_path(file_path)
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                SELECT 1 FROM file_hashes h
-                JOIN file_paths p ON h.path_id = p.id
-                WHERE p.file_path = ? AND h.algorithm = ?
-                LIMIT 1
-            """,
-                (norm_path, algorithm),
-            )
-
-            return cursor.fetchone() is not None
-
-    def get_files_with_hash_batch(
-        self, file_paths: list[str], algorithm: str = "CRC32"
-    ) -> list[str]:
-        """Get all files from the list that have a hash stored using batch database query."""
-        if not file_paths:
-            return []
-
-        # Normalize all paths
-        norm_paths = [self._normalize_path(path) for path in file_paths]
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Create placeholders for the IN clause
-            placeholders = ",".join(["?" for _ in norm_paths])
-
-            cursor.execute(
-                f"""
-                SELECT p.file_path FROM file_paths p
-                JOIN file_hashes h ON h.path_id = p.id
-                WHERE p.file_path IN ({placeholders}) AND h.algorithm = ?
-            """,
-                norm_paths + [algorithm],
-            )
-
-            # Get all file paths that have hashes
-            files_with_hash = [row["file_path"] for row in cursor.fetchall()]
-
-            logger.debug(
-                "[DatabaseManager] Batch hash check: %d/%d files have %s hashes",
-                len(files_with_hash),
-                len(file_paths),
-                algorithm,
-            )
-
-            return files_with_hash
-
-    # =====================================
-    # Metadata Categories & Fields Management
-    # =====================================
+        """Check if file has metadata."""
+        return self.metadata_store.has_metadata(file_path, metadata_type)
 
     def create_metadata_category(
         self,
+        category_key: str,
         category_name: str,
-        display_name: str,
         description: str | None = None,
-        sort_order: int = 0,
+        display_order: int = 0,
     ) -> int | None:
-        """Create a new metadata category."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    INSERT INTO metadata_categories
-                    (category_name, display_name, description, sort_order)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (category_name, display_name, description, sort_order),
-                )
-                conn.commit()
-                return cursor.lastrowid
-        except Exception as e:
-            logger.error(
-                "[DatabaseManager] Error creating metadata category '%s': %s",
-                category_name,
-                e,
-            )
-            return None
+        """Create or get metadata category."""
+        return self.metadata_store.create_metadata_category(
+            category_key, category_name, description, display_order
+        )
 
     def get_metadata_categories(self) -> list[dict[str, Any]]:
-        """Get all metadata categories ordered by sort_order."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT id, category_name, display_name, description, sort_order
-                    FROM metadata_categories
-                    ORDER BY sort_order, display_name
-                    """
-                )
-                return [dict(row) for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error("[DatabaseManager] Error getting metadata categories: %s", e)
-            return []
+        """Get all metadata categories."""
+        return self.metadata_store.get_metadata_categories()
 
     def create_metadata_field(
         self,
+        category_key: str,
         field_key: str,
         field_name: str,
-        category_id: int,
-        data_type: str = "text",
-        is_editable: bool = False,
-        is_searchable: bool = True,
-        display_format: str | None = None,
-        sort_order: int = 0,
+        field_type: str = "string",
+        is_array: bool = False,
+        description: str | None = None,
+        display_order: int = 0,
     ) -> int | None:
-        """Create a new metadata field."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    INSERT INTO metadata_fields
-                    (field_key, field_name, category_id, data_type, is_editable,
-                     is_searchable, display_format, sort_order)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        field_key,
-                        field_name,
-                        category_id,
-                        data_type,
-                        is_editable,
-                        is_searchable,
-                        display_format,
-                        sort_order,
-                    ),
-                )
-                conn.commit()
-                return cursor.lastrowid
-        except Exception as e:
-            logger.error("[DatabaseManager] Error creating metadata field '%s': %s", field_key, e)
-            return None
+        """Create or get metadata field."""
+        return self.metadata_store.create_metadata_field(
+            category_key,
+            field_key,
+            field_name,
+            field_type,
+            is_array,
+            description,
+            display_order,
+        )
 
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                if category_id:
-                    cursor.execute(
-                        """
-                        SELECT f.id, f.field_key, f.field_name, f.category_id, f.data_type,
-                               f.is_editable, f.is_searchable, f.display_format, f.sort_order,
-                               c.category_name, c.display_name as category_display_name
-                        FROM metadata_fields f
-                        JOIN metadata_categories c ON f.category_id = c.id
-                        WHERE f.category_id = ?
-                        ORDER BY f.sort_order, f.field_name
-                        """,
-                        (category_id,),
-                    )
-                else:
-                    cursor.execute(
-                        """
-                        SELECT f.id, f.field_key, f.field_name, f.category_id, f.data_type,
-                               f.is_editable, f.is_searchable, f.display_format, f.sort_order,
-                               c.category_name, c.display_name as category_display_name
-                        FROM metadata_fields f
-                        JOIN metadata_categories c ON f.category_id = c.id
-                        ORDER BY c.sort_order, f.sort_order, f.field_name
-                        """
-                    )
-
-                return [dict(row) for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error("[DatabaseManager] Error getting metadata fields: %s", e)
-            return []
+        return self.metadata_store.get_metadata_fields(category_id)
 
     def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
-        """Get a metadata field by its key."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT f.id, f.field_key, f.field_name, f.category_id, f.data_type,
-                           f.is_editable, f.is_searchable, f.display_format, f.sort_order,
-                           c.category_name, c.display_name as category_display_name
-                    FROM metadata_fields f
-                    JOIN metadata_categories c ON f.category_id = c.id
-                    WHERE f.field_key = ?
-                    """,
-                    (field_key,),
-                )
-                row = cursor.fetchone()
-                return dict(row) if row else None
-        except Exception as e:
-            logger.error("[DatabaseManager] Error getting metadata field '%s': %s", field_key, e)
-            return None
+        """Get metadata field by its unique key."""
+        return self.metadata_store.get_metadata_field_by_key(field_key)
 
-    def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
-        """Store structured metadata for a file."""
-        try:
-            path_id = self.get_or_create_path_id(file_path)
-
-            # Get field info
-            field_info = self.get_metadata_field_by_key(field_key)
-            if not field_info:
-                logger.warning(
-                    "[DatabaseManager] Field '%s' not found in metadata_fields", field_key
-                )
-                return False
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Use INSERT OR REPLACE to handle updates
-                cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO file_metadata_structured
-                    (path_id, field_id, field_value, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    """,
-                    (path_id, field_info["id"], field_value),
-                )
-                conn.commit()
-                return True
-
-        except Exception as e:
-            logger.error(
-                "[DatabaseManager] Error storing structured metadata for %s: %s", file_path, e
-            )
-            return False
+    def store_structured_metadata(
+        self, file_path: str, field_key: str, field_value: str
+    ) -> bool:
+        """Store structured metadata value for a file field."""
+        return self.metadata_store.store_structured_metadata(file_path, field_key, field_value)
 
     def batch_store_structured_metadata(
-        self, file_path: str, field_data: list[tuple[str, str]]
+        self,
+        file_path: str,
+        metadata_dict: dict[str, str],
     ) -> int:
-        """Store multiple structured metadata fields for a file in a single batch operation.
-
-        Args:
-            file_path: Path to the file
-            field_data: List of (field_key, field_value) tuples
-
-        Returns:
-            Number of fields successfully stored
-
-        """
-        if not field_data:
-            return 0
-
-        try:
-            path_id = self.get_or_create_path_id(file_path)
-
-            # Build field_id mapping
-            field_ids = []
-            valid_data = []
-            for field_key, field_value in field_data:
-                field_info = self.get_metadata_field_by_key(field_key)
-                if field_info:
-                    field_ids.append(field_info["id"])
-                    valid_data.append((path_id, field_info["id"], field_value))
-                else:
-                    logger.debug(
-                        "[DatabaseManager] Field '%s' not found in metadata_fields - skipping",
-                        field_key,
-                    )
-
-            if not valid_data:
-                return 0
-
-            # Batch insert using executemany
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.executemany(
-                    """
-                    INSERT OR REPLACE INTO file_metadata_structured
-                    (path_id, field_id, field_value, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    """,
-                    valid_data,
-                )
-                conn.commit()
-
-                logger.debug(
-                    "[DatabaseManager] Batch stored %d structured metadata fields",
-                    len(valid_data),
-                )
-                return len(valid_data)
-
-        except Exception as e:
-            logger.error(
-                "[DatabaseManager] Error in batch store structured metadata for %s: %s",
-                file_path,
-                e,
-            )
-            return 0
+        """Batch store structured metadata for a file."""
+        return self.metadata_store.batch_store_structured_metadata(file_path, metadata_dict)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return {}
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT f.field_key, f.field_name, f.data_type, f.display_format,
-                           c.category_name, c.display_name as category_display_name,
-                           s.field_value
-                    FROM file_metadata_structured s
-                    JOIN metadata_fields f ON s.field_id = f.id
-                    JOIN metadata_categories c ON f.category_id = c.id
-                    WHERE s.path_id = ?
-                    ORDER BY c.sort_order, f.sort_order
-                    """,
-                    (path_id,),
-                )
-
-                result = {}
-                for row in cursor.fetchall():
-                    result[row["field_key"]] = {
-                        "value": row["field_value"],
-                        "field_name": row["field_name"],
-                        "data_type": row["data_type"],
-                        "display_format": row["display_format"],
-                        "category_name": row["category_name"],
-                        "category_display_name": row["category_display_name"],
-                    }
-
-                return result
-
-        except Exception as e:
-            logger.error(
-                "[DatabaseManager] Error getting structured metadata for %s: %s", file_path, e
-            )
-            return {}
+        return self.metadata_store.get_structured_metadata(file_path)
 
     def initialize_default_metadata_schema(self) -> bool:
         """Initialize default metadata categories and fields."""
-        try:
-            # Check if already initialized
-            categories = self.get_metadata_categories()
-            if categories:
-                logger.debug("[DatabaseManager] Metadata schema already initialized")
-                return True
-
-            # Create default categories
-            category_mapping: dict[str, int | None] = {}
-
-            # Basic File Information
-            cat_id = self.create_metadata_category(
-                "file_basic", "File Information", "Basic file properties and information", 0
-            )
-            category_mapping["file_basic"] = cat_id
-
-            # Image Information
-            cat_id = self.create_metadata_category(
-                "image", "Image Properties", "Image-specific metadata and properties", 1
-            )
-            category_mapping["image"] = cat_id
-
-            # Camera/Device Information
-            cat_id = self.create_metadata_category(
-                "camera", "Camera & Device", "Camera settings and device information", 2
-            )
-            category_mapping["camera"] = cat_id
-
-            # Video Information
-            cat_id = self.create_metadata_category(
-                "video", "Video Properties", "Video-specific metadata and properties", 3
-            )
-            category_mapping["video"] = cat_id
-
-            # Audio Information
-            cat_id = self.create_metadata_category(
-                "audio", "Audio Properties", "Audio-specific metadata and properties", 4
-            )
-            category_mapping["audio"] = cat_id
-
-            # GPS/Location Information
-            cat_id = self.create_metadata_category(
-                "location", "Location & GPS", "GPS coordinates and location information", 5
-            )
-            category_mapping["location"] = cat_id
-
-            # Technical Information
-            cat_id = self.create_metadata_category(
-                "technical", "Technical Details", "Technical metadata and processing information", 6
-            )
-            category_mapping["technical"] = cat_id
-
-            # Create default fields
-            default_fields = [
-                # File Basic
-                ("System:FileName", "Filename", "file_basic", "text", False, True, None, 0),
-                ("System:FileSize", "File Size", "file_basic", "size", False, True, "bytes", 1),
-                (
-                    "System:FileModifyDate",
-                    "Modified Date",
-                    "file_basic",
-                    "datetime",
-                    False,
-                    True,
-                    None,
-                    2,
-                ),
-                (
-                    "System:FileCreateDate",
-                    "Created Date",
-                    "file_basic",
-                    "datetime",
-                    False,
-                    True,
-                    None,
-                    3,
-                ),
-                ("File:FileType", "File Type", "file_basic", "text", False, True, None, 4),
-                ("File:MIMEType", "MIME Type", "file_basic", "text", False, True, None, 5),
-                # Image
-                ("EXIF:ImageWidth", "Image Width", "image", "number", False, True, "pixels", 0),
-                ("EXIF:ImageHeight", "Image Height", "image", "number", False, True, "pixels", 1),
-                ("EXIF:Orientation", "Orientation", "image", "text", True, True, None, 2),
-                (
-                    "QuickTime:Rotation",
-                    "Rotation (Video)",
-                    "video",
-                    "text",
-                    True,
-                    True,
-                    "degrees",
-                    2,
-                ),
-                ("EXIF:ColorSpace", "Color Space", "image", "text", False, True, None, 3),
-                (
-                    "EXIF:BitsPerSample",
-                    "Bits Per Sample",
-                    "image",
-                    "number",
-                    False,
-                    True,
-                    "bits",
-                    4,
-                ),
-                ("EXIF:Compression", "Compression", "image", "text", False, True, None, 5),
-                # Camera
-                ("EXIF:Make", "Camera Make", "camera", "text", True, True, None, 0),
-                ("EXIF:Model", "Camera Model", "camera", "text", True, True, None, 1),
-                ("EXIF:LensModel", "Lens Model", "camera", "text", True, True, None, 2),
-                ("EXIF:ISO", "ISO", "camera", "number", True, True, None, 3),
-                ("EXIF:FNumber", "F-Number", "camera", "number", True, True, "f/", 4),
-                ("EXIF:ExposureTime", "Exposure Time", "camera", "text", True, True, "sec", 5),
-                ("EXIF:FocalLength", "Focal Length", "camera", "text", True, True, "mm", 6),
-                ("EXIF:WhiteBalance", "White Balance", "camera", "text", True, True, None, 7),
-                ("EXIF:Flash", "Flash", "camera", "text", True, True, None, 8),
-                # Video
-                (
-                    "QuickTime:ImageWidth",
-                    "Video Width",
-                    "video",
-                    "number",
-                    False,
-                    True,
-                    "pixels",
-                    0,
-                ),
-                (
-                    "QuickTime:ImageHeight",
-                    "Video Height",
-                    "video",
-                    "number",
-                    False,
-                    True,
-                    "pixels",
-                    1,
-                ),
-                ("QuickTime:Duration", "Duration", "video", "duration", False, True, "seconds", 2),
-                (
-                    "QuickTime:VideoFrameRate",
-                    "Frame Rate",
-                    "video",
-                    "number",
-                    False,
-                    True,
-                    "fps",
-                    3,
-                ),
-                ("QuickTime:VideoCodec", "Video Codec", "video", "text", False, True, None, 4),
-                (
-                    "QuickTime:AvgBitrate",
-                    "Average Bitrate",
-                    "video",
-                    "number",
-                    False,
-                    True,
-                    "kbps",
-                    5,
-                ),
-                # Audio
-                (
-                    "QuickTime:AudioChannels",
-                    "Audio Channels",
-                    "audio",
-                    "number",
-                    False,
-                    True,
-                    None,
-                    0,
-                ),
-                (
-                    "QuickTime:AudioSampleRate",
-                    "Sample Rate",
-                    "audio",
-                    "number",
-                    False,
-                    True,
-                    "Hz",
-                    1,
-                ),
-                ("QuickTime:AudioFormat", "Audio Format", "audio", "text", False, True, None, 2),
-                (
-                    "QuickTime:AudioBitrate",
-                    "Audio Bitrate",
-                    "audio",
-                    "number",
-                    False,
-                    True,
-                    "kbps",
-                    3,
-                ),
-                # Location
-                ("GPS:GPSLatitude", "Latitude", "location", "coordinate", True, True, "degrees", 0),
-                (
-                    "GPS:GPSLongitude",
-                    "Longitude",
-                    "location",
-                    "coordinate",
-                    True,
-                    True,
-                    "degrees",
-                    1,
-                ),
-                ("GPS:GPSAltitude", "Altitude", "location", "number", True, True, "meters", 2),
-                ("GPS:GPSMapDatum", "Map Datum", "location", "text", True, True, None, 3),
-                # Technical
-                (
-                    "ExifTool:ExifToolVersion",
-                    "ExifTool Version",
-                    "technical",
-                    "text",
-                    False,
-                    False,
-                    None,
-                    0,
-                ),
-                (
-                    "File:FilePermissions",
-                    "File Permissions",
-                    "technical",
-                    "text",
-                    False,
-                    False,
-                    None,
-                    1,
-                ),
-            ]
-
-            for (
-                field_key,
-                field_name,
-                category_name,
-                data_type,
-                is_editable,
-                is_searchable,
-                display_format,
-                sort_order,
-            ) in default_fields:
-                category_id = category_mapping.get(category_name)
-                if category_id:
-                    self.create_metadata_field(
-                        field_key,
-                        field_name,
-                        category_id,
-                        data_type,
-                        is_editable,
-                        is_searchable,
-                        display_format,
-                        sort_order,
-                    )
-
-            logger.info("[DatabaseManager] Default metadata schema initialized")
-            return True
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error initializing default metadata schema: %s", e)
-            return False
-
-    # =====================================
-    # Utility Methods
-    # =====================================
-
-    def get_database_stats(self) -> dict[str, int]:
-        """Get database statistics."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                stats = {}
-
-                # Count records in each table
-                tables = [
-                    "file_paths",
-                    "file_metadata",
-                    "file_hashes",
-                    "file_rename_history",
-                    "metadata_categories",
-                    "metadata_fields",
-                    "file_metadata_structured",
-                ]
-                for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
-                    row = cursor.fetchone()
-                    stats[table] = row["count"] if row else 0
-
-                return stats
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error getting database stats: %s", e)
-            return {}
-
-    # =====================================
-    # Color Tag Methods
-    # =====================================
+        return self.metadata_store.initialize_default_metadata_schema()
 
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
-        """Set color tag for a file.
-
-        Args:
-            file_path: File path
-            color_hex: Hex color string (e.g., "#ff00aa") or "none"
-
-        Returns:
-            True if successful, False otherwise
-
-        """
-        try:
-            # Validate and normalize color
-            if color_hex != "none":
-                color_hex = color_hex.lower()
-                if not color_hex.startswith("#") or len(color_hex) != 7:
-                    logger.warning("[DatabaseManager] Invalid color hex: %s", color_hex)
-                    return False
-
-            path_id = self.get_or_create_path_id(file_path)
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    UPDATE file_paths
-                    SET color_tag = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                    """,
-                    (color_hex, path_id),
-                )
-                conn.commit()
-
-                logger.debug("[DatabaseManager] Set color_tag=%s for: %s", color_hex, file_path)
-                return True
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error setting color tag: %s", e)
-            return False
+        """Set color tag for a file."""
+        return self.metadata_store.set_color_tag(file_path, color_hex)
 
     def get_color_tag(self, file_path: str) -> str:
-        """Get color tag for a file.
+        """Get color tag for a file."""
+        return self.metadata_store.get_color_tag(file_path)
 
-        Args:
-            file_path: File path
+    # ====================================================================
+    # Stats (kept in orchestrator - queries multiple tables)
+    # ====================================================================
 
-        Returns:
-            Hex color string or "none" if not set
-
-        """
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return "none"
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT color_tag FROM file_paths WHERE id = ?
-                    """,
-                    (path_id,),
-                )
-                row = cursor.fetchone()
-
-                if row and row["color_tag"]:
-                    return row["color_tag"]
-                return "none"
-
-        except Exception as e:
-            logger.error("[DatabaseManager] Error getting color tag: %s", e)
-            return "none"
-
-    def update_file_path(self, old_path: str, new_path: str) -> bool:
-        """Update file path in database (e.g., after rename operation).
-        This preserves all associated data (metadata, hashes, color_tag, etc.)
-        by keeping the same path_id.
-
-        Args:
-            old_path: Original file path
-            new_path: New file path
+    def get_database_stats(self) -> dict[str, int]:
+        """Get database statistics across all tables.
 
         Returns:
-            True if successful, False otherwise
+            dict with counts for paths, metadata, hashes, etc.
 
         """
-        try:
-            old_norm_path = self._normalize_path(old_path)
-            new_norm_path = self._normalize_path(new_path)
-            new_filename = os.path.basename(new_norm_path)
+        stats = {}
+        cursor = self._conn.cursor()
 
-            # Get file size and modified time for the new path
-            file_size = None
-            modified_time = None
-            try:
-                if os.path.exists(new_norm_path):
-                    stat = os.stat(new_norm_path)
-                    file_size = stat.st_size
-                    modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
-            except OSError:
-                pass
+        # Count file paths
+        cursor.execute("SELECT COUNT(*) FROM file_paths")
+        stats["total_paths"] = cursor.fetchone()[0]
 
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
+        # Count metadata entries
+        cursor.execute("SELECT COUNT(*) FROM file_metadata")
+        stats["metadata_entries"] = cursor.fetchone()[0]
 
-                # Update the path while preserving all other data (including color_tag)
-                cursor.execute(
-                    """
-                    UPDATE file_paths
-                    SET file_path = ?, filename = ?, file_size = ?, modified_time = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE file_path = ?
-                    """,
-                    (new_norm_path, new_filename, file_size, modified_time, old_norm_path),
-                )
-                conn.commit()
+        # Count hash entries
+        cursor.execute("SELECT COUNT(*) FROM file_hashes")
+        stats["hash_entries"] = cursor.fetchone()[0]
 
-                if cursor.rowcount > 0:
-                    logger.debug(
-                        "[DatabaseManager] Updated file path: %s -> %s",
-                        os.path.basename(old_path),
-                        os.path.basename(new_path),
-                    )
-                    return True
-                else:
-                    logger.debug(
-                        "[DatabaseManager] No record found to update for: %s",
-                        old_path,
-                    )
-                    return False
+        # Count color tags
+        cursor.execute("SELECT COUNT(*) FROM file_color_tags")
+        stats["color_tags"] = cursor.fetchone()[0]
 
-        except Exception as e:
-            logger.error(
-                "[DatabaseManager] Error updating file path from %s to %s: %s",
-                old_path,
-                new_path,
-                e,
-            )
-            return False
+        # Count metadata categories
+        cursor.execute("SELECT COUNT(*) FROM metadata_categories")
+        stats["metadata_categories"] = cursor.fetchone()[0]
+
+        # Count metadata fields
+        cursor.execute("SELECT COUNT(*) FROM metadata_fields")
+        stats["metadata_fields"] = cursor.fetchone()[0]
+
+        # Count structured metadata entries
+        cursor.execute("SELECT COUNT(*) FROM file_metadata_structured")
+        stats["structured_metadata_entries"] = cursor.fetchone()[0]
+
+        return stats
+
+    # ====================================================================
+    # Lifecycle
+    # ====================================================================
 
     def close(self):
-        """Close database connections."""
-        # Connection pooling cleanup would go here if needed
-        logger.debug("[DatabaseManager] Database connections closed", extra={"dev_only": True})
+        """Close database connection and cleanup resources."""
+        if hasattr(self, "_conn") and self._conn:
+            try:
+                self._conn.close()
+                logger.debug("[DatabaseManager] Connection closed", extra={"dev_only": True})
+            except Exception as e:
+                logger.error("[DatabaseManager] Error closing connection: %s", e)
 
 
-# =====================================
-# Global Instance Management
-# =====================================
+# ====================================================================
+# Module-level functions for global instance
+# ====================================================================
 
-_db_manager_v2_instance = None
-
-
-def get_database_manager() -> DatabaseManager:
-    """Get global database manager instance."""
-    global _db_manager_v2_instance
-    if _db_manager_v2_instance is None:
-        _db_manager_v2_instance = DatabaseManager()
-    return _db_manager_v2_instance
+_db_manager_instance: DatabaseManager | None = None
 
 
-def initialize_database(db_path: str | None = None) -> DatabaseManager:
-    """Initialize database manager with custom path."""
-    global _db_manager_v2_instance
-    _db_manager_v2_instance = DatabaseManager(db_path)
-    return _db_manager_v2_instance
+def get_database_manager(db_path: str | None = None) -> DatabaseManager:
+    """Get or create singleton DatabaseManager instance.
+
+    Args:
+        db_path: Optional custom database path (only used on first call)
+
+    Returns:
+        DatabaseManager instance
+
+    """
+    global _db_manager_instance
+    if _db_manager_instance is None:
+        _db_manager_instance = DatabaseManager(db_path)
+    return _db_manager_instance
+
+
+def init_database_with_custom_path(db_path: str) -> DatabaseManager:
+    """Initialize database with custom path (replaces singleton).
+
+    Args:
+        db_path: Custom database path
+
+    Returns:
+        New DatabaseManager instance
+
+    """
+    global _db_manager_instance
+    if _db_manager_instance:
+        _db_manager_instance.close()
+    _db_manager_instance = DatabaseManager(db_path)
+    return _db_manager_instance
