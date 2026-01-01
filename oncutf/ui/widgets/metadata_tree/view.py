@@ -55,7 +55,6 @@ from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelect
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.filesystem.path_utils import find_parent_with_attribute, paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
 
@@ -245,12 +244,6 @@ class MetadataTreeView(QTreeView):
         # Timer for update debouncing
         self._update_timer_id = None
 
-        # Initialize MetadataCacheHelper for unified cache access
-        self._cache_helper = None
-
-        # Initialize cache helper when parent is available
-        self._initialize_cache_helper()
-
         # Initialize direct metadata loader
         self._direct_loader = None
         self._initialize_direct_loader()
@@ -318,14 +311,6 @@ class MetadataTreeView(QTreeView):
                     self.viewport().update(self.visualRect(old_index))
                 if new_index.isValid():
                     self.viewport().update(self.visualRect(new_index))
-
-    def _initialize_cache_helper(self) -> None:
-        """Initialize the metadata cache helper. Delegates to cache handler."""
-        self._cache_handler.initialize_cache_helper()
-
-    def _get_cache_helper(self) -> MetadataCacheHelper | None:
-        """Get the MetadataCacheHelper instance, initializing if needed. Delegates to cache handler."""
-        return self._cache_handler.get_cache_helper()
 
     def _initialize_direct_loader(self) -> None:
         """Initialize the direct metadata loader. Delegates to cache handler."""

@@ -24,7 +24,6 @@ from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 from oncutf.utils.metadata.exiftool_adapter import ExifToolMetadataAdapter
 
 logger = get_cached_logger(__name__)
@@ -74,22 +73,12 @@ class MetadataWorker(QObject):
         self._cancelled = False  # Alias for compatibility
         self.batch_operations_enabled = True
 
-        # Initialize cache helper and batch manager attributes
-        self._cache_helper = None
+        # Initialize batch manager attributes
         self._batch_manager = None
         self._batch_operations = []
         self._enable_batching = False
         self._total_size = 0
         self._processed_size = 0
-
-        # Initialize cache helper if not provided
-        if not self.metadata_cache and reader:
-            try:
-                from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
-
-                self._cache_helper = MetadataCacheHelper()
-            except ImportError:
-                logger.warning("MetadataCacheHelper not available")
 
         logger.debug("[Worker] __init__ called", extra={"dev_only": True})
 
@@ -135,13 +124,6 @@ class MetadataWorker(QObject):
             )
             self.reader = ExifToolMetadataAdapter()
 
-        # Ensure we have cache helper if not provided
-        if not self._cache_helper and not self.metadata_cache:
-            try:
-                self._cache_helper = MetadataCacheHelper()
-            except Exception as e:
-                logger.warning("[Worker] Could not create cache helper: %s", e)
-
         start_total = time.time()
 
         # Initialize batch operations manager if enabled
@@ -180,29 +162,23 @@ class MetadataWorker(QObject):
                         filepath=path, use_extended=self.use_extended
                     )
 
-                    # Create a temporary FileItem-like object for cache helper
-                    class TempFileItem:
-                        def __init__(self, path):
-                            self.full_path = path
+                    # Get previous entry using file_status_helpers
+                    from oncutf.utils.filesystem.file_status_helpers import (
+                        get_metadata_cache_entry,
+                    )
 
-                    temp_file_item = TempFileItem(path)
-
-                    # Get previous entry using cache helper if available
                     previous_extended = False
-                    if self._cache_helper:
-                        try:
-                            previous_entry = self._cache_helper.get_cache_entry_for_file(
-                                temp_file_item
-                            )
-                            previous_extended = (
-                                previous_entry.is_extended if previous_entry else False
-                            )
-                        except Exception as e:
-                            logger.debug(
-                                "[Worker] Cache helper error: %s",
-                                e,
-                                extra={"dev_only": True},
-                            )
+                    try:
+                        previous_entry = get_metadata_cache_entry(path)
+                        previous_extended = (
+                            previous_entry.is_extended if previous_entry else False
+                        )
+                    except Exception as e:
+                        logger.debug(
+                            "[Worker] Cache entry error: %s",
+                            e,
+                            extra={"dev_only": True},
+                        )
 
                     # Check if metadata has the extended flag directly
                     metadata_has_extended = (

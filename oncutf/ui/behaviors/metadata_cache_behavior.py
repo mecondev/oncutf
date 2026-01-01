@@ -6,6 +6,7 @@ Extracted from MetadataCacheMixin as part of composition-based refactoring.
 
 Author: Michael Economou
 Date: December 28, 2025
+Updated: January 1, 2026 - Removed MetadataCacheHelper dependency
 """
 
 from typing import Any, Protocol
@@ -13,6 +14,12 @@ from typing import Any, Protocol
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget
 
+from oncutf.utils.filesystem.file_status_helpers import (
+    get_metadata_cache_entry,
+    get_metadata_for_file,
+    get_metadata_value,
+    set_metadata_value,
+)
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -36,15 +43,6 @@ class CacheableWidget(Protocol):
 
         Returns:
             list[Any]: List of selected FileItem objects
-
-        """
-        ...
-
-    def _get_cache_helper(self) -> Any | None:
-        """Get the MetadataCacheHelper instance.
-
-        Returns:
-            MetadataCacheHelper | None: Cache helper if available
 
         """
         ...
@@ -115,12 +113,7 @@ class MetadataCacheBehavior:
             return None
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return None
-
-        # Use cache helper for unified access
-        return cache_helper.get_metadata_value(file_item, key_path)
+        return get_metadata_value(file_item.full_path, key_path)
 
     def get_original_metadata_value(self, key_path: str) -> Any | None:
         """Get the ORIGINAL metadata value (not staged) for comparison.
@@ -139,12 +132,9 @@ class MetadataCacheBehavior:
             return None
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return None
 
         # Get original metadata entry (not staged version)
-        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
+        metadata_entry = get_metadata_cache_entry(file_item.full_path)
         if not metadata_entry or not hasattr(metadata_entry, "data"):
             return None
 
@@ -194,15 +184,12 @@ class MetadataCacheBehavior:
             return
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return
 
         # Update cache entry
-        cache_helper.set_metadata_value(file_item, key_path, new_value)
+        set_metadata_value(file_item.full_path, key_path, new_value)
 
         # Mark cache entry as modified
-        cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+        cache_entry = get_metadata_cache_entry(file_item.full_path)
         if cache_entry:
             cache_entry.modified = True
 
@@ -228,12 +215,9 @@ class MetadataCacheBehavior:
             return
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return
 
         # Set value in cache
-        cache_helper.set_metadata_value(file_item, key_path, new_value)
+        set_metadata_value(file_item.full_path, key_path, new_value)
 
         logger.debug(
             "Set %s in cache for %s",
@@ -291,9 +275,6 @@ class MetadataCacheBehavior:
             return
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return
 
         # Get the original value from file item metadata
         original_value = None
@@ -302,17 +283,17 @@ class MetadataCacheBehavior:
 
         # Update cache with original value or remove if no original
         if original_value is not None:
-            cache_helper.set_metadata_value(file_item, key_path, original_value)
+            set_metadata_value(file_item.full_path, key_path, original_value)
         else:
             # Remove from cache if no original value
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+            cache_entry = get_metadata_cache_entry(file_item.full_path)
             if cache_entry and hasattr(cache_entry, "data") and key_path in cache_entry.data:
                 del cache_entry.data[key_path]
 
         # Update file icon status based on remaining modified items
         if not hasattr(self._widget, "modified_items") or not self._widget.modified_items:
             file_item.metadata_status = "loaded"
-            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+            cache_entry = get_metadata_cache_entry(file_item.full_path)
             if cache_entry:
                 cache_entry.modified = False
         else:
@@ -333,12 +314,9 @@ class MetadataCacheBehavior:
             return
 
         file_item = selected_files[0]
-        cache_helper = self._widget._get_cache_helper()
-        if not cache_helper:
-            return
 
         # Remove from cache entry
-        cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+        cache_entry = get_metadata_cache_entry(file_item.full_path)
         if cache_entry and hasattr(cache_entry, "data") and key_path in cache_entry.data:
             del cache_entry.data[key_path]
 
@@ -459,7 +437,7 @@ class MetadataCacheBehavior:
     def fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
         """Fallback metadata loading method.
 
-        Attempts to load metadata from cache helper.
+        Attempts to load metadata from cache.
 
         Args:
             file_item: FileItem to load metadata for
@@ -469,15 +447,13 @@ class MetadataCacheBehavior:
 
         """
         try:
-            cache_helper = self._widget._get_cache_helper()
-            if cache_helper:
-                metadata = cache_helper.get_metadata_for_file(file_item)
-                if metadata:
-                    logger.debug(
-                        "Loaded metadata via cache helper for %s",
-                        file_item.filename,
-                    )
-                    return metadata
+            metadata = get_metadata_for_file(file_item.full_path)
+            if metadata:
+                logger.debug(
+                    "Loaded metadata via cache for %s",
+                    file_item.filename,
+                )
+                return metadata
 
             logger.debug(
                 "No metadata found for %s",

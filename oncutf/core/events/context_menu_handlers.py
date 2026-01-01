@@ -1171,10 +1171,18 @@ class ContextMenuHandlers:
 
     def _file_has_metadata_type(self, file_item: FileItem, extended: bool) -> bool:
         """Check if a file has the specified type of metadata (basic or extended)."""
-        from oncutf.utils.metadata.cache_helper import get_metadata_cache_helper
+        from oncutf.utils.filesystem.file_status_helpers import (
+            get_metadata_cache_entry,
+            has_metadata as has_metadata_check,
+        )
 
-        cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
-        return cache_helper.has_metadata(file_item, extended=extended)
+        if not has_metadata_check(file_item.full_path):
+            return False
+
+        entry = get_metadata_cache_entry(file_item.full_path)
+        if entry and hasattr(entry, "is_extended"):
+            return bool(entry.is_extended) == extended
+        return not extended  # If no is_extended flag, assume basic metadata
 
     def check_files_status(
         self,

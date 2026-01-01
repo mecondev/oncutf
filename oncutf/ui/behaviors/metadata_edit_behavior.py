@@ -12,6 +12,7 @@ Extracted from MetadataEditMixin as part of composition-based refactoring.
 
 Author: Michael Economou
 Date: December 28, 2025
+Updated: January 1, 2026 - Removed MetadataCacheHelper dependency
 """
 
 from typing import Any, Protocol
@@ -19,6 +20,7 @@ from typing import Any, Protocol
 from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 
+from oncutf.utils.filesystem.file_status_helpers import get_metadata_value
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
@@ -84,15 +86,6 @@ class EditableWidget(Protocol):
 
         Returns:
             list[Any]: List of selected FileItem objects
-
-        """
-        ...
-
-    def _get_cache_helper(self) -> Any | None:
-        """Get the MetadataCacheHelper instance.
-
-        Returns:
-            MetadataCacheHelper | None: Cache helper if available
 
         """
         ...
@@ -747,10 +740,7 @@ class MetadataEditBehavior:
             return
 
         # Get current value
-        current_value = None
-        cache_helper = self._widget._get_cache_helper()
-        if cache_helper:
-            current_value = cache_helper.get_metadata_value(file_item, key_path)
+        current_value = get_metadata_value(file_item.full_path, key_path)
 
         # Early return if already at 0 or 1 (no rotation)
         if current_value in ("0", "1"):

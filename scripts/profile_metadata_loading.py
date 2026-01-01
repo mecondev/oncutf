@@ -177,53 +177,6 @@ def profile_batch_loading() -> dict[str, float]:
     return results
 
 
-def profile_cache_performance() -> dict[str, float]:
-    """Profile metadata cache hit performance."""
-    print("\n" + "=" * 80)
-    print("PROFILING: Cache Performance")
-    print("=" * 80)
-
-    test_images = find_test_images()
-    if not test_images:
-        print("⚠️  No test images found - skipping")
-        return {}
-
-    print(f"Testing with {len(test_images)} files")
-
-    from oncutf.utils.metadata_cache_helper import MetadataCacheHelper
-
-    cache = MetadataCacheHelper()
-
-    # First pass: populate cache (cold)
-    cold_times = []
-    for img in test_images:
-        start = time.perf_counter()
-        _ = cache.get_cached_metadata(str(img))
-        elapsed = time.perf_counter() - start
-        cold_times.append(elapsed * 1000)
-
-    # Second pass: read from cache (hot)
-    hot_times = []
-    for img in test_images:
-        start = time.perf_counter()
-        _ = cache.get_cached_metadata(str(img))
-        elapsed = time.perf_counter() - start
-        hot_times.append(elapsed * 1000)
-
-    results = {
-        "cold_avg": sum(cold_times) / len(cold_times),
-        "hot_avg": sum(hot_times) / len(hot_times),
-        "speedup": (sum(cold_times) / len(cold_times)) / (sum(hot_times) / len(hot_times)),
-    }
-
-    print("\n📊 Cache Performance:")
-    print(f"  Cold (miss): {results['cold_avg']:>8.3f} ms/file")
-    print(f"  Hot (hit):   {results['hot_avg']:>8.3f} ms/file")
-    print(f"  Speedup:     {results['speedup']:>8.1f}x")
-
-    return results
-
-
 def main() -> int:
     """Run all metadata profiling tests."""
     print("\n" + "=" * 80)

@@ -88,13 +88,15 @@ class MetadataTreeModificationsHandler:
                 selected_files = self._view._get_current_selection()
                 if selected_files and len(selected_files) == 1:
                     file_item = selected_files[0]
-                    cache_helper = self._view._get_cache_helper()
-                    if cache_helper:
-                        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-                        if metadata_entry and hasattr(metadata_entry, "data"):
-                            display_data = dict(metadata_entry.data)
-                            display_data["FileName"] = file_item.filename
-                            self._view.display_metadata(display_data, context="after_save")
+                    from oncutf.utils.filesystem.file_status_helpers import (
+                        get_metadata_cache_entry,
+                    )
+
+                    metadata_entry = get_metadata_cache_entry(file_item.full_path)
+                    if metadata_entry and hasattr(metadata_entry, "data"):
+                        display_data = dict(metadata_entry.data)
+                        display_data["FileName"] = file_item.filename
+                        self._view.display_metadata(display_data, context="after_save")
             self._view._update_file_icon_status()
             self._view.viewport().update()
 

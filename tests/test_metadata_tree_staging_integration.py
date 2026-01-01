@@ -68,8 +68,7 @@ class TestMetadataTreeStagingIntegration:
             assert staged.get("EXIF/Artist") is None
 
             # 4. Test fallback edit value (stages change)
-            # Mock cache helper (needed for _fallback_edit_value to update icon status)
-            tree_view._get_cache_helper = MagicMock()
+            # Mock needed methods for _fallback_edit_value to work
             tree_view._update_file_icon_status = MagicMock()
             tree_view._update_tree_item_value = MagicMock()
             tree_view.viewport = MagicMock()

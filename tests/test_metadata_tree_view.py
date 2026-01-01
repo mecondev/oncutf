@@ -218,7 +218,7 @@ class TestMetadataTreeViewRotation:
 
     def test_set_rotation_to_zero_with_existing_value(self, tree_view, mock_file_item):
         """Test setting rotation to 0 when a rotation value exists."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup mock metadata cache with existing rotation value
         mock_metadata = {"EXIF:Orientation": "3"}  # 180 degrees rotation
@@ -226,11 +226,6 @@ class TestMetadataTreeViewRotation:
         # Mock the necessary methods
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
-
-        # Mock cache helper to return the current value
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
 
         # Mock direct loader
         mock_direct_loader = MagicMock()
@@ -244,8 +239,13 @@ class TestMetadataTreeViewRotation:
         tree_view.value_edited = MagicMock()
         tree_view.value_edited.emit = MagicMock()
 
-        # Call the method
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return "3"
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value="3",
+        ):
+            # Call the method
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was called
         mock_direct_loader.set_metadata_value.assert_called_once_with(
@@ -263,7 +263,7 @@ class TestMetadataTreeViewRotation:
 
     def test_set_rotation_to_zero_without_existing_value(self, tree_view, mock_file_item):
         """Test setting rotation to 0 when no rotation value exists in metadata."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup mock metadata cache without rotation value
         mock_metadata = {"EXIF:CameraMake": "Canon"}  # No orientation key
@@ -271,11 +271,6 @@ class TestMetadataTreeViewRotation:
         # Mock the necessary methods
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
-
-        # Mock cache helper to return None for non-existent value
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value=None)
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
 
         # Mock direct loader
         mock_direct_loader = MagicMock()
@@ -289,8 +284,13 @@ class TestMetadataTreeViewRotation:
         tree_view.value_edited = MagicMock()
         tree_view.value_edited.emit = MagicMock()
 
-        # Call the method
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return None
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value=None,
+        ):
+            # Call the method
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was called
         mock_direct_loader.set_metadata_value.assert_called_once_with(
@@ -302,7 +302,7 @@ class TestMetadataTreeViewRotation:
 
     def test_set_rotation_to_zero_already_zero(self, tree_view, mock_file_item):
         """Test setting rotation to 0 when rotation is already 0."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup mock metadata cache with rotation already at 0
         mock_metadata = {"EXIF:Orientation": "0"}
@@ -311,24 +311,24 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
-        # Mock cache helper to return "0" (already at zero)
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value="0")
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
-
         # Mock direct loader (should not be called)
         mock_direct_loader = MagicMock()
         tree_view._direct_loader = mock_direct_loader
 
-        # Call the method
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return "0"
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value="0",
+        ):
+            # Call the method
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was NOT called (early return)
         mock_direct_loader.set_metadata_value.assert_not_called()
 
     def test_set_rotation_to_zero_fallback_path(self, tree_view, mock_file_item):
         """Test fallback path when direct loader fails or is unavailable."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup mock metadata cache
         mock_metadata = {"EXIF:Orientation": "3"}
@@ -336,11 +336,6 @@ class TestMetadataTreeViewRotation:
         # Mock the necessary methods
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
-
-        # Mock cache helper to return "3"
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
 
         # Make direct loader fail
         mock_direct_loader = MagicMock()
@@ -350,8 +345,13 @@ class TestMetadataTreeViewRotation:
         # Mock fallback method on behavior
         tree_view._edit_behavior._fallback_set_rotation_to_zero = MagicMock()
 
-        # Call the method
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return "3"
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value="3",
+        ):
+            # Call the method
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called with current value
         tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(
@@ -360,16 +360,11 @@ class TestMetadataTreeViewRotation:
 
     def test_set_rotation_to_zero_empty_metadata_cache(self, tree_view, mock_file_item):
         """Test setting rotation to 0 when metadata cache is None or empty."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup empty metadata cache
         tree_view._get_metadata_cache = MagicMock(return_value=None)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
-
-        # Mock cache helper to return None for empty cache
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value=None)
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
 
         # Mock direct loader
         mock_direct_loader = MagicMock()
@@ -383,15 +378,20 @@ class TestMetadataTreeViewRotation:
         tree_view.value_edited = MagicMock()
         tree_view.value_edited.emit = MagicMock()
 
-        # Call the method (should not crash with UnboundLocalError)
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return None
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value=None,
+        ):
+            # Call the method (should not crash with UnboundLocalError)
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify signal was emitted with empty string (no previous value)
         tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "")
 
     def test_set_rotation_to_zero_no_direct_loader(self, tree_view, mock_file_item):
         """Test setting rotation to 0 when direct loader is not available."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, patch
 
         # Setup mock metadata cache
         mock_metadata = {"EXIF:Orientation": "3"}
@@ -400,19 +400,19 @@ class TestMetadataTreeViewRotation:
         tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
         tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
 
-        # Mock cache helper to return "3"
-        mock_cache_helper = MagicMock()
-        mock_cache_helper.get_metadata_value = MagicMock(return_value="3")
-        tree_view._get_cache_helper = MagicMock(return_value=mock_cache_helper)
-
         # No direct loader
         tree_view._direct_loader = None
 
         # Mock fallback method on behavior
         tree_view._edit_behavior._fallback_set_rotation_to_zero = MagicMock()
 
-        # Call the method
-        tree_view.set_rotation_to_zero("EXIF:Orientation")
+        # Mock file_status_helpers.get_metadata_value to return "3"
+        with patch(
+            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            return_value="3",
+        ):
+            # Call the method
+            tree_view.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called
         tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(

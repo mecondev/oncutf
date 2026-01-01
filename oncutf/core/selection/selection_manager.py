@@ -10,8 +10,8 @@ Handles file table selection operations, preview updates, and metadata synchroni
 
 import time
 
+from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.cache_helper import MetadataCacheHelper
 from oncutf.utils.shared.timer_manager import schedule_metadata_load
 from oncutf.utils.ui.cursor_helper import wait_cursor
 
@@ -31,18 +31,9 @@ class SelectionManager:
     def __init__(self, parent_window=None):
         """Initialize the selection manager with the parent window."""
         self.parent_window = parent_window
-        self._cache_helper = None
         # Cache for avoiding unnecessary preview updates
         self._last_selected_rows = None
         self._last_preview_update_time = 0
-
-    def _get_cache_helper(self) -> MetadataCacheHelper | None:
-        """Get or create the MetadataCacheHelper instance."""
-        if self._cache_helper is None and self.parent_window:
-            metadata_cache = getattr(self.parent_window, "metadata_cache", None)
-            if metadata_cache:
-                self._cache_helper = MetadataCacheHelper(metadata_cache)
-        return self._cache_helper
 
     def select_all_rows(self) -> None:
         """Selects all rows in the file table efficiently with wait cursor."""
@@ -85,7 +76,6 @@ class SelectionManager:
                 # Step 5: Handle metadata display using centralized logic (async)
                 def show_metadata_later():
                     metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
-                    cache_helper = self._get_cache_helper()
                     if metadata_tree_view:
                         # Use centralized logic - select_all means multiple files, so show empty state
                         if hasattr(
@@ -97,9 +87,8 @@ class SelectionManager:
                         else:
                             # Fallback for single file case (shouldn't happen with select_all)
                             last_file = file_model.files[-1]
-                            if cache_helper:
-                                metadata = cache_helper.get_metadata_for_file(last_file)
-                                metadata_tree_view.display_metadata(metadata, context="select_all")
+                            metadata = get_metadata_for_file(last_file.full_path)
+                            metadata_tree_view.display_metadata(metadata, context="select_all")
 
                 schedule_metadata_load(show_metadata_later, 15)
 
@@ -224,7 +213,6 @@ class SelectionManager:
 
                 # Handle metadata display using centralized logic
                 metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
-                cache_helper = self._get_cache_helper()
 
                 if metadata_tree_view:
                     # Use centralized logic to determine if metadata should be displayed
@@ -234,12 +222,12 @@ class SelectionManager:
                         len(checked_rows)
                     )
 
-                    if should_display and checked_rows and cache_helper:
+                    if should_display and checked_rows:
 
                         def show_metadata_later():
                             last_row = checked_rows[-1]
                             file_item = file_model.files[last_row]
-                            metadata = cache_helper.get_metadata_for_file(file_item)
+                            metadata = get_metadata_for_file(file_item.full_path)
                             if hasattr(metadata_tree_view, "handle_invert_selection"):
                                 metadata_tree_view.handle_invert_selection(metadata)
                             elif hasattr(metadata_tree_view, "display_metadata"):
@@ -319,7 +307,6 @@ class SelectionManager:
         file_model = getattr(self.parent_window, "file_model", None)
         metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
         rename_modules_area = getattr(self.parent_window, "rename_modules_area", None)
-        cache_helper = self._get_cache_helper()
 
         if not file_model or not metadata_tree_view:
             return
@@ -333,8 +320,8 @@ class SelectionManager:
                 rename_modules_area.set_current_file_for_modules(file_item)
 
             # Display metadata
-            if len(selected_rows) == 1 and cache_helper:
-                metadata = cache_helper.get_metadata_for_file(file_item)
+            if len(selected_rows) == 1:
+                metadata = get_metadata_for_file(file_item.full_path)
                 if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
                     metadata_tree_view.smart_display_metadata_or_empty_state(
                         metadata, len(selected_rows), context="selection_update"
