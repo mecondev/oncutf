@@ -116,18 +116,35 @@ class TestAppPaths:
         """Test that reset() clears the cached path."""
         from oncutf.utils.paths import AppPaths
 
-        if os.name != "nt":
-            # Set custom path
+        if os.name == "nt":
+            # Windows: test LOCALAPPDATA
+            monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "first"))
+            AppPaths.reset()
+            path1 = AppPaths.get_user_data_dir()
+
+            monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "second"))
+            AppPaths.reset()
+            path2 = AppPaths.get_user_data_dir()
+
+            assert path1 != path2
+        elif platform.system() == "Darwin":
+            # macOS: test that reset actually clears the cache by checking internal state
+            AppPaths.reset()
+            assert AppPaths._user_data_dir is None
+            path1 = AppPaths.get_user_data_dir()
+            assert AppPaths._user_data_dir is not None
+            AppPaths.reset()
+            assert AppPaths._user_data_dir is None
+        else:
+            # Linux: test XDG_DATA_HOME
             monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "first"))
             AppPaths.reset()
             path1 = AppPaths.get_user_data_dir()
 
-            # Change env and reset
             monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "second"))
             AppPaths.reset()
             path2 = AppPaths.get_user_data_dir()
 
-            # Paths should be different
             assert path1 != path2
 
 
