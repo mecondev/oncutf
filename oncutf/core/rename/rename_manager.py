@@ -163,7 +163,6 @@ class RenameManager:
                     return
 
                 logger.info("[RenameManager] Starting safe post-rename workflow")
-                self._results: dict[str, Any] = {}
                 self._execute_post_rename_workflow_safe(new_checked_paths, new_selected_paths)
             except Exception as e:
                 logger.exception(

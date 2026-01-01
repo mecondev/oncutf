@@ -73,7 +73,7 @@ class WindowConfig(ConfigCategory[Any]):
             "metadata_tree_columns": {},  # Metadata tree column visibility by key
             "last_folder": "",
             "recursive_mode": False,
-            # TODO: When last_state restoration is implemented, remember actual sort column
+            # NOTE: Sort column restoration feature tracked in TODO.md
             # Default to filename column (2) instead of color (1)
             "sort_column": 2,
             "sort_order": 0,

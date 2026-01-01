@@ -181,19 +181,6 @@ class MetadataModule:
         return metadata
 
     @staticmethod
-    def clear_cache() -> None:
-        """Clear the metadata cache.
-
-        NOTE: Caching is now handled by MetadataExtractor internally.
-        This method is kept for backwards compatibility.
-        """
-        from oncutf.domain.metadata.extractor import MetadataExtractor
-
-        extractor = MetadataExtractor()
-        extractor.clear_cache()
-        logger.debug("[MetadataModule] Cache cleared")
-
-    @staticmethod
     def is_effective_data(data: dict[str, Any]) -> bool:
         """Returns True if any transformation is active."""
         field = data.get("field")

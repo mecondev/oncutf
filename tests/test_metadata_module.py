@@ -19,7 +19,9 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # Clear metadata cache before each test to avoid interference
 def setup_function(function):  # noqa: ARG001
-    MetadataModule.clear_cache()
+    from oncutf.domain.metadata.extractor import MetadataExtractor
+
+    MetadataExtractor().clear_cache()
 
 
 def test_metadata_module_basic():

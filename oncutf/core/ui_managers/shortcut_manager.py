@@ -61,7 +61,7 @@ class ShortcutManager:
         self.main_window.clear_file_table("Press Escape to clear, or drag folders here")
         # Clear folder state via ApplicationContext (centralized state management)
         self.main_window.context.set_current_folder(None, False)
-        # TODO: When last_state restoration is implemented, restore previous sort column
+        # NOTE: Sort column restoration feature tracked in TODO.md
         # For now, reset to filename column (index 2, not color at index 1)
         self.main_window.current_sort_column = 2
         self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending

@@ -75,7 +75,7 @@ class FileOperationsManager:
             try:
                 logger.info("[Rename] File conflict detected for: %s", filename)
                 # For now, automatically skip conflicts to prevent blocking
-                # TODO: Implement non-blocking conflict resolution UI
+                # NOTE: Non-blocking conflict resolution UI tracked in TODO.md
                 return "skip"
             except Exception as e:
                 logger.error("[Rename] Error in conflict callback: %s", e)

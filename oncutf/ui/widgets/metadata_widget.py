@@ -175,23 +175,6 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.warning("Error emitting settings_changed: %s", e)
 
-    def update_options(self) -> None:
-        """Update options combo box based on selected category.
-
-        Deprecated: Use CategoryManager.update_options() instead.
-        This method is kept for backwards compatibility.
-        """
-        category = self.category_combo.currentData()
-
-        # Set label based on category
-        if category in {"file_dates", "hash"}:
-            self.options_label.setText("Type")
-        elif category == "metadata_keys":
-            self.options_label.setText("Field")
-
-        # Delegate to CategoryManager
-        self._category_manager.update_options()
-
         # Set to first option by default (if exists)
         if hasattr(self.options_combo, "get_current_data"):
             # For hierarchical combo box, we don't need to set index
@@ -395,7 +378,7 @@ class MetadataWidget(QWidget):
 
     def force_preview_update(self) -> None:
         """Force preview update even if data hasn't changed (for hash calculation)."""
-        self.update_options()
+        self._category_manager.update_options()
         self.emit_if_changed()
         self.updated.emit(self)
         logger.debug(
@@ -437,14 +420,14 @@ class MetadataWidget(QWidget):
         # Update category availability first
         self.update_category_availability()
         # Then update options
-        self.update_options()
+        self._category_manager.update_options()
 
     def _debounced_update_options(self):
         """Immediate update_options and hash check (no debounce, for compatibility)."""
         # Update category availability first
         self.update_category_availability()
         # Then update options
-        self.update_options()
+        self._category_manager.update_options()
 
     def _load_metadata_for_files(self, files_needing_metadata):
         """Load metadata for the given file paths."""
@@ -644,8 +627,8 @@ class MetadataWidget(QWidget):
         )
 
     def _on_selection_changed(self):
-        self.update_options()
+        self._category_manager.update_options()
         self.force_preview_update()
 
     def _on_metadata_loaded(self):
-        self.update_options()
+        self._category_manager.update_options()

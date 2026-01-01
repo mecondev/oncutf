@@ -234,9 +234,9 @@ class PreviewManager:
         clear_module_cache()
 
         # Clear metadata cache
-        from oncutf.modules.metadata_module import MetadataModule
+        from oncutf.domain.metadata.extractor import MetadataExtractor
 
-        MetadataModule.clear_cache()
+        MetadataExtractor().clear_cache()
 
         logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 

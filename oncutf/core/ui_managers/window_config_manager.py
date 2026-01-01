@@ -273,7 +273,7 @@ class WindowConfigManager:
             self.main_window._recursive_mode_from_config = window_config.get(
                 "recursive_mode", False
             )
-            # TODO: When last_state restoration is implemented, restore actual sort column from config
+            # NOTE: Sort column restoration feature tracked in TODO.md
             # For now, default to filename (column 2) instead of color (column 1)
             self.main_window._sort_column_from_config = window_config.get("sort_column", 2)
             self.main_window._sort_order_from_config = window_config.get("sort_order", 0)
@@ -378,7 +378,7 @@ class WindowConfigManager:
 
     def get_sort_settings_from_config(self) -> tuple[int, int]:
         """Get sort column and order from configuration."""
-        # TODO: When last_state restoration is implemented, restore sort column preference
+        # NOTE: Sort column restoration feature tracked in TODO.md
         # Default to filename column (2) instead of color (1)
         column = getattr(self.main_window, "_sort_column_from_config", 2)
         order = getattr(self.main_window, "_sort_order_from_config", 0)

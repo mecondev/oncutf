@@ -415,7 +415,7 @@ class StructuredMetadataManager:
                 return []
 
             # This would require a more complex query - for now, return empty list
-            # TODO: Implement database search functionality
+            # NOTE: Database search functionality tracked in TODO.md
             logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
             return []
 
