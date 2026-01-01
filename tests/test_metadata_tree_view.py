@@ -241,7 +241,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return "3"
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value="3",
         ):
             # Call the method
@@ -286,7 +286,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return None
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value=None,
         ):
             # Call the method
@@ -317,7 +317,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return "0"
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value="0",
         ):
             # Call the method
@@ -347,7 +347,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return "3"
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value="3",
         ):
             # Call the method
@@ -380,7 +380,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return None
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value=None,
         ):
             # Call the method (should not crash with UnboundLocalError)
@@ -408,7 +408,7 @@ class TestMetadataTreeViewRotation:
 
         # Mock file_status_helpers.get_metadata_value to return "3"
         with patch(
-            "oncutf.ui.behaviors.metadata_edit_behavior.get_metadata_value",
+            "oncutf.ui.behaviors.metadata_edit.rotation_handler.get_metadata_value",
             return_value="3",
         ):
             # Call the method

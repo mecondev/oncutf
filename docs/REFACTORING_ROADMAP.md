@@ -16,7 +16,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 | ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phases 4A-C)** |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`unified_rename_engine.py`~~ | ~~1258~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 5)** |
-| `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
+| ~~`metadata_edit_behavior.py`~~ | ~~1119~~ | ~~LOW~~ | ✅ **DONE (Phase 7)** |
 | ~~`file_table_model.py`~~ | ~~1081~~ | ~~LOW~~ | ✅ **DONE (Phase 6)** |
 
 ---
@@ -286,6 +286,41 @@ oncutf/models/file_table_model.py  # Re-exports from file_table/ (14 lines)
 
 ---
 
+### ✅ Phase 7: Metadata Edit Behavior (COMPLETED)
+
+**Original**: `oncutf/ui/behaviors/metadata_edit_behavior.py` (1119 lines)
+
+**Split into**:
+```
+oncutf/ui/behaviors/metadata_edit/
+├── __init__.py                    # Module exports (52 lines)
+├── metadata_edit_behavior.py      # Main orchestrator (328 lines, 71% reduction!)
+├── field_detector.py              # Field type detection (205 lines)
+├── tree_navigator.py              # Tree path operations (177 lines)
+├── edit_operations.py             # Edit dialogs & operations (361 lines)
+├── rotation_handler.py            # Rotation operations (136 lines)
+├── reset_handler.py               # Reset operations (143 lines)
+└── undo_redo_handler.py           # Undo/redo + history (101 lines)
+```
+
+**Backward Compatibility**:
+```
+oncutf/ui/behaviors/metadata_edit_behavior.py  # Re-exports from metadata_edit/ (17 lines)
+```
+
+**Benefits:**
+- **71% reduction** in main orchestrator (1119 → 328 lines)
+- Clear separation of concerns:
+  - Field detection isolated with constants
+  - Tree navigation decoupled from edit logic
+  - Edit operations handle all dialog interactions
+  - Rotation and reset handlers isolated
+  - Undo/redo support modular
+- Backward compatible (old imports still work)
+- All 949 tests passing
+
+---
+
 ## 🚀 Node Editor Readiness
 
 ### Current Seams (already in place)
@@ -321,6 +356,7 @@ oncutf/models/file_table_model.py  # Re-exports from file_table/ (14 lines)
 - [x] **Phase 4C: Split main_window.py** (987 → 665 lines + shutdown_handler, all tests passing)
 - [x] **Phase 5: Split unified_rename_engine.py** (1258 → 244 lines + 6 modules, all tests passing)
 - [x] **Phase 6: Split file_table_model.py** (1081 → 301 lines + 5 modules, all tests passing)
+- [x] **Phase 7: Split metadata_edit_behavior.py** (1119 → 328 lines + 7 modules, all tests passing)
 
 ---
 
