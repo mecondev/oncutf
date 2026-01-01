@@ -57,7 +57,8 @@ class MetadataEntry:
         is_extended: bool = False,
         timestamp: float | None = None,
         modified: bool = False,
-    ):
+    ) -> None:
+        """Initialize metadata entry with data and flags."""
         self.data = data
         self.is_extended = is_extended
         self.timestamp = timestamp or time.time()
@@ -435,9 +436,10 @@ def get_persistent_metadata_cache() -> Union[PersistentMetadataCache, "DummyMeta
 class DummyMetadataCache:
     """Dummy cache for fallback when database is not available."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize dummy cache with empty memory store."""
         logger.warning("[DEBUG] [PersistentMetadataCache] DummyMetadataCache initialized")
-        self._memory_cache = {}
+        self._memory_cache: dict[str, dict[str, Any]] = {}
 
     def has(self, _file_path: str) -> bool:
         return False

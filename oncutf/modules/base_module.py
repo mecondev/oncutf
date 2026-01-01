@@ -39,6 +39,7 @@ class BaseRenameModule(QWidget):
     _is_validating: bool
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize base rename module with parent widget."""
         super().__init__(parent)
         self.setProperty("class", "RenameModule")
         self._last_value = ""

@@ -291,7 +291,8 @@ class FileTableView(QTableView):
         # Update header visibility when widget becomes visible
         self._update_header_visibility()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
+        """Handle paint events for the table view."""
         # Remove this debug log as it's too verbose
         # logger.debug("FileTableView paintEvent called")
         super().paintEvent(event)
@@ -910,6 +911,7 @@ class FileTableView(QTableView):
         return not files or len(files) == 0
 
     def focusOutEvent(self, event) -> None:
+        """Handle focus out events, clearing hover state and tooltips."""
         super().focusOutEvent(event)
         if self.context_focused_row is not None:
             self.context_focused_row = None

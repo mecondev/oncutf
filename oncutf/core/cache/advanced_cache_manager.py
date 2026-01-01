@@ -21,7 +21,8 @@ logger = get_cached_logger(__name__)
 class LRUCache:
     """Simple LRU cache for speed optimization."""
 
-    def __init__(self, maxsize: int = 1000):
+    def __init__(self, maxsize: int = 1000) -> None:
+        """Initialize LRU cache with maximum size."""
         self.maxsize = maxsize
         self.cache: OrderedDict[str, Any] = OrderedDict()
         self.hits = 0
@@ -74,7 +75,8 @@ class LRUCache:
 class DiskCache:
     """Simple disk cache for large datasets."""
 
-    def __init__(self, cache_dir: str | None = None):
+    def __init__(self, cache_dir: str | None = None) -> None:
+        """Initialize disk cache in the specified directory."""
         if cache_dir is None:
             cache_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "cache")
 
@@ -162,7 +164,8 @@ class DiskCache:
 class AdvancedCacheManager:
     """Advanced cache manager with memory and disk caching."""
 
-    def __init__(self, memory_cache_size: int = 1000):
+    def __init__(self, memory_cache_size: int = 1000) -> None:
+        """Initialize cache manager with memory and disk backends."""
         self.memory_cache = LRUCache(memory_cache_size)
         self.disk_cache = DiskCache()
         self.compression_threshold = 1024 * 1024  # 1MB

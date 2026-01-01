@@ -65,6 +65,7 @@ class FileTreeView(QTreeView):
     selection_changed = pyqtSignal(str)  # Signal emitted when selection changes (single path)
 
     def __init__(self, parent=None) -> None:
+        """Initialize file tree view with drag/drop support."""
         super().__init__(parent)
 
         # Enable drag so Qt can call startDrag, but we'll override it
@@ -1594,7 +1595,8 @@ class DragCancelFilter:
     to MetadataTreeView, especially when no modifier keys are pressed.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize drag cancel filter with inactive state."""
         self._active = False
         self._preserved_selection = set()
 

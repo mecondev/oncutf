@@ -16,6 +16,7 @@
 - **User communication:** Greek. **Code/comments/logs:** English.
 - **Logging:** Use %-formatting: `logger.info("Processing %d files", count)`.
 - **Characters:** ASCII only in code/logs (Windows cp1253 compatibility).
+- **NO EMOJIS:** Never use emojis anywhere (code, comments, logs, git commits, scripts, reports). Use ASCII symbols only.
 - **New modules:** Add Author/Date headers (Michael Economou, current date).
 - **Type hints:** Use `if TYPE_CHECKING:` for type-only imports.
 
@@ -88,15 +89,19 @@ mypy .                   # Type check (many modules have ignore_errors=true)
 | Domain | Canonical | Legacy/Supporting |
 |--------|-----------|-------------------|
 | **Rename Pipeline** | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
-| **Column Management** | `UnifiedColumnService` | `ColumnManager` (thin adapter) |
+| **Column Management** | `UnifiedColumnService` (`core/ui_managers/column_service.py`) | `ColumnManager` (adapter), `models/file_table/column_manager.py` (model-level) |
 | **UI Components** | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
+| **Metadata Loading** | `UnifiedMetadataManager` | `MetadataController` (orchestration) |
+| **File Loading** | `FileLoadController` | `FileLoadManager` (legacy) |
 
 **Rules:**
 - All rename operations MUST go through `UnifiedRenameEngine`.
 - New UI code uses **Behaviors**, NOT Mixins.
 - New column logic goes in `UnifiedColumnService`.
+- New features: controller → core service → domain. NO new logic in `ui_managers/` or `MainWindow`.
 
 See [REFACTORING_ROADMAP.md](../docs/REFACTORING_ROADMAP.md) for technical debt tracking.
+See [MIGRATION_STANCE.md](../docs/MIGRATION_STANCE.md) for architecture migration policy.
 
 ---
 

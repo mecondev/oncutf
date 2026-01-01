@@ -36,7 +36,8 @@ class PreviewResult:
     errors: list[str] | None = None
     timestamp: float = 0.0  # Unix timestamp
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize default values for errors and timestamp."""
         if self.errors is None:
             self.errors = []
         if self.timestamp == 0.0:
@@ -107,7 +108,8 @@ class ValidationResult:
     has_unchanged: bool = False
     unchanged_count: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Compute derived validation flags from items."""
         self.has_errors = any(not item.is_valid for item in self.items)
         self.unchanged_count = sum(1 for item in self.items if item.is_unchanged)
         self.has_unchanged = self.unchanged_count == len(self.items) if self.items else False
@@ -201,7 +203,8 @@ class RenameState:
     validation_changed: bool = False
     execution_changed: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize empty collections for None fields."""
         if self.files is None:
             self.files = []
         if self.modules_data is None:

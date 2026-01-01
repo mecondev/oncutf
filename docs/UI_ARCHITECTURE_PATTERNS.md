@@ -276,9 +276,45 @@ For widgets with complex logic:
 
 | Pattern | Use case | Testability | Reusability | Status |
 |---------|----------|-------------|-------------|--------|
-| **Mixin** | Legacy widgets | Low (needs Qt) | High (inheritance) | ⚠️ Frozen |
-| **Behavior** | NEW shared logic | High (protocols) | High (composition) | ✅ Preferred |
-| **Handler** | Widget-internal routing | Medium | None (widget-specific) | ✅ Recommended |
+| **Mixin** | Legacy widgets | Low (needs Qt) | High (inheritance) | [FREEZE] Frozen |
+| **Behavior** | NEW shared logic | High (protocols) | High (composition) | [OK] Preferred |
+| **Handler** | Widget-internal routing | Medium | None (widget-specific) | [OK] Recommended |
 
 **Golden rule:** Mixins are **frozen legacy**. Behaviors are the **future**. Handlers are **internal organization**.
+
+---
+
+## Widget Architecture Inventory
+
+This section tracks which widgets use which patterns, to prevent "dual system forever" syndrome.
+
+### Mixin-Based Widgets (Legacy)
+
+| Widget | Mixins Used | Migration Status |
+|--------|-------------|------------------|
+| `FileTableView` | `SelectionMixin`, `DragDropMixin`, `ColumnManagementMixin` | [PARTIAL] Column behavior extracted |
+| `MetadataTreeView` | `MetadataCacheMixin`, `MetadataEditMixin`, `MetadataContextMenuMixin`, `MetadataScrollMixin` | [TODO] Pending behavior extraction |
+
+### Behavior-Based Widgets (Modern)
+
+| Widget | Behaviors Used | Status |
+|--------|----------------|--------|
+| `FileTableView` | `ColumnManagementBehavior` | [OK] Active |
+| (Future widgets) | Use behaviors from start | [OK] Recommended |
+
+### Handler-Based Widgets (Internal Organization)
+
+| Widget | Handlers | Purpose |
+|--------|----------|---------|
+| `metadata_tree/` | `event_handler.py`, `drag_handler.py`, `search_handler.py`, `selection_handler.py`, `display_handler.py` | Event routing, specialized logic |
+
+### Migration Triggers
+
+Migrate a mixin to behavior when:
+- Bug requires touching mixin code extensively
+- New feature needs similar functionality
+- Widget is being refactored for other reasons
+- Testing becomes painful due to Qt dependencies
+
+**Do NOT migrate just for the sake of migration** - focus on value delivered.
 

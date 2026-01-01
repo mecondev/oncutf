@@ -308,6 +308,7 @@ class ColumnManager:
     def _calculate_column_width(
         self, table_view: QTableView | QTreeView, table_type: str, column_config: ColumnConfig
     ) -> int:
+        """Calculate optimal width for a column based on config and user preferences."""
         logger.debug(
             "[ColumnManager] Calculating width for column %d (type: %s)",
             column_config.column_index,

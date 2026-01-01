@@ -58,6 +58,7 @@ INCLUDE_EXTENSIONS = {".py"}
 # Default output paths
 DEFAULT_OUTPUT = {
     "structure": "reports/project_structure.md",
+    "structure-full": "reports/project_structure_full.md",
     "content": "reports/project_context.md",
 }
 
@@ -123,6 +124,106 @@ def get_module_summary(path: Path, max_doc_len: int = 300) -> dict:
         "classes": classes,
         "functions": functions,
         "syntax_error": False,
+    }
+
+
+def get_full_docstring_coverage(path: Path) -> dict:
+    """Parse a Python file and extract ALL docstrings (module, class, function).
+
+    Returns:
+        dict with:
+            - line_count: number of lines
+            - module_doc: bool (has module docstring)
+            - classes: list of {name, has_doc, line, methods: [{name, has_doc, line}]}
+            - functions: list of {name, has_doc, line}
+            - syntax_error: bool
+            - stats: {total, documented} counts
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return {
+            "line_count": 0,
+            "module_doc": False,
+            "classes": [],
+            "functions": [],
+            "syntax_error": True,
+            "stats": {"total": 0, "documented": 0},
+        }
+
+    line_count = text.count("\n") + 1
+
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError:
+        return {
+            "line_count": line_count,
+            "module_doc": False,
+            "classes": [],
+            "functions": [],
+            "syntax_error": True,
+            "stats": {"total": 0, "documented": 0},
+        }
+
+    total = 0
+    documented = 0
+
+    # Module docstring
+    total += 1
+    module_has_doc = ast.get_docstring(tree) is not None
+    if module_has_doc:
+        documented += 1
+
+    classes = []
+    functions = []
+
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            total += 1
+            class_has_doc = ast.get_docstring(node) is not None
+            if class_has_doc:
+                documented += 1
+
+            methods = []
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
+                    total += 1
+                    method_has_doc = ast.get_docstring(item) is not None
+                    if method_has_doc:
+                        documented += 1
+                    methods.append({
+                        "name": item.name,
+                        "has_doc": method_has_doc,
+                        "line": item.lineno,
+                    })
+
+            classes.append({
+                "name": node.name,
+                "has_doc": class_has_doc,
+                "line": node.lineno,
+                "methods": methods,
+            })
+
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            total += 1
+            func_has_doc = ast.get_docstring(node) is not None
+            if func_has_doc:
+                documented += 1
+            functions.append({
+                "name": node.name,
+                "has_doc": func_has_doc,
+                "line": node.lineno,
+            })
+
+    return {
+        "line_count": line_count,
+        "module_doc": module_has_doc,
+        "classes": classes,
+        "functions": functions,
+        "syntax_error": False,
+        "stats": {"total": total, "documented": documented},
     }
 
 
@@ -261,6 +362,105 @@ def generate_structure_report(
         print(f"[WARNING] {len(missing)} files missing docstrings")
 
 
+def generate_structure_full_report(
+    project_root: Path, output_path: Path, recursive: bool = True, extra_ignored: set | None = None
+) -> None:
+    """Generate structure-full report: complete docstring coverage for modules, classes, functions."""
+    py_files = find_python_files(project_root, recursive, extra_ignored)
+    if not py_files:
+        print("No Python files found.")
+        return
+
+    now = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    total_all = 0
+    documented_all = 0
+    missing_items: list[str] = []
+
+    with output_path.open("w", encoding="utf-8") as f:
+        f.write(f"# Full Docstring Coverage Report – {project_root.name}\n\n")
+        f.write(f"_Generated on {now}_\n\n")
+        f.write("This report checks docstrings for:\n")
+        f.write("- Module-level docstrings\n")
+        f.write("- Class docstrings\n")
+        f.write("- Function/method docstrings\n\n")
+        f.write("---\n\n")
+
+        for py_file in py_files:
+            try:
+                rel_path = py_file.relative_to(project_root)
+            except ValueError:
+                rel_path = py_file
+
+            coverage = get_full_docstring_coverage(py_file)
+            total_all += coverage["stats"]["total"]
+            documented_all += coverage["stats"]["documented"]
+
+            file_pct = (
+                (coverage["stats"]["documented"] / coverage["stats"]["total"] * 100)
+                if coverage["stats"]["total"]
+                else 100
+            )
+
+            # File header
+            status = "[OK]" if file_pct == 100 else "[WARN]" if file_pct >= 80 else "[FAIL]"
+            f.write(f"## {status} `{rel_path}` ({coverage['line_count']} lines)\n\n")
+            f.write(
+                f"**Coverage:** {coverage['stats']['documented']}/{coverage['stats']['total']} "
+                f"({file_pct:.0f}%)\n\n"
+            )
+
+            if coverage["syntax_error"]:
+                f.write("[!] _Syntax error - could not parse_\n\n")
+                continue
+
+            # Module docstring
+            if not coverage["module_doc"]:
+                f.write("- [X] Module docstring missing\n")
+                missing_items.append(f"{rel_path}: module docstring")
+
+            # Classes
+            for cls in coverage["classes"]:
+                cls_status = "[+]" if cls["has_doc"] else "[X]"
+                f.write(f"- {cls_status} Class `{cls['name']}` (line {cls['line']})\n")
+                if not cls["has_doc"]:
+                    missing_items.append(f"{rel_path}:{cls['line']} class {cls['name']}")
+
+                for method in cls["methods"]:
+                    m_status = "[+]" if method["has_doc"] else "[X]"
+                    f.write(f"  - {m_status} `{method['name']}()` (line {method['line']})\n")
+                    if not method["has_doc"]:
+                        missing_items.append(
+                            f"{rel_path}:{method['line']} method {cls['name']}.{method['name']}"
+                        )
+
+            # Top-level functions
+            for func in coverage["functions"]:
+                f_status = "[+]" if func["has_doc"] else "[X]"
+                f.write(f"- {f_status} Function `{func['name']}()` (line {func['line']})\n")
+                if not func["has_doc"]:
+                    missing_items.append(f"{rel_path}:{func['line']} function {func['name']}")
+
+            f.write("\n")
+
+        # Summary section
+        overall_pct = (documented_all / total_all * 100) if total_all else 0
+        f.write("---\n\n")
+        f.write("## Summary\n\n")
+        f.write(f"**Total docstrings:** {documented_all} / {total_all} ({overall_pct:.1f}%)\n\n")
+
+        if missing_items:
+            f.write(f"### Missing Docstrings ({len(missing_items)} items)\n\n")
+            for item in missing_items:
+                f.write(f"- `{item}`\n")
+
+    print(f"[OK] Structure-full report written to: {output_path}")
+    print(f"[STATS] Full Docstring Coverage: {documented_all} / {total_all} ({overall_pct:.1f}%)")
+    if missing_items:
+        print(f"[WARNING] {len(missing_items)} missing docstrings")
+
+
 # --- Content Mode (AI Context) ---------------------------------------------
 
 
@@ -368,20 +568,29 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="""Generate comprehensive project reports for analysis and documentation.
 
-Two report types:
-  structure  - Tree visualization with docstrings, classes, functions, and statistics
-             Shows hierarchy, module coverage, missing docstrings
-  content    - AI-friendly context report grouped by directory
-             Useful for providing project context to language models""",
+Three report types:
+  structure      - Tree visualization with module docstrings, classes, functions
+                   Shows hierarchy, module coverage, missing module docstrings
+  structure-full - Complete docstring coverage (module + class + function/method)
+                   Detailed report of ALL missing docstrings
+  content        - AI-friendly context report grouped by directory
+                   Useful for providing project context to language models""",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
 
-  # Generate full structure report with tree and analysis
+  # Generate structure report with tree and module analysis
   %(prog)s --mode structure
+
+  # Generate FULL docstring coverage report (modules, classes, functions)
+  %(prog)s --mode structure-full
 
   # Generate AI context for the entire project
   %(prog)s --mode content
+
+  # Generate report with datetime stamp at START of filename (for sorting)
+  %(prog)s --mode structure -d
+  # Output: reports/20260101_2130_project_structure.md
 
   # Custom output location with excluded directories
   %(prog)s --mode structure -o analysis/project.md --exclude tests scripts
@@ -389,26 +598,26 @@ Examples:
   # Scan only top-level files (no recursion)
   %(prog)s --mode content --no-recursive
 
-  # Exclude multiple directories and adjust docstring preview length
-  %(prog)s --mode structure \\
-    --exclude tests htmlcov build \\
-    --max-doc-length 500
+  # Full docstring check excluding tests
+  %(prog)s --mode structure-full --exclude tests
 
 Output Defaults:
-  structure: reports/project_structure.md
-  content:   reports/project_context.md
+  structure:      reports/project_structure.md
+  structure-full: reports/project_structure_full.md
+  content:        reports/project_context.md
 
-For more details on what each mode includes:
-  structure: Full tree with line counts, docstrings, class/function names
-  content:   Summary by directory (good for LLM context windows)
+Mode details:
+  structure:      Module-level docstrings only (fast overview)
+  structure-full: ALL docstrings - modules, classes, methods, functions
+  content:        Summary by directory (good for LLM context windows)
         """,
     )
 
     parser.add_argument(
         "--mode",
-        choices=["structure", "content"],
+        choices=["structure", "structure-full", "content"],
         required=True,
-        help="Report type: 'structure' for tree analysis, 'content' for AI context",
+        help="Report type: 'structure', 'structure-full', or 'content'",
     )
 
     parser.add_argument(
@@ -417,6 +626,13 @@ For more details on what each mode includes:
         type=str,
         metavar="PATH",
         help="Output file path (default: reports/project_<mode>.md)",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--date",
+        action="store_true",
+        help="Add datetime stamp at START of filename for sorting (e.g., 20260101_2130_project_structure.md)",
     )
 
     parser.add_argument(
@@ -460,12 +676,21 @@ For more details on what each mode includes:
     else:
         output_path = project_root / DEFAULT_OUTPUT[args.mode]
 
+    # Add datetime stamp if requested (at START of filename for sorting)
+    if args.date:
+        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M")
+        stem = output_path.stem
+        suffix = output_path.suffix
+        output_path = output_path.with_name(f"{timestamp}_{stem}{suffix}")
+
     # Generate report
     recursive = not args.no_recursive
     extra_ignored = set(args.exclude) if args.exclude else None
 
     if args.mode == "structure":
         generate_structure_report(project_root, output_path, recursive, extra_ignored)
+    elif args.mode == "structure-full":
+        generate_structure_full_report(project_root, output_path, recursive, extra_ignored)
     else:  # content
         generate_content_report(
             project_root, output_path, recursive, extra_ignored, args.max_doc_length

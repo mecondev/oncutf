@@ -1,368 +1,315 @@
-# Refactoring Roadmap
+# Refactoring Roadmap — Monster Files Tracker
 
-> Generated: 2026-01-01  
-> Status: Active planning document
-
-This document tracks technical debt and planned refactoring for the oncutf codebase.
-
----
-
-## 📊 Current Mega-Files (>700 lines)
-
-| File | Lines | Priority | Status |
-|------|-------|----------|--------|
-| ~~`metadata_tree/view.py`~~ | ~~1670~~ | ~~HIGH~~ | ✅ **DONE** |
-| ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
-| ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phases 4A-C)** |
-| ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
-| ~~`unified_rename_engine.py`~~ | ~~1258~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 5)** |
-| ~~`metadata_edit_behavior.py`~~ | ~~1119~~ | ~~LOW~~ | ✅ **DONE (Phase 7)** |
-| ~~`file_table_model.py`~~ | ~~1081~~ | ~~LOW~~ | ✅ **DONE (Phase 6)** |
+**Author:** Michael Economou  
+**Date:** 2026-01-01  
+**Status:** Active tracking document
 
 ---
 
-## 🎯 Canonical Patterns (Single Source of Truth)
+## Purpose
 
-### 1. Rename Pipeline
+Track and prioritize the decomposition of oversized modules (>600 lines).
+Large files are maintenance risks: hidden interactions, difficult testing, refactor hell.
 
-**Canonical**: `UnifiedRenameEngine` (`oncutf/core/rename/unified_rename_engine.py`)
-
-```
-User Action → RenameController → UnifiedRenameEngine → Preview/Execute
-```
-
-**Supporting (NOT entry points)**:
-- `utils/naming/preview_engine.py` - Low-level preview helpers (used BY engine)
-- `utils/naming/rename_logic.py` - Pure filename logic (used BY engine)
-- `utils/naming/renamer.py` - Legacy, to be deprecated
-
-**Rule**: All rename operations MUST go through `UnifiedRenameEngine`.
-
-### 2. Column Management
-
-**Canonical**: `UnifiedColumnService` (`oncutf/ui_managers/column_service.py`)
-
-**Legacy**: `ColumnManager` - Thin adapter, delegates to UnifiedColumnService
-
-**Rule**: New code uses `UnifiedColumnService`. Do not add logic to `ColumnManager`.
-
-### 3. UI Component Patterns
-
-**Canonical**: Behaviors (`oncutf/ui/behaviors/`)
-
-```python
-# NEW CODE pattern
-class MyWidget(QWidget):
-    def __init__(self):
-        self.scroll_behavior = ScrollBehavior(self)
-        self.edit_behavior = EditBehavior(self)
-```
-
-**Legacy**: Mixins (`oncutf/ui/mixins/`) - Do NOT create new mixins.
-
-**Rule**: "New code uses behaviors. Mixins only in legacy widgets."
+**Target thresholds:**
+- [CRIT] **Critical (>900 lines):** Split ASAP
+- [WARN] **Warning (600-900 lines):** Plan split
+- [OK] **OK (<600 lines):** Monitor only
 
 ---
 
-## 🔧 Planned Splits
+## Monster Files Inventory
 
-### ✅ Phase 1: Context Menu Handlers (COMPLETED)
+### [CRIT] Critical Priority (>900 lines)
 
-**Original**: `oncutf/core/events/context_menu_handlers.py` (1289 lines)
+| File | Lines | Category | Split Strategy | Status |
+|------|-------|----------|----------------|--------|
+| `ui/widgets/file_tree_view.py` | 1629 | UI | Extract behaviors | [TODO] Planned |
+| `ui/widgets/file_table_view.py` | 1318 | UI | Behaviors already extracted | [TODO] Review |
+| `ui/widgets/metadata_tree/view.py` | 1272 | UI | Handlers partially extracted | [TODO] Planned |
+| ~~`core/database/database_manager.py`~~ | ~~1615~~ | ~~Core~~ | ~~Split by concern~~ | [DONE] Split to 6 modules |
+| ~~`config.py`~~ | ~~1298~~ | ~~Config~~ | ~~Split to package~~ | [DONE] Split to oncutf/config/ |
+| ~~`core/events/context_menu_handlers.py`~~ | ~~1289~~ | ~~Core~~ | ~~Split by domain~~ | [DONE] Split to package |
+| ~~`core/rename/unified_rename_engine.py`~~ | ~~1259~~ | ~~Core~~ | ~~Extract validators~~ | [DONE] Split to 10 modules (244 lines) |
+| ~~`ui/behaviors/metadata_edit_behavior.py`~~ | ~~1120~~ | ~~UI~~ | ~~Split by operation~~ | [DONE] Split to metadata_edit/ (8 modules, 1503 lines) |
+| ~~`models/file_table_model.py`~~ | ~~1082~~ | ~~Model~~ | ~~Extract delegates~~ | [DONE] Split to file_table/ (7 modules, 1622 lines) |
+| `core/ui_managers/ui_manager.py` | 982 | Legacy | Migrate to controllers | [TODO] Planned |
+| `ui/behaviors/column_management_behavior.py` | 964 | UI | Simplify via service | [TODO] Planned |
 
-**Split into**:
-```
-oncutf/core/events/context_menu/
-├── __init__.py              # Re-exports ContextMenuHandlers (11 lines)
-├── base.py                  # Main menu builder (639 lines)
-├── metadata_handlers.py     # Metadata analysis (172 lines)
-├── hash_handlers.py         # Hash analysis (137 lines)
-├── rotation_handlers.py     # Rotation operations (360 lines)
-└── file_status.py           # File status utilities (153 lines)
-```
+### [WARN] Warning Priority (600-900 lines)
 
-**Benefits:**
-- Each file focused on single domain
-- Easier to test individual components
-- Clear separation of concerns
-- Backward compatible (old imports still work)
-
----
-
-### ✅ Phase 2: Database Manager (COMPLETED)
-
-**Original**: `oncutf/core/database/database_manager.py` (1614 lines)
-
-**Split into**:
-```
-oncutf/core/database/
-├── __init__.py              # Module exports
-├── database_manager.py      # Main orchestrator (407 lines - 75% reduction!)
-├── migrations.py            # Schema creation & migrations (520 lines)
-├── metadata_store.py        # Metadata operations (627 lines)
-├── path_store.py            # Path management (161 lines)
-├── hash_store.py            # Hash operations (161 lines)
-└── backup_store.py          # Rename history scaffold (40 lines)
-```
-
-**Benefits:**
-- Single responsibility per store
-- Orchestrator reduced by 75% (1614 → 407 lines)
-- Clear table ownership (path_store owns file_paths table, etc.)
-- Composition pattern (stores as dependencies)
-- All 949 tests passing
+| File | Lines | Category | Split Strategy | Status |
+|------|-------|----------|----------------|--------|
+| `core/file/load_manager.py` | 872 | Core | Delegate to controller | [TODO] Planned |
+| `core/ui_managers/column_manager.py` | 853 | Legacy | Thin adapter only | [TODO] Planned |
+| `core/metadata/unified_manager.py` | 838 | Core | Extract cache logic | [TODO] Planned |
+| `core/metadata/operations_manager.py` | 779 | Core | Merge with controller | [TODO] Planned |
+| `core/ui_managers/status_manager.py` | 708 | Legacy | Review for splitting | [TODO] Planned |
+| `core/events/context_menu/base.py` | 639 | Core | Extract more handlers | [TODO] Planned |
+| `core/database/metadata_store.py` | 627 | Core | Extract to smaller modules | [TODO] Planned |
+| `core/rename/rename_manager.py` | 586 | Core | Near threshold - monitor | [OK] Monitor |
 
 ---
 
-### Phase 3: Metadata Tree View
+## Detailed Split Plans
 
-Current: `oncutf/core/database/database_manager.py` (1614 lines)
+### 1. `config.py` (1298 lines) -> Package [DONE]
 
-Split into:
+**Completed:** 2026-01-01
+
+**Final structure:**
 ```
-oncutf/core/database/
-├── __init__.py
-├── database_manager.py  # Main orchestrator (~400 lines)
-├── hash_store.py        # Hash-related tables
-├── metadata_store.py    # Metadata caching tables
-├── backup_store.py      # Backup/restore tables
-└── migrations.py        # Schema migrations
-```
-
-### ✅ Phase 3: Metadata Tree View (COMPLETED)
-
-**Original**: `oncutf/ui/widgets/metadata_tree/view.py` (1670 lines)
-
-**Split into**:
-```
-oncutf/ui/widgets/metadata_tree/
-├── view.py                # Main orchestrator (~1036 lines, 38% reduction)
-├── display_handler.py     # Display logic (502 lines)
-├── event_handler.py       # Qt event handlers (132 lines)
-└── [existing handlers]
-    ├── cache_handler.py
-    ├── drag_handler.py
-    ├── modifications_handler.py
-    ├── search_handler.py
-    └── selection_handler.py
+oncutf/config/
+├── __init__.py (26 lines)  <- Re-exports all for backward compatibility
+├── app.py (101 lines)      <- Debug, app info, logging, backup
+├── columns.py (322 lines)  <- Table column configs (FileTable, MetadataTree)
+├── features.py (111 lines) <- FeatureAvailability, timeouts, undo/redo
+├── paths.py (68 lines)     <- Extensions, filename validation
+├── shortcuts.py (57 lines) <- All keyboard shortcuts
+└── ui.py (450 lines)       <- Themes, colors, fonts, dialogs
 ```
 
-**Benefits:**
-- Extracted 634 lines into specialized handlers
-- `_rebuild_tree_from_metadata` (266 lines) moved to display_handler
-- Consistent handler pattern across metadata tree
-- All 949 tests passing
+**Migration:** All existing imports like `from oncutf.config import APP_NAME` continue to work.
 
 ---
 
-### ✅ Phase 4A: Main Window Handlers (COMPLETED)
+### 2. `metadata_tree/view.py` (1272 lines) -> Already Partially Split
 
-**Original**: `oncutf/ui/main_window.py` (1362 lines)
+**Status:** Handlers already extracted (discovered 2026-01-01)
 
-**Split into**:
+**Current structure:**
 ```
-oncutf/ui/
-├── main_window.py                           # Main orchestrator (1065 lines, 22% reduction)
-└── handlers/
-    ├── shortcut_command_handler.py         # Shortcuts & commands (265 lines)
-    ├── metadata_signal_handler.py          # Metadata signals (140 lines)
-    └── config_column_handler.py            # Config & columns (162 lines)
+metadata_tree/
+├── __init__.py (102 lines)        <- Re-exports
+├── view.py (1272 lines)           <- Main view (still large)
+├── controller.py (302 lines)      <- Controller logic
+├── service.py (593 lines)         <- Service layer
+├── model.py (294 lines)           <- Data model
+├── view_config.py (309 lines)     <- Configuration
+├── worker.py (358 lines)          <- Background workers
+├── display_handler.py (502 lines) <- Display logic
+├── search_handler.py (322 lines)  <- Search logic
+├── selection_handler.py (231 lines) <- Selection logic
+├── drag_handler.py (203 lines)    <- Drag & drop
+├── event_handler.py (130 lines)   <- Event handling
+├── modifications_handler.py (145 lines) <- Modifications
+└── cache_handler.py (65 lines)    <- Cache management
 ```
 
-**Benefits:**
-- Extracted 567 lines into 3 specialized handlers
-- Delegation pattern for 29 methods
-- `auto_color_by_folder` (147 lines) moved to shortcut_handler
-- `_register_managers_in_context` (63 lines) moved to config_handler
-- All 949 tests passing
+**Total:** 4828 lines split across 14 modules. Average: 345 lines/module.
+
+**Note:** `view.py` at 1272 lines is still large. Consider extracting more into handlers:
+- Context menu logic -> dedicated handler
+- Keyboard shortcuts -> dedicated handler
+- State persistence -> dedicated handler
 
 ---
 
-### ✅ Phase 4B: Window Event Handler (COMPLETED)
+### 3. `file_tree_view.py` (1629 lines) -> Proposed Split
 
-**Original**: `oncutf/ui/main_window.py` (1065 lines after Phase 4A)
-
-**Split into**:
+**Current structure analysis:**
 ```
-oncutf/ui/
-├── main_window.py                          # Main orchestrator (987 lines, 7% additional reduction)
-└── handlers/
-    ├── window_event_handler.py             # Qt events & geometry (171 lines)
-    └── [Phase 4A handlers...]
+file_tree_view.py (1629 lines)
+├── Init + styling (~100 lines: 67-165)
+├── Filesystem monitor (~240 lines: 167-412) <- CAN EXTRACT
+├── Tree UI setup (~125 lines: 437-560)
+├── State persistence (~170 lines: 599-730) <- CAN EXTRACT
+├── Drag & drop (~425 lines: 770-1157) <- CAN EXTRACT
+├── Drop handling (~125 lines: 1158-1280)
+├── Event handlers (~250 lines: 1281-1530) <- CAN EXTRACT
+├── Misc tree operations (~60 lines: 1532-1590)
+└── DragCancelFilter class (~35 lines: 1591-1625)
 ```
 
-**Benefits:**
-- Extracted 171 lines into window event handler
-- Delegation pattern for 9 methods
-- Qt event handling (changeEvent, resizeEvent) isolated
-- Window config and geometry management extracted
-- All 949 tests passing
+**Proposed target structure:**
+```
+ui/widgets/file_tree/                <- NEW package
+├── __init__.py (~20 lines)          <- Re-exports FileTreeView
+├── view.py (~450 lines)             <- Main view (Qt glue + wiring)
+├── filesystem_monitor.py (~250 lines) <- Monitor setup & callbacks
+├── state_handler.py (~180 lines)    <- Expanded state persistence
+├── drag_handler.py (~400 lines)     <- All drag & drop logic
+├── event_handler.py (~200 lines)    <- Keyboard, scroll, misc events
+└── utils.py (~50 lines)             <- DragCancelFilter + helpers
+```
+
+**Migration priority:** [MED] Medium - large but functional
 
 ---
 
-### ✅ Phase 4C: Shutdown Lifecycle Handler (COMPLETED)
+### 4. `context_menu_handlers.py` (1289 lines) -> Split by Domain [DONE]
 
-**Original**: `oncutf/ui/main_window.py` (987 lines after Phase 4B)
+**Completed:** Pre-existing split (discovered 2026-01-01)
 
-**Split into**:
+**Current structure:**
 ```
-oncutf/ui/
-├── main_window.py                          # Main orchestrator (665 lines, 33% additional reduction)
-└── handlers/
-    ├── shutdown_lifecycle_handler.py       # Shutdown & cleanup (423 lines)
-    └── [Phase 4A/4B handlers...]
+events/context_menu/
+├── __init__.py (11 lines)      <- Re-exports ContextMenuHandlers
+├── base.py (639 lines)         <- Main handler class [WARN: >600]
+├── file_status.py (153 lines)  <- File status helpers
+├── hash_handlers.py (137 lines) <- Hash operations
+├── metadata_handlers.py (172 lines) <- Metadata operations
+└── rotation_handlers.py (360 lines) <- Rotation operations
 ```
 
-**Benefits:**
-- Extracted 423 lines into shutdown lifecycle handler
-- Delegation pattern for 9 methods
-- Critical shutdown path isolated (_pre_coordinator_cleanup 64 lines)
-- Background worker cleanup and dialog management extracted
-- Coordinated shutdown flow preserved
-- All 949 tests passing
-- **Total main_window reduction: 51.2% (1362 → 665 lines)**
+**Note:** `base.py` at 639 lines is in [WARN] territory. Future work: extract more handlers.
 
 ---
 
-### ✅ Phase 5: Unified Rename Engine (COMPLETED)
+### 5. `database_manager.py` (1615 lines) -> Split by Concern [DONE]
 
-**Original**: `oncutf/core/rename/unified_rename_engine.py` (1258 lines)
+**Completed:** Pre-existing split (discovered 2026-01-01)
 
-**Split into**:
+**Current structure:**
 ```
-oncutf/core/rename/
-├── __init__.py                 # Module exports (58 lines)
-├── unified_rename_engine.py    # Main orchestrator (244 lines, 81% reduction!)
-├── data_classes.py             # Result dataclasses (210 lines)
-├── query_managers.py           # BatchQueryManager + SmartCacheManager (205 lines)
-├── preview_manager.py          # UnifiedPreviewManager (295 lines)
-├── validation_manager.py       # UnifiedValidationManager (102 lines)
-├── execution_manager.py        # UnifiedExecutionManager (285 lines)
-└── state_manager.py            # RenameStateManager (59 lines)
+database/
+├── __init__.py (35 lines)       <- Re-exports
+├── database_manager.py (424 lines) <- Orchestrator
+├── metadata_store.py (627 lines) <- Metadata operations [WARN]
+├── migrations.py (520 lines)    <- Schema migrations
+├── path_store.py (161 lines)    <- Path operations
+├── hash_store.py (161 lines)    <- Hash operations
+└── backup_store.py (40 lines)   <- Backup operations
 ```
 
-**Benefits:**
-- **81% reduction** in main orchestrator (1258 → 244 lines)
-- Clear separation of concerns:
-  - Data classes isolated for reuse
-  - Preview, validation, execution managers independent
-  - State management decoupled
-- Backward compatible (all imports still work via __init__.py)
-- All tests passing
-- Ready for future extensibility (e.g., node editor integration)
+**Note:** `metadata_store.py` at 627 lines is in [WARN] territory. Future work: extract to smaller modules.
 
 ---
 
-### ✅ Phase 6: File Table Model (COMPLETED)
+### 6. `unified_rename_engine.py` (1259 lines) -> Split by Concern [DONE]
 
-**Original**: `oncutf/models/file_table_model.py` (1081 lines)
+**Completed:** Pre-existing split (discovered 2026-01-01)
 
-**Split into**:
+**Current structure:**
 ```
-oncutf/models/file_table/
-├── __init__.py              # Module exports (31 lines)
-├── file_table_model.py      # Main orchestrator (301 lines, 72% reduction!)
-├── icon_manager.py          # Status icons and tooltips (190 lines)
-├── sort_manager.py          # File sorting logic (152 lines)
-├── column_manager.py        # Column visibility/mapping (350 lines)
-├── data_provider.py         # Qt model data interface (372 lines)
-└── file_operations.py       # File add/remove/refresh (226 lines)
-```
-
-**Backward Compatibility**:
-```
-oncutf/models/file_table_model.py  # Re-exports from file_table/ (14 lines)
+core/rename/
+├── __init__.py (58 lines)              <- Re-exports
+├── unified_rename_engine.py (244 lines) <- Orchestrator
+├── data_classes.py (213 lines)         <- Data models
+├── execution_manager.py (285 lines)    <- Execute renames
+├── preview_manager.py (295 lines)      <- Preview generation
+├── query_managers.py (205 lines)       <- Query operations
+├── rename_history_manager.py (410 lines) <- Undo/redo history
+├── rename_manager.py (586 lines)       <- Main rename logic [WARN: near 600]
+├── state_manager.py (59 lines)         <- State tracking
+└── validation_manager.py (98 lines)    <- Validation rules
 ```
 
-**Benefits:**
-- **72% reduction** in main orchestrator (1081 → 301 lines)
-- Clear separation of concerns:
-  - Icon management isolated with caching
-  - Column management decoupled from Qt model
-  - Sorting logic with natural sort support
-  - Data provider handles all Qt roles
-- Backward compatible (old imports still work)
-- All 949 tests passing
+**Total:** 2453 lines split across 10 modules. Average: 245 lines/module.
 
 ---
 
-### ✅ Phase 7: Metadata Edit Behavior (COMPLETED)
+### 7. `metadata_edit_behavior.py` (1120 lines) -> Split by Operation [DONE]
 
-**Original**: `oncutf/ui/behaviors/metadata_edit_behavior.py` (1119 lines)
+**Completed:** Pre-existing split (discovered 2026-01-01)
 
-**Split into**:
+**Current structure:**
 ```
-oncutf/ui/behaviors/metadata_edit/
-├── __init__.py                    # Module exports (52 lines)
-├── metadata_edit_behavior.py      # Main orchestrator (328 lines, 71% reduction!)
-├── field_detector.py              # Field type detection (205 lines)
-├── tree_navigator.py              # Tree path operations (177 lines)
-├── edit_operations.py             # Edit dialogs & operations (361 lines)
-├── rotation_handler.py            # Rotation operations (136 lines)
-├── reset_handler.py               # Reset operations (143 lines)
-└── undo_redo_handler.py           # Undo/redo + history (101 lines)
-```
-
-**Backward Compatibility**:
-```
-oncutf/ui/behaviors/metadata_edit_behavior.py  # Re-exports from metadata_edit/ (17 lines)
+ui/behaviors/metadata_edit/
+├── __init__.py (52 lines)              <- Re-exports
+├── metadata_edit_behavior.py (328 lines) <- Main coordinator
+├── edit_operations.py (361 lines)      <- Edit logic
+├── field_detector.py (205 lines)       <- Field detection
+├── reset_handler.py (143 lines)        <- Reset operations
+├── rotation_handler.py (136 lines)     <- Image rotation
+├── tree_navigator.py (177 lines)       <- Tree navigation
+└── undo_redo_handler.py (101 lines)    <- Undo/redo support
 ```
 
-**Benefits:**
-- **71% reduction** in main orchestrator (1119 → 328 lines)
-- Clear separation of concerns:
-  - Field detection isolated with constants
-  - Tree navigation decoupled from edit logic
-  - Edit operations handle all dialog interactions
-  - Rotation and reset handlers isolated
-  - Undo/redo support modular
-- Backward compatible (old imports still work)
-- All 949 tests passing
+**Total:** 1503 lines split across 8 modules. Average: 188 lines/module.
 
 ---
 
-## 🚀 Node Editor Readiness
+### 8. `file_table_model.py` (1082 lines) -> Split by Concern [DONE]
 
-### Current Seams (already in place)
-- `controllers/module_orchestrator.py` - Manages module chain
-- `services/interfaces.py` - Service protocols
-- `services/registry.py` - Dependency injection
+**Completed:** Pre-existing split (discovered 2026-01-01)
 
-### Next Steps for Node Editor
-1. Create `RenameGraph` (pure Python, no Qt)
-   - Nodes: ModuleNode, FilterNode, ConditionalNode
-   - Edges: Data flow connections
-   
-2. Create `GraphExecutor`
-   - Converts graph → module chain
-   - Feeds into existing `UnifiedRenameEngine`
+**Current structure:**
+```
+models/file_table/
+├── __init__.py (31 lines)              <- Re-exports
+├── file_table_model.py (301 lines)     <- Main model
+├── column_manager.py (350 lines)       <- Column handling
+├── data_provider.py (372 lines)        <- Data access
+├── file_operations.py (226 lines)      <- File operations
+├── icon_manager.py (190 lines)         <- Icon management
+└── sort_manager.py (152 lines)         <- Sort operations
+```
 
-3. Create `NodeEditorWidget`
-   - Visual graph editor
-   - Uses `RenameGraph` as model
+**Total:** 1622 lines split across 7 modules. Average: 232 lines/module.
 
 ---
 
-## 📋 Quick Wins Completed
+### 9. Column System Consolidation
 
-- [x] Add docstring to `models/__init__.py`
-- [x] Add docstring to `modules/__init__.py`
-- [x] Document canonical patterns (this file)
-- [x] **Phase 1: Split context_menu_handlers.py** (1289 → 6 files, all tests passing)
-- [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
-- [x] **Phase 3: Split metadata_tree/view.py** (1670 → view.py + 2 handlers, all tests passing)
-- [x] **Phase 4A: Split main_window.py** (1362 → 1065 lines + 3 handlers, all tests passing)
-- [x] **Phase 4B: Split main_window.py** (1065 → 987 lines + window_event_handler, all tests passing)
-- [x] **Phase 4C: Split main_window.py** (987 → 665 lines + shutdown_handler, all tests passing)
-- [x] **Phase 5: Split unified_rename_engine.py** (1258 → 244 lines + 6 modules, all tests passing)
-- [x] **Phase 6: Split file_table_model.py** (1081 → 301 lines + 5 modules, all tests passing)
-- [x] **Phase 7: Split metadata_edit_behavior.py** (1119 → 328 lines + 7 modules, all tests passing)
+**Problem:** 3 sources of truth
+
+| Component | Lines | Role | Target |
+|-----------|-------|------|--------|
+| `core/ui_managers/column_manager.py` | 852 | Legacy facade | Thin adapter (<200) |
+| `core/ui_managers/column_service.py` | 391 | Canonical service | **Keep** |
+| `ui/behaviors/column_management_behavior.py` | 964 | UI behavior | Simplify (<500) |
+| `models/file_table/column_manager.py` | 350 | Model-level | **Keep** (different purpose) |
+
+**Target:**
+```
+UnifiedColumnService (canonical)
+       ↑
+       ├── ColumnManager (thin legacy adapter, <100 lines)
+       └── ColumnManagementBehavior (UI-only logic, <400 lines)
+```
+
+**Migration:**
+1. Move all business logic to `UnifiedColumnService`
+2. `ColumnManager` becomes pass-through to service
+3. `ColumnManagementBehavior` keeps only UI interactions
 
 ---
 
-## 📚 Related Documentation
+## Priority Order
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System overview
-- [subsystems/rename_engine.md](subsystems/rename_engine.md) - Rename system details
-- [subsystems/metadata_engine.md](subsystems/metadata_engine.md) - Metadata system details
-- [TODO.md](../TODO.md) - Feature backlog
+### Phase 1: High Impact (Q1 2026)
+
+1. ~~**`context_menu_handlers.py`**~~ — [DONE] Already split to package
+2. ~~**`config.py`**~~ — [DONE] Split to oncutf/config/ package (7 modules)
+3. **Column system** — Consolidate to single truth
+
+### Phase 2: Core Services (Q1-Q2 2026)
+
+4. ~~**`database_manager.py`**~~ — [DONE] Already split to 6 modules
+5. ~~**`unified_rename_engine.py`**~~ — [DONE] Already split to 10 modules
+6. **`unified_manager.py`** — Extract cache logic
+
+### Phase 3: UI Layer (Q2 2026)
+
+7. ~~**`metadata_edit_behavior.py`**~~ — [DONE] Already split to 8 modules
+8. ~~**`file_table_model.py`**~~ — [DONE] Already split to 7 modules
+9. **`metadata_tree/view.py`** — Shell view (1272 lines)
+10. **`file_tree_view.py`** — Extract behaviors (1629 lines)
+11. **`file_table_view.py`** — Review extraction (1318 lines)
+
+### Phase 4: Legacy Migration (Q2-Q3 2026)
+
+12. **`ui_manager.py`** — Migrate to controllers (982 lines)
+13. **`column_manager.py`** — Thin adapter (853 lines)
+14. **`column_management_behavior.py`** — Simplify via service (964 lines)
+15. **`load_manager.py`** — Delegate to controller (872 lines)
+
+---
+
+## Success Metrics
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Files >900 lines | 5 | 0 |
+| Files >600 lines | 12 | 5 |
+| Average LOC/file | ~200 | ~200 |
+| Docstring coverage | 96.2% | 98%+ |
+
+---
+
+## References
+
+- [MIGRATION_STANCE.md](MIGRATION_STANCE.md) — Architecture migration policy
+- [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture
+- [UI_ARCHITECTURE_PATTERNS.md](UI_ARCHITECTURE_PATTERNS.md) — UI patterns guide
