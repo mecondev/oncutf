@@ -170,7 +170,9 @@ class MetadataOperationsManager:
 
     def _execute_export(self, dialog, format_combo, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
-        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+        from PyQt5.QtWidgets import QFileDialog
+
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         # Get format
         format_map = {0: "json", 1: "markdown"}
@@ -205,13 +207,13 @@ class MetadataOperationsManager:
 
             # Show result
             if success:
-                QMessageBox.information(
+                CustomMessageDialog.information(
                     self.parent_window,
                     "Export Successful",
                     f"Metadata exported successfully to:\n{output_dir}",
                 )
             else:
-                QMessageBox.warning(
+                CustomMessageDialog.show_warning(
                     self.parent_window,
                     "Export Failed",
                     "Failed to export metadata. Check the logs for details.",
@@ -219,7 +221,7 @@ class MetadataOperationsManager:
 
         except Exception as e:
             logger.exception("[EventHandler] Export error: %s", e)
-            QMessageBox.critical(
+            CustomMessageDialog.show_error(
                 self.parent_window, "Export Error", f"An error occurred during export:\n{str(e)}"
             )
 

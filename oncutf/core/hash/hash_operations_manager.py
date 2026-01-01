@@ -166,12 +166,12 @@ class HashOperationsManager:
 
         """
         from oncutf.config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
-        from oncutf.core.pyqt_imports import QMessageBox
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         # Check if an operation is already running
         if self.hash_worker and self.hash_worker.isRunning():
             logger.warning("[HashManager] Hash operation already in progress")
-            QMessageBox.information(
+            CustomMessageDialog.information(
                 self.parent_window,
                 "Operation In Progress",
                 "A hash operation is already running. Please wait for it to complete.",
