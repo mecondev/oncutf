@@ -238,9 +238,9 @@ class CompanionFilesWidget(QWidget):
         try:
             # This would need to be connected to the main application
             # to get the current folder and file list
-            from PyQt5.QtWidgets import QMessageBox
+            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
-            QMessageBox.information(
+            CustomMessageDialog.information(
                 self,
                 "Companion Files Detection",
                 "This feature will scan the current folder for companion files.\n\n"

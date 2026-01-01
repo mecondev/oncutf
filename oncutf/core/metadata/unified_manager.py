@@ -688,9 +688,9 @@ class UnifiedMetadataManager(QObject):
         if failed_files:
             logger.warning("[UnifiedMetadataManager] Failed to save %d files", len(failed_files))
             if self.parent_window:
-                from oncutf.core.pyqt_imports import QMessageBox
+                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
-                QMessageBox.warning(
+                CustomMessageDialog.show_warning(
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"
