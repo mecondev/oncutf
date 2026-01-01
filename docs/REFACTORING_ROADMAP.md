@@ -11,7 +11,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 
 | File | Lines | Priority | Status |
 |------|-------|----------|--------|
-| `metadata_tree/view.py` | 1670 | HIGH | ⏳ Planned |
+| ~~`metadata_tree/view.py`~~ | ~~1670~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
 | `main_window.py` | 1362 | MEDIUM | ⏳ Delegating |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
@@ -129,18 +129,29 @@ oncutf/core/database/
 └── migrations.py        # Schema migrations
 ```
 
-### Phase 3: Metadata Tree View
+### ✅ Phase 3: Metadata Tree View (COMPLETED)
 
-Current: `oncutf/ui/widgets/metadata_tree/view.py` (1670 lines)
+**Original**: `oncutf/ui/widgets/metadata_tree/view.py` (1670 lines)
 
-Split into:
+**Split into**:
 ```
 oncutf/ui/widgets/metadata_tree/
-├── view.py              # Main MetadataTreeView (~600 lines)
-├── view_handlers.py     # Event handlers
-├── view_delegates.py    # Custom delegates
-└── view_helpers.py      # Utility functions
+├── view.py                # Main orchestrator (~1036 lines, 38% reduction)
+├── display_handler.py     # Display logic (502 lines)
+├── event_handler.py       # Qt event handlers (132 lines)
+└── [existing handlers]
+    ├── cache_handler.py
+    ├── drag_handler.py
+    ├── modifications_handler.py
+    ├── search_handler.py
+    └── selection_handler.py
 ```
+
+**Benefits:**
+- Extracted 634 lines into specialized handlers
+- `_rebuild_tree_from_metadata` (266 lines) moved to display_handler
+- Consistent handler pattern across metadata tree
+- All 949 tests passing
 
 ---
 
@@ -172,6 +183,8 @@ oncutf/ui/widgets/metadata_tree/
 - [x] Add docstring to `modules/__init__.py`
 - [x] Document canonical patterns (this file)
 - [x] **Phase 1: Split context_menu_handlers.py** (1289 → 6 files, all tests passing)
+- [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
+- [x] **Phase 3: Split metadata_tree/view.py** (1670 → view.py + 2 handlers, all tests passing)
 - [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
 
 ---

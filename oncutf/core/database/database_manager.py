@@ -204,7 +204,7 @@ class DatabaseManager:
 
     def get_files_with_hash_batch(
         self, file_paths: list[str], algorithm: str = "CRC32"
-    ) -> dict[str, str]:
+    ) -> list[str]:
         """Get hash values for multiple files."""
         return self.hash_store.get_files_with_hash_batch(file_paths, algorithm)
 
@@ -216,17 +216,17 @@ class DatabaseManager:
         self,
         file_path: str,
         metadata: dict[str, Any],
-        metadata_type: str = "basic",
         is_extended: bool = False,
+        is_modified: bool = False,
     ) -> bool:
         """Store metadata for a file."""
         return self.metadata_store.store_metadata(
-            file_path, metadata, metadata_type, is_extended
+            file_path, metadata, is_extended, is_modified
         )
 
     def batch_store_metadata(
         self,
-        file_metadata_list: list[tuple[str, dict[str, Any], str, bool]],
+        file_metadata_list: list[tuple[str, dict[str, Any], bool, bool]],
     ) -> int:
         """Batch store metadata for multiple files."""
         return self.metadata_store.batch_store_metadata(file_metadata_list)
@@ -261,23 +261,25 @@ class DatabaseManager:
 
     def create_metadata_field(
         self,
-        category_key: str,
         field_key: str,
         field_name: str,
-        field_type: str = "string",
-        is_array: bool = False,
-        description: str | None = None,
-        display_order: int = 0,
+        category_id: int,
+        data_type: str = "text",
+        is_editable: bool = False,
+        is_searchable: bool = True,
+        display_format: str | None = None,
+        sort_order: int = 0,
     ) -> int | None:
         """Create or get metadata field."""
         return self.metadata_store.create_metadata_field(
-            category_key,
             field_key,
             field_name,
-            field_type,
-            is_array,
-            description,
-            display_order,
+            category_id,
+            data_type,
+            is_editable,
+            is_searchable,
+            display_format,
+            sort_order,
         )
 
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
@@ -297,10 +299,10 @@ class DatabaseManager:
     def batch_store_structured_metadata(
         self,
         file_path: str,
-        metadata_dict: dict[str, str],
+        field_data: list[tuple[str, str]],
     ) -> int:
         """Batch store structured metadata for a file."""
-        return self.metadata_store.batch_store_structured_metadata(file_path, metadata_dict)
+        return self.metadata_store.batch_store_structured_metadata(file_path, field_data)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
@@ -308,7 +310,13 @@ class DatabaseManager:
 
     def initialize_default_metadata_schema(self) -> bool:
         """Initialize default metadata categories and fields."""
-        return self.metadata_store.initialize_default_metadata_schema()
+        from oncutf.core.database.migrations import initialize_default_metadata_schema
+
+        return initialize_default_metadata_schema(
+            self.get_metadata_categories,
+            self.create_metadata_category,
+            self.create_metadata_field,
+        )
 
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
         """Set color tag for a file."""

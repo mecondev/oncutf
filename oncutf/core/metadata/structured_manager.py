@@ -325,6 +325,7 @@ class StructuredMetadataManager:
                 is_editable,
                 is_searchable,
                 display_format,
+                0,  # sort_order
             )
 
             if field_id:

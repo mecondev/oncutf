@@ -96,7 +96,7 @@ mypy .                   # Type check (many modules have ignore_errors=true)
 - New UI code uses **Behaviors**, NOT Mixins.
 - New column logic goes in `UnifiedColumnService`.
 
-See [docs/REFACTORING_ROADMAP.md](../docs/REFACTORING_ROADMAP.md) for technical debt tracking.
+See [REFACTORING_ROADMAP.md](../docs/REFACTORING_ROADMAP.md) for technical debt tracking.
 
 ---
 
