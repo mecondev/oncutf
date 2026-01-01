@@ -178,6 +178,28 @@ oncutf/ui/
 
 ---
 
+### ✅ Phase 4B: Window Event Handler (COMPLETED)
+
+**Original**: `oncutf/ui/main_window.py` (1065 lines after Phase 4A)
+
+**Split into**:
+```
+oncutf/ui/
+├── main_window.py                           # Main orchestrator (987 lines, 7% additional reduction)
+└── handlers/
+    ├── window_event_handler.py             # Qt events & geometry (171 lines)
+    └── [Phase 4A handlers...]
+```
+
+**Benefits:**
+- Extracted 171 lines into window event handler
+- Delegation pattern for 9 methods
+- Qt event handling (changeEvent, resizeEvent) isolated
+- Window config and geometry management extracted
+- All 949 tests passing
+
+---
+
 ## 🚀 Node Editor Readiness
 
 ### Current Seams (already in place)
@@ -209,6 +231,7 @@ oncutf/ui/
 - [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
 - [x] **Phase 3: Split metadata_tree/view.py** (1670 → view.py + 2 handlers, all tests passing)
 - [x] **Phase 4A: Split main_window.py** (1362 → 1065 lines + 3 handlers, all tests passing)
+- [x] **Phase 4B: Split main_window.py** (1065 → 987 lines + window_event_handler, all tests passing)
 
 ---
 

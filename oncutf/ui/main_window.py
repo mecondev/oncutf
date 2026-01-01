@@ -187,7 +187,7 @@ class MainWindow(QMainWindow):
 
     def center_window(self) -> None:
         """Center window via Application Service."""
-        self.app_service.center_window()
+        return self.window_event_handler.center_window()
 
     def force_reload(self) -> None:
         """Force reload via Application Service."""
@@ -514,23 +514,19 @@ class MainWindow(QMainWindow):
 
     def _load_window_config(self) -> None:
         """Load and apply window configuration from config manager."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.load_window_config()
+        return self.window_event_handler._load_window_config()
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size."""
-        if hasattr(self.window_config_manager, "set_smart_default_geometry"):
-            self.window_config_manager.set_smart_default_geometry()  # type: ignore[union-attr]
+        return self.window_event_handler._set_smart_default_geometry()
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.save_window_config()
+        return self.window_event_handler._save_window_config()
 
     def _apply_loaded_config(self) -> None:
         """Apply loaded configuration after UI is fully initialized."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.apply_loaded_config()
+        return self.window_event_handler._apply_loaded_config()
 
     def _ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
@@ -591,93 +587,19 @@ class MainWindow(QMainWindow):
 
     def changeEvent(self, event) -> None:
         """Handle window state changes (maximize, minimize, restore)."""
-        super().changeEvent(event)
-
-        if event.type() == QEvent.WindowStateChange:  # type: ignore[union-attr]
-            self._handle_window_state_change()
+        return self.window_event_handler.changeEvent(event)
 
     def resizeEvent(self, event) -> None:
         """Handle window resize events to update splitter ratios for wide screens."""
-        super().resizeEvent(event)
-
-        # Only update splitters if UI is fully initialized and window is visible
-        if (
-            hasattr(self, "splitter_manager")
-            and hasattr(self, "horizontal_splitter")
-            and self.isVisible()
-            and not self.isMinimized()
-        ):
-            # Get new window width
-            new_width = self.width()
-
-            # Use SplitterManager to update splitter sizes
-            from oncutf.utils.shared.timer_manager import schedule_resize_adjust
-
-            def update_splitters():
-                """Update splitter proportions for new window width."""
-                self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
-
-            # Schedule the update to avoid conflicts with other resize operations
-            schedule_resize_adjust(update_splitters, 50)
-
-            # Also trigger column adjustment when window resizes
-            if hasattr(self, "file_table_view"):
-
-                def trigger_column_adjustment():
-                    """Trigger column width adjustment after splitter change."""
-                    self.splitter_manager.trigger_column_adjustment_after_splitter_change()
-
-                # Schedule column adjustment after splitter update
-                schedule_resize_adjust(trigger_column_adjustment, 60)
+        return self.window_event_handler.resizeEvent(event)
 
     def _handle_window_state_change(self) -> None:
         """Handle maximize/restore geometry and file table refresh."""
-        # Handle maximize: store appropriate geometry for restore
-        if self.isMaximized() and not hasattr(self, "_restore_geometry"):
-            current_geo = self.geometry()
-            initial_size = self._initial_geometry.size()
-
-            # Use current geometry if manually resized, otherwise use initial
-            is_manually_resized = (
-                abs(current_geo.width() - initial_size.width()) > 10
-                or abs(current_geo.height() - initial_size.height()) > 10
-            )
-
-            self._restore_geometry = current_geo if is_manually_resized else self._initial_geometry
-            geometry_kind = "manual" if is_manually_resized else "initial"
-            logger.debug(
-                "[MainWindow] Stored %s geometry for restore",
-                geometry_kind,
-            )
-
-        # Handle restore: restore stored geometry
-        elif not self.isMaximized() and hasattr(self, "_restore_geometry"):
-            self.setGeometry(self._restore_geometry)
-            delattr(self, "_restore_geometry")
-            logger.debug("[MainWindow] Restored geometry")
-
-        # Refresh file table after state change
-        self._refresh_file_table_for_window_change()
+        return self.window_event_handler._handle_window_state_change()
 
     def _refresh_file_table_for_window_change(self) -> None:
         """Refresh file table after window state changes."""
-        if not hasattr(self, "file_table_view") or not self.file_table_view.model():
-            return
-
-        from oncutf.utils.shared.timer_manager import schedule_resize_adjust
-
-        def refresh():
-            """Refresh file table column widths after layout change."""
-            # Reset manual column preference for auto-sizing
-            if not getattr(self.file_table_view, "_recent_manual_resize", False):
-                self.file_table_view._has_manual_preference = False
-
-            # Use existing splitter logic for column sizing
-            if hasattr(self, "horizontal_splitter"):
-                sizes = self.horizontal_splitter.sizes()
-                self.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
-
-        schedule_resize_adjust(refresh, 25)
+        return self.window_event_handler._refresh_file_table_for_window_change()
 
     def closeEvent(self, event) -> None:
         """Handles application shutdown and cleanup using Shutdown Coordinator.

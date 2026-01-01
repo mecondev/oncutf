@@ -252,10 +252,12 @@ class InitializationOrchestrator:
         from oncutf.ui.handlers.config_column_handler import ConfigColumnHandler
         from oncutf.ui.handlers.metadata_signal_handler import MetadataSignalHandler
         from oncutf.ui.handlers.shortcut_command_handler import ShortcutCommandHandler
+        from oncutf.ui.handlers.window_event_handler import WindowEventHandler
 
         self.window.shortcut_handler = ShortcutCommandHandler(self.window)
         self.window.metadata_signal_handler = MetadataSignalHandler(self.window)
         self.window.config_column_handler = ConfigColumnHandler(self.window)
+        self.window.window_event_handler = WindowEventHandler(self.window)
         logger.info("[Phase4A] UI Handlers initialized", extra={"dev_only": True})
 
         # Config managers
