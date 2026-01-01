@@ -366,13 +366,41 @@ def generate_content_report(
 def main() -> None:
     """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Generate project structure or AI context reports",
+        description="""Generate comprehensive project reports for analysis and documentation.
+
+Two report types:
+  structure  - Tree visualization with docstrings, classes, functions, and statistics
+             Shows hierarchy, module coverage, missing docstrings
+  content    - AI-friendly context report grouped by directory
+             Useful for providing project context to language models""",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --mode structure           # Tree with docstrings, classes, stats
-  %(prog)s --mode content             # AI context grouped by directory
-  %(prog)s --mode structure -o custom.md --exclude tests scripts
+
+  # Generate full structure report with tree and analysis
+  %(prog)s --mode structure
+  
+  # Generate AI context for the entire project
+  %(prog)s --mode content
+  
+  # Custom output location with excluded directories
+  %(prog)s --mode structure -o analysis/project.md --exclude tests scripts
+  
+  # Scan only top-level files (no recursion)
+  %(prog)s --mode content --no-recursive
+  
+  # Exclude multiple directories and adjust docstring preview length
+  %(prog)s --mode structure \\
+    --exclude tests htmlcov build \\
+    --max-doc-length 500
+
+Output Defaults:
+  structure: reports/project_structure.md
+  content:   reports/project_context.md
+
+For more details on what each mode includes:
+  structure: Full tree with line counts, docstrings, class/function names
+  content:   Summary by directory (good for LLM context windows)
         """,
     )
 
@@ -380,34 +408,37 @@ Examples:
         "--mode",
         choices=["structure", "content"],
         required=True,
-        help="Report type: 'structure' (tree + analysis) or 'content' (AI context)",
+        help="Report type: 'structure' for tree analysis, 'content' for AI context",
     )
 
     parser.add_argument(
         "-o",
         "--output",
         type=str,
-        help="Output file path (default: reports/project_structure.md or reports/project_context.md)",
+        metavar="PATH",
+        help="Output file path (default: reports/project_<mode>.md)",
     )
 
     parser.add_argument(
         "--exclude",
         action="append",
         default=[],
-        help="Additional directories to exclude (repeatable)",
+        metavar="DIR",
+        help="Additional directories to exclude (repeatable, e.g., --exclude tests --exclude build)",
     )
 
     parser.add_argument(
         "--no-recursive",
         action="store_true",
-        help="Scan only root directory (no subdirectories)",
+        help="Scan only top-level Python files (skip subdirectories)",
     )
 
     parser.add_argument(
         "--max-doc-length",
         type=int,
         default=300,
-        help="Max characters for docstring snippets (default: 300)",
+        metavar="N",
+        help="Max characters for docstring previews (default: 300)",
     )
 
     args = parser.parse_args()
