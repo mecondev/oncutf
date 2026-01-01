@@ -261,7 +261,15 @@ pytest tests/ -v
 **Current Status:**
 - **Ruff:** All checks passing
 - **MyPy:** Clean (0 errors, 330 source files)
-- **Pytest:** 939 tests passing
+- **Pytest:** 949 tests passing
+
+### Future Enhancements
+
+See [TODO.md](TODO.md) for planned features and improvements:
+- Last state restoration (sort column persistence)
+- Non-blocking conflict resolution UI
+- Metadata database search functionality
+- Rename preview profiling
 
 ---
 
