@@ -529,7 +529,7 @@ class MainWindow(QMainWindow):
 
     def _ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
-        return self.config_column_handler._ensure_initial_column_sizing()
+        return self.config_column_handler.ensure_initial_column_sizing()
 
     def configure_table_columns(self, table_view, table_type: str) -> None:
         """Configure columns for a specific table view using ColumnManager."""
