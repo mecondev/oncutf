@@ -797,8 +797,10 @@ class FileLoadManager:
         """
         # Get FileStore instance
         if not file_store:
-            if hasattr(self.parent_window, "file_store"):
-                file_store = self.parent_window.file_store
+            if hasattr(self.parent_window, "context") and hasattr(
+                self.parent_window.context, "file_store"
+            ):
+                file_store = self.parent_window.context.file_store
             else:
                 logger.warning("[FileLoadManager] No FileStore available for refresh")
                 return False

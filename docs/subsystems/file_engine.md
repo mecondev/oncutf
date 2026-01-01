@@ -1,15 +1,15 @@
 # File Engine Subsystem
 
 > **Status**: Architecture Documentation (Phase 7)  
-> **Last Updated**: 2026-01-01  
+> **Last Updated**: 2026-01-01 (Refactored: I/O/State Separation)  
 > **Author**: Michael Economou
 
 ## Overview
 
-The File Engine is responsible for **file discovery, loading, storage, and UI display**. It implements a **centralized state pattern** where:
+The File Engine is responsible for **file discovery, loading, storage, and UI display**. It implements a **separation of concerns** pattern with clear I/O/State boundaries:
 
 ```
-Filesystem → FileLoadManager → FileStore → FileTableModel → UI
+Filesystem → FileLoadManager (I/O) → FileStore (State) → FileTableModel → UI
 ```
 
 Key capabilities:
@@ -58,16 +58,16 @@ The File Engine **does NOT own**:
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       MANAGER LAYER                                  │
-│  FileLoadManager (folder scanning, streaming)                        │
+│                       I/O LAYER (MANAGERS)                           │
+│  FileLoadManager (folder scanning, streaming, filesystem refresh)    │
 │  FileOperationsManager (rename execution)                            │
 │  FileValidationManager (content-based identification)                │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        STORE LAYER                                   │
-│  FileStore (centralized state, caching, signals)                     │
+│                     STATE LAYER (STORE)                              │
+│  FileStore (state-only: loaded files, cache, signals)                │
 │  FileItem (data model)                                               │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
@@ -86,12 +86,12 @@ The File Engine **does NOT own**:
 
 | File | Responsibility |
 |------|----------------|
-| `file_store.py` | Centralized file state, caching, signals |
+| `file_store.py` | **State-only**: loaded files, cache accessors, signals (NO I/O) |
 | `file_item.py` | Data model for single file |
-| `file_load_manager.py` | Folder scanning, drag/drop, streaming |
+| `file_load_manager.py` | **I/O operations**: folder scanning, drag/drop, streaming, filesystem refresh |
 | `file_operations_manager.py` | Rename execution workflow |
 | `file_validation_manager.py` | Content-based identification, TTL caching |
-| `filesystem_monitor.py` | Directory watching, drive mount events |
+| `filesystem_monitor.py` | Directory watching, drive mount events (delegates I/O to FileLoadManager) |
 
 ### Controller (`oncutf/controllers/`)
 
@@ -141,19 +141,21 @@ The File Engine **does NOT own**:
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ 3. FileLoadManager                                                   │
-│    → os.walk() for folder scanning                                   │
+│ 3. FileLoadManager (I/O LAYER)                                       │
+│    → os.listdir() + os.path.isfile() for folder scanning             │
 │    → Companion file filtering (RAW+JPG grouping)                     │
 │    → Creates FileItem instances via FileItem.from_path()             │
 │    → Streaming loading for >200 files (batch_size=100)               │
+│    → Coordinates with FileStore for cache read/write                 │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ 4. FileStore                                                         │
+│ 4. FileStore (STATE LAYER)                                           │
 │    → Stores in _loaded_files: list[FileItem]                         │
-│    → Maintains folder cache (_file_cache)                            │
+│    → Provides cache accessors (get/set/invalidate)                   │
 │    → Emits files_loaded signal                                       │
+│    → NO I/O OPERATIONS (delegated to FileLoadManager)                │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -223,13 +225,16 @@ file_item.formatted_size    # str - "1.2 GB"
 
 ## FileStore Architecture
 
+> **Design Principle**: FileStore is **STATE-ONLY** — no I/O operations.  
+> All filesystem operations delegated to FileLoadManager.
+
 ### Internal Structure
 
 ```python
 class FileStore(QObject):
     _current_folder: str | None      # Active folder path
-    _loaded_files: list[FileItem]    # Working file set
-    _file_cache: dict[str, list[FileItem]]  # Folder → cached items
+    _loaded_files: list[FileItem]    # Working file set (state)
+    _file_cache: dict[str, list[FileItem]]  # Cache storage (accessed via methods)
 ```
 
 ### Signals
@@ -240,31 +245,45 @@ class FileStore(QObject):
 | `folder_changed` | `str` | Current folder changed |
 | `files_filtered` | `list[FileItem]` | After filtering |
 
-### Query Methods
+### State Management Methods
 
 | Method | Description |
 |--------|-------------|
 | `get_loaded_files()` | Get all files (returns copy) |
-| `filter_files_by_extension(exts)` | Filter by extension set |
+| `set_loaded_files(files)` | Update loaded files state |
 | `get_current_folder()` | Get active folder path |
-| `is_extension_allowed(ext)` | Check allowlist |
+| `set_current_folder(path)` | Update current folder |
+| `get_cached_files(folder)` | Get cached files for folder |
+| `set_cached_files(folder, files)` | Store cache for folder |
+| `invalidate_folder_cache(folder)` | Clear specific folder cache |
+| `clear_cache()` | Clear all cached data |
+| `filter_files_by_extension(exts)` | Filter loaded files by extension |
+| `remove_files_from_folder(folder)` | Remove files from specific folder |
+| `invalidate_missing_folders()` | Remove files from non-existent folders |
 
 ### Caching
 
-```python
-# Cache hit
-if use_cache and folder_path in self._file_cache:
-    return self._file_cache[folder_path].copy()
+**Pattern**: FileStore provides cache storage, FileLoadManager performs I/O.
 
-# Cache miss: scan + store
-file_items = [...]
-self._file_cache[folder_path] = file_items.copy()
+```python
+# In FileLoadManager.get_file_items_from_folder():
+
+# Cache hit (via FileStore)
+cached_files = file_store.get_cached_files(folder_path)
+if cached_files is not None:
+    return cached_files
+
+# Cache miss: FileLoadManager performs I/O
+file_items = [FileItem.from_path(p) for p in scanned_paths]
+
+# Store in FileStore cache
+file_store.set_cached_files(folder_path, file_items)
 ```
 
 Cache invalidation:
-- `clear_cache()` - Full clear
-- `invalidate_folder_cache(path)` - Specific folder
-- Drive unmount - Automatic via FilesystemMonitor
+- `clear_cache()` - Full clear (FileStore)
+- `invalidate_folder_cache(path)` - Specific folder (FileStore)
+- Drive unmount - Automatic via FilesystemMonitor → FileLoadManager → FileStore
 
 ### Thread Safety
 
@@ -278,17 +297,22 @@ Cache invalidation:
 
 ### FileStore
 
-- **File**: `oncutf/core/file_store.py`
-- **Role**: Centralized file state management
-- **Key Methods**: `get_file_items_from_folder()`, `load_mixed_paths()`, `get_loaded_files()`
+- **File**: `oncutf/core/file/store.py`
+- **Role**: State-only management (NO I/O operations)
+- **Key Methods**: `get/set_loaded_files()`, `get/set_cached_files()`, `invalidate_folder_cache()`
 - **Signals**: `files_loaded`, `folder_changed`, `files_filtered`
+- **Design**: Removed all I/O operations (delegated to FileLoadManager)
 
 ### FileLoadManager
 
-- **File**: `oncutf/core/file_load_manager.py`
-- **Role**: Folder scanning, drag/drop, streaming loading
-- **Key Methods**: `load_folder()`, `load_from_paths()`, `handle_single_item_drop()`
-- **Features**: Streaming for >200 files, companion filtering
+- **File**: `oncutf/core/file/load_manager.py`
+- **Role**: I/O operations layer (folder scanning, filesystem refresh)
+- **Key Methods**: `get_file_items_from_folder()`, `refresh_loaded_folders()`, `load_folder()`, `load_from_paths()`
+- **Features**: 
+  - Streaming for >200 files, companion filtering
+  - Coordinates with FileStore for cache read/write
+  - Handles all filesystem I/O (os.listdir, os.path.isfile)
+  - Refresh operations for FilesystemMonitor
 
 ### FileLoadController
 
@@ -311,9 +335,11 @@ Cache invalidation:
 
 ### FilesystemMonitor
 
-- **File**: `oncutf/core/filesystem_monitor.py`
+- **File**: `oncutf/core/file/monitor.py`
 - **Role**: Directory watching, drive mount events
-- **Signals**: `drive_mounted`, `drive_unmounted`, `directory_changed`
+- **Signals**: `drive_added`, `drive_removed`, `directory_changed`, `file_changed`
+- **Design**: Delegates I/O to FileLoadManager, reads state from FileStore
+- **Pattern**: FileMonitor → FileLoadManager.refresh_loaded_folders() → FileStore.set_loaded_files()
 
 ---
 
@@ -405,6 +431,12 @@ file_item.color          # "#ff0000" or "none"
 
 ## Known Issues & Technical Debt
 
+### ~~1. FileStore/FileLoadManager Overlap~~ ✅ RESOLVED (2026-01-01)
+
+**Was**: FileStore had both I/O operations (get_file_items_from_folder) and state management.  
+**Now**: Clean separation — FileStore = state-only, FileLoadManager = I/O-only.  
+**Result**: Better testability, clearer architecture, proper backend/frontend separation.
+
 ### 1. Dual State Management
 
 FileLoadManager updates both `FileStore` AND `FileTableModel.files` directly, creating potential for state drift.
@@ -456,7 +488,8 @@ Named `backup_manager.py` but handles DATABASE backups, not file backups.
 | Folder caching | ✅ Per-folder cache |
 | Filesystem monitoring | ✅ watchdog integration |
 | Color tagging | ✅ Database persistence |
-| Architecture clarity | ⚠️ Manager/Store overlap |
+| Architecture clarity | ✅ I/O/State separation (2026-01-01 refactor) |
+| Backend/Frontend separation | ✅ FileLoadManager (I/O) / FileStore (State) |
 | Documentation | 📝 This document |
 
 The File Engine is **production-ready** and provides:
