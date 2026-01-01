@@ -33,23 +33,11 @@ from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.main_window import MainWindow
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 from oncutf.utils.logging.logger_setup import ConfigureLogger
+from oncutf.utils.paths import AppPaths
 from oncutf.utils.ui.fonts import _get_inter_fonts
 
-
-# Calculate the user config directory for logs
-def get_user_config_dir(app_name: str = "oncutf") -> str:
-    """Get user configuration directory based on OS."""
-    if os.name == "nt":
-        base_dir = os.environ.get("APPDATA", os.path.expanduser("~"))
-        return os.path.join(base_dir, app_name)
-    else:
-        base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-        return os.path.join(base_dir, app_name)
-
-
-# Configure logging to use user config directory
-config_dir = get_user_config_dir()
-logs_dir = os.path.join(config_dir, "logs")
+# Configure logging to use centralized user data directory
+logs_dir = str(AppPaths.get_logs_dir())
 ConfigureLogger(log_name="oncutf", log_dir=logs_dir)
 
 logger = logging.getLogger()

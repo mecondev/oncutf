@@ -26,7 +26,6 @@ Usage:
 import os
 import platform
 import subprocess
-import sys
 from enum import Enum
 from pathlib import Path
 
@@ -87,20 +86,17 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
         logger.warning("[ExternalTools] Unknown OS: %s", system)
         return None
 
-    # Get project root (works with PyInstaller frozen executables)
-    if getattr(sys, "frozen", False):
-        # Running as compiled exe - use _MEIPASS for bundled resources
-        base_path = Path(sys._MEIPASS)  # type: ignore[attr-defined]
-    else:
-        # Running from source - go up to project root
-        base_path = Path(__file__).parent.parent.parent  # oncutf/utils/ -> oncutf/ -> project root
+    # Use centralized path management for bundled tools
+    from oncutf.utils.paths import AppPaths
+
+    bundled_dir = AppPaths.get_bundled_tools_dir()
 
     # Construct path to bundled tool
-    tool_path = base_path / "bin" / os_dir / executable
+    tool_path = bundled_dir / os_dir / executable
 
     # Try fallback if primary not found (e.g., universal binary on macOS)
     if not tool_path.exists() and fallback:
-        tool_path = base_path / "bin" / os_dir / fallback
+        tool_path = bundled_dir / os_dir / fallback
 
     if tool_path.exists():
         # Make executable on Unix-like systems
