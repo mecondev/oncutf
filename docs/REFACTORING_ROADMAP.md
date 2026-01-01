@@ -13,7 +13,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 |------|-------|----------|--------|
 | ~~`metadata_tree/view.py`~~ | ~~1670~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
-| ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 4A)** |
+| ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phases 4A-C)** |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
 | `unified_rename_engine.py` | 1258 | MEDIUM | ⏳ Planned |
 | `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
@@ -185,7 +185,7 @@ oncutf/ui/
 **Split into**:
 ```
 oncutf/ui/
-├── main_window.py                           # Main orchestrator (987 lines, 7% additional reduction)
+├── main_window.py                          # Main orchestrator (987 lines, 7% additional reduction)
 └── handlers/
     ├── window_event_handler.py             # Qt events & geometry (171 lines)
     └── [Phase 4A handlers...]
@@ -197,6 +197,30 @@ oncutf/ui/
 - Qt event handling (changeEvent, resizeEvent) isolated
 - Window config and geometry management extracted
 - All 949 tests passing
+
+---
+
+### ✅ Phase 4C: Shutdown Lifecycle Handler (COMPLETED)
+
+**Original**: `oncutf/ui/main_window.py` (987 lines after Phase 4B)
+
+**Split into**:
+```
+oncutf/ui/
+├── main_window.py                          # Main orchestrator (665 lines, 33% additional reduction)
+└── handlers/
+    ├── shutdown_lifecycle_handler.py       # Shutdown & cleanup (423 lines)
+    └── [Phase 4A/4B handlers...]
+```
+
+**Benefits:**
+- Extracted 423 lines into shutdown lifecycle handler
+- Delegation pattern for 9 methods
+- Critical shutdown path isolated (_pre_coordinator_cleanup 64 lines)
+- Background worker cleanup and dialog management extracted
+- Coordinated shutdown flow preserved
+- All 949 tests passing
+- **Total main_window reduction: 51.2% (1362 → 665 lines)**
 
 ---
 
@@ -232,6 +256,7 @@ oncutf/ui/
 - [x] **Phase 3: Split metadata_tree/view.py** (1670 → view.py + 2 handlers, all tests passing)
 - [x] **Phase 4A: Split main_window.py** (1362 → 1065 lines + 3 handlers, all tests passing)
 - [x] **Phase 4B: Split main_window.py** (1065 → 987 lines + window_event_handler, all tests passing)
+- [x] **Phase 4C: Split main_window.py** (987 → 665 lines + shutdown_handler, all tests passing)
 
 ---
 
