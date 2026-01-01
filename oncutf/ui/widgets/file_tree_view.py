@@ -165,46 +165,78 @@ class FileTreeView(QTreeView):
         try:
             from oncutf.core.file.monitor import FilesystemMonitor
 
-            # Get FileStore from parent window if available
+            # Get FileStore and FileLoadManager from parent window if available
             file_store = None
+            file_load_manager = None
 
-            # Try multiple paths to find FileStore
+            # Try multiple paths to find FileStore and FileLoadManager
             if hasattr(self, "parent") and self.parent():
                 parent = self.parent()
 
-                # Try 1: parent.context.file_store (MainWindow with context)
-                if hasattr(parent, "context") and hasattr(parent.context, "file_store"):
-                    file_store = parent.context.file_store
-                    logger.debug(
-                        "[FileTreeView] Found FileStore from parent.context",
-                        extra={"dev_only": True},
-                    )
-                # Try 2: parent._file_store (direct attribute)
-                elif hasattr(parent, "_file_store"):
-                    file_store = parent._file_store
-                    logger.debug(
-                        "[FileTreeView] Found FileStore from parent._file_store",
-                        extra={"dev_only": True},
-                    )
-                # Try 3: Walk up parent chain looking for MainWindow
+                # Try 1: parent.context (MainWindow with context)
+                if hasattr(parent, "context"):
+                    if hasattr(parent.context, "file_store"):
+                        file_store = parent.context.file_store
+                        logger.debug(
+                            "[FileTreeView] Found FileStore from parent.context",
+                            extra={"dev_only": True},
+                        )
+                    if hasattr(parent.context, "file_load_manager"):
+                        file_load_manager = parent.context.file_load_manager
+                        logger.debug(
+                            "[FileTreeView] Found FileLoadManager from parent.context",
+                            extra={"dev_only": True},
+                        )
+                # Try 2: parent direct attributes
                 else:
+                    if hasattr(parent, "_file_store"):
+                        file_store = parent._file_store
+                        logger.debug(
+                            "[FileTreeView] Found FileStore from parent._file_store",
+                            extra={"dev_only": True},
+                        )
+                    if hasattr(parent, "file_load_manager"):
+                        file_load_manager = parent.file_load_manager
+                        logger.debug(
+                            "[FileTreeView] Found FileLoadManager from parent.file_load_manager",
+                            extra={"dev_only": True},
+                        )
+
+                # Try 3: Walk up parent chain looking for MainWindow
+                if not file_store or not file_load_manager:
                     current = parent
                     while current is not None:
-                        if hasattr(current, "context") and hasattr(current.context, "file_store"):
-                            file_store = current.context.file_store
-                            logger.debug(
-                                "[FileTreeView] Found FileStore from ancestor context",
-                                extra={"dev_only": True},
-                            )
-                            break
+                        if hasattr(current, "context"):
+                            if not file_store and hasattr(current.context, "file_store"):
+                                file_store = current.context.file_store
+                                logger.debug(
+                                    "[FileTreeView] Found FileStore from ancestor context",
+                                    extra={"dev_only": True},
+                                )
+                            if not file_load_manager and hasattr(
+                                current.context, "file_load_manager"
+                            ):
+                                file_load_manager = current.context.file_load_manager
+                                logger.debug(
+                                    "[FileTreeView] Found FileLoadManager from ancestor context",
+                                    extra={"dev_only": True},
+                                )
+                            if file_store and file_load_manager:
+                                break
                         current = current.parent() if hasattr(current, "parent") else None
 
             if file_store is None:
                 logger.warning(
                     "[FileTreeView] FileStore not found - auto-refresh on USB unmount won't work"
                 )
+            if file_load_manager is None:
+                logger.warning(
+                    "[FileTreeView] FileLoadManager not found - auto-refresh on USB unmount won't work"
+                )
 
-            self._filesystem_monitor = FilesystemMonitor(file_store=file_store)
+            self._filesystem_monitor = FilesystemMonitor(
+                file_store=file_store, file_load_manager=file_load_manager
+            )
 
             # Connect directory change signal for tree model refresh
             self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)

@@ -19,6 +19,7 @@ from oncutf.core.pyqt_imports import QFileSystemWatcher, QObject, QTimer, pyqtSi
 from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
 if TYPE_CHECKING:
+    from oncutf.core.file.load_manager import FileLoadManager
     from oncutf.core.file.store import FileStore
 
 logger = logging.getLogger(__name__)
@@ -40,15 +41,21 @@ class FilesystemMonitor(QObject):
     directory_changed = pyqtSignal(str)  # Directory content changed
     file_changed = pyqtSignal(str)  # File modified
 
-    def __init__(self, file_store: FileStore | None = None) -> None:
+    def __init__(
+        self,
+        file_store: FileStore | None = None,
+        file_load_manager: FileLoadManager | None = None,
+    ) -> None:
         """Initialize filesystem monitor.
 
         Args:
-            file_store: FileStore instance for auto-refresh
+            file_store: FileStore instance for state access
+            file_load_manager: FileLoadManager instance for I/O operations
 
         """
         super().__init__()
         self.file_store = file_store
+        self.file_load_manager = file_load_manager
         self._system = platform.system()
 
         # QFileSystemWatcher for directory/file changes
@@ -287,14 +294,16 @@ class FilesystemMonitor(QObject):
                 self.remove_folder(folder)
 
             # Trigger FileStore refresh - files on unmounted drive will be automatically removed
-            if self.file_store:
+            if self.file_load_manager and self.file_store:
                 try:
                     logger.info(
                         "[FilesystemMonitor] Refreshing FileStore after drive unmount: %s", drive
                     )
-                    # Use refresh_loaded_folders() which will check if files still exist
-                    # and automatically update the UI through the normal reload flow
-                    if self.file_store.refresh_loaded_folders():
+                    # Use FileLoadManager to scan filesystem and update FileStore
+                    # This will check if files still exist and automatically update the UI
+                    if self.file_load_manager.refresh_loaded_folders(
+                        changed_folder=None, file_store=self.file_store
+                    ):
                         logger.info("[FilesystemMonitor] FileStore refreshed after drive unmount")
                     else:
                         logger.info(
@@ -306,7 +315,7 @@ class FilesystemMonitor(QObject):
                     )
             else:
                 logger.warning(
-                    "[FilesystemMonitor] FileStore not available - cannot auto-refresh on unmount"
+                    "[FilesystemMonitor] FileLoadManager or FileStore not available - cannot auto-refresh on unmount"
                 )
 
         # Update state
@@ -389,7 +398,7 @@ class FilesystemMonitor(QObject):
             changed_path: Path that changed
 
         """
-        if not self.file_store:
+        if not self.file_load_manager or not self.file_store:
             return
 
         # Get loaded files
@@ -407,8 +416,10 @@ class FilesystemMonitor(QObject):
             logger.info(
                 "[FilesystemMonitor] Refreshing FileStore for changed folder: %s", changed_path
             )
-            # Refresh files from affected folder
-            self.file_store.refresh_loaded_folders(changed_path)
+            # Use FileLoadManager to scan filesystem and refresh files from affected folder
+            self.file_load_manager.refresh_loaded_folders(
+                changed_folder=changed_path, file_store=self.file_store
+            )
 
     def get_monitored_folders(self) -> list[str]:
         """Get list of currently monitored folders.

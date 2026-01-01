@@ -2,23 +2,25 @@
 
 Author: Michael Economou
 Date: 2025-05-31
+Refactored: 2026-01-01 - State management only (I/O moved to FileLoadManager)
 
-File Store - Centralized file management
-This module handles all file-related operations, removing them from MainWindow
-to improve performance and maintainability.
-Manages:
-- File scanning and loading
-- Folder operations
-- File validation and filtering
-- Performance optimization for large folders
+File Store - Centralized STATE management for loaded files.
+
+This module provides a single source of truth for loaded file state:
+- Current loaded files list
+- Current folder path
+- File filtering by extension
+- Cache management (folder → FileItem cache)
+- State change signals
+
+I/O Operations (scanning, loading) are handled by FileLoadManager.
+This separation follows backend/frontend principle: Store = State, Manager = I/O.
 """
 
-import glob
 import os
 from typing import Any
 
-from oncutf.config import ALLOWED_EXTENSIONS
-from oncutf.core.pyqt_imports import QElapsedTimer, QObject, pyqtSignal
+from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -26,10 +28,18 @@ logger = get_cached_logger(__name__)
 
 
 class FileStore(QObject):
-    """Centralized file management and operations.
+    """Centralized STATE management for loaded files.
 
-    Handles all file-related logic previously scattered across MainWindow
-    and other components. Provides optimized file loading and caching.
+    This class maintains the single source of truth for:
+    - Currently loaded files (_loaded_files)
+    - Current folder path (_current_folder)
+    - Folder-to-FileItem cache (_file_cache)
+
+    It does NOT perform I/O operations. File scanning/loading is done by FileLoadManager.
+    This separation enables:
+    - Better testability (mock state without I/O)
+    - Clear backend/frontend separation
+    - UI-agnostic state management
     """
 
     # Signals for file operations
@@ -45,147 +55,18 @@ class FileStore(QObject):
         self._loaded_files: list[FileItem] = []
         self._file_cache: dict[str, list[FileItem]] = {}
 
-        # Performance tracking
-        self._load_timer = QElapsedTimer()
-
-        logger.debug("[FileStore] Initialized", extra={"dev_only": True})
+        logger.debug("[FileStore] Initialized (state-only mode)", extra={"dev_only": True})
 
     # =====================================
-    # File Scanning Operations
-    # =====================================
-
-    def get_file_items_from_folder(
-        self, folder_path: str, *, use_cache: bool = True
-    ) -> list[FileItem]:
-        """Scans a folder and returns FileItem objects for supported files.
-
-        Moved from MainWindow.get_file_items_from_folder() with optimizations:
-        - Caching for frequently accessed folders
-        - Performance timing
-        - Batch processing for large folders
-
-        Args:
-            folder_path: Absolute path to folder to scan
-            use_cache: Whether to use cached results if available
-
-        Returns:
-            List of FileItem objects for supported files
-
-        """
-        self._load_timer.start()
-
-        # Check cache first
-        if use_cache and folder_path in self._file_cache:
-            cached_items = self._file_cache[folder_path]
-            logger.debug(
-                "[FileStore] Using cached files for %s: %d items",
-                folder_path,
-                len(cached_items),
-            )
-            return cached_items.copy()
-
-        # Scan folder
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        file_items = []
-
-        for file_path in sorted(all_files):
-            if os.path.isfile(file_path):
-                ext = os.path.splitext(file_path)[1][1:].lower()
-                if ext in ALLOWED_EXTENSIONS:
-                    filename = os.path.basename(file_path)
-                    try:
-                        file_items.append(FileItem.from_path(file_path))
-                    except OSError as e:
-                        logger.warning("Could not create FileItem for %s: %s", filename, e)
-                        continue
-
-        # Cache results
-        if use_cache:
-            self._file_cache[folder_path] = file_items.copy()
-
-        elapsed = self._load_timer.elapsed()
-        logger.info(
-            "[FileStore] Scanned %s: %d files in %dms", folder_path, len(file_items), elapsed
-        )
-
-        return file_items
-
-    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> list[FileItem]:
-        """Loads a mix of files and folders into FileItem objects.
-
-        Moved from MainWindow.load_files_from_paths() with optimizations:
-        - Batch processing
-        - Better error handling
-        - Performance tracking
-
-        Args:
-            file_paths: List of absolute file or folder paths
-            clear: Whether to clear existing loaded files
-
-        Returns:
-            List of FileItem objects loaded
-
-        """
-        self._load_timer.start()
-
-        if clear:
-            self._loaded_files.clear()
-
-        if not file_paths:
-            logger.debug("[FileStore] No file paths provided")
-            return []
-
-        file_items = []
-
-        for path in file_paths:
-            try:
-                if os.path.isdir(path):
-                    # Load folder contents
-                    folder_items = self.get_file_items_from_folder(path)
-                    file_items.extend(folder_items)
-                    logger.debug(
-                        "[FileStore] Loaded %d files from folder: %s",
-                        len(folder_items),
-                        path,
-                    )
-
-                elif os.path.isfile(path):
-                    # Load individual file
-                    ext = os.path.splitext(path)[1][1:].lower()
-                    if ext in ALLOWED_EXTENSIONS:
-                        file_items.append(FileItem.from_path(path))
-                        logger.debug("[FileStore] Loaded file: %s", os.path.basename(path))
-                    else:
-                        logger.debug("[FileStore] Skipped unsupported file: %s", path)
-
-            except OSError as e:
-                logger.error("[FileStore] Error loading path %s: %s", path, e)
-                continue
-
-        # Update state
-        if clear:
-            self._loaded_files = file_items
-        else:
-            self._loaded_files.extend(file_items)
-
-        elapsed = self._load_timer.elapsed()
-        logger.info("[FileStore] Loaded %d total files in %dms", len(file_items), elapsed)
-
-        # Emit signal
-        self.files_loaded.emit(file_items)
-
-        return file_items
-
-    # =====================================
-    # State Management
+    # State Management (Core Responsibility)
     # =====================================
 
     def get_loaded_files(self) -> list[FileItem]:
-        """Get currently loaded files."""
+        """Get currently loaded files (returns copy for immutability)."""
         return self._loaded_files.copy()
 
     def set_loaded_files(self, files: list[FileItem]) -> None:
-        """Set loaded files directly (used when files are loaded externally).
+        """Set loaded files and emit signal.
 
         Args:
             files: List of FileItem objects to set as loaded
@@ -193,14 +74,14 @@ class FileStore(QObject):
         """
         self._loaded_files = files.copy() if files else []
         self.files_loaded.emit(self._loaded_files)
-        logger.debug("[FileStore] Loaded files set directly: %d files", len(self._loaded_files))
+        logger.debug("[FileStore] Loaded files set: %d files", len(self._loaded_files))
 
     def get_current_folder(self) -> str | None:
         """Get current folder path."""
         return self._current_folder
 
     def set_current_folder(self, folder_path: str) -> None:
-        """Set current folder and emit signal."""
+        """Set current folder and emit signal if changed."""
         old_folder = self._current_folder
         self._current_folder = folder_path
 
@@ -209,25 +90,25 @@ class FileStore(QObject):
             logger.debug("[FileStore] Current folder changed: %s", folder_path)
 
     def clear_files(self) -> None:
-        """Clear all loaded files."""
+        """Clear all loaded files and emit signal."""
         self._loaded_files.clear()
         self.files_loaded.emit([])
         logger.debug("[FileStore] Files cleared")
 
     # =====================================
-    # File Validation & Filtering
+    # Filtering Operations (State-based)
     # =====================================
 
-    def is_supported_file(self, file_path: str) -> bool:
-        """Check if file has supported extension."""
-        if not os.path.isfile(file_path):
-            return False
-
-        ext = os.path.splitext(file_path)[1][1:].lower()
-        return ext in ALLOWED_EXTENSIONS
-
     def filter_files_by_extension(self, extensions: set[str]) -> list[FileItem]:
-        """Filter loaded files by extension."""
+        """Filter loaded files by extension set.
+
+        Args:
+            extensions: Set of extensions to match (lowercase, without dot)
+
+        Returns:
+            Filtered list of FileItem objects
+
+        """
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
         logger.debug(
@@ -239,13 +120,54 @@ class FileStore(QObject):
     # Cache Management
     # =====================================
 
+    def get_cached_files(self, folder_path: str) -> list[FileItem] | None:
+        """Get cached files for a folder.
+
+        Args:
+            folder_path: Folder path to get cached files for
+
+        Returns:
+            List of cached FileItem objects, or None if not cached
+
+        """
+        if folder_path in self._file_cache:
+            return self._file_cache[folder_path].copy()
+        return None
+
+    def set_cached_files(self, folder_path: str, files: list[FileItem]) -> None:
+        """Cache files for a folder.
+
+        Args:
+            folder_path: Folder path to cache files for
+            files: List of FileItem objects to cache
+
+        """
+        self._file_cache[folder_path] = files.copy()
+        logger.debug("[FileStore] Cached %d files for %s", len(files), folder_path)
+
+    def invalidate_folder_cache(self, folder_path: str) -> None:
+        """Invalidate cache for a specific folder.
+
+        Args:
+            folder_path: Folder path to invalidate
+
+        """
+        if folder_path in self._file_cache:
+            del self._file_cache[folder_path]
+            logger.debug("[FileStore] Invalidated cache for %s", folder_path)
+
     def clear_cache(self) -> None:
-        """Clear file cache."""
+        """Clear all cached files."""
         self._file_cache.clear()
         logger.debug("[FileStore] File cache cleared")
 
     def get_cache_stats(self) -> dict[str, Any]:
-        """Get cache statistics."""
+        """Get cache statistics.
+
+        Returns:
+            Dictionary with cache statistics
+
+        """
         return {
             "cached_folders": len(self._file_cache),
             "total_cached_files": sum(len(items) for items in self._file_cache.values()),
@@ -253,77 +175,47 @@ class FileStore(QObject):
         }
 
     # =====================================
-    # Performance & Utilities
+    # Filesystem Change Handling (State Update)
     # =====================================
 
-    def get_performance_stats(self) -> dict[str, Any]:
-        """Get performance statistics."""
-        cache_stats = self.get_cache_stats()
-        return {
-            "last_load_time_ms": self._load_timer.elapsed() if self._load_timer.isValid() else 0,
-            **cache_stats,
-        }
-
-    # =====================================
-    # Filesystem Change Handling
-    # =====================================
-
-    def refresh_loaded_folders(self, changed_folder: str | None = None) -> bool:
-        """Refresh files from loaded folders after filesystem changes.
-
-        Args:
-            changed_folder: Specific folder that changed (optional)
+    def invalidate_missing_folders(self) -> bool:
+        """Invalidate cache entries for folders that no longer exist.
 
         Returns:
-            bool: True if files were refreshed
+            bool: True if any folders were invalidated
 
         """
-        if not self._loaded_files:
-            logger.debug("[FileStore] No files loaded, skipping refresh")
-            return False
-
-        # Get unique folders from loaded files
-        loaded_folders = set()
-        for file_item in self._loaded_files:
-            folder = os.path.dirname(file_item.full_path)
-            loaded_folders.add(folder)
-
-        # If specific folder given, check if it's relevant
-        if changed_folder:
-            changed_folder_norm = os.path.normpath(changed_folder)
-            if changed_folder_norm not in loaded_folders:
-                logger.debug("[FileStore] Changed folder not in loaded files: %s", changed_folder)
-                return False
-
-            folders_to_refresh = {changed_folder_norm}
-        else:
-            folders_to_refresh = loaded_folders
-
-        logger.info(
-            "[FileStore] Refreshing %d folder(s) after filesystem change", len(folders_to_refresh)
-        )
-
-        # Invalidate cache for affected folders
-        for folder in folders_to_refresh:
-            self._file_cache.pop(folder, None)
-
-        # Reload files from all loaded folders
-        refreshed_files: list[FileItem] = []
-        for folder in loaded_folders:
-            # Skip folders that no longer exist (e.g., unmounted USB drives)
+        folders_to_remove = []
+        for folder in self._file_cache:
             if not os.path.exists(folder):
-                logger.info("[FileStore] Folder no longer exists, removing its files: %s", folder)
-                continue
+                folders_to_remove.append(folder)
 
-            try:
-                folder_files = self.get_file_items_from_folder(folder, use_cache=False)
-                refreshed_files.extend(folder_files)
-            except Exception as e:
-                logger.error("[FileStore] Error refreshing folder %s: %s", folder, e)
+        for folder in folders_to_remove:
+            del self._file_cache[folder]
+            logger.info("[FileStore] Removed cache for non-existent folder: %s", folder)
 
-        # Update state
-        self._loaded_files = refreshed_files
-        self.files_loaded.emit(refreshed_files)
+        return len(folders_to_remove) > 0
 
-        logger.info("[FileStore] Refreshed %d files", len(refreshed_files))
-        return True
+    def remove_files_from_folder(self, folder_path: str) -> bool:
+        """Remove all loaded files from a specific folder.
+
+        Args:
+            folder_path: Folder path to remove files from
+
+        Returns:
+            bool: True if any files were removed
+
+        """
+        folder_norm = os.path.normpath(folder_path)
+        initial_count = len(self._loaded_files)
+
+        self._loaded_files = [
+            f for f in self._loaded_files if os.path.normpath(os.path.dirname(f.full_path)) != folder_norm
+        ]
+
+        removed_count = initial_count - len(self._loaded_files)
+        if removed_count > 0:
+            self.files_loaded.emit(self._loaded_files)
+            logger.info("[FileStore] Removed %d files from folder %s", removed_count, folder_path)
+            return True
+        return False
