@@ -13,7 +13,7 @@ This document tracks technical debt and planned refactoring for the oncutf codeb
 |------|-------|----------|--------|
 | ~~`metadata_tree/view.py`~~ | ~~1670~~ | ~~HIGH~~ | ✅ **DONE** |
 | ~~`database_manager.py`~~ | ~~1614~~ | ~~HIGH~~ | ✅ **DONE** |
-| `main_window.py` | 1362 | MEDIUM | ⏳ Delegating |
+| ~~`main_window.py`~~ | ~~1362~~ | ~~MEDIUM~~ | ✅ **DONE (Phase 4A)** |
 | ~~`context_menu_handlers.py`~~ | ~~1288~~ | ~~HIGH~~ | ✅ **DONE** |
 | `unified_rename_engine.py` | 1258 | MEDIUM | ⏳ Planned |
 | `metadata_edit_behavior.py` | 1119 | LOW | ⏳ Stable |
@@ -155,6 +155,29 @@ oncutf/ui/widgets/metadata_tree/
 
 ---
 
+### ✅ Phase 4A: Main Window Handlers (COMPLETED)
+
+**Original**: `oncutf/ui/main_window.py` (1362 lines)
+
+**Split into**:
+```
+oncutf/ui/
+├── main_window.py                           # Main orchestrator (1065 lines, 22% reduction)
+└── handlers/
+    ├── shortcut_command_handler.py         # Shortcuts & commands (265 lines)
+    ├── metadata_signal_handler.py          # Metadata signals (140 lines)
+    └── config_column_handler.py            # Config & columns (162 lines)
+```
+
+**Benefits:**
+- Extracted 567 lines into 3 specialized handlers
+- Delegation pattern for 29 methods
+- `auto_color_by_folder` (147 lines) moved to shortcut_handler
+- `_register_managers_in_context` (63 lines) moved to config_handler
+- All 949 tests passing
+
+---
+
 ## 🚀 Node Editor Readiness
 
 ### Current Seams (already in place)
@@ -185,7 +208,7 @@ oncutf/ui/widgets/metadata_tree/
 - [x] **Phase 1: Split context_menu_handlers.py** (1289 → 6 files, all tests passing)
 - [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
 - [x] **Phase 3: Split metadata_tree/view.py** (1670 → view.py + 2 handlers, all tests passing)
-- [x] **Phase 2: Split database_manager.py** (1614 → 6 files, all tests passing)
+- [x] **Phase 4A: Split main_window.py** (1362 → 1065 lines + 3 handlers, all tests passing)
 
 ---
 

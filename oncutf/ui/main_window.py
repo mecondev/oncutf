@@ -29,6 +29,7 @@ from oncutf.core.pyqt_imports import *
 # Data models and business logic modules
 from oncutf.models.file_item import FileItem
 
+# Phase 4A UI Handlers
 # Utility functions and helpers
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -71,77 +72,68 @@ class MainWindow(QMainWindow):
 
     def select_all_rows(self) -> None:
         """Select all rows via Application Service."""
-        self.app_service.select_all_rows()
+        return self.shortcut_handler.select_all_rows()
 
     def clear_all_selection(self) -> None:
         """Clear all selection via Application Service."""
-        self.app_service.clear_all_selection()
+        return self.shortcut_handler.clear_all_selection()
 
     def invert_selection(self) -> None:
         """Invert selection via Application Service."""
-        self.app_service.invert_selection()
+        return self.shortcut_handler.invert_selection()
 
     def shortcut_load_metadata(self) -> None:
         """Load fast metadata via Application Service."""
-        self.app_service.load_metadata_fast()
+        return self.shortcut_handler.shortcut_load_metadata()
 
     def shortcut_load_extended_metadata(self) -> None:
         """Load extended metadata via Application Service."""
-        self.app_service.load_metadata_extended()
+        return self.shortcut_handler.shortcut_load_extended_metadata()
 
     def shortcut_save_selected_metadata(self) -> None:
         """Save selected metadata via Application Service."""
-        self.app_service.save_selected_metadata()
+        return self.shortcut_handler.shortcut_save_selected_metadata()
 
     def shortcut_save_all_metadata(self) -> None:
         """Save all modified metadata via Application Service."""
-        self.app_service.save_all_metadata()
+        return self.shortcut_handler.shortcut_save_all_metadata()
 
     def shortcut_calculate_hash_selected(self) -> None:
         """Calculate hash for selected files via Application Service."""
-        self.app_service.calculate_hash_selected()
+        return self.shortcut_handler.shortcut_calculate_hash_selected()
 
     def rename_files(self) -> None:
         """Execute batch rename via Application Service."""
-        self.app_service.rename_files()
+        return self.shortcut_handler.rename_files()
 
     def clear_file_table_shortcut(self) -> None:
         """Clear file table via Application Service."""
-        self.app_service.clear_file_table_shortcut()
+        return self.shortcut_handler.clear_file_table_shortcut()
 
     def force_drag_cleanup(self) -> None:
         """Force drag cleanup via Application Service."""
-        self.app_service.force_drag_cleanup()
+        return self.shortcut_handler.force_drag_cleanup()
 
     def global_undo(self) -> None:
         """Global undo handler (Ctrl+Z).
 
         Note: Unified undo/redo system not yet implemented.
         """
-        logger.info("[MainWindow] Global Ctrl+Z pressed - Unified undo system not yet implemented")
+        return self.shortcut_handler.global_undo()
 
     def global_redo(self) -> None:
         """Global redo handler (Ctrl+Shift+Z).
 
         Note: Unified undo/redo system not yet implemented.
         """
-        logger.info(
-            "[MainWindow] Global Ctrl+Shift+Z pressed - Unified redo system not yet implemented"
-        )
+        return self.shortcut_handler.global_redo()
 
     def show_command_history(self) -> None:
         """Show command history dialog (Ctrl+Y).
 
         Currently shows MetadataHistoryDialog for metadata operations.
         """
-        try:
-            from oncutf.ui.dialogs.metadata_history_dialog import MetadataHistoryDialog
-
-            dialog = MetadataHistoryDialog(self)
-            dialog.exec_()
-        except Exception as e:
-            logger.error("[MainWindow] Error showing command history dialog: %s", e)
-            logger.info("[MainWindow] Unified command history not yet fully implemented")
+        return self.shortcut_handler.show_command_history()
 
     def auto_color_by_folder(self) -> None:
         """Auto-color files by their parent folder (Ctrl+Shift+C).
@@ -150,146 +142,7 @@ class MainWindow(QMainWindow):
         Skips files that already have colors assigned (preserves user choices).
         Only works when 2+ folders are present.
         """
-        logger.info("[MainWindow] AUTO_COLOR: Auto-color by folder requested")
-
-        try:
-            # Check if we have files
-            if not self.file_model or not self.file_model.files:
-                logger.info("[MainWindow] AUTO_COLOR: No files loaded")
-                if hasattr(self, "status_manager"):
-                    self.status_manager.set_file_operation_status(
-                        "No files loaded", success=False, auto_reset=True
-                    )
-                return
-
-            # Check if we have 2+ folders
-            from pathlib import Path
-
-            folders = set()
-            for file_item in self.file_model.files:
-                # Normalize path to use forward slashes consistently (cross-platform)
-                folder_path = str(Path(file_item.path).parent).replace("\\", "/")
-                folders.add(folder_path)
-
-            if len(folders) < 2:
-                logger.info(
-                    "[MainWindow] AUTO_COLOR: Need at least 2 folders, found %d", len(folders)
-                )
-                if hasattr(self, "status_manager"):
-                    self.status_manager.set_file_operation_status(
-                        f"Need 2+ folders (found {len(folders)})", success=False, auto_reset=True
-                    )
-                return
-
-            # Check for files with existing colors
-            from oncutf.core.folder_color_command import AutoColorByFolderCommand
-
-            command = AutoColorByFolderCommand(
-                file_items=self.file_model.files, db_manager=self.db_manager
-            )
-
-            files_with_colors = command.get_files_with_existing_colors()
-
-            # Show warning dialog if files already have colors
-            if files_with_colors:
-                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-                from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
-
-                total_selected = len(self.file_model.files)
-                count_with_colors = len(files_with_colors)
-
-                message = f"{count_with_colors} files already have colors out of {total_selected} selected.\n\nWhat would you like to do?"
-
-                dialog = CustomMessageDialog(
-                    parent=self,
-                    title="Files Already Colored",
-                    message=message,
-                    buttons=["Proceed", "Skip", "Cancel"],
-                )
-
-                # Add custom tooltips to buttons using TooltipHelper
-                if "Proceed" in dialog._buttons:
-                    TooltipHelper._setup_persistent_tooltip(
-                        dialog._buttons["Proceed"],
-                        "Recolor ALL files including those with existing colors",
-                        TooltipType.INFO,
-                    )
-                if "Skip" in dialog._buttons:
-                    TooltipHelper._setup_persistent_tooltip(
-                        dialog._buttons["Skip"],
-                        "Color only files without existing colors",
-                        TooltipType.INFO,
-                    )
-                if "Cancel" in dialog._buttons:
-                    TooltipHelper._setup_persistent_tooltip(
-                        dialog._buttons["Cancel"],
-                        "Cancel the auto-color operation",
-                        TooltipType.WARNING,
-                    )
-
-                dialog.exec_()
-
-                if dialog.selected == "Cancel" or dialog.selected is None:
-                    logger.info("[MainWindow] AUTO_COLOR: User cancelled")
-                    return
-
-                # Set skip_existing based on user choice
-                skip_existing = dialog.selected == "Skip"
-                logger.info(
-                    "[MainWindow] AUTO_COLOR: User chose '%s' (skip_existing=%s)",
-                    dialog.selected,
-                    skip_existing,
-                )
-
-                # Recreate command with skip_existing based on user choice
-                command = AutoColorByFolderCommand(
-                    file_items=self.file_model.files,
-                    db_manager=self.db_manager,
-                    skip_existing=skip_existing,
-                )
-
-            # Execute command with wait cursor
-            from oncutf.utils.ui.cursor_helper import wait_cursor
-
-            with wait_cursor():
-                success = command.execute()
-
-            if success:
-                # Add to command manager for undo/redo
-                from oncutf.core.metadata import get_metadata_command_manager
-
-                cmd_manager = get_metadata_command_manager()
-                cmd_manager._undo_stack.append(command)
-                cmd_manager._emit_state_signals()
-
-                # Refresh table to show colors
-                self.file_model.layoutChanged.emit()
-
-                logger.info(
-                    "[MainWindow] AUTO_COLOR: Successfully colored %d files across %d folders",
-                    len(command.new_colors),
-                    len(command.folder_colors),
-                )
-
-                if hasattr(self, "status_manager"):
-                    self.status_manager.set_file_operation_status(
-                        f"Auto-colored {len(command.new_colors)} files from {len(folders)} folders",
-                        success=True,
-                        auto_reset=True,
-                    )
-            else:
-                logger.warning("[MainWindow] AUTO_COLOR: Command execution failed")
-                if hasattr(self, "status_manager"):
-                    self.status_manager.set_file_operation_status(
-                        "Auto-color failed", success=False, auto_reset=True
-                    )
-
-        except Exception as e:
-            logger.exception("[MainWindow] AUTO_COLOR: Error during auto-color: %s", e)
-            if hasattr(self, "status_manager"):
-                self.status_manager.set_file_operation_status(
-                    "Auto-color error", success=False, auto_reset=True
-                )
+        return self.shortcut_handler.auto_color_by_folder()
 
     def request_preview_update(self) -> None:
         """Request preview update via Application Service."""
@@ -635,21 +488,7 @@ class MainWindow(QMainWindow):
             new_value: The new value
 
         """
-        logger.info(
-            "[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value
-        )
-
-        # Use specialized metadata status method if status manager is available
-        if hasattr(self, "status_manager") and self.status_manager:
-            self.status_manager.set_metadata_status(
-                f"Modified {key_path}: {old_value} -> {new_value}",
-                operation_type="success",
-                auto_reset=True,
-            )
-
-        # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
-        # Just log the change for debugging
-        logger.debug("[MetadataEdit] Modified metadata field: %s", key_path)
+        return self.metadata_signal_handler.on_metadata_value_edited(key_path, old_value, new_value)
 
     def on_metadata_value_reset(self, key_path: str) -> None:
         """Handle metadata value reset signal from metadata tree view.
@@ -658,16 +497,7 @@ class MainWindow(QMainWindow):
             key_path: The metadata key path that was reset
 
         """
-        logger.info("[MetadataEdit] Value reset: %s", key_path)
-
-        # Use specialized metadata status method if status manager is available
-        if hasattr(self, "status_manager") and self.status_manager:
-            self.status_manager.set_metadata_status(
-                f"Reset {key_path} to original value", operation_type="success", auto_reset=True
-            )
-
-        # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
-        logger.debug("[MetadataEdit] Reset metadata field: %s", key_path)
+        return self.metadata_signal_handler.on_metadata_value_reset(key_path)
 
     def on_metadata_value_copied(self, value: str) -> None:
         """Handle metadata value copied signal from metadata tree view.
@@ -676,18 +506,7 @@ class MainWindow(QMainWindow):
             value: The value that was copied to clipboard
 
         """
-        logger.debug("[MetadataEdit] Value copied to clipboard: %s", value)
-
-        # Use specialized file operation status method if status manager is available
-        if hasattr(self, "status_manager") and self.status_manager:
-            self.status_manager.set_file_operation_status(
-                f"Copied '{value}' to clipboard", success=True, auto_reset=True
-            )
-
-            # Override the reset delay for clipboard operations (shorter feedback)
-            if hasattr(self.status_manager, "_status_timer") and self.status_manager._status_timer:
-                self.status_manager._status_timer.stop()
-                self.status_manager._status_timer.start(2000)  # 2 seconds for clipboard feedback
+        return self.metadata_signal_handler.on_metadata_value_copied(value)
 
     # =====================================
     # Window Configuration Management
@@ -715,57 +534,31 @@ class MainWindow(QMainWindow):
 
     def _ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
-        # Use the original FileTableView column configuration logic instead of ColumnManager
-        if hasattr(self, "file_table_view") and self.file_table_view.model():
-            # Trigger the original, sophisticated column configuration
-            if hasattr(self.file_table_view, "_configure_columns"):
-                self.file_table_view._configure_columns()
-
-            # Then trigger column adjustment using the existing logic
-
-            logger.debug(
-                "[MainWindow] Used original FileTableView column configuration",
-                extra={"dev_only": True},
-            )
-
-        # Configure other table views with ColumnManager (they don't have the sophisticated logic)
-        # Note: MetadataTreeView handles its own column configuration, so we skip it here
-
-        if hasattr(self, "preview_tables_view") and self.preview_tables_view:
-            # Configure preview tables
-            if hasattr(self.preview_tables_view, "old_names_table"):
-                self.column_manager.configure_table_columns(
-                    self.preview_tables_view.old_names_table, "preview_old"
-                )
-            if hasattr(self.preview_tables_view, "new_names_table"):
-                self.column_manager.configure_table_columns(
-                    self.preview_tables_view.new_names_table, "preview_new"
-                )
+        return self.config_column_handler._ensure_initial_column_sizing()
 
     def configure_table_columns(self, table_view, table_type: str) -> None:
         """Configure columns for a specific table view using ColumnManager."""
-        self.column_manager.configure_table_columns(table_view, table_type)
+        return self.config_column_handler.configure_table_columns(table_view, table_type)
 
     def adjust_columns_for_splitter_change(self, table_view, table_type: str) -> None:
         """Adjust columns when splitter position changes using ColumnManager."""
-        self.column_manager.adjust_columns_for_splitter_change(table_view, table_type)
+        return self.config_column_handler.adjust_columns_for_splitter_change(table_view, table_type)
 
     def reset_column_preferences(self, table_type: str, column_index: int | None = None) -> None:
         """Reset user preferences for columns to allow auto-sizing."""
-        self.column_manager.reset_user_preferences(table_type, column_index)
+        return self.config_column_handler.reset_column_preferences(table_type, column_index)
 
     def save_column_state(self, table_type: str) -> dict:
         """Save current column state for persistence."""
-        return self.column_manager.save_column_state(table_type)
+        return self.config_column_handler.save_column_state(table_type)
 
     def load_column_state(self, table_type: str, state_data: dict) -> None:
         """Load column state from persistence."""
-        self.column_manager.load_column_state(table_type, state_data)
+        return self.config_column_handler.load_column_state(table_type, state_data)
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.restore_last_folder_if_available()
+        return self.config_column_handler.restore_last_folder_if_available()
 
     def get_selected_files_ordered(self) -> list[FileItem]:
         """Unified method to get selected files in table display order.
@@ -1215,48 +1008,15 @@ class MainWindow(QMainWindow):
 
     def refresh_metadata_widgets(self):
         """Refresh all active MetadataWidget instances and trigger preview update."""
-        logger.debug(
-            "[MainWindow] refresh_metadata_widgets CALLED (hash_worker signal or selection)"
-        )
-        try:
-            from oncutf.ui.widgets.metadata_widget import MetadataWidget
-
-            for module_widget in self.rename_modules_area.module_widgets:
-                if hasattr(module_widget, "current_module_widget"):
-                    widget = module_widget.current_module_widget
-                    if isinstance(widget, MetadataWidget):
-                        widget.trigger_update_options()
-                        widget.emit_if_changed()
-            # Force preview update after metadata widget changes using UnifiedRenameEngine
-            self._trigger_unified_preview_update()
-        except Exception:
-            pass
+        return self.metadata_signal_handler.refresh_metadata_widgets()
 
     def _trigger_unified_preview_update(self):
         """Trigger preview update using UnifiedRenameEngine ONLY."""
-        try:
-            if hasattr(self, "unified_rename_engine") and self.unified_rename_engine:
-                # Clear cache to force fresh preview
-                self.unified_rename_engine.clear_cache()
-                logger.debug("[MainWindow] Unified preview update triggered")
-            else:
-                logger.warning("[MainWindow] UnifiedRenameEngine not available")
-        except Exception as e:
-            logger.error("[MainWindow] Error in unified preview update: %s", e)
+        return self.metadata_signal_handler._trigger_unified_preview_update()
 
     def update_active_metadata_widget_options(self):
         """Find the active MetadataWidget and call trigger_update_options and emit_if_changed (for selection change)."""
-        try:
-            from oncutf.ui.widgets.metadata_widget import MetadataWidget
-
-            for module_widget in self.rename_modules_area.module_widgets:
-                if hasattr(module_widget, "current_module_widget"):
-                    widget = module_widget.current_module_widget
-                    if isinstance(widget, MetadataWidget):
-                        widget.trigger_update_options()
-                        widget.emit_if_changed()
-        except Exception as e:
-            logger.warning("[MainWindow] Error updating metadata widget: %s", e)
+        return self.metadata_signal_handler.update_active_metadata_widget_options()
 
     def _register_managers_in_context(self):
         """Register all managers in ApplicationContext for centralized access.
@@ -1264,64 +1024,7 @@ class MainWindow(QMainWindow):
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.
         """
-        try:
-            # Core managers
-            self.context.register_manager("table", self.table_manager)
-            self.context.register_manager("metadata", self.metadata_manager)
-            self.context.register_manager("selection", self.selection_manager)
-            self.context.register_manager("rename", self.rename_manager)
-            self.context.register_manager("preview", self.preview_manager)
-
-            # UI managers
-            self.context.register_manager("ui", self.ui_manager)
-            self.context.register_manager("dialog", self.dialog_manager)
-            self.context.register_manager("status", self.status_manager)
-            self.context.register_manager("shortcut", self.shortcut_manager)
-            self.context.register_manager("splitter", self.splitter_manager)
-            self.context.register_manager("window_config", self.window_config_manager)
-            self.context.register_manager("column", self.column_manager)
-
-            # File operations managers
-            self.context.register_manager("file_load", self.file_load_manager)
-            self.context.register_manager("file_operations", self.file_operations_manager)
-            self.context.register_manager("file_validation", self.file_validation_manager)
-
-            # System managers
-            self.context.register_manager("db", self.db_manager)
-            self.context.register_manager("backup", self.backup_manager)
-            self.context.register_manager("rename_history", self.rename_history_manager)
-
-            # Utility managers
-            self.context.register_manager("utility", self.utility_manager)
-            self.context.register_manager("event_handler", self.event_handler_manager)
-            self.context.register_manager("drag", self.drag_manager)
-            self.context.register_manager("drag_cleanup", self.drag_cleanup_manager)
-            self.context.register_manager("initialization", self.initialization_manager)
-
-            # Service layer
-            self.context.register_manager("app_service", self.app_service)
-            self.context.register_manager("batch", self.batch_manager)
-            self.context.register_manager("config", self.config_manager)
-
-            # Coordinators
-            self.context.register_manager("signal_coordinator", self.signal_coordinator)
-
-            # Engines
-            self.context.register_manager("rename_engine", self.unified_rename_engine)
-
-            logger.info(
-                "[MainWindow] Registered %d managers in ApplicationContext",
-                len(self.context.list_managers()),
-                extra={"dev_only": True},
-            )
-            logger.debug(
-                "[MainWindow] Available managers: %s",
-                self.context.list_managers(),
-                extra={"dev_only": True},
-            )
-
-        except Exception as e:
-            logger.error("[MainWindow] Error registering managers in context: %s", e)
+        return self.config_column_handler._register_managers_in_context()
 
     def _register_shutdown_components(self):
         """Register all concurrent components with shutdown coordinator."""
