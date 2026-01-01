@@ -3,11 +3,14 @@
 Author: Michael Economou
 Date: 2025-06-13
 
-file_load_manager.py
-Unified file loading manager with fully optimized policy:
-- All operations: wait_cursor only (fast, synchronous)
-- Consistent behavior between drag, import, and external operations
-- No progress dialogs, just fast os.walk() for everything
+File loading and I/O operations manager.
+
+Responsibilities:
+- Folder scanning (recursive and non-recursive)
+- File loading with streaming support for large sets
+- Drag & drop handling with modifier keys
+- Filesystem refresh after external changes
+- Cache coordination with FileStore
 """
 
 import os

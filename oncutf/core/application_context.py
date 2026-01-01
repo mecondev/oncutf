@@ -1,12 +1,16 @@
-"""Application Context - Centralized state management.
-
-This module provides centralized access to application state, eliminating
-the need for complex parent-child traversal patterns throughout the codebase.
-Current implementation is a skeleton that will gradually replace
-distributed state management across widgets.
+"""Module: application_context.py
 
 Author: Michael Economou
 Date: 2025-05-31
+
+Centralized application state management.
+
+Provides single point of access to:
+- FileStore (loaded files state)
+- SelectionStore (file selection state)
+- Metadata cache
+- Manager registry
+- Performance metrics
 """
 
 from __future__ import annotations

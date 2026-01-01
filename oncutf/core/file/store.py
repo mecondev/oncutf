@@ -2,19 +2,17 @@
 
 Author: Michael Economou
 Date: 2025-05-31
-Refactored: 2026-01-01 - State management only (I/O moved to FileLoadManager)
 
-File Store - Centralized STATE management for loaded files.
+Centralized state management for loaded files.
 
-This module provides a single source of truth for loaded file state:
-- Current loaded files list
+Provides single source of truth for:
+- Loaded files list
 - Current folder path
 - File filtering by extension
-- Cache management (folder → FileItem cache)
+- Folder cache (folder path → FileItem list)
 - State change signals
 
-I/O Operations (scanning, loading) are handled by FileLoadManager.
-This separation follows backend/frontend principle: Store = State, Manager = I/O.
+Note: This is a state-only module. I/O operations are in FileLoadManager.
 """
 
 import os

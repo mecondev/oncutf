@@ -3,7 +3,12 @@
 Author: Michael Economou
 Date: 2025-12-16
 
-Comprehensive filesystem monitoring for drive and directory changes.
+Filesystem monitoring for drive and directory changes.
+
+Features:
+- Drive mount/unmount detection (polling-based)
+- Directory content change detection (QFileSystemWatcher)
+- Automatic refresh via FileLoadManager when changes detected
 """
 
 from __future__ import annotations

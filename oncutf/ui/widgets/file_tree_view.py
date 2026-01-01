@@ -3,10 +3,13 @@
 Author: Michael Economou
 Date: 2025-05-31
 
-file_tree_view.py
-Implements a custom tree view with clean single-item drag implementation.
-No reliance on Qt built-in drag system - everything is manual and controlled.
-Single item selection only - no multi-selection complexity.
+Filesystem tree view for folder navigation.
+
+Features:
+- Custom drag implementation (manual, not Qt built-in)
+- Single item selection
+- Filesystem monitoring for auto-refresh
+- Drive mount/unmount detection
 """
 
 import os
