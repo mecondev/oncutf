@@ -85,6 +85,13 @@ class FilesystemHandler:
                             "[FilesystemHandler] Found FileLoadManager from parent.context",
                             extra={"dev_only": True},
                         )
+                    # Also check parent directly (MainWindow stores managers as direct attrs)
+                    if not file_load_manager and hasattr(parent, "file_load_manager"):
+                        file_load_manager = parent.file_load_manager
+                        logger.debug(
+                            "[FilesystemHandler] Found FileLoadManager from parent.file_load_manager",
+                            extra={"dev_only": True},
+                        )
                 # Try 2: parent direct attributes
                 else:
                     if hasattr(parent, "_file_store"):
@@ -119,22 +126,34 @@ class FilesystemHandler:
                                     "[FilesystemHandler] Found FileLoadManager from ancestor context",
                                     extra={"dev_only": True},
                                 )
-                            if file_store and file_load_manager:
-                                break
+                        # Also check direct attribute on ancestor (MainWindow pattern)
+                        if not file_load_manager and hasattr(current, "file_load_manager"):
+                            file_load_manager = current.file_load_manager
+                            logger.debug(
+                                "[FilesystemHandler] Found FileLoadManager from ancestor direct attr",
+                                extra={"dev_only": True},
+                            )
+                        if file_store and file_load_manager:
+                            break
                         current = current.parent() if hasattr(current, "parent") else None
 
             if file_store is None:
                 logger.warning(
-                    "[FilesystemHandler] FileStore not found - auto-refresh on USB unmount won't work"
+                    "[FilesystemHandler] FileStore not found at init - will retry connection"
                 )
             if file_load_manager is None:
                 logger.warning(
-                    "[FilesystemHandler] FileLoadManager not found - auto-refresh on USB unmount won't work"
+                    "[FilesystemHandler] FileLoadManager not found at init - will retry connection"
                 )
 
             self._filesystem_monitor = FilesystemMonitor(
                 file_store=file_store, file_load_manager=file_load_manager
             )
+
+            # Schedule delayed reconnection if managers not found
+            if file_store is None or file_load_manager is None:
+                from oncutf.utils.shared.timer_manager import schedule_ui_update
+                schedule_ui_update(self._reconnect_managers, 500)  # Try again after 500ms
 
             # Connect directory change signal for tree model refresh
             self._filesystem_monitor.directory_changed.connect(self._on_directory_changed)
@@ -163,6 +182,51 @@ class FilesystemHandler:
         except Exception as e:
             logger.warning("[FilesystemHandler] Failed to setup filesystem monitor: %s", e)
             self._filesystem_monitor = None
+
+    def _reconnect_managers(self) -> None:
+        """Attempt to reconnect FileStore and FileLoadManager after initialization.
+
+        Called via delayed timer to pick up managers that weren't available
+        during initial setup (timing issue with MainWindow initialization).
+        """
+        if not self._filesystem_monitor:
+            return
+
+        # Check if already connected
+        if self._filesystem_monitor.file_store and self._filesystem_monitor.file_load_manager:
+            return
+
+        # Try to find managers by walking up parent chain
+        file_store = None
+        file_load_manager = None
+
+        current = self._view.parent() if hasattr(self._view, "parent") else None
+        while current is not None:
+            # Check for file_model (FileStore)
+            if not file_store and hasattr(current, "file_model"):
+                file_store = current.file_model
+                logger.debug(
+                    "[FilesystemHandler] Reconnected FileStore from ancestor",
+                    extra={"dev_only": True},
+                )
+            # Check for file_load_manager
+            if not file_load_manager and hasattr(current, "file_load_manager"):
+                file_load_manager = current.file_load_manager
+                logger.debug(
+                    "[FilesystemHandler] Reconnected FileLoadManager from ancestor",
+                    extra={"dev_only": True},
+                )
+            if file_store and file_load_manager:
+                break
+            current = current.parent() if hasattr(current, "parent") else None
+
+        # Update monitor with found managers
+        if file_store and not self._filesystem_monitor.file_store:
+            self._filesystem_monitor.file_store = file_store
+            logger.info("[FilesystemHandler] FileStore reconnected successfully")
+        if file_load_manager and not self._filesystem_monitor.file_load_manager:
+            self._filesystem_monitor.file_load_manager = file_load_manager
+            logger.info("[FilesystemHandler] FileLoadManager reconnected successfully")
 
     def _on_directory_changed(self, dir_path: str) -> None:
         """Handle directory content changed.
