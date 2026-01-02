@@ -26,7 +26,7 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 |------|-------|----------|----------------|--------|
 | `ui/widgets/file_tree_view.py` | 1629 | UI | Extract behaviors | ~~[TODO] Planned~~ [DONE] Split to package |
 | `ui/widgets/file_table_view.py` | 1318 | UI | Behaviors already extracted | [SKIP] Already optimal |
-| `ui/widgets/metadata_tree/view.py` | 1272 | UI | Handlers partially extracted | [WIP] DisplayHandler split done |
+| ~~`ui/widgets/metadata_tree/view.py`~~ | ~~1272~~ → 1082 | UI | ~~Handlers partially extracted~~ | [DONE] Delegation cleanup (-18%) |
 | ~~`core/database/database_manager.py`~~ | ~~1615~~ | ~~Core~~ | ~~Split by concern~~ | [DONE] Split to 6 modules |
 | ~~`config.py`~~ | ~~1298~~ | ~~Config~~ | ~~Split to package~~ | [DONE] Split to oncutf/config/ |
 | ~~`core/events/context_menu_handlers.py`~~ | ~~1289~~ | ~~Core~~ | ~~Split by domain~~ | [DONE] Split to package |
@@ -72,23 +72,22 @@ oncutf/config/
 
 ---
 
-### 2. `metadata_tree/view.py` (1272 lines) -> Already Partially Split
+### 2. `metadata_tree/view.py` (1272 lines) -> Split + Cleanup [DONE]
 
-**Status:** Handlers already extracted (discovered 2026-01-01)
+**Status:** Completed 2026-01-02
 
-**Current structure:**
+**Final structure:**
 ```
 metadata_tree/
 ├── __init__.py (109 lines)           <- Re-exports
-├── view.py (1326 lines)              <- Main view (still large)
+├── view.py (1082 lines)              <- Main view (shell view, -18%)
 ├── controller.py (302 lines)         <- Controller logic
 ├── service.py (593 lines)            <- Service layer
 ├── model.py (294 lines)              <- Data model
 ├── view_config.py (309 lines)        <- Configuration
 ├── worker.py (358 lines)             <- Background workers
-├── display_handler.py (115 lines)    <- FACADE: delegates to render/ui_state [DONE]
-├── render_handler.py (295 lines)     <- NEW: Tree model building, proxy [DONE]
-├── ui_state_handler.py (287 lines)   <- NEW: Placeholders, info label [DONE]
+├── render_handler.py (295 lines)     <- Tree model building, proxy
+├── ui_state_handler.py (287 lines)   <- Placeholders, info label
 ├── search_handler.py (322 lines)     <- Search logic
 ├── selection_handler.py (231 lines)  <- Selection logic
 ├── drag_handler.py (203 lines)       <- Drag & drop
@@ -97,16 +96,22 @@ metadata_tree/
 └── cache_handler.py (65 lines)       <- Cache management
 ```
 
-**Total:** 5559 lines split across 16 modules. Average: 347 lines/module.
+**Changes (2026-01-02):**
 
-**DisplayHandler Split (2026-01-02):**
-- Original: 502 lines (mini-god object)
-- After split: 697 lines total (115 facade + 295 render + 287 ui_state)
-- Benefit: Clear separation of concerns (rendering vs UI state)
+1. **DisplayHandler Split:**
+   - Original: 502 lines (mini-god object)
+   - Split to: render_handler.py + ui_state_handler.py
+   - Deleted: display_handler.py (facade no longer needed)
 
-**Next steps for view.py:**
-- Remove delegation methods once external callers use handler properties
-- Target: ~600 lines (shell view with Qt glue)
+2. **Delegation Cleanup:**
+   - Removed 245+ lines of pure pass-through delegations
+   - Updated 15+ external callers to use handler properties:
+     * `view._cache_behavior.method()` instead of `view.method()`
+     * `view._edit_behavior.method()` instead of `view.method()`
+     * `view._scroll_behavior.method()` instead of `view.method()`
+   - view.py: 1327 -> 1082 lines (-18% reduction)
+
+**Result:** view.py is now a thin shell with only essential public API.
 
 ---
 
@@ -371,7 +376,7 @@ all business logic is now properly delegated to the service, achieving the archi
 
 7. ~~**`metadata_edit_behavior.py`**~~ — [DONE] Already split to 8 modules
 8. ~~**`file_table_model.py`**~~ — [DONE] Already split to 7 modules
-9. **`metadata_tree/view.py`** — Shell view (1272 lines)
+9. ~~**`metadata_tree/view.py`**~~ — [DONE] Delegation cleanup (1327 → 1082 lines, -18%)
 10. ~~**`file_tree_view.py`**~~ — [DONE] Extracted to package (1629 → 448 lines, 72% reduction)
 11. **`file_table_view.py`** — [SKIP] Already optimal with 3 behaviors (1318 lines)
 
@@ -388,8 +393,8 @@ all business logic is now properly delegated to the service, achieving the archi
 
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
-| Files >900 lines | 11 | 2 | 0 |
-| Files >600 lines | 16 | 9 | 5 |
+| Files >900 lines | 11 | 1 | 0 |
+| Files >600 lines | 16 | 8 | 5 |
 | Average LOC/file | ~200 | ~200 | ~200 |
 | Tests passing | 949 | 949 | 949+ |
 | Docstring coverage | 96.2% | 96.2% | 98%+ |
