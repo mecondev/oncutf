@@ -33,7 +33,7 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 | ~~`core/rename/unified_rename_engine.py`~~ | ~~1259~~ | ~~Core~~ | ~~Extract validators~~ | [DONE] Split to 10 modules (244 lines) |
 | ~~`ui/behaviors/metadata_edit_behavior.py`~~ | ~~1120~~ | ~~UI~~ | ~~Split by operation~~ | [DONE] Split to metadata_edit/ (8 modules, 1503 lines) |
 | ~~`models/file_table_model.py`~~ | ~~1082~~ | ~~Model~~ | ~~Extract delegates~~ | [DONE] Split to file_table/ (7 modules, 1622 lines) |
-| ~~`ui_manager.py`~~ | ~~982~~ | ~~Legacy~~ | ~~Migrate to controllers~~ | [SKIP] Low priority |
+| ~~`ui_manager.py`~~ | ~~982~~ → 133 | ~~Legacy~~ | ~~Migrate to controllers~~ | [DONE] Split to 4 controllers + Protocol typing |
 | ~~`column_management_behavior.py`~~ | ~~964~~ | ~~UI~~ | ~~Simplify via service~~ | [DONE] Delegated to service (928 lines) |
 
 ### [WARN] Warning Priority (600-900 lines)
@@ -358,6 +358,40 @@ all business logic is now properly delegated to the service, achieving the archi
 
 ---
 
+### 10. `ui_manager.py` (982 lines) -> Split to Controllers [DONE]
+
+**Completed:** 2026-01-02/03
+
+**Problem:** Monolithic UI setup class handling window config, layout, signals, and shortcuts.
+
+**Solution:** Split into 4 specialized controllers with Protocol-based typing.
+
+**Final structure:**
+```
+oncutf/controllers/ui/
+├── __init__.py (20 lines)              <- Re-exports
+├── protocols.py (324 lines)            <- Protocol interfaces for type safety
+├── window_setup_controller.py (128 lines) <- Window sizing, title, icon
+├── layout_controller.py (548 lines)    <- Panels, splitters, layout
+├── signal_controller.py (341 lines)    <- Signal connections
+└── shortcut_controller.py (112 lines)  <- Keyboard shortcuts
+
+oncutf/core/ui_managers/
+└── ui_manager.py (133 lines)           <- Thin delegator for backward compatibility
+```
+
+**Architecture improvements:**
+- Protocol-based typing (`WindowSetupContext`, `ShortcutContext`, etc.)
+- Self-documenting controller dependencies
+- Easy mocking for future tests
+- No circular imports (Protocols avoid TYPE_CHECKING issues)
+
+**Total:** 1606 lines across 6 modules (avg 268 lines/module)
+
+**Quality Gates:** ✅ 949 tests passed, ✅ ruff clean, ✅ mypy clean (strict Protocol typing)
+
+---
+
 ## Priority Order
 
 ### Phase 1: High Impact (Q1 2026)
@@ -382,7 +416,7 @@ all business logic is now properly delegated to the service, achieving the archi
 
 ### Phase 4: Legacy Migration (Q2-Q3 2026)
 
-12. **`ui_manager.py`** — Migrate to controllers (982 lines)
+12. ~~**`ui_manager.py`**~~ — [DONE] Split to 4 controllers (982 → 133 lines delegator)
 13. ~~**`column_manager.py`**~~ — [DONE] Thin adapter (853 → 329 lines, 61% reduction)
 14. ~~**`column_management_behavior.py`**~~ — [DONE] Simplified (965 → 928 lines, 3.8% reduction)
 15. **`load_manager.py`** — Delegate to controller (872 lines)
@@ -393,8 +427,8 @@ all business logic is now properly delegated to the service, achieving the archi
 
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
-| Files >900 lines | 11 | 1 | 0 |
-| Files >600 lines | 16 | 8 | 5 |
+| Files >900 lines | 11 | 0 | 0 |
+| Files >600 lines | 16 | 7 | 5 |
 | Average LOC/file | ~200 | ~200 | ~200 |
 | Tests passing | 949 | 949 | 949+ |
 | Docstring coverage | 96.2% | 96.2% | 98%+ |

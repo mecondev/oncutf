@@ -18,6 +18,7 @@ from typing import Any, Protocol
 from PyQt5.QtCore import QModelIndex, QPoint
 from PyQt5.QtWidgets import QAction, QMenu, QWidget
 
+from oncutf.ui.behaviors.metadata_edit.field_detector import normalize_metadata_field_name
 from oncutf.utils.filesystem.file_status_helpers import get_metadata_value
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -260,7 +261,7 @@ class MetadataContextMenuBehavior:
         current_field_value = None
         if self._widget._current_file_path:
             # Normalize key path for standard metadata fields
-            normalized_key_path = self._widget._normalize_metadata_field_name(key_path)
+            normalized_key_path = normalize_metadata_field_name(key_path)
 
             # Check staging manager
             from oncutf.core.metadata import get_metadata_staging_manager
@@ -405,7 +406,7 @@ class MetadataContextMenuBehavior:
         undo_action = QAction(undo_text, history_menu)
         undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
         undo_action.setEnabled(can_undo)
-        undo_action.triggered.connect(self._widget._undo_metadata_operation)
+        undo_action.triggered.connect(self._widget._edit_behavior._undo_metadata_operation)
 
         # Redo action with operation description
         redo_text = (
@@ -414,7 +415,7 @@ class MetadataContextMenuBehavior:
         redo_action = QAction(redo_text, history_menu)
         redo_action.setIcon(self._get_menu_icon("rotate-cw"))
         redo_action.setEnabled(can_redo)
-        redo_action.triggered.connect(self._widget._redo_metadata_operation)
+        redo_action.triggered.connect(self._widget._edit_behavior._redo_metadata_operation)
 
         history_menu.addAction(undo_action)
         history_menu.addAction(redo_action)
