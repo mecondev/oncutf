@@ -21,18 +21,14 @@ is now cleanly separated into focused modules.
 import contextlib
 import os
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from oncutf.core.pyqt_imports import QApplication, Qt
+from oncutf.core.pyqt_imports import QApplication
 from oncutf.models.file_item import FileItem
-from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.cursor_helper import wait_cursor
-
-if TYPE_CHECKING:
-    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -67,7 +63,6 @@ class UnifiedMetadataManager(QObject):
         self.force_extended_metadata = False
         self._metadata_cancelled = False
         self._save_cancelled = False
-        self._hash_progress_dialog: ProgressDialog | None = None
 
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
@@ -81,11 +76,12 @@ class UnifiedMetadataManager(QObject):
         # Workers (for cleanup)
         self._metadata_worker = None
         self._metadata_thread = None
-        self._hash_worker = None
+        # Note: _hash_worker managed by HashLoadingService
 
         # Initialize extracted modules for delegation
         from oncutf.core.metadata import (
             CompanionMetadataHandler,
+            HashLoadingService,
             MetadataCacheService,
             MetadataLoader,
             MetadataProgressHandler,
@@ -98,6 +94,7 @@ class UnifiedMetadataManager(QObject):
         self._writer = MetadataWriter(parent_window)
         self._shortcut_handler = MetadataShortcutHandler(self, parent_window)
         self._progress_handler = MetadataProgressHandler(parent_window)
+        self._hash_service = HashLoadingService(parent_window, self._cache_service)
         self._loader = MetadataLoader(
             parent_window=parent_window,
             exiftool_getter=lambda: self.exiftool_wrapper,
@@ -253,166 +250,37 @@ class UnifiedMetadataManager(QObject):
         self._loader.load_metadata_for_items(items, use_extended, source, on_finished=on_finished)
 
     # =========================================================================
-    # Hash Loading
+    # Hash Loading - Delegate to HashLoadingService
     # =========================================================================
 
     def load_hashes_for_files(self, files: list[FileItem], source: str = "user_request") -> None:
-        """Load hashes for files that don't have them cached."""
-        if not files:
-            return
+        """Load hashes for files that don't have them cached.
 
-        # Filter files that need loading
-        files_to_load = []
-        for file_item in files:
-            if file_item.full_path not in self._currently_loading:
-                cached = self.check_cached_hash(file_item)
-                if not cached:
-                    files_to_load.append(file_item)
-                    self._currently_loading.add(file_item.full_path)
-
-        if not files_to_load:
-            logger.info(
-                "[UnifiedMetadataManager] All %d files already have cached hashes",
-                len(files),
-            )
-            return
-
-        logger.info(
-            "[UnifiedMetadataManager] Loading hashes for %d files (%s)",
-            len(files_to_load),
-            source,
-        )
-
-        # Show progress dialog for multiple files
-        if len(files_to_load) > 1:
-            self._show_hash_progress_dialog(files_to_load, source)
-        else:
-            self._start_hash_loading(files_to_load, source)
-
-    def _show_hash_progress_dialog(self, files: list[FileItem], source: str) -> None:
-        """Show progress dialog for hash loading."""
-        try:
-
-            def cancel_hash_loading():
-                self._cancel_current_loading()
-
-            from oncutf.utils.ui.progress_dialog import ProgressDialog
-
-            self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
-                self.parent_window, cancel_callback=cancel_hash_loading
-            )
-
-            if self._hash_worker:
-                self._hash_worker.progress_updated.connect(
-                    lambda current, total, _: self._hash_progress_dialog.update_progress(
-                        current, total
-                    )
-                )
-                self._hash_worker.size_progress.connect(
-                    lambda processed, total: self._hash_progress_dialog.update_progress(
-                        processed_bytes=processed, total_bytes=total
-                    )
-                )
-
-            self._hash_progress_dialog.show()
-            self._start_hash_loading(files, source)
-
-        except Exception:
-            logger.exception("[UnifiedMetadataManager] Error showing hash progress dialog")
-            if hasattr(self, "_hash_progress_dialog") and self._hash_progress_dialog:
-                self._hash_progress_dialog.close()
-                self._hash_progress_dialog = None
-            self._start_hash_loading(files, source)
-
-    def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
-        """Start hash loading using parallel hash worker."""
-        if not files:
-            return
-
-        from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
-
-        file_paths = [f.full_path for f in files]
-        self._hash_worker = ParallelHashWorker(parent=self.parent_window)
-        self._hash_worker.setup_checksum_calculation(file_paths)
-
-        from typing import cast
-
-        from PyQt5.QtCore import Qt
-
-        cast("Any", self._hash_worker.file_hash_calculated).connect(
-            self._on_file_hash_calculated, Qt.QueuedConnection
-        )
-        cast("Any", self._hash_worker.finished_processing).connect(
-            lambda _: self._on_hash_finished(), Qt.QueuedConnection
-        )
-        cast("Any", self._hash_worker.progress_updated).connect(
-            lambda current, total, _: self._on_hash_progress(current, total), Qt.QueuedConnection
-        )
-
-        self._hash_worker.start()
-
-    def _on_hash_progress(self, current: int, total: int) -> None:
-        """Handle hash loading progress updates."""
-        # Progress handler manages this via connected signals
-
-    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
-        """Handle individual file hash calculated.
-
-        Note:
-            Hash is already stored in cache by calculate_hash() — no need to store again
-
+        Delegates to HashLoadingService with callback for loading_finished signal.
         """
-        self._currently_loading.discard(file_path)
+        def on_finished():
+            self.loading_finished.emit()
 
-        # Progressive UI update
-        if self.parent_window and hasattr(self.parent_window, "file_model"):
-            if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
-                self.parent_window.file_model.refresh_icon_for_file(file_path)
-            else:
-                try:
-                    for i, file in enumerate(self.parent_window.file_model.files):
-                        if paths_equal(file.full_path, file_path):
-                            top_left = self.parent_window.file_model.index(i, 0)
-                            bottom_right = self.parent_window.file_model.index(
-                                i, self.parent_window.file_model.columnCount() - 1
-                            )
-                            self.parent_window.file_model.dataChanged.emit(
-                                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
-                            )
-                            break
-                except Exception:
-                    pass
-
-    def _on_hash_finished(self) -> None:
-        """Handle hash loading completion."""
-        self._cleanup_hash_worker_and_thread()
-        self.loading_finished.emit()
-
-        if self.parent_window:
-            if hasattr(self.parent_window, "file_model"):
-                self.parent_window.file_model.refresh_icons()
-            if (
-                hasattr(self.parent_window, "preview_manager")
-                and self.parent_window.preview_manager
-            ):
-                self.parent_window.preview_manager.on_hash_calculation_completed()
-
-        logger.info("[UnifiedMetadataManager] Hash loading completed")
+        self._hash_service.load_hashes_for_files(files, source, on_finished_callback=on_finished)
 
     # =========================================================================
     # Cancellation
     # =========================================================================
 
     def _cancel_current_loading(self) -> None:
-        """Cancel current loading operation."""
+        """Cancel current loading operation.
+
+        Delegates hash cancellation to HashLoadingService.
+        Metadata cancellation handled by MetadataLoader.
+        """
         self._metadata_cancelled = True
         self._loader.request_cancellation()
 
         if hasattr(self, "_metadata_worker") and self._metadata_worker:
             self._metadata_worker.cancel()
 
-        if hasattr(self, "_hash_worker") and self._hash_worker:
-            self._hash_worker.cancel()
+        # Delegate hash cancellation to service
+        self._hash_service.cancel_loading()
 
         logger.info("[UnifiedMetadataManager] Loading operation cancelled")
 
@@ -788,21 +656,17 @@ class UnifiedMetadataManager(QObject):
             self._metadata_thread.deleteLater()
             self._metadata_thread = None
 
-    def _cleanup_hash_worker_and_thread(self) -> None:
-        """Clean up hash worker."""
-        if hasattr(self, "_hash_worker") and self._hash_worker:
-            if self._hash_worker.isRunning():
-                if not self._hash_worker.wait(3000):
-                    self._hash_worker.terminate()
-                    self._hash_worker.wait(1000)
-            self._hash_worker.deleteLater()
-            self._hash_worker = None
-
     def cleanup(self) -> None:
-        """Clean up resources."""
+        """Clean up resources.
+
+        Delegates hash service cleanup to HashLoadingService.
+        """
         self._cancel_current_loading()
         self._cleanup_metadata_worker_and_thread()
-        self._cleanup_hash_worker_and_thread()
+
+        # Delegate hash service cleanup
+        self._hash_service.cleanup()
+
         self._progress_handler.cleanup()
 
         if hasattr(self, "_exiftool_wrapper") and self._exiftool_wrapper:
