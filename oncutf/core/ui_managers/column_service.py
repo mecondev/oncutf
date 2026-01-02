@@ -361,6 +361,130 @@ class UnifiedColumnService:
         except Exception as e:
             logger.error("[UnifiedColumnService] Failed to save user settings: %s", e)
 
+    def analyze_column_content_type(self, column_key: str) -> str:
+        """Analyze column content type for width recommendations.
+
+        Args:
+            column_key: The column identifier
+
+        Returns:
+            Content type string: 'datetime', 'filesize', 'numeric', or 'text'
+
+        """
+        # Simple heuristic based on column key
+        if "date" in column_key.lower() or "time" in column_key.lower():
+            return "datetime"
+        elif column_key in ("filesize", "size"):
+            return "filesize"
+        elif column_key in ("width", "height", "duration"):
+            return "numeric"
+        else:
+            return "text"
+
+    def get_recommended_width_for_content_type(
+        self, content_type: str, current_width: int, min_width: int
+    ) -> int:
+        """Get recommended width based on content type.
+
+        Args:
+            content_type: Type of content ('datetime', 'filesize', 'numeric', 'text')
+            current_width: Current column width
+            min_width: Minimum allowed width
+
+        Returns:
+            Recommended width in pixels
+
+        """
+        # Datetime columns need more space
+        if content_type == "datetime":
+            return max(current_width, 180)
+        # Filesize needs moderate space
+        elif content_type == "filesize":
+            return max(current_width, 100)
+        # Numeric needs less space
+        elif content_type == "numeric":
+            return max(current_width, 80)
+        # Text columns use current width
+        else:
+            return max(current_width, min_width)
+
+    def validate_column_width(self, column_key: str, width: int) -> int:
+        """Validate and adjust column width within acceptable bounds.
+
+        Args:
+            column_key: The column identifier
+            width: Proposed width in pixels
+
+        Returns:
+            Validated width (constrained to min_width and reasonable max)
+
+        """
+        config = self.get_column_config(column_key)
+        if not config:
+            # Fallback to reasonable defaults if column not found
+            return max(50, min(width, 800))
+
+        # Use config min_width as lower bound
+        min_width = config.min_width
+
+        # Reasonable maximum to prevent absurdly wide columns
+        max_width = 800
+
+        return max(min_width, min(width, max_width))
+
+    def get_visible_column_configs(self) -> list[ColumnConfig]:
+        """Get configurations for all visible columns in display order.
+
+        Returns:
+            List of ColumnConfig objects for visible columns
+
+        """
+        visible_keys = self.get_visible_columns()
+        configs = []
+
+        for key in visible_keys:
+            config = self.get_column_config(key)
+            if config:
+                configs.append(config)
+
+        return configs
+
+    def reset_column_width(self, column_key: str) -> None:
+        """Reset column width to default (remove user override).
+
+        Args:
+            column_key: The column identifier
+
+        """
+        user_settings = self._get_user_settings()
+        column_widths = user_settings.get("file_table_column_widths", {})
+
+        if column_key in column_widths:
+            del column_widths[column_key]
+            user_settings["file_table_column_widths"] = column_widths
+            self._save_user_settings(user_settings)
+            logger.debug("[UnifiedColumnService] Reset width for column: %s", column_key)
+
+    def reset_all_widths(self) -> None:
+        """Reset all column widths to defaults (remove all user overrides)."""
+        user_settings = self._get_user_settings()
+        user_settings["file_table_column_widths"] = {}
+        self._save_user_settings(user_settings)
+        logger.debug("[UnifiedColumnService] Reset all column widths")
+
+    def get_column_keys(self) -> list[str]:
+        """Get all column keys in configuration order.
+
+        Returns:
+            List of all column keys
+
+        """
+        if self._config_cache is None:
+            self._load_configuration()
+
+        assert self._config_cache is not None
+        return list(self._config_cache.keys())
+
 
 # Global service instance
 _column_service_instance: UnifiedColumnService | None = None
