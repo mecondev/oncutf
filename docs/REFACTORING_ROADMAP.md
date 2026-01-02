@@ -26,7 +26,7 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 |------|-------|----------|----------------|--------|
 | `ui/widgets/file_tree_view.py` | 1629 | UI | Extract behaviors | ~~[TODO] Planned~~ [DONE] Split to package |
 | `ui/widgets/file_table_view.py` | 1318 | UI | Behaviors already extracted | [SKIP] Already optimal |
-| `ui/widgets/metadata_tree/view.py` | 1272 | UI | Handlers partially extracted | [TODO] Planned |
+| `ui/widgets/metadata_tree/view.py` | 1272 | UI | Handlers partially extracted | [WIP] DisplayHandler split done |
 | ~~`core/database/database_manager.py`~~ | ~~1615~~ | ~~Core~~ | ~~Split by concern~~ | [DONE] Split to 6 modules |
 | ~~`config.py`~~ | ~~1298~~ | ~~Config~~ | ~~Split to package~~ | [DONE] Split to oncutf/config/ |
 | ~~`core/events/context_menu_handlers.py`~~ | ~~1289~~ | ~~Core~~ | ~~Split by domain~~ | [DONE] Split to package |
@@ -79,28 +79,34 @@ oncutf/config/
 **Current structure:**
 ```
 metadata_tree/
-├── __init__.py (102 lines)        <- Re-exports
-├── view.py (1272 lines)           <- Main view (still large)
-├── controller.py (302 lines)      <- Controller logic
-├── service.py (593 lines)         <- Service layer
-├── model.py (294 lines)           <- Data model
-├── view_config.py (309 lines)     <- Configuration
-├── worker.py (358 lines)          <- Background workers
-├── display_handler.py (502 lines) <- Display logic
-├── search_handler.py (322 lines)  <- Search logic
-├── selection_handler.py (231 lines) <- Selection logic
-├── drag_handler.py (203 lines)    <- Drag & drop
-├── event_handler.py (130 lines)   <- Event handling
+├── __init__.py (109 lines)           <- Re-exports
+├── view.py (1326 lines)              <- Main view (still large)
+├── controller.py (302 lines)         <- Controller logic
+├── service.py (593 lines)            <- Service layer
+├── model.py (294 lines)              <- Data model
+├── view_config.py (309 lines)        <- Configuration
+├── worker.py (358 lines)             <- Background workers
+├── display_handler.py (115 lines)    <- FACADE: delegates to render/ui_state [DONE]
+├── render_handler.py (295 lines)     <- NEW: Tree model building, proxy [DONE]
+├── ui_state_handler.py (287 lines)   <- NEW: Placeholders, info label [DONE]
+├── search_handler.py (322 lines)     <- Search logic
+├── selection_handler.py (231 lines)  <- Selection logic
+├── drag_handler.py (203 lines)       <- Drag & drop
+├── event_handler.py (130 lines)      <- Event handling
 ├── modifications_handler.py (145 lines) <- Modifications
-└── cache_handler.py (65 lines)    <- Cache management
+└── cache_handler.py (65 lines)       <- Cache management
 ```
 
-**Total:** 4828 lines split across 14 modules. Average: 345 lines/module.
+**Total:** 5559 lines split across 16 modules. Average: 347 lines/module.
 
-**Note:** `view.py` at 1272 lines is still large. Consider extracting more into handlers:
-- Context menu logic -> dedicated handler
-- Keyboard shortcuts -> dedicated handler
-- State persistence -> dedicated handler
+**DisplayHandler Split (2026-01-02):**
+- Original: 502 lines (mini-god object)
+- After split: 697 lines total (115 facade + 295 render + 287 ui_state)
+- Benefit: Clear separation of concerns (rendering vs UI state)
+
+**Next steps for view.py:**
+- Remove delegation methods once external callers use handler properties
+- Target: ~600 lines (shell view with Qt glue)
 
 ---
 
