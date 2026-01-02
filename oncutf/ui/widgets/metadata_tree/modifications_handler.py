@@ -63,7 +63,7 @@ class MetadataTreeModificationsHandler:
         if hasattr(self._view, "_current_display_data") and self._view._current_display_data:
             self._view._update_information_label(self._view._current_display_data)
 
-        self._view._update_file_icon_status()
+        self._view._cache_behavior.update_file_icon_status()
         self._view.viewport().update()
 
     def clear_modifications_for_file(self, file_path: str) -> None:
@@ -97,7 +97,7 @@ class MetadataTreeModificationsHandler:
                         display_data = dict(metadata_entry.data)
                         display_data["FileName"] = file_item.filename
                         self._view.display_metadata(display_data, context="after_save")
-            self._view._update_file_icon_status()
+            self._view._cache_behavior.update_file_icon_status()
             self._view.viewport().update()
 
     def has_modifications_for_selected_files(self) -> bool:

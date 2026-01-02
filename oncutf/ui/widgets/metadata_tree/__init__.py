@@ -14,51 +14,19 @@ This package provides a clean separation of concerns for the metadata tree:
 Usage:
     from oncutf.ui.widgets.metadata_tree import MetadataTreeView
 
-For advanced usage:
-    from oncutf.ui.widgets.metadata_tree.model import TreeNodeData, MetadataDisplayState
-    from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
-    from oncutf.ui.widgets.metadata_tree.controller import MetadataTreeController
+Public API:
+    - MetadataTreeView: The main widget (only public export)
+
+Internal modules (import directly if needed):
+    - model: TreeNodeData, MetadataDisplayState, NodeType, FieldStatus
+    - service: MetadataTreeService
+    - controller: MetadataTreeController
+    - handlers: render_handler, ui_state_handler, search_handler, etc.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
-# Controller layer
-from oncutf.ui.widgets.metadata_tree.controller import (
-    MetadataTreeController,
-    create_metadata_tree_controller,
-)
-
-# Drag handler - import directly to avoid circular import
-from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
-from oncutf.ui.widgets.metadata_tree.model import (
-    EXTENDED_ONLY_PATTERNS,
-    METADATA_GROUPS,
-    READ_ONLY_FIELDS,
-    FieldStatus,
-    MetadataDisplayState,
-    NodeType,
-    TreeNodeData,
-)
-
-# Modifications handler
-from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
-
-# Search handler
-from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
-
-# Selection handler
-from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
-
-# Service layer
-from oncutf.ui.widgets.metadata_tree.service import (
-    MetadataTreeService,
-    create_metadata_tree_service,
-)
-
-# View configuration handler
-from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 
 # MetadataTreeView is imported lazily to avoid circular imports
 # (view.py imports from this package)
@@ -76,27 +44,5 @@ def __getattr__(name: str):
 
 
 __all__ = [
-    # Data structures
-    "TreeNodeData",
-    "MetadataDisplayState",
-    "NodeType",
-    "FieldStatus",
-    "METADATA_GROUPS",
-    "READ_ONLY_FIELDS",
-    "EXTENDED_ONLY_PATTERNS",
-    # Service layer
-    "MetadataTreeService",
-    "create_metadata_tree_service",
-    # Controller layer
-    "MetadataTreeController",
-    "create_metadata_tree_controller",
-    # Handlers
-    "MetadataTreeDragHandler",
-    "MetadataTreeViewConfig",
-    "MetadataTreeSearchHandler",
-    "MetadataTreeSelectionHandler",
-    "MetadataTreeModificationsHandler",
-    "MetadataTreeCacheHandler",
-    # Main widget
     "MetadataTreeView",
 ]

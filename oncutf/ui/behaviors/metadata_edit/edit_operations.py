@@ -103,7 +103,7 @@ class EditOperations:
         dialog = MetadataEditDialog(
             parent=self._widget,  # type: ignore[arg-type]
             selected_files=selected_files,
-            metadata_cache=self._widget._get_metadata_cache(),
+            metadata_cache=self._widget._cache_behavior.get_metadata_cache(),
             field_name=clean_field_name,  # For dialog display
             field_value=str(current_value) if current_value else "",
         )
@@ -264,7 +264,7 @@ class EditOperations:
             return
 
         # Update the file icon status immediately
-        self._widget._update_file_icon_status()
+        self._widget._cache_behavior.update_file_icon_status()
 
         # Update the tree display to show the new value
         self._update_tree_item_value(key_path, new_value)
@@ -321,7 +321,7 @@ class EditOperations:
                 from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
                 command_manager = get_metadata_command_manager()
-                metadata_cache = self._widget._get_metadata_cache()
+                metadata_cache = self._widget._cache_behavior.get_metadata_cache()
 
                 # Filter selected files to only those in result_files
                 files_to_modify = [f for f in selected_files if f.full_path in result_files]

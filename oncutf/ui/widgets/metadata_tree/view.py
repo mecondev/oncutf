@@ -45,14 +45,13 @@ from oncutf.ui.behaviors.metadata_context_menu_behavior import MetadataContextMe
 from oncutf.ui.behaviors.metadata_edit_behavior import MetadataEditBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
-from oncutf.ui.widgets.metadata_tree.display_handler import (
-    DisplayHandler as MetadataTreeDisplayHandler,
-)
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.event_handler import MetadataTreeEventHandler
 from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
+from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
+from oncutf.ui.widgets.metadata_tree.ui_state_handler import TreeUiStateHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -186,8 +185,11 @@ class MetadataTreeView(QTreeView):
         # Cache handler
         self._cache_handler = MetadataTreeCacheHandler(self)
 
-        # Display handler for metadata rendering
-        self._display_handler = MetadataTreeDisplayHandler(self)
+        # Render handler for tree model building
+        self._render_handler = TreeRenderHandler(self)
+
+        # UI state handler for display orchestration
+        self._ui_state_handler = TreeUiStateHandler(self)
 
         # Event handler for Qt events
         self._event_handler = MetadataTreeEventHandler(self)
@@ -205,7 +207,7 @@ class MetadataTreeView(QTreeView):
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._show_context_menu_delegated)
+        self.customContextMenuRequested.connect(self.show_context_menu)
         self._current_menu = None
 
         # Track if we're in placeholder mode
@@ -470,6 +472,58 @@ class MetadataTreeView(QTreeView):
         """Force Qt style system to update. Delegates to view config handler."""
         self._view_config._force_style_update()
 
+    # =========================================================================
+    # Handler Properties - Direct Access to Internal Handlers
+    # =========================================================================
+    # These properties provide clean access to internal handlers for advanced use.
+    # Prefer using public methods, but these are available for cases where
+    # direct handler access is needed.
+
+    @property
+    def scroll(self) -> MetadataScrollBehavior:
+        """Access scroll position behavior handler."""
+        return self._scroll_behavior
+
+    @property
+    def cache(self) -> MetadataCacheBehavior:
+        """Access cache behavior handler."""
+        return self._cache_behavior
+
+    @property
+    def edit_handler(self) -> MetadataEditBehavior:
+        """Access edit behavior handler."""
+        return self._edit_behavior
+
+    @property
+    def context_menu(self) -> MetadataContextMenuBehavior:
+        """Access context menu behavior handler."""
+        return self._context_menu_behavior
+
+    @property
+    def render(self) -> TreeRenderHandler:
+        """Access tree render handler."""
+        return self._render_handler
+
+    @property
+    def ui_state(self) -> TreeUiStateHandler:
+        """Access UI state handler."""
+        return self._ui_state_handler
+
+    @property
+    def search(self) -> MetadataTreeSearchHandler:
+        """Access search handler."""
+        return self._search_handler
+
+    @property
+    def selection(self) -> MetadataTreeSelectionHandler:
+        """Access selection handler."""
+        return self._selection_handler
+
+    @property
+    def modifications(self) -> MetadataTreeModificationsHandler:
+        """Access modifications handler."""
+        return self._modifications_handler
+
     # =====================================
     # Scroll Position Memory (delegated to MetadataScrollBehavior)
     # =====================================
@@ -499,22 +553,6 @@ class MetadataTreeView(QTreeView):
         """Trigger scroll position restore after expandAll() has completed."""
         self._scroll_behavior.restore_scroll_after_expand()
 
-    def _path_in_dict(self, path: str, path_dict: dict) -> bool:
-        """Check if path exists in dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._path_in_dict(path, path_dict)
-
-    def _get_from_path_dict(self, path: str, path_dict: dict):
-        """Get value from path dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._get_from_path_dict(path, path_dict)
-
-    def _set_in_path_dict(self, path: str, value, path_dict: dict) -> None:
-        """Set value in path dictionary (delegated to scroll behavior)."""
-        self._scroll_behavior._set_in_path_dict(path, value, path_dict)
-
-    def _remove_from_path_dict(self, path: str, path_dict: dict) -> bool:
-        """Remove path from dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._remove_from_path_dict(path, path_dict)
-
     # =====================================
     # Context Menu & Actions
     # =====================================
@@ -532,102 +570,8 @@ class MetadataTreeView(QTreeView):
         return self._selection_handler.get_current_selection()
 
     # =====================================
-    # Cache Interaction Methods (delegate to behavior)
-    # =====================================
-
-    def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
-        """Update the metadata value in the cache to persist changes.
-        Delegates to cache behavior.
-        """
-        self._cache_behavior.update_metadata_in_cache(key_path, new_value)
-
-    def _update_file_icon_status(self) -> None:
-        """Update the file icon in the file table to reflect modified status.
-        Delegates to cache behavior.
-        """
-        self._cache_behavior.update_file_icon_status()
-
-    def _try_lazy_metadata_loading(
-        self, file_item: Any, context: str = ""
-    ) -> dict[str, Any] | None:
-        """Try to load metadata using simple fallback loading.
-        Delegates to cache behavior.
-
-        Args:
-            file_item: FileItem to load metadata for
-            context: Context string for logging
-
-        Returns:
-            dict | None: Metadata if available, None if not cached
-
-        """
-        return self._cache_behavior.try_lazy_metadata_loading(file_item, context)
-
-    def _get_value_from_metadata_dict(
-        self, metadata: dict[str, Any], key_path: str
-    ) -> Any | None:
-        """Extract value from metadata dictionary using key path.
-        Delegates to cache behavior.
-
-        Args:
-            metadata: Metadata dictionary
-            key_path: Key path
-
-        Returns:
-            Any | None: Value if found
-
-        """
-        return self._cache_behavior._get_value_from_metadata_dict(metadata, key_path)
-
-    def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-        """Get original value from cache.
-        Delegates to cache behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            Any | None: Original value if found
-
-        """
-        return self._cache_behavior.get_original_value_from_cache(key_path)
-
-    def _get_original_metadata_value(self, key_path: str) -> Any | None:
-        """Get ORIGINAL metadata value (not staged).
-        Delegates to cache behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            Any | None: Original value if found
-
-        """
-        return self._cache_behavior.get_original_metadata_value(key_path)
-
-    def _get_metadata_cache(self) -> dict[str, Any] | None:
-        """Get metadata cache dictionary.
-        Delegates to cache behavior.
-
-        Returns:
-            dict | None: Metadata cache if available
-
-        """
-        return self._cache_behavior.get_metadata_cache()
-
-    # =====================================
     # Context Menu Methods (delegate to behavior)
     # =====================================
-
-    def _show_context_menu_delegated(self, position: QPoint) -> None:
-        """Show context menu at position.
-        Delegates to context menu behavior.
-
-        Args:
-            position: Position where the context menu should appear
-
-        """
-        self._context_menu_behavior.show_context_menu(position)
 
     # Keep public alias for backward compatibility
     def show_context_menu(self, position: QPoint) -> None:
@@ -641,142 +585,8 @@ class MetadataTreeView(QTreeView):
         self._context_menu_behavior.show_context_menu(position)
 
     # =====================================
-    # Edit Methods (delegate to behavior)
+    # Tree Item Value Update
     # =====================================
-
-    def edit_value(self, key_path: str, current_value: Any) -> None:
-        """Edit metadata value.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-            current_value: Current value
-
-        """
-        self._edit_behavior.edit_value(key_path, current_value)
-
-    def reset_value(self, key_path: str) -> None:
-        """Reset metadata value to original.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.reset_value(key_path)
-
-    def set_rotation_to_zero(self, key_path: str) -> None:
-        """Set rotation to 0 degrees.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.set_rotation_to_zero(key_path)
-
-    def copy_value(self, value: Any) -> None:
-        """Copy value to clipboard.
-        Delegates to edit behavior.
-
-        Args:
-            value: Value to copy
-
-        """
-        self._edit_behavior.copy_value(value)
-
-    def get_key_path(self, index: QModelIndex) -> str:
-        """Get metadata key path from model index.
-        Delegates to edit behavior.
-
-        Args:
-            index: Model index
-
-        Returns:
-            str: Key path
-
-        """
-        return self._edit_behavior.get_key_path(index)
-
-    def mark_as_modified(self, key_path: str) -> None:
-        """Mark field as modified.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.mark_as_modified(key_path)
-
-    def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
-        """Mark field as modified only if different from original.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-            new_value: New value
-
-        """
-        self._edit_behavior.smart_mark_modified(key_path, new_value)
-
-    def _is_editable_metadata_field(self, key_path: str) -> bool:
-        """Check if field is editable.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            bool: True if editable
-
-        """
-        return self._edit_behavior._is_editable_metadata_field(key_path)
-
-    def _normalize_metadata_field_name(self, key_path: str) -> str:
-        """Normalize metadata field name.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            str: Normalized key path
-
-        """
-        return self._edit_behavior._normalize_metadata_field_name(key_path)
-
-    def _undo_metadata_operation(self) -> None:
-        """Undo last metadata operation.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._undo_metadata_operation()
-
-    def _redo_metadata_operation(self) -> None:
-        """Redo last undone metadata operation.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._redo_metadata_operation()
-
-    def _show_history_dialog(self) -> None:
-        """Show metadata history dialog.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._show_history_dialog()
-
-    def _fallback_edit_value(
-        self, key_path: str, new_value: str, old_value: str, files_to_modify: list
-    ) -> None:
-        """Fallback method for editing metadata without command system.
-        Delegates to edit behavior (used by tests).
-
-        Args:
-            key_path: Metadata key path
-            new_value: New value to set
-            old_value: Old value
-            files_to_modify: List of file items to modify
-
-        """
-        self._edit_behavior._fallback_edit_value(key_path, new_value, old_value, files_to_modify)
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
         """Update tree by refreshing the entire view with updated metadata.
@@ -944,17 +754,17 @@ class MetadataTreeView(QTreeView):
         """Shows empty state using unified placeholder helper.
         No longer creates text model - uses only the placeholder helper.
         """
-        return self._display_handler.display_placeholder(_message)
+        return self._ui_state_handler.display_placeholder(_message)
 
     def clear_view(self) -> None:
         """Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
-        return self._display_handler.clear_tree()
+        return self._ui_state_handler.clear_tree()
 
     def display_metadata(self, metadata: dict[str, Any] | None, context: str = "") -> None:
         """Display metadata in the tree view."""
-        return self._display_handler.display_metadata(metadata, context)
+        return self._ui_state_handler.display_metadata(metadata, context)
 
     def _update_search_field_state(self, enabled: bool):
         """Update the metadata search field enabled state. Delegates to search handler."""
@@ -985,7 +795,7 @@ class MetadataTreeView(QTreeView):
         Emits rebuild_requested signal which is processed via QueuedConnection.
         This ensures all model operations happen in the main thread via Qt event queue.
         """
-        return self._display_handler.emit_rebuild_tree(metadata, context)
+        return self._render_handler.emit_rebuild_tree(metadata, context)
 
     def _render_metadata_view_impl(self, metadata: dict[str, Any], context: str = "") -> None:
         """Actually builds the metadata tree and displays it.
@@ -995,15 +805,15 @@ class MetadataTreeView(QTreeView):
         Includes fallback protection in case called with invalid metadata.
         Uses rebuild lock to prevent concurrent model swaps that cause segfaults.
         """
-        return self._display_handler.rebuild_tree_from_metadata(metadata, context)
+        return self._render_handler.rebuild_tree_from_metadata(metadata, context)
 
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
-        return self._display_handler.update_information_label(display_data)
+        return self._ui_state_handler.update_information_label(display_data)
 
     def _set_current_file_from_metadata(self, metadata: dict[str, Any]) -> None:
         """Set current file from metadata if available."""
-        return self._display_handler.set_current_file_from_metadata(metadata)
+        return self._ui_state_handler.set_current_file_from_metadata(metadata)
 
     # =====================================
     # Selection-based Metadata Management
@@ -1053,7 +863,7 @@ class MetadataTreeView(QTreeView):
         """Clears both view and scroll memory when changing folders.
         This is different from clear_view() which preserves scroll memory.
         """
-        return self._display_handler.cleanup_on_folder_change()
+        return self._ui_state_handler.cleanup_on_folder_change()
 
     def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
         """Display metadata for a specific file item.
@@ -1064,7 +874,7 @@ class MetadataTreeView(QTreeView):
             context: Context string for logging
 
         """
-        return self._display_handler.display_file_metadata(file_item, context)
+        return self._ui_state_handler.display_file_metadata(file_item, context)
 
     def handle_selection_change(self) -> None:
         """Handle selection changes from the parent file table.
@@ -1208,7 +1018,7 @@ class MetadataTreeView(QTreeView):
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on tree content."""
-        return self._display_handler.sync_placeholder_state()
+        return self._ui_state_handler.sync_placeholder_state()
 
     def _handle_metadata_field_click(self, field: str, value: str) -> None:
         """Handle click on metadata field that might be a file path."""

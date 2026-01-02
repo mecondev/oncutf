@@ -245,7 +245,7 @@ class TestMetadataTreeViewRotation:
             return_value="3",
         ):
             # Call the method
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was called
         mock_direct_loader.set_metadata_value.assert_called_once_with(
@@ -290,7 +290,7 @@ class TestMetadataTreeViewRotation:
             return_value=None,
         ):
             # Call the method
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was called
         mock_direct_loader.set_metadata_value.assert_called_once_with(
@@ -321,7 +321,7 @@ class TestMetadataTreeViewRotation:
             return_value="0",
         ):
             # Call the method
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify direct loader was NOT called (early return)
         mock_direct_loader.set_metadata_value.assert_not_called()
@@ -351,7 +351,7 @@ class TestMetadataTreeViewRotation:
             return_value="3",
         ):
             # Call the method
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called with current value
         tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(
@@ -384,7 +384,7 @@ class TestMetadataTreeViewRotation:
             return_value=None,
         ):
             # Call the method (should not crash with UnboundLocalError)
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify signal was emitted with empty string (no previous value)
         tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "")
@@ -412,7 +412,7 @@ class TestMetadataTreeViewRotation:
             return_value="3",
         ):
             # Call the method
-            tree_view.set_rotation_to_zero("EXIF:Orientation")
+            tree_view._edit_behavior.set_rotation_to_zero("EXIF:Orientation")
 
         # Verify fallback was called
         tree_view._edit_behavior._fallback_set_rotation_to_zero.assert_called_once_with(

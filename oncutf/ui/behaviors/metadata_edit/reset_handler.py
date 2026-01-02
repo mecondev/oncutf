@@ -55,7 +55,7 @@ class ResetHandler:
             return
 
         # Get original value
-        original_value = self._widget._get_original_value_from_cache(key_path)
+        original_value = self._widget._cache_behavior.get_original_value_from_cache(key_path)
         if original_value is None:
             logger.warning("No original value found for %s", key_path)
             return
@@ -85,7 +85,7 @@ class ResetHandler:
                     self._widget.modified_items.remove(key_path)
 
                 # Update file icon status
-                self._widget._update_file_icon_status()
+                self._widget._cache_behavior.update_file_icon_status()
 
                 # Emit signal
                 if hasattr(self._widget, "value_reset"):
@@ -130,7 +130,7 @@ class ResetHandler:
             self._widget.modified_items.remove(key_path)
 
         # Update the file icon status
-        self._widget._update_file_icon_status()
+        self._widget._cache_behavior.update_file_icon_status()
 
         # Update the tree display
         self._update_tree_item_value(key_path, str(original_value))

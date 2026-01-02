@@ -97,7 +97,7 @@ class MetadataTreeSelectionHandler:
             # Handle single file selection
             if len(selection) == 1:
                 file_item = selection[0]
-                metadata = self._view._try_lazy_metadata_loading(file_item, "parent_selection")
+                metadata = self._view._cache_behavior.try_lazy_metadata_loading(file_item, "parent_selection")
                 if metadata:
                     self._view.display_metadata(metadata, "parent_selection")
                     logger.debug(

@@ -218,23 +218,23 @@ class EditMetadataFieldCommand(MetadataCommand):
                     "[EditMetadataFieldCommand] No staging manager available, using fallback"
                 )
                 # Fallback to old cache method
-                self.metadata_tree_view._update_metadata_in_cache(field_path, str(value))
+                self.metadata_tree_view._cache_behavior.update_metadata_in_cache(field_path, str(value))
 
             # Update tree view display using display_path (for grouped paths)
             # CRITICAL: Set current file path before updating tree, otherwise refresh will fail
-            if hasattr(self.metadata_tree_view, "set_current_file_path"):
-                self.metadata_tree_view.set_current_file_path(self.file_path)
+            if hasattr(self.metadata_tree_view, "_scroll_behavior"):
+                self.metadata_tree_view._scroll_behavior.set_current_file_path(self.file_path)
 
             self.metadata_tree_view._update_tree_item_value(self.display_path, str(value))
 
             # Smart mark: checks if value differs from original (use display_path for tree)
-            if hasattr(self.metadata_tree_view, "smart_mark_modified"):
-                self.metadata_tree_view.smart_mark_modified(self.display_path, value)
+            if hasattr(self.metadata_tree_view, "_edit_behavior"):
+                self.metadata_tree_view._edit_behavior.smart_mark_modified(self.display_path, value)
             elif hasattr(self.metadata_tree_view, "mark_as_modified"):
-                self.metadata_tree_view.mark_as_modified(self.display_path)  # Fallback
+                self.metadata_tree_view._edit_behavior.mark_as_modified(self.display_path)  # Fallback
 
             # Update file icon status
-            self.metadata_tree_view._update_file_icon_status()
+            self.metadata_tree_view._cache_behavior.update_file_icon_status()
 
             return True
 
@@ -359,10 +359,10 @@ class ResetMetadataFieldCommand(MetadataCommand):
             if value == self.original_value:
                 self.metadata_tree_view.modified_items.discard(field_path)
             else:
-                self.metadata_tree_view.mark_as_modified(field_path)
+                self.metadata_tree_view._edit_behavior.mark_as_modified(field_path)
 
             # Update file icon status
-            self.metadata_tree_view._update_file_icon_status()
+            self.metadata_tree_view._cache_behavior.update_file_icon_status()
 
             return True
 
