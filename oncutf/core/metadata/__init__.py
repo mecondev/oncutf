@@ -2,7 +2,7 @@
 
 Author: Michael Economou
 Date: 2025-12-21
-Updated: 2025-12-28
+Updated: 2026-01-02
 
 This package contains all metadata-related functionality:
 - MetadataCacheService: Cache operations for metadata and hashes
@@ -11,6 +11,7 @@ This package contains all metadata-related functionality:
 - MetadataShortcutHandler: Keyboard shortcut handling for metadata operations
 - MetadataProgressHandler: Progress dialog management for metadata/hash operations
 - MetadataLoader: Orchestration of metadata loading operations (single/batch/streaming)
+- HashLoadingService: Hash loading operations with progress and cancellation support
 - MetadataCommandManager: Undo/redo command management for metadata operations
 - MetadataOperationsManager: Export, field editing, compatibility checks
 - MetadataStagingManager: Staged changes management (pending modifications)
@@ -32,6 +33,7 @@ from oncutf.core.metadata.commands import (
     SaveMetadataCommand,
 )
 from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
+from oncutf.core.metadata.hash_loading_service import HashLoadingService
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
 from oncutf.core.metadata.metadata_loader import MetadataLoader
 from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
@@ -52,6 +54,7 @@ __all__ = [
     # Cache and handlers
     "MetadataCacheService",
     "CompanionMetadataHandler",
+    "HashLoadingService",
     "MetadataWriter",
     "MetadataShortcutHandler",
     "MetadataProgressHandler",

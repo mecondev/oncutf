@@ -41,8 +41,7 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 | File | Lines | Category | Split Strategy | Status |
 |------|-------|----------|----------------|--------|
 | `core/file/load_manager.py` | 872 | Core | Delegate to controller | [TODO] Planned |
-| ~~`core/ui_managers/column_manager.py`~~ | ~~853~~ | ~~Legacy~~ | ~~Thin adapter only~~ | [DONE] Refactored to 329 lines (61% reduction) |
-| `core/metadata/unified_manager.py` | 838 | Core | Extract cache logic | [TODO] Planned |
+| ~~`core/metadata/unified_manager.py`~~ | ~~838~~ | ~~Core~~ | ~~Extract cache logic~~ | [DONE] 838 → 706 lines (16% reduction) |
 | `core/metadata/operations_manager.py` | 779 | Core | Merge with controller | [TODO] Planned |
 | `core/ui_managers/status_manager.py` | 708 | Legacy | Review for splitting | [TODO] Planned |
 | `core/events/context_menu/base.py` | 639 | Core | Extract more handlers | [TODO] Planned |
@@ -199,7 +198,55 @@ core/rename/
 
 ---
 
-### 7. `metadata_edit_behavior.py` (1120 lines) -> Split by Operation [DONE]
+### 7. `unified_manager.py` (838 lines) -> Extract Hash Loading Logic [DONE]
+
+**Completed:** 2026-01-02
+
+**Problem:** UnifiedMetadataManager already delegates to 6 services but still contains ~140 lines of hash loading logic embedded in the facade.
+
+**Solution:** Extract hash loading operations to dedicated HashLoadingService.
+
+**Changes:**
+1. Created `hash_loading_service.py` (254 lines):
+   - `load_hashes_for_files()` - orchestration with cache filtering
+   - `_show_hash_progress_dialog()` - progress UI management
+   - `_start_hash_loading()` - ParallelHashWorker setup
+   - `_on_hash_progress()` - progress updates
+   - `_on_file_hash_calculated()` - individual file completion + UI refresh
+   - `_on_hash_finished()` - completion handler + callback invocation
+   - `cancel_loading()` - cancellation support
+   - `_cleanup_hash_worker()` - resource cleanup
+   - `cleanup()` - full cleanup
+
+2. Updated `unified_manager.py` (838 → 706 lines, -132 lines, 16% reduction):
+   - Removed hash loading methods
+   - Removed `_hash_worker`, `_hash_progress_dialog` attributes
+   - Removed `_cleanup_hash_worker_and_thread()` method
+   - Delegated to HashLoadingService via `self._hash_service`
+   - Simplified `load_hashes_for_files()` to 5-line delegation with callback
+   - Updated `_cancel_current_loading()` to delegate cancellation
+   - Updated `cleanup()` to call service cleanup
+
+3. Updated `metadata/__init__.py`:
+   - Exported HashLoadingService for external use
+   - Updated package docstring
+
+**Architecture:** Now 7 specialized services (was 6):
+- MetadataCacheService (cache operations)
+- CompanionMetadataHandler (companion files)
+- MetadataWriter (write operations)
+- MetadataShortcutHandler (keyboard shortcuts)
+- MetadataProgressHandler (progress dialogs)
+- MetadataLoader (metadata loading)
+- **HashLoadingService (hash loading)** ← NEW
+
+**Quality Gates:** ✅ 949 tests passed, ✅ ruff clean, ✅ mypy clean
+
+**Result:** UnifiedMetadataManager is now a pure facade with no embedded business logic.
+
+---
+
+### 8. `metadata_edit_behavior.py` (1120 lines) -> Split by Operation [DONE]
 
 **Completed:** Pre-existing split (discovered 2026-01-01)
 
