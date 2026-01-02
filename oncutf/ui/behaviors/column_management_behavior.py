@@ -21,6 +21,7 @@ Provides:
 from typing import Protocol
 
 from oncutf.core.pyqt_imports import QHeaderView, QTimer
+from oncutf.core.ui_managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -93,6 +94,7 @@ class ColumnManagementBehavior:
             widget: Widget implementing ColumnManageableWidget protocol
         """
         self._widget = widget
+        self._service = get_column_service()
 
         # Column state
         self._visible_columns: dict = {}
@@ -172,19 +174,8 @@ class ColumnManagementBehavior:
     def reset_column_widths_to_defaults(self) -> None:
         """Reset all column widths to their default values."""
         try:
-            # Clear saved widths
-            main_window = self._widget._get_main_window()
-            if main_window and hasattr(main_window, "window_config_manager"):
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category("window")
-                window_config.set("file_table_column_widths", {})
-                config_manager.mark_dirty()
-            else:
-                from oncutf.utils.shared.json_config_manager import load_config, save_config
-
-                config = load_config()
-                config["file_table_column_widths"] = {}
-                save_config(config)
+            # Delegate to service
+            self._service.reset_all_widths()
 
             # Reconfigure columns
             self.configure_columns()
@@ -216,9 +207,8 @@ class ColumnManagementBehavior:
             suspicious_count = 0
             total_count = 0
 
-            from oncutf.core.ui_managers import get_column_service
 
-            for column_key, column_config in get_column_service().get_all_columns().items():
+            for column_key, column_config in self._service.get_all_columns().items():
                 if getattr(column_config, "default_visible", False):
                     total_count += 1
                     default_width = getattr(column_config, "width", 100)
@@ -259,9 +249,8 @@ class ColumnManagementBehavior:
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 for status column
 
-                from oncutf.core.ui_managers import get_column_service
 
-                cfg = get_column_service().get_column_config(column_key)
+                cfg = self._service.get_column_config(column_key)
 
                 # Filename column: set to stretch
                 if column_key == "filename":
@@ -431,9 +420,8 @@ class ColumnManagementBehavior:
             return
 
         # Enforce minimum width
-        from oncutf.core.ui_managers import get_column_service
 
-        service = get_column_service()
+        service = self._service
         cfg = service.get_column_config(column_key)
         min_width = cfg.min_width if cfg else 30
 
@@ -483,9 +471,8 @@ class ColumnManagementBehavior:
             if hasattr(self._widget.model(), "get_visible_columns"):
                 visible_columns = self._widget.model().get_visible_columns()
             else:
-                from oncutf.core.ui_managers import get_column_service
 
-                visible_columns = get_column_service().get_visible_columns()
+                visible_columns = self._service.get_visible_columns()
 
             # Configure each visible column
             for column_index, column_key in enumerate(visible_columns):
@@ -523,9 +510,8 @@ class ColumnManagementBehavior:
 
     def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on content type."""
-        from oncutf.core.ui_managers import get_column_service
 
-        cfg = get_column_service().get_column_config(column_key)
+        cfg = self._service.get_column_config(column_key)
         if not cfg:
             return current_width
 
@@ -541,32 +527,15 @@ class ColumnManagementBehavior:
 
     def _analyze_column_content_type(self, column_key: str) -> str:
         """Analyze column content type for width recommendations."""
-        # Simple heuristic based on column key
-        if "date" in column_key.lower() or "time" in column_key.lower():
-            return "datetime"
-        elif column_key in ("filesize", "size"):
-            return "filesize"
-        elif column_key in ("width", "height", "duration"):
-            return "numeric"
-        else:
-            return "text"
+        return self._service.analyze_column_content_type(column_key)
 
     def _get_recommended_width_for_content_type(
         self, content_type: str, current_width: int, min_width: int
     ) -> int:
         """Get recommended width based on content type."""
-        # Datetime columns need more space
-        if content_type == "datetime":
-            return max(current_width, 180)
-        # Filesize needs moderate space
-        elif content_type == "filesize":
-            return max(current_width, 100)
-        # Numeric needs less space
-        elif content_type == "numeric":
-            return max(current_width, 80)
-        # Text columns use current width
-        else:
-            return max(current_width, min_width)
+        return self._service.get_recommended_width_for_content_type(
+            content_type, current_width, min_width
+        )
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on table empty state."""
@@ -587,9 +556,8 @@ class ColumnManagementBehavior:
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from config with fallback to defaults."""
         try:
-            from oncutf.core.ui_managers import get_column_service
 
-            service = get_column_service()
+            service = self._service
             column_cfg = service.get_column_config(column_key)
             default_width = column_cfg.width if column_cfg else 100
 
@@ -722,8 +690,7 @@ class ColumnManagementBehavior:
                 save_config(config)
 
             # Invalidate column service cache so it picks up the new settings
-            from oncutf.core.ui_managers import get_column_service
-            service = get_column_service()
+            service = self._service
             service.invalidate_cache()
 
             visible_columns = self.get_visible_columns_list()
@@ -815,9 +782,8 @@ class ColumnManagementBehavior:
                         saved_visibility,
                     )
                     # Ensure we have all columns from config
-                    from oncutf.core.ui_managers import get_column_service
 
-                    service = get_column_service()
+                    service = self._service
                     complete_visibility = {}
                     for key, cfg in service.get_all_columns().items():
                         complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
@@ -830,9 +796,8 @@ class ColumnManagementBehavior:
             saved_visibility = config.get("file_table_columns", {})
 
             if saved_visibility:
-                from oncutf.core.ui_managers import get_column_service
 
-                service = get_column_service()
+                service = self._service
                 complete_visibility = {}
                 for key, cfg in service.get_all_columns().items():
                     complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
@@ -842,9 +807,8 @@ class ColumnManagementBehavior:
             logger.warning("[ColumnVisibility] Error loading config: %s", e)
 
         # Return default configuration
-        from oncutf.core.ui_managers import get_column_service
 
-        service = get_column_service()
+        service = self._service
         return {key: cfg.default_visible for key, cfg in service.get_all_columns().items()}
 
     def sync_view_model_columns(self) -> None:
