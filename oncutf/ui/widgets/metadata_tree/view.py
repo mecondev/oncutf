@@ -472,6 +472,58 @@ class MetadataTreeView(QTreeView):
         """Force Qt style system to update. Delegates to view config handler."""
         self._view_config._force_style_update()
 
+    # =========================================================================
+    # Handler Properties - Direct Access to Internal Handlers
+    # =========================================================================
+    # These properties provide clean access to internal handlers for advanced use.
+    # Prefer using public methods, but these are available for cases where
+    # direct handler access is needed.
+
+    @property
+    def scroll(self) -> MetadataScrollBehavior:
+        """Access scroll position behavior handler."""
+        return self._scroll_behavior
+
+    @property
+    def cache(self) -> MetadataCacheBehavior:
+        """Access cache behavior handler."""
+        return self._cache_behavior
+
+    @property
+    def edit_handler(self) -> MetadataEditBehavior:
+        """Access edit behavior handler."""
+        return self._edit_behavior
+
+    @property
+    def context_menu(self) -> MetadataContextMenuBehavior:
+        """Access context menu behavior handler."""
+        return self._context_menu_behavior
+
+    @property
+    def render(self) -> TreeRenderHandler:
+        """Access tree render handler."""
+        return self._render_handler
+
+    @property
+    def ui_state(self) -> TreeUiStateHandler:
+        """Access UI state handler."""
+        return self._ui_state_handler
+
+    @property
+    def search(self) -> MetadataTreeSearchHandler:
+        """Access search handler."""
+        return self._search_handler
+
+    @property
+    def selection(self) -> MetadataTreeSelectionHandler:
+        """Access selection handler."""
+        return self._selection_handler
+
+    @property
+    def modifications(self) -> MetadataTreeModificationsHandler:
+        """Access modifications handler."""
+        return self._modifications_handler
+
     # =====================================
     # Scroll Position Memory (delegated to MetadataScrollBehavior)
     # =====================================

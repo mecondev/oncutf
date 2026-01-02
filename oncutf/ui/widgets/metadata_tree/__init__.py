@@ -45,6 +45,9 @@ from oncutf.ui.widgets.metadata_tree.model import (
 # Modifications handler
 from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
 
+# Render handler for tree model building
+from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
+
 # Search handler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 
@@ -56,9 +59,6 @@ from oncutf.ui.widgets.metadata_tree.service import (
     MetadataTreeService,
     create_metadata_tree_service,
 )
-
-# Render handler for tree model building
-from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
 
 # UI state handler for display orchestration
 from oncutf.ui.widgets.metadata_tree.ui_state_handler import TreeUiStateHandler
