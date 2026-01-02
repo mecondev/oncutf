@@ -236,13 +236,13 @@ class MetadataContextMenuBehavior:
             self._widget._current_menu.close()
             self._widget._current_menu = None
 
-        key_path = self._widget.get_key_path(index)
+        key_path = self._widget._edit_behavior.get_key_path(index)
         value = index.sibling(index.row(), 1).data()
         selected_files = self._widget._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
 
         # Check if this field can be edited (standard metadata fields)
-        is_editable_field = self._widget._is_editable_metadata_field(key_path)
+        is_editable_field = self._widget._edit_behavior._is_editable_metadata_field(key_path)
 
         # Debug logging
         from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -286,7 +286,7 @@ class MetadataContextMenuBehavior:
                     and hasattr(file_item, "metadata")
                     and file_item.metadata
                 ):
-                    current_field_value = self._widget._get_value_from_metadata_dict(
+                    current_field_value = self._widget._cache_behavior._get_value_from_metadata_dict(
                         file_item.metadata, key_path
                     )
 
@@ -307,7 +307,7 @@ class MetadataContextMenuBehavior:
         # Edit action - enabled for editable metadata fields with single selection
         edit_action = QAction("Edit Value", menu)
         edit_action.setIcon(self._get_menu_icon("edit"))
-        edit_action.triggered.connect(lambda: self._widget.edit_value(key_path, value))
+        edit_action.triggered.connect(lambda: self._widget._edit_behavior.edit_value(key_path, value))
         edit_action.setEnabled(not has_multiple_selection and is_editable_field)
 
         # Add tooltip to explain why it's disabled
@@ -323,7 +323,7 @@ class MetadataContextMenuBehavior:
         # Reset action - enabled for editable fields with modifications
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        reset_action.triggered.connect(lambda: self._widget.reset_value(key_path))
+        reset_action.triggered.connect(lambda: self._widget._edit_behavior.reset_value(key_path))
         reset_action.setEnabled(
             not has_multiple_selection and is_editable_field and has_modifications
         )
@@ -335,7 +335,7 @@ class MetadataContextMenuBehavior:
             set_zero_action = QAction("Set Rotation to 0°", menu)
             set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
             set_zero_action.triggered.connect(
-                lambda: self._widget.set_rotation_to_zero(key_path)
+                lambda: self._widget._edit_behavior.set_rotation_to_zero(key_path)
             )
 
             # Enable only if: single selection + rotation field + current value is not "0"
@@ -424,7 +424,7 @@ class MetadataContextMenuBehavior:
         # Show History action - opens metadata history dialog
         show_history_action = QAction("Show History\tCtrl+Y", history_menu)
         show_history_action.setIcon(self._get_menu_icon("list"))
-        show_history_action.triggered.connect(self._widget._show_history_dialog)
+        show_history_action.triggered.connect(self._widget._edit_behavior._show_history_dialog)
         history_menu.addAction(show_history_action)
 
         menu.addMenu(history_menu)
@@ -434,7 +434,7 @@ class MetadataContextMenuBehavior:
         # Copy action - always available if there's a value
         copy_action = QAction("Copy", menu)
         copy_action.setIcon(self._get_menu_icon("copy"))
-        copy_action.triggered.connect(lambda: self._widget.copy_value(value))
+        copy_action.triggered.connect(lambda: self._widget._edit_behavior.copy_value(value))
         copy_action.setEnabled(bool(value))
         menu.addAction(copy_action)
 

@@ -140,7 +140,7 @@ class TreeRenderHandler:
             self.view._update_header_visibility()
 
             # Trigger scroll position restore AFTER expandAll
-            self.view.restore_scroll_after_expand()
+            self.view._scroll_behavior.restore_scroll_after_expand()
 
         except Exception as e:
             logger.exception("[TreeRenderHandler] Unexpected error while rendering: %s", e)
@@ -276,7 +276,7 @@ class TreeRenderHandler:
         """Set current file from metadata if available."""
         file_path = self.get_file_path_from_metadata(metadata)
         if file_path:
-            self.view.set_current_file_path(file_path)
+            self.view._scroll_behavior.set_current_file_path(file_path)
             logger.debug(
                 "[TreeRenderHandler] Set current file from metadata: %s",
                 file_path,

@@ -207,7 +207,7 @@ class MetadataTreeView(QTreeView):
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._show_context_menu_delegated)
+        self.customContextMenuRequested.connect(self.show_context_menu)
         self._current_menu = None
 
         # Track if we're in placeholder mode
@@ -553,22 +553,6 @@ class MetadataTreeView(QTreeView):
         """Trigger scroll position restore after expandAll() has completed."""
         self._scroll_behavior.restore_scroll_after_expand()
 
-    def _path_in_dict(self, path: str, path_dict: dict) -> bool:
-        """Check if path exists in dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._path_in_dict(path, path_dict)
-
-    def _get_from_path_dict(self, path: str, path_dict: dict):
-        """Get value from path dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._get_from_path_dict(path, path_dict)
-
-    def _set_in_path_dict(self, path: str, value, path_dict: dict) -> None:
-        """Set value in path dictionary (delegated to scroll behavior)."""
-        self._scroll_behavior._set_in_path_dict(path, value, path_dict)
-
-    def _remove_from_path_dict(self, path: str, path_dict: dict) -> bool:
-        """Remove path from dictionary (delegated to scroll behavior)."""
-        return self._scroll_behavior._remove_from_path_dict(path, path_dict)
-
     # =====================================
     # Context Menu & Actions
     # =====================================
@@ -586,102 +570,8 @@ class MetadataTreeView(QTreeView):
         return self._selection_handler.get_current_selection()
 
     # =====================================
-    # Cache Interaction Methods (delegate to behavior)
-    # =====================================
-
-    def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
-        """Update the metadata value in the cache to persist changes.
-        Delegates to cache behavior.
-        """
-        self._cache_behavior.update_metadata_in_cache(key_path, new_value)
-
-    def _update_file_icon_status(self) -> None:
-        """Update the file icon in the file table to reflect modified status.
-        Delegates to cache behavior.
-        """
-        self._cache_behavior.update_file_icon_status()
-
-    def _try_lazy_metadata_loading(
-        self, file_item: Any, context: str = ""
-    ) -> dict[str, Any] | None:
-        """Try to load metadata using simple fallback loading.
-        Delegates to cache behavior.
-
-        Args:
-            file_item: FileItem to load metadata for
-            context: Context string for logging
-
-        Returns:
-            dict | None: Metadata if available, None if not cached
-
-        """
-        return self._cache_behavior.try_lazy_metadata_loading(file_item, context)
-
-    def _get_value_from_metadata_dict(
-        self, metadata: dict[str, Any], key_path: str
-    ) -> Any | None:
-        """Extract value from metadata dictionary using key path.
-        Delegates to cache behavior.
-
-        Args:
-            metadata: Metadata dictionary
-            key_path: Key path
-
-        Returns:
-            Any | None: Value if found
-
-        """
-        return self._cache_behavior._get_value_from_metadata_dict(metadata, key_path)
-
-    def _get_original_value_from_cache(self, key_path: str) -> Any | None:
-        """Get original value from cache.
-        Delegates to cache behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            Any | None: Original value if found
-
-        """
-        return self._cache_behavior.get_original_value_from_cache(key_path)
-
-    def _get_original_metadata_value(self, key_path: str) -> Any | None:
-        """Get ORIGINAL metadata value (not staged).
-        Delegates to cache behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            Any | None: Original value if found
-
-        """
-        return self._cache_behavior.get_original_metadata_value(key_path)
-
-    def _get_metadata_cache(self) -> dict[str, Any] | None:
-        """Get metadata cache dictionary.
-        Delegates to cache behavior.
-
-        Returns:
-            dict | None: Metadata cache if available
-
-        """
-        return self._cache_behavior.get_metadata_cache()
-
-    # =====================================
     # Context Menu Methods (delegate to behavior)
     # =====================================
-
-    def _show_context_menu_delegated(self, position: QPoint) -> None:
-        """Show context menu at position.
-        Delegates to context menu behavior.
-
-        Args:
-            position: Position where the context menu should appear
-
-        """
-        self._context_menu_behavior.show_context_menu(position)
 
     # Keep public alias for backward compatibility
     def show_context_menu(self, position: QPoint) -> None:
@@ -695,142 +585,8 @@ class MetadataTreeView(QTreeView):
         self._context_menu_behavior.show_context_menu(position)
 
     # =====================================
-    # Edit Methods (delegate to behavior)
+    # Tree Item Value Update
     # =====================================
-
-    def edit_value(self, key_path: str, current_value: Any) -> None:
-        """Edit metadata value.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-            current_value: Current value
-
-        """
-        self._edit_behavior.edit_value(key_path, current_value)
-
-    def reset_value(self, key_path: str) -> None:
-        """Reset metadata value to original.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.reset_value(key_path)
-
-    def set_rotation_to_zero(self, key_path: str) -> None:
-        """Set rotation to 0 degrees.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.set_rotation_to_zero(key_path)
-
-    def copy_value(self, value: Any) -> None:
-        """Copy value to clipboard.
-        Delegates to edit behavior.
-
-        Args:
-            value: Value to copy
-
-        """
-        self._edit_behavior.copy_value(value)
-
-    def get_key_path(self, index: QModelIndex) -> str:
-        """Get metadata key path from model index.
-        Delegates to edit behavior.
-
-        Args:
-            index: Model index
-
-        Returns:
-            str: Key path
-
-        """
-        return self._edit_behavior.get_key_path(index)
-
-    def mark_as_modified(self, key_path: str) -> None:
-        """Mark field as modified.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        """
-        self._edit_behavior.mark_as_modified(key_path)
-
-    def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
-        """Mark field as modified only if different from original.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-            new_value: New value
-
-        """
-        self._edit_behavior.smart_mark_modified(key_path, new_value)
-
-    def _is_editable_metadata_field(self, key_path: str) -> bool:
-        """Check if field is editable.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            bool: True if editable
-
-        """
-        return self._edit_behavior._is_editable_metadata_field(key_path)
-
-    def _normalize_metadata_field_name(self, key_path: str) -> str:
-        """Normalize metadata field name.
-        Delegates to edit behavior.
-
-        Args:
-            key_path: Metadata key path
-
-        Returns:
-            str: Normalized key path
-
-        """
-        return self._edit_behavior._normalize_metadata_field_name(key_path)
-
-    def _undo_metadata_operation(self) -> None:
-        """Undo last metadata operation.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._undo_metadata_operation()
-
-    def _redo_metadata_operation(self) -> None:
-        """Redo last undone metadata operation.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._redo_metadata_operation()
-
-    def _show_history_dialog(self) -> None:
-        """Show metadata history dialog.
-        Delegates to edit behavior.
-        """
-        self._edit_behavior._show_history_dialog()
-
-    def _fallback_edit_value(
-        self, key_path: str, new_value: str, old_value: str, files_to_modify: list
-    ) -> None:
-        """Fallback method for editing metadata without command system.
-        Delegates to edit behavior (used by tests).
-
-        Args:
-            key_path: Metadata key path
-            new_value: New value to set
-            old_value: Old value
-            files_to_modify: List of file items to modify
-
-        """
-        self._edit_behavior._fallback_edit_value(key_path, new_value, old_value, files_to_modify)
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
         """Update tree by refreshing the entire view with updated metadata.

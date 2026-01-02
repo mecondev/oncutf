@@ -264,7 +264,7 @@ class MetadataEditBehavior:
         self._widget.modified_items.add(key_path)
 
         # Schedule UI update
-        schedule_ui_update(self._widget._update_file_icon_status, delay=0)
+        schedule_ui_update(self._widget._cache_behavior.update_file_icon_status, delay=0)
 
         # Update information label if available
         if (
@@ -285,7 +285,7 @@ class MetadataEditBehavior:
 
         """
         # Get original value from ORIGINAL metadata cache, not staging
-        original_value = self._widget._get_original_metadata_value(key_path)
+        original_value = self._widget._cache_behavior.get_original_metadata_value(key_path)
 
         # Convert values to strings for comparison
         new_str = str(new_value) if new_value is not None else ""

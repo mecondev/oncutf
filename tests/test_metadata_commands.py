@@ -40,10 +40,21 @@ class TestEditMetadataFieldCommand:
 
         # Mock metadata tree view
         self.mock_tree_view = Mock()
-        self.mock_tree_view._update_metadata_in_cache = Mock()
+        # Mock cache behavior
+        self.mock_tree_view._cache_behavior = Mock()
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache = Mock()
+        self.mock_tree_view._cache_behavior.update_file_icon_status = Mock()
+        # Mock edit behavior
+        self.mock_tree_view._edit_behavior = Mock()
+        self.mock_tree_view._edit_behavior.smart_mark_modified = Mock()
+        self.mock_tree_view._edit_behavior.mark_as_modified = Mock()
+        # Mock scroll behavior
+        self.mock_tree_view._scroll_behavior = Mock()
+        self.mock_tree_view._scroll_behavior.set_current_file_path = Mock()
+        # Legacy compatibility
         self.mock_tree_view._update_tree_item_value = Mock()
-        self.mock_tree_view.mark_as_modified = Mock()
-        self.mock_tree_view._update_file_icon_status = Mock()
+        self.mock_tree_view.smart_mark_modified = self.mock_tree_view._edit_behavior.smart_mark_modified
+        self.mock_tree_view.mark_as_modified = self.mock_tree_view._edit_behavior.mark_as_modified
 
         self.command = EditMetadataFieldCommand(
             file_path=self.test_file,
@@ -74,16 +85,16 @@ class TestEditMetadataFieldCommand:
         assert self.command.undone is False
 
         # Verify tree view methods were called
-        self.mock_tree_view._update_metadata_in_cache.assert_called_once_with(
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_called_once_with(
             self.field_path, self.new_value
         )
         self.mock_tree_view._update_tree_item_value.assert_called_once_with(
             self.field_path, self.new_value
         )
-        self.mock_tree_view.smart_mark_modified.assert_called_once_with(
+        self.mock_tree_view._edit_behavior.smart_mark_modified.assert_called_once_with(
             self.field_path, self.new_value
         )
-        self.mock_tree_view._update_file_icon_status.assert_called_once()
+        self.mock_tree_view._cache_behavior.update_file_icon_status.assert_called_once()
 
     def test_execute_already_executed(self):
         """Test executing already executed command."""
@@ -98,7 +109,7 @@ class TestEditMetadataFieldCommand:
 
         # Should return True but not call methods again
         assert result is True
-        self.mock_tree_view._update_metadata_in_cache.assert_not_called()
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_not_called()
 
     def test_undo_command(self):
         """Test command undo."""
@@ -116,7 +127,7 @@ class TestEditMetadataFieldCommand:
         assert self.command.undone is True
 
         # Verify tree view methods were called with old value
-        self.mock_tree_view._update_metadata_in_cache.assert_called_once_with(
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_called_once_with(
             self.field_path, self.old_value
         )
         self.mock_tree_view._update_tree_item_value.assert_called_once_with(
@@ -514,11 +525,22 @@ class TestIntegration:
         # Mock tree view with more realistic behavior
         self.mock_tree_view = Mock()
         self.mock_tree_view.modified_items = set()
-        self.mock_tree_view._update_metadata_in_cache = Mock()
+        # Mock cache behavior
+        self.mock_tree_view._cache_behavior = Mock()
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache = Mock()
+        self.mock_tree_view._cache_behavior.update_file_icon_status = Mock()
+        # Mock edit behavior
+        self.mock_tree_view._edit_behavior = Mock()
+        self.mock_tree_view._edit_behavior.smart_mark_modified = Mock()
+        self.mock_tree_view._edit_behavior.mark_as_modified = Mock()
+        # Mock scroll behavior
+        self.mock_tree_view._scroll_behavior = Mock()
+        self.mock_tree_view._scroll_behavior.set_current_file_path = Mock()
+        # Legacy
         self.mock_tree_view._update_tree_item_value = Mock()
-        self.mock_tree_view.mark_as_modified = Mock()
-        self.mock_tree_view._update_file_icon_status = Mock()
         self.mock_tree_view._reset_metadata_in_cache = Mock()
+        self.mock_tree_view.smart_mark_modified = self.mock_tree_view._edit_behavior.smart_mark_modified
+        self.mock_tree_view.mark_as_modified = self.mock_tree_view._edit_behavior.mark_as_modified
 
     def test_complete_edit_workflow(self):
         """Test complete edit workflow with undo/redo."""
@@ -537,8 +559,8 @@ class TestIntegration:
         assert self.manager.can_redo() is False
 
         # Verify execution calls
-        self.mock_tree_view._update_metadata_in_cache.assert_called_with("EXIF/Rotation", "90")
-        self.mock_tree_view.smart_mark_modified.assert_called_with("EXIF/Rotation", "90")
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_called_with("EXIF/Rotation", "90")
+        self.mock_tree_view._edit_behavior.smart_mark_modified.assert_called_with("EXIF/Rotation", "90")
 
         # Undo
         assert self.manager.undo() is True

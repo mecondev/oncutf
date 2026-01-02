@@ -281,7 +281,7 @@ class ShutdownLifecycleHandler:
                 and self.main_window.metadata_tree_view._current_file_path
             ):
                 if self.main_window.metadata_tree_view.modified_items:
-                    self.main_window.metadata_tree_view._set_in_path_dict(
+                    self.main_window.metadata_tree_view._scroll_behavior._set_in_path_dict(
                         self.main_window.metadata_tree_view._current_file_path,
                         self.main_window.metadata_tree_view.modified_items.copy(),
                         self.main_window.metadata_tree_view.modified_items_per_file,

@@ -265,18 +265,18 @@ class RotationHandlers:
                 if hasattr(self.parent_window, "metadata_tree_view"):
                     for file_item in files_to_process:
                         if file_item.metadata_status == "modified":
-                            if not self.parent_window.metadata_tree_view._path_in_dict(
+                            if not self.parent_window.metadata_tree_view._scroll_behavior._path_in_dict(
                                 file_item.full_path,
                                 self.parent_window.metadata_tree_view.modified_items_per_file,
                             ):
-                                self.parent_window.metadata_tree_view._set_in_path_dict(
+                                self.parent_window.metadata_tree_view._scroll_behavior._set_in_path_dict(
                                     file_item.full_path,
                                     set(),
                                     self.parent_window.metadata_tree_view.modified_items_per_file,
                                 )
 
                             existing_modifications = (
-                                self.parent_window.metadata_tree_view._get_from_path_dict(
+                                self.parent_window.metadata_tree_view._scroll_behavior._get_from_path_dict(
                                     file_item.full_path,
                                     self.parent_window.metadata_tree_view.modified_items_per_file,
                                 )
@@ -284,7 +284,7 @@ class RotationHandlers:
                             if existing_modifications is None:
                                 existing_modifications = set()
                             existing_modifications.add("Rotation")
-                            self.parent_window.metadata_tree_view._set_in_path_dict(
+                            self.parent_window.metadata_tree_view._scroll_behavior._set_in_path_dict(
                                 file_item.full_path,
                                 existing_modifications,
                                 self.parent_window.metadata_tree_view.modified_items_per_file,

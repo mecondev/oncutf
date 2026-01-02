@@ -222,14 +222,14 @@ class TreeUiStateHandler:
             return
 
         # Try lazy loading first for better performance
-        metadata = self.view._try_lazy_metadata_loading(file_item, context)
+        metadata = self.view._cache_behavior.try_lazy_metadata_loading(file_item, context)
 
         if isinstance(metadata, dict) and metadata:
             display_metadata = dict(metadata)
             display_metadata["FileName"] = file_item.filename
 
             # Set current file path for scroll position memory
-            self.view.set_current_file_path(file_item.full_path)
+            self.view._scroll_behavior.set_current_file_path(file_item.full_path)
 
             # CRITICAL: Clear any stale modifications for this file
             normalized_path = normalize_path(file_item.full_path)
@@ -262,7 +262,7 @@ class TreeUiStateHandler:
 
         This is different from clear_tree() which preserves scroll memory.
         """
-        self.view.clear_scroll_memory()
+        self.view._scroll_behavior.clear_scroll_memory()
 
         # Clear all staged changes
         from oncutf.core.metadata import get_metadata_staging_manager

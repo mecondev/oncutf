@@ -127,7 +127,7 @@ class RotationHandler:
             file_item.metadata_status = "modified"
 
         # Update the file icon status immediately
-        self._widget._update_file_icon_status()
+        self._widget._cache_behavior.update_file_icon_status()
 
         # Update the tree display via behavior
         self._behavior._update_tree_item_value(key_path, new_value)
