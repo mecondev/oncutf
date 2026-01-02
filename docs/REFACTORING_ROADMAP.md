@@ -359,7 +359,7 @@ all business logic is now properly delegated to the service, achieving the archi
 
 4. ~~**`database_manager.py`**~~ — [DONE] Already split to 6 modules
 5. ~~**`unified_rename_engine.py`**~~ — [DONE] Already split to 10 modules
-6. **`unified_manager.py`** — Extract cache logic
+6. ~~**`unified_manager.py`**~~ — [DONE] Extracted HashLoadingService (838 → 706 lines, 16% reduction)
 
 ### Phase 3: UI Layer (Q2 2026)
 
@@ -383,7 +383,7 @@ all business logic is now properly delegated to the service, achieving the archi
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
 | Files >900 lines | 11 | 2 | 0 |
-| Files >600 lines | 16 | 10 | 5 |
+| Files >600 lines | 16 | 9 | 5 |
 | Average LOC/file | ~200 | ~200 | ~200 |
 | Tests passing | 949 | 949 | 949+ |
 | Docstring coverage | 96.2% | 96.2% | 98%+ |
