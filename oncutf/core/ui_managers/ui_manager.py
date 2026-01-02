@@ -14,7 +14,7 @@ See oncutf/controllers/ui/ for the new architecture:
 - ShortcutController: Keyboard shortcuts
 """
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 from oncutf.controllers.ui import (
     LayoutController,
@@ -23,9 +23,6 @@ from oncutf.controllers.ui import (
     WindowSetupController,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -43,7 +40,7 @@ class UIManager:
     - ShortcutController: Keyboard shortcuts
     """
 
-    def __init__(self, parent_window: "MainWindow"):
+    def __init__(self, parent_window: Any):
         """Initialize UIManager with parent window reference.
 
         Args:

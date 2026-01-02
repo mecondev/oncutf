@@ -7,7 +7,7 @@ Handles UI layout setup: panels, splitters, and widget hierarchy.
 """
 
 import platform
-from typing import TYPE_CHECKING
+from typing import cast
 
 from PyQt5.QtCore import QDir, QStringListModel, Qt
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
@@ -36,12 +36,10 @@ from oncutf.config import (
     METADATA_TREE_USE_CUSTOM_DELEGATE,
     TOP_BOTTOM_SPLIT_RATIO,
 )
+from oncutf.controllers.ui.protocols import LayoutContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_menu_icon
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -59,7 +57,7 @@ class LayoutController:
     - Footer
     """
 
-    def __init__(self, parent_window: "MainWindow"):
+    def __init__(self, parent_window: LayoutContext):
         """Initialize controller with parent window reference.
 
         Args:
@@ -170,10 +168,10 @@ class LayoutController:
 
     def _setup_splitters(self) -> None:
         """Setup vertical and horizontal splitters."""
-        self.parent_window.vertical_splitter = QSplitter(Qt.Vertical)  # type: ignore
+        self.parent_window.vertical_splitter = QSplitter(Qt.Vertical)
         self.parent_window.main_layout.addWidget(self.parent_window.vertical_splitter)
 
-        self.parent_window.horizontal_splitter = QSplitter(Qt.Horizontal)  # type: ignore
+        self.parent_window.horizontal_splitter = QSplitter(Qt.Horizontal)
         self.parent_window.vertical_splitter.addWidget(self.parent_window.horizontal_splitter)
         self.parent_window.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
 
@@ -260,8 +258,9 @@ class LayoutController:
         self.parent_window.files_label = QLabel("Files")
         center_layout.addWidget(self.parent_window.files_label)
 
-        self.parent_window.file_table_view = FileTableView(parent=self.parent_window)
-        self.parent_window.file_table_view.parent_window = self.parent_window
+        parent_widget = cast("QWidget", self.parent_window)
+        self.parent_window.file_table_view = FileTableView(parent=parent_widget)
+        self.parent_window.file_table_view.parent_window = parent_widget  # type: ignore[attr-defined]
         self.parent_window.file_table_view.verticalHeader().setVisible(False)
         self.parent_window.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.parent_window.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -429,7 +428,7 @@ class LayoutController:
         self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)
 
         # Create horizontal splitter for lower section
-        self.parent_window.lower_section_splitter = QSplitter(Qt.Horizontal)  # type: ignore
+        self.parent_window.lower_section_splitter = QSplitter(Qt.Horizontal)
 
         # === Left side: Two vertical containers ===
         left_container = QWidget()
@@ -438,8 +437,9 @@ class LayoutController:
         left_layout.setSpacing(4)
 
         # Top container: Rename modules area
+        parent_widget = cast("QWidget", self.parent_window)
         self.parent_window.rename_modules_area = RenameModulesArea(
-            parent=left_container, parent_window=self.parent_window
+            parent=left_container, parent_window=parent_widget
         )
         left_layout.addWidget(self.parent_window.rename_modules_area, stretch=1)
 

@@ -6,8 +6,6 @@ Date: 2026-01-02
 Handles main window configuration: size, title, icon, and positioning.
 """
 
-from typing import TYPE_CHECKING
-
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication
 
@@ -17,11 +15,9 @@ from oncutf.config import (
     WINDOW_MIN_WIDTH,
     WINDOW_WIDTH,
 )
+from oncutf.controllers.ui.protocols import WindowSetupContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_app_icon
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -35,7 +31,7 @@ class WindowSetupController:
     - Adaptive sizing based on screen resolution
     """
 
-    def __init__(self, parent_window: "MainWindow"):
+    def __init__(self, parent_window: WindowSetupContext):
         """Initialize controller with parent window reference.
 
         Args:
@@ -78,7 +74,7 @@ class WindowSetupController:
             QSize with optimal width and height
         """
         # Get primary screen geometry
-        screen = QApplication.desktop().screenGeometry()  # type: ignore
+        screen = QApplication.desktop().screenGeometry()
         screen_width = screen.width()
         screen_height = screen.height()
         screen_aspect = screen_width / screen_height

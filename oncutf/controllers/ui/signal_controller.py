@@ -6,17 +6,13 @@ Date: 2026-01-02
 Handles signal connections between UI components.
 """
 
-from typing import TYPE_CHECKING
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QLineEdit, QMenu
 
+from oncutf.controllers.ui.protocols import SignalContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_selection_update, schedule_ui_update
 from oncutf.utils.ui.icons_loader import get_menu_icon
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -31,7 +27,7 @@ class SignalController:
     - Search field handlers
     """
 
-    def __init__(self, parent_window: "MainWindow"):
+    def __init__(self, parent_window: SignalContext):
         """Initialize controller with parent window reference.
 
         Args:

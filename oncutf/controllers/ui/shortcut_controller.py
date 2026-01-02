@@ -6,15 +6,13 @@ Date: 2026-01-02
 Handles keyboard shortcut registration and management.
 """
 
-from typing import TYPE_CHECKING
+from typing import cast
 
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QShortcut, QWidget
 
+from oncutf.controllers.ui.protocols import ShortcutContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
-
-if TYPE_CHECKING:
-    from oncutf.ui.main_window import MainWindow
 
 logger = get_cached_logger(__name__)
 
@@ -28,7 +26,7 @@ class ShortcutController:
     - Register dialog shortcuts
     """
 
-    def __init__(self, parent_window: "MainWindow"):
+    def __init__(self, parent_window: ShortcutContext):
         """Initialize controller with parent window reference.
 
         Args:
@@ -85,7 +83,7 @@ class ShortcutController:
         ]
 
         for key, handler in global_shortcuts:
-            shortcut = QShortcut(QKeySequence(key), self.parent_window)
+            shortcut = QShortcut(QKeySequence(key), cast("QWidget", self.parent_window))
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 
@@ -105,6 +103,6 @@ class ShortcutController:
         ]
 
         for key, handler in other_shortcuts:
-            shortcut = QShortcut(QKeySequence(key), self.parent_window)
+            shortcut = QShortcut(QKeySequence(key), cast("QWidget", self.parent_window))
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
