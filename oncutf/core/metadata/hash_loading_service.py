@@ -14,7 +14,8 @@ Handles hash loading operations including:
 Extracted from UnifiedMetadataManager to improve separation of concerns.
 """
 
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
 
@@ -51,8 +52,8 @@ class HashLoadingService:
         self.parent_window = parent_window
         self._cache_service = cache_service
         self._currently_loading: set[str] = set()
-        self._hash_worker: "ParallelHashWorker | None" = None
-        self._hash_progress_dialog: "ProgressDialog | None" = None
+        self._hash_worker: ParallelHashWorker | None = None
+        self._hash_progress_dialog: ProgressDialog | None = None
         self._on_finished_callback: Callable[[], None] | None = None
 
     def load_hashes_for_files(

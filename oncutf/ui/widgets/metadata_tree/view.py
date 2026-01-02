@@ -45,14 +45,13 @@ from oncutf.ui.behaviors.metadata_context_menu_behavior import MetadataContextMe
 from oncutf.ui.behaviors.metadata_edit_behavior import MetadataEditBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
-from oncutf.ui.widgets.metadata_tree.display_handler import (
-    DisplayHandler as MetadataTreeDisplayHandler,
-)
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.event_handler import MetadataTreeEventHandler
 from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
+from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
 from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
+from oncutf.ui.widgets.metadata_tree.ui_state_handler import TreeUiStateHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -186,8 +185,11 @@ class MetadataTreeView(QTreeView):
         # Cache handler
         self._cache_handler = MetadataTreeCacheHandler(self)
 
-        # Display handler for metadata rendering
-        self._display_handler = MetadataTreeDisplayHandler(self)
+        # Render handler for tree model building
+        self._render_handler = TreeRenderHandler(self)
+
+        # UI state handler for display orchestration
+        self._ui_state_handler = TreeUiStateHandler(self)
 
         # Event handler for Qt events
         self._event_handler = MetadataTreeEventHandler(self)
@@ -944,17 +946,17 @@ class MetadataTreeView(QTreeView):
         """Shows empty state using unified placeholder helper.
         No longer creates text model - uses only the placeholder helper.
         """
-        return self._display_handler.display_placeholder(_message)
+        return self._ui_state_handler.display_placeholder(_message)
 
     def clear_view(self) -> None:
         """Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
-        return self._display_handler.clear_tree()
+        return self._ui_state_handler.clear_tree()
 
     def display_metadata(self, metadata: dict[str, Any] | None, context: str = "") -> None:
         """Display metadata in the tree view."""
-        return self._display_handler.display_metadata(metadata, context)
+        return self._ui_state_handler.display_metadata(metadata, context)
 
     def _update_search_field_state(self, enabled: bool):
         """Update the metadata search field enabled state. Delegates to search handler."""
@@ -985,7 +987,7 @@ class MetadataTreeView(QTreeView):
         Emits rebuild_requested signal which is processed via QueuedConnection.
         This ensures all model operations happen in the main thread via Qt event queue.
         """
-        return self._display_handler.emit_rebuild_tree(metadata, context)
+        return self._render_handler.emit_rebuild_tree(metadata, context)
 
     def _render_metadata_view_impl(self, metadata: dict[str, Any], context: str = "") -> None:
         """Actually builds the metadata tree and displays it.
@@ -995,15 +997,15 @@ class MetadataTreeView(QTreeView):
         Includes fallback protection in case called with invalid metadata.
         Uses rebuild lock to prevent concurrent model swaps that cause segfaults.
         """
-        return self._display_handler.rebuild_tree_from_metadata(metadata, context)
+        return self._render_handler.rebuild_tree_from_metadata(metadata, context)
 
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
-        return self._display_handler.update_information_label(display_data)
+        return self._ui_state_handler.update_information_label(display_data)
 
     def _set_current_file_from_metadata(self, metadata: dict[str, Any]) -> None:
         """Set current file from metadata if available."""
-        return self._display_handler.set_current_file_from_metadata(metadata)
+        return self._ui_state_handler.set_current_file_from_metadata(metadata)
 
     # =====================================
     # Selection-based Metadata Management
@@ -1053,7 +1055,7 @@ class MetadataTreeView(QTreeView):
         """Clears both view and scroll memory when changing folders.
         This is different from clear_view() which preserves scroll memory.
         """
-        return self._display_handler.cleanup_on_folder_change()
+        return self._ui_state_handler.cleanup_on_folder_change()
 
     def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
         """Display metadata for a specific file item.
@@ -1064,7 +1066,7 @@ class MetadataTreeView(QTreeView):
             context: Context string for logging
 
         """
-        return self._display_handler.display_file_metadata(file_item, context)
+        return self._ui_state_handler.display_file_metadata(file_item, context)
 
     def handle_selection_change(self) -> None:
         """Handle selection changes from the parent file table.
@@ -1208,7 +1210,7 @@ class MetadataTreeView(QTreeView):
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on tree content."""
-        return self._display_handler.sync_placeholder_state()
+        return self._ui_state_handler.sync_placeholder_state()
 
     def _handle_metadata_field_click(self, field: str, value: str) -> None:
         """Handle click on metadata field that might be a file path."""

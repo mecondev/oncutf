@@ -57,6 +57,12 @@ from oncutf.ui.widgets.metadata_tree.service import (
     create_metadata_tree_service,
 )
 
+# Render handler for tree model building
+from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
+
+# UI state handler for display orchestration
+from oncutf.ui.widgets.metadata_tree.ui_state_handler import TreeUiStateHandler
+
 # View configuration handler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 
@@ -97,6 +103,8 @@ __all__ = [
     "MetadataTreeSelectionHandler",
     "MetadataTreeModificationsHandler",
     "MetadataTreeCacheHandler",
+    "TreeRenderHandler",
+    "TreeUiStateHandler",
     # Main widget
     "MetadataTreeView",
 ]
