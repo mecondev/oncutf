@@ -188,7 +188,12 @@ module = [
     "oncutf.ui.services.dialog_manager",
     "oncutf.core.event_handler_manager",
     "oncutf.core.file_load_manager",
-    "oncutf.core.modifier_handler"
+    "oncutf.core.modifier_handler",
+    # UI Controllers - heavy dynamic attribute access on MainWindow
+    "oncutf.controllers.ui.layout_controller",
+    "oncutf.controllers.ui.signal_controller",
+    "oncutf.controllers.ui.shortcut_controller",
+    "oncutf.controllers.ui.window_setup_controller"
 ]
 ignore_errors = true
 
