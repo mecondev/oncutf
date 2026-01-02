@@ -17,6 +17,7 @@ All public methods are preserved for backward compatibility.
 
 import contextlib
 import sqlite3
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -82,6 +83,9 @@ class DatabaseManager:
                     logger.info("[DEBUG] Database files deleted successfully")
                 except Exception as e:
                     logger.error("[DEBUG] Failed to delete database: %s", e)
+
+        # Thread safety lock for concurrent access from parallel workers
+        self._write_lock = threading.RLock()
 
         # Create connection first (stores need it)
         self._conn = sqlite3.connect(
@@ -171,16 +175,18 @@ class DatabaseManager:
     # ====================================================================
 
     def get_or_create_path_id(self, file_path: str) -> int:
-        """Get or create path ID for a file path."""
-        return self.path_store.get_or_create_path_id(file_path)
+        """Get or create path ID for a file path (thread-safe)."""
+        with self._write_lock:
+            return self.path_store.get_or_create_path_id(file_path)
 
     def get_path_id(self, file_path: str) -> int | None:
         """Get path ID for a file path."""
         return self.path_store.get_path_id(file_path)
 
     def update_file_path(self, old_path: str, new_path: str) -> bool:
-        """Update file path after rename."""
-        return self.path_store.update_file_path(old_path, new_path)
+        """Update file path after rename (thread-safe)."""
+        with self._write_lock:
+            return self.path_store.update_file_path(old_path, new_path)
 
     def normalize_path(self, file_path: str) -> str:
         """Normalize file path for database consistency."""
@@ -191,8 +197,9 @@ class DatabaseManager:
     # ====================================================================
 
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
-        """Store hash value for a file."""
-        return self.hash_store.store_hash(file_path, hash_value, algorithm)
+        """Store hash value for a file (thread-safe)."""
+        with self._write_lock:
+            return self.hash_store.store_hash(file_path, hash_value, algorithm)
 
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Get hash value for a file."""
@@ -219,17 +226,19 @@ class DatabaseManager:
         is_extended: bool = False,
         is_modified: bool = False,
     ) -> bool:
-        """Store metadata for a file."""
-        return self.metadata_store.store_metadata(
-            file_path, metadata, is_extended, is_modified
-        )
+        """Store metadata for a file (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.store_metadata(
+                file_path, metadata, is_extended, is_modified
+            )
 
     def batch_store_metadata(
         self,
         file_metadata_list: list[tuple[str, dict[str, Any], bool, bool]],
     ) -> int:
-        """Batch store metadata for multiple files."""
-        return self.metadata_store.batch_store_metadata(file_metadata_list)
+        """Batch store metadata for multiple files (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.batch_store_metadata(file_metadata_list)
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Get metadata for a file."""
@@ -250,10 +259,11 @@ class DatabaseManager:
         description: str | None = None,
         display_order: int = 0,
     ) -> int | None:
-        """Create or get metadata category."""
-        return self.metadata_store.create_metadata_category(
-            category_key, category_name, description, display_order
-        )
+        """Create or get metadata category (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.create_metadata_category(
+                category_key, category_name, description, display_order
+            )
 
     def get_metadata_categories(self) -> list[dict[str, Any]]:
         """Get all metadata categories."""
@@ -270,17 +280,18 @@ class DatabaseManager:
         display_format: str | None = None,
         sort_order: int = 0,
     ) -> int | None:
-        """Create or get metadata field."""
-        return self.metadata_store.create_metadata_field(
-            field_key,
-            field_name,
-            category_id,
-            data_type,
-            is_editable,
-            is_searchable,
-            display_format,
-            sort_order,
-        )
+        """Create or get metadata field (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.create_metadata_field(
+                field_key,
+                field_name,
+                category_id,
+                data_type,
+                is_editable,
+                is_searchable,
+                display_format,
+                sort_order,
+            )
 
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
@@ -293,16 +304,18 @@ class DatabaseManager:
     def store_structured_metadata(
         self, file_path: str, field_key: str, field_value: str
     ) -> bool:
-        """Store structured metadata value for a file field."""
-        return self.metadata_store.store_structured_metadata(file_path, field_key, field_value)
+        """Store structured metadata value for a file field (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.store_structured_metadata(file_path, field_key, field_value)
 
     def batch_store_structured_metadata(
         self,
         file_path: str,
         field_data: list[tuple[str, str]],
     ) -> int:
-        """Batch store structured metadata for a file."""
-        return self.metadata_store.batch_store_structured_metadata(file_path, field_data)
+        """Batch store structured metadata for a file (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.batch_store_structured_metadata(file_path, field_data)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
@@ -319,8 +332,9 @@ class DatabaseManager:
         )
 
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
-        """Set color tag for a file."""
-        return self.metadata_store.set_color_tag(file_path, color_hex)
+        """Set color tag for a file (thread-safe)."""
+        with self._write_lock:
+            return self.metadata_store.set_color_tag(file_path, color_hex)
 
     def get_color_tag(self, file_path: str) -> str:
         """Get color tag for a file."""

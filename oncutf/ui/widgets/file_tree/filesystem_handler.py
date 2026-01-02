@@ -283,13 +283,21 @@ class FilesystemHandler:
             delay=100,
         )
 
-    def _refresh_tree_on_drives_change(self, _drives: list[str]) -> None:
+    def _refresh_tree_on_drives_change(self, drives: list[str]) -> None:
         """Refresh tree when drives change.
 
         Args:
-            _drives: Current list of available drives (unused)
+            drives: Current list of available drives
 
         """
+        # Prevent infinite loop if this triggers another change event
+        if self._refresh_in_progress:
+            logger.debug(
+                "[FilesystemHandler] Ignoring drives change during refresh",
+                extra={"dev_only": True},
+            )
+            return
+
         logger.info("[FilesystemHandler] Drives changed, refreshing tree")
 
         # Save state before refresh
@@ -307,6 +315,9 @@ class FilesystemHandler:
         file_filter = old_model.filter() if hasattr(old_model, "filter") else None
 
         try:
+            # Set refresh flag to prevent recursive calls
+            self._refresh_in_progress = True
+
             # The only reliable way to refresh drives in Windows is to recreate the model
             from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
 
@@ -347,12 +358,18 @@ class FilesystemHandler:
             # Restore state after model finishes loading (async)
             from oncutf.utils.shared.timer_manager import schedule_ui_update
 
-            schedule_ui_update(
-                lambda: self._view.state_handler.restore_tree_state(
+            # Capture drives for closure
+            current_drives = list(drives)
+
+            def restore_and_expand() -> None:
+                self._view.state_handler.restore_tree_state(
                     expanded_paths, selected_path, scroll_position
-                ),
-                delay=100,
-            )
+                )
+                # On Linux, auto-expand /media/ to show mounted drives (like Nemo does)
+                if platform.system() == "Linux":
+                    self._auto_expand_media_paths(current_drives)
+
+            schedule_ui_update(restore_and_expand, delay=100)
 
         except Exception as e:
             logger.exception("[FilesystemHandler] Error recreating model: %s", e)
@@ -364,6 +381,63 @@ class FilesystemHandler:
                 ),
                 delay=100,
             )
+        finally:
+            self._refresh_in_progress = False
+
+    def _auto_expand_media_paths(self, drives: list[str]) -> None:
+        """Auto-expand /media/ and user directories to show mounted drives.
+
+        On Linux, mounted USB drives appear under /media/username/device.
+        This method expands those paths so users can see newly mounted drives,
+        similar to how Nemo file manager behaves.
+
+        Args:
+            drives: List of currently mounted drive paths
+
+        """
+        model = self._view.model()
+        if not model:
+            return
+
+        # Collect unique parent paths that need expanding
+        paths_to_expand: set[str] = set()
+
+        for drive_path in drives:
+            # Check if drive is under /media/ (typical Ubuntu/Debian pattern)
+            if drive_path.startswith("/media/"):
+                # Add /media
+                paths_to_expand.add("/media")
+
+                # Add /media/username (parent of the drive)
+                parts = drive_path.split("/")
+                if len(parts) >= 3:
+                    # /media/username
+                    user_path = "/".join(parts[:3])
+                    if os.path.isdir(user_path):
+                        paths_to_expand.add(user_path)
+
+            # Also check /mnt/ for direct mounts
+            elif drive_path.startswith("/mnt/"):
+                paths_to_expand.add("/mnt")
+
+        # Expand the paths
+        for path in sorted(paths_to_expand):
+            try:
+                index = model.index(path)
+                if index.isValid() and not self._view.isExpanded(index):
+                    self._view.expand(index)
+                    logger.debug(
+                        "[FilesystemHandler] Auto-expanded: %s",
+                        path,
+                        extra={"dev_only": True},
+                    )
+            except Exception as e:
+                logger.debug(
+                    "[FilesystemHandler] Could not expand %s: %s",
+                    path,
+                    e,
+                    extra={"dev_only": True},
+                )
 
     def update_monitored_folder(self, folder_path: str) -> None:
         """Update the monitored folder when selection changes.
