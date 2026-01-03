@@ -1,16 +1,19 @@
-"""Module: hash_operations_manager.py
+"""Hash Operations Management Service.
 
 Author: Michael Economou
-Date: 2025-06-15
+Date: 2025-06-15 (Refactored: 2026-01-04)
 
-Manages hash-related operations for file duplicate detection, comparison, and checksum calculations.
+Orchestrates hash-related operations for file duplicate detection, comparison, and checksum calculations.
+
+This module has been refactored into specialized components:
+- HashResultsPresenter: UI presentation layer
+- HashWorkerCoordinator: Worker thread and progress management
+- HashOperationsManager: High-level orchestration (this file)
 
 Features:
 - Duplicate file detection within selected or all files
 - External folder comparison for finding matching/different files
 - CRC32 checksum calculation with progress tracking
-- Hash worker management with cancellation support
-- Progress dialog coordination for long-running operations
 """
 
 from __future__ import annotations
@@ -21,6 +24,8 @@ if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
 from oncutf.config import STATUS_COLORS
+from oncutf.core.hash.hash_results_presenter import HashResultsPresenter
+from oncutf.core.hash.hash_worker_coordinator import HashWorkerCoordinator
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.file_status_helpers import has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -29,14 +34,11 @@ logger = get_cached_logger(__name__)
 
 
 class HashOperationsManager:
-    """Manages all hash-related operations (duplicates, comparison, checksums).
+    """Orchestrates hash-related operations using specialized components.
 
-    This manager handles:
-    - Finding duplicate files based on CRC32 hashes
-    - Comparing files with external folders
-    - Calculating and displaying checksums
-    - Managing hash worker threads and progress dialogs
-    - Coordinating cancellation of long-running operations
+    This manager delegates to:
+    - HashWorkerCoordinator: Worker thread and progress management
+    - HashResultsPresenter: UI presentation and dialogs
     """
 
     def __init__(self, parent_window: QWidget) -> None:
@@ -47,9 +49,11 @@ class HashOperationsManager:
 
         """
         self.parent_window: Any = parent_window
-        self.hash_worker: Any = None
-        self.hash_dialog: Any = None
-        self._operation_cancelled = False  # Track if operation was cancelled
+
+        # Initialize specialized components
+        self._worker_coordinator = HashWorkerCoordinator(parent_window)
+        self._results_presenter = HashResultsPresenter(parent_window)
+
         logger.debug("HashOperationsManager initialized", extra={"dev_only": True})
 
     # ===== Public Interface Methods =====
@@ -149,521 +153,16 @@ class HashOperationsManager:
         file_paths = [item.full_path for item in files_to_check]
 
         # Start hash operation using worker thread
-        self._start_hash_operation("duplicates", file_paths)
-
-    def _start_hash_operation(
-        self,
-        operation: str,
-        file_paths: list[str],
-        external_folder: str | None = None,
-    ) -> None:
-        """Start a hash operation using a worker thread with progress dialog.
-
-        Args:
-            operation: Type of operation ("duplicates", "compare", "checksums")
-            file_paths: List of file paths to process
-            external_folder: Folder path for comparison operation
-
-        """
-        from oncutf.config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        # Check if an operation is already running
-        if self.hash_worker and self.hash_worker.isRunning():
-            logger.warning("[HashManager] Hash operation already in progress")
-            CustomMessageDialog.information(
-                self.parent_window,
-                "Operation In Progress",
-                "A hash operation is already running. Please wait for it to complete.",
-            )
-            return
-
-        # Reset cancellation flag
-        self._operation_cancelled = False
-
-        # Create worker based on configuration
-        if USE_PARALLEL_HASH_WORKER:
-            from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
-
-            self.hash_worker = ParallelHashWorker(
-                parent=self.parent_window, max_workers=PARALLEL_HASH_MAX_WORKERS
-            )
-            logger.info("[HashOperationsManager] Using parallel hash worker")
-        else:
-            from oncutf.core.hash.hash_worker import HashWorker
-
-            self.hash_worker = HashWorker(parent=self.parent_window)
-            logger.info("[HashOperationsManager] Using serial hash worker")
-
-        # Configure based on operation type
-        if operation == "duplicates":
-            self.hash_worker.setup_duplicate_scan(file_paths)
-        elif operation == "compare":
-            self.hash_worker.setup_external_comparison(file_paths, external_folder)
-        elif operation == "checksums":
-            self.hash_worker.setup_checksum_calculation(file_paths)
-
-        # Connect signals for progress updates
-        # Use QueuedConnection to ensure UI updates happen in main thread
-        from oncutf.core.pyqt_imports import Qt
-
-        # Connect progress signals
-        if self.hash_worker:
-            self.hash_worker.progress_updated.connect(
-                self._update_operation_progress, Qt.QueuedConnection
-            )
-            self.hash_worker.size_progress.connect(
-                self._update_operation_size_progress, Qt.QueuedConnection
-            )
-            self.hash_worker.file_hash_calculated.connect(
-                self._on_file_hash_calculated, Qt.QueuedConnection
-            )
-
-        # Connect signals for results
-        if self.hash_worker:
-            self.hash_worker.duplicates_found.connect(
-                self._on_duplicates_found, Qt.QueuedConnection
-            )
-            self.hash_worker.comparison_result.connect(
-                self._on_comparison_result, Qt.QueuedConnection
-            )
-            self.hash_worker.checksums_calculated.connect(
-                self._on_checksums_calculated, Qt.QueuedConnection
-            )
-
-            # Connect signals for completion/error
-            # Use the worker's `finished_processing` (bool) signal so the handler
-            # receives the success flag. Do not connect QThread.finished here
-            # because it emits no arguments and would cause a TypeError.
-            if hasattr(self.hash_worker, "finished_processing"):
-                self.hash_worker.finished_processing.connect(
-                    self._on_hash_operation_finished, Qt.QueuedConnection
-                )
-            else:
-                # Fallback: connect QThread.finished with a wrapper that passes True
-                self.hash_worker.finished.connect(
-                    lambda: self._on_hash_operation_finished(True), Qt.QueuedConnection
-                )
-
-            self.hash_worker.error_occurred.connect(
-                self._on_hash_operation_error, Qt.QueuedConnection
-            )
-
-        # Create progress dialog
-        self._create_hash_progress_dialog(operation, len(file_paths))
-
-        # Start worker
-        if self.hash_worker:
-            self.hash_worker.start()
-
-        logger.info(
-            "[HashManager] Started hash operation: %s for %d files",
-            operation,
-            len(file_paths),
+        self._worker_coordinator.start_hash_operation(
+            "duplicates",
+            file_paths,
+            on_duplicates=self._on_duplicates_found,
+            on_progress=self._update_operation_progress,
+            on_size_progress=self._update_operation_size_progress,
+            on_file_hash=self._on_file_hash_calculated,
+            on_finished=self._on_hash_operation_finished,
+            on_error=self._on_hash_operation_error,
         )
-
-    def _create_hash_progress_dialog(self, _operation: str, file_count: int) -> None:
-        """Create and show a progress dialog for hash operations.
-
-        Args:
-            operation: Type of operation for dialog title
-            file_count: Number of files being processed
-
-        """
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
-
-        # Create dialog using the unified ProgressDialog for hash operations
-        self.hash_dialog = ProgressDialog.create_hash_dialog(
-            self.parent_window,
-            cancel_callback=self._cancel_hash_operation,
-            use_size_based_progress=True,
-        )
-        # Initialize count and show
-        self.hash_dialog.set_count(0, file_count)
-        self.hash_dialog.show()
-
-    def _cancel_hash_operation(self) -> None:
-        """Cancel the current hash operation."""
-        logger.info("[HashManager] User cancelled hash operation")
-
-        # Set cancellation flag
-        self._operation_cancelled = True
-
-        # Tell worker to stop
-        if self.hash_worker:
-            self.hash_worker.cancel()
-
-        # Update status
-        if hasattr(self.parent_window, "set_status"):
-            self.parent_window.set_status(
-                "Hash operation cancelled", color=STATUS_COLORS["no_action"], auto_reset=True
-            )
-
-    def _update_operation_progress(self, current: int, total: int, message: str) -> None:
-        """Handle hash calculation progress updates.
-
-        Args:
-            current: Current file number
-            total: Total number of files
-            message: Status message
-
-        """
-        if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.set_count(current, total)
-            self.hash_dialog.set_status(message)
-
-    def _update_operation_size_progress(self, current_bytes: int, total_bytes: int) -> None:
-        """Handle file size progress updates (for large files).
-
-        Args:
-            current_bytes: Bytes processed so far
-            total_bytes: Total file size
-
-        """
-        if hasattr(self, "hash_dialog") and self.hash_dialog:
-            # Ensure the dialog is configured for size-based tracking and
-            # start progress tracking when we learn the total size.
-            try:
-                # If the dialog hasn't started progress tracking yet, start it
-                if hasattr(self.hash_dialog, "start_progress_tracking"):
-                    # Check if widget start_time is unset (not started)
-                    wt = getattr(self.hash_dialog, "waiting_widget", None)
-                    started = False
-                    if wt is not None:
-                        started = getattr(wt, "start_time", None) is not None
-
-                    if total_bytes > 0 and not started:
-                        # Initialize size-based tracking
-                        self.hash_dialog.start_progress_tracking(total_bytes)
-                        # Ensure progress widget is in size mode
-                        if wt is not None and hasattr(wt, "set_progress_mode"):
-                            wt.set_progress_mode("size")
-
-                # Update unified progress dialog with cumulative sizes
-                self.hash_dialog.update_progress(
-                    processed_bytes=current_bytes, total_bytes=total_bytes
-                )
-            except Exception as e:
-                # Fallback to previous behavior on any error
-                logger.debug("[HashManager] Error updating size progress: %s", e)
-                import contextlib
-
-                with contextlib.suppress(Exception):
-                    self.hash_dialog.update_progress(current_bytes, total_bytes)
-
-    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
-        """Handle notification that a file's hash was calculated.
-        Updates the file table icon in real-time.
-
-        Args:
-            file_path: Path to the file
-            hash_value: Calculated hash value (optional, for backward compatibility)
-
-        Note:
-            Hash is already stored in cache by calculate_hash() — no need to store again
-
-        """
-        try:
-            # Find FileItem in model
-            if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
-                return
-
-            # Update icon using the correct method in FileTableModel
-            if hasattr(self.parent_window, "file_model") and hasattr(
-                self.parent_window.file_model, "refresh_icon_for_file"
-            ):
-                self.parent_window.file_model.refresh_icon_for_file(file_path)
-
-                # Log update
-                logger.debug(
-                    "[HashWorker] Updated hash icon for %s",
-                    file_path,
-                    extra={"dev_only": True},
-                )
-            else:
-                # Fallback for older model versions or missing attribute
-                logger.warning(
-                    "[HashManager] FileTableModel (file_model) missing or refresh_icon_for_file method missing"
-                )
-
-        except Exception as e:
-            logger.warning("[HashWorker] Error updating icon for %s: %s", file_path, e)
-
-    # ===== Result Handlers =====
-
-    def _on_duplicates_found(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
-        """Handle duplicates found result."""
-        self._show_duplicate_results(duplicates, scope)
-
-    def _on_comparison_result(self, results: dict[str, Any], external_folder: str) -> None:
-        """Handle comparison result."""
-        self._show_comparison_results(results, external_folder)
-
-    def _on_checksums_calculated(self, hash_results: dict[str, dict[str, str]]) -> None:
-        """Handle checksums calculated result."""
-        # Force restore cursor before showing results dialog
-        from oncutf.utils.ui.cursor_helper import force_restore_cursor
-
-        force_restore_cursor()
-
-        # Check if this was a cancelled operation
-        was_cancelled = self._operation_cancelled
-
-        self._show_hash_results(hash_results, was_cancelled)
-
-        # Reset the flag after showing results
-        self._operation_cancelled = False
-
-    def _on_hash_operation_finished(self, _success: bool) -> None:
-        """Handle hash operation completion."""
-        if hasattr(self, "hash_dialog") and self.hash_dialog:
-            # Keep dialog visible for a moment to show completion
-            from oncutf.utils.shared.timer_manager import schedule_dialog_close
-
-            schedule_dialog_close(self.hash_dialog.close, 500)
-
-        # Refresh file table icons to show new hash status
-        if hasattr(self.parent_window, "file_table_model") and self.parent_window.file_table_model:
-            if hasattr(self.parent_window.file_table_model, "refresh_icons"):
-                self.parent_window.file_table_model.refresh_icons()
-                logger.debug(
-                    "[EventHandler] Refreshed file table icons after hash operation",
-                    extra={"dev_only": True},
-                )
-
-        # Notify preview manager about hash calculation completion
-        if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:
-            self.parent_window.preview_manager.on_hash_calculation_completed()
-
-        # Clean up worker
-        if hasattr(self, "hash_worker") and self.hash_worker:
-            self.hash_worker.quit()
-            self.hash_worker.wait()
-            self.hash_worker = None
-
-        # Reset operation cancelled flag
-        self._operation_cancelled = False
-
-    def _on_hash_operation_error(self, error_message: str) -> None:
-        """Handle hash operation error."""
-        logger.error("[HashManager] Hash operation error: %s", error_message)
-
-        # Close dialog
-        if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.close()
-
-        # Show error message
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
-            self.parent_window, "Error", f"Hash operation failed: {error_message}"
-        )
-
-        # Update status
-        if hasattr(self.parent_window, "set_status"):
-            self.parent_window.set_status(
-                "Hash operation failed", color=STATUS_COLORS["critical_error"], auto_reset=True
-            )
-
-        # Clean up worker
-        if hasattr(self, "hash_worker") and self.hash_worker:
-            self.hash_worker.quit()
-            self.hash_worker.wait()
-            self.hash_worker = None
-
-    # ===== UI Display Methods =====
-
-    def _show_duplicate_results(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
-        """Show duplicate detection results to the user.
-
-        Args:
-            duplicates: Dictionary with hash as key and list of duplicate FileItem objects as value
-            scope: Either "selected" or "all" for display purposes
-
-        """
-        if not duplicates:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
-                self.parent_window,
-                "Duplicate Detection Results",
-                f"No duplicates found in {scope} files.",
-            )
-            if hasattr(self.parent_window, "set_status"):
-                self.parent_window.set_status(
-                    f"No duplicates found in {scope} files",
-                    color=STATUS_COLORS["operation_success"],
-                    auto_reset=True,
-                )
-            return
-
-        # Build results message
-        duplicate_count = sum(len(files) for files in duplicates.values())
-        duplicate_groups = len(duplicates)
-
-        message_lines = [f"Found {duplicate_count} duplicate files in {duplicate_groups} groups:\n"]
-
-        for i, (hash_val, files) in enumerate(duplicates.items(), 1):
-            message_lines.append(f"Group {i} ({len(files)} files):")
-            for file_item in files:
-                message_lines.append(f"  • {file_item.filename}")
-            message_lines.append(f"  Hash: {hash_val[:16]}...")
-            message_lines.append("")
-
-        # Show results dialog
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
-            self.parent_window, "Duplicate Detection Results", "\n".join(message_lines)
-        )
-
-        # Update status
-        if hasattr(self.parent_window, "set_status"):
-            self.parent_window.set_status(
-                f"Found {duplicate_count} duplicates in {duplicate_groups} groups",
-                color=STATUS_COLORS["duplicate_found"],
-                auto_reset=True,
-            )
-
-        logger.info(
-            "[HashManager] Showed duplicate results: %d files in %d groups",
-            duplicate_count,
-            duplicate_groups,
-        )
-
-    def _show_comparison_results(self, results: dict[str, Any], external_folder: str) -> None:
-        """Show external folder comparison results to the user.
-
-        Args:
-            results: Dictionary with comparison results
-            external_folder: Path to the external folder that was compared
-
-        """
-        if not results:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
-                self.parent_window,
-                "External Comparison Results",
-                f"No matching files found in:\n{external_folder}",
-            )
-            if hasattr(self.parent_window, "set_status"):
-                self.parent_window.set_status(
-                    "No matching files found", color=STATUS_COLORS["no_action"], auto_reset=True
-                )
-            return
-
-        # Count matches and differences
-        matches = sum(1 for r in results.values() if r["is_same"])
-        differences = len(results) - matches
-
-        # Build results message
-        message_lines = [
-            f"Comparison with: {external_folder}\n",
-            f"Files compared: {len(results)}",
-            f"Identical: {matches}",
-            f"Different: {differences}\n",
-        ]
-
-        if differences > 0:
-            message_lines.append("Different files:")
-            for filename, data in results.items():
-                if not data["is_same"]:
-                    message_lines.append(f"  • {filename}")
-
-        if matches > 0:
-            message_lines.append("\nIdentical files:")
-            for filename, data in results.items():
-                if data["is_same"]:
-                    message_lines.append(f"  • {filename}")
-
-        # Show results dialog
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
-            self.parent_window, "External Comparison Results", "\n".join(message_lines)
-        )
-
-        # Update status
-        if hasattr(self.parent_window, "set_status"):
-            if differences > 0:
-                self.parent_window.set_status(
-                    f"Found {differences} different files, {matches} identical",
-                    color=STATUS_COLORS["alert_notice"],
-                    auto_reset=True,
-                )
-            else:
-                self.parent_window.set_status(
-                    f"All {matches} files are identical",
-                    color=STATUS_COLORS["operation_success"],
-                    auto_reset=True,
-                )
-
-        logger.info(
-            "[HashManager] Showed comparison results: %d identical, %d different",
-            matches,
-            differences,
-        )
-
-    def _show_hash_results(
-        self, hash_results: dict[str, dict[str, str]], was_cancelled: bool = False
-    ) -> None:
-        """Show checksum calculation results to the user.
-
-        Args:
-            hash_results: Dictionary with filename as key and hash data as value
-            was_cancelled: Whether the operation was cancelled (for partial results)
-
-        """
-        if not hash_results:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            if was_cancelled:
-                CustomMessageDialog.information(
-                    self.parent_window,
-                    "Checksum Results",
-                    "Operation was cancelled before any checksums could be calculated.",
-                )
-            else:
-                CustomMessageDialog.information(
-                    self.parent_window, "Checksum Results", "No checksums could be calculated."
-                )
-            if hasattr(self.parent_window, "set_status"):
-                status_msg = "Operation cancelled" if was_cancelled else "No checksums calculated"
-                self.parent_window.set_status(
-                    status_msg, color=STATUS_COLORS["no_action"], auto_reset=True
-                )
-            return
-
-        # Show results in the new table dialog
-        from oncutf.ui.dialogs.results_table_dialog import ResultsTableDialog
-
-        ResultsTableDialog.show_hash_results(
-            parent=self.parent_window, hash_results=hash_results, was_cancelled=was_cancelled
-        )
-
-        # Update status
-        if hasattr(self.parent_window, "set_status"):
-            if was_cancelled:
-                self.parent_window.set_status(
-                    f"Calculated checksums for {len(hash_results)} files (cancelled)",
-                    color=STATUS_COLORS["hash_success"],
-                    auto_reset=True,
-                )
-            else:
-                self.parent_window.set_status(
-                    f"Calculated checksums for {len(hash_results)} files",
-                    color=STATUS_COLORS["hash_success"],
-                    auto_reset=True,
-                )
-
-        logger.info(
-            "[HashManager] Showed checksum results for %d files%s",
-            len(hash_results),
-            " (cancelled)" if was_cancelled else "",
-        )
-
-    # ===== Entry Point Handlers =====
 
     def _handle_compare_external(self, selected_files: list[FileItem]) -> None:
         """Handle comparison of selected files with an external folder.
@@ -681,7 +180,9 @@ class HashOperationsManager:
             from oncutf.core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
-            from oncutf.utils.ui.multiscreen_helper import get_existing_directory_on_parent_screen
+            from oncutf.utils.ui.multiscreen_helper import (
+                get_existing_directory_on_parent_screen,
+            )
 
             external_folder = get_existing_directory_on_parent_screen(
                 self.parent_window,
@@ -706,16 +207,27 @@ class HashOperationsManager:
             # Convert FileItem objects to file paths
             file_paths = [item.full_path for item in selected_files]
 
-            # Always use worker thread with progress dialog for cancellation support
-            # This is especially important for large files (videos) that may take time
-            self._start_hash_operation("compare", file_paths, external_folder=external_folder)
+            # Start hash operation using worker thread
+            self._worker_coordinator.start_hash_operation(
+                "compare",
+                file_paths,
+                external_folder=external_folder,
+                on_comparison=self._on_comparison_result,
+                on_progress=self._update_operation_progress,
+                on_size_progress=self._update_operation_size_progress,
+                on_file_hash=self._on_file_hash_calculated,
+                on_finished=self._on_hash_operation_finished,
+                on_error=self._on_hash_operation_error,
+            )
 
         except Exception as e:
             logger.error("[HashManager] Error setting up external comparison: %s", e)
             from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
-                self.parent_window, "Error", f"Failed to start external comparison: {str(e)}"
+                self.parent_window,
+                "Error",
+                f"Failed to start external comparison: {str(e)}",
             )
 
     def _handle_calculate_hashes(self, selected_files: list[FileItem]) -> None:
@@ -739,7 +251,16 @@ class HashOperationsManager:
             self._calculate_single_file_hash_fast(selected_files[0])
         else:
             # Multiple files - use worker thread with progress dialog
-            self._start_hash_operation("checksums", file_paths)
+            self._worker_coordinator.start_hash_operation(
+                "checksums",
+                file_paths,
+                on_checksums=self._on_checksums_calculated,
+                on_progress=self._update_operation_progress,
+                on_size_progress=self._update_operation_size_progress,
+                on_file_hash=self._on_file_hash_calculated,
+                on_finished=self._on_hash_operation_finished,
+                on_error=self._on_hash_operation_error,
+            )
 
     def _calculate_single_file_hash_fast(self, file_item: FileItem) -> None:
         """Calculate hash for a single small file using wait cursor (fast, no cancellation).
@@ -761,11 +282,11 @@ class HashOperationsManager:
                     hash_results[file_item.full_path] = file_hash
 
             # Show results after cursor is restored
-            # Wrap flat dict into nested structure expected by _show_hash_results
+            # Wrap flat dict into nested structure expected by results presenter
             wrapped_results: dict[str, dict[str, str]] = {
                 path: {"hash": hash_val} for path, hash_val in hash_results.items()
             }
-            self._show_hash_results(wrapped_results)
+            self._results_presenter.show_hash_results(wrapped_results)
 
         except Exception as e:
             logger.error("[HashManager] Error calculating checksum: %s", e)
@@ -774,6 +295,160 @@ class HashOperationsManager:
             CustomMessageDialog.information(
                 self.parent_window, "Error", f"Failed to calculate checksum: {str(e)}"
             )
+
+    # ===== Worker Callbacks =====
+
+    def _update_operation_progress(self, current: int, total: int, message: str) -> None:
+        """Update operation progress in dialog.
+
+        Args:
+            current: Current progress value
+            total: Total progress value
+            message: Progress message to display
+
+        """
+        self._worker_coordinator.update_progress(current, total, message)
+
+    def _update_operation_size_progress(
+        self, current_bytes: int, total_bytes: int
+    ) -> None:
+        """Update size-based progress in dialog.
+
+        Args:
+            current_bytes: Current bytes processed
+            total_bytes: Total bytes to process
+
+        """
+        self._worker_coordinator.update_size_progress(current_bytes, total_bytes)
+
+    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
+        """Handle individual file hash calculation completion.
+
+        Args:
+            file_path: Path to the file
+            hash_value: Calculated hash value
+
+        """
+        # Update file model with new hash
+        if (
+            hasattr(self.parent_window, "file_table_model")
+            and self.parent_window.file_table_model
+        ):
+            # Find FileItem and update its hash
+            file_items = self.parent_window.file_table_model.get_all_file_items()
+            for file_item in file_items:
+                if file_item.full_path == file_path:
+                    # Hash is cached in database, will be loaded on next access
+                    break
+
+        logger.debug(
+            "[HashManager] File hash calculated: %s -> %s",
+            file_path,
+            hash_value[:16] if hash_value else "Error",
+            extra={"dev_only": True},
+        )
+
+    def _on_duplicates_found(
+        self, duplicates: dict[str, list[FileItem]], scope: str
+    ) -> None:
+        """Handle duplicate detection results.
+
+        Args:
+            duplicates: Dictionary with hash as key and list of FileItem objects as value
+            scope: Scope of the search ("selected" or "all")
+
+        """
+        self._results_presenter.show_duplicate_results(duplicates, scope)
+
+    def _on_comparison_result(
+        self, results: dict[str, Any], external_folder: str
+    ) -> None:
+        """Handle external comparison results.
+
+        Args:
+            results: Dictionary with comparison results
+            external_folder: Path to the external folder
+
+        """
+        self._results_presenter.show_comparison_results(results, external_folder)
+
+    def _on_checksums_calculated(
+        self, hash_results: dict[str, dict[str, str]]
+    ) -> None:
+        """Handle checksum calculation results.
+
+        Args:
+            hash_results: Dictionary with file paths and hash values
+
+        """
+        # Force restore cursor before showing results dialog
+        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+
+        force_restore_cursor()
+
+        # Check if operation was cancelled
+        was_cancelled = self._worker_coordinator.is_cancelled()
+
+        self._results_presenter.show_hash_results(hash_results, was_cancelled)
+
+        # Reset the cancellation flag
+        self._worker_coordinator.reset_cancelled()
+
+    def _on_hash_operation_finished(self, _success: bool) -> None:
+        """Handle hash operation completion.
+
+        Args:
+            _success: Whether the operation completed successfully
+
+        """
+        # Refresh file table icons to show new hash status
+        if (
+            hasattr(self.parent_window, "file_table_model")
+            and self.parent_window.file_table_model
+        ):
+            if hasattr(self.parent_window.file_table_model, "refresh_icons"):
+                self.parent_window.file_table_model.refresh_icons()
+                logger.debug(
+                    "[HashManager] Refreshed file table icons after hash operation",
+                    extra={"dev_only": True},
+                )
+
+        # Notify preview manager about hash calculation completion
+        if (
+            hasattr(self.parent_window, "preview_manager")
+            and self.parent_window.preview_manager
+        ):
+            self.parent_window.preview_manager.on_hash_calculation_completed()
+
+        # Clean up worker and dialog
+        self._worker_coordinator.cleanup_worker()
+
+    def _on_hash_operation_error(self, error_message: str) -> None:
+        """Handle hash operation error.
+
+        Args:
+            error_message: Error message from the worker
+
+        """
+        logger.error("[HashManager] Hash operation error: %s", error_message)
+
+        # Show error message
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
+
+        CustomMessageDialog.information(
+            self.parent_window, "Error", f"Hash operation failed: {error_message}"
+        )
+
+        # Update status
+        if hasattr(self.parent_window, "set_status"):
+            self.parent_window.set_status(
+                "Hash operation failed",
+                color=STATUS_COLORS["critical_error"],
+                auto_reset=True,
+            )
+
+        # Clean up worker and dialog
+        self._worker_coordinator.cleanup_worker()
 
     # ===== Status Check Methods =====
 

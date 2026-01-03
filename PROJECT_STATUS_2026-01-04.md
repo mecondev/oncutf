@@ -19,7 +19,8 @@ The project is in **excellent shape** after extensive refactoring:
 2. FileLoadManager refactoring: 873 -> 551 lines (-36.9%) with proper I/O layering
 3. file_table_view cleanup: 1321 -> 592 lines (-55.2%), removed ALL delegation wrappers
 4. metadata/operations_manager refactoring: 779 -> 506 lines (-35%), extracted field_compatibility
-5. Eliminated all CRITICAL (>900 lines) files - 0 remaining
+5. hash_operations_manager refactoring: 807 -> 482 lines (-40.3%), extracted worker coordinator + results presenter
+6. Eliminated all CRITICAL (>900 lines) files - 0 remaining
 
 ---
 
@@ -74,20 +75,20 @@ The project is in **excellent shape** after extensive refactoring:
 | `ui_manager.py` | 982 | DELETED | Split to 4 controllers |
 | `file_load_manager.py` | 873 | 3 layers | Proper layering (36.9% down) |
 | `operations_manager.py` | 779 | 506 + field_compatibility | Extract field compatibility (35% down) |
+| `hash_operations_manager.py` | 807 | 482 + 2 modules | Split to 3 modules (40.3% down) |
 
 **Status:** 0 critical files remaining
 
-### Warning Priority (600-900 lines) — 5 remaining
+### Warning Priority (600-900 lines) — 4 remaining
 
 | File | Lines | Status | Target |
 |------|-------|--------|--------|
-| `core/hash/hash_operations_manager.py` | 807 | Plan: Split by operation | Q1 2026 |
 | `core/application_service.py` | 786 | Plan: Layer by responsibility | Q1 2026 |
 | `core/ui_managers/status_manager.py` | 708 | Plan: Review structure | Q2 2026 |
 | `core/events/context_menu/base.py` | 639 | Plan: Extract handlers | Q2 2026 |
 | `core/database/metadata_store.py` | 627 | Plan: Domain separation | Q2 2026 |
 
-**Status:** 5 files in active refactoring pipeline
+**Status:** 4 files in active refactoring pipeline
 
 ---
 
@@ -126,7 +127,7 @@ The project is in **excellent shape** after extensive refactoring:
 
 ### Architecture
 - **Critical Monster Files (>900 lines):** 0 [DONE]
-- **Warning Files (600-900 lines):** 5 (down from 6)
+- **Warning Files (600-900 lines):** 4 (down from 6)
 - **Average Module Size:** ~200 lines
 - **Proper Layer Separation:** UI <-> Service <-> I/O [OK]
 
@@ -143,10 +144,10 @@ The project is in **excellent shape** after extensive refactoring:
 - [DONE] 2026-01-03/04: FileLoadManager proper refactoring (873 -> 551 lines)
 - [DONE] 2026-01-04: FileTableView aggressive cleanup (1321 -> 592 lines)
 - [DONE] 2026-01-04: Metadata operations refactoring (779 -> 506 lines)
+- [DONE] 2026-01-04: Hash operations refactoring (807 -> 482 lines)
 
 ### In Progress
 - [WIP] Application service layering
-- [WIP] Hash operations split
 
 ### Planned
 - [TODO] Status manager review
@@ -163,7 +164,7 @@ The project is in **excellent shape** after extensive refactoring:
 
 ### Short Term (Q1 2026)
 1. Refactor metadata/operations_manager (779 -> <600 lines) [DONE]
-2. Split hash_operations_manager (807 -> <600 lines)
+2. Split hash_operations_manager (807 -> <600 lines) [DONE]
 3. Layer application_service (786 -> <600 lines)
 
 ### Medium Term (Q2 2026)
