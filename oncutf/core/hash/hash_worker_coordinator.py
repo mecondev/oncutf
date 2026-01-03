@@ -192,7 +192,8 @@ class HashWorkerCoordinator:
 
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.set_count(current, total)
+            self.hash_dialog.set_progress(current, total)  # Update progress bar
+            self.hash_dialog.set_count(current, total)      # Update count label
             self.hash_dialog.set_filename(message)
             # Force UI update to show progress immediately
             from oncutf.core.pyqt_imports import QApplication
@@ -208,6 +209,7 @@ class HashWorkerCoordinator:
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Calculate percentage
+
             if total_bytes > 0:
                 percentage = int((current_bytes / total_bytes) * 100)
                 self.hash_dialog.set_count(percentage, 100)
