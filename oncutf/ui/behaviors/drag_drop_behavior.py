@@ -153,7 +153,7 @@ class DragDropBehavior:
         self._clicked_index = None
 
         # Get selected file data
-        selected_rows = self._widget._get_current_selection_safe()
+        selected_rows = self._get_current_selection_safe()
         if not selected_rows:
             return
 

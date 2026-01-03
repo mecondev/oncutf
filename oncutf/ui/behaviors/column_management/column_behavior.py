@@ -217,6 +217,17 @@ class ColumnManagementBehavior:
         self._width_manager.force_save_pending_changes()
 
     # =====================================
+    # Public API - Header Management
+    # =====================================
+
+    def _update_header_visibility(self) -> None:
+        """Update header visibility based on table empty state.
+
+        Note: This is a public API for backward compatibility with file_table/view.py.
+        """
+        self._header_configurator._update_header_visibility()
+
+    # =====================================
     # Event Handlers
     # =====================================
 
