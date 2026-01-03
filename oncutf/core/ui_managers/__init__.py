@@ -2,11 +2,14 @@
 
 Author: Michael Economou
 Date: 2025-01-19
-Updated: 2025-12-28
+Updated: 2026-01-03
 
 This package provides UI-related managers for the oncutf application,
-including main UI management, column configuration, status bar, table view,
-shortcuts, splitters, and window configuration.
+including column configuration, status bar, table view, shortcuts,
+splitters, and window configuration.
+
+Note: UIManager was removed in favor of direct controller usage.
+See oncutf/controllers/ui/ for the new architecture.
 """
 
 from __future__ import annotations
@@ -22,7 +25,6 @@ from .shortcut_manager import ShortcutManager
 from .splitter_manager import SplitterManager
 from .status_manager import StatusManager
 from .table_manager import TableManager
-from .ui_manager import UIManager
 from .window_config_manager import WindowConfigManager
 
 __all__ = [
@@ -35,6 +37,5 @@ __all__ = [
     "SplitterManager",
     "StatusManager",
     "TableManager",
-    "UIManager",
     "WindowConfigManager",
 ]

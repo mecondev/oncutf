@@ -173,6 +173,12 @@ class InitializationOrchestrator:
         """
         from oncutf.controllers.file_load_controller import FileLoadController
         from oncutf.controllers.metadata_controller import MetadataController
+        from oncutf.controllers.ui import (
+            LayoutController,
+            ShortcutController,
+            SignalController,
+            WindowSetupController,
+        )
         from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.core.event_handler_manager import EventHandlerManager
         from oncutf.core.file import get_file_validation_manager
@@ -183,7 +189,6 @@ class InitializationOrchestrator:
         from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
         from oncutf.core.ui_managers.splitter_manager import SplitterManager
         from oncutf.core.ui_managers.table_manager import TableManager
-        from oncutf.core.ui_managers.ui_manager import UIManager
         from oncutf.core.ui_managers.window_config_manager import WindowConfigManager
         from oncutf.ui.services.dialog_manager import DialogManager
         from oncutf.ui.services.utility_manager import UtilityManager
@@ -266,15 +271,29 @@ class InitializationOrchestrator:
         self.window.config_manager = get_app_config_manager()
         self.window.window_config_manager = WindowConfigManager(self.window)
 
-        # Create UIManager (but don't setup UI yet)
-        self.window.ui_manager = UIManager(parent_window=self.window)
+        # Initialize UI controllers (replaces UIManager)
+        self.window.window_setup_controller = WindowSetupController(self.window)
+        self.window.layout_controller = LayoutController(self.window)
+        self.window.signal_controller = SignalController(self.window)
+        self.window.shortcut_controller = ShortcutController(self.window)
+        logger.info("[Phase4B] UI Controllers initialized", extra={"dev_only": True})
 
-        # Register managers in context BEFORE setup_all_ui
+        # Register managers in context BEFORE UI setup
         # (They are all created by this point)
         self._register_managers_for_ui()
 
-        # Setup UI (now managers are available via context)
-        self.window.ui_manager.setup_all_ui()
+        # Setup UI in correct order (replaces ui_manager.setup_all_ui())
+        # Disable updates during setup to prevent flickering
+        self.window.setUpdatesEnabled(False)
+
+        self.window.window_setup_controller.setup()
+        self.window.layout_controller.setup()
+        self.window.signal_controller.setup()
+        self.window.shortcut_controller.setup()
+
+        # Re-enable updates after UI is fully constructed
+        self.window.setUpdatesEnabled(True)
+        logger.info("[Phase4C] UI setup completed via controllers", extra={"dev_only": True})
 
         # Preview update timer
         self.window.preview_update_timer = QTimer(self.window)

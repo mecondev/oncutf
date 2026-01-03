@@ -111,8 +111,7 @@ class ConfigColumnHandler:
             self.main_window.context.register_manager("rename", self.main_window.rename_manager)
             self.main_window.context.register_manager("preview", self.main_window.preview_manager)
 
-            # UI managers
-            self.main_window.context.register_manager("ui", self.main_window.ui_manager)
+            # UI managers (ui_manager removed - replaced by individual controllers)
             self.main_window.context.register_manager("dialog", self.main_window.dialog_manager)
             self.main_window.context.register_manager("status", self.main_window.status_manager)
             self.main_window.context.register_manager("shortcut", self.main_window.shortcut_manager)

@@ -118,8 +118,8 @@ class MetadataTreeSearchHandler:
         self.update_search_suggestions()
 
         # Restore any saved search text
-        if hasattr(parent_window, "ui_manager"):
-            parent_window.ui_manager.restore_metadata_search_text()
+        if hasattr(parent_window, "signal_controller"):
+            parent_window.signal_controller.restore_metadata_search_text()
 
     def _disable_search_field(self, search_field, parent_window) -> None:
         """Disable the search field with proper styling."""
@@ -168,9 +168,9 @@ class MetadataTreeSearchHandler:
         if not parent_window:
             return
 
-        # Call the UI manager's clear method if available
-        if hasattr(parent_window, "ui_manager"):
-            parent_window.ui_manager._clear_metadata_search()
+        # Call the signal controller's clear method if available
+        if hasattr(parent_window, "signal_controller"):
+            parent_window.signal_controller._clear_metadata_search()
         elif hasattr(parent_window, "metadata_search_field"):
             # Fallback: clear the field directly
             parent_window.metadata_search_field.clear()
