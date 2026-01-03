@@ -2,7 +2,7 @@
 
 Author: Michael Economou
 Date: 2025-12-21
-Updated: 2026-01-02
+Updated: 2026-01-03
 
 This package contains all metadata-related functionality:
 - MetadataCacheService: Cache operations for metadata and hashes
@@ -15,6 +15,7 @@ This package contains all metadata-related functionality:
 - MetadataCommandManager: Undo/redo command management for metadata operations
 - MetadataOperationsManager: Export, field editing, compatibility checks
 - MetadataStagingManager: Staged changes management (pending modifications)
+- FieldCompatibilityChecker: Field compatibility checking for file types
 - UnifiedMetadataManager: Facade for all metadata operations
 - Commands: Command pattern implementations (MetadataCommand, EditMetadataFieldCommand, etc.)
 """
@@ -33,6 +34,10 @@ from oncutf.core.metadata.commands import (
     SaveMetadataCommand,
 )
 from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
+from oncutf.core.metadata.field_compatibility import (
+    FieldCompatibilityChecker,
+    get_field_compatibility_checker,
+)
 from oncutf.core.metadata.hash_loading_service import HashLoadingService
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
 from oncutf.core.metadata.metadata_loader import MetadataLoader
@@ -68,6 +73,9 @@ __all__ = [
     "set_metadata_staging_manager",
     "UnifiedMetadataManager",
     "get_unified_metadata_manager",
+    # Field compatibility
+    "FieldCompatibilityChecker",
+    "get_field_compatibility_checker",
     # Command pattern
     "MetadataCommand",
     "EditMetadataFieldCommand",
