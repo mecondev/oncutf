@@ -223,7 +223,13 @@ class MainWindow(QMainWindow):
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
     ) -> None:
         """Load files from dropped items via FileLoadController."""
+        import time
+        t0 = time.time()
+        logger.debug("[DROP-MAIN] load_files_from_dropped_items START with %d paths", len(paths), extra={"dev_only": True})
+
         result = self.file_load_controller.handle_drop(paths, modifiers)
+
+        logger.debug("[DROP-MAIN] handle_drop returned at +%.3fms, success=%s", (time.time()-t0)*1000, result.get("success"), extra={"dev_only": True})
         logger.debug(
             "[FileLoadController] handle_drop result: %s", result, extra={"dev_only": True}
         )
@@ -238,7 +244,21 @@ class MainWindow(QMainWindow):
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
     ) -> None:
         """Load single item from drop via FileLoadController."""
+        import time
+        t0 = time.time()
+        logger.debug("[DROP-SINGLE] load_single_item_from_drop START: %s", path, extra={"dev_only": True})
+
+        # Set wait cursor IMMEDIATELY before any processing
+        from oncutf.core.pyqt_imports import QApplication, Qt as QtCore
+        t1 = time.time()
+        logger.debug("[DROP-SINGLE] Setting wait cursor at +%.3fms", (t1-t0)*1000, extra={"dev_only": True})
+        QApplication.setOverrideCursor(QtCore.WaitCursor)
+        QApplication.processEvents()
+        t2 = time.time()
+        logger.debug("[DROP-SINGLE] Wait cursor set at +%.3fms", (t2-t0)*1000, extra={"dev_only": True})
+
         self.file_load_controller.handle_drop([path], modifiers)
+        logger.debug("[DROP-SINGLE] Completed at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"

@@ -210,6 +210,10 @@ class HashLoadingService:
                 except Exception:
                     pass
 
+            # Force immediate UI update to show out-of-order completion
+            from oncutf.core.pyqt_imports import QApplication
+            QApplication.processEvents()
+
     def _on_hash_finished(self) -> None:
         """Handle hash loading completion."""
         self._cleanup_hash_worker()

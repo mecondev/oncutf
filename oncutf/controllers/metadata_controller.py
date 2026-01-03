@@ -72,6 +72,47 @@ class MetadataController:
     # Metadata Loading
     # -------------------------------------------------------------------------
 
+    def load_metadata_for_selected(self, extended: bool = False) -> dict[str, Any]:
+        """Load metadata for currently selected files.
+
+        This is the primary entry point for keyboard shortcuts and UI commands
+        that need to load metadata for the current selection.
+
+        Args:
+            extended: If True, load extended (all tags) metadata
+
+        Returns:
+            dict: Result summary from load_metadata()
+
+        """
+        # Get selected files from TableManager
+        table_manager = self._app_context.get_manager("table")
+        if not table_manager:
+            logger.error("[MetadataController] TableManager not available")
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "skipped_count": 0,
+                "errors": ["TableManager not initialized"],
+            }
+
+        selected_files = table_manager.get_selected_files()
+        if not selected_files:
+            logger.debug("[MetadataController] No files selected")
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "skipped_count": 0,
+                "errors": ["No files selected"],
+            }
+
+        # Delegate to load_metadata with source tracking
+        return self.load_metadata(
+            selected_files,
+            use_extended=extended,
+            source="shortcut" if extended else "shortcut_fast",
+        )
+
     def load_metadata(
         self,
         file_items: list[FileItem],

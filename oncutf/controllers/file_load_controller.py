@@ -271,12 +271,15 @@ class FileLoadController:
             Dictionary with success status
 
         """
+        import time
+        t0 = time.time()
+
         # Decode modifiers for readable logging
         from oncutf.core.modifier_handler import decode_modifiers_to_flags
 
         _, _, modifier_desc = decode_modifiers_to_flags(modifiers)
-        logger.info(
-            "[FileLoadController] handle_drop: %d paths (modifiers=%s)", len(paths), modifier_desc
+        logger.debug(
+            "[DROP-CONTROLLER] handle_drop START: %d paths (modifiers=%s)", len(paths), modifier_desc, extra={"dev_only": True}
         )
 
         if not self._file_load_manager:
@@ -289,7 +292,13 @@ class FileLoadController:
 
         # Delegate to FileLoadManager which handles modifiers
         try:
+            t1 = time.time()
+            logger.debug("[DROP-CONTROLLER] Calling load_files_from_dropped_items at +%.3fms", (t1-t0)*1000, extra={"dev_only": True})
+
             self._file_load_manager.load_files_from_dropped_items(paths, modifiers)
+
+            t2 = time.time()
+            logger.debug("[DROP-CONTROLLER] load_files_from_dropped_items returned at +%.3fms", (t2-t0)*1000, extra={"dev_only": True})
             logger.info("[FileLoadController] Drop handled successfully")
             return {"success": True, "errors": []}
 
@@ -302,7 +311,10 @@ class FileLoadController:
         finally:
             # Ensure wait cursor is restored
             from oncutf.core.pyqt_imports import QApplication
+            t_restore = time.time()
+            logger.debug("[DROP-CONTROLLER] Restoring cursor at +%.3fms", (t_restore-t0)*1000, extra={"dev_only": True})
             QApplication.restoreOverrideCursor()
+            logger.debug("[DROP-CONTROLLER] Cursor restored at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
 
     def clear_files(self) -> bool:
         """Clear all loaded files.

@@ -330,15 +330,25 @@ class DragDropBehavior:
         Returns:
             Tuple of (dropped_paths, modifiers) if successful, None otherwise
         """
+        import time
+
+        from oncutf.utils.logging.logger_factory import get_cached_logger
+        logger = get_cached_logger(__name__)
+
+        t0 = time.time()
+        logger.debug("[DROP-BEHAVIOR] handle_drop START", extra={"dev_only": True})
+
         mime_data = event.mimeData()
 
         # Ignore internal drags
         if mime_data.hasFormat("application/x-oncutf-filetable"):
+            logger.debug("[DROP-BEHAVIOR] Internal drag ignored at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
             return None
 
         # Extract dropped paths
         modifiers = event.keyboardModifiers()
         dropped_paths = extract_file_paths(mime_data)
+        logger.debug("[DROP-BEHAVIOR] Extracted %d paths at +%.3fms", len(dropped_paths) if dropped_paths else 0, (time.time()-t0)*1000, extra={"dev_only": True})
 
         if not dropped_paths:
             return None
@@ -347,12 +357,14 @@ class DragDropBehavior:
         if self._widget.model() and hasattr(self._widget.model(), "files"):
             existing_paths = {f.full_path for f in self._widget.model().files}
             new_paths = [p for p in dropped_paths if p not in existing_paths]
+            logger.debug("[DROP-BEHAVIOR] Filtered to %d new paths at +%.3fms", len(new_paths), (time.time()-t0)*1000, extra={"dev_only": True})
             if not new_paths:
                 return None
         else:
             new_paths = dropped_paths
 
         event.acceptProposedAction()
+        logger.debug("[DROP-BEHAVIOR] Returning %d paths at +%.3fms", len(new_paths), (time.time()-t0)*1000, extra={"dev_only": True})
         return (new_paths, modifiers)
 
     # =====================================

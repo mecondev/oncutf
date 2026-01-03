@@ -88,9 +88,17 @@ class ApplicationService:
         self, path: str, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
     ) -> None:
         """Load single item from drop via FileLoadController."""
+        import time
+
+        from oncutf.utils.logging.logger_factory import get_cached_logger
+        logger_local = get_cached_logger(__name__)
+        t0 = time.time()
+        logger_local.debug("[DROP-SERVICE] load_single_item_from_drop START: %s", path, extra={"dev_only": True})
+
         # Use controller for orchestration (proper architecture)
         # Controller handles modifiers parsing and delegates to manager
         self.main_window.file_load_controller.handle_drop([path], modifiers)
+        logger_local.debug("[DROP-SERVICE] Completed at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
 
     # =====================================
     # Metadata Operations (with business logic)

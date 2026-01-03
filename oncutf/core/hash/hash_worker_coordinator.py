@@ -78,11 +78,11 @@ class HashWorkerCoordinator:
         # Reset cancellation flag
         self._operation_cancelled = False
 
-        # Import hash worker
-        from oncutf.core.hash.hash_worker import HashWorker
+        # Import parallel hash worker for better performance
+        from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
 
-        # Create worker thread
-        self.hash_worker = HashWorker()
+        # Create worker thread (parallel for speed)
+        self.hash_worker = ParallelHashWorker(parent=self.parent_window)
 
         # Setup worker based on operation type
         if operation == "duplicates":
