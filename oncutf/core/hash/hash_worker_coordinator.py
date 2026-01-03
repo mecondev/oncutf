@@ -193,7 +193,7 @@ class HashWorkerCoordinator:
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             self.hash_dialog.set_count(current, total)
-            self.hash_dialog.set_message(message)
+            self.hash_dialog.set_filename(message)
 
     def update_size_progress(self, current_bytes: int, total_bytes: int) -> None:
         """Update size-based progress in dialog.
