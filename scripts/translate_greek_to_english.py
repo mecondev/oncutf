@@ -729,7 +729,7 @@ EXCLUSIONS (built-in):
     )
 
     parser.add_argument(
-        "-f", "--file", 
+        "-f", "--file",
         type=str,
         action="append",
         dest="files",
@@ -739,16 +739,16 @@ EXCLUSIONS (built-in):
     )
 
     parser.add_argument(
-        "-a", "--apply", 
-        action="store_true", 
+        "-a", "--apply",
+        action="store_true",
         dest="fix",
         help="Apply changes and write to files (default: dry-run mode shows changes without writing)"
     )
 
     parser.add_argument(
-        "--root", 
-        type=str, 
-        default=".", 
+        "--root",
+        type=str,
+        default=".",
         help="Root directory to scan (default: current directory). "
              "Only used when --file is not specified."
     )
