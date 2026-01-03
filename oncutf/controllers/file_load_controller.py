@@ -271,8 +271,12 @@ class FileLoadController:
             Dictionary with success status
 
         """
+        # Decode modifiers for readable logging
+        from oncutf.core.modifier_handler import decode_modifiers_to_flags
+
+        _, _, modifier_desc = decode_modifiers_to_flags(modifiers)
         logger.info(
-            "[FileLoadController] handle_drop: %d paths (modifiers=%s)", len(paths), modifiers
+            "[FileLoadController] handle_drop: %d paths (modifiers=%s)", len(paths), modifier_desc
         )
 
         if not self._file_load_manager:

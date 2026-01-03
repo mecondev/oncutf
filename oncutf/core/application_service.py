@@ -11,7 +11,7 @@ Date: 2025-06-15
 import os
 from typing import Any
 
-from oncutf.core.pyqt_imports import QModelIndex, Qt
+from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -93,49 +93,8 @@ class ApplicationService:
         self.main_window.file_load_controller.handle_drop([path], modifiers)
 
     # =====================================
-    # Metadata Operations
+    # Metadata Operations (with business logic)
     # =====================================
-
-    def load_metadata_fast(self):
-        """Load fast metadata for selected files."""
-        return self.main_window.metadata_manager.shortcut_load_metadata()
-
-    def load_metadata_extended(self):
-        """Load extended metadata for selected files."""
-        return self.main_window.metadata_manager.shortcut_load_extended_metadata()
-
-    def load_metadata_all_fast(self):
-        """Load basic metadata for all files."""
-        return self.main_window.metadata_manager.shortcut_load_metadata_all()
-
-    def load_metadata_all_extended(self):
-        """Load extended metadata for all files."""
-        return self.main_window.metadata_manager.shortcut_load_extended_metadata_all()
-
-    def load_metadata_for_items(
-        self,
-        items: list[FileItem],
-        use_extended: bool = False,
-        source: str = "unknown",
-    ) -> None:
-        """Load metadata for specific FileItem objects.
-
-        Delegates to UnifiedMetadataManager which handles:
-        - Cache pre-check (skip already-loaded files)
-        - Single file: wait_cursor (fast and responsive)
-        - Multiple files: ProgressDialog with ESC cancel support
-
-        Args:
-            items: List of FileItem objects to load metadata for
-            use_extended: Whether to use extended metadata loading
-            source: Source of the request (for logging)
-
-        """
-        if not items:
-            return
-        self.main_window.metadata_manager.load_metadata_for_items(
-            items, use_extended=use_extended, source=source
-        )
 
     def calculate_hash_selected(self):
         """Calculate hash for selected files that don't already have hashes."""
@@ -195,121 +154,15 @@ class ApplicationService:
 
         return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(all_files)
 
-    def save_selected_metadata(self):
-        """Save metadata for selected files."""
-        return self.main_window.metadata_manager.save_metadata_for_selected()
-
-    def save_all_metadata(self):
-        """Save all modified metadata."""
-        return self.main_window.metadata_manager.save_all_modified_metadata()
-
     # =====================================
-    # Table Operations
-    # =====================================
-
-    def sort_by_column(
-        self,
-        column: int,
-        order: Qt.SortOrder | None = None,
-        force_order: Qt.SortOrder | None = None,
-    ) -> None:
-        """Sort by column via TableManager."""
-        self.main_window.table_manager.sort_by_column(column, order, force_order)
-
-    def prepare_file_table(self, file_items: list[FileItem]) -> None:
-        """Prepare file table via TableManager."""
-        self.main_window.table_manager.prepare_file_table(file_items)
-
-    def _show_hash_results(self, hash_results: dict[str, str], was_cancelled: bool) -> None:
-        """Show hash calculation results."""
-        # This method is intended to be called by the hash calculation process
-        # It's not directly part of the ApplicationService public API but is used internally
-        # by the event handler manager.
-        if was_cancelled:
-            self.main_window.status_manager.set_validation_status(
-                "Hash calculation cancelled.", validation_type="warning", auto_reset=True
-            )
-            return
-
-        successful_hashes = {k: v for k, v in hash_results.items() if v != "Error"}
-        failed_hashes = {k: v for k, v in hash_results.items() if v == "Error"}
-
-        if successful_hashes:
-            self.main_window.status_manager.set_validation_status(
-                f"Calculated {len(successful_hashes)} hashes successfully.",
-                validation_type="success",
-                auto_reset=True,
-            )
-        if failed_hashes:
-            self.main_window.status_manager.set_validation_status(
-                f"Failed to calculate {len(failed_hashes)} hashes.",
-                validation_type="error",
-                auto_reset=True,
-            )
-        if not successful_hashes and not failed_hashes:
-            self.main_window.status_manager.set_validation_status(
-                "No hashes calculated.", validation_type="info", auto_reset=True
-            )
-
-    def clear_file_table(self, message: str = "No folder selected") -> None:
-        """Clear file table via TableManager."""
-        self.main_window.table_manager.clear_file_table(message)
-
-    def set_fields_from_list(self, field_names: list[str]) -> None:
-        """Set fields from list via TableManager."""
-        self.main_window.table_manager.set_fields_from_list(field_names)
-
-    def after_check_change(self) -> None:
-        """Handle check change via TableManager."""
-        self.main_window.table_manager.after_check_change()
-
-    def get_selected_files(self) -> list[FileItem]:
-        """Get selected files via TableManager."""
-        return self.main_window.table_manager.get_selected_files()
-
-    # =====================================
-    # Selection Operations
-    # =====================================
-
-    def select_all_rows(self) -> None:
-        """Select all rows via SelectionManager."""
-        self.main_window.selection_manager.select_all_rows()
-
-    def clear_all_selection(self) -> None:
-        """Clear all selection via SelectionManager."""
-        self.main_window.selection_manager.clear_all_selection()
-
-    def invert_selection(self) -> None:
-        """Invert selection via SelectionManager."""
-        self.main_window.selection_manager.invert_selection()
-
-    def _handle_compare_external(self, selected_files: list[FileItem]) -> None:
-        """Handle comparing selected files with external files."""
-        if not selected_files:
-            logger.info("[ApplicationService] No files selected for external comparison.")
-            self.main_window.status_manager.set_selection_status(
-                "No files selected for external comparison",
-                selected_count=0,
-                total_count=0,
-                auto_reset=True,
-            )
-            return
-
-        self.main_window.event_handler_manager.compare_ops.handle_compare_external(selected_files)
-
-    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """Update preview from selection via SelectionManager."""
-        self.main_window.selection_manager.update_preview_from_selection(selected_rows)
-
-    # =====================================
-    # Rename Operations
+    # Rename Operations (with business logic)
     # =====================================
 
     def rename_files(self):
         """Execute batch rename using RenameController."""
         try:
             # Get selected files and rename data
-            selected_files = self.get_selected_files()
+            selected_files = self.main_window.table_manager.get_selected_files()
             rename_data = self.main_window.rename_modules_area.get_all_data()
             post_transform_data = self.main_window.final_transform_container.get_data()
 
@@ -361,7 +214,7 @@ class ApplicationService:
 
             # Reload folder to reflect changes
             if renamed_count > 0:
-                self.reload_current_folder()
+                self.main_window.file_load_manager.reload_current_folder()
 
         except Exception as e:
             logger.exception("[ApplicationService] Error in RenameController rename: %s", e)
@@ -413,130 +266,8 @@ class ApplicationService:
         except Exception as e:
             logger.error("[ApplicationService] Error updating FileItem objects: %s", e)
 
-    def update_module_dividers(self):
-        """Update module dividers."""
-        return self.main_window.rename_manager.update_module_dividers()
-
     # =====================================
-    # Preview Operations
-    # =====================================
-
-    def generate_preview_names(self):
-        """Generate preview names."""
-        return self.main_window.utility_manager.generate_preview_names()
-
-    def request_preview_update(self):
-        """Request preview update."""
-        return self.main_window.utility_manager.request_preview_update()
-
-    def get_identity_name_pairs(self) -> list[tuple[str, str]]:
-        """Get identity name pairs via PreviewManager."""
-        return self.main_window.preview_manager.get_identity_name_pairs(
-            self.main_window.file_model.files
-        )
-
-    def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """Update preview tables from pairs via PreviewManager."""
-        self.main_window.preview_manager.update_preview_tables_from_pairs(name_pairs)
-
-    def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
-        """Compute max filename width via PreviewManager."""
-        return self.main_window.preview_manager.compute_max_filename_width(file_list)
-
-    # =====================================
-    # Event Handling
-    # =====================================
-
-    def handle_browse(self):
-        """Handle browse action."""
-        return self.main_window.event_handler_manager.handle_browse()
-
-    def handle_folder_import(self):
-        """Handle folder import."""
-        return self.main_window.event_handler_manager.handle_folder_import()
-
-    def handle_table_context_menu(self, position) -> None:
-        """Handle table context menu via EventHandlerManager."""
-        self.main_window.event_handler_manager.handle_table_context_menu(position)
-
-    def handle_file_double_click(
-        self,
-        index: QModelIndex,
-        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
-    ) -> None:
-        """Handle file double click via EventHandlerManager."""
-        self.main_window.event_handler_manager.handle_file_double_click(index, modifiers)
-
-    def handle_header_toggle(self, _) -> None:
-        """Handle header toggle via EventHandlerManager."""
-        self.main_window.event_handler_manager.handle_header_toggle(_)
-
-    def on_table_row_clicked(self, index: QModelIndex) -> None:
-        """Handle table row click via EventHandlerManager."""
-        self.main_window.event_handler_manager.on_table_row_clicked(index)
-
-    # =====================================
-    # Drag & Drop Operations
-    # =====================================
-
-    def force_drag_cleanup(self):
-        """Force drag cleanup."""
-        return self.main_window.drag_cleanup_manager.force_drag_cleanup()
-
-    def cleanup_widget_drag_states(self):
-        """Cleanup widget drag states."""
-        return self.main_window.drag_cleanup_manager._cleanup_widget_drag_states()
-
-    def emergency_drag_cleanup(self):
-        """Emergency drag cleanup."""
-        return self.main_window.drag_cleanup_manager.emergency_drag_cleanup()
-
-    # =====================================
-    # UI Operations
-    # =====================================
-
-    def center_window(self):
-        """Center the window."""
-        return self.main_window.utility_manager.center_window()
-
-    def force_reload(self):
-        """Force reload."""
-        return self.main_window.utility_manager.force_reload()
-
-    def update_files_label(self) -> None:
-        """Update files label via UtilityManager."""
-        self.main_window.utility_manager.update_files_label()
-
-    def get_modifier_flags(self) -> tuple[bool, bool]:
-        """Get modifier flags via UtilityManager."""
-        return self.main_window.utility_manager.get_modifier_flags()
-
-    def get_selected_rows_files(self) -> list[FileItem]:
-        """Get selected rows as files via UtilityManager."""
-        return self.main_window.utility_manager.get_selected_rows_files()
-
-    # =====================================
-    # Splitter Operations
-    # =====================================
-
-    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement via SplitterManager."""
-        self.main_window.splitter_manager.on_horizontal_splitter_moved(pos, index)
-
-    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle vertical splitter movement via SplitterManager."""
-        self.main_window.splitter_manager.on_vertical_splitter_moved(pos, index)
-
-    # =====================================
-    # Shortcuts
-    # =====================================
-
-    def clear_file_table_shortcut(self):
-        """Clear file table via shortcut."""
-        return self.main_window.shortcut_manager.clear_file_table_shortcut()
-
-    # =====================================
-    # Validation & Dialog Operations
+    # Validation & Dialog Operations (with business logic)
     # =====================================
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
@@ -681,62 +412,12 @@ class ApplicationService:
         return moved_files
 
     # =====================================
-    # Utility Operations
-    # =====================================
-
-    def find_consecutive_ranges(self, indices: list[int]):
-        """Find consecutive ranges."""
-        return self.main_window.utility_manager.find_consecutive_ranges(indices)
-
-    def find_fileitem_by_path(self, path: str) -> FileItem | None:
-        """Find FileItem by path via FileOperationsManager."""
-        return self.main_window.file_operations_manager.find_fileitem_by_path(
-            self.main_window.file_model.files, path
-        )
-
-    def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
-        """Check if folder reload should be skipped."""
-        return self.main_window.file_operations_manager.should_skip_folder_reload(
-            folder_path, self.main_window.context.get_current_folder(), force
-        )
-
-    def _is_video_file(self, file_item: FileItem, metadata: dict[str, Any]) -> bool:
-        """Check if the given file item is a video file based on its metadata."""
-        return self.main_window.metadata_manager.is_video_file(file_item, metadata)
-
-    def has_deep_content(self, folder_path: str) -> bool:
-        """Check if folder has deep content."""
-        return self.main_window.file_load_manager._has_deep_content(folder_path)
-
-    def get_file_items_from_folder(self, folder_path: str):
-        """Get file items from folder."""
-        return self.main_window.file_load_manager.get_file_items_from_folder(folder_path)
-
-    # =====================================
     # Status & Initialization
     # =====================================
-
-    def update_status_from_preview(self, status_html: str):
-        """Update status from preview."""
-        return self.main_window.initialization_manager.update_status_from_preview(status_html)
-
-    def show_metadata_status(self):
-        """Show metadata status."""
-        return self.main_window.initialization_manager.show_metadata_status()
 
     def is_initialized(self) -> bool:
         """Check if service is initialized."""
         return self._initialized
-
-    def set_status(
-        self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000
-    ) -> None:
-        """Set status text and color via StatusManager."""
-        self.main_window.status_manager.set_status(text, color, auto_reset, reset_delay)
-
-    def reload_current_folder(self) -> None:
-        """Reload current folder via FileLoadManager."""
-        self.main_window.file_load_manager.reload_current_folder()
 
 
 # =====================================

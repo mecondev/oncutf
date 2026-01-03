@@ -277,13 +277,15 @@ class MetadataWriter(QObject):
         # We'll update icons manually for each file instead
         filesystem_monitor = None
         try:
-            # The FilesystemMonitor is created in FileTreeView (folder_tree)
+            # The FilesystemMonitor is created in FilesystemHandler (inside FileTreeView)
             if hasattr(self.parent_window, "folder_tree"):
-                filesystem_monitor = getattr(self.parent_window.folder_tree, "_filesystem_monitor", None)
-                if filesystem_monitor:
-                    logger.info("[MetadataWriter] Found filesystem_monitor from folder_tree")
-                else:
-                    logger.warning("[MetadataWriter] folder_tree exists but _filesystem_monitor is None")
+                folder_tree = self.parent_window.folder_tree
+                if hasattr(folder_tree, "_filesystem_handler"):
+                    filesystem_monitor = folder_tree._filesystem_handler.filesystem_monitor
+                    if filesystem_monitor:
+                        logger.info("[MetadataWriter] Found filesystem_monitor from folder_tree handler")
+                    else:
+                        logger.debug("[MetadataWriter] folder_tree exists but filesystem_monitor not yet initialized", extra={"dev_only": True})
             else:
                 logger.warning("[MetadataWriter] parent_window has no folder_tree attribute")
         except Exception as e:
@@ -292,8 +294,8 @@ class MetadataWriter(QObject):
         if filesystem_monitor and hasattr(filesystem_monitor, "pause"):
             filesystem_monitor.pause()
             logger.info("[MetadataWriter] Paused filesystem monitoring during save")
-        else:
-            logger.warning("[MetadataWriter] Cannot pause - filesystem_monitor=%s", filesystem_monitor)
+        elif filesystem_monitor:
+            logger.debug("[MetadataWriter] filesystem_monitor has no pause method", extra={"dev_only": True})
 
         try:
             if save_mode == "multiple_files_dialog":

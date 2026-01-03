@@ -144,8 +144,8 @@ class MainWindow(QMainWindow):
         return self.shortcut_handler.auto_color_by_folder()
 
     def request_preview_update(self) -> None:
-        """Request preview update via Application Service."""
-        self.app_service.request_preview_update()
+        """Request preview update via UtilityManager."""
+        self.utility_manager.request_preview_update()
 
     def request_preview_update_debounced(self) -> None:
         """Request preview update with 300ms debounce.
@@ -178,31 +178,31 @@ class MainWindow(QMainWindow):
         """Execute pending preview update after debounce delay."""
         if self._preview_pending:
             self._preview_pending = False
-            self.app_service.request_preview_update()
+            self.utility_manager.request_preview_update()
 
     def generate_preview_names(self) -> None:
-        """Generate preview names via Application Service."""
-        self.app_service.generate_preview_names()
+        """Generate preview names via UtilityManager."""
+        self.utility_manager.generate_preview_names()
 
     def center_window(self) -> None:
         """Center window via Application Service."""
         return self.window_event_handler.center_window()
 
     def force_reload(self) -> None:
-        """Force reload via Application Service."""
-        self.app_service.force_reload()
+        """Force reload via UtilityManager."""
+        self.utility_manager.force_reload()
 
     def handle_browse(self) -> None:
-        """Handle browse via Application Service."""
-        self.app_service.handle_browse()
+        """Handle browse via EventHandlerManager."""
+        self.event_handler_manager.handle_browse()
 
     def handle_folder_import(self) -> None:
-        """Handle folder import via Application Service."""
-        self.app_service.handle_folder_import()
+        """Handle folder import via EventHandlerManager."""
+        self.event_handler_manager.handle_folder_import()
 
     def reload_current_folder(self) -> None:
-        """Reload current folder via Application Service."""
-        self.app_service.reload_current_folder()
+        """Reload current folder via FileLoadManager."""
+        self.file_load_manager.reload_current_folder()
 
     # =====================================
     # File Operations via Application Service
@@ -229,24 +229,16 @@ class MainWindow(QMainWindow):
         )
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
-        """Prepare folder load via Application Service."""
-        return self.app_service.prepare_folder_load(folder_path, clear=clear)
+        """Prepare folder load via FileLoadManager."""
+        return self.file_load_manager.prepare_folder_load(folder_path, clear=clear)
 
     def load_single_item_from_drop(
         self,
         path: str,
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
     ) -> None:
-        """Load single item from drop via Application Service."""
-        self.app_service.load_single_item_from_drop(path, modifiers)
-
-    def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
-        """Handle folder drop via Application Service."""
-        self.app_service.handle_folder_drop(folder_path, merge_mode, recursive)
-
-    def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
-        """Handle file drop via Application Service."""
-        self.app_service.handle_file_drop(file_path, merge_mode)
+        """Load single item from drop via FileLoadController."""
+        self.file_load_controller.handle_drop([path], modifiers)
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
@@ -269,12 +261,12 @@ class MainWindow(QMainWindow):
         order: Qt.SortOrder | None = None,
         force_order: Qt.SortOrder | None = None,
     ) -> None:
-        """Sort by column via Application Service."""
-        self.app_service.sort_by_column(column, order, force_order)  # type: ignore[arg-type]
+        """Sort by column via TableManager."""
+        self.table_manager.sort_by_column(column, order, force_order)  # type: ignore[arg-type]
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
-        """Prepare file table via Application Service."""
-        self.app_service.prepare_file_table(file_items)
+        """Prepare file table via TableManager."""
+        self.table_manager.prepare_file_table(file_items)
 
     def restore_fileitem_metadata_from_cache(self) -> None:
         """Restore metadata from cache via MetadataController."""
@@ -297,84 +289,84 @@ class MainWindow(QMainWindow):
         return self.metadata_controller.get_common_metadata_fields()
 
     def set_fields_from_list(self, field_names: list[str]) -> None:
-        """Set fields from list via Application Service."""
-        self.app_service.set_fields_from_list(field_names)
+        """Set fields from list via TableManager."""
+        self.table_manager.set_fields_from_list(field_names)
 
     def after_check_change(self) -> None:
-        """Handle check change via Application Service."""
-        self.app_service.after_check_change()
+        """Handle check change via TableManager."""
+        self.table_manager.after_check_change()
 
     def get_selected_files(self) -> list[FileItem]:
-        """Get selected files via Application Service."""
-        return self.app_service.get_selected_files()
+        """Get selected files via TableManager."""
+        return self.table_manager.get_selected_files()
 
     # =====================================
     # Event Handling via Application Service
     # =====================================
 
     def handle_table_context_menu(self, position) -> None:
-        """Handle table context menu via Application Service."""
-        self.app_service.handle_table_context_menu(position)
+        """Handle table context menu via EventHandlerManager."""
+        self.event_handler_manager.handle_table_context_menu(position)
 
     def handle_file_double_click(
         self,
         index: QModelIndex,
         modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore[arg-type]
     ) -> None:
-        """Handle file double click via Application Service."""
-        self.app_service.handle_file_double_click(index, modifiers)
+        """Handle file double click via EventHandlerManager."""
+        self.event_handler_manager.handle_file_double_click(index, modifiers)
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
-        """Handle table row click via Application Service."""
-        self.app_service.on_table_row_clicked(index)
+        """Handle table row click via EventHandlerManager."""
+        self.event_handler_manager.on_table_row_clicked(index)
 
     def handle_header_toggle(self, _) -> None:
-        """Handle header toggle via Application Service."""
-        self.app_service.handle_header_toggle(_)
+        """Handle header toggle via EventHandlerManager."""
+        self.event_handler_manager.handle_header_toggle(_)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement via Application Service."""
-        self.app_service.on_horizontal_splitter_moved(pos, index)
+        """Handle horizontal splitter movement via SplitterManager."""
+        self.splitter_manager.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle vertical splitter movement via Application Service."""
-        self.app_service.on_vertical_splitter_moved(pos, index)
+        """Handle vertical splitter movement via SplitterManager."""
+        self.splitter_manager.on_vertical_splitter_moved(pos, index)
 
     # =====================================
     # Preview Operations via Application Service
     # =====================================
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
-        """Get identity name pairs via Application Service."""
-        return self.app_service.get_identity_name_pairs()
+        """Get identity name pairs via PreviewManager."""
+        return self.preview_manager.get_identity_name_pairs(self.file_model.files)
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """Update preview tables from pairs via Application Service."""
-        self.app_service.update_preview_tables_from_pairs(name_pairs)
+        """Update preview tables from pairs via PreviewManager."""
+        self.preview_manager.update_preview_tables_from_pairs(name_pairs)
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
-        """Compute max filename width via Application Service."""
-        return self.app_service.compute_max_filename_width(file_list)
+        """Compute max filename width via PreviewManager."""
+        return self.preview_manager.compute_max_filename_width(file_list)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """Update preview from selection via Application Service."""
-        self.app_service.update_preview_from_selection(selected_rows)
+        """Update preview from selection via SelectionManager."""
+        self.selection_manager.update_preview_from_selection(selected_rows)
 
     # =====================================
     # Utility Operations via Application Service
     # =====================================
 
     def get_selected_rows_files(self) -> list:
-        """Get selected rows as files via Application Service."""
-        return self.app_service.get_selected_rows_files()
+        """Get selected rows as files via UtilityManager."""
+        return self.utility_manager.get_selected_rows_files()
 
     def find_fileitem_by_path(self, path: str) -> list[FileItem]:
-        """Find FileItem by path via Application Service."""
-        return self.app_service.find_fileitem_by_path(path)  # type: ignore[return-value]
+        """Find FileItem by path via FileOperationsManager."""
+        return self.file_operations_manager.find_fileitem_by_path(self.file_model.files, path)  # type: ignore[return-value]
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
-        """Get modifier flags via Application Service."""
-        return self.app_service.get_modifier_flags()
+        """Get modifier flags via UtilityManager."""
+        return self.utility_manager.get_modifier_flags()
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """Determine metadata mode via MetadataController."""
@@ -385,23 +377,23 @@ class MainWindow(QMainWindow):
         return self.metadata_controller.should_use_extended_metadata()
 
     def update_files_label(self) -> None:
-        """Update files label via Application Service."""
-        self.app_service.update_files_label()
+        """Update files label via UtilityManager."""
+        self.utility_manager.update_files_label()
 
     # =====================================
     # Validation & Dialog Operations via Application Service
     # =====================================
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
-        """Confirm large folder via Application Service."""
+        """Confirm large folder via FileValidationManager and DialogManager."""
         return self.app_service.confirm_large_folder(file_list, folder_path)
 
     def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
-        """Check large files via Application Service."""
+        """Check large files via FileValidationManager and DialogManager."""
         return self.app_service.check_large_files(files)
 
     def confirm_large_files(self, files: list[FileItem]) -> bool:
-        """Confirm large files via Application Service."""
+        """Confirm large files via FileValidationManager and DialogManager."""
         return self.app_service.confirm_large_files(files)
 
     def prompt_file_conflict(self, target_path: str) -> str:
@@ -413,14 +405,14 @@ class MainWindow(QMainWindow):
         return self.app_service.validate_operation_for_user(files, operation_type)
 
     def identify_moved_files(self, file_paths: list[str]) -> dict:
-        """Identify moved files via Application Service."""
+        """Identify moved files via FileValidationManager."""
         return self.app_service.identify_moved_files(file_paths)
 
     def set_status(
         self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000
     ) -> None:
-        """Set status text and color via Application Service."""
-        self.app_service.set_status(text, color, auto_reset, reset_delay)
+        """Set status text and color via StatusManager."""
+        self.status_manager.set_status(text, color, auto_reset, reset_delay)
 
     # =====================================
     # Direct Manager Delegates
@@ -452,8 +444,8 @@ class MainWindow(QMainWindow):
         return folder_path == self.context.get_current_folder() and not force
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
-        """Get file items from folder via ApplicationService."""
-        return self.app_service.get_file_items_from_folder(folder_path)
+        """Get file items from folder via FileLoadManager."""
+        return self.file_load_manager.get_file_items_from_folder(folder_path)
 
     def update_module_dividers(self) -> None:
         """Delegates to RenameManager for module dividers update."""

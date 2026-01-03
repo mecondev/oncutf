@@ -5,16 +5,10 @@ Date: 2025-05-09
 
 widgets package initialization
 This package contains all custom widgets used in the OnCutF application.
-"""
 
-# Re-export dialogs from ui/dialogs for backward compatibility
-from oncutf.ui.dialogs import (
-    BulkRotationDialog,
-    CustomMessageDialog,
-    DateTimeEditDialog,
-    MetadataEditDialog,
-    RenameHistoryDialog,
-)
+NOTE: Dialog imports removed to fix circular import issue.
+Import dialogs directly from oncutf.ui.dialogs instead.
+"""
 
 from .base_validated_input import BaseValidatedInput
 from .custom_file_system_model import CustomFileSystemModel
@@ -37,7 +31,6 @@ from .styled_combo_box import StyledComboBox
 from .validated_line_edit import ValidatedLineEdit
 
 __all__ = [
-    "CustomMessageDialog",
     "ProgressManager",
     "ProgressWidget",
     "ValidatedLineEdit",
@@ -51,10 +44,6 @@ __all__ = [
     "RenameModulesArea",
     "StyledComboBox",
     "MetadataWidget",
-    "MetadataEditDialog",
-    "BulkRotationDialog",
-    "DateTimeEditDialog",
-    "RenameHistoryDialog",
     "CustomFileSystemModel",
     "FinalTransformContainer",
     "NameTransformWidget",

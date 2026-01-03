@@ -1,7 +1,7 @@
 # Project Status Report — oncutf
 **Date:** 2026-01-04  
-**Status:** Phase 7 (Final Polish) - 949+ tests, architecture refactoring complete
-**Latest Update:** file_table_view aggressive cleanup complete - removed ALL delegation wrappers
+**Status:** Phase 7 (Final Polish) - 974 tests, architecture refactoring complete
+**Latest Update:** Application service layering complete - removed 320 trivial delegations
 
 ---
 
@@ -10,7 +10,7 @@
 The project is in **excellent shape** after extensive refactoring:
 - All critical monster files (>900 lines) **eliminated**
 - Proper separation of concerns achieved
-- 949/949 tests passing
+- 974/974 tests passing (+25 new file loader tests)
 - Clean code (ruff + mypy)
 - Phase 7 Final Polish nearly complete
 
@@ -20,7 +20,9 @@ The project is in **excellent shape** after extensive refactoring:
 3. file_table_view cleanup: 1321 -> 592 lines (-55.2%), removed ALL delegation wrappers
 4. metadata/operations_manager refactoring: 779 -> 506 lines (-35%), extracted field_compatibility
 5. hash_operations_manager refactoring: 807 -> 482 lines (-40.3%), extracted worker coordinator + results presenter
-6. Eliminated all CRITICAL (>900 lines) files - 0 remaining
+6. Application service layering: 789 -> 469 lines (-40.6%), removed 60+ trivial delegations
+7. File loader tests: Created 25 new tests, fixed circular import in ui/widgets/__init__.py
+8. Eliminated all CRITICAL (>900 lines) files - 0 remaining
 
 ---
 
@@ -76,19 +78,26 @@ The project is in **excellent shape** after extensive refactoring:
 | `file_load_manager.py` | 873 | 3 layers | Proper layering (36.9% down) |
 | `operations_manager.py` | 779 | 506 + field_compatibility | Extract field compatibility (35% down) |
 | `hash_operations_manager.py` | 807 | 482 + 2 modules | Split to 3 modules (40.3% down) |
+| `application_service.py` | 789 | 469 | Removed trivial delegations (40.6% down) |
 
 **Status:** 0 critical files remaining
 
-### Warning Priority (600-900 lines) — 4 remaining
+### Warning Priority (600-900 lines) — 3 remaining
 
 | File | Lines | Status | Target |
 |------|-------|--------|--------|
-| `core/application_service.py` | 786 | Plan: Layer by responsibility | Q1 2026 |
 | `core/ui_managers/status_manager.py` | 708 | Plan: Review structure | Q2 2026 |
 | `core/events/context_menu/base.py` | 639 | Plan: Extract handlers | Q2 2026 |
 | `core/database/metadata_store.py` | 627 | Plan: Domain separation | Q2 2026 |
 
-**Status:** 4 files in active refactoring pipeline
+**Status:** 3 files in active refactoring pipeline
+
+### OK Priority (<600 lines) — Recently Cleaned
+
+| File | Lines | Status | What Changed |
+|------|-------|--------|---------------|
+| `core/application_service.py` | 469 | [DONE] 2026-01-04 | Removed 60+ trivial delegations (-40.6%) |
+| `core/ui/handlers/shortcut_command_handler.py` | Updated | [DONE] 2026-01-04 | 10 methods bypass app_service |
 
 ---
 
@@ -116,7 +125,7 @@ The project is in **excellent shape** after extensive refactoring:
 ## Code Metrics
 
 ### Test Coverage
-- **Tests Passing:** 949/949 [PASS]
+- **Tests Passing:** 974/974 [PASS] (+25 file loader tests)
 - **Tests Skipped:** 6 (stress tests)
 - **Critical Regressions:** 0 [NONE]
 
@@ -146,8 +155,9 @@ The project is in **excellent shape** after extensive refactoring:
 - [DONE] 2026-01-04: Metadata operations refactoring (779 -> 506 lines)
 - [DONE] 2026-01-04: Hash operations refactoring (807 -> 482 lines)
 
-### In Progress
-- [WIP] Application service layering
+### Completed (This Session)
+- [DONE] 2026-01-04: Application service layering (789 -> 469 lines, removed 60+ trivial delegations)
+- [DONE] 2026-01-04: FileLoader test coverage (25 new tests, circular import fixed)
 
 ### Planned
 - [TODO] Status manager review
@@ -213,4 +223,4 @@ The project is in **excellent shape** after extensive refactoring:
 
 ---
 
-**Last Verified:** 2026-01-04 (949 tests passed, ruff clean, mypy clean) 
+**Last Verified:** 2026-01-04 (974 tests passed, ruff clean, mypy clean, app_service reduced 40.6%) 

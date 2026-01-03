@@ -32,52 +32,52 @@ class ShortcutCommandHandler:
         logger.debug("[ShortcutCommandHandler] Initialized")
 
     # -------------------------------------------------------------------------
-    # Simple Shortcut Delegates (1-liners)
+    # Simple Shortcut Delegates (direct manager calls)
     # -------------------------------------------------------------------------
 
     def select_all_rows(self) -> None:
-        """Select all rows via Application Service."""
-        self.main_window.app_service.select_all_rows()
+        """Select all rows via SelectionManager."""
+        self.main_window.selection_manager.select_all_rows()
 
     def clear_all_selection(self) -> None:
-        """Clear all selection via Application Service."""
-        self.main_window.app_service.clear_all_selection()
+        """Clear all selection via SelectionManager."""
+        self.main_window.selection_manager.clear_all_selection()
 
     def invert_selection(self) -> None:
-        """Invert selection via Application Service."""
-        self.main_window.app_service.invert_selection()
+        """Invert selection via SelectionManager."""
+        self.main_window.selection_manager.invert_selection()
 
     def shortcut_load_metadata(self) -> None:
-        """Load fast metadata via Application Service."""
-        self.main_window.app_service.load_metadata_fast()
+        """Load fast metadata via MetadataController."""
+        self.main_window.metadata_controller.load_metadata_for_selected(extended=False)
 
     def shortcut_load_extended_metadata(self) -> None:
-        """Load extended metadata via Application Service."""
-        self.main_window.app_service.load_metadata_extended()
+        """Load extended metadata via MetadataController."""
+        self.main_window.metadata_controller.load_metadata_for_selected(extended=True)
 
     def shortcut_save_selected_metadata(self) -> None:
-        """Save selected metadata via Application Service."""
-        self.main_window.app_service.save_selected_metadata()
+        """Save selected metadata via MetadataManager."""
+        self.main_window.metadata_manager.save_metadata_for_selected()
 
     def shortcut_save_all_metadata(self) -> None:
-        """Save all modified metadata via Application Service."""
-        self.main_window.app_service.save_all_metadata()
+        """Save all modified metadata via MetadataManager."""
+        self.main_window.metadata_manager.save_all_modified_metadata()
 
     def shortcut_calculate_hash_selected(self) -> None:
-        """Calculate hash for selected files via Application Service."""
+        """Calculate hash for selected files via ApplicationService (has business logic)."""
         self.main_window.app_service.calculate_hash_selected()
 
     def rename_files(self) -> None:
-        """Execute batch rename via Application Service."""
+        """Execute batch rename via ApplicationService (has business logic)."""
         self.main_window.app_service.rename_files()
 
     def clear_file_table_shortcut(self) -> None:
-        """Clear file table via Application Service."""
-        self.main_window.app_service.clear_file_table_shortcut()
+        """Clear file table via ShortcutManager."""
+        self.main_window.shortcut_manager.clear_file_table_shortcut()
 
     def force_drag_cleanup(self) -> None:
-        """Force drag cleanup via Application Service."""
-        self.main_window.app_service.force_drag_cleanup()
+        """Force drag cleanup via DragCleanupManager."""
+        self.main_window.drag_cleanup_manager.force_drag_cleanup()
 
     # -------------------------------------------------------------------------
     # History/Undo Stubs
