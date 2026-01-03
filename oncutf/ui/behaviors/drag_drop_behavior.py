@@ -457,14 +457,14 @@ class DragDropBehavior:
         modifiers = QApplication.keyboardModifiers()
         use_extended = bool(modifiers & Qt.ShiftModifier)
 
-        # Verify app_service
-        if not hasattr(parent_window, "app_service"):
-            logger.warning("[DragDropBehavior] Could not find app_service")
+        # Verify metadata_controller
+        if not hasattr(parent_window, "metadata_controller"):
+            logger.warning("[DragDropBehavior] Could not find metadata_controller")
             return False
 
-        # Delegate to ApplicationService
+        # Delegate to MetadataController
         try:
-            parent_window.app_service.load_metadata_for_items(
+            parent_window.metadata_controller.load_metadata_for_items(
                 file_items, use_extended=use_extended, source="drag_drop"
             )
 

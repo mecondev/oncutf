@@ -87,6 +87,10 @@ class SelectionBehavior:
                 )
         return self._selection_store
 
+    def get_selection_store(self) -> SelectionStore | None:
+        """Get SelectionStore instance (method form for backward compatibility)."""
+        return self.selection_store
+
     def _on_qt_selection_changed(
         self, selected: QItemSelection, deselected: QItemSelection
     ) -> None:
