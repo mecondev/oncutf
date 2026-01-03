@@ -464,7 +464,7 @@ class DragDropBehavior:
 
         # Delegate to MetadataController
         try:
-            parent_window.metadata_controller.load_metadata_for_items(
+            parent_window.metadata_controller.load_metadata(
                 file_items, use_extended=use_extended, source="drag_drop"
             )
 
