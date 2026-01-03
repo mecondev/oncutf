@@ -329,23 +329,39 @@ class HashOperationsManager:
             hash_value: Calculated hash value
 
         """
-        # Update file model with new hash
+        # Update file table view to show new hash
         if (
             hasattr(self.parent_window, "file_table_view")
             and self.parent_window.file_table_view
         ):
-            # Force table to refresh hash column for this file
-            from oncutf.core.application_context import get_app_context
             try:
+                from oncutf.core.application_context import get_app_context
+                from oncutf.core.pyqt_imports import Qt
+                
                 file_store = get_app_context().file_store
-                file_item = file_store.get_file_item_by_path(file_path)
-                if file_item:
-                    # Emit dataChanged signal for the hash column to trigger refresh
-                    model = self.parent_window.file_table_view.model()
-                    if model and hasattr(model, 'emit_file_item_changed'):
-                        model.emit_file_item_changed(file_item)
+                model = self.parent_window.file_table_view.model()
+                
+                if model and file_store:
+                    # Find the row for this file
+                    file_items = file_store.get_all_files()
+                    for row, file_item in enumerate(file_items):
+                        if file_item.full_path == file_path:
+                            # Emit dataChanged for the entire row to refresh hash column
+                            left_index = model.index(row, 0)
+                            right_index = model.index(row, model.columnCount() - 1)
+                            model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
+                            
+                            # Force immediate repaint
+                            from oncutf.core.pyqt_imports import QApplication
+                            QApplication.instance().processEvents()
+                            break
+                            
             except Exception as e:
-                logger.debug("[HashManager] Could not refresh file item UI: %s", e, extra={"dev_only": True})
+                logger.debug(
+                    "[HashManager] Could not refresh file item UI: %s", 
+                    e, 
+                    extra={"dev_only": True}
+                )
 
         logger.debug(
             "[HashManager] File hash calculated: %s -> %s",
