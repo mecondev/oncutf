@@ -589,3 +589,27 @@ class FileTableView(QTableView):
     def selectionChanged(self, selected, deselected) -> None:
         """Override to delegate to SelectionBehavior."""
         self._selection_behavior.handle_selection_changed(selected, deselected)
+
+    # =====================================
+    # Selection Delegation (for DragDropBehavior Protocol)
+    # =====================================
+
+    def _get_current_selection(self) -> set[int]:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_current_selection()
+
+    def _get_current_selection_safe(self) -> set[int]:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_current_selection_safe()
+
+    def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
+        """Delegate to SelectionBehavior."""
+        self._selection_behavior.set_anchor_row(row)
+
+    def _get_anchor_row(self) -> int | None:
+        """Delegate to SelectionBehavior."""
+        return self._selection_behavior.get_anchor_row()
+
+    def _get_selection_store(self):
+        """Get SelectionStore instance."""
+        return self._selection_behavior.selection_store
