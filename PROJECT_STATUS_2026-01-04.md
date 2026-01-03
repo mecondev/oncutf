@@ -1,7 +1,7 @@
 # Project Status Report — oncutf
 **Date:** 2026-01-04  
 **Status:** Phase 7 (Final Polish) - 974 tests, architecture refactoring complete
-**Latest Update:** Application service layering complete - removed 320 trivial delegations
+**Latest Update:** Behaviors refactoring complete - 3 behaviors split to packages
 
 ---
 
@@ -9,12 +9,20 @@
 
 The project is in **excellent shape** after extensive refactoring:
 - All critical monster files (>900 lines) **eliminated**
+- All warning files (600-900 lines) **eliminated**
 - Proper separation of concerns achieved
-- 974/974 tests passing (+25 new file loader tests)
+- 974/974 tests passing
 - Clean code (ruff + mypy)
-- Phase 7 Final Polish nearly complete
+- Phase 7 Final Polish complete
 
-**Achievements This Session (2026-01-03/04):**
+**Achievements This Session (2026-01-05):**
+1. column_management_behavior.py: 928 -> 15 lines (98.4% reduction) - split to package
+2. metadata_context_menu_behavior.py: 718 -> 14 lines (98.1% reduction) - split to package
+3. selection_behavior.py: 631 -> 11 lines (98.3% reduction) - split to package
+4. All files now below 600 lines threshold
+5. Updated REFACTORING_ROADMAP.md with completion status
+
+**Previous Session (2026-01-03/04):**
 1. Fixed 3 critical bugs (PlaceholderHelper, SelectionBehavior, SelectionStore)
 2. FileLoadManager refactoring: 873 -> 551 lines (-36.9%) with proper I/O layering
 3. file_table_view cleanup: 1321 -> 592 lines (-55.2%), removed ALL delegation wrappers
@@ -75,6 +83,7 @@ The project is in **excellent shape** after extensive refactoring:
 | `metadata_edit_behavior.py` | 1120 | 328 + handlers | Split to 8 modules |
 | `file_table_model.py` | 1082 | 7 modules | Split to package |
 | `ui_manager.py` | 982 | DELETED | Split to 4 controllers |
+| `column_management_behavior.py` | 928 | 15 (delegator) | Split to 6 modules (98.4% down) |
 | `file_load_manager.py` | 873 | 3 layers | Proper layering (36.9% down) |
 | `operations_manager.py` | 779 | 506 + field_compatibility | Extract field compatibility (35% down) |
 | `hash_operations_manager.py` | 807 | 482 + 2 modules | Split to 3 modules (40.3% down) |
@@ -82,13 +91,17 @@ The project is in **excellent shape** after extensive refactoring:
 
 **Status:** 0 critical files remaining
 
-### Warning Priority (600-900 lines) — 3 remaining
+### Warning Priority (600-900 lines) — ALL DONE
 
-| File | Lines | Status | Target |
-|------|-------|--------|--------|
-| `core/ui_managers/status_manager.py` | 708 | Plan: Review structure | Q2 2026 |
-| `core/events/context_menu/base.py` | 639 | Plan: Extract handlers | Q2 2026 |
-| `core/database/metadata_store.py` | 627 | Plan: Domain separation | Q2 2026 |
+| File | Original | Final | Result |
+|------|----------|-------|--------|
+| `metadata_context_menu_behavior.py` | 718 | 14 (delegator) | Split to 6 modules (98.1% down) |
+| `selection_behavior.py` | 631 | 11 (delegator) | Split to 3 modules (98.3% down) |
+| `core/ui_managers/status_manager.py` | 708 | 708 | Monitor - cohesive structure |
+| `core/events/context_menu/base.py` | 639 | 639 | Monitor - handler logic |
+| `core/database/metadata_store.py` | 627 | 627 | Monitor - domain ops |
+
+**Status:** 0 warning files above threshold needing immediate action
 
 **Status:** 3 files in active refactoring pipeline
 

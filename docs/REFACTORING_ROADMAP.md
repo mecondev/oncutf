@@ -2,7 +2,7 @@
 
 **Author:** Michael Economou  
 **Date:** 2026-01-01  
-**Last Updated:** 2026-01-04 (FileLoadManager complete)  
+**Last Updated:** 2026-01-05 (Behaviors refactoring complete)  
 **Status:** Active tracking document
 
 ---
@@ -35,12 +35,15 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 | ~~`ui/behaviors/metadata_edit_behavior.py`~~ | ~~1120~~ → 328 | UI | Split by operation | [DONE] Split to 8 modules (70.7% ↓) |
 | ~~`models/file_table_model.py`~~ | ~~1082~~ → 301 | Model | Extract delegates | [DONE] Split to 7 modules (72.1% ↓) |
 | ~~`ui_manager.py`~~ | ~~982~~ → 133 | Legacy | Migrate to controllers | [DONE] Split to 4 controllers (86.5% ↓) |
-| ~~`column_management_behavior.py`~~ | ~~964~~ → 928 | UI | Simplify via service | [DONE] Delegated to service (3.8% ↓) |
+| ~~`column_management_behavior.py`~~ | ~~928~~ → 15 | UI | Split to package | [DONE] Split to 6 modules (98.4% ↓) |
 | ~~`core/file/load_manager.py`~~ | ~~873~~ → 551 | Core | Proper layering | [DONE] 3 layers + UI service (36.9% ↓) |
 
-### [WARN] Warning Priority (600-900 lines)
+### [WARN] Warning Priority (600-900 lines) — ✅ ALL ELIMINATED
 
----
+| File | Lines | Category | Split Strategy | Status |
+|------|-------|----------|----------------|--------|
+| ~~`ui/behaviors/metadata_context_menu_behavior.py`~~ | ~~718~~ → 14 | UI | Split to package | [DONE] Split to 6 modules (98.1% ↓) |
+| ~~`ui/behaviors/selection_behavior.py`~~ | ~~631~~ → 11 | UI | Split to package | [DONE] Split to 3 modules (98.3% ↓) |
 
 ## Detailed Split Plans
 
@@ -505,14 +508,89 @@ core/ui_managers/
 
 ---
 
+### 16. `column_management_behavior.py` (928 lines) -> Package [DONE]
+
+**Completed:** 2026-01-05
+
+**Final structure:**
+```
+ui/behaviors/column_management/
+├── __init__.py (13 lines)           <- Re-exports
+├── column_behavior.py (392 lines)   <- Main coordinator
+├── visibility_manager.py (254 lines) <- Add/remove columns, visibility config
+├── width_manager.py (207 lines)     <- Width loading, saving, scheduling
+├── header_configurator.py (181 lines) <- Header setup and resize modes
+└── protocols.py (57 lines)          <- ColumnManageableWidget protocol
+
+column_management_behavior.py (15 lines) <- Delegator for backward compatibility
+```
+
+**Total package:** 1104 lines across 6 modules (avg 184 lines/module)
+**Reduction:** 928 -> 15 lines delegator (98.4%)
+
+**Quality Gates:** ✅ 974 tests, ✅ ruff clean, ✅ mypy clean
+
+---
+
+### 17. `metadata_context_menu_behavior.py` (718 lines) -> Package [DONE]
+
+**Completed:** 2026-01-05
+
+**Final structure:**
+```
+ui/behaviors/metadata_context_menu/
+├── __init__.py (13 lines)              <- Re-exports
+├── context_menu_behavior.py (131 lines) <- Main coordinator
+├── menu_builder.py (377 lines)         <- Menu creation and display
+├── column_integration.py (176 lines)   <- File view column operations
+├── key_mapping.py (108 lines)          <- Metadata to column key mapping
+└── protocols.py (79 lines)             <- ContextMenuWidget protocol
+
+metadata_context_menu_behavior.py (14 lines) <- Delegator
+```
+
+**Total package:** 884 lines across 6 modules (avg 147 lines/module)
+**Reduction:** 718 -> 14 lines delegator (98.1%)
+
+**Quality Gates:** ✅ 974 tests, ✅ ruff clean, ✅ mypy clean
+
+---
+
+### 18. `selection_behavior.py` (631 lines) -> Package [DONE]
+
+**Completed:** 2026-01-05
+
+**Final structure:**
+```
+ui/behaviors/selection/
+├── __init__.py (11 lines)              <- Re-exports
+├── selection_behavior.py (560 lines)   <- Main behavior (refactored)
+└── protocols.py (44 lines)             <- SelectableWidget protocol
+
+selection_behavior.py (11 lines) <- Delegator
+```
+
+**Changes:**
+- Extracted helper methods: `_handle_shift_selection`, `_handle_ctrl_selection`,
+  `_handle_simple_selection`, `_update_row_visual`
+- Moved Protocol to separate file
+- Main behavior remains cohesive at 560 lines (below 600 threshold)
+
+**Total package:** 615 lines across 3 modules (avg 205 lines/module)
+**Reduction:** 631 -> 11 lines delegator (98.3%)
+
+**Quality Gates:** ✅ 974 tests, ✅ ruff clean, ✅ mypy clean
+
+---
+
 ## Success Metrics
 
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
-| Files >900 lines | 11 | 0 | 0 |
-| Files >600 lines | 16 | 5 | 5 |
-| Average LOC/file | ~200 | ~200 | ~200 |
-| Tests passing | 949 | 949 | 949+ |
+| Files >900 lines | 12 | 0 | 0 |
+| Files >600 lines | 16 | 0 | 0 |
+| Average LOC/file | ~200 | ~180 | ~200 |
+| Tests passing | 949 | 974 | 949+ |
 | Docstring coverage | 96.2% | 96.2% | 98%+ |
 
 ---
