@@ -7,11 +7,11 @@
 
 ## Summary
 
-Το project είναι σε **πολύ καλή κατάσταση** μετά από extensive refactoring. Τα περισσότερα monster files έχουν split ή refactor.
+The project is in **very good shape** after extensive refactoring. Most monster files have been split or refactored.
 
 ---
 
-## ✅ Completed Refactorings (από REFACTORING_ROADMAP.md)
+## ✅ Completed Refactorings (from REFACTORING_ROADMAP.md)
 
 ### Critical Priority (>900 lines) — ALL DONE ✅
 

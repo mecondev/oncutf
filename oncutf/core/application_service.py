@@ -67,7 +67,7 @@ class ApplicationService:
     # =====================================
 
     def load_files_from_folder(self, folder_path: str, force: bool = False):  # noqa: ARG002
-        """Load files from folder via FileLoadManager."""
+        """Load files from folder via FileLoadController."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)
         logger.info(
@@ -75,7 +75,8 @@ class ApplicationService:
             folder_path,
             recursive,
         )
-        self.main_window.file_load_manager.load_folder(
+        # Use controller instead of manager (proper architecture)
+        self.main_window.file_load_controller.load_folder(
             folder_path, merge_mode=False, recursive=recursive
         )
 
@@ -86,8 +87,10 @@ class ApplicationService:
     def load_single_item_from_drop(
         self, path: str, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
     ) -> None:
-        """Load single item from drop via FileLoadManager."""
-        self.main_window.file_load_manager.load_single_item_from_drop(path, modifiers)
+        """Load single item from drop via FileLoadController."""
+        # Use controller for orchestration (proper architecture)
+        # Controller handles modifiers parsing and delegates to manager
+        self.main_window.file_load_controller.handle_drop([path], modifiers)
 
     # =====================================
     # Metadata Operations

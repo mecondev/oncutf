@@ -75,7 +75,7 @@ EXCLUDED_DIRS = {
 
 # Files to always exclude (functional data, not documentation)
 EXCLUDED_FILES = {
-    "utils/transform_utils.py",  # Greek-to-Latin transliteration dictionary
+    "oncutf/utils/naming/transform_utils.py",  # Greek-to-Latin transliteration dictionary
     "tests/test_transform_utils.py",  # Test data with Greek characters
 }
 

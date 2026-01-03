@@ -56,9 +56,11 @@ class FileEventHandlers:
 
             logger.info("User selected folder: %s (%s)", folder_path, action_type)
 
-            # Use unified folder loading method
+            # Use controller for orchestration (proper architecture)
             if os.path.isdir(folder_path):
-                self.parent_window.file_load_manager.load_folder(folder_path, merge_mode, recursive)
+                self.parent_window.file_load_controller.load_folder(
+                    folder_path, merge_mode, recursive
+                )
 
             # Update folder tree selection if replace mode
             if (
@@ -83,5 +85,7 @@ class FileEventHandlers:
         modifiers = QApplication.keyboardModifiers()
         merge_mode, recursive, _ = decode_modifiers_to_flags(modifiers)
 
-        # Use unified folder loading method
-        self.parent_window.file_load_manager.load_folder(selected_path, merge_mode, recursive)
+        # Use controller for orchestration (proper architecture)
+        self.parent_window.file_load_controller.load_folder(
+            selected_path, merge_mode, recursive
+        )

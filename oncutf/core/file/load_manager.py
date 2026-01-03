@@ -22,10 +22,10 @@ from oncutf.config import (
 )
 from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
 from oncutf.core.pyqt_imports import Qt
+from oncutf.core.ui_managers.file_load_ui_service import FileLoadUIService
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import get_timer_manager
 from oncutf.utils.ui.cursor_helper import force_restore_cursor, wait_cursor
 
 logger = get_cached_logger(__name__)
@@ -42,15 +42,12 @@ class FileLoadManager:
         """Initialize FileLoadManager with parent window reference."""
         self.parent_window = parent_window
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
-        self.timer_manager = get_timer_manager()
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
-        # Streaming file loading support
-        self._pending_files = []
-        self._loading_in_progress = False
-        self._batch_size = 100  # Files to add per UI update cycle
+        # UI refresh service (handles all model and UI updates)
+        self._ui_service = FileLoadUIService(parent_window)
         logger.debug(
-            "[FileLoadManager] Initialized with unified loading policy + streaming support",
+            "[FileLoadManager] Initialized with unified loading policy",
             extra={"dev_only": True},
         )
 
@@ -414,7 +411,7 @@ class FileLoadManager:
 
     def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
         """Update UI with loaded files.
-        Converts file paths to FileItem objects and updates the model.
+        Converts file paths to FileItem objects and delegates to service.
         """
         if not file_paths:
             logger.info("[FileLoadManager] No files to update UI with")
@@ -430,7 +427,7 @@ class FileLoadManager:
             extra={"dev_only": True},
         )
 
-        # Convert file paths to FileItem objects
+        # Convert file paths to FileItem objects (I/O only)
         file_items = []
         for path in filtered_paths:
             try:
@@ -443,327 +440,8 @@ class FileLoadManager:
             logger.warning("[FileLoadManager] No valid FileItem objects created")
             return
 
-        # Update the model
-        self._update_ui_after_load(file_items, clear=clear)
-
-    def _update_ui_after_load(self, items: list[FileItem], clear: bool = True) -> None:
-        """Update UI after loading files.
-        Uses streaming approach for large file sets to keep UI responsive.
-        """
-        if not hasattr(self.parent_window, "file_model"):
-            logger.error("[FileLoadManager] Parent window has no file_model attribute")
-            return
-
-        try:
-            # Set current folder path from first file's directory
-            if items and clear:
-                first_file_path = items[0].full_path
-                if first_file_path:
-                    folder_path = os.path.dirname(first_file_path)
-
-                    # Check if this was a recursive load by looking for files in subdirectories
-                    has_subdirectory_files = any(
-                        os.path.dirname(item.full_path) != folder_path for item in items
-                    )
-
-                    # Set folder path and recursive mode in ApplicationContext (centralized state)
-                    self.parent_window.context.set_current_folder(
-                        folder_path, has_subdirectory_files
-                    )
-                    logger.info(
-                        "[FileLoadManager] Set current_folder_path to: %s",
-                        folder_path,
-                        extra={"dev_only": True},
-                    )
-                    logger.info(
-                        "[FileLoadManager] Recursive mode: %s",
-                        has_subdirectory_files,
-                        extra={"dev_only": True},
-                    )
-
-            # Use streaming loading for large file sets (> 200 files)
-            if len(items) > 200:
-                self._load_files_streaming(items, clear=clear)
-            else:
-                # Small file sets: load immediately (legacy behavior)
-                self._load_files_immediate(items, clear=clear)
-
-        except Exception as e:
-            logger.error("[FileLoadManager] Error updating UI: %s", e)
-
-    def _load_files_immediate(self, items: list[FileItem], clear: bool = True) -> None:
-        """Load files immediately (legacy behavior for small file sets).
-        Used for < 200 files where UI blocking is negligible.
-        """
-        if clear:
-            # Replace existing files
-            self.parent_window.file_model.set_files(items)
-            # Also update FileStore (centralized state)
-            self.parent_window.context.file_store.set_loaded_files(items)
-            logger.info(
-                "[FileLoadManager] Replaced files with %d new items",
-                len(items),
-                extra={"dev_only": True},
-            )
-            # Refresh UI to ensure placeholders, header and labels are updated
-            try:
-                self._refresh_ui_after_file_load()
-            except Exception:
-                logger.debug(
-                    "[FileLoadManager] _refresh_ui_after_file_load failed", extra={"dev_only": True}
-                )
-        else:
-            # Add to existing files with duplicate detection
-            existing_files = self.parent_window.file_model.files
-
-            # Create a set of existing file paths for fast lookup
-            existing_paths = {file_item.full_path for file_item in existing_files}
-
-            # Filter out duplicates from new items
-            new_items = []
-            duplicate_count = 0
-
-            for item in items:
-                if item.full_path not in existing_paths:
-                    new_items.append(item)
-                    existing_paths.add(
-                        item.full_path
-                    )  # Add to set to avoid duplicates within the new items too
-                else:
-                    duplicate_count += 1
-
-            # Combine existing files with new non-duplicate items
-            combined_files = existing_files + new_items
-            self.parent_window.file_model.set_files(combined_files)
-            # Also update FileStore (centralized state)
-            self.parent_window.context.file_store.set_loaded_files(combined_files)
-
-            # Log the results
-            if duplicate_count > 0:
-                logger.info(
-                    "[FileLoadManager] Added %d new items, " "skipped %d duplicates",
-                    len(new_items),
-                    duplicate_count,
-                )
-
-    def _load_files_streaming(self, items: list[FileItem], clear: bool = True) -> None:
-        """Load files in batches to keep UI responsive.
-        Used for large file sets (> 200 files) to prevent UI freeze.
-        """
-        logger.info(
-            "[FileLoadManager] Starting streaming load for %d files " "(batch_size=%d)",
-            len(items),
-            self._batch_size,
-        )
-
-        # Clear existing files if requested
-        if clear:
-            self.parent_window.file_model.set_files([])
-            self.parent_window.context.file_store.set_loaded_files([])
-            self._pending_files = items.copy()
-        else:
-            # Merge mode: filter duplicates first
-            existing_files = self.parent_window.file_model.files
-            existing_paths = {f.full_path for f in existing_files}
-            self._pending_files = [item for item in items if item.full_path not in existing_paths]
-
-        self._loading_in_progress = True
-        self._process_next_batch()
-
-    def _process_next_batch(self) -> None:
-        """Process next batch of files in streaming loading.
-        Called recursively via QTimer to keep UI responsive.
-        """
-        if not self._loading_in_progress or not self._pending_files:
-            # Streaming complete
-            self._loading_in_progress = False
-            self._pending_files = []
-            logger.info("[FileLoadManager] Streaming load complete")
-            # Final UI refresh after streaming completes
-            try:
-                self._refresh_ui_after_file_load()
-            except Exception:
-                logger.debug(
-                    "[FileLoadManager] _refresh_ui_after_file_load (stream end) failed",
-                    extra={"dev_only": True},
-                )
-            return
-
-        # Take next batch
-        batch = self._pending_files[: self._batch_size]
-        self._pending_files = self._pending_files[self._batch_size :]
-
-        # Add batch to model
-        existing_files = self.parent_window.file_model.files
-        combined_files = existing_files + batch
-        self.parent_window.file_model.set_files(combined_files)
-        self.parent_window.context.file_store.set_loaded_files(combined_files)
-
-        # Update status
-        loaded_count = len(combined_files)
-        total_count = loaded_count + len(self._pending_files)
-        logger.debug(
-            "[FileLoadManager] Streaming progress: %d/%d files",
-            loaded_count,
-            total_count,
-            extra={"dev_only": True},
-        )
-
-        # Update files label to show progress
-        if hasattr(self.parent_window, "update_files_label"):
-            self.parent_window.update_files_label()
-
-        # Schedule next batch (5ms delay to allow UI updates)
-        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
-
-        get_timer_manager().schedule(
-            self._process_next_batch,
-            delay=5,
-            timer_type=TimerType.UI_UPDATE,
-            timer_id="file_load_next_batch",
-            consolidate=False,  # Each batch must execute independently
-        )
-
-    def _refresh_ui_after_file_load(self) -> None:
-        """Refresh all UI elements after files are loaded.
-        This ensures placeholders are hidden, labels are updated, and selection works.
-        """
-        try:
-            # Update files label (shows count)
-            if hasattr(self.parent_window, "update_files_label"):
-                self.parent_window.update_files_label()
-                logger.debug("[FileLoadManager] Updated files label", extra={"dev_only": True})
-
-            total_files = len(self.parent_window.file_model.files)
-
-            # Hide file table placeholder when files are loaded
-            if hasattr(self.parent_window, "file_table_view"):
-                if total_files > 0:
-                    # Hide file table placeholder when files are loaded
-                    self.parent_window.file_table_view.set_placeholder_visible(False)
-                    logger.debug(
-                        "[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True}
-                    )
-                else:
-                    # Show file table placeholder when no files
-                    self.parent_window.file_table_view.set_placeholder_visible(True)
-                    logger.debug(
-                        "[FileLoadManager] Shown file table placeholder", extra={"dev_only": True}
-                    )
-
-            # Ensure the header is enabled when there are files and disabled when empty
-            if hasattr(self.parent_window, "header") and self.parent_window.header is not None:
-                try:
-                    if total_files > 0:
-                        self.parent_window.header.setEnabled(True)
-                    else:
-                        self.parent_window.header.setEnabled(False)
-                    logger.debug(
-                        "[FileLoadManager] Header enabled state set to %s",
-                        total_files > 0,
-                        extra={"dev_only": True},
-                    )
-                except Exception:
-                    logger.debug(
-                        "[FileLoadManager] Failed to set header enabled state",
-                        extra={"dev_only": True},
-                    )
-
-            # Hide placeholders in preview tables (if files are loaded)
-            if hasattr(self.parent_window, "preview_tables_view"):
-                if total_files > 0:
-                    # Hide placeholders when files are loaded
-                    self.parent_window.preview_tables_view._set_placeholders_visible(False)
-                    logger.debug(
-                        "[FileLoadManager] Hidden preview table placeholders",
-                        extra={"dev_only": True},
-                    )
-                else:
-                    # Show placeholders when no files
-                    self.parent_window.preview_tables_view._set_placeholders_visible(True)
-                    logger.debug(
-                        "[FileLoadManager] Shown preview table placeholders",
-                        extra={"dev_only": True},
-                    )
-
-            # Update preview tables
-            if hasattr(self.parent_window, "request_preview_update"):
-                self.parent_window.request_preview_update()
-                logger.debug("[FileLoadManager] Requested preview update", extra={"dev_only": True})
-
-            # Ensure file table selection works properly
-            if hasattr(self.parent_window, "file_table_view"):
-                # Restore previous sorting state for consistency
-                if hasattr(self.parent_window, "current_sort_column") and hasattr(
-                    self.parent_window, "current_sort_order"
-                ):
-                    sort_column = self.parent_window.current_sort_column
-                    sort_order = self.parent_window.current_sort_order
-                    logger.debug(
-                        "[FileLoadManager] Restoring sort state: column=%s, order=%s",
-                        sort_column,
-                        sort_order,
-                        extra={"dev_only": True},
-                    )
-
-                    # Apply sorting through the model and header
-                    self.parent_window.file_model.sort(sort_column, sort_order)
-                    header = self.parent_window.file_table_view.horizontalHeader()
-                    header.setSortIndicator(sort_column, sort_order)
-
-                # Force refresh of the table view
-                self.parent_window.file_table_view.viewport().update()
-
-                # Refresh icons to show any cached metadata/hash status
-                if hasattr(self.parent_window.file_model, "refresh_icons"):
-                    self.parent_window.file_model.refresh_icons()
-                    logger.debug(
-                        "[FileLoadManager] Refreshed file table icons", extra={"dev_only": True}
-                    )
-
-                # Reset selection state to ensure clicks work
-                if hasattr(self.parent_window.file_table_view, "_sync_selection_safely"):
-                    self.parent_window.file_table_view._sync_selection_safely()
-                    logger.debug(
-                        "[FileLoadManager] Refreshed file table view", extra={"dev_only": True}
-                    )
-
-            # Update metadata tree (clear it for new files)
-            if hasattr(self.parent_window, "metadata_tree_view"):
-                # Only refresh metadata tree if we're not in the middle of a metadata operation
-                # This prevents conflicts with metadata loading operations (drag & drop, context menu, etc.)
-                if not self._metadata_operation_in_progress:
-                    if hasattr(
-                        self.parent_window.metadata_tree_view, "refresh_metadata_from_selection"
-                    ):
-                        self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-                        logger.debug(
-                            "[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True}
-                        )
-                else:
-                    logger.debug(
-                        "[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)",
-                        extra={"dev_only": True},
-                    )
-
-            # Let metadata tree view handle search field state based on metadata availability
-            # Don't directly enable/disable here - the metadata tree view will manage this
-            # when metadata is loaded or cleared
-            if total_files == 0 and hasattr(self.parent_window, "metadata_tree_view"):
-                # Only force disable when no files at all
-                if hasattr(self.parent_window.metadata_tree_view, "_update_search_field_state"):
-                    self.parent_window.metadata_tree_view._update_search_field_state(False)
-                    logger.debug(
-                        "[FileLoadManager] Disabled metadata search field (no files)",
-                        extra={"dev_only": True},
-                    )
-
-            logger.info(
-                "[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True}
-            )
-
-        except Exception as e:
-            logger.error("[FileLoadManager] Error refreshing UI: %s", e)
+        # Delegate to service for model + UI updates
+        self._ui_service.update_model_and_ui(file_items, clear=clear)
 
     def prepare_folder_load(self, folder_path: str, *, _clear: bool = True) -> list[str]:
         """Prepare folder for loading by getting file list.
