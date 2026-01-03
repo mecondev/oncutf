@@ -571,6 +571,10 @@ class FileTableView(QTableView):
         """Delegate to DragDropBehavior."""
         result = self._drag_drop_behavior.handle_drop(event)
         if result:
+            # Set wait cursor immediately for user feedback
+            from oncutf.core.pyqt_imports import QApplication, Qt
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
             dropped_paths, modifiers = result
             self.files_dropped.emit(dropped_paths, modifiers)
 

@@ -299,6 +299,10 @@ class FileLoadController:
                 str(e),
             )
             return {"success": False, "errors": [str(e)]}
+        finally:
+            # Ensure wait cursor is restored
+            from oncutf.core.pyqt_imports import QApplication
+            QApplication.restoreOverrideCursor()
 
     def clear_files(self) -> bool:
         """Clear all loaded files.
