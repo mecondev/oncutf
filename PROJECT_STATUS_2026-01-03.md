@@ -1,5 +1,6 @@
 # Project Status Report — oncutf
 **Date:** 2026-01-03  
+**Last Update:** 2026-01-03 (UIManager cleanup completed)  
 **Author:** AI Analysis
 
 ---
@@ -42,14 +43,26 @@
 
 ## 🗑️ Dead Code / Candidates for Removal
 
-### 1. **Backup File (Safe to Delete)**
+### 1. **Backup File (Safe to Delete)** ✅ DONE
 
 **File:** `oncutf/core/ui_managers/column_manager_legacy_backup.py` (853 lines)
-- **Status:** Not imported anywhere
-- **Action:** DELETE (just a backup from refactoring)
+- **Status:** DELETED (commit `184e235d`)
+- **Action:** ✅ Removed
 - **Impact:** Zero — pure backup file
 
-### 2. **Empty Package Init**
+### 2. **UIManager Delegator** ✅ DONE
+
+**File:** `oncutf/core/ui_managers/ui_manager.py` (130 lines)
+- **Status:** DELETED (commit `32470384`)
+- **Action:** ✅ Removed — replaced with direct controller usage
+- **Impact:** Zero — pure delegator, all functionality in controllers
+- **Changes:**
+  * Updated `initialization_orchestrator.py` to use controllers directly
+  * Updated `search_handler.py` to use `signal_controller`
+  * Updated `config_column_handler.py` to remove context registration
+  * All 949 tests passing
+
+### 3. **Empty Package Init**
 
 **File:** `oncutf/ui/delegates/__init__.py` (1 line)
 - **Content:** Just docstring
@@ -84,10 +97,11 @@ Average LOC/file: ~200  ✅ GOOD
 
 ### Active Delegators (Backward Compatibility)
 
-1. **`ui_manager.py`** (130 lines)
-   - Pure delegator to 4 controllers
+1. **~~`ui_manager.py`~~** ✅ **REMOVED**
+   - Was: Pure delegator to 4 controllers (130 lines)
    - Used ONLY in `initialization_orchestrator.py`
-   - ✅ **Can be removed** if we update initialization to use controllers directly
+   - ✅ **DONE:** Removed — initialization now uses controllers directly
+   - Commit: `32470384`
 
 2. **`models/file_table_model.py`** (14 lines)
    - Re-export for backward compatibility
@@ -101,17 +115,13 @@ Average LOC/file: ~200  ✅ GOOD
 
 ## 🎯 Recommendations
 
-### High Priority (Do Now)
+### ~~High Priority (Do Now)~~ ✅ COMPLETED
 
-1. **Delete backup file:**
-   ```bash
-   rm oncutf/core/ui_managers/column_manager_legacy_backup.py
-   ```
-
-2. **Remove UIManager delegator** (optional but clean):
-   - Update `initialization_orchestrator.py` to use controllers directly
-   - Delete `oncutf/core/ui_managers/ui_manager.py`
-   - Saves 130 lines of pure delegation
+1. ✅ **DONE:** Delete backup file (commit `184e235d`)
+2. ✅ **DONE:** Remove UIManager delegator (commit `32470384`)
+   - Updated initialization_orchestrator.py to use controllers directly
+   - Saved 130 lines of pure delegation code
+   - All tests passing (949/949)
 
 ### Medium Priority (Next Refactoring)
 
