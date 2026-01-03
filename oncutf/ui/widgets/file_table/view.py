@@ -568,14 +568,18 @@ class FileTableView(QTableView):
 
     def dropEvent(self, event) -> None:
         """Delegate to DragDropBehavior."""
+        # Set wait cursor BEFORE processing for immediate user feedback
+        from oncutf.core.pyqt_imports import QApplication, Qt
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
+
         result = self._drag_drop_behavior.handle_drop(event)
         if result:
-            # Set wait cursor immediately for user feedback
-            from oncutf.core.pyqt_imports import QApplication, Qt
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
             dropped_paths, modifiers = result
             self.files_dropped.emit(dropped_paths, modifiers)
+        else:
+            # Restore cursor if no valid drop
+            QApplication.restoreOverrideCursor()
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to delegate to SelectionBehavior."""

@@ -734,13 +734,27 @@ class ProgressWidget(QWidget):
             if self.show_time_info:
                 self._update_time_display()
 
-    def set_time_info(self, elapsed: float):
-        """Manually set time information in HH:MM:SS format."""
+    def set_time_info(self, elapsed: float, estimated_total: float | None = None):
+        """Manually set time information in HH:MM:SS format.
+
+        Args:
+            elapsed: Elapsed time in seconds
+            estimated_total: Estimated total time in seconds (optional)
+        """
         if not self.show_time_info:
             return
 
-        # Use the new HH:MM:SS format for consistency
-        time_text = self._format_time_hms(elapsed)
+        # Format elapsed time
+        elapsed_text = self._format_time_hms(elapsed)
+
+        # If we have estimated total, show both elapsed and remaining
+        if estimated_total is not None and estimated_total > elapsed:
+            remaining = estimated_total - elapsed
+            remaining_text = self._format_time_hms(remaining)
+            time_text = f"{elapsed_text} / ~{remaining_text} remaining"
+        else:
+            time_text = elapsed_text
+
         self.time_label.setText(time_text)
 
     def reset(self):
