@@ -26,7 +26,7 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 | File | Lines | Category | Split Strategy | Status |
 |------|-------|----------|----------------|--------|
 | ~~`ui/widgets/file_tree_view.py`~~ | ~~1629~~ → 448 | UI | Extract behaviors | [DONE] Split to package (72% ↓) |
-| `ui/widgets/file_table_view.py` | 1318 | UI | Behaviors already extracted | [SKIP] Already optimal |
+| ~~`ui/widgets/file_table_view.py`~~ | ~~1321~~ → 707 | UI | Extract handlers | [DONE] Split to package (46.5% ↓) |
 | ~~`ui/widgets/metadata_tree/view.py`~~ | ~~1272~~ → 1082 | UI | ~~Handlers partially extracted~~ | [DONE] Delegation cleanup (18% ↓) |
 | ~~`core/database/database_manager.py`~~ | ~~1615~~ → 424 | Core | Split by concern | [DONE] Split to 6 modules |
 | ~~`config.py`~~ | ~~1298~~ → 26 | Config | Split to package | [DONE] Split to 7 modules |
@@ -136,6 +136,35 @@ ui/widgets/file_tree/                <- NEW package
 ```
 
 **Migration priority:** [MED] Medium - large but functional
+
+---
+
+### 3b. `file_table_view.py` (1321 lines) -> Package [DONE]
+
+**Completed:** 2026-01-04
+
+**Final structure:**
+```
+ui/widgets/file_table/
+├── __init__.py (27 lines)           <- Re-exports FileTableView
+├── view.py (707 lines)              <- Main view (thin shell, -46.5%)
+├── event_handler.py (319 lines)     <- Qt event handlers
+├── hover_handler.py (102 lines)     <- Hover state management
+├── tooltip_handler.py (159 lines)   <- Custom tooltip logic
+├── viewport_handler.py (162 lines)  <- Scrollbar/viewport management
+└── utils.py (136 lines)             <- Cursor cleanup, helpers
+```
+
+**Changes:**
+1. Extracted EventHandler for mouse/keyboard/focus events
+2. Extracted HoverHandler for hover highlighting
+3. Extracted TooltipHandler for custom tooltips
+4. Extracted ViewportHandler for scrollbar management
+5. Created utils.py for cursor cleanup functions
+6. file_table_view.py now re-exports for backward compatibility
+
+**Result:** view.py is now a thin shell delegating to handlers.
+Total package: 1612 lines across 7 modules (avg 230 lines/module)
 
 ---
 
@@ -404,7 +433,7 @@ oncutf/core/ui_managers/
 8. ~~**`file_table_model.py`**~~ — [DONE] Already split to 7 modules
 9. ~~**`metadata_tree/view.py`**~~ — [DONE] Delegation cleanup (1327 → 1082 lines, -18%)
 10. ~~**`file_tree_view.py`**~~ — [DONE] Extracted to package (1629 → 448 lines, 72% reduction)
-11. **`file_table_view.py`** — [SKIP] Already optimal with 3 behaviors (1318 lines)
+11. ~~**`file_table_view.py`**~~ — [DONE] Extracted to package (1321 → 707 lines, 46.5% reduction)
 
 ### Phase 4: Legacy Migration (Q2-Q3 2026)
 
