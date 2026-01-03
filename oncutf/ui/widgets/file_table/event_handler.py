@@ -167,16 +167,21 @@ class EventHandler:
         index = self._view.indexAt(event.pos())
         hovered_row = index.row() if index.isValid() else -1
 
-        # Handle drag operations (only if no modifiers are pressed)
+        # Handle drag operations (allow shift for extended metadata, but with higher threshold)
         if event.buttons() & Qt.LeftButton and self._view._drag_start_pos is not None:
-            # Don't allow drag with Ctrl/Alt/Shift modifiers
-            if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier):
+            # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
+            if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                 self._view._drag_start_pos = None
                 return False
 
+            # Calculate required drag distance based on modifiers
+            # Shift+drag for extended metadata needs 3x the normal distance to prevent accidental selection changes
+            base_distance = QApplication.startDragDistance()
+            required_distance = base_distance * 3 if event.modifiers() & Qt.ShiftModifier else base_distance
+
             distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
 
-            if distance >= QApplication.startDragDistance():
+            if distance >= required_distance:
                 start_index = self._view.indexAt(self._view._drag_start_pos)
                 if start_index.isValid():
                     start_row = start_index.row()
