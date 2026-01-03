@@ -1,23 +1,22 @@
-"""Module: file_tree_view.py
+"""Module: file_tree_view.py - Backward compatibility re-export.
+
+DEPRECATED: The FileTreeView class has been moved to the file_tree package.
+Use `oncutf.ui.widgets.file_tree` instead.
+Scheduled for removal in v2.0.
 
 Author: Michael Economou
 Date: 2025-05-31 (Delegator created: 2026-01-02)
-
-Delegator module for backward compatibility.
-
-This module re-exports FileTreeView and DragCancelFilter from their new
-locations in the file_tree package. The implementation has been split into:
-- oncutf.ui.widgets.file_tree.view - Main FileTreeView class
-- oncutf.ui.widgets.file_tree.utils - DragCancelFilter and utilities
-- oncutf.ui.widgets.file_tree.filesystem_handler - Filesystem monitoring
-- oncutf.ui.widgets.file_tree.state_handler - State persistence
-- oncutf.ui.widgets.file_tree.drag_handler - Drag & drop handling
-- oncutf.ui.widgets.file_tree.event_handler - Event handling
-
-For new code, import directly from oncutf.ui.widgets.file_tree instead.
 """
+import warnings
 
-# Re-export for backward compatibility
+warnings.warn(
+    "oncutf.ui.widgets.file_tree_view is deprecated. "
+    "Use oncutf.ui.widgets.file_tree instead. "
+    "This module will be removed in v2.0.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from oncutf.ui.widgets.file_tree import (
     DragCancelFilter,
     FileTreeView,

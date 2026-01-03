@@ -112,7 +112,7 @@ def global_exception_handler(exc_type, exc_value, exc_tb) -> None:
     try:
         cleanup_on_exit()
     except Exception as cleanup_error:
-        logger.error("Error during exception cleanup: %s", cleanup_error)
+        logger.exception("Error during exception cleanup: %s", cleanup_error)
 
 
 # Install global exception handler
@@ -303,7 +303,7 @@ def main() -> int:
                     worker_thread.wait(1000)  # Wait max 1 second
 
                 except Exception as e:
-                    logger.error("[Init] Error creating MainWindow: %s", e)
+                    logger.exception("[Init] Error creating MainWindow: %s", e)
                     splash.close()
                     raise
 
@@ -342,7 +342,7 @@ def main() -> int:
             )
 
         except Exception as e:
-            logger.error("Error creating splash screen: %s", e)
+            logger.exception("Error creating splash screen: %s", e)
             # Fallback: Initialize app without splash
             app.restoreOverrideCursor()
             window = MainWindow()

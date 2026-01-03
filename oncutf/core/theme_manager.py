@@ -204,7 +204,7 @@ class ThemeManager(QObject):
             return template
 
         except Exception as e:
-            logger.error("[ThemeManager] Error rendering QSS template: %s", e)
+            logger.exception("[ThemeManager] Error rendering QSS template: %s", e)
             return ""
 
     def apply_theme(self, app: Any) -> None:

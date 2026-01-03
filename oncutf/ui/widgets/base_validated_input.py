@@ -10,8 +10,6 @@ Contains:
 - BaseValidatedInput: Abstract base class for validated input widgets
 """
 
-import logging
-
 from oncutf.config import (
     QLABEL_DARK_BG,
     QLABEL_DARK_BORDER,
@@ -19,9 +17,10 @@ from oncutf.config import (
 )
 from oncutf.core.pyqt_imports import QKeyEvent
 from oncutf.core.theme_manager import get_theme_manager
+from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
-logger = logging.getLogger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class BaseValidatedInput:

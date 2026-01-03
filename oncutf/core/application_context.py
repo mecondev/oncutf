@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.core.type_aliases import MetadataCache
 from oncutf.models.file_item import FileItem
@@ -208,6 +210,7 @@ class ApplicationContext(QObject):
         """Get current file list."""
         return self._files.copy()
 
+    @deprecated("Use FileStore.set_loaded_files() instead. Will be removed in v2.0.")
     def set_files(self, files: list[FileItem]) -> None:
         """Set current file list (legacy method)."""
         self._files = files.copy()

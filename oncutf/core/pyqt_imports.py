@@ -47,6 +47,7 @@ from PyQt5.QtCore import (
 # GUI classes for drawing, events, and visual elements
 from PyQt5.QtGui import (
     QBrush,
+    QCloseEvent,
     QColor,
     QCursor,
     QDesktopServices,
@@ -174,6 +175,7 @@ __all__ = [
     "pyqtSlot",
     # GUI
     "QBrush",
+    "QCloseEvent",
     "QColor",
     "QCursor",
     "QDesktopServices",

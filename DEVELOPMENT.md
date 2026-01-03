@@ -148,7 +148,57 @@ pytest -n auto
 
 ### Logging
 
-The application uses structured logging. Set log level in `config.py`:
+The application uses structured logging with `get_cached_logger()`.
+
+#### Logger Initialization
+
+```python
+# ALWAYS use this pattern:
+from oncutf.utils.logging.logger_factory import get_cached_logger
+logger = get_cached_logger(__name__)
+
+# NEVER use:
+# import logging
+# logger = logging.getLogger(__name__)  # Wrong!
+```
+
+#### Log Levels
+
+| Level | Usage |
+|-------|-------|
+| `DEBUG` | Development-only messages, verbose details |
+| `INFO` | Operation milestones (file loaded, rename completed) |
+| `WARNING` | Recoverable issues (failed to load optional data) |
+| `ERROR` | Operation failures that need attention |
+| `CRITICAL` | Application-wide failures |
+
+#### Exception Logging
+
+```python
+# For unexpected exceptions - include full stack trace:
+try:
+    risky_operation()
+except Exception as e:
+    logger.exception("Operation failed: %s", e)
+
+# For expected/handled exceptions - no stack trace needed:
+try:
+    optional_operation()
+except FileNotFoundError:
+    logger.warning("Optional file not found, using defaults")
+```
+
+#### Log Message Formatting
+
+```python
+# Use %-formatting (NOT f-strings):
+logger.info("Processing %d files in %s", count, folder)
+
+# NOT:
+# logger.info(f"Processing {count} files")  # Wrong!
+```
+
+Set log level in `config.py`:
 
 ```python
 LOG_LEVEL = "DEBUG"  # For development

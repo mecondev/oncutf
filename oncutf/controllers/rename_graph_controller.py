@@ -142,7 +142,7 @@ class RenameGraphController:
             return True
 
         except Exception as e:
-            logger.error("[RenameGraphController] Failed to save graph: %s", e)
+            logger.exception("[RenameGraphController] Failed to save graph: %s", e)
             return False
 
     def load_graph(self, file_path: str | Path) -> bool:
@@ -173,7 +173,7 @@ class RenameGraphController:
             return success
 
         except Exception as e:
-            logger.error("[RenameGraphController] Failed to load graph: %s", e)
+            logger.exception("[RenameGraphController] Failed to load graph: %s", e)
             return False
 
     def mark_modified(self) -> None:

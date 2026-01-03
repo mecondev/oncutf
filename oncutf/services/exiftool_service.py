@@ -55,7 +55,7 @@ class ExifToolService:
                 self._wrapper = ExifToolWrapper()
                 logger.debug("ExifToolWrapper initialized successfully")
             except Exception as e:
-                logger.error("Failed to initialize ExifToolWrapper: %s", e)
+                logger.exception("Failed to initialize ExifToolWrapper: %s", e)
                 raise RuntimeError("ExifTool not available") from e
         return self._wrapper
 
@@ -121,7 +121,7 @@ class ExifToolService:
             result = wrapper.get_metadata(str(path), use_extended=self._use_extended)
             return result if result else {}
         except Exception as e:
-            logger.error("Error loading metadata for %s: %s", path, e)
+            logger.exception("Error loading metadata for %s: %s", path, e)
             return {}
 
     def load_metadata_batch(self, paths: list[Path]) -> dict[Path, dict[str, Any]]:

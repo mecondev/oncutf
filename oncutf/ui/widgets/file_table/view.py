@@ -95,7 +95,6 @@ class FileTableView(QTableView):
         self.selected_rows: set[int] = set()
         self.anchor_row: int | None = None
         self.context_focused_row: int | None = None
-        self._legacy_selection_mode = True
 
         # Protection flags
         self._selection_change_count = 0
@@ -307,22 +306,20 @@ class FileTableView(QTableView):
             super().scrollTo(index, hint)
 
     def enable_selection_store_mode(self):
-        """Enable SelectionStore integration mode."""
+        """Enable SelectionStore integration mode.
+
+        Called during initialization to sync Qt selection with SelectionStore.
+        """
         logger.debug(
-            "enable_selection_store_mode called - disabling legacy mode",
+            "enable_selection_store_mode called - syncing selection to store",
             extra={"dev_only": True},
         )
-        self._legacy_selection_mode = False
 
         # Sync current Qt selection to store
         selection_store = self._get_selection_store()
         if selection_store is not None:
             current_selection = self._selection_behavior.get_current_selection_safe()
             selection_store.set_selected_rows(current_selection, emit_signal=True)
-
-    def disable_selection_store_mode(self):
-        """Disable SelectionStore integration mode."""
-        self._legacy_selection_mode = True
 
     # =====================================
     # Table State & Utility Methods

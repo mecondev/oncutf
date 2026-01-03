@@ -270,7 +270,7 @@ class FileLoadManager:
                                     e
                                 )
             except Exception as e:
-                logger.error(
+                logger.exception(
                     "[FileLoadManager] Error walking directory %s: %s",
                     folder_path,
                     e
@@ -434,7 +434,7 @@ class FileLoadManager:
                 file_item = FileItem.from_path(path)
                 file_items.append(file_item)
             except Exception as e:
-                logger.error("Error creating FileItem for %s: %s", path, e)
+                logger.exception("Error creating FileItem for %s: %s", path, e)
 
         if not file_items:
             logger.warning("[FileLoadManager] No valid FileItem objects created")
@@ -541,7 +541,7 @@ class FileLoadManager:
                 )
                 refreshed_files.extend(folder_files)
             except Exception as e:
-                logger.error("[FileLoadManager] Error refreshing folder %s: %s", folder, e)
+                logger.exception("[FileLoadManager] Error refreshing folder %s: %s", folder, e)
 
         # Update FileStore state
         file_store.set_loaded_files(refreshed_files)

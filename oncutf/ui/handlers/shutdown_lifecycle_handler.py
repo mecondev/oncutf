@@ -352,25 +352,16 @@ class ShutdownLifecycleHandler:
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
-        from oncutf.ui.dialogs.metadata_waiting_dialog import OperationDialog
         from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         # Find and close any active progress dialogs
         dialogs_closed = 0
 
-        # Close ProgressDialog instances
+        # Close ProgressDialog instances (but NOT the shutdown dialog)
         progress_dialogs = self.main_window.findChildren(ProgressDialog)
         for dialog in progress_dialogs:
-            if dialog.isVisible():
-                logger.info("[CloseEvent] Force closing ProgressDialog")
-                dialog.reject()  # Force close without waiting
-                dialogs_closed += 1
-
-        # Close OperationDialog instances (but NOT the shutdown dialog)
-        metadata_dialogs = self.main_window.findChildren(OperationDialog)
-        for dialog in metadata_dialogs:
             if dialog.isVisible() and dialog != getattr(self.main_window, "shutdown_dialog", None):
-                logger.info("[CloseEvent] Force closing OperationDialog")
+                logger.info("[CloseEvent] Force closing ProgressDialog")
                 dialog.reject()  # Force close without waiting
                 dialogs_closed += 1
 

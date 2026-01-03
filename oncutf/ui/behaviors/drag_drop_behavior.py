@@ -133,7 +133,6 @@ class DragDropBehavior:
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index: QModelIndex | None = None
-        self._legacy_selection_mode = True
 
         # Large selection optimization
         self._drag_pending_rows: list[int] | None = None

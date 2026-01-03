@@ -272,7 +272,7 @@ class ApplicationService:
                 )
 
         except Exception as e:
-            logger.error("[ApplicationService] Error updating FileItem objects: %s", e)
+            logger.exception("[ApplicationService] Error updating FileItem objects: %s", e)
 
     # =====================================
     # Validation & Dialog Operations (with business logic)

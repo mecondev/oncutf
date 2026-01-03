@@ -8,7 +8,7 @@ Author: Michael Economou
 Date: December 19, 2025
 """
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, TypedDict, runtime_checkable
 
 # =============================================================================
 # Metadata Types
@@ -20,6 +20,72 @@ MetadataDict = dict[str, Any]
 # The metadata cache - mapping of normalized file path to metadata dict
 MetadataCacheMap = dict[str, MetadataDict]
 MetadataCache = MetadataCacheMap  # Alias for backward compatibility
+
+
+class ExifMetadata(TypedDict, total=False):
+    """TypedDict for common EXIF metadata fields from ExifTool.
+
+    All fields are optional (total=False) as not all files have all metadata.
+    This provides IDE autocomplete for commonly accessed fields.
+    """
+
+    # File information
+    SourceFile: str
+    FileName: str
+    Directory: str
+    FileSize: str
+    FileModifyDate: str
+    FileAccessDate: str
+    FileType: str
+    FileTypeExtension: str
+    MIMEType: str
+
+    # Image dimensions
+    ImageWidth: int
+    ImageHeight: int
+    ImageSize: str
+
+    # EXIF dates
+    DateTimeOriginal: str
+    CreateDate: str
+    ModifyDate: str
+
+    # Camera information
+    Make: str
+    Model: str
+    LensModel: str
+    FocalLength: str
+    FNumber: str
+    ExposureTime: str
+    ISO: int
+
+    # GPS data
+    GPSLatitude: str
+    GPSLongitude: str
+    GPSAltitude: str
+
+    # Orientation and rotation
+    Orientation: str | int
+    Rotation: int
+
+    # Video specific
+    Duration: str
+    VideoFrameRate: float
+    AudioChannels: int
+    AudioSampleRate: int
+
+    # IPTC/XMP
+    Title: str
+    Description: str
+    Subject: list[str]
+    Keywords: list[str]
+    Creator: str
+    Copyright: str
+    Rating: int
+
+    # Internal flags (added by oncutf)
+    __extended__: bool
+    __modified__: bool
 
 
 @runtime_checkable

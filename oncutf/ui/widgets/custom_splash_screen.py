@@ -13,8 +13,6 @@ Features:
 - Blocks application interaction until closed
 """
 
-import logging
-
 from oncutf.config import APP_VERSION
 from oncutf.core.pyqt_imports import (
     QApplication,
@@ -28,8 +26,9 @@ from oncutf.core.pyqt_imports import (
     Qt,
     QTimer,
 )
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
-logger = logging.getLogger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class CustomSplashScreen(QSplashScreen):

@@ -155,7 +155,7 @@ class EventHandler:
                     current_selection = self._view._selection_behavior.get_current_selection()
                     if current_selection:
                         selection_store = self._view._selection_behavior.get_selection_store()
-                        if selection_store and not self._view._legacy_selection_mode:
+                        if selection_store:
                             selection_store.selection_changed.emit(list(current_selection))
 
                 schedule_ui_update(final_status_update, delay=50)

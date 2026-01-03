@@ -153,7 +153,7 @@ class EditMetadataFieldCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[EditMetadataFieldCommand] Error executing: %s", e)
+            logger.exception("[EditMetadataFieldCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -178,7 +178,7 @@ class EditMetadataFieldCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[EditMetadataFieldCommand] Error undoing: %s", e)
+            logger.exception("[EditMetadataFieldCommand] Error undoing: %s", e)
             return False
 
     def _update_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -239,7 +239,7 @@ class EditMetadataFieldCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error("[EditMetadataFieldCommand] Error updating metadata field: %s", e)
+            logger.exception("[EditMetadataFieldCommand] Error updating metadata field: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -302,7 +302,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[ResetMetadataFieldCommand] Error executing: %s", e)
+            logger.exception("[ResetMetadataFieldCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -327,7 +327,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[ResetMetadataFieldCommand] Error undoing: %s", e)
+            logger.exception("[ResetMetadataFieldCommand] Error undoing: %s", e)
             return False
 
     def _reset_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -367,7 +367,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error("[ResetMetadataFieldCommand] Error resetting metadata field: %s", e)
+            logger.exception("[ResetMetadataFieldCommand] Error resetting metadata field: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -410,7 +410,7 @@ class SaveMetadataCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error("[SaveMetadataCommand] Error executing: %s", e)
+            logger.exception("[SaveMetadataCommand] Error executing: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -430,7 +430,7 @@ class SaveMetadataCommand(MetadataCommand):
             return True
 
         except Exception as e:
-            logger.error("[SaveMetadataCommand] Error undoing: %s", e)
+            logger.exception("[SaveMetadataCommand] Error undoing: %s", e)
             return False
 
     def get_description(self) -> str:
@@ -494,7 +494,7 @@ class BatchMetadataCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[BatchMetadataCommand] Error executing batch: %s", e)
+            logger.exception("[BatchMetadataCommand] Error executing batch: %s", e)
             return False
 
     def undo(self) -> bool:
@@ -527,7 +527,7 @@ class BatchMetadataCommand(MetadataCommand):
                 return False
 
         except Exception as e:
-            logger.error("[BatchMetadataCommand] Error undoing batch: %s", e)
+            logger.exception("[BatchMetadataCommand] Error undoing batch: %s", e)
             return False
 
     def get_description(self) -> str:

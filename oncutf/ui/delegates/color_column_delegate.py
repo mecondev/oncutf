@@ -12,6 +12,8 @@ Handles:
 - Proper hover/selection states (inherits from FileTableHoverDelegate)
 """
 
+from typing_extensions import deprecated
+
 from oncutf.core.pyqt_imports import (
     QColor,
     QEvent,
@@ -280,6 +282,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         QApplication.restoreOverrideCursor()
         logger.info("[ColorColumnDelegate] Cursor restored")
 
+    @deprecated("Use _set_files_color() with single-element list. Will be removed in v2.0.")
     def _set_file_color(self, model, index, color):
         """Set the color tag for a single file (legacy method for compatibility).
 

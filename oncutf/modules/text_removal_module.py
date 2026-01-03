@@ -10,10 +10,11 @@ with case-sensitive or case-insensitive matching.
 
 from __future__ import annotations
 
-import logging
 import re
 from dataclasses import dataclass
 from typing import Any
+
+from typing_extensions import deprecated
 
 from oncutf.core.pyqt_imports import (
     QCheckBox,
@@ -27,8 +28,9 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
+from oncutf.utils.logging.logger_factory import get_cached_logger
 
-logger = logging.getLogger(__name__)
+logger = get_cached_logger(__name__)
 
 
 @dataclass
@@ -220,14 +222,17 @@ class TextRemovalModule(BaseRenameModule):
             .replace('"', "&quot;")
         )
 
+    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
     def on_text_changed(self):
         """Handle text input changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
+    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
     def on_position_changed(self):
         """Handle position combo changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
+    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
     def on_case_changed(self):
         """Handle case sensitivity changes (legacy method for compatibility)."""
         self._on_setting_changed()

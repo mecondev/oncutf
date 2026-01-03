@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Deprecated
+- **Legacy Methods** (marked for removal in v2.0):
+  - `ApplicationContext.set_files()` - Use `FileStore.set_loaded_files()` instead
+  - `TextRemovalModule.on_text_changed()` - Connect to `module_changed` signal instead
+  - `TextRemovalModule.on_position_changed()` - Connect to `module_changed` signal instead  
+  - `TextRemovalModule.on_case_changed()` - Connect to `module_changed` signal instead
+  - `ProgressWidget._format_time()` - Use `_format_time_hms()` instead
+  - `ColorColumnDelegate._set_file_color()` - Use `_set_files_color()` with single-element list
+- **Delegator Modules** (will be removed in v2.0):
+  - `oncutf.ui.widgets.file_table_view` - Import from `oncutf.ui.widgets.file_table` instead
+  - `oncutf.ui.widgets.file_tree_view` - Import from `oncutf.ui.widgets.file_tree` instead
+  - `oncutf.ui.behaviors.selection_behavior` - Import from `oncutf.ui.behaviors.selection` instead
+  - `oncutf.ui.behaviors.column_management_behavior` - Import from `oncutf.ui.behaviors.column_management` instead
+  - `oncutf.ui.behaviors.metadata_edit_behavior` - Import from `oncutf.ui.behaviors.metadata_edit` instead
+  - `oncutf.ui.behaviors.metadata_context_menu_behavior` - Import from `oncutf.ui.behaviors.metadata_context_menu` instead
+
+### Code Quality
+- **Audit-driven improvements** (2026-01-03):
+  - Standardized all logging to `get_cached_logger(__name__)` pattern
+  - Added `@deprecated` decorator to legacy methods with migration guidance
+  - Converted critical error handlers to `logger.exception()` for stack traces
+  - Added `ExifMetadata` TypedDict for better IDE autocomplete
+  - Added `OperationType` Literal type for type-safe operation handling
+  - Extracted `WorkerProtocol` and `CancellableMixin` for worker consistency
+  - Removed duplicate `OperationDialog` class (use `ProgressDialog` instead)
+  - Added deprecation warnings to delegator files
+  - Removed dead `_legacy_selection_mode` flag (SelectionStore is always enabled)
+
 ### Performance
 - **Phase 7 - Final Polish**: Major performance optimizations and polish
   - **Startup Optimization**: 31% faster application startup (1426ms → 989ms)

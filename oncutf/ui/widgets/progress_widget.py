@@ -36,6 +36,8 @@ Usage Examples:
 
 import time
 
+from typing_extensions import deprecated
+
 from oncutf.config import (
     QLABEL_BORDER_GRAY,
     QLABEL_PRIMARY_TEXT,
@@ -620,6 +622,7 @@ class ProgressWidget(QWidget):
         # Format as HH:MM:SS
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
+    @deprecated("Use _format_time_hms() instead. Will be removed in v2.0.")
     def _format_time(self, seconds: float) -> str:
         """Format time in a human-readable format (legacy method).
 
@@ -674,10 +677,6 @@ class ProgressWidget(QWidget):
             self.total_size = total_size
 
         # Debug logging to track what's happening - improved logic
-        import logging
-
-        logger = logging.getLogger()
-
         # Only log significant changes to avoid spam
         log_message = ""
 

@@ -115,7 +115,7 @@ class HashService:
             logger.error("OS error reading file %s: %s", path, e)
             return ""
         except Exception as e:
-            logger.error("Unexpected error hashing file %s: %s", path, e)
+            logger.exception("Unexpected error hashing file %s: %s", path, e)
             return ""
 
     def compute_hashes_batch(

@@ -14,7 +14,7 @@ Features:
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Literal
 
 from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -28,13 +28,22 @@ from oncutf.config import (
     SAVE_BG_COLOR,
     SAVE_COLOR,
 )
-from oncutf.core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
+from oncutf.core.pyqt_imports import QCloseEvent, QDialog, QKeyEvent, Qt, QVBoxLayout, QWidget
 from oncutf.ui.widgets.progress_widget import ProgressWidget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.cursor_helper import force_restore_cursor
 from oncutf.utils.ui.dialog_utils import setup_dialog_size_and_center
 
 logger = get_cached_logger(__name__)
+
+# Type alias for operation types
+OperationType = Literal[
+    "metadata_basic",
+    "metadata_extended",
+    "metadata_save",
+    "file_loading",
+    "hash_calculation",
+]
 
 
 class ProgressDialog(QDialog):
@@ -49,7 +58,7 @@ class ProgressDialog(QDialog):
     """
 
     # Predefined color schemes for different operations
-    COLOR_SCHEMES = {
+    COLOR_SCHEMES: dict[OperationType, dict[str, str]] = {
         "metadata_basic": {
             "bar_color": FAST_METADATA_COLOR,
             "bar_bg_color": FAST_METADATA_BG_COLOR,
@@ -72,7 +81,7 @@ class ProgressDialog(QDialog):
     def __init__(
         self,
         parent: QWidget | None = None,
-        operation_type: str = "metadata_basic",
+        operation_type: OperationType = "metadata_basic",
         cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
         is_exit_save: bool = False,
@@ -162,7 +171,7 @@ class ProgressDialog(QDialog):
 
         logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
-    def keyPressEvent(self, event: Any) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle ESC key for cancellation with improved responsiveness and save protection."""
         key = event.key()
 
@@ -247,7 +256,7 @@ class ProgressDialog(QDialog):
         # Close dialog
         self.reject()
 
-    def closeEvent(self, event: Any) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Handle dialog close event with proper cleanup."""
         if not self._is_cancelling:
             self._restore_cursors()
@@ -338,7 +347,7 @@ class ProgressDialog(QDialog):
         elif total_files > 0:
             self.set_progress(file_count, total_files)
 
-    def get_progress_summary(self) -> dict[str, Any]:
+    def get_progress_summary(self) -> dict[str, object]:
         """Get comprehensive progress summary (enhanced widget only)."""
         if hasattr(self.waiting_widget, "get_progress_summary"):
             return self.waiting_widget.get_progress_summary()  # type: ignore[no-any-return]
