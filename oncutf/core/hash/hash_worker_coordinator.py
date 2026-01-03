@@ -42,6 +42,8 @@ class HashWorkerCoordinator:
         self.hash_worker: Any = None
         self.hash_dialog: Any = None
         self._operation_cancelled = False
+        self._operation_start_time: float | None = None
+        self._total_size: int = 0
 
     def start_hash_operation(
         self,
@@ -133,6 +135,8 @@ class HashWorkerCoordinator:
 
         # Start worker
         if self.hash_worker:
+            import time
+            self._operation_start_time = time.time()
             self.hash_worker.start()
 
         logger.info(
@@ -209,12 +213,29 @@ class HashWorkerCoordinator:
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Calculate percentage
-
             if total_bytes > 0:
                 percentage = int((current_bytes / total_bytes) * 100)
                 self.hash_dialog.set_count(percentage, 100)
             else:
                 self.hash_dialog.set_count(0, 100)
+            
+            # Update size info if available
+            self.hash_dialog.set_size_info(current_bytes, total_bytes)
+            
+            # Update time info if operation started
+            if self._operation_start_time:
+                import time
+                elapsed = time.time() - self._operation_start_time
+                
+                # Calculate estimated total time
+                if current_bytes > 0 and total_bytes > 0:
+                    rate = current_bytes / elapsed if elapsed > 0 else 0
+                    estimated_total = total_bytes / rate if rate > 0 else 0
+                else:
+                    estimated_total = None
+                
+                self.hash_dialog.set_time_info(elapsed, estimated_total)
+            
             # Force UI update
             from oncutf.core.pyqt_imports import QApplication
             QApplication.instance().processEvents()
