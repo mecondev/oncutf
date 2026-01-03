@@ -337,29 +337,31 @@ class HashOperationsManager:
             try:
                 from oncutf.core.application_context import get_app_context
                 from oncutf.core.pyqt_imports import Qt
-                
+
                 file_store = get_app_context().file_store
                 model = self.parent_window.file_table_view.model()
-                
+
                 if model and file_store:
                     # Find the row for this file
-                    file_items = file_store.get_all_files()
+                    file_items = file_store.get_loaded_files()
                     for row, file_item in enumerate(file_items):
                         if file_item.full_path == file_path:
                             # Emit dataChanged for the entire row to refresh hash column
                             left_index = model.index(row, 0)
                             right_index = model.index(row, model.columnCount() - 1)
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
-                            
+
                             # Force immediate repaint
                             from oncutf.core.pyqt_imports import QApplication
-                            QApplication.instance().processEvents()
+                            app_instance = QApplication.instance()
+                            if app_instance:
+                                app_instance.processEvents()
                             break
-                            
+
             except Exception as e:
                 logger.debug(
-                    "[HashManager] Could not refresh file item UI: %s", 
-                    e, 
+                    "[HashManager] Could not refresh file item UI: %s",
+                    e,
                     extra={"dev_only": True}
                 )
 

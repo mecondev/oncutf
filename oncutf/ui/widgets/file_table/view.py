@@ -23,7 +23,6 @@ Architecture:
 
 from contextlib import suppress
 
-from oncutf.core.application_context import get_app_context
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QEvent,
@@ -574,7 +573,7 @@ class FileTableView(QTableView):
             # Set wait cursor immediately for user feedback
             from oncutf.core.pyqt_imports import QApplication, Qt
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            
+
             dropped_paths, modifiers = result
             self.files_dropped.emit(dropped_paths, modifiers)
 
