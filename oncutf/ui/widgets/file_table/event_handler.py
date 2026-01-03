@@ -75,6 +75,17 @@ class EventHandler:
                     self._view.clearSelection()
                 return True
 
+            # Check if clicking on already selected item (for drag)
+            current_selection = self._view._get_current_selection_safe()
+            is_already_selected = index.row() in current_selection
+
+            # If clicking on selected item without modifiers, preserve selection for drag
+            # Don't call super() which would clear the selection
+            if modifiers == Qt.NoModifier and is_already_selected and len(current_selection) > 1:
+                # Just set anchor, don't change selection (preserve for drag)
+                self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
+                return True  # Skip super call to preserve selection
+
             # Handle selection based on modifiers
             if modifiers in (Qt.NoModifier, Qt.ControlModifier):
                 self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
