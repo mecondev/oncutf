@@ -65,8 +65,11 @@ class EventHandler:
         self._view._clicked_index = index
 
         if event.button() == Qt.LeftButton:
-            # Store drag start position
-            self._view._drag_start_pos = event.pos()
+            # Store drag start position only if no modifiers (Ctrl/Alt/Shift disable drag)
+            if modifiers == Qt.NoModifier:
+                self._view._drag_start_pos = event.pos()
+            else:
+                self._view._drag_start_pos = None
 
             # Clicking on empty space - clear selection
             if not index.isValid():
@@ -115,21 +118,8 @@ class EventHandler:
         if not index.isValid():
             return False
 
-        selection_model = self._view.selectionModel()
-        from oncutf.core.pyqt_imports import QItemSelectionModel
-
-        if event.modifiers() & Qt.ShiftModifier:
-            # Cancel range selection for extended metadata on single file
-            selection_model.clearSelection()
-            selection_model.select(
-                index,
-                QItemSelectionModel.Clear | QItemSelectionModel.Select | QItemSelectionModel.Rows,
-            )
-            selection_model.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-            self._view._manual_anchor_index = index
-        else:
-            self._view._selection_behavior.ensure_anchor_or_select(index, event.modifiers())
-
+        # Double-click should NOT change selection - just use current state
+        # Only sync the current selection to SelectionStore
         self._view._selection_behavior.sync_selection_safely()
         return False
 
@@ -177,8 +167,13 @@ class EventHandler:
         index = self._view.indexAt(event.pos())
         hovered_row = index.row() if index.isValid() else -1
 
-        # Handle drag operations
+        # Handle drag operations (only if no modifiers are pressed)
         if event.buttons() & Qt.LeftButton and self._view._drag_start_pos is not None:
+            # Don't allow drag with Ctrl/Alt/Shift modifiers
+            if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier):
+                self._view._drag_start_pos = None
+                return False
+
             distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
 
             if distance >= QApplication.startDragDistance():

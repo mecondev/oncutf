@@ -292,37 +292,35 @@ class SelectionBehavior:
         """
         from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
-        selected_indexes = sm.selectedRows()
-        current_selection = {idx.row() for idx in selected_indexes}
-        clicked_row = index.row()
+        # Determine anchor: use existing anchor or first selected item
+        anchor_index = self._manual_anchor_index
+        if anchor_index is None:
+            selected_indexes = sm.selectedRows()
+            anchor_index = selected_indexes[0] if selected_indexes else index
 
-        if clicked_row in current_selection:
+        # Always keep the original anchor - don't change it during shift selection
+        if self._manual_anchor_index is None:
+            self._manual_anchor_index = anchor_index
+
+        # Create range selection from anchor to clicked row
+        selection = QItemSelection(anchor_index, index)
+        self._widget.blockSignals(True)
+        try:
+            sm.select(
+                selection,
+                QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+            )
             sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-        else:
-            if self._manual_anchor_index is None:
-                if selected_indexes:
-                    self._manual_anchor_index = selected_indexes[0]
-            else:
-                self._manual_anchor_index = index
-
-            selection = QItemSelection(self._manual_anchor_index, index)
-            self._widget.blockSignals(True)
-            try:
-                sm.select(
-                    selection,
-                    QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
-                )
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-            finally:
-                self._widget.blockSignals(False)
+        finally:
+            self._widget.blockSignals(False)
 
         if self.selection_store:
             current_qt_selection = {idx.row() for idx in sm.selectedRows()}
             self.selection_store.set_selected_rows(current_qt_selection, emit_signal=False)
-            if self._manual_anchor_index:
-                self.selection_store.set_anchor_row(
-                    self._manual_anchor_index.row(), emit_signal=False
-                )
+            # Always use the original anchor, not the clicked row
+            self.selection_store.set_anchor_row(
+                self._manual_anchor_index.row(), emit_signal=False
+            )
 
         self._update_row_visual(model, index.row())
 
