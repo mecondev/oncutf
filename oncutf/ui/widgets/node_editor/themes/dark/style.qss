@@ -1,0 +1,216 @@
+/* Dark Theme Stylesheet for Node Editor */
+
+/* Main Window */
+QFrame, QDialog, QMainWindow {
+    background: #474747;
+}
+
+QSplitter, QMainWindow::separator {
+    background: #474747;
+}
+
+QStatusBar {
+    background: #474747;
+    color: #ccc;
+}
+
+/* Menu Bar */
+QMenuBar {
+    background: #474747;
+}
+
+QMenuBar::item {
+    spacing: 3px;
+    padding: 3px 5px;
+    color: #eee;
+    background: transparent;
+}
+
+QMenuBar::item:selected,
+QMenuBar::item:pressed {
+    background: #4f9eee;
+}
+
+/* Menus */
+QMenu {
+    background: #474747;
+    border: 1px solid #2e2e2e;
+}
+
+QMenu::item {
+    background: #474747;
+    color: #eee;
+}
+
+QMenu::item:selected {
+    background: #616161;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #2e2e2e;
+}
+
+QMenu::disabled,
+QMenu::item:disabled {
+    color: #6e6e6e;
+}
+
+/* Dock Widgets */
+QDockWidget {
+    color: #ddd;
+    font-weight: bold;
+}
+
+QDockWidget::title {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #3b3b3b, stop:1 #2e2e2e);
+    padding-top: 4px;
+    padding-right: 22px;
+    font-weight: bold;
+}
+
+/* List Views */
+QListView {
+    background-color: #555;
+    alternate-background-color: #434343;
+}
+
+QListView::item {
+    height: 22px;
+    color: #e6e6e6;
+}
+
+QListView::item:hover {
+    background: #6e6e6e;
+}
+
+QListView::item:selected {
+    color: #fff;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4f9eee, stop:1 #2084ea);
+}
+
+/* Buttons */
+QPushButton {
+    color: #e6e6e6;
+    background: #555;
+    border: 1px solid #141414;
+    border-radius: 3px;
+    padding: 4px 8px;
+}
+
+QPushButton:hover {
+    background: #666;
+}
+
+QPushButton:pressed {
+    background: #444;
+}
+
+/* Labels */
+QLabel {
+    color: #e6e6e6;
+}
+
+/* Line Edits */
+QLineEdit, QTextEdit {
+    color: #e6e6e6;
+    background: #5a5a5a;
+    border: 1px solid #3a3a3a;
+    border-radius: 2px;
+    padding: 1px 2px;
+}
+
+/* Node Content Widget */
+QDMNodeContentWidget {
+    background: transparent;
+}
+
+QDMNodeContentWidget QFrame {
+    background: transparent;
+}
+
+QDMNodeContentWidget QTextEdit,
+QDMNodeContentWidget QLineEdit {
+    background: #666;
+    color: #fff;
+}
+
+QDMNodeContentWidget QLabel {
+    color: #e0e0e0;
+}
+
+/* Graphics View */
+QGraphicsView {
+    selection-background-color: #fff;
+}
+
+/* Tab Widget */
+QTabWidget {
+    border: 0;
+}
+
+QTabBar {
+    background: #474747;
+    color: #ccc;
+}
+
+QTabBar::tab {
+    background: #3a3a3a;
+    color: #ccc;
+    padding: 6px 12px;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background: #474747;
+    color: #fff;
+}
+
+QTabBar::tab:hover {
+    background: #4a4a4a;
+}
+
+/* Scroll Bars */
+QScrollBar:vertical {
+    background: #2e2e2e;
+    width: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #5a5a5a;
+    min-height: 20px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #6a6a6a;
+}
+
+QScrollBar:horizontal {
+    background: #2e2e2e;
+    height: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: #5a5a5a;
+    min-width: 20px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #6a6a6a;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0;
+    width: 0;
+}

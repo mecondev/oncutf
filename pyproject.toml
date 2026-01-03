@@ -86,11 +86,12 @@ module = "oncutf.*"
 ignore_missing_imports = false
 
 # ============================================================
-# Tier 0 — Generated / auto files (NEVER check)
+# Tier 0 — Generated / auto files / external packages (NEVER check)
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.utils.ui.fonts_rc"
+    "oncutf.utils.ui.fonts_rc",
+    "oncutf.ui.widgets.node_editor.*"
 ]
 ignore_errors = true
 
