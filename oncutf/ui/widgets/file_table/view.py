@@ -307,18 +307,6 @@ class FileTableView(QTableView):
         else:
             super().scrollTo(index, hint)
 
-    # =====================================
-    # Selection Store Integration
-    # =====================================
-
-    def _get_selection_store(self):
-        """Get SelectionStore from ApplicationContext."""
-        try:
-            context = get_app_context()
-            return context.selection_store
-        except RuntimeError:
-            return None
-
     def enable_selection_store_mode(self):
         """Enable SelectionStore integration mode."""
         logger.debug(
