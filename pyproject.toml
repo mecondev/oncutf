@@ -28,7 +28,8 @@ dependencies = [
     "Pillow>=9.0.0",
     "charset-normalizer>=3.0.0",
     "psutil>=6.1.0",
-    "aiofiles>=24.1.0"
+    "aiofiles>=24.1.0",
+    "typing_extensions>=4.0.0"
 ]
 
 [project.optional-dependencies]
