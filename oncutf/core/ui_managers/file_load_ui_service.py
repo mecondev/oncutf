@@ -271,8 +271,8 @@ class FileLoadUIService:
             )
 
         # Reset selection state to ensure clicks work
-        if hasattr(self.parent_window.file_table_view, "_sync_selection_safely"):
-            self.parent_window.file_table_view._sync_selection_safely()
+        if hasattr(self.parent_window.file_table_view, "_selection_behavior"):
+            self.parent_window.file_table_view._selection_behavior.sync_selection_safely()
             logger.debug(
                 "[FileLoadUIService] Refreshed file table view", extra={"dev_only": True}
             )

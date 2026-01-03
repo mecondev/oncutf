@@ -58,8 +58,8 @@ class MetadataTreeSelectionHandler:
         # Method 2: Use file table view's internal selection method
         if not selected_files:
             try:
-                if hasattr(parent_window.file_table_view, "_get_current_selection"):
-                    selected_rows = parent_window.file_table_view._get_current_selection()
+                if hasattr(parent_window.file_table_view, "_selection_behavior"):
+                    selected_rows = parent_window.file_table_view._selection_behavior.get_current_selection()
                     if selected_rows and hasattr(parent_window, "file_model"):
                         file_model = parent_window.file_model
                         for row in selected_rows:
@@ -80,8 +80,8 @@ class MetadataTreeSelectionHandler:
                 parent_window = self._view._get_parent_with_file_table()
                 if parent_window and hasattr(parent_window, "file_table_view"):
                     file_table_view = parent_window.file_table_view
-                    if hasattr(file_table_view, "_get_current_selection"):
-                        selected_rows = file_table_view._get_current_selection()
+                    if hasattr(file_table_view, "_selection_behavior"):
+                        selected_rows = file_table_view._selection_behavior.get_current_selection()
                         if selected_rows and hasattr(parent_window, "file_model"):
                             file_model = parent_window.file_model
                             selection = [

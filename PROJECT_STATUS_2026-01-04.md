@@ -1,7 +1,7 @@
 # Project Status Report — oncutf
-**Date:** 2026-01-03  
+**Date:** 2026-01-04  
 **Status:** Phase 7 (Final Polish) - 949+ tests, architecture refactoring complete
-**Latest Update:** FileLoadManager properly layered (I/O separated from UI)
+**Latest Update:** file_table_view aggressive cleanup complete - removed ALL delegation wrappers
 
 ---
 
@@ -14,7 +14,9 @@ The project is in **excellent shape** after extensive refactoring:
 - ✅ Clean code (ruff + mypy)
 - ✅ Phase 7 Final Polish nearly complete
 
-**Key Achievement (2026-01-03/04):** FileLoadManager refactoring completed with proper I/O layer separation.
+**Key Achievements (2026-01-03/04):**
+1. FileLoadManager refactoring completed with proper I/O layer separation
+2. file_table_view aggressive cleanup: 707→592 lines, ALL delegation wrappers removed
 
 ---
 
@@ -28,11 +30,26 @@ The project is in **excellent shape** after extensive refactoring:
 - `StreamingFileLoader`: 140 lines - batch loading for large file sets
 - Total: 1005 lines across 3 focused modules
 
-**Architecture Achievement:**
+**Architecture Achievement (FileLoad):**
 - ✅ FileLoadManager: Zero UI widget access, zero model.set_files() calls
 - ✅ FileLoadUIService: All model + widget operations centralized
 - ✅ Proper layer separation: Controller → Service → Manager (I/O)
 - ✅ FileLoadController now primary entry point (377 lines)
+
+### FileTableView Aggressive Cleanup (2026-01-04)
+**Previous State:** 707 lines view.py with ~40 delegation wrappers
+**New State:** 592 lines view.py with ZERO delegation wrappers
+- Removed ALL pass-through delegation methods
+- Updated 6 external callers to use behaviors directly
+- Updated 15+ internal calls in event_handler.py to use behaviors
+- view.py is now a true thin shell (display + Qt overrides only)
+- Total package: 1497 lines across 7 focused modules (avg 214 lines/module)
+
+**Result:**
+- ✅ view.py 707→592 lines (-16.3%)
+- ✅ Original file_table_view.py 1321→592 lines (-55.2%)
+- ✅ All callers use behaviors directly: `._selection_behavior.method()`
+- ✅ event_handler.py properly updated (0 broken imports)
 
 ---
 
@@ -43,7 +60,7 @@ The project is in **excellent shape** after extensive refactoring:
 | File | Original | Final | Result |
 |------|----------|-------|--------|
 | `file_tree_view.py` | 1629 | 448 | Split to package (72% ↓) |
-| `file_table_view.py` | 1318 | 1318 | [SKIP] Already optimal |
+| `file_table_view.py` | 1321 | 592 + handlers | Aggressive cleanup (55.2% ↓) |
 | `metadata_tree/view.py` | 1272 | 1082 | Delegation cleanup (18% ↓) |
 | `database_manager.py` | 1615 | 6 modules | Split to 6 modules |
 | `config.py` | 1298 | 7 modules | Split to package |
@@ -120,7 +137,8 @@ The project is in **excellent shape** after extensive refactoring:
 - ✅ 2026-01-02: Database split + cleanup
 - ✅ 2026-01-03: Config split to package + consolidated docs
 - ✅ 2026-01-03: Dead code analysis + removal
-- ✅ 2026-01-03/04: FileLoadManager proper refactoring
+- ✅ 2026-01-03/04: FileLoadManager proper refactoring (873 → 551 lines)
+- ✅ 2026-01-04: FileTableView aggressive cleanup (1321 → 592 lines)
 
 ### In Progress
 - 🔄 Metadata operations refactoring
@@ -191,4 +209,4 @@ The project is in **excellent shape** after extensive refactoring:
 
 ---
 
-**Last Verified:** 2026-01-03 
+**Last Verified:** 2026-01-04 (949 tests passed, ruff clean, mypy clean) 

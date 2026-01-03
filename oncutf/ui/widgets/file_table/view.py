@@ -153,7 +153,7 @@ class FileTableView(QTableView):
         self.viewport().installEventFilter(self)
 
         # Schedule header visibility update
-        schedule_ui_update(self._update_header_visibility, delay=100)
+        schedule_ui_update(self._column_mgmt_behavior._update_header_visibility, delay=100)
 
     def _setup_qt_properties(self) -> None:
         """Setup Qt widget properties."""
@@ -231,7 +231,7 @@ class FileTableView(QTableView):
             return
         super().keyPressEvent(event)
         if self._event_handler.should_sync_selection_after_key(event):
-            self._sync_selection_safely()
+            self._selection_behavior.sync_selection_safely()
 
     def keyReleaseEvent(self, event) -> None:
         """Handle key release events."""
@@ -275,7 +275,7 @@ class FileTableView(QTableView):
         """Handle show events."""
         super().showEvent(event)
         self._viewport_handler.force_scrollbar_update()
-        self._update_header_visibility()
+        self._column_mgmt_behavior._update_header_visibility()
 
     def paintEvent(self, event) -> None:
         """Handle paint events."""
@@ -330,7 +330,7 @@ class FileTableView(QTableView):
         # Sync current Qt selection to store
         selection_store = self._get_selection_store()
         if selection_store is not None:
-            current_selection = self._get_current_selection_safe()
+            current_selection = self._selection_behavior.get_current_selection_safe()
             selection_store.clear_selection(emit_signal=False)
             selection_store.update_selection(current_selection, emit_signal=True)
 
@@ -386,17 +386,17 @@ class FileTableView(QTableView):
             model._table_view_ref = self
 
             if hasattr(model, "columnsInserted"):
-                model.columnsInserted.connect(self._configure_columns)
+                model.columnsInserted.connect(self._column_mgmt_behavior.configure_columns)
             if hasattr(model, "columnsRemoved"):
-                model.columnsRemoved.connect(self._configure_columns)
+                model.columnsRemoved.connect(self._column_mgmt_behavior.configure_columns)
             if hasattr(model, "modelReset"):
-                model.modelReset.connect(self._configure_columns)
+                model.modelReset.connect(self._column_mgmt_behavior.configure_columns)
 
             if model.columnCount() > 0:
-                schedule_ui_update(self._check_and_fix_column_widths, delay=50)
-                self._configure_columns()
+                schedule_ui_update(self._column_mgmt_behavior.check_and_fix_column_widths, delay=50)
+                self._column_mgmt_behavior.configure_columns()
             else:
-                schedule_ui_update(self._configure_columns, delay=50)
+                schedule_ui_update(self._column_mgmt_behavior.configure_columns, delay=50)
 
         self.update_placeholder_visibility()
 
@@ -423,7 +423,7 @@ class FileTableView(QTableView):
             self.model().set_files(file_items)
 
         self.show()
-        self._configure_columns()
+        self._column_mgmt_behavior.configure_columns()
         self._ensure_no_word_wrap()
         self._setup_column_delegates()
 
@@ -472,7 +472,7 @@ class FileTableView(QTableView):
         if self.model():
             for row in range(self.model().rowCount()):
                 self.setRowHeight(row, row_height)
-            self._ensure_all_columns_proper_width()
+            self._column_mgmt_behavior.ensure_all_columns_proper_width()
             self.model().layoutChanged.emit()
 
         self.viewport().update()
@@ -527,14 +527,14 @@ class FileTableView(QTableView):
                 parent = parent.parent()
 
         with suppress(Exception):
-            self._update_header_visibility()
+            self._column_mgmt_behavior._update_header_visibility()
 
     def refresh_view_state(self) -> None:
         """Refresh complete view state (scrollbar + header visibility)."""
         with suppress(Exception):
-            self._update_scrollbar_visibility()
+            self._viewport_handler.update_scrollbar_visibility()
         with suppress(Exception):
-            self._update_header_visibility()
+            self._column_mgmt_behavior._update_header_visibility()
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement."""
@@ -561,85 +561,14 @@ class FileTableView(QTableView):
             self.placeholder_helper.update_visibility()
 
     # =====================================
-    # Behavior Delegation Methods
+    # Qt Event Overrides (required for proper delegation)
     # =====================================
 
-    # Column Management Behavior delegation
-    def _configure_columns(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.configure_columns()
-
-    def _ensure_all_columns_proper_width(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.ensure_all_columns_proper_width()
-
-    def _reset_columns_to_default(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.reset_column_widths_to_defaults()
-
-    def _check_and_fix_column_widths(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.check_and_fix_column_widths()
-
-    def _auto_fit_columns_to_content(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.auto_fit_columns_to_content()
-
-    def add_column(self, column_key: str) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.add_column(column_key)
-
-    def remove_column(self, column_key: str) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.remove_column(column_key)
-
     def _load_column_visibility_config(self) -> dict:
-        """Delegate to ColumnManagementBehavior (legacy compatibility)."""
+        """Load column visibility config (called during __init__ before behavior exists)."""
         if hasattr(self, "_column_mgmt_behavior"):
             return self._column_mgmt_behavior.load_column_visibility_config()
         return {}
-
-    def _set_column_alignment(self, column_index: int, alignment: str) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        if hasattr(self, "_column_mgmt_behavior"):
-            self._column_mgmt_behavior._set_column_alignment(column_index, alignment)
-
-    def _sync_view_model_columns(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        if hasattr(self, "_column_mgmt_behavior"):
-            self._column_mgmt_behavior.sync_view_model_columns()
-
-    def _toggle_column_visibility(self, column_key: str) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        if hasattr(self, "_column_mgmt_behavior"):
-            self._column_mgmt_behavior.toggle_column_visibility(column_key)
-
-    def _update_header_visibility(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        if hasattr(self, "_column_mgmt_behavior"):
-            self._column_mgmt_behavior._update_header_visibility()
-
-    def refresh_columns_after_model_change(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        self._column_mgmt_behavior.refresh_columns_after_model_change()
-
-    def _force_save_column_changes(self) -> None:
-        """Delegate to ColumnManagementBehavior."""
-        if hasattr(self, "_column_mgmt_behavior"):
-            self._column_mgmt_behavior.force_save_column_changes()
-
-    # Drag & Drop Behavior delegation
-    def _start_custom_drag(self) -> None:
-        """Delegate to DragDropBehavior."""
-        self._drag_drop_behavior.start_drag()
-
-    def _end_custom_drag(self) -> None:
-        """Delegate to DragDropBehavior."""
-        self._drag_drop_behavior.end_drag()
-
-    def _update_drag_feedback(self) -> None:
-        """Delegate to DragDropBehavior."""
-        self._drag_drop_behavior._update_drag_feedback()
 
     def dragEnterEvent(self, event) -> None:
         """Delegate to DragDropBehavior."""
@@ -658,50 +587,6 @@ class FileTableView(QTableView):
             dropped_paths, modifiers = result
             self.files_dropped.emit(dropped_paths, modifiers)
 
-    # Selection Behavior delegation
-    def _get_current_selection(self) -> set[int]:
-        """Delegate to SelectionBehavior."""
-        return self._selection_behavior.get_current_selection()
-
-    def _get_current_selection_safe(self) -> set[int]:
-        """Delegate to SelectionBehavior."""
-        return self._selection_behavior.get_current_selection_safe()
-
-    def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.set_anchor_row(row)
-
-    def _get_anchor_row(self) -> int | None:
-        """Delegate to SelectionBehavior."""
-        return self._selection_behavior.get_anchor_row()
-
-    def _sync_selection_safely(self) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.sync_selection_safely()
-
-    def _update_selection_store(self, selected_rows: set[int], emit_signal: bool = True) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.update_selection_store(selected_rows, emit_signal=emit_signal)
-
-    def select_rows_range(self, start_row: int, end_row: int) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.select_rows_range(start_row, end_row)
-
-    def select_dropped_files(self, file_paths: list[str] | None = None) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.select_dropped_files(file_paths)
-
-    def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
-        """Delegate to SelectionBehavior."""
-        self._selection_behavior.ensure_anchor_or_select(index, modifiers)
-
     def selectionChanged(self, selected, deselected) -> None:
         """Override to delegate to SelectionBehavior."""
         self._selection_behavior.handle_selection_changed(selected, deselected)
-
-    # =====================================
-    # Cleanup & Lifecycle
-    # =====================================
-
-    def _restore_pending_selection(self) -> None:
-        """Restore pending selection if it exists (no longer needed)."""

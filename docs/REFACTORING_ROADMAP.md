@@ -141,13 +141,13 @@ ui/widgets/file_tree/                <- NEW package
 
 ### 3b. `file_table_view.py` (1321 lines) -> Package [DONE]
 
-**Completed:** 2026-01-04
+**Completed:** 2026-01-04 (Phase 1 + Aggressive Cleanup)
 
 **Final structure:**
 ```
 ui/widgets/file_table/
 ├── __init__.py (27 lines)           <- Re-exports FileTableView
-├── view.py (707 lines)              <- Main view (thin shell, -46.5%)
+├── view.py (592 lines)              <- Main view (thin shell, -55.2%)
 ├── event_handler.py (319 lines)     <- Qt event handlers
 ├── hover_handler.py (102 lines)     <- Hover state management
 ├── tooltip_handler.py (159 lines)   <- Custom tooltip logic
@@ -155,16 +155,23 @@ ui/widgets/file_table/
 └── utils.py (136 lines)             <- Cursor cleanup, helpers
 ```
 
-**Changes:**
+**Phase 1 (Initial Split):**
 1. Extracted EventHandler for mouse/keyboard/focus events
 2. Extracted HoverHandler for hover highlighting
 3. Extracted TooltipHandler for custom tooltips
 4. Extracted ViewportHandler for scrollbar management
 5. Created utils.py for cursor cleanup functions
-6. file_table_view.py now re-exports for backward compatibility
 
-**Result:** view.py is now a thin shell delegating to handlers.
-Total package: 1612 lines across 7 modules (avg 230 lines/module)
+**Phase 2 (Aggressive Cleanup):**
+6. Removed ~40 delegation wrappers from view.py
+7. Updated 6 external callers to use behaviors directly:
+   - `_selection_behavior.method()` instead of `view.method()`
+   - `_drag_drop_behavior.method()` instead of `view.method()`
+   - `_column_mgmt_behavior.method()` instead of `view.method()`
+8. Updated event_handler.py to use behaviors directly (15+ calls changed)
+
+**Result:** view.py is a true thin shell with NO pass-through delegation.
+Total package: 1497 lines across 7 modules (avg 214 lines/module)
 
 ---
 
@@ -503,7 +510,7 @@ core/ui_managers/
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
 | Files >900 lines | 11 | 0 | 0 |
-| Files >600 lines | 16 | 6 | 5 |
+| Files >600 lines | 16 | 5 | 5 |
 | Average LOC/file | ~200 | ~200 | ~200 |
 | Tests passing | 949 | 949 | 949+ |
 | Docstring coverage | 96.2% | 96.2% | 98%+ |

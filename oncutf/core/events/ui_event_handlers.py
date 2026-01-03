@@ -52,7 +52,7 @@ class UIEventHandlers:
                     file.checked = False
             else:
                 # Select all efficiently
-                self.parent_window.file_table_view.select_rows_range(0, total - 1)
+                self.parent_window.file_table_view._selection_behavior.select_rows_range(0, total - 1)
                 for file in self.parent_window.file_model.files:
                     file.checked = True
                 self.parent_window.file_table_view.anchor_row = 0

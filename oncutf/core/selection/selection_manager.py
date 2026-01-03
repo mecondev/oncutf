@@ -62,7 +62,7 @@ class SelectionManager:
                 for file in file_model.files:
                     file.checked = True
 
-                file_table_view.select_rows_range(0, len(file_model.files) - 1)
+                file_table_view._selection_behavior.select_rows_range(0, len(file_model.files) - 1)
                 if hasattr(file_table_view, "anchor_row"):
                     file_table_view.anchor_row = 0
 
@@ -196,8 +196,8 @@ class SelectionManager:
                 )
 
                 for start, end in ranges:
-                    if hasattr(file_table_view, "select_rows_range"):
-                        file_table_view.select_rows_range(start, end)
+                    if hasattr(file_table_view, "_selection_behavior"):
+                        file_table_view._selection_behavior.select_rows_range(start, end)
 
                 if hasattr(file_table_view, "anchor_row") and checked_rows:
                     file_table_view.anchor_row = checked_rows[0]

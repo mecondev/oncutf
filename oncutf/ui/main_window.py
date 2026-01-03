@@ -569,7 +569,7 @@ class MainWindow(QMainWindow):
             return []
 
         # Get current selection and sort to maintain display order
-        selected_rows = self.file_table_view._get_current_selection()
+        selected_rows = self.file_table_view._selection_behavior.get_current_selection()
         selected_rows_sorted = sorted(selected_rows)
 
         # Convert to FileItem objects with bounds checking

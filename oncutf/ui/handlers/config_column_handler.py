@@ -60,8 +60,8 @@ class ConfigColumnHandler:
         # Use the original FileTableView column configuration logic instead of ColumnManager
         if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view.model():
             # Trigger the original, sophisticated column configuration
-            if hasattr(self.main_window.file_table_view, "_configure_columns"):
-                self.main_window.file_table_view._configure_columns()
+            if hasattr(self.main_window.file_table_view, "_column_mgmt_behavior"):
+                self.main_window.file_table_view._column_mgmt_behavior.configure_columns()
 
             # Then trigger column adjustment using the existing logic
 

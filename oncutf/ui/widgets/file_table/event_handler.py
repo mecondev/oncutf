@@ -71,20 +71,20 @@ class EventHandler:
             # Clicking on empty space - clear selection
             if not index.isValid():
                 if modifiers == Qt.NoModifier:
-                    self._view._set_anchor_row(None, emit_signal=False)
+                    self._view._selection_behavior.set_anchor_row(None, emit_signal=False)
                     self._view.clearSelection()
                 return True
 
             # Handle selection based on modifiers
             if modifiers in (Qt.NoModifier, Qt.ControlModifier):
-                self._view._set_anchor_row(index.row(), emit_signal=False)
+                self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
             elif modifiers == Qt.ShiftModifier:
-                anchor = self._view._get_anchor_row()
+                anchor = self._view._selection_behavior.get_anchor_row()
                 if anchor is not None:
-                    self._view.select_rows_range(anchor, index.row())
+                    self._view._selection_behavior.select_rows_range(anchor, index.row())
                     return True
                 else:
-                    self._view._set_anchor_row(index.row(), emit_signal=False)
+                    self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
 
         return False  # Call super
 
@@ -117,9 +117,9 @@ class EventHandler:
             selection_model.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
             self._view._manual_anchor_index = index
         else:
-            self._view.ensure_anchor_or_select(index, event.modifiers())
+            self._view._selection_behavior.ensure_anchor_or_select(index, event.modifiers())
 
-        self._view._sync_selection_safely()
+        self._view._selection_behavior.sync_selection_safely()
         return False
 
     def handle_mouse_release(self, event: QMouseEvent) -> bool:
@@ -137,13 +137,13 @@ class EventHandler:
 
             if self._view._drag_drop_behavior.is_dragging:
                 was_dragging = True
-                self._view._end_custom_drag()
+                self._view._drag_drop_behavior.end_drag()
 
                 # Final status update after drag ends
                 def final_status_update():
-                    current_selection = self._view._get_current_selection()
+                    current_selection = self._view._selection_behavior.get_current_selection()
                     if current_selection:
-                        selection_store = self._view._get_selection_store()
+                        selection_store = self._view._selection_behavior.get_selection_store()
                         if selection_store and not self._view._legacy_selection_mode:
                             selection_store.selection_changed.emit(list(current_selection))
 
@@ -174,9 +174,9 @@ class EventHandler:
                 start_index = self._view.indexAt(self._view._drag_start_pos)
                 if start_index.isValid():
                     start_row = start_index.row()
-                    if start_row in self._view._get_current_selection_safe():
+                    if start_row in self._view._selection_behavior.get_current_selection_safe():
                         self._view._drag_start_pos = None
-                        self._view._start_custom_drag()
+                        self._view._drag_drop_behavior.start_drag()
                         return True
 
         # Skip hover updates if dragging
@@ -210,7 +210,7 @@ class EventHandler:
 
         # Skip key handling during drag
         if self._view._drag_drop_behavior.is_dragging:
-            self._view._update_drag_feedback()
+            self._view._drag_drop_behavior._update_drag_feedback()
             return True
 
         return False
@@ -225,7 +225,7 @@ class EventHandler:
             True if super call should be skipped
         """
         if self._view._drag_drop_behavior.is_dragging:
-            self._view._update_drag_feedback()
+            self._view._drag_drop_behavior._update_drag_feedback()
             return True
         return False
 
@@ -249,7 +249,7 @@ class EventHandler:
             from oncutf.utils.ui.selection_provider import get_selected_row_set
 
             selected_rows = get_selected_row_set(selection_model)
-            self._view._update_selection_store(selected_rows, emit_signal=False)
+            self._view._selection_behavior.update_selection_store(selected_rows, emit_signal=False)
 
         self._view.viewport().update()
 
