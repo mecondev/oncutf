@@ -331,15 +331,21 @@ class HashOperationsManager:
         """
         # Update file model with new hash
         if (
-            hasattr(self.parent_window, "file_table_model")
-            and self.parent_window.file_table_model
+            hasattr(self.parent_window, "file_table_view")
+            and self.parent_window.file_table_view
         ):
-            # Find FileItem and update its hash
-            file_items = self.parent_window.file_table_model.get_all_file_items()
-            for file_item in file_items:
-                if file_item.full_path == file_path:
-                    # Hash is cached in database, will be loaded on next access
-                    break
+            # Force table to refresh hash column for this file
+            from oncutf.core.application_context import get_app_context
+            try:
+                file_store = get_app_context().file_store
+                file_item = file_store.get_file_item_by_path(file_path)
+                if file_item:
+                    # Emit dataChanged signal for the hash column to trigger refresh
+                    model = self.parent_window.file_table_view.model()
+                    if model and hasattr(model, 'emit_file_item_changed'):
+                        model.emit_file_item_changed(file_item)
+            except Exception as e:
+                logger.debug("[HashManager] Could not refresh file item UI: %s", e, extra={"dev_only": True})
 
         logger.debug(
             "[HashManager] File hash calculated: %s -> %s",

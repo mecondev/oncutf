@@ -194,6 +194,9 @@ class HashWorkerCoordinator:
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             self.hash_dialog.set_count(current, total)
             self.hash_dialog.set_filename(message)
+            # Force UI update to show progress immediately
+            from oncutf.core.pyqt_imports import QApplication
+            QApplication.instance().processEvents()
 
     def update_size_progress(self, current_bytes: int, total_bytes: int) -> None:
         """Update size-based progress in dialog.
@@ -210,6 +213,9 @@ class HashWorkerCoordinator:
                 self.hash_dialog.set_count(percentage, 100)
             else:
                 self.hash_dialog.set_count(0, 100)
+            # Force UI update
+            from oncutf.core.pyqt_imports import QApplication
+            QApplication.instance().processEvents()
 
     def cleanup_worker(self) -> None:
         """Clean up the worker thread and dialog."""
