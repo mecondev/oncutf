@@ -1,33 +1,42 @@
-# oncutf Documentation
+# Documentation Index
 
-Comprehensive documentation for the oncutf application, a PyQt5 desktop app for advanced batch file renaming with EXIF/metadata support.
+## Project Status & Planning
 
-## Status Update
+**Primary Reference:**
+- **[PROJECT_STATUS_2026-01-04.md](../PROJECT_STATUS_2026-01-04.md)** — Current project status (root), metrics, completed refactorings
 
-**Phase 7 In Progress** (December 2025) — Final polish focuses on documentation cleanup and stability. See [2025_12_19.md](2025_12_19.md) for the master plan and current status.
+**Architecture Evolution:**
+- **[REFACTORING_ROADMAP.md](REFACTORING_ROADMAP.md)** — Monster files tracker (Phase 4+ active)
+- **[MIGRATION_STANCE.md](MIGRATION_STANCE.md)** — Architecture migration policy: legacy vs modern patterns
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture (4-tier MVC, core layers)
+- **[UI_ARCHITECTURE_PATTERNS.md](UI_ARCHITECTURE_PATTERNS.md)** — UI patterns: Behaviors vs Mixins vs Handlers
 
-## Quick Start
+## Application Systems
 
-- **[Master Plan](2025_12_19.md)** — Current status, next steps, and architecture summary
-- **[ROADMAP](ROADMAP.md)** — Development roadmap and phase tracking
-- **[ARCHITECTURE](ARCHITECTURE.md)** — System architecture overview
-- **[Keyboard Shortcuts](keyboard_shortcuts.md)** — Complete keyboard shortcuts reference
-- **[Database Quick Start](database_quick_start.md)** — Persistent database usage
+- **[application_workflow.md](application_workflow.md)** — Initialization, shutdown, event flow
+- **[database_system.md](database_system.md)** — SQLite design, schema, migrations
+- **[database_quick_start.md](database_quick_start.md)** — Quick database reference
+- **[structured_metadata_system.md](structured_metadata_system.md)** — Metadata handling
+- **[safe_rename_workflow.md](safe_rename_workflow.md)** — Rename operation safety
+- **[color_tagging_system.md](color_tagging_system.md)** — Color tagging implementation
+- **[keyboard_shortcuts.md](keyboard_shortcuts.md)** — All keyboard bindings
+- **[dialog_ui_rules.md](dialog_ui_rules.md)** — Dialog design patterns
 
-## Core Systems Documentation
+## Implementation References
 
-- **[Application Workflow](application_workflow.md)** — Startup to rename execution flow
-- **[Database System](database_system.md)** — SQLite-based persistence architecture
-- **[Structured Metadata System](structured_metadata_system.md)** — Metadata organization and processing
-- **[Progress Manager System](progress_manager_system.md)** — Unified progress tracking API
-- **[Safe Rename Workflow](safe_rename_workflow.md)** — Enhanced rename process with Qt safety
-- **[JSON Config System](json_config_system.md)** — Configuration management
+- **[database_split_plan.md](database_split_plan.md)** — Database manager refactoring
+- **[progress_manager_system.md](progress_manager_system.md)** — Progress tracking API
+- **[json_config_system.md](json_config_system.md)** — Configuration management
+- **[PHASE5_SUMMARY.md](PHASE5_SUMMARY.md)** — Phase 5 completion summary
+- **[WINDOWS_FIXES.md](WINDOWS_FIXES.md)** — Windows-specific issues and solutions
 
-## Historical Documentation
+## Archived Documentation
 
-Phase-by-phase execution plans and historical refactoring notes are archived in [_archive/refactor-runs/](_archive/refactor-runs/).
+Completed refactoring plans are in **[_archive/](_archive/)** — implementation complete.
 
-## System Architecture
+---
+
+**Last Updated:** 2026-01-04 | **Active Phase:** Final Polish (Phase 7) | **Status:** 949/949 tests ✅
 
 Layered structure with controllers separating UI from core services:
 
