@@ -331,8 +331,7 @@ class FileTableView(QTableView):
         selection_store = self._get_selection_store()
         if selection_store is not None:
             current_selection = self._selection_behavior.get_current_selection_safe()
-            selection_store.clear_selection(emit_signal=False)
-            selection_store.update_selection(current_selection, emit_signal=True)
+            selection_store.set_selected_rows(current_selection, emit_signal=True)
 
     def disable_selection_store_mode(self):
         """Disable SelectionStore integration mode."""
@@ -558,7 +557,7 @@ class FileTableView(QTableView):
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on table content."""
         if hasattr(self, "placeholder_helper"):
-            self.placeholder_helper.update_visibility()
+            self.placeholder_helper.update_position()
 
     # =====================================
     # Qt Event Overrides (required for proper delegation)

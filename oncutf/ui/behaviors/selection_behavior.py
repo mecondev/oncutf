@@ -209,17 +209,20 @@ class SelectionBehavior:
         finally:
             self._processing_selection_change = False
 
-    def set_anchor_row(self, row: int | None) -> None:
+    def set_anchor_row(self, row: int | None, *, emit_signal: bool = True) -> None:
         """Set the anchor row for range selections.
 
         Args:
             row: Row index to use as anchor, or None to clear
+            emit_signal: Whether to emit the anchor_changed signal (default: True)
 
         """
         self._anchor_row = row
         logger.debug(
             "[SelectionBehavior] Anchor row set to %s", row, extra={"dev_only": True}
         )
+        # Note: SelectionBehavior is not a QObject, so it cannot emit signals directly
+        # Signal emission should be handled by the SelectionStore if needed
 
     def get_anchor_row(self) -> int | None:
         """Get the current anchor row.
