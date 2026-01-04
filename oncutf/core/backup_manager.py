@@ -78,9 +78,9 @@ class BackupManager(QObject):
         if self.periodic_enabled and self.backup_interval > 0:
             self.start_periodic_backups()
 
-        logger.info("BackupManager initialized for %s", self.database_path)
+        logger.info("[BackupManager] Initialized for %s", self.database_path)
         logger.info(
-            "Backup count: %d, Interval: %ds, Periodic: %s",
+            "[BackupManager] Backup count: %d, Interval: %ds, Periodic: %s",
             self.backup_count,
             self.backup_interval,
             self.periodic_enabled,
@@ -99,7 +99,7 @@ class BackupManager(QObject):
         try:
             # Check if database file exists
             if not self.database_path.exists():
-                logger.warning("Database file not found: %s", self.database_path)
+                logger.warning("[BackupManager] Database file not found: %s", self.database_path)
                 return None
 
             # Generate backup filename
@@ -111,7 +111,7 @@ class BackupManager(QObject):
             # Create the backup
             shutil.copy2(self.database_path, backup_path)
 
-            logger.info("Database backup created (%s): %s", reason, backup_path)
+            logger.info("[BackupManager] Database backup created (%s): %s", reason, backup_path)
 
             # Clean up old backups
             self._cleanup_old_backups()
@@ -122,7 +122,7 @@ class BackupManager(QObject):
             return str(backup_path)
 
         except Exception as e:
-            error_msg = f"Failed to create backup: {str(e)}"
+            error_msg = f"[BackupManager] Failed to create backup: {str(e)}"
             logger.error(error_msg)
             self.backup_failed.emit(error_msg)
             return None
@@ -145,23 +145,23 @@ class BackupManager(QObject):
                 for old_backup in files_to_remove:
                     try:
                         old_backup.unlink()
-                        logger.info("Removed old backup: %s", old_backup)
+                        logger.info("[BackupManager] Removed old backup: %s", old_backup)
                     except Exception as e:
-                        logger.error("Failed to remove old backup %s: %s", old_backup, e)
+                        logger.error("[BackupManager] Failed to remove old backup %s: %s", old_backup, e)
 
         except Exception as e:
-            logger.error("Error during backup cleanup: %s", e)
+            logger.error("[BackupManager] Error during backup cleanup: %s", e)
 
     def start_periodic_backups(self) -> None:
         """Start the periodic backup timer."""
         if self.backup_interval > 0:
             self.backup_timer.start(self.backup_interval * 1000)  # Convert to milliseconds
-            logger.info("Periodic backups started (every %d seconds)", self.backup_interval)
+            logger.info("[BackupManager] Periodic backups started (every %d seconds)", self.backup_interval)
 
     def stop_periodic_backups(self) -> None:
         """Stop the periodic backup timer."""
         self.backup_timer.stop()
-        logger.info("Periodic backups stopped")
+        logger.info("[BackupManager] Periodic backups stopped")
 
     def _perform_periodic_backup(self) -> None:
         """Perform a periodic backup (called by timer)."""
@@ -174,7 +174,7 @@ class BackupManager(QObject):
             Path to the created backup file, or None if backup failed
 
         """
-        logger.info("Creating shutdown backup...")
+        logger.info("[BackupManager] Creating shutdown backup...")
         return self.create_backup("shutdown")
 
     def set_backup_count(self, count: int) -> None:
@@ -185,12 +185,12 @@ class BackupManager(QObject):
 
         """
         if count < 1:
-            logger.warning("Invalid backup count: %d. Must be >= 1", count)
+            logger.warning("[BackupManager] Invalid backup count: %d. Must be >= 1", count)
             return
 
         old_count = self.backup_count
         self.backup_count = count
-        logger.info("Backup count changed from %d to %d", old_count, count)
+        logger.info("[BackupManager] Backup count changed from %d to %d", old_count, count)
 
         # Clean up immediately if we reduced the count
         if count < old_count:
@@ -204,12 +204,12 @@ class BackupManager(QObject):
 
         """
         if interval < 0:
-            logger.warning("Invalid backup interval: %d. Must be >= 0", interval)
+            logger.warning("[BackupManager] Invalid backup interval: %d. Must be >= 0", interval)
             return
 
         old_interval = self.backup_interval
         self.backup_interval = interval
-        logger.info("Backup interval changed from %ds to %ds", old_interval, interval)
+        logger.info("[BackupManager] Backup interval changed from %ds to %ds", old_interval, interval)
 
         # Restart timer with new interval
         if self.periodic_enabled:
@@ -228,10 +228,10 @@ class BackupManager(QObject):
 
         if enabled:
             self.start_periodic_backups()
-            logger.info("Periodic backups enabled")
+            logger.info("[BackupManager] Periodic backups enabled")
         else:
             self.stop_periodic_backups()
-            logger.info("Periodic backups disabled")
+            logger.info("[BackupManager] Periodic backups disabled")
 
     def get_backup_files(self) -> list[Path]:
         """Get a list of all backup files for this database.
@@ -252,7 +252,7 @@ class BackupManager(QObject):
             return backup_files
 
         except Exception as e:
-            logger.error("Error getting backup files: %s", e)
+            logger.error("[BackupManager] Error getting backup files: %s", e)
             return []
 
     def get_status(self) -> dict[str, object]:
@@ -307,7 +307,7 @@ def get_backup_manager(
             periodic_enabled=periodic_enabled,
             grouping_timeout=grouping_timeout,
         )
-        logger.info("Global backup manager created")
+        logger.info("[BackupManager] Global instance created")
 
     return _backup_manager
 
@@ -319,4 +319,4 @@ def cleanup_backup_manager() -> None:
     if _backup_manager is not None:
         _backup_manager.stop_periodic_backups()
         _backup_manager = None
-        logger.info("Global backup manager cleaned up")
+        logger.info("[BackupManager] Global instance cleaned up")

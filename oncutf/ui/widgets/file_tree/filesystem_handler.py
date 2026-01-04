@@ -327,10 +327,7 @@ class FilesystemHandler:
             # Set root path based on platform
             # Windows: Start from first drive (C:) to show disk tree
             # Linux/macOS: Start from root (/)
-            if platform.system() == "Windows":
-                root = "C:"  # Windows Explorer style - start from primary drive
-            else:
-                root = "/"
+            root = "C:" if platform.system() == "Windows" else "/"
             new_model.setRootPath(root)
 
             if file_filter is not None:

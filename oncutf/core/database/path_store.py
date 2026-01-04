@@ -42,6 +42,14 @@ class PathStore:
             path_id for the file
 
         """
+        # Validate input
+        if not file_path:
+            raise ValueError("file_path cannot be empty")
+
+        # Check for null bytes (SQLite doesn't support them)
+        if '\x00' in file_path:
+            raise ValueError(f"file_path contains null byte: {file_path!r}")
+
         norm_path = self.normalize_path(file_path)
         filename = os.path.basename(norm_path)
 

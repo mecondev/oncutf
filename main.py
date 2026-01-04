@@ -44,7 +44,7 @@ logger = logging.getLogger()
 
 # Log application start with current date/time
 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-logger.info("Application started at %s", now)
+logger.info("[App] Application started at %s", now)
 
 logger_effective_level = logger.getEffectiveLevel()
 logger.debug("Effective logging level: %d", logger_effective_level, extra={"dev_only": True})
@@ -66,22 +66,22 @@ def cleanup_on_exit() -> None:
         from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         get_app_config_manager().save_immediate()
-        logger.info("Configuration saved immediately before exit")
+        logger.info("[App] Configuration saved immediately before exit")
     except Exception as e:
-        logger.warning("Error saving configuration during cleanup: %s", e)
+        logger.warning("[App] Error saving configuration during cleanup: %s", e)
 
     try:
         from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
-        logger.info("Emergency ExifTool cleanup completed")
+        logger.info("[App] Emergency ExifTool cleanup completed")
     except Exception as e:
-        logger.warning("Error in emergency cleanup: %s", e)
+        logger.warning("[App] Error in emergency cleanup: %s", e)
 
 
 def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
-    logger.info("Received signal %d, performing cleanup...", signum)
+    logger.info("[App] Received signal %d, performing cleanup...", signum)
     cleanup_on_exit()
     sys.exit(0)
 
@@ -129,20 +129,20 @@ def main() -> int:
         # CRITICAL: Set working directory to project root first
         # This ensures all relative paths work correctly regardless of where script is run from
         os.chdir(project_root)
-        logger.info("Working directory set to: %s", os.getcwd())
+        logger.info("[App] Working directory set to: %s", os.getcwd())
 
         # Log platform information for debugging
-        logger.info("Platform: %s %s", platform.system(), platform.release())
-        logger.info("Python version: %s", sys.version)
+        logger.info("[App] Platform: %s %s", platform.system(), platform.release())
+        logger.info("[App] Python version: %s", sys.version)
         logger.debug("Project root: %s", project_root, extra={"dev_only": True})
 
         # Log Windows-specific info
         if platform.system() == "Windows":
-            logger.info("Windows version: %s", platform.win32_ver())
+            logger.info("[App] Windows version: %s", platform.win32_ver())
             import locale
 
-            logger.info("System locale: %s", locale.getdefaultlocale())
-            logger.info("File system encoding: %s", sys.getfilesystemencoding())
+            logger.info("[App] System locale: %s", locale.getdefaultlocale())
+            logger.info("[App] File system encoding: %s", sys.getfilesystemencoding())
 
         # Enable High DPI support before creating QApplication
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -199,7 +199,7 @@ def main() -> int:
         from oncutf.services import configure_default_services
 
         configure_default_services()
-        logger.info("Default services configured")
+        logger.info("[App] Default services configured")
 
         # Create custom splash screen
         from oncutf.utils.filesystem.path_utils import get_images_dir
@@ -218,7 +218,7 @@ def main() -> int:
                 app.processEvents()
 
             logger.info(
-                "Splash screen displayed (size: %dx%d)", splash.splash_width, splash.splash_height
+                "[App] Splash screen displayed (size: %dx%d)", splash.splash_width, splash.splash_height
             )
 
             # Initialize state for dual-flag synchronization
@@ -354,7 +354,7 @@ def main() -> int:
         exit_code = app.exec_()
 
         # Clean up before exit
-        logger.info("Application shutting down with exit code: %d", exit_code)
+        logger.info("[App] Application shutting down with exit code: %d", exit_code)
 
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
@@ -363,9 +363,9 @@ def main() -> int:
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
-            logger.info("ExifTool processes cleaned up")
+            logger.info("[App] ExifTool processes cleaned up")
         except Exception as e:
-            logger.warning("Error cleaning up ExifTool processes: %s", e)
+            logger.warning("[App] Error cleaning up ExifTool processes: %s", e)
 
         # Windows-specific: Process pending deleteLater events before quit
         if platform.system() == "Windows":

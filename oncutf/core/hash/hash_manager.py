@@ -88,6 +88,7 @@ class HashManager:
         self,
         file_path: str | Path,
         progress_callback: Callable[[int], None] | None = None,
+        cancellation_check: Callable[[], bool] | None = None,
     ) -> str | None:
         """Calculate the CRC32 hash of a file with error handling and progress tracking.
         Checks cache first before calculating.
@@ -95,6 +96,7 @@ class HashManager:
         Args:
             file_path: Path to the file to hash
             progress_callback: Optional callback function(bytes_processed) for progress tracking
+            cancellation_check: Optional callback to check if operation should be cancelled
 
         Returns:
             str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
@@ -143,6 +145,11 @@ class HashManager:
 
             with file_path.open("rb") as f:
                 while True:
+                    # Check for cancellation
+                    if cancellation_check and cancellation_check():
+                        logger.debug("[HashManager] Hash calculation cancelled for: %s", file_path.name)
+                        return None
+
                     bytes_read = f.readinto(buffer)
                     if not bytes_read:
                         break

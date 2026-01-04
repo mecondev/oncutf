@@ -11,6 +11,7 @@ categories, fields, and color tags.
 import json
 import os
 import sqlite3
+import threading
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -24,16 +25,23 @@ logger = get_cached_logger(__name__)
 class MetadataStore:
     """Manages metadata storage and retrieval in the database."""
 
-    def __init__(self, connection: sqlite3.Connection, path_store: "PathStore"):
+    def __init__(
+        self,
+        connection: sqlite3.Connection,
+        path_store: "PathStore",
+        write_lock: threading.RLock,
+    ):
         """Initialize MetadataStore with a database connection and path store.
 
         Args:
             connection: Active SQLite database connection
             path_store: PathStore instance for path management
+            write_lock: Lock for thread-safe database access
 
         """
         self.connection = connection
         self.path_store = path_store
+        self._write_lock = write_lock
 
     def store_metadata(
         self,
@@ -44,36 +52,41 @@ class MetadataStore:
     ) -> bool:
         """Store metadata for a file."""
         try:
-            path_id = self.path_store.get_or_create_path_id(file_path)
+            with self._write_lock:
+                path_id = self.path_store.get_or_create_path_id(file_path)
 
-            cursor = self.connection.cursor()
+                cursor = self.connection.cursor()
 
-            # Remove existing metadata for this path
-            cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
+                # Remove existing metadata for this path
+                cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
 
-            # Store new metadata
-            metadata_type = "extended" if is_extended else "fast"
-            metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
+                # Store new metadata
+                metadata_type = "extended" if is_extended else "fast"
+                metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
 
-            cursor.execute(
-                """
-                INSERT INTO file_metadata
-                (path_id, metadata_type, metadata_json, is_modified)
-                VALUES (?, ?, ?, ?)
-            """,
-                (path_id, metadata_type, metadata_json, is_modified),
-            )
+                cursor.execute(
+                    """
+                    INSERT INTO file_metadata
+                    (path_id, metadata_type, metadata_json, is_modified)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (path_id, metadata_type, metadata_json, is_modified),
+                )
 
-            # Commit the transaction
-            self.connection.commit()
+                # Commit the transaction
+                self.connection.commit()
 
-            logger.debug(
-                "[MetadataStore] Stored %s metadata for: %s",
-                metadata_type,
-                os.path.basename(file_path),
-            )
-            return True
+                logger.debug(
+                    "[MetadataStore] Stored %s metadata for: %s",
+                    metadata_type,
+                    os.path.basename(file_path),
+                )
+                return True
 
+        except sqlite3.OperationalError as e:
+            # Suppress errors during shutdown/cancellation
+            logger.debug("[MetadataStore] Database locked/closing during store: %s", e)
+            return False
         except Exception as e:
             logger.error("[MetadataStore] Error storing metadata for %s: %s", file_path, e)
             return False
@@ -145,36 +158,41 @@ class MetadataStore:
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Retrieve metadata for a file."""
         try:
-            path_id = self.path_store.get_path_id(file_path)
-            if not path_id:
-                return None
+            with self._write_lock:
+                path_id = self.path_store.get_path_id(file_path)
+                if not path_id:
+                    return None
 
-            cursor = self.connection.cursor()
-            cursor.execute(
-                """
-                SELECT metadata_json, metadata_type, is_modified
-                FROM file_metadata
-                WHERE path_id = ?
-                ORDER BY updated_at DESC
-                LIMIT 1
-            """,
-                (path_id,),
-            )
+                cursor = self.connection.cursor()
+                cursor.execute(
+                    """
+                    SELECT metadata_json, metadata_type, is_modified
+                    FROM file_metadata
+                    WHERE path_id = ?
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                """,
+                    (path_id,),
+                )
 
-            row = cursor.fetchone()
-            if not row:
-                return None
+                row = cursor.fetchone()
+                if not row:
+                    return None
 
-            metadata = json.loads(row["metadata_json"])
+                metadata = json.loads(row["metadata_json"])
 
-            # Add metadata flags
-            if row["metadata_type"] == "extended":
-                metadata["__extended__"] = True
-            if row["is_modified"]:
-                metadata["__modified__"] = True
+                # Add metadata flags
+                if row["metadata_type"] == "extended":
+                    metadata["__extended__"] = True
+                if row["is_modified"]:
+                    metadata["__modified__"] = True
 
-            return metadata
+                return metadata
 
+        except sqlite3.OperationalError as e:
+            # Suppress errors during shutdown/cancellation
+            logger.debug("[MetadataStore] Database locked/closing for %s: %s", file_path, e)
+            return None
         except Exception as e:
             logger.error("[MetadataStore] Error retrieving metadata for %s: %s", file_path, e)
             return None

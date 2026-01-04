@@ -278,13 +278,25 @@ class ExifToolWrapper:
                     self._loader._active_processes.append(process)
 
             # Wait for completion with timeout
+            # Use poll() to allow faster termination on cancellation
             try:
-                stdout, stderr = process.communicate(timeout=EXIFTOOL_TIMEOUT_EXTENDED)
+                import time
+
+                start_time = time.time()
+                while process.poll() is None:  # While process is still running
+                    if time.time() - start_time > EXIFTOOL_TIMEOUT_EXTENDED:
+                        process.kill()
+                        process.wait()
+                        logger.error("[ExtendedReader] Timeout executing exiftool for %s", file_path)
+                        return None
+                    time.sleep(0.05)  # Check every 50ms
+
+                stdout, stderr = process.communicate()
                 returncode = process.returncode
-            except subprocess.TimeoutExpired:
+            except Exception as e:
                 process.kill()
                 stdout, stderr = process.communicate()
-                logger.error("[ExtendedReader] Timeout executing exiftool for %s", file_path)
+                logger.error("[ExtendedReader] Error executing exiftool for %s: %s", file_path, e)
                 return None
             finally:
                 # Unregister process
@@ -295,6 +307,15 @@ class ExifToolWrapper:
                         self._loader._active_processes.remove(process)
 
             if returncode != 0:
+                # Suppress warnings for SIGTERM (-15) during shutdown
+                # This is expected when ExifTool is terminated during app shutdown
+                if returncode == -15:
+                    logger.debug(
+                        "[ExtendedReader] ExifTool process terminated (SIGTERM) for %s",
+                        file_path,
+                    )
+                    return None
+
                 logger.warning(
                     "[ExtendedReader] ExifTool returned error code %d for %s",
                     returncode,

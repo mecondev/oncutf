@@ -251,7 +251,10 @@ class ParallelHashWorker(QThread):
         logger.debug("[ParallelHashWorker] Calculating hash: %s", filename)
 
         try:
-            hash_value = self._hash_manager.calculate_hash(file_path)
+            hash_value = self._hash_manager.calculate_hash(
+                file_path,
+                cancellation_check=self.is_cancelled
+            )
 
             if hash_value is not None:
                 # Store hash (will use batch if enabled)

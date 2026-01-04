@@ -70,7 +70,7 @@ class DatabaseManager:
 
         if DEBUG_RESET_DATABASE:
             if self.db_path.exists():
-                logger.info("[DEBUG] Deleting database for fresh start: %s", self.db_path)
+                logger.info("[DatabaseManager] DEBUG_RESET_DATABASE enabled - deleting: %s", self.db_path)
                 try:
                     self.db_path.unlink()
                     # Also remove WAL and SHM files if they exist
@@ -80,9 +80,9 @@ class DatabaseManager:
                         wal_path.unlink()
                     if shm_path.exists():
                         shm_path.unlink()
-                    logger.info("[DEBUG] Database files deleted successfully")
+                    logger.info("[DatabaseManager] Database files deleted for fresh start")
                 except Exception as e:
-                    logger.error("[DEBUG] Failed to delete database: %s", e)
+                    logger.error("[DatabaseManager] Failed to delete database: %s", e)
 
         # Thread safety lock for concurrent access from parallel workers
         self._write_lock = threading.RLock()
@@ -164,8 +164,8 @@ class DatabaseManager:
 
         # Initialize specialized stores (composition pattern)
         self.path_store = PathStore(self._conn)
-        self.hash_store = HashStore(self._conn, self.path_store)
-        self.metadata_store = MetadataStore(self._conn, self.path_store)
+        self.hash_store = HashStore(self._conn, self.path_store, self._write_lock)
+        self.metadata_store = MetadataStore(self._conn, self.path_store, self._write_lock)
         self.backup_store = BackupStore(self._conn, self.path_store)
 
         logger.debug("[DatabaseManager] Store instances initialized", extra={"dev_only": True})

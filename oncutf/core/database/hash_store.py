@@ -9,6 +9,7 @@ Handles all file hash CRUD operations.
 
 import os
 import sqlite3
+import threading
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -22,61 +23,83 @@ logger = get_cached_logger(__name__)
 class HashStore:
     """Manages file hash storage and retrieval in the database."""
 
-    def __init__(self, connection: sqlite3.Connection, path_store: "PathStore"):
+    def __init__(
+        self,
+        connection: sqlite3.Connection,
+        path_store: "PathStore",
+        write_lock: threading.RLock,
+    ):
         """Initialize HashStore with a database connection and path store.
 
         Args:
             connection: Active SQLite database connection
             path_store: PathStore instance for path management
+            write_lock: Lock for thread-safe database access
 
         """
         self.connection = connection
         self.path_store = path_store
+        self._write_lock = write_lock
 
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
         """Store file hash."""
         try:
-            path_id = self.path_store.get_or_create_path_id(file_path)
+            # Validate inputs
+            if not file_path or not hash_value:
+                logger.warning("[HashStore] Invalid input: file_path=%s, hash_value=%s", file_path, hash_value)
+                return False
 
-            # Get current file size
-            file_size = None
-            try:
-                if os.path.exists(file_path):
-                    file_size = os.path.getsize(file_path)
-            except OSError:
-                pass
+            # Check for null bytes (SQLite doesn't support them)
+            if '\x00' in file_path or '\x00' in hash_value:
+                logger.warning("[HashStore] Null byte detected in path or hash, skipping: %s", file_path)
+                return False
 
-            cursor = self.connection.cursor()
+            with self._write_lock:
+                path_id = self.path_store.get_or_create_path_id(file_path)
 
-            # Remove existing hash for this path and algorithm
-            cursor.execute(
-                """
-                DELETE FROM file_hashes
-                WHERE path_id = ? AND algorithm = ?
-            """,
-                (path_id, algorithm),
-            )
+                # Get current file size
+                file_size = None
+                try:
+                    if os.path.exists(file_path):
+                        file_size = os.path.getsize(file_path)
+                except OSError:
+                    pass
 
-            # Store new hash
-            cursor.execute(
-                """
-                INSERT INTO file_hashes
-                (path_id, algorithm, hash_value, file_size_at_hash)
-                VALUES (?, ?, ?, ?)
-            """,
-                (path_id, algorithm, hash_value, file_size),
-            )
+                cursor = self.connection.cursor()
 
-            # Commit the transaction
-            self.connection.commit()
+                # Remove existing hash for this path and algorithm
+                cursor.execute(
+                    """
+                    DELETE FROM file_hashes
+                    WHERE path_id = ? AND algorithm = ?
+                """,
+                    (path_id, algorithm),
+                )
 
-            logger.debug(
-                "[HashStore] Stored %s hash for: %s",
-                algorithm,
-                os.path.basename(file_path),
-            )
+                # Store new hash
+                cursor.execute(
+                    """
+                    INSERT INTO file_hashes
+                    (path_id, algorithm, hash_value, file_size_at_hash)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (path_id, algorithm, hash_value, file_size),
+                )
+
+                # Commit the transaction
+                self.connection.commit()
+
+                logger.debug(
+                    "[HashStore] Stored %s hash for: %s",
+                    algorithm,
+                    os.path.basename(file_path),
+                )
             return True
 
+        except sqlite3.OperationalError as e:
+            # Suppress errors during shutdown/cancellation
+            logger.debug("[HashStore] Database locked/closing during store: %s", e)
+            return False
         except Exception as e:
             logger.error("[HashStore] Error storing hash for %s: %s", file_path, e)
             return False
@@ -84,24 +107,39 @@ class HashStore:
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Retrieve file hash."""
         try:
-            path_id = self.path_store.get_path_id(file_path)
-            if not path_id:
+            # Validate input
+            if not file_path:
                 return None
 
-            cursor = self.connection.cursor()
-            cursor.execute(
-                """
-                SELECT hash_value FROM file_hashes
-                WHERE path_id = ? AND algorithm = ?
-                ORDER BY created_at DESC
-                LIMIT 1
-            """,
-                (path_id, algorithm),
-            )
+            # Check for null bytes
+            if '\x00' in file_path:
+                logger.warning("[HashStore] Null byte detected in path, skipping: %s", file_path)
+                return None
 
-            row = cursor.fetchone()
-            return row["hash_value"] if row else None
+            with self._write_lock:
+                path_id = self.path_store.get_path_id(file_path)
+                if not path_id:
+                    return None
 
+                cursor = self.connection.cursor()
+                cursor.execute(
+                    """
+                    SELECT hash_value FROM file_hashes
+                    WHERE path_id = ? AND algorithm = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """,
+                    (path_id, algorithm),
+                )
+
+                row = cursor.fetchone()
+                return row["hash_value"] if row else None
+
+        except sqlite3.OperationalError as e:
+            # Suppress errors during shutdown/cancellation
+            # These happen when the connection is being closed by another thread
+            logger.debug("[HashStore] Database locked/closing for %s: %s", file_path, e)
+            return None
         except Exception as e:
             logger.error("[HashStore] Error retrieving hash for %s: %s", file_path, e)
             return None
