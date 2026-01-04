@@ -175,7 +175,7 @@ class HashLoadingService:
         # Update filename if available
         if filename:
             dialog.set_filename(filename)
-        
+
         # Call custom progress callback if provided
         if self._on_progress_callback:
             self._on_progress_callback(current, total, filename)

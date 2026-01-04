@@ -38,7 +38,7 @@ class HashOperationsManager:
 
     This manager now uses HashLoadingService for all hash loading operations,
     eliminating code duplication between shortcuts (Ctrl+H) and context menu.
-    
+
     Delegates to:
     - HashLoadingService: Unified hash loading with progress tracking
     - HashResultsPresenter: UI presentation and dialogs
@@ -56,10 +56,10 @@ class HashOperationsManager:
 
         # Use unified HashLoadingService
         from oncutf.core.metadata.hash_loading_service import HashLoadingService
-        
+
         self._hash_service = HashLoadingService(parent_window, cache_service=None)
         self._results_presenter = HashResultsPresenter(parent_window)
-        
+
         # Keep legacy coordinator for backward compatibility with duplicates feature
         # TODO: Migrate duplicates to use HashLoadingService callbacks
         self._worker_coordinator = HashWorkerCoordinator(parent_window)
