@@ -121,7 +121,9 @@ class HashLoadingService:
 
             if self._hash_worker and dialog:
                 self._hash_worker.progress_updated.connect(
-                    lambda current, total, _: dialog.update_progress(current, total)
+                    lambda current, total, filename: self._update_hash_dialog(
+                        dialog, current, total, filename
+                    )
                 )
                 self._hash_worker.size_progress.connect(
                     lambda processed, total: dialog.update_progress(
@@ -139,6 +141,25 @@ class HashLoadingService:
                 self._hash_progress_dialog.close()
                 self._hash_progress_dialog = None
             self._start_hash_loading(files, source)
+
+    def _update_hash_dialog(
+        self, dialog: "ProgressDialog", current: int, total: int, filename: str
+    ) -> None:
+        """Update hash progress dialog with current progress.
+
+        Args:
+            dialog: Progress dialog to update
+            current: Current file index
+            total: Total files
+            filename: Current filename being processed
+        """
+        # Update progress with named arguments (like metadata does)
+        dialog.update_progress(file_count=current, total_files=total)
+        # Update count label separately
+        dialog.set_count(current, total)
+        # Update filename if available
+        if filename:
+            dialog.set_filename(filename)
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading using parallel hash worker.
