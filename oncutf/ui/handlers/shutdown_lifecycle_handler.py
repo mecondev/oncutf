@@ -177,7 +177,7 @@ class ShutdownLifecycleHandler:
             step = steps[idx]
             self._shutdown_pre_cleanup_index = idx + 1
 
-            with self._shutdown_wait_cursor_cm(restore_after=False):
+            with self._shutdown_wait_cursor_cm():
                 step()
 
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
@@ -222,7 +222,7 @@ class ShutdownLifecycleHandler:
         from PyQt5.QtCore import QTimer
 
         try:
-            with self._shutdown_wait_cursor_cm(restore_after=False):
+            with self._shutdown_wait_cursor_cm():
                 self._post_coordinator_cleanup()
 
             summary = self.main_window.shutdown_coordinator.get_summary()
