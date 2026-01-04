@@ -27,7 +27,7 @@ project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from oncutf.config import SPLASH_SCREEN_DURATION
+from oncutf.config import SPLASH_SCREEN_DURATION, WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.main_window import MainWindow
@@ -285,6 +285,15 @@ def main() -> int:
                 logger.info("[Init] All initialization complete, showing main window")
 
                 try:
+                    # Suppress wait cursor during MainWindow construction so any
+                    # early wait_cursor usage inside init does not flicker.
+                    try:
+                        from oncutf.utils.ui.cursor_helper import suppress_wait_cursor_for
+
+                        suppress_wait_cursor_for(5.0)
+                    except Exception:
+                        pass
+
                     # Create MainWindow with theme callback (must be in main thread)
                     window = MainWindow(
                         theme_callback=lambda w: _apply_theme_to_app(app, theme_manager, w)
@@ -293,6 +302,20 @@ def main() -> int:
 
                     # Show main window and close splash
                     splash.finish(window)
+
+                    # Startup polish: delay wait-cursor usage for 1s after splash closes.
+                    # This prevents cursor flicker during immediate post-splash init work.
+                    try:
+                        import time
+
+                        from oncutf.utils.ui.cursor_helper import set_wait_cursor_suppressed_until
+
+                        set_wait_cursor_suppressed_until(
+                            time.monotonic() + (WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS / 1000.0)
+                        )
+                    except Exception:
+                        pass
+
                     window.show()
                     window.raise_()
                     window.activateWindow()

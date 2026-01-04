@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +69,16 @@ class ShutdownCoordinator(QObject):
     shutdown_completed = pyqtSignal(bool)  # overall_success
 
     # Default timeouts per phase (seconds)
+    # Keep these reasonably short to avoid Windows "Not Responding" dialog,
+    # but not so short that shutdown skips meaningful work during diagnostics.
     DEFAULT_TIMEOUTS = {
-        ShutdownPhase.TIMERS: 2.0,
-        ShutdownPhase.THREAD_POOL: 10.0,
-        ShutdownPhase.DATABASE: 3.0,
-        ShutdownPhase.EXIFTOOL: 5.0,
-        ShutdownPhase.FINALIZE: 2.0,
+        ShutdownPhase.TIMERS: 0.5,
+        ShutdownPhase.THREAD_POOL: 2.0,
+        ShutdownPhase.DATABASE: 1.0,
+        ShutdownPhase.EXIFTOOL: 0.5,
+        ShutdownPhase.FINALIZE: 0.5,
     }
+    # Total worst-case: 4.0 seconds
 
     def __init__(self, parent=None):
         """Initialize shutdown coordinator.
@@ -99,6 +102,13 @@ class ShutdownCoordinator(QObject):
         self._thread_pool_manager = None
         self._database_manager = None
         self._exiftool_wrapper = None
+
+        # Async shutdown state
+        self._async_phases: list[tuple[ShutdownPhase, Callable[[], tuple[bool, str | None]]]] = []
+        self._async_index: int = 0
+        self._async_start_time: float = 0.0
+        self._async_overall_success: bool = True
+        self._async_progress_callback: Callable[[str, float], None] | None = None
 
         logger.info("[ShutdownCoordinator] Initialized")
 
@@ -232,6 +242,101 @@ class ShutdownCoordinator(QObject):
         self._shutdown_in_progress = False
 
         return overall_success
+
+    def execute_shutdown_async(
+        self,
+        progress_callback: Callable[[str, float], None] | None = None,
+        emergency: bool = False,
+    ) -> bool:
+        """Start coordinated shutdown without blocking the Qt event loop.
+
+        This schedules each shutdown phase on subsequent Qt ticks (via QTimer),
+        keeping the UI message pump responsive to avoid Windows "Not Responding"
+        during close.
+
+        Returns:
+            True if shutdown was started, False if already in progress.
+
+        """
+        if self._shutdown_in_progress:
+            logger.warning("[ShutdownCoordinator] Shutdown already in progress")
+            return False
+
+        self._shutdown_in_progress = True
+        self._emergency_mode = emergency
+        self._results.clear()
+        self._async_progress_callback = progress_callback
+        self._async_start_time = time.time()
+        self._async_overall_success = True
+
+        logger.info(
+            "[ShutdownCoordinator] Starting %s shutdown (async)",
+            "EMERGENCY" if emergency else "GRACEFUL",
+        )
+
+        self._async_phases = [
+            (ShutdownPhase.TIMERS, self._shutdown_timers),
+            (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
+            (ShutdownPhase.DATABASE, self._shutdown_database),
+            (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
+            (ShutdownPhase.FINALIZE, self._shutdown_finalize),
+        ]
+        self._async_index = 0
+
+        QTimer.singleShot(0, self._execute_next_phase_async)
+        return True
+
+    def _execute_next_phase_async(self) -> None:
+        """Execute the next shutdown phase (scheduled via QTimer)."""
+        try:
+            if self._async_index >= len(self._async_phases):
+                total_duration = time.time() - self._async_start_time
+                logger.info(
+                    "[ShutdownCoordinator] Shutdown %s in %.2fs (async)",
+                    "succeeded" if self._async_overall_success else "completed with errors",
+                    total_duration,
+                )
+                self.shutdown_completed.emit(self._async_overall_success)
+                self._shutdown_in_progress = False
+                return
+
+            total_phases = len(self._async_phases)
+            phase, shutdown_func = self._async_phases[self._async_index]
+            phase_name = phase.value
+            progress = self._async_index / total_phases
+
+            self.phase_started.emit(phase_name)
+            if self._async_progress_callback:
+                self._async_progress_callback(f"Shutting down {phase_name}...", progress)
+
+            result = self._execute_phase(phase, shutdown_func)
+            self._results.append(result)
+
+            self.phase_completed.emit(phase_name, result.success)
+            if not result.success:
+                self._async_overall_success = False
+                logger.error(
+                    "[ShutdownCoordinator] Phase %s failed: %s",
+                    phase_name,
+                    result.error,
+                )
+
+            status = "[OK]" if result.success else "[FAIL]"
+            logger.info(
+                "[ShutdownCoordinator] %s %s (%.2fs)",
+                status,
+                phase_name,
+                result.duration,
+            )
+
+            self._async_index += 1
+            QTimer.singleShot(0, self._execute_next_phase_async)
+
+        except Exception as e:
+            logger.exception("[ShutdownCoordinator] Async shutdown error: %s", e)
+            self._async_overall_success = False
+            self.shutdown_completed.emit(False)
+            self._shutdown_in_progress = False
 
     def _execute_phase(
         self, phase: ShutdownPhase, shutdown_func: Callable[[], tuple[bool, str | None]]
@@ -367,7 +472,13 @@ class ShutdownCoordinator(QObject):
 
             # Shutdown thread pool
             if hasattr(self._thread_pool_manager, "shutdown"):
-                self._thread_pool_manager.shutdown()
+                # Keep this very short to avoid freezing the UI thread during app close.
+                # The ThreadPoolManager supports bounded shutdown parameters.
+                try:
+                    self._thread_pool_manager.shutdown(worker_wait_ms=200, terminate_wait_ms=50)
+                except TypeError:
+                    # Backward compatibility if signature doesn't accept kwargs
+                    self._thread_pool_manager.shutdown()
 
             return True, None
         except Exception as e:
@@ -395,11 +506,6 @@ class ShutdownCoordinator(QObject):
                     if hasattr(self._database_manager, "commit"):
                         self._database_manager.commit()
 
-                # Give Windows time to release file handles
-                import time
-
-                time.sleep(0.1)  # 100ms grace period
-
             return True, None
         except Exception as e:
             logger.exception("Database shutdown failed: %s", e)
@@ -408,35 +514,54 @@ class ShutdownCoordinator(QObject):
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
         """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
         import contextlib
-        import platform
+        import threading
 
         if not self._exiftool_wrapper:
             # Still do force cleanup even if no wrapper registered
             try:
                 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
-                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+                threading.Thread(
+                    target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                    kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                    daemon=True,
+                    name="ExifToolForceCleanup",
+                ).start()
             except Exception:
                 pass
             return True, None
 
         try:
-            # Stop the wrapper first
+            # Stop/close the wrapper first (close is the common API).
             if hasattr(self._exiftool_wrapper, "stop"):
                 with contextlib.suppress(Exception):
                     self._exiftool_wrapper.stop()
+            if hasattr(self._exiftool_wrapper, "close"):
+                # Keep this bounded to avoid UI freezes during app close.
+                with contextlib.suppress(Exception):
+                    try:
+                        self._exiftool_wrapper.close(
+                            try_graceful=False,
+                            graceful_wait_s=0.0,
+                            terminate_wait_s=0.2,
+                            kill_wait_s=0.1,
+                        )
+                    except TypeError:
+                        # Backward compatibility if signature doesn't accept kwargs
+                        self._exiftool_wrapper.close()
 
             # Force cleanup all ExifTool processes
             # This is critical on Windows to prevent zombie processes
             from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
-            ExifToolWrapper.force_cleanup_all_exiftool_processes()
-
-            # On Windows, add extra wait time for process termination
-            if platform.system() == "Windows":
-                import time
-
-                time.sleep(0.2)  # 200ms grace period for Windows process cleanup
+            # IMPORTANT: Do this in background; psutil.process_iter() can occasionally
+            # block on Windows and would freeze the UI thread during close.
+            threading.Thread(
+                target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                daemon=True,
+                name="ExifToolForceCleanup",
+            ).start()
 
             return True, None
         except Exception as e:
@@ -445,7 +570,12 @@ class ShutdownCoordinator(QObject):
             try:
                 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
-                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+                threading.Thread(
+                    target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                    kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                    daemon=True,
+                    name="ExifToolForceCleanup",
+                ).start()
             except Exception:
                 pass
             return False, f"ExifTool shutdown failed: {e}"

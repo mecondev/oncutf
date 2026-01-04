@@ -152,6 +152,10 @@ WINDOW_MIN_HEIGHT = 500
 
 SPLASH_SCREEN_DURATION = 2000
 
+# Delay wait cursor activation right after splash closes.
+# This prevents cursor flicker during immediate post-splash initialization.
+WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS = 1000
+
 # =====================================
 # SPLITTER SIZES
 # =====================================

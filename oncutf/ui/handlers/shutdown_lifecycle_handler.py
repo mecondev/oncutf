@@ -105,41 +105,216 @@ class ShutdownLifecycleHandler:
         # Ignore this close event - we'll handle closing ourselves
         event.ignore()
 
-        # Start coordinated shutdown process
-        self._start_coordinated_shutdown()
+        # Immediately hide/disable the window so Windows doesn't show
+        # a "Not Responding" dialog while we perform shutdown work.
+        with contextlib.suppress(Exception):
+            self.main_window.setEnabled(False)
+        with contextlib.suppress(Exception):
+            self.main_window.hide()
+
+        # Start coordinated shutdown on the next Qt tick so closeEvent returns
+        # immediately (prevents Windows "Not Responding" during close handling).
+        from PyQt5.QtCore import QTimer
+
+        QTimer.singleShot(0, self._start_coordinated_shutdown)
 
     def _start_coordinated_shutdown(self):
         """Start the coordinated shutdown process using ShutdownCoordinator."""
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        try:
+            # Canonical helper (see project guidelines)
+            from oncutf.utils.ui.cursor_helper import wait_cursor
+        except Exception:
+            # Shutdown must never crash due to helper import issues.
+            from contextlib import contextmanager
+
+            @contextmanager
+            def wait_cursor(restore_after: bool = True):
+                yield
+
+        # Watchdog disabled: user requested to stop creating temp watchdog logs.
+        self._shutdown_watchdog_cancel = None
+        self._shutdown_wait_cursor_cm = wait_cursor  # type: ignore[assignment]
+
+        logger.info("[CloseEvent] Starting coordinated shutdown")
+
+        from PyQt5.QtCore import QTimer
+
+        QTimer.singleShot(0, self._shutdown_step_pre_cleanup)
+
+    def _shutdown_step_pre_cleanup(self) -> None:
+        """Run UI pre-cleanup, then start async coordinator shutdown."""
+        from PyQt5.QtCore import QTimer
 
         try:
-            # Use wait cursor for the entire shutdown process (simpler than dialog)
-            with wait_cursor(restore_after=False):
-                logger.info("[CloseEvent] Starting coordinated shutdown with wait cursor")
-
-                # Perform additional cleanup before coordinator shutdown
-                self._pre_coordinator_cleanup()
-
-                # Execute coordinated shutdown (no dialog progress needed)
-                success = self.main_window.shutdown_coordinator.execute_shutdown(
-                    progress_callback=None, emergency=False
-                )
-
-                # Perform final cleanup after coordinator
-                self._post_coordinator_cleanup()
-
-                # Log summary
-                summary = self.main_window.shutdown_coordinator.get_summary()
-                logger.info("[CloseEvent] Shutdown summary: %s", summary)
-
-            # Complete shutdown (cursor restored by context manager exit)
-            self._complete_shutdown(success)
+            self._shutdown_pre_cleanup_steps = [
+                self._pre_cleanup_stop_periodic_backups,
+                self._pre_cleanup_save_window_config,
+                self._pre_cleanup_flush_batch_operations,
+                self._pre_cleanup_cleanup_drag_manager,
+                self._pre_cleanup_cleanup_dialogs,
+                self._pre_cleanup_cleanup_metadata_thread,
+            ]
+            self._shutdown_pre_cleanup_index = 0
+            QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
+            return
 
         except Exception as e:
-            logger.exception("[CloseEvent] Error during coordinated shutdown: %s", e)
-            # Fallback to emergency shutdown
+            logger.exception("[CloseEvent] Error starting async shutdown: %s", e)
+            self._emergency_quit()
+
+    def _shutdown_run_pre_cleanup_step(self) -> None:
+        """Execute one pre-cleanup step per Qt tick."""
+        from PyQt5.QtCore import QTimer
+
+        try:
+            steps = getattr(self, "_shutdown_pre_cleanup_steps", [])
+            idx = getattr(self, "_shutdown_pre_cleanup_index", 0)
+
+            if idx >= len(steps):
+                QTimer.singleShot(0, self._shutdown_start_async_coordinator)
+                return
+
+            step = steps[idx]
+            self._shutdown_pre_cleanup_index = idx + 1
+
+            with self._shutdown_wait_cursor_cm(restore_after=False):
+                step()
+
+            QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
+        except Exception as e:
+            logger.exception("[CloseEvent] Pre-cleanup step failed: %s", e)
+            QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
+
+    def _shutdown_start_async_coordinator(self) -> None:
+        """Start the coordinator async shutdown after pre-cleanup finishes."""
+        from PyQt5.QtCore import QTimer
+
+        try:
+            # Connect once; run post-cleanup when coordinator finishes.
+            with contextlib.suppress(Exception):
+                self.main_window.shutdown_coordinator.shutdown_completed.disconnect(
+                    self._on_coordinator_shutdown_completed
+                )
+            self.main_window.shutdown_coordinator.shutdown_completed.connect(
+                self._on_coordinator_shutdown_completed
+            )
+
+            started = self.main_window.shutdown_coordinator.execute_shutdown_async(
+                progress_callback=None,
+                emergency=False,
+            )
+            if not started:
+                # If already in progress, re-check shortly.
+                QTimer.singleShot(50, self._shutdown_start_async_coordinator)
+        except Exception as e:
+            logger.exception("[CloseEvent] Error starting async shutdown: %s", e)
+            self._emergency_quit()
+
+    def _on_coordinator_shutdown_completed(self, success: bool) -> None:
+        """Handle coordinator completion without blocking the event loop."""
+        from PyQt5.QtCore import QTimer
+
+        self._shutdown_coordinator_success = success
+        QTimer.singleShot(0, self._shutdown_step_post_cleanup)
+
+    def _shutdown_step_post_cleanup(self) -> None:
+        """Run post-cleanup and schedule final quit on next tick."""
+        from PyQt5.QtCore import QTimer
+
+        try:
+            with self._shutdown_wait_cursor_cm(restore_after=False):
+                self._post_coordinator_cleanup()
+
+            summary = self.main_window.shutdown_coordinator.get_summary()
+            logger.info("[CloseEvent] Shutdown summary: %s", summary)
+
+            QTimer.singleShot(0, self._shutdown_step_finalize)
+        except Exception as e:
+            logger.exception("[CloseEvent] Error during post-cleanup: %s", e)
+            self._emergency_quit()
+
+    def _shutdown_step_finalize(self) -> None:
+        """Finalize shutdown (cancel watchdog, quit)."""
+        try:
+            self._complete_shutdown(getattr(self, "_shutdown_coordinator_success", True))
+        finally:
+            with contextlib.suppress(Exception):
+                if (
+                    hasattr(self, "_shutdown_watchdog_cancel")
+                    and self._shutdown_watchdog_cancel is not None
+                ):
+                    self._shutdown_watchdog_cancel()
+
+            with contextlib.suppress(Exception):
+                self.main_window.shutdown_coordinator.shutdown_completed.disconnect(
+                    self._on_coordinator_shutdown_completed
+                )
+
+    def _emergency_quit(self) -> None:
+        """Emergency fallback quit path - must never raise."""
+        with contextlib.suppress(Exception):
             QApplication.restoreOverrideCursor()
+        with contextlib.suppress(Exception):
             QApplication.quit()
+
+    def _start_shutdown_watchdog(self, timeout_s: float, *, repeat: bool = False):
+        """Start a watchdog that dumps stack traces if shutdown appears hung.
+
+        Uses faulthandler.dump_traceback_later(), which is more reliable than a
+        Python-level Timer when the main thread is blocked.
+
+        Returns:
+            Callable[[], None]: cancel function
+
+        """
+        import os
+        import tempfile
+        import time
+
+        import faulthandler
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        dump_path = os.path.join(tempfile.gettempdir(), f"oncutf_shutdown_hang_{timestamp}.log")
+
+        # Create the file early so the path is known even if we hard-hang.
+        # Keep output ASCII-safe.
+        try:
+            f = open(dump_path, "w", encoding="utf-8", errors="backslashreplace")
+        except Exception as e:
+            logger.exception("[CloseEvent] Failed to open watchdog dump file: %s", e)
+
+            def _cancel_noop() -> None:
+                return
+
+            return _cancel_noop
+
+        f.write("OnCutF shutdown watchdog armed.\n")
+        f.write(f"Timestamp: {timestamp}\n")
+        f.write(f"Timeout: {timeout_s:.1f}s\n")
+        f.write(f"Repeat: {repeat}\n")
+        f.write("\nExpected: stack dump will be appended below during shutdown.\n")
+        f.write("\n")
+        f.flush()
+
+        logger.info("[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path)
+
+        # Ensure faulthandler is enabled and configured to include all threads.
+        # NOTE: enable() is idempotent.
+        with contextlib.suppress(Exception):
+            faulthandler.enable(file=f, all_threads=True)
+
+        # Schedule automatic stack dump(s) during shutdown.
+        faulthandler.dump_traceback_later(timeout_s, repeat=repeat, file=f, exit=False)
+
+        def _cancel() -> None:
+            with contextlib.suppress(Exception):
+                faulthandler.cancel_dump_traceback_later()
+            with contextlib.suppress(Exception):
+                f.flush()
+            with contextlib.suppress(Exception):
+                f.close()
+
+        return _cancel
 
     def _complete_shutdown(self, success: bool = True):
         """Complete the shutdown process."""
@@ -149,7 +324,7 @@ class ShutdownLifecycleHandler:
                 while QApplication.overrideCursor():
                     QApplication.restoreOverrideCursor()
 
-            # Process any pending deleteLater events
+            # Single processEvents to clear pending events
             with contextlib.suppress(RuntimeError):
                 QApplication.processEvents()
 
@@ -157,7 +332,7 @@ class ShutdownLifecycleHandler:
             status = "successfully" if success else "with errors"
             logger.info("[CloseEvent] Shutdown completed %s", status)
 
-            # Quit application (with guard against multiple calls)
+            # Quit immediately - no delay
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 
@@ -173,68 +348,79 @@ class ShutdownLifecycleHandler:
     def _pre_coordinator_cleanup(self):
         """Perform cleanup before coordinator shutdown (UI-specific cleanup)."""
         try:
-            # Create database backup
-            if hasattr(self.main_window, "backup_manager") and self.main_window.backup_manager:
-                try:
-                    self.main_window.backup_manager.create_backup(reason="auto")  # type: ignore[union-attr]
-                    logger.info("[CloseEvent] Database backup created")
-                except Exception as e:
-                    logger.warning("[CloseEvent] Database backup failed: %s", e)
-
-            # Save window configuration
-            if hasattr(self.main_window, "window_config_manager") and self.main_window.window_config_manager:
-                try:
-                    self.main_window.window_config_manager.save_window_config()
-                    logger.info("[CloseEvent] Window configuration saved")
-                except Exception as e:
-                    logger.warning("[CloseEvent] Failed to save window config: %s", e)
-
-            # Flush batch operations
-            if hasattr(self.main_window, "batch_manager") and self.main_window.batch_manager:
-                try:
-                    if hasattr(self.main_window.batch_manager, "flush_operations"):
-                        self.main_window.batch_manager.flush_operations()  # type: ignore[union-attr]
-                        logger.info("[CloseEvent] Batch operations flushed")
-                except Exception as e:
-                    logger.warning("[CloseEvent] Batch flush failed: %s", e)
-
-            # Cleanup drag operations
-            if hasattr(self.main_window, "drag_manager") and self.main_window.drag_manager:
-                try:
-                    self.main_window.drag_manager.force_cleanup()  # type: ignore[union-attr]
-                    logger.info("[CloseEvent] Drag manager cleaned up")
-                except Exception as e:
-                    logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
-
-            # Close dialogs
-            if hasattr(self.main_window, "dialog_manager") and self.main_window.dialog_manager:
-                try:
-                    self.main_window.dialog_manager.cleanup()  # type: ignore[union-attr]
-                    logger.info("[CloseEvent] All dialogs closed")
-                except Exception as e:
-                    logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
-
-            # Stop metadata operations
-            if hasattr(self.main_window, "metadata_thread") and self.main_window.metadata_thread:
-                try:
-                    # Disconnect all signals first to prevent crashes
-                    with suppress(RuntimeError, TypeError):
-                        self.main_window.metadata_thread.disconnect()
-
-                    self.main_window.metadata_thread.quit()
-                    if not self.main_window.metadata_thread.wait(1500):  # Wait max 1.5 seconds
-                        logger.warning("[CloseEvent] Metadata thread did not stop, terminating...")
-                        self.main_window.metadata_thread.terminate()
-                        if not self.main_window.metadata_thread.wait(500):  # Wait 500ms for termination
-                            logger.error("[CloseEvent] Metadata thread failed to terminate")
-                    logger.info("[CloseEvent] Metadata thread stopped")
-                    # Set to None to prevent double cleanup
-                    self.main_window.metadata_thread = None
-                except Exception as e:
-                    logger.warning("[CloseEvent] Metadata thread cleanup failed: %s", e)
+            self._pre_cleanup_stop_periodic_backups()
+            self._pre_cleanup_save_window_config()
+            self._pre_cleanup_flush_batch_operations()
+            self._pre_cleanup_cleanup_drag_manager()
+            self._pre_cleanup_cleanup_dialogs()
+            self._pre_cleanup_cleanup_metadata_thread()
 
         except Exception as e:
             logger.error("[CloseEvent] Error in pre-coordinator cleanup: %s", e)
+
+    def _pre_cleanup_stop_periodic_backups(self) -> None:
+        # Database backup on shutdown can block the UI thread (large file copy).
+        # We rely on periodic backups instead and only stop the timer here.
+        if hasattr(self.main_window, "backup_manager") and self.main_window.backup_manager:
+            try:
+                if hasattr(self.main_window.backup_manager, "stop_periodic_backups"):
+                    self.main_window.backup_manager.stop_periodic_backups()  # type: ignore[union-attr]
+                logger.info("[CloseEvent] Periodic backups stopped (skipping shutdown backup)")
+            except Exception as e:
+                logger.warning("[CloseEvent] Failed to stop periodic backups: %s", e)
+
+    def _pre_cleanup_save_window_config(self) -> None:
+        if hasattr(self.main_window, "window_config_manager") and self.main_window.window_config_manager:
+            try:
+                self.main_window.window_config_manager.save_window_config()
+                logger.info("[CloseEvent] Window configuration saved")
+            except Exception as e:
+                logger.warning("[CloseEvent] Failed to save window config: %s", e)
+
+    def _pre_cleanup_flush_batch_operations(self) -> None:
+        if hasattr(self.main_window, "batch_manager") and self.main_window.batch_manager:
+            try:
+                if hasattr(self.main_window.batch_manager, "flush_operations"):
+                    self.main_window.batch_manager.flush_operations()  # type: ignore[union-attr]
+                    logger.info("[CloseEvent] Batch operations flushed")
+            except Exception as e:
+                logger.warning("[CloseEvent] Batch flush failed: %s", e)
+
+    def _pre_cleanup_cleanup_drag_manager(self) -> None:
+        if hasattr(self.main_window, "drag_manager") and self.main_window.drag_manager:
+            try:
+                self.main_window.drag_manager.force_cleanup()  # type: ignore[union-attr]
+                logger.info("[CloseEvent] Drag manager cleaned up")
+            except Exception as e:
+                logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
+
+    def _pre_cleanup_cleanup_dialogs(self) -> None:
+        if hasattr(self.main_window, "dialog_manager") and self.main_window.dialog_manager:
+            try:
+                self.main_window.dialog_manager.cleanup()  # type: ignore[union-attr]
+                logger.info("[CloseEvent] All dialogs closed")
+            except Exception as e:
+                logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
+
+    def _pre_cleanup_cleanup_metadata_thread(self) -> None:
+        if hasattr(self.main_window, "metadata_thread") and self.main_window.metadata_thread:
+            try:
+                # Disconnect all signals first to prevent crashes
+                with suppress(RuntimeError, TypeError):
+                    self.main_window.metadata_thread.disconnect()
+
+                self.main_window.metadata_thread.quit()
+                if not self.main_window.metadata_thread.wait(200):
+                    logger.warning("[CloseEvent] Metadata thread did not stop, terminating...")
+                    self.main_window.metadata_thread.terminate()
+                    logger.info("[CloseEvent] Metadata thread terminated")
+                else:
+                    logger.info("[CloseEvent] Metadata thread stopped")
+
+                # Set to None to prevent double cleanup
+                self.main_window.metadata_thread = None
+            except Exception as e:
+                logger.warning("[CloseEvent] Metadata thread cleanup failed: %s", e)
 
     def _post_coordinator_cleanup(self):
         """Perform final cleanup after coordinator shutdown."""

@@ -162,25 +162,27 @@ class NodeEditorWidget(QWidget):
         Returns:
             True if load succeeded, False on error.
         """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            load_scene_from_file(self.scene, filename)
-            self.filename = filename
-            self.scene.history.clear()
-            self.scene.history.store_initial_history_stamp()
-            return True
-        except FileNotFoundError as e:
-            dump_exception(e)
-            QMessageBox.warning(
-                self, f"Error loading {os.path.basename(filename)}", str(e).replace("[Errno 2]", "")
-            )
-            return False
-        except InvalidFileError as e:
-            dump_exception(e)
-            QMessageBox.warning(self, f"Error loading {os.path.basename(filename)}", str(e))
-            return False
-        finally:
-            QApplication.restoreOverrideCursor()
+        from oncutf.utils.cursor_helper import wait_cursor
+
+        with wait_cursor():
+            try:
+                load_scene_from_file(self.scene, filename)
+                self.filename = filename
+                self.scene.history.clear()
+                self.scene.history.store_initial_history_stamp()
+                return True
+            except FileNotFoundError as e:
+                dump_exception(e)
+                QMessageBox.warning(
+                    self,
+                    f"Error loading {os.path.basename(filename)}",
+                    str(e).replace("[Errno 2]", ""),
+                )
+                return False
+            except InvalidFileError as e:
+                dump_exception(e)
+                QMessageBox.warning(self, f"Error loading {os.path.basename(filename)}", str(e))
+                return False
 
     def file_save(self, filename: str | None = None) -> bool:
         """Save graph to JSON file.
@@ -194,8 +196,9 @@ class NodeEditorWidget(QWidget):
         if filename is not None:
             self.filename = filename
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        save_scene_to_file(self.scene, self.filename)
-        QApplication.restoreOverrideCursor()
+        from oncutf.utils.cursor_helper import wait_cursor
+
+        with wait_cursor():
+            save_scene_to_file(self.scene, self.filename)
 
         return True

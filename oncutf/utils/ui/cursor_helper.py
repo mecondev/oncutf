@@ -9,12 +9,60 @@ Provides safe cursor operations with emergency cleanup capabilities.
 """
 
 import contextlib
+import time
 import traceback
 
 from oncutf.core.pyqt_imports import QApplication, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+
+# Suppress wait cursor activation until this monotonic timestamp.
+_WAIT_CURSOR_SUPPRESS_UNTIL: float = 0.0
+
+
+def suppress_wait_cursor_for(seconds: float) -> None:
+    """Temporarily suppress wait cursor activation.
+
+    This is useful during startup transitions (e.g., right after splash closes)
+    where immediate wait cursor flicker is undesirable.
+
+    Args:
+        seconds: Duration to suppress wait cursor activations.
+
+    """
+    global _WAIT_CURSOR_SUPPRESS_UNTIL
+    try:
+        delay_s = max(0.0, float(seconds))
+    except Exception:
+        delay_s = 0.0
+
+    _WAIT_CURSOR_SUPPRESS_UNTIL = max(_WAIT_CURSOR_SUPPRESS_UNTIL, time.monotonic() + delay_s)
+    logger.debug(
+        "[Cursor] Suppressing wait cursor for %.2fs",
+        delay_s,
+        extra={"dev_only": True},
+    )
+
+
+def set_wait_cursor_suppressed_until(deadline_monotonic: float) -> None:
+    """Set wait cursor suppression until an absolute monotonic timestamp.
+
+    This is used to anchor suppression to a specific UI event (e.g., splash close)
+    even if we temporarily suppress earlier during window construction.
+
+    Args:
+        deadline_monotonic: time.monotonic() timestamp until which wait_cursor is suppressed.
+
+    """
+    global _WAIT_CURSOR_SUPPRESS_UNTIL
+    _WAIT_CURSOR_SUPPRESS_UNTIL = float(deadline_monotonic)
+    logger.debug(
+        "[Cursor] Wait cursor suppressed until monotonic %.3f",
+        _WAIT_CURSOR_SUPPRESS_UNTIL,
+        extra={"dev_only": True},
+    )
 
 
 @contextlib.contextmanager
@@ -29,6 +77,14 @@ def wait_cursor(restore_after: bool = True):
                        If False, the cursor will remain as wait cursor.
 
     """
+    if time.monotonic() < _WAIT_CURSOR_SUPPRESS_UNTIL:
+        logger.debug(
+            "[Cursor] Wait cursor suppressed (startup delay)",
+            extra={"dev_only": True},
+        )
+        yield
+        return
+
     QApplication.setOverrideCursor(Qt.WaitCursor)
 
     # Get full stack and reverse it (top frame is last)

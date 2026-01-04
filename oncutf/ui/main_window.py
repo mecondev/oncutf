@@ -248,17 +248,32 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         logger.debug("[DROP-SINGLE] load_single_item_from_drop START: %s", path, extra={"dev_only": True})
 
-        # Set wait cursor IMMEDIATELY before any processing
-        from oncutf.core.pyqt_imports import QApplication, Qt as QtCore
-        t1 = time.time()
-        logger.debug("[DROP-SINGLE] Setting wait cursor at +%.3fms", (t1-t0)*1000, extra={"dev_only": True})
-        QApplication.setOverrideCursor(QtCore.WaitCursor)
-        QApplication.processEvents()
-        t2 = time.time()
-        logger.debug("[DROP-SINGLE] Wait cursor set at +%.3fms", (t2-t0)*1000, extra={"dev_only": True})
+        # Set wait cursor IMMEDIATELY before any processing.
+        # NOTE: Use wait_cursor helper so startup suppression (post-splash delay) is respected.
+        from oncutf.core.pyqt_imports import QApplication
+        from oncutf.utils.cursor_helper import wait_cursor
 
-        self.file_load_controller.handle_drop([path], modifiers)
-        logger.debug("[DROP-SINGLE] Completed at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
+        t1 = time.time()
+        logger.debug(
+            "[DROP-SINGLE] Attempting wait cursor at +%.3fms",
+            (t1 - t0) * 1000,
+            extra={"dev_only": True},
+        )
+        with wait_cursor(restore_after=False):
+            QApplication.processEvents()
+            t2 = time.time()
+            logger.debug(
+                "[DROP-SINGLE] After processEvents at +%.3fms",
+                (t2 - t0) * 1000,
+                extra={"dev_only": True},
+            )
+            self.file_load_controller.handle_drop([path], modifiers)
+
+        logger.debug(
+            "[DROP-SINGLE] Completed at +%.3fms",
+            (time.time() - t0) * 1000,
+            extra={"dev_only": True},
+        )
 
     def load_metadata_for_items(
         self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"

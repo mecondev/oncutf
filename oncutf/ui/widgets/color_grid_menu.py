@@ -252,19 +252,21 @@ class ColorGridMenu(QWidget):
         """
         logger.info("[ColorGridMenu] Color selected: %s", color)
 
-        # Start wait cursor before anything else
-        from oncutf.core.pyqt_imports import QApplication
+        # Start wait cursor before anything else.
+        # NOTE: Use wait_cursor helper so startup suppression (post-splash delay) is respected.
+        # Keep cursor active: the external handler will restore it.
+        from oncutf.utils.cursor_helper import wait_cursor
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        logger.info("[ColorGridMenu] Wait cursor started")
+        with wait_cursor(restore_after=False):
+            logger.info("[ColorGridMenu] Wait cursor started")
 
-        # Close menu first
-        self.close()
-        logger.info("[ColorGridMenu] Menu closed")
+            # Close menu first
+            self.close()
+            logger.info("[ColorGridMenu] Menu closed")
 
-        # Emit signal - the handler will apply colors and restore cursor
-        self.color_selected.emit(color)
-        logger.info("[ColorGridMenu] Signal emitted")
+            # Emit signal - the handler will apply colors and restore cursor
+            self.color_selected.emit(color)
+            logger.info("[ColorGridMenu] Signal emitted")
 
     def _open_color_picker(self):
         """Open the Qt custom color picker dialog."""

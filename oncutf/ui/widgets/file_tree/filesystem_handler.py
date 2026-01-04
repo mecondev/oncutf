@@ -325,10 +325,14 @@ class FilesystemHandler:
             new_model = CustomFileSystemModel()
 
             # Set root path based on platform
-            # Windows: Start from first drive (C:) to show disk tree
-            # Linux/macOS: Start from root (/)
-            root = "C:" if platform.system() == "Windows" else "/"
-            new_model.setRootPath(root)
+            # Windows: Set to C: drive
+            # Linux/macOS: "/" is the root directory
+            if platform.system() == "Windows":
+                root = "C:/"
+                new_model.setRootPath(root)
+            else:
+                root = "/"
+                new_model.setRootPath(root)
 
             if file_filter is not None:
                 new_model.setFilter(file_filter)
@@ -339,7 +343,15 @@ class FilesystemHandler:
 
             # Replace the model
             self._view.setModel(new_model)
-            self._view.setRootIndex(new_model.index(root))
+            
+            # Set root index based on platform
+            # Windows: Use invalid index to show all drives
+            # Linux/macOS: Use root directory
+            if platform.system() == "Windows":
+                from oncutf.core.pyqt_imports import QModelIndex
+                self._view.setRootIndex(QModelIndex())
+            else:
+                self._view.setRootIndex(new_model.index(root))
 
             # Update parent window reference if available
             parent = self._view.parent()

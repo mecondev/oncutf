@@ -570,47 +570,81 @@ class FileTableView(QTableView):
 
         from oncutf.utils.logging.logger_factory import get_cached_logger
         logger = get_cached_logger(__name__)
+        from oncutf.utils.cursor_helper import wait_cursor
 
         t0 = time.time()
         logger.debug("[DROP-TIMING] dropEvent START at %.3f", t0, extra={"dev_only": True})
 
-        # Set wait cursor IMMEDIATELY for user feedback
-        from oncutf.core.pyqt_imports import QApplication, Qt
+        # Set wait cursor IMMEDIATELY for user feedback.
+        # NOTE: Use wait_cursor helper so startup suppression (post-splash delay) is respected.
+        from oncutf.core.pyqt_imports import QApplication
+
         t1 = time.time()
-        logger.debug("[DROP-TIMING] Before setOverrideCursor at +%.3fms", (t1-t0)*1000, extra={"dev_only": True})
+        logger.debug(
+            "[DROP-TIMING] Attempting wait cursor at +%.3fms",
+            (t1 - t0) * 1000,
+            extra={"dev_only": True},
+        )
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        t2 = time.time()
-        logger.debug("[DROP-TIMING] After setOverrideCursor at +%.3fms", (t2-t0)*1000, extra={"dev_only": True})
+        with wait_cursor(restore_after=False):
+            # Force cursor update before any processing
+            QApplication.processEvents()
+            t3 = time.time()
+            logger.debug(
+                "[DROP-TIMING] After processEvents at +%.3fms",
+                (t3 - t0) * 1000,
+                extra={"dev_only": True},
+            )
 
-        # Force cursor update before any processing
-        QApplication.processEvents()
-        t3 = time.time()
-        logger.debug("[DROP-TIMING] After processEvents at +%.3fms", (t3-t0)*1000, extra={"dev_only": True})
+            QApplication.flush()
+            t4 = time.time()
+            logger.debug(
+                "[DROP-TIMING] After flush at +%.3fms",
+                (t4 - t0) * 1000,
+                extra={"dev_only": True},
+            )
 
-        QApplication.flush()
-        t4 = time.time()
-        logger.debug("[DROP-TIMING] After flush at +%.3fms", (t4-t0)*1000, extra={"dev_only": True})
+            try:
+                result = self._drag_drop_behavior.handle_drop(event)
+                t5 = time.time()
+                logger.debug(
+                    "[DROP-TIMING] After handle_drop at +%.3fms, result=%s",
+                    (t5 - t0) * 1000,
+                    bool(result),
+                    extra={"dev_only": True},
+                )
 
-        try:
-            result = self._drag_drop_behavior.handle_drop(event)
-            t5 = time.time()
-            logger.debug("[DROP-TIMING] After handle_drop at +%.3fms, result=%s", (t5-t0)*1000, bool(result), extra={"dev_only": True})
-
-            if result:
-                dropped_paths, modifiers = result
-                logger.debug("[DROP-TIMING] Emitting files_dropped with %d paths at +%.3fms", len(dropped_paths), (time.time()-t0)*1000, extra={"dev_only": True})
-                self.files_dropped.emit(dropped_paths, modifiers)
-                t6 = time.time()
-                logger.debug("[DROP-TIMING] After emit at +%.3fms", (t6-t0)*1000, extra={"dev_only": True})
-            else:
-                # Restore cursor if no valid drop
+                if result:
+                    dropped_paths, modifiers = result
+                    logger.debug(
+                        "[DROP-TIMING] Emitting files_dropped with %d paths at +%.3fms",
+                        len(dropped_paths),
+                        (time.time() - t0) * 1000,
+                        extra={"dev_only": True},
+                    )
+                    self.files_dropped.emit(dropped_paths, modifiers)
+                    t6 = time.time()
+                    logger.debug(
+                        "[DROP-TIMING] After emit at +%.3fms",
+                        (t6 - t0) * 1000,
+                        extra={"dev_only": True},
+                    )
+                else:
+                    # Restore cursor if no valid drop
+                    QApplication.restoreOverrideCursor()
+                    logger.debug(
+                        "[DROP-TIMING] No valid drop, cursor restored at +%.3fms",
+                        (time.time() - t0) * 1000,
+                        extra={"dev_only": True},
+                    )
+            except Exception as e:
                 QApplication.restoreOverrideCursor()
-                logger.debug("[DROP-TIMING] No valid drop, cursor restored at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
-        except Exception as e:
-            QApplication.restoreOverrideCursor()
-            logger.error("[DROP-TIMING] Exception at +%.3fms: %s", (time.time()-t0)*1000, e)
-            raise
+                logger.error(
+                    "[DROP-TIMING] Exception at +%.3fms: %s",
+                    (time.time() - t0) * 1000,
+                    e,
+                )
+                raise
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to delegate to SelectionBehavior."""

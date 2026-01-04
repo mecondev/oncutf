@@ -448,20 +448,33 @@ class ThreadPoolManager(QObject):
 
         logger.debug("[ThreadPoolManager] Added worker: %s", worker_id)
 
-    def _remove_worker(self, worker_id: str):
-        """Remove a worker thread."""
+    def _remove_worker(
+        self,
+        worker_id: str,
+        *,
+        wait_ms: int = 5000,
+        terminate_wait_ms: int = 1000,
+    ):
+        """Remove a worker thread.
+
+        Args:
+            worker_id: Worker identifier.
+            wait_ms: Max milliseconds to wait for graceful stop.
+            terminate_wait_ms: Max milliseconds to wait after terminate().
+
+        """
         if worker_id in self._workers:
             worker = self._workers[worker_id]
             worker.request_shutdown()
 
             # Wait with timeout to prevent infinite hang
-            if not worker.wait(5000):  # Wait up to 5 seconds
+            if not worker.wait(wait_ms):
                 logger.warning(
                     "[ThreadPoolManager] Worker %s did not stop gracefully, terminating...",
                     worker_id,
                 )
                 worker.terminate()
-                if not worker.wait(1000):  # Wait another 1 second for termination
+                if not worker.wait(terminate_wait_ms):
                     logger.error(
                         "[ThreadPoolManager] Worker %s did not terminate after 1s",
                         worker_id,
@@ -603,8 +616,19 @@ class ThreadPoolManager(QObject):
             "last_error": self._last_error,
         }
 
-    def shutdown(self):
-        """Shutdown thread pool manager."""
+    def shutdown(
+        self,
+        *,
+        worker_wait_ms: int = 5000,
+        terminate_wait_ms: int = 1000,
+    ):
+        """Shutdown thread pool manager.
+
+        Args:
+            worker_wait_ms: Max milliseconds per worker to wait for graceful stop.
+            terminate_wait_ms: Max milliseconds to wait after terminate().
+
+        """
         logger.info("[ThreadPoolManager] Shutting down...")
 
         # Stop monitoring
@@ -616,7 +640,11 @@ class ThreadPoolManager(QObject):
 
         # Shutdown all workers
         for worker_id in list(self._workers.keys()):
-            self._remove_worker(worker_id)
+            self._remove_worker(
+                worker_id,
+                wait_ms=worker_wait_ms,
+                terminate_wait_ms=terminate_wait_ms,
+            )
 
         logger.info("[ThreadPoolManager] Shutdown completed")
 

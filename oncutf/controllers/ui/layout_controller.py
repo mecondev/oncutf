@@ -225,8 +225,16 @@ class LayoutController:
         self.parent_window.dir_model = CustomFileSystemModel()
 
         # Set root path based on platform
-        root = "" if platform.system() == "Windows" else "/"
-        self.parent_window.dir_model.setRootPath(root)
+        # Windows: Initialize with C: drive, then use invalid index to show all drives
+        # Linux/macOS: Use root directory "/"
+        if platform.system() == "Windows":
+            # Set root to C: to initialize the model
+            self.parent_window.dir_model.setRootPath("C:/")
+            root = "C:/"
+        else:
+            root = "/"
+            self.parent_window.dir_model.setRootPath(root)
+            
         self.parent_window.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
         # Adding filter for allowed file extensions
@@ -239,8 +247,15 @@ class LayoutController:
         for i in range(1, 4):
             self.parent_window.folder_tree.hideColumn(i)
 
-        # Set root index
-        self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(root))
+        # Set root index based on platform
+        # Windows: Use invalid index to show all drives (C:, D:, E:, etc)
+        # Linux/macOS: Show root directory
+        if platform.system() == "Windows":
+            from PyQt5.QtCore import QModelIndex
+            # Use invalid/empty index to show all drives at root level
+            self.parent_window.folder_tree.setRootIndex(QModelIndex())
+        else:
+            self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(root))
 
         # Set minimum size for left panel and add to splitter
         self.parent_window.left_frame.setMinimumWidth(230)

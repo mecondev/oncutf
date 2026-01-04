@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import threading
+import time
 from typing import Any
 
 # Initialize Logger
@@ -48,8 +49,9 @@ class ExifToolWrapper:
         """Destructor to ensure ExifTool process is cleaned up."""
         import contextlib
 
+        # Destructor must never block (Windows can show "Not Responding").
         with contextlib.suppress(Exception):
-            self.close()
+            self.close(try_graceful=False)
 
     def get_metadata(self, file_path: str, use_extended: bool = False) -> dict[str, Any]:
         """Get metadata for a single file using exiftool.
@@ -259,52 +261,22 @@ class ExifToolWrapper:
         cmd = ["exiftool", "-api", "largefilesupport=1", "-j", "-ee", file_path]
         logger.info("[ExtendedReader] Running command: %s", " ".join(cmd))
 
-        # Use Popen instead of run so we can track and terminate the process
-        process = None
         try:
-            process = subprocess.Popen(
+            # Use run() with timeout for simpler and more reliable execution
+            # communicate() automatically handles stdout/stderr buffering
+            result = subprocess.run(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
+                check=False,
+                timeout=EXIFTOOL_TIMEOUT_EXTENDED,
                 encoding="utf-8",
                 errors="replace",
             )
 
-            # Register process for potential cancellation
-            # Check if we're running in a ParallelMetadataLoader context
-            if hasattr(self, "_loader") and hasattr(self._loader, "_active_processes"):
-                with self._loader._process_lock:
-                    self._loader._active_processes.append(process)
-
-            # Wait for completion with timeout
-            # Use poll() to allow faster termination on cancellation
-            try:
-                import time
-
-                start_time = time.time()
-                while process.poll() is None:  # While process is still running
-                    if time.time() - start_time > EXIFTOOL_TIMEOUT_EXTENDED:
-                        process.kill()
-                        process.wait()
-                        logger.error("[ExtendedReader] Timeout executing exiftool for %s", file_path)
-                        return None
-                    time.sleep(0.05)  # Check every 50ms
-
-                stdout, stderr = process.communicate()
-                returncode = process.returncode
-            except Exception as e:
-                process.kill()
-                stdout, stderr = process.communicate()
-                logger.error("[ExtendedReader] Error executing exiftool for %s: %s", file_path, e)
-                return None
-            finally:
-                # Unregister process
-                if hasattr(self, "_loader") and hasattr(self._loader, "_active_processes"):
-                    import contextlib as _contextlib
-
-                    with self._loader._process_lock, _contextlib.suppress(ValueError):
-                        self._loader._active_processes.remove(process)
+            returncode = result.returncode
+            stdout = result.stdout
+            stderr = result.stderr
 
             if returncode != 0:
                 # Suppress warnings for SIGTERM (-15) during shutdown
@@ -487,70 +459,89 @@ class ExifToolWrapper:
             logger.exception("[ExifToolWrapper] Exception while writing metadata: %s", e)
             return False
 
-    def close(self) -> None:
-        """Shuts down the persistent ExifTool process cleanly."""
-        if not self.process:
+    def close(
+        self,
+        *,
+        try_graceful: bool = False,
+        graceful_wait_s: float = 0.2,
+        terminate_wait_s: float = 0.2,
+        kill_wait_s: float = 0.1,
+    ) -> None:
+        """Shuts down the persistent ExifTool process.
+
+        Notes:
+            This method is used during app shutdown, often on the UI thread.
+            Defaults are intentionally short/bounded to avoid Windows "Not Responding".
+
+        Args:
+            try_graceful: If True, attempt a stay_open False request first.
+            graceful_wait_s: Max seconds to wait for a graceful exit.
+            terminate_wait_s: Max seconds to wait after terminate().
+            kill_wait_s: Max seconds to wait after kill().
+
+        """
+        proc = self.process
+        if not proc:
             return
 
         try:
             with self.lock:  # Ensure thread-safe shutdown
-                # First try to close gracefully
-                if self.process.stdin and not self.process.stdin.closed:
-                    try:
-                        self.process.stdin.write("-stay_open\nFalse\n")
-                        self.process.stdin.flush()
-                    except (BrokenPipeError, OSError, ValueError) as e:
-                        # Process may have already terminated or stdin is closed
-                        logger.debug(
-                            "[ExifToolWrapper] Expected error during graceful close: %s",
-                            e,
-                            extra={"dev_only": True},
-                        )
-                    finally:
-                        import contextlib
-
-                        with contextlib.suppress(BrokenPipeError, OSError, ValueError):
-                            # Ignore errors when closing stdin
-                            self.process.stdin.close()
-
-                # Wait for process to terminate gracefully
-                try:
-                    self.process.wait(timeout=3)
-                    logger.debug(
-                        "[ExifToolWrapper] Process terminated gracefully", extra={"dev_only": True}
-                    )
-                except subprocess.TimeoutExpired:
-                    # Force terminate if it doesn't close gracefully
-                    logger.warning(
-                        "[ExifToolWrapper] Process didn't terminate gracefully, forcing termination",
-                        extra={"dev_only": True},
-                    )
-                    self.process.terminate()
-                    try:
-                        self.process.wait(timeout=2)
-                    except subprocess.TimeoutExpired:
-                        # Last resort: kill the process
-                        logger.warning(
-                            "[ExifToolWrapper] Force killing ExifTool process",
-                            extra={"dev_only": True},
-                        )
-                        self.process.kill()
+                if try_graceful:
+                    if proc.stdin and not proc.stdin.closed:
                         try:
-                            self.process.wait(timeout=1)
-                        except subprocess.TimeoutExpired:
-                            logger.error(
-                                "[ExifToolWrapper] Process refused to die, may be zombie",
+                            proc.stdin.write("-stay_open\nFalse\n")
+                            proc.stdin.flush()
+                        except (BrokenPipeError, OSError, ValueError) as e:
+                            logger.debug(
+                                "[ExifToolWrapper] Expected error during graceful close: %s",
+                                e,
                                 extra={"dev_only": True},
                             )
+
+                # Always close stdin best-effort (even on fast close).
+                with contextlib.suppress(BrokenPipeError, OSError, ValueError, AttributeError):
+                    if proc.stdin and not proc.stdin.closed:
+                        proc.stdin.close()
+
+                if try_graceful:
+                    try:
+                        proc.wait(timeout=graceful_wait_s)
+                        logger.debug(
+                            "[ExifToolWrapper] Process terminated gracefully",
+                            extra={"dev_only": True},
+                        )
+                        return
+                    except subprocess.TimeoutExpired:
+                        logger.debug(
+                            "[ExifToolWrapper] Graceful close timed out (%.2fs)",
+                            graceful_wait_s,
+                            extra={"dev_only": True},
+                        )
+
+                with contextlib.suppress(Exception):
+                    proc.terminate()
+                try:
+                    proc.wait(timeout=terminate_wait_s)
+                    return
+                except subprocess.TimeoutExpired:
+                    logger.debug(
+                        "[ExifToolWrapper] Terminate timed out (%.2fs)",
+                        terminate_wait_s,
+                        extra={"dev_only": True},
+                    )
+                    with contextlib.suppress(Exception):
+                        proc.kill()
+                    with contextlib.suppress(subprocess.TimeoutExpired):
+                        proc.wait(timeout=kill_wait_s)
 
         except Exception as e:
             logger.exception("[ExifToolWrapper] Error during shutdown: %s", e)
             # Force kill as last resort
             try:
-                if self.process and self.process.poll() is None:
-                    self.process.kill()
+                if proc and proc.poll() is None:
+                    proc.kill()
                     try:
-                        self.process.wait(timeout=1)
+                        proc.wait(timeout=kill_wait_s)
                     except subprocess.TimeoutExpired:
                         logger.error(
                             "[ExifToolWrapper] Zombie process detected", extra={"dev_only": True}
@@ -562,16 +553,38 @@ class ExifToolWrapper:
             logger.debug("[ExifToolWrapper] ExifTool wrapper closed", extra={"dev_only": True})
 
     @staticmethod
-    def force_cleanup_all_exiftool_processes() -> None:
-        """Force cleanup all ExifTool processes system-wide."""
-        try:
-            import time
+    def force_cleanup_all_exiftool_processes(
+        *,
+        max_scan_s: float = 0.5,
+        graceful_wait_s: float = 0.5,
+    ) -> None:
+        """Force cleanup all ExifTool processes system-wide.
 
-            import psutil
+        Notes:
+            This can run during app shutdown (often on the UI thread). The work is
+            bounded via time caps to reduce the risk of Windows "Not Responding".
+
+        Args:
+            max_scan_s: Maximum time to spend scanning processes.
+            graceful_wait_s: Maximum time to wait for terminate() before kill().
+
+        """
+        try:
+            import importlib
+
+            psutil = importlib.import_module("psutil")
 
             exiftool_processes = []
+            scan_start = time.perf_counter()
             for proc in psutil.process_iter(["pid", "name", "cmdline"]):
                 try:
+                    if (time.perf_counter() - scan_start) > max_scan_s:
+                        logger.debug(
+                            "[ExifToolWrapper] Process scan time limit reached (%.2fs)",
+                            max_scan_s,
+                            extra={"dev_only": True},
+                        )
+                        break
                     if proc.info["name"] and "exiftool" in proc.info["name"].lower():
                         exiftool_processes.append(proc)
                     elif proc.info["cmdline"]:
@@ -599,8 +612,20 @@ class ExifToolWrapper:
                 with contextlib.suppress(psutil.NoSuchProcess):
                     proc.terminate()
 
-            # Wait a bit for graceful termination
-            time.sleep(0.5)
+            # Wait briefly for graceful termination (bounded)
+            wait_deadline = time.perf_counter() + max(0.0, graceful_wait_s)
+            while time.perf_counter() < wait_deadline:
+                remaining_count = 0
+                for proc in exiftool_processes:
+                    try:
+                        if proc.is_running():
+                            remaining_count += 1
+                    except psutil.NoSuchProcess:
+                        pass
+
+                if remaining_count == 0:
+                    break
+                time.sleep(0.01)
 
             # Force kill any remaining processes
             remaining_processes = []
@@ -664,8 +689,6 @@ class ExifToolWrapper:
             Dictionary with health status and metrics.
 
         """
-        import time
-
         self._last_health_check = time.time()
 
         is_process_alive = False
