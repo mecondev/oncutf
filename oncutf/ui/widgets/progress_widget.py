@@ -152,13 +152,25 @@ class ProgressWidget(QWidget):
         self.status_label.setWordWrap(True)
         self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        self.count_label = QLabel("")
-        self.count_label.setObjectName("count_label")
-        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
-        self.count_label.setFixedWidth(90)
+        # Split count into 3 labels to prevent jumping when numbers change
+        self.count_current_label = QLabel("")
+        self.count_current_label.setObjectName("count_current_label")
+        self.count_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.count_current_label.setFixedWidth(35)  # Space for current number
+
+        self.count_of_label = QLabel("of")
+        self.count_of_label.setObjectName("count_of_label")
+        self.count_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
+
+        self.count_total_label = QLabel("")
+        self.count_total_label.setObjectName("count_total_label")
+        self.count_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.count_total_label.setFixedWidth(35)  # Space for total number
 
         status_row.addWidget(self.status_label)
-        status_row.addWidget(self.count_label)
+        status_row.addWidget(self.count_current_label)
+        status_row.addWidget(self.count_of_label)
+        status_row.addWidget(self.count_total_label)
         self.main_layout.addLayout(status_row)
 
         # Second row: progress bar (very thin)
@@ -208,21 +220,67 @@ class ProgressWidget(QWidget):
         enhanced_row.setSpacing(10)
 
         if self.show_size_info:
-            self.size_label = QLabel("Ready...")
-            self.size_label.setObjectName("size_info_label")
-            self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
-            self.size_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-            enhanced_row.addWidget(self.size_label)
+            # Split size into 3 labels to prevent jumping
+            size_container = QHBoxLayout()
+            size_container.setContentsMargins(0, 0, 0, 0)
+            size_container.setSpacing(3)
+
+            self.size_current_label = QLabel("")
+            self.size_current_label.setObjectName("size_current_label")
+            self.size_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.size_current_label.setMinimumWidth(60)
+
+            self.size_of_label = QLabel("of")
+            self.size_of_label.setObjectName("size_of_label")
+            self.size_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
+
+            self.size_total_label = QLabel("")
+            self.size_total_label.setObjectName("size_total_label")
+            self.size_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.size_total_label.setMinimumWidth(60)
+
+            size_container.addWidget(self.size_current_label)
+            size_container.addWidget(self.size_of_label)
+            size_container.addWidget(self.size_total_label)
+            size_container.addStretch()
+
+            enhanced_row.addLayout(size_container)
 
         if self.show_size_info and self.show_time_info:
             enhanced_row.addStretch()
 
         if self.show_time_info:
-            self.time_label = QLabel("Ready...")
-            self.time_label.setObjectName("time_info_label")
-            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
-            self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-            enhanced_row.addWidget(self.time_label)
+            # Split time into 4 labels to prevent jumping (elapsed + 'of' + estimated + 'Est.')
+            time_container = QHBoxLayout()
+            time_container.setContentsMargins(0, 0, 0, 0)
+            time_container.setSpacing(3)
+
+            time_container.addStretch()
+
+            self.time_elapsed_label = QLabel("")
+            self.time_elapsed_label.setObjectName("time_elapsed_label")
+            self.time_elapsed_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.time_elapsed_label.setMinimumWidth(60)
+
+            self.time_of_label = QLabel("of")
+            self.time_of_label.setObjectName("time_of_label")
+            self.time_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
+
+            self.time_estimated_label = QLabel("")
+            self.time_estimated_label.setObjectName("time_estimated_label")
+            self.time_estimated_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.time_estimated_label.setMinimumWidth(60)
+
+            self.time_est_label = QLabel("Est.")
+            self.time_est_label.setObjectName("time_est_label")
+            self.time_est_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+
+            time_container.addWidget(self.time_elapsed_label)
+            time_container.addWidget(self.time_of_label)
+            time_container.addWidget(self.time_estimated_label)
+            time_container.addWidget(self.time_est_label)
+
+            enhanced_row.addLayout(time_container)
 
         self.main_layout.addLayout(enhanced_row)
 
@@ -308,8 +366,9 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(percentage)
         # Display percentage (top-right label)
         self.percentage_label.setText(f"{percentage}%")
-        # Update count label (below bar)
-        self.count_label.setText(f"{value} of {total}")
+        # Update count labels (split into 3 parts)
+        self.count_current_label.setText(str(value))
+        self.count_total_label.setText(str(total))
 
     def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
         """Set progress based on data volume (bytes processed).
@@ -342,9 +401,10 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(percentage)
         # Always display percentage (top-right label)
         self.percentage_label.setText(f"{percentage}%")
-        # Update count label if available (below bar)
+        # Update count labels if available (split into 3 parts)
         if self.current_count > 0 and self.total_count > 0:
-            self.count_label.setText(f"{self.current_count} of {self.total_count}")
+            self.count_current_label.setText(str(self.current_count))
+            self.count_total_label.setText(str(self.total_count))
 
         # Log milestone progress (every 10%)
         if percentage % 10 == 0 and percentage != getattr(self, "_last_milestone", -1):
@@ -389,14 +449,16 @@ class ProgressWidget(QWidget):
         self.filename_label.setText(truncated_filename)
 
     def set_count(self, current: int, total: int):
-        """Set count display."""
-        self.count_label.setText(f"{current} of {total}")
+        """Set count display (split into 3 labels)."""
+        self.count_current_label.setText(str(current))
+        self.count_total_label.setText(str(total))
 
     def set_indeterminate_mode(self):
         """Set progress bar to indeterminate/animated mode."""
         self.progress_bar.setRange(0, 0)
         self.percentage_label.setText("")
-        self.count_label.setText("")
+        self.count_current_label.setText("")
+        self.count_total_label.setText("")
         self.progress_bar.show()
         self.percentage_label.hide()
         logger.debug(
@@ -411,7 +473,8 @@ class ProgressWidget(QWidget):
         self.total_count = 0
         self.percentage_label.setText("0%")
         self.percentage_label.show()
-        self.count_label.setText("0 of 0")
+        self.count_current_label.setText("0")
+        self.count_total_label.setText("0")
         logger.debug(
             "[ProgressWidget] Progress bar set to determinate mode", extra={"dev_only": True}
         )
@@ -452,19 +515,22 @@ class ProgressWidget(QWidget):
         self.total_size = total_size
         self.processed_size = 0
 
-        if self.show_size_info and hasattr(self, "size_label"):
+        if self.show_size_info and hasattr(self, "size_current_label"):
             if total_size > 0:
                 from oncutf.utils.filesystem.file_size_formatter import (
                     format_file_size_system_compatible,
                 )
 
                 total_str = format_file_size_system_compatible(total_size)
-                self.size_label.setText(f"0 B/{total_str}")
+                self.size_current_label.setText("0 B")
+                self.size_total_label.setText(total_str)
             else:
-                self.size_label.setText("0 B")
+                self.size_current_label.setText("0 B")
+                self.size_total_label.setText("")
 
-        if self.show_time_info and hasattr(self, "time_label"):
-            self.time_label.setText("0s")
+        if self.show_time_info and hasattr(self, "time_elapsed_label"):
+            self.time_elapsed_label.setText("0s")
+            self.time_estimated_label.setText("")
             # Start timer to update time display every 500ms for smoother updates
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
@@ -517,23 +583,24 @@ class ProgressWidget(QWidget):
             self.set_progress_by_size(self.processed_size, self.total_size)
 
         # Update displays
-        if self.show_size_info and hasattr(self, "size_label"):
+        if self.show_size_info and hasattr(self, "size_current_label"):
             self._update_size_display()
 
-        if self.show_time_info and hasattr(self, "time_label"):
+        if self.show_time_info and hasattr(self, "time_elapsed_label"):
             self._update_time_display()
 
     def _update_size_display(self):
-        """Update size information display with improved formatting."""
+        """Update size information display with improved formatting (split labels)."""
         from oncutf.utils.naming.text_helpers import format_file_size_stable
 
         processed_str = format_file_size_stable(self.processed_size)
+        self.size_current_label.setText(processed_str)
+
         if self.total_size > 0:
             total_str = format_file_size_stable(self.total_size)
-            size_text = f"{processed_str} of {total_str}"  # Use "of" instead of "/"
+            self.size_total_label.setText(total_str)
         else:
-            size_text = processed_str
-        self.size_label.setText(size_text)
+            self.size_total_label.setText("")
 
     def _update_time_display(self):
         """Update time display with elapsed and estimated time in HH:MM:SS format.
@@ -541,11 +608,12 @@ class ProgressWidget(QWidget):
         Improved estimation (2025): More stable time calculation that doesn't reset
         between files - better than old approach that lost estimation accuracy.
         """
-        if not self.show_time_info or not hasattr(self, "time_label"):
+        if not self.show_time_info or not hasattr(self, "time_elapsed_label"):
             return
 
         if self.start_time is None:
-            self.time_label.setText("Ready...")
+            self.time_elapsed_label.setText("Ready...")
+            self.time_estimated_label.setText("")
             return
 
         # Calculate elapsed time
@@ -589,26 +657,29 @@ class ProgressWidget(QWidget):
                 elapsed_str = self._format_time_hms(elapsed)
                 estimated_total_str = self._format_time_hms(estimated_total)
 
-                time_text = f"{elapsed_str} of {estimated_total_str} Est."  # Use "of" and "Est."
-                self.time_label.setText(time_text)
+                # Split into separate labels
+                self.time_elapsed_label.setText(elapsed_str)
+                self.time_estimated_label.setText(estimated_total_str)
                 logger.debug(
-                    "[ProgressWidget] Time updated: %s",
-                    time_text,
+                    "[ProgressWidget] Time updated: %s of %s Est.",
+                    elapsed_str,
+                    estimated_total_str,
                     extra={"dev_only": True},
                 )
             else:
                 # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time_hms(elapsed)
-                time_text = f"{elapsed_str} of calculating... Est."
-                self.time_label.setText(time_text)
+                self.time_elapsed_label.setText(elapsed_str)
+                self.time_estimated_label.setText("calculating...")
                 logger.debug(
-                    "[ProgressWidget] Time updated (early): %s",
-                    time_text,
+                    "[ProgressWidget] Time updated (early): %s of calculating...",
+                    elapsed_str,
                     extra={"dev_only": True},
                 )
         else:
             elapsed_str = self._format_time_hms(elapsed)
-            self.time_label.setText(elapsed_str)
+            self.time_elapsed_label.setText(elapsed_str)
+            self.time_estimated_label.setText("")
             logger.debug(
                 "[ProgressWidget] Time updated (no progress): %s",
                 elapsed_str,
@@ -749,7 +820,7 @@ class ProgressWidget(QWidget):
                 self._update_time_display()
 
     def set_time_info(self, elapsed: float, estimated_total: float | None = None):
-        """Manually set time information in HH:MM:SS format.
+        """Manually set time information in HH:MM:SS format (split labels).
 
         Args:
             elapsed: Elapsed time in seconds
@@ -760,15 +831,14 @@ class ProgressWidget(QWidget):
 
         # Format elapsed time
         elapsed_text = self._format_time_hms(elapsed)
+        self.time_elapsed_label.setText(elapsed_text)
 
-        # If we have estimated total, show both elapsed and estimated (matching _update_time_display format)
+        # If we have estimated total, show both elapsed and estimated
         if estimated_total is not None and estimated_total > elapsed:
             estimated_text = self._format_time_hms(estimated_total)
-            time_text = f"{elapsed_text} of {estimated_text} Est."
+            self.time_estimated_label.setText(estimated_text)
         else:
-            time_text = elapsed_text
-
-        self.time_label.setText(time_text)
+            self.time_estimated_label.setText("")
 
     def reset(self):
         """Reset all progress tracking."""
@@ -792,11 +862,13 @@ class ProgressWidget(QWidget):
             self._time_timer.stop()
             self._time_timer = None
 
-        if self.show_size_info and hasattr(self, "size_label"):
-            self.size_label.setText("Ready...")
+        if self.show_size_info and hasattr(self, "size_current_label"):
+            self.size_current_label.setText("Ready...")
+            self.size_total_label.setText("")
 
-        if self.show_time_info and hasattr(self, "time_label"):
-            self.time_label.setText("Ready...")
+        if self.show_time_info and hasattr(self, "time_elapsed_label"):
+            self.time_elapsed_label.setText("Ready...")
+            self.time_estimated_label.setText("")
 
 
 # Simplified factory functions - only keep the essential ones
