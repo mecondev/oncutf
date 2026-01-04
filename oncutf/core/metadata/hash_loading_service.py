@@ -15,7 +15,7 @@ Extracted from UnifiedMetadataManager to improve separation of concerns.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from PyQt5.QtCore import Qt
 
@@ -32,7 +32,7 @@ logger = get_cached_logger(__name__)
 
 
 class HashLoadingService:
-    """Service for hash loading operations.
+    """Unified service for hash loading operations.
 
     Responsibilities:
     - Orchestrate hash loading for multiple files
@@ -40,14 +40,15 @@ class HashLoadingService:
     - Handle worker lifecycle
     - Update UI on hash completion
     - Support cancellation
+    - Support custom callbacks for advanced operations (duplicates, compare)
     """
 
-    def __init__(self, parent_window, cache_service: "MetadataCacheService"):
+    def __init__(self, parent_window, cache_service: Optional["MetadataCacheService"] = None):
         """Initialize HashLoadingService.
 
         Args:
             parent_window: Parent window reference for UI operations
-            cache_service: Cache service for checking cached hashes
+            cache_service: Cache service for checking cached hashes (optional)
         """
         self.parent_window = parent_window
         self._cache_service = cache_service
@@ -55,9 +56,16 @@ class HashLoadingService:
         self._hash_worker: ParallelHashWorker | None = None
         self._hash_progress_dialog: ProgressDialog | None = None
         self._on_finished_callback: Callable[[], None] | None = None
+        self._on_file_hash_callback: Callable[[str, str, int], None] | None = None
+        self._on_progress_callback: Callable[[int, int, str], None] | None = None
 
     def load_hashes_for_files(
-        self, files: list[FileItem], source: str = "user_request", on_finished_callback=None
+        self,
+        files: list[FileItem],
+        source: str = "user_request",
+        on_finished_callback=None,
+        on_file_hash_callback=None,
+        on_progress_callback=None,
     ) -> None:
         """Load hashes for files that don't have them cached.
 
@@ -65,21 +73,28 @@ class HashLoadingService:
             files: List of files to load hashes for
             source: Source of the request (for logging)
             on_finished_callback: Optional callback when loading finishes
+            on_file_hash_callback: Optional callback(path, hash, size) for each file
+            on_progress_callback: Optional callback(current, total, message) for progress updates
         """
         if not files:
             return
 
-        # Store callback for later
+        # Store callbacks for later
         self._on_finished_callback = on_finished_callback
+        self._on_file_hash_callback = on_file_hash_callback
+        self._on_progress_callback = on_progress_callback
 
         # Filter files that need loading
         files_to_load = []
         for file_item in files:
             if file_item.full_path not in self._currently_loading:
-                cached = self._cache_service.check_cached_hash(file_item)
-                if not cached:
-                    files_to_load.append(file_item)
-                    self._currently_loading.add(file_item.full_path)
+                # Skip cache check if no cache service (used by HashOperationsManager)
+                if self._cache_service:
+                    cached = self._cache_service.check_cached_hash(file_item)
+                    if cached:
+                        continue
+                files_to_load.append(file_item)
+                self._currently_loading.add(file_item.full_path)
 
         if not files_to_load:
             logger.info(
@@ -160,6 +175,10 @@ class HashLoadingService:
         # Update filename if available
         if filename:
             dialog.set_filename(filename)
+        
+        # Call custom progress callback if provided
+        if self._on_progress_callback:
+            self._on_progress_callback(current, total, filename)
 
     def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading using parallel hash worker.
@@ -196,9 +215,15 @@ class HashLoadingService:
 
         Args:
             file_path: Path to file
-            hash_value: Calculated hash (unused, already in cache)
+            hash_value: Calculated hash value
         """
         self._currently_loading.discard(file_path)
+
+        # Call custom callback if provided
+        if self._on_file_hash_callback:
+            import os
+            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            self._on_file_hash_callback(file_path, hash_value, file_size)
 
         # Progressive UI update
         if self.parent_window and hasattr(self.parent_window, "file_model"):
