@@ -153,7 +153,7 @@ class ProgressWidget(QWidget):
         self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Split count into 3 labels to prevent jumping when numbers change
-        self.count_current_label = QLabel("")
+        self.count_current_label = QLabel("0")
         self.count_current_label.setObjectName("count_current_label")
         self.count_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
         self.count_current_label.setFixedWidth(35)  # Space for current number
@@ -162,7 +162,7 @@ class ProgressWidget(QWidget):
         self.count_of_label.setObjectName("count_of_label")
         self.count_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
 
-        self.count_total_label = QLabel("")
+        self.count_total_label = QLabel("0")
         self.count_total_label.setObjectName("count_total_label")
         self.count_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
         self.count_total_label.setFixedWidth(35)  # Space for total number
