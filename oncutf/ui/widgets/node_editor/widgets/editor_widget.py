@@ -23,8 +23,7 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMessageBox, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
 from oncutf.ui.widgets.node_editor.core.scene import Scene
 from oncutf.ui.widgets.node_editor.persistence.scene_json import (

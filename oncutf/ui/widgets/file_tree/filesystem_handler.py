@@ -343,7 +343,7 @@ class FilesystemHandler:
 
             # Replace the model
             self._view.setModel(new_model)
-            
+
             # Set root index based on platform
             # Windows: Use invalid index to show all drives
             # Linux/macOS: Use root directory

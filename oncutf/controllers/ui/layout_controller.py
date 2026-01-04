@@ -234,7 +234,7 @@ class LayoutController:
         else:
             root = "/"
             self.parent_window.dir_model.setRootPath(root)
-            
+
         self.parent_window.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
         # Adding filter for allowed file extensions

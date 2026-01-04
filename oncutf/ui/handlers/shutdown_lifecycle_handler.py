@@ -128,7 +128,7 @@ class ShutdownLifecycleHandler:
             from contextlib import contextmanager
 
             @contextmanager
-            def wait_cursor(restore_after: bool = True):
+            def wait_cursor() -> None:
                 yield
 
         # Watchdog disabled: user requested to stop creating temp watchdog logs.
@@ -267,11 +267,10 @@ class ShutdownLifecycleHandler:
             Callable[[], None]: cancel function
 
         """
+        import faulthandler
         import os
         import tempfile
         import time
-
-        import faulthandler
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         dump_path = os.path.join(tempfile.gettempdir(), f"oncutf_shutdown_hang_{timestamp}.log")
@@ -279,7 +278,24 @@ class ShutdownLifecycleHandler:
         # Create the file early so the path is known even if we hard-hang.
         # Keep output ASCII-safe.
         try:
-            f = open(dump_path, "w", encoding="utf-8", errors="backslashreplace")
+            with open(dump_path, "w", encoding="utf-8", errors="backslashreplace") as f:
+                f.write("OnCutF shutdown watchdog armed.\n")
+                f.write(f"Timestamp: {timestamp}\n")
+                f.write(f"Timeout: {timeout_s:.1f}s\n")
+                f.write(f"Repeat: {repeat}\n")
+                f.write("\nExpected: stack dump will be appended below during shutdown.\n")
+                f.write("\n")
+                f.flush()
+
+                logger.info("[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path)
+
+                # Ensure faulthandler is enabled and configured to include all threads.
+                # NOTE: enable() is idempotent.
+                with contextlib.suppress(Exception):
+                    faulthandler.enable(file=f, all_threads=True)
+
+                # Schedule automatic stack dump(s) during shutdown.
+                faulthandler.dump_traceback_later(timeout_s, repeat=repeat, file=f, exit=False)
         except Exception as e:
             logger.exception("[CloseEvent] Failed to open watchdog dump file: %s", e)
 
@@ -287,24 +303,6 @@ class ShutdownLifecycleHandler:
                 return
 
             return _cancel_noop
-
-        f.write("OnCutF shutdown watchdog armed.\n")
-        f.write(f"Timestamp: {timestamp}\n")
-        f.write(f"Timeout: {timeout_s:.1f}s\n")
-        f.write(f"Repeat: {repeat}\n")
-        f.write("\nExpected: stack dump will be appended below during shutdown.\n")
-        f.write("\n")
-        f.flush()
-
-        logger.info("[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path)
-
-        # Ensure faulthandler is enabled and configured to include all threads.
-        # NOTE: enable() is idempotent.
-        with contextlib.suppress(Exception):
-            faulthandler.enable(file=f, all_threads=True)
-
-        # Schedule automatic stack dump(s) during shutdown.
-        faulthandler.dump_traceback_later(timeout_s, repeat=repeat, file=f, exit=False)
 
         def _cancel() -> None:
             with contextlib.suppress(Exception):
