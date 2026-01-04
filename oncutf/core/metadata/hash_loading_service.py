@@ -164,20 +164,8 @@ class HashLoadingService:
         cast("Any", self._hash_worker.finished_processing).connect(
             lambda _: self._on_hash_finished(), Qt.QueuedConnection
         )
-        cast("Any", self._hash_worker.progress_updated).connect(
-            lambda current, total, _: self._on_hash_progress(current, total), Qt.QueuedConnection
-        )
 
         self._hash_worker.start()
-
-    def _on_hash_progress(self, current: int, total: int) -> None:
-        """Handle hash loading progress updates.
-
-        Args:
-            current: Current file index
-            total: Total files
-        """
-        # Progress dialog handles this via connected signals
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated.
