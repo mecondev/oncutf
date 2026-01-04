@@ -306,8 +306,10 @@ class ProgressWidget(QWidget):
             percentage = max(0, min(100, percentage))
 
         self.progress_bar.setValue(percentage)
-        # Display file count instead of percentage
-        self.percentage_label.setText(f"{value} of {total}")
+        # Display percentage (top-right label)
+        self.percentage_label.setText(f"{percentage}%")
+        # Update count label (below bar)
+        self.count_label.setText(f"{value} of {total}")
 
     def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
         """Set progress based on data volume (bytes processed).
@@ -338,11 +340,11 @@ class ProgressWidget(QWidget):
                 percentage = max(0, min(100, percentage))
 
         self.progress_bar.setValue(percentage)
-        # Display file count if available, otherwise percentage
+        # Always display percentage (top-right label)
+        self.percentage_label.setText(f"{percentage}%")
+        # Update count label if available (below bar)
         if self.current_count > 0 and self.total_count > 0:
-            self.percentage_label.setText(f"{self.current_count} of {self.total_count}")
-        else:
-            self.percentage_label.setText(f"{percentage}%")
+            self.count_label.setText(f"{self.current_count} of {self.total_count}")
 
         # Log milestone progress (every 10%)
         if percentage % 10 == 0 and percentage != getattr(self, "_last_milestone", -1):
@@ -407,7 +409,7 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(0)
         self.current_count = 0
         self.total_count = 0
-        self.percentage_label.setText("0 of 0")
+        self.percentage_label.setText("0%")
         self.percentage_label.show()
         self.count_label.setText("0 of 0")
         logger.debug(
