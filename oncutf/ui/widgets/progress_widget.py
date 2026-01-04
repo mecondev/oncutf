@@ -761,11 +761,10 @@ class ProgressWidget(QWidget):
         # Format elapsed time
         elapsed_text = self._format_time_hms(elapsed)
 
-        # If we have estimated total, show both elapsed and remaining
+        # If we have estimated total, show both elapsed and estimated (matching _update_time_display format)
         if estimated_total is not None and estimated_total > elapsed:
-            remaining = estimated_total - elapsed
-            remaining_text = self._format_time_hms(remaining)
-            time_text = f"{elapsed_text} / ~{remaining_text} remaining"
+            estimated_text = self._format_time_hms(estimated_total)
+            time_text = f"{elapsed_text} of {estimated_text} Est."
         else:
             time_text = elapsed_text
 
