@@ -214,12 +214,13 @@ class HashWorkerCoordinator:
 
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            # Calculate percentage
+            # Calculate percentage for progress bar
             if total_bytes > 0:
                 percentage = int((current_bytes / total_bytes) * 100)
-                self.hash_dialog.set_count(percentage, 100)
+                # Update progress bar (not count label!)
+                self.hash_dialog.set_progress(percentage, 100)
             else:
-                self.hash_dialog.set_count(0, 100)
+                self.hash_dialog.set_progress(0, 100)
 
             # Update size info if available
             self.hash_dialog.set_size_info(current_bytes, total_bytes)
