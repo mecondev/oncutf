@@ -31,6 +31,31 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
+def _format_modifiers(modifiers: Qt.KeyboardModifiers) -> str:
+    """Format Qt modifiers to readable string for logging.
+    
+    Args:
+        modifiers: Qt keyboard modifiers
+        
+    Returns:
+        Human-readable string like "Ctrl+Shift", "Ctrl", "Shift", or "None"
+    """
+    if modifiers == Qt.NoModifier:
+        return "None"
+    
+    parts = []
+    if modifiers & Qt.ControlModifier:
+        parts.append("Ctrl")
+    if modifiers & Qt.ShiftModifier:
+        parts.append("Shift")
+    if modifiers & Qt.AltModifier:
+        parts.append("Alt")
+    if modifiers & Qt.MetaModifier:
+        parts.append("Meta")
+    
+    return "+".join(parts) if parts else "None"
+
+
 class EventHandler:
     """Handles Qt events for FileTableView.
 
@@ -63,10 +88,12 @@ class EventHandler:
 
         # Store clicked index for potential drag
         self._view._clicked_index = index
+        # Track if we're preserving selection for drag (will change on release if no drag happened)
+        self._view._preserved_selection_for_drag = False
 
         if event.button() == Qt.LeftButton:
-            # Store drag start position only if no modifiers (Ctrl/Alt/Shift disable drag)
-            if modifiers == Qt.NoModifier:
+            # Allow drag start with no modifier or Shift (Shift = extended metadata)
+            if modifiers in (Qt.NoModifier, Qt.ShiftModifier):
                 self._view._drag_start_pos = event.pos()
             else:
                 self._view._drag_start_pos = None
@@ -82,12 +109,57 @@ class EventHandler:
             current_selection = self._view._get_current_selection_safe()
             is_already_selected = index.row() in current_selection
 
-            # If clicking on selected item without modifiers, preserve selection for drag
-            # Don't call super() which would clear the selection
-            if modifiers == Qt.NoModifier and is_already_selected and len(current_selection) > 1:
-                # Just set anchor, don't change selection (preserve for drag)
-                self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
-                return True  # Skip super call to preserve selection
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+            logger = get_cached_logger(__name__)
+            anchor_before = self._view._selection_behavior.get_anchor_row()
+            logger.info(
+                "[MOUSE PRESS] Row=%d, Modifiers=%s, AlreadySelected=%s, Selection=%s, Anchor=%s",
+                index.row(), _format_modifiers(modifiers), is_already_selected, sorted(current_selection), anchor_before
+            )
+
+            # If clicking on selected item without modifiers OR with Shift (extended drag), preserve selection for drag
+            # Block selection changes by temporarily disconnecting selection model
+            if modifiers in (Qt.NoModifier, Qt.ShiftModifier) and is_already_selected and len(current_selection) > 1:
+                # Preserve selection without changing anchor (keep original anchor for correct drag behavior)
+                logger.info(
+                    "[PRESERVE] Preserving multi-selection for drag, clicked row=%d, keeping anchor=%s, selection=%s",
+                    index.row(), anchor_before, sorted(current_selection)
+                )
+                self._view._preserved_selection_for_drag = True
+                self._view._preserved_selection_rows = current_selection.copy()
+                
+                # Block signals to prevent selection model from changing selection
+                selection_model = self._view.selectionModel()
+                if selection_model:
+                    # We want to PREVENT the default QTableView behavior which clears selection on click
+                    # So we DON'T call super() at all for this specific case
+                    # But we DO need to set the current index for focus purposes
+                    from oncutf.core.pyqt_imports import QItemSelectionModel
+                    selection_model.setCurrentIndex(index, QItemSelectionModel.Current)
+                    
+                    # Ensure anchor is preserved (it might not change, but just in case)
+                    self._view._selection_behavior.set_anchor_row(anchor_before, emit_signal=False)
+                    
+                    logger.info(
+                        "[PRESERVE] Skipped super(), set CurrentIndex=%d, selection=%s, anchor=%s",
+                        index.row(),
+                        sorted(self._view._get_current_selection_safe()), 
+                        self._view._selection_behavior.get_anchor_row()
+                    )
+                    return True  # Prevent calling super
+                else:
+                    return True
+
+            # Ctrl+click: handle toggle ourselves to avoid Qt clearing selection unexpectedly
+            if modifiers == Qt.ControlModifier:
+                logger.info(
+                    "[CTRL TOGGLE] Toggling row=%d, current selection=%s, anchor=%s",
+                    index.row(), sorted(current_selection), anchor_before
+                )
+                self._view._selection_behavior.ensure_anchor_or_select(index, modifiers)
+                # ensure_anchor_or_select sets anchor internally; keep drag start disabled
+                self._view._drag_start_pos = None
+                return True
 
             # Handle selection based on modifiers
             if modifiers in (Qt.NoModifier, Qt.ControlModifier):
@@ -134,7 +206,68 @@ class EventHandler:
         """
         was_dragging = False
         if event.button() == Qt.LeftButton:
+            # Check if we preserved selection for drag but no drag happened
+            # In this case, select only the clicked item
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+            logger = get_cached_logger(__name__)
+            current_selection = self._view._get_current_selection_safe()
+            anchor_before = self._view._selection_behavior.get_anchor_row()
+            
+            # Check if user actually moved the mouse (real drag vs accidental micro-movement)
+            actual_drag_happened = self._view._drag_drop_behavior.is_dragging
+            if not actual_drag_happened and self._view._drag_start_pos is not None:
+                from oncutf.core.pyqt_imports import QApplication
+                distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
+                # Only consider it a real drag if moved at least the drag distance
+                actual_drag_happened = distance >= QApplication.startDragDistance()
+            
+            logger.info(
+                "[MOUSE RELEASE] Preserved=%s, IsDragging=%s, ActualDrag=%s, ClickedRow=%s, Selection=%s, Anchor=%s",
+                self._view._preserved_selection_for_drag,
+                self._view._drag_drop_behavior.is_dragging,
+                actual_drag_happened,
+                self._view._clicked_index.row() if self._view._clicked_index and self._view._clicked_index.isValid() else None,
+                sorted(current_selection),
+                anchor_before
+            )
+            
+            # If we preserved selection but no actual drag happened, select only clicked item
+            if (self._view._preserved_selection_for_drag and
+                not actual_drag_happened and
+                self._view._clicked_index is not None and
+                self._view._clicked_index.isValid()):
+                # User clicked on selected item but didn't drag - select only that item
+                logger.info("[SINGLE SELECT] Converting multi-selection to single: %d", self._view._clicked_index.row())
+                from oncutf.core.pyqt_imports import QItemSelectionModel
+                sm = self._view.selectionModel()
+                if sm:
+                    sm.select(
+                        self._view._clicked_index,
+                        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
+                    )
+                    sm.setCurrentIndex(self._view._clicked_index, QItemSelectionModel.NoUpdate)
+                    self._view._selection_behavior.set_anchor_row(
+                        self._view._clicked_index.row(), emit_signal=False
+                    )
+                    # Sync to store
+                    selection_store = self._view._selection_behavior.get_selection_store()
+                    if selection_store:
+                        selection_store.set_selected_rows(
+                            {self._view._clicked_index.row()}, emit_signal=True
+                        )
+                    anchor_after = self._view._selection_behavior.get_anchor_row()
+                    new_selection = self._view._get_current_selection_safe()
+                    logger.info(
+                        "[SINGLE SELECT] Done - Selection=%s, Anchor=%s -> %s",
+                        sorted(new_selection), anchor_before, anchor_after
+                    )
+
+            # Clear preserved selection cache
+            self._view._preserved_selection_rows = set()
+
             self._view._drag_start_pos = None
+            self._view._preserved_selection_for_drag = False
+            self._view._preserved_selection_rows: set[int] = set()
 
             if self._view._drag_drop_behavior.is_dragging:
                 was_dragging = True
@@ -168,11 +301,20 @@ class EventHandler:
         hovered_row = index.row() if index.isValid() else -1
 
         # Handle drag operations (allow shift for extended metadata, but with higher threshold)
-        if event.buttons() & Qt.LeftButton and self._view._drag_start_pos is not None:
-            # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
-            if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
-                self._view._drag_start_pos = None
-                return False
+        if event.buttons() & Qt.LeftButton:
+            # Block rubber-band when Ctrl is pressed (toggle mode should not lasso)
+            if event.modifiers() & Qt.ControlModifier:
+                return True
+
+            if self._view._drag_start_pos is not None:
+                # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
+                if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
+                    self._view._drag_start_pos = None
+                    return False
+
+            # If drag start was cancelled (e.g., due to modifiers), skip drag detection
+            if self._view._drag_start_pos is None:
+                return True
 
             # Calculate required drag distance based on modifiers
             # Shift+drag for extended metadata needs 3x the normal distance to prevent accidental selection changes
@@ -186,9 +328,28 @@ class EventHandler:
                 if start_index.isValid():
                     start_row = start_index.row()
                     if start_row in self._view._selection_behavior.get_current_selection_safe():
+                        # If selection was preserved for drag, ensure it is restored before starting drag
+                        preserved_rows = getattr(self._view, "_preserved_selection_rows", set())
+                        if preserved_rows:
+                            current = self._view._selection_behavior.get_current_selection_safe()
+                            if current != preserved_rows:
+                                selection_store = self._view._selection_behavior.get_selection_store()
+                                if selection_store:
+                                    selection_store.set_selected_rows(preserved_rows, emit_signal=False)
+                                self._view._selection_behavior.set_anchor_row(
+                                    self._view._selection_behavior.get_anchor_row(), emit_signal=False
+                                )
+                                logger.info(
+                                    "[DRAG] Restored preserved selection before drag: %s -> %s",
+                                    sorted(current), sorted(preserved_rows)
+                                )
                         self._view._drag_start_pos = None
                         self._view._drag_drop_behavior.start_drag()
                         return True
+
+            # Left button held but drag not yet triggered: block default Qt rubber-band selection
+            # to avoid accidental lasso selection when preparing to drag.
+            return True
 
         # Skip hover updates if dragging
         if self._view._drag_drop_behavior.is_dragging:

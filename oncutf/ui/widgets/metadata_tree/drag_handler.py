@@ -97,9 +97,12 @@ class MetadataTreeDragHandler:
             event: The drop event
 
         """
-        # Get and deactivate any drag cancel filter
+        # Get preserved selection before deactivating drag cancel filter
         _drag_cancel_filter = getattr(self._tree_view, "_drag_cancel_filter", None)
+        preserved_selection = set()
         if _drag_cancel_filter:
+            preserved_selection = _drag_cancel_filter.get_preserved_selection()
+            logger.info("[DROP] Preserved selection from drag: %s", sorted(preserved_selection))
             _drag_cancel_filter.deactivate()
 
         if event.mimeData().hasUrls():
@@ -113,7 +116,7 @@ class MetadataTreeDragHandler:
                 use_extended = bool(modifiers & Qt.ShiftModifier)
 
                 # Trigger metadata load via parent window -> application service
-                self._trigger_metadata_load(files, use_extended)
+                self._trigger_metadata_load(files, use_extended, preserved_selection)
 
                 logger.debug(
                     "[MetadataTreeDragHandler] Drop processed: %d files (extended=%s)",
@@ -134,12 +137,15 @@ class MetadataTreeDragHandler:
         # Schedule drag cleanup
         schedule_drag_cleanup(self._complete_drag_cleanup, 0)
 
-    def _trigger_metadata_load(self, files: list[str], use_extended: bool) -> None:
+    def _trigger_metadata_load(
+        self, files: list[str], use_extended: bool, preserved_selection: set[int]
+    ) -> None:
         """Trigger metadata loading for dropped files.
 
         Args:
             files: List of file paths to load metadata for
             use_extended: Whether to load extended metadata
+            preserved_selection: Selection to restore after drop
 
         """
         parent_window = self._tree_view._get_parent_with_file_table()
@@ -177,9 +183,27 @@ class MetadataTreeDragHandler:
             if not item.checked:
                 item.checked = True
 
-        # Update file table model to reflect changes
+        # Update file table model to reflect changes and restore selection
         if hasattr(parent_window, "file_table_model"):
             parent_window.file_table_model.layoutChanged.emit()
+            
+            # Restore preserved selection after layoutChanged (which clears selection)
+            if preserved_selection and hasattr(parent_window, "file_table"):
+                from oncutf.utils.shared.timer_manager import schedule_ui_update
+                
+                def restore_selection():
+                    file_table = parent_window.file_table
+                    if hasattr(file_table, "_selection_behavior"):
+                        logger.info(
+                            "[DROP] Restoring selection after layoutChanged: %s",
+                            sorted(preserved_selection)
+                        )
+                        selection_store = file_table._selection_behavior.get_selection_store()
+                        if selection_store:
+                            selection_store.set_selected_rows(preserved_selection, emit_signal=True)
+                
+                # Schedule selection restore after layoutChanged has been processed
+                schedule_ui_update(restore_selection, delay=10)
 
         # Trigger metadata loading
         parent_window.load_metadata_for_items(

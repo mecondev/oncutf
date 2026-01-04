@@ -95,6 +95,7 @@ class FileTableView(QTableView):
         self.selected_rows: set[int] = set()
         self.anchor_row: int | None = None
         self.context_focused_row: int | None = None
+        self._preserved_selection_for_drag: bool = False
 
         # Protection flags
         self._selection_change_count = 0
