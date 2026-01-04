@@ -39,6 +39,10 @@ class HashOperationsManager:
     This manager delegates to:
     - HashWorkerCoordinator: Worker thread and progress management
     - HashResultsPresenter: UI presentation and dialogs
+
+    TODO: Unify with HashLoadingService to avoid code duplication.
+    Currently HashLoadingService is used for shortcuts (Ctrl+H) and
+    HashWorkerCoordinator for context menu. Both should use same path.
     """
 
     def __init__(self, parent_window: QWidget) -> None:
