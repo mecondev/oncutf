@@ -165,6 +165,25 @@ python3.12 main.py
 
 ---
 
+## Selection & Modifier Behavior (File Table)
+
+### Single Click
+- **No Modifier**: Select clicked row, deselect others
+- **Ctrl**: Toggle clicked row (add/remove from selection)
+- **Shift**: Extend selection from anchor to clicked row
+
+### Drag Operations
+- **Drag to Metadata Tree (No Modifier)**: Load fast metadata for selected files
+- **Drag to Metadata Tree (Shift)**: Load extended metadata for selected files (requires 3x normal drag distance to prevent accidental triggers)
+- **Ctrl+Drag (Lasso)**: Select/deselect rows in range; initial selection XOR dragged range. Compatible with Windows Explorer behavior
+
+### Multi-Selection Behavior
+- Clicking on already-selected item (no modifier): Preserves multi-selection for drag. If no drag occurs, converts to single selection
+- Anchor row is maintained for Shift+Click range selection
+- Selection restored after metadata operations
+
+---
+
 ## Project Structure
 
 ```

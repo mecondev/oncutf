@@ -186,11 +186,11 @@ class MetadataTreeDragHandler:
         # Update file table model to reflect changes and restore selection
         if hasattr(parent_window, "file_table_model"):
             parent_window.file_table_model.layoutChanged.emit()
-            
+
             # Restore preserved selection after layoutChanged (which clears selection)
             if preserved_selection and hasattr(parent_window, "file_table"):
                 from oncutf.utils.shared.timer_manager import schedule_ui_update
-                
+
                 def restore_selection():
                     file_table = parent_window.file_table
                     if hasattr(file_table, "_selection_behavior"):
@@ -201,7 +201,7 @@ class MetadataTreeDragHandler:
                         selection_store = file_table._selection_behavior.get_selection_store()
                         if selection_store:
                             selection_store.set_selected_rows(preserved_selection, emit_signal=True)
-                
+
                 # Schedule selection restore after layoutChanged has been processed
                 schedule_ui_update(restore_selection, delay=10)
 
