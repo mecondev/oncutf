@@ -113,6 +113,8 @@ class ProgressWidget(QWidget):
         self.start_time = None
         self.total_size = 0
         self.processed_size = 0
+        self.current_count = 0  # Track current file count
+        self.total_count = 0    # Track total file count
 
         # Optimized throttling for better responsiveness
         self._last_update_time = 0
@@ -293,6 +295,10 @@ class ProgressWidget(QWidget):
 
     def set_progress(self, value: int, total: int):
         """Set progress bar value and total."""
+        # Store for display
+        self.current_count = value
+        self.total_count = total
+
         if total <= 0:
             percentage = 0
         else:
@@ -300,7 +306,8 @@ class ProgressWidget(QWidget):
             percentage = max(0, min(100, percentage))
 
         self.progress_bar.setValue(percentage)
-        self.percentage_label.setText(f"{percentage}%")
+        # Display file count instead of percentage
+        self.percentage_label.setText(f"{value} of {total}")
 
     def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
         """Set progress based on data volume (bytes processed).
@@ -331,7 +338,11 @@ class ProgressWidget(QWidget):
                 percentage = max(0, min(100, percentage))
 
         self.progress_bar.setValue(percentage)
-        self.percentage_label.setText(f"{percentage}%")
+        # Display file count if available, otherwise percentage
+        if self.current_count > 0 and self.total_count > 0:
+            self.percentage_label.setText(f"{self.current_count} of {self.total_count}")
+        else:
+            self.percentage_label.setText(f"{percentage}%")
 
         # Log milestone progress (every 10%)
         if percentage % 10 == 0 and percentage != getattr(self, "_last_milestone", -1):
@@ -394,7 +405,9 @@ class ProgressWidget(QWidget):
         """Set progress bar back to normal determinate mode."""
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.percentage_label.setText("0%")
+        self.current_count = 0
+        self.total_count = 0
+        self.percentage_label.setText("0 of 0")
         self.percentage_label.show()
         self.count_label.setText("0 of 0")
         logger.debug(
