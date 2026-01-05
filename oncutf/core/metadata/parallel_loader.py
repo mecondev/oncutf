@@ -319,6 +319,35 @@ class ParallelMetadataLoader:
         """Check if loading has been cancelled."""
         return self._cancelled
 
+    def cleanup(self) -> None:
+        """Clean up resources including active subprocesses.
+
+        This should be called during application shutdown to ensure
+        all ExifTool processes are terminated.
+        """
+        self._cancelled = True
+
+        # Terminate any active ExifTool subprocesses
+        with self._process_lock:
+            terminated_count = 0
+            for proc in self._active_processes:
+                try:
+                    if proc and proc.poll() is None:  # Still running
+                        proc.terminate()
+                        # Wait briefly for termination
+                        try:
+                            proc.wait(timeout=0.5)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()  # Force kill if terminate doesn't work
+                        terminated_count += 1
+                except Exception as e:
+                    logger.debug("[ParallelMetadataLoader] Error terminating process during cleanup: %s", e)
+            if terminated_count > 0:
+                logger.info("[ParallelMetadataLoader] Terminated %d processes during cleanup", terminated_count)
+            self._active_processes.clear()
+
+        logger.info("[ParallelMetadataLoader] Cleanup completed")
+
 
 def update_file_item_metadata(
     item: FileItem, metadata: dict[str, Any], parent_window, metadata_cache, use_extended: bool

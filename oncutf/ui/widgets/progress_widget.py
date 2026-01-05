@@ -154,7 +154,7 @@ class ProgressWidget(QWidget):
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("count_label")
-        self.count_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
         self.count_label.setMinimumWidth(70)
 
         status_row.addWidget(self.status_label)
@@ -216,16 +216,23 @@ class ProgressWidget(QWidget):
             self.size_current_label = QLabel("")
             self.size_current_label.setObjectName("size_current_label")
             self.size_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
-            self.size_current_label.setMinimumWidth(60)
+            # Keep a stable width and align towards 'of'
+            self.size_current_label.setFixedWidth(70)
+            self.size_current_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             self.size_of_label = QLabel("of")
             self.size_of_label.setObjectName("size_of_label")
             self.size_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
+            # Keep 'of' centered with stable spacing around it
+            self.size_of_label.setFixedWidth(18)
+            self.size_of_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             self.size_total_label = QLabel("")
             self.size_total_label.setObjectName("size_total_label")
             self.size_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
-            self.size_total_label.setMinimumWidth(60)
+            # Keep a stable width and align towards 'of'
+            self.size_total_label.setFixedWidth(70)
+            self.size_total_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             size_container.addWidget(self.size_current_label)
             size_container.addWidget(self.size_of_label)
@@ -240,7 +247,7 @@ class ProgressWidget(QWidget):
         if self.show_time_info:
             self.time_label = QLabel("Ready...")
             self.time_label.setObjectName("time_info_label")
-            self.time_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
             self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.time_label)
 
@@ -697,7 +704,9 @@ class ProgressWidget(QWidget):
             total_size: Total bytes to process (optional, uses stored value if 0, 64-bit)
 
         """
-        if not self.show_size_info or not hasattr(self, "size_label"):
+        # Enhanced layout uses split labels (size_current_label / size_total_label).
+        # Keep compatibility with older layouts by checking the actual fields.
+        if not self.show_size_info or not hasattr(self, "size_current_label"):
             return
 
         # Convert to Python integers to handle 64-bit values properly
@@ -711,6 +720,9 @@ class ProgressWidget(QWidget):
         self.processed_size = processed_size
         if total_size > 0:
             self.total_size = total_size
+
+        # Update the visible split labels.
+        self._update_size_display()
 
         # Debug logging to track what's happening - improved logic
         # Only log significant changes to avoid spam

@@ -660,9 +660,13 @@ class UnifiedMetadataManager(QObject):
         """Clean up resources.
 
         Delegates hash service cleanup to HashLoadingService.
+        Delegates loader cleanup to MetadataLoader.
         """
         self._cancel_current_loading()
         self._cleanup_metadata_worker_and_thread()
+
+        # Delegate loader cleanup (handles ParallelMetadataLoader)
+        self._loader.cleanup()
 
         # Delegate hash service cleanup
         self._hash_service.cleanup()

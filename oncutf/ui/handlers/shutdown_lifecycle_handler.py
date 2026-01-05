@@ -401,6 +401,15 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
 
     def _pre_cleanup_cleanup_metadata_thread(self) -> None:
+        # First, cleanup the metadata manager (handles ParallelMetadataLoader)
+        if hasattr(self.main_window, "metadata_manager") and self.main_window.metadata_manager:
+            try:
+                self.main_window.metadata_manager.cleanup()
+                logger.info("[CloseEvent] Metadata manager cleaned up")
+            except Exception as e:
+                logger.warning("[CloseEvent] Metadata manager cleanup failed: %s", e)
+
+        # Then cleanup the metadata thread if it exists separately
         if hasattr(self.main_window, "metadata_thread") and self.main_window.metadata_thread:
             try:
                 # Disconnect all signals first to prevent crashes

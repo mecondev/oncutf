@@ -384,7 +384,7 @@ class ParallelHashWorker(QThread):
         hash_results: dict[str, str] = {}
         total_files = len(file_paths)
 
-        self.status_updated.emit("Calculating CRC32 checksums (parallel)...")
+        self.status_updated.emit("Calculating CRC32 checksums...")
 
         # Use ThreadPoolExecutor for parallel processing
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
@@ -458,7 +458,7 @@ class ParallelHashWorker(QThread):
         hash_to_files: dict[str, list[str]] = {}
         len(file_paths)
 
-        self.status_updated.emit("Scanning for duplicates (parallel)...")
+        self.status_updated.emit("Scanning for duplicates...")
 
         # Calculate all hashes in parallel
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
@@ -498,7 +498,7 @@ class ParallelHashWorker(QThread):
         comparison_results = {}
         external_path = Path(external_folder)
 
-        self.status_updated.emit("Comparing files (parallel)...")
+        self.status_updated.emit("Comparing files...")
 
         # Build list of (source_file, external_file) pairs
         file_pairs: list[tuple[str, str | None]] = []

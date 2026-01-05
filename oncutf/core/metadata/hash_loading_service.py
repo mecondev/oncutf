@@ -134,21 +134,37 @@ class HashLoadingService:
             )
             dialog = self._hash_progress_dialog  # Local ref for type narrowing
 
+            # Set initial status and start tracking (even with 0 size to init labels)
+            dialog.set_status("Calculating hash...")
+            dialog.start_progress_tracking(0)
+
+            # Start worker FIRST, then connect signals (worker is created in _start_hash_loading)
+            self._start_hash_loading(files, source)
+
             if self._hash_worker and dialog:
-                self._hash_worker.progress_updated.connect(
+                from typing import cast
+
+                cast("Any", self._hash_worker.progress_updated).connect(
                     lambda current, total, filename: self._update_hash_dialog(
                         dialog, current, total, filename
-                    )
+                    ),
+                    Qt.QueuedConnection,
                 )
-                self._hash_worker.size_progress.connect(
+                cast("Any", self._hash_worker.size_progress).connect(
                     lambda processed, total: dialog.update_progress(
                         processed_bytes=processed, total_bytes=total
-                    )
+                    ),
+                    Qt.QueuedConnection,
                 )
+                # Connect status updates from worker (e.g. "Calculating total size...")
+                if hasattr(self._hash_worker, "status_updated"):
+                    cast("Any", self._hash_worker.status_updated).connect(
+                        dialog.set_status,
+                        Qt.QueuedConnection,
+                    )
 
             if dialog:
                 dialog.show()
-            self._start_hash_loading(files, source)
 
         except Exception:
             logger.exception("[HashLoadingService] Error showing hash progress dialog")

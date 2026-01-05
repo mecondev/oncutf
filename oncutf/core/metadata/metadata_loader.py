@@ -119,11 +119,29 @@ class MetadataLoader:
     def request_cancellation(self) -> None:
         """Request cancellation of current loading operation."""
         self._metadata_cancelled = True
+        # Also cancel the parallel loader if it exists
+        if self._parallel_loader is not None:
+            self._parallel_loader.cancel()
         logger.info("[MetadataLoader] Cancellation requested")
 
     def is_cancelled(self) -> bool:
         """Check if loading has been cancelled."""
         return self._metadata_cancelled
+
+    def cleanup(self) -> None:
+        """Clean up resources including parallel loader.
+
+        This should be called during application shutdown to ensure
+        all threads and subprocesses are properly terminated.
+        """
+        self._metadata_cancelled = True
+
+        # Clean up parallel loader if it was initialized
+        if self._parallel_loader is not None:
+            self._parallel_loader.cleanup()
+            self._parallel_loader = None
+
+        logger.info("[MetadataLoader] Cleanup completed")
 
     # =========================================================================
     # Mode Determination

@@ -155,6 +155,7 @@ class HashWorkerCoordinator:
             file_count: Number of files being processed
 
         """
+        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
         from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         # Create dialog using the unified ProgressDialog for hash operations
@@ -163,8 +164,24 @@ class HashWorkerCoordinator:
             cancel_callback=self._cancel_hash_operation,
             use_size_based_progress=True,
         )
-        # Initialize count and show
+        # Initialize status + tracking (match metadata dialog behavior)
+        self.hash_dialog.set_status("Calculating hash...")
         self.hash_dialog.set_count(0, file_count)
+
+        # Size/time tracking uses cumulative bytes.
+        try:
+            self._total_size = calculate_files_total_size(getattr(self.hash_worker, "_file_paths", []))
+        except Exception:
+            self._total_size = 0
+        self.hash_dialog.start_progress_tracking(self._total_size)
+
+        # Keep status responsive (e.g. "Calculating total size...")
+        if self.hash_worker and hasattr(self.hash_worker, "status_updated"):
+            from oncutf.core.pyqt_imports import Qt
+
+            self.hash_worker.status_updated.connect(self.hash_dialog.set_status, Qt.QueuedConnection)
+
+        # Show
         self.hash_dialog.show()
 
     def _cancel_hash_operation(self) -> None:
@@ -196,11 +213,14 @@ class HashWorkerCoordinator:
 
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.set_progress(current, total)  # Update progress bar
-            self.hash_dialog.set_count(current, total)      # Update count label
+            # For hash operations we use size-based progress (driven by size_progress).
+            # Here we only update the file count and current filename.
+            self.hash_dialog.set_count(current, total)
             self.hash_dialog.set_filename(message)
+
             # Force UI update to show progress immediately
             from oncutf.core.pyqt_imports import QApplication
+
             app_instance = QApplication.instance()
             if app_instance:
                 app_instance.processEvents()
@@ -214,20 +234,13 @@ class HashWorkerCoordinator:
 
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            # Calculate percentage for progress bar
-            if total_bytes > 0:
-                percentage = int((current_bytes / total_bytes) * 100)
-                # Update progress bar (not count label!)
-                self.hash_dialog.set_progress(percentage, 100)
-            else:
-                self.hash_dialog.set_progress(0, 100)
-
-            # Update size info if available
-            self.hash_dialog.set_size_info(current_bytes, total_bytes)
+            # Size-based progress updates the percentage label and bar.
+            self.hash_dialog.update_progress(processed_bytes=current_bytes, total_bytes=total_bytes)
 
             # Update time info if operation started
             if self._operation_start_time:
                 import time
+
                 elapsed = time.time() - self._operation_start_time
 
                 # Calculate estimated total time
@@ -241,6 +254,7 @@ class HashWorkerCoordinator:
 
             # Force UI update
             from oncutf.core.pyqt_imports import QApplication
+
             app_instance = QApplication.instance()
             if app_instance:
                 app_instance.processEvents()
