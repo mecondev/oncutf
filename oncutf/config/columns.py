@@ -30,7 +30,7 @@ COLUMN_RESIZE_BEHAVIOR = {
 
 FILE_TABLE_COLUMN_CONFIG = {
     "color": {
-        "title": "Color",
+        "title": "Color Flag",
         "key": "color",
         "default_visible": True,
         "removable": True,
@@ -60,7 +60,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "min_width": 40,
     },
     "type": {
-        "title": "Type",
+        "title": "File Type",
         "key": "type",
         "default_visible": True,
         "removable": True,
@@ -70,7 +70,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "min_width": 30,
     },
     "modified": {
-        "title": "Modified",
+        "title": "Last Modified",
         "key": "modified",
         "default_visible": True,
         "removable": True,
@@ -248,6 +248,46 @@ FILE_TABLE_COLUMN_CONFIG = {
         "width": 120,
         "alignment": "left",
         "min_width": 100,
+    },
+    "color_space": {
+        "title": "Color Space",
+        "key": "color_space",
+        "default_visible": False,
+        "removable": True,
+        "resizable": True,
+        "width": 100,
+        "alignment": "left",
+        "min_width": 80,
+    },
+    "artist": {
+        "title": "Artist",
+        "key": "artist",
+        "default_visible": False,
+        "removable": True,
+        "resizable": True,
+        "width": 120,
+        "alignment": "left",
+        "min_width": 80,
+    },
+    "copyright": {
+        "title": "Copyright",
+        "key": "copyright",
+        "default_visible": False,
+        "removable": True,
+        "resizable": True,
+        "width": 150,
+        "alignment": "left",
+        "min_width": 100,
+    },
+    "owner_name": {
+        "title": "Owner Name",
+        "key": "owner_name",
+        "default_visible": False,
+        "removable": True,
+        "resizable": True,
+        "width": 120,
+        "alignment": "left",
+        "min_width": 80,
     },
     "target_umid": {
         "title": "Target UMID",

@@ -166,7 +166,8 @@ class ColumnManagementBehavior:
             column_key: Column identifier to show
         """
         self._visibility_manager.add_column(column_key)
-        self._header_configurator.ensure_new_column_proper_width()
+        # Reconfigure columns to refresh header and apply proper width
+        self.configure_columns()
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the visible set.
@@ -175,6 +176,8 @@ class ColumnManagementBehavior:
             column_key: Column identifier to hide
         """
         self._visibility_manager.remove_column(column_key)
+        # Reconfigure columns to refresh header
+        self.configure_columns()
 
     def get_visible_columns_list(self) -> list[str]:
         """Get list of currently visible column keys.

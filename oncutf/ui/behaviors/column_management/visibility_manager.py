@@ -203,9 +203,20 @@ class ColumnVisibilityManager:
     def _update_model_columns(self) -> None:
         """Update model with current visible columns."""
         model = self._widget.model()
-        if model and hasattr(model, "set_visible_columns"):
+        if model and hasattr(model, "update_visible_columns"):
+            # Store current selection before model update
+            saved_selection = set()
+            if hasattr(self._widget, "_selection_behavior"):
+                saved_selection = self._widget._selection_behavior.get_current_selection_safe()
+
             visible_list = self.get_visible_columns_list()
-            model.set_visible_columns(visible_list)
+            model.update_visible_columns(visible_list)
+
+            # Restore selection after model update
+            if saved_selection and hasattr(self._widget, "_selection_behavior"):
+                self._widget._selection_behavior.update_selection_store(
+                    saved_selection, emit_signal=True
+                )
 
     def sync_view_model_columns(self) -> None:
         """Ensure view and model have synchronized column visibility."""
@@ -232,8 +243,8 @@ class ColumnVisibilityManager:
             # If they differ, update model to match view
             if view_visible != model_visible:
                 logger.info("[ColumnSync] Syncing model columns to match view")
-                if hasattr(model, "set_visible_columns"):
-                    model.set_visible_columns(view_visible)
+                if hasattr(model, "update_visible_columns"):
+                    model.update_visible_columns(view_visible)
 
         except Exception as e:
             logger.error("[ColumnSync] Error syncing columns: %s", e)

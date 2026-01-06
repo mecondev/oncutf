@@ -141,11 +141,15 @@ class InteractiveHeader(QHeaderView):
             main_window.sort_by_column(column, force_order=order)
 
     def _add_column_visibility_menu(self, menu):
-        """Add column visibility toggle options to the menu."""
+        """Add column visibility toggle options to the menu with grouped sections."""
         try:
             # Get the file table view to access column configuration
             file_table_view = self._get_file_table_view()
             if not file_table_view:
+                return
+
+            # Use canonical column management behavior API
+            if not hasattr(file_table_view, "_column_mgmt_behavior"):
                 return
 
             from oncutf.config import FILE_TABLE_COLUMN_CONFIG
@@ -155,39 +159,75 @@ class InteractiveHeader(QHeaderView):
             columns_menu = QMenu("Show Columns", menu)
             columns_menu.setIcon(get_menu_icon("columns"))
 
-            # Add column toggle actions (sorted alphabetically by title)
-            column_items = []
+            # Get current visible columns via canonical API
+            visible_columns_list = file_table_view._column_mgmt_behavior.get_visible_columns_list()
+
+            # Group columns by category
+            column_groups = {
+                "File": [],
+                "Image": [],
+                "Video": [],
+                "Audio": [],
+                "Metadata": [],
+                "Device": [],
+                "Other": [],
+            }
+
             for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
                 if not column_config.get("removable", True):
                     continue  # Skip non-removable columns like filename
-                column_items.append((column_key, column_config))
 
-            # Sort by title alphabetically (cast to str for type safety)
-            from typing import cast
-
-            column_items.sort(key=lambda x: cast("str", x[1]["title"]))
-
-            for column_key, column_config in column_items:
-                action = QAction(column_config["title"], columns_menu)
-
-                # Get visibility state from file table view
-                is_visible = True
-                if hasattr(file_table_view, "_visible_columns"):
-                    is_visible = file_table_view._visible_columns.get(
-                        column_key, column_config.get("default_visible", True)
-                    )
-
-                # Set icon based on visibility (toggle-left for hidden, toggle-right for visible)
-                if is_visible:
-                    action.setIcon(get_menu_icon("toggle-right"))
+                # Categorize columns
+                if column_key in ["color", "type", "file_size", "modified", "file_hash", "duration"]:
+                    column_groups["File"].append((column_key, column_config))
+                elif column_key in ["image_size", "rotation", "iso", "aperture", "shutter_speed",
+                                   "white_balance", "compression", "color_space"]:
+                    column_groups["Image"].append((column_key, column_config))
+                elif column_key in ["video_fps", "video_avg_bitrate", "video_codec", "video_format"]:
+                    column_groups["Video"].append((column_key, column_config))
+                elif column_key in ["audio_channels", "audio_format"]:
+                    column_groups["Audio"].append((column_key, column_config))
+                elif column_key in ["artist", "copyright", "owner_name"]:
+                    column_groups["Metadata"].append((column_key, column_config))
+                elif column_key in ["device_manufacturer", "device_model", "device_serial_no", "target_umid"]:
+                    column_groups["Device"].append((column_key, column_config))
                 else:
-                    action.setIcon(get_menu_icon("toggle-left"))
+                    column_groups["Other"].append((column_key, column_config))
 
-                # Use triggered signal (menu will close, but it's simpler)
-                action.triggered.connect(
-                    lambda _checked=False, key=column_key: self._toggle_column_visibility(key)
-                )
-                columns_menu.addAction(action)
+            # Add grouped columns to menu
+            first_group = True
+            for group_name in ["File", "Image", "Video", "Audio", "Metadata", "Device", "Other"]:
+                group_columns = column_groups[group_name]
+                if not group_columns:
+                    continue
+
+                # Add separator between groups (except before first group)
+                if not first_group:
+                    columns_menu.addSeparator()
+                first_group = False
+
+                # Sort columns within group alphabetically
+                from typing import cast
+                group_columns.sort(key=lambda x: cast("str", x[1]["title"]))
+
+                # Add group columns
+                for column_key, column_config in group_columns:
+                    action = QAction(column_config["title"], columns_menu)
+
+                    # Get visibility state via canonical API
+                    is_visible = column_key in visible_columns_list
+
+                    # Set icon based on visibility
+                    if is_visible:
+                        action.setIcon(get_menu_icon("toggle-right"))
+                    else:
+                        action.setIcon(get_menu_icon("toggle-left"))
+
+                    # Connect toggle action
+                    action.triggered.connect(
+                        lambda _checked=False, key=column_key: self._toggle_column_visibility(key)
+                    )
+                    columns_menu.addAction(action)
 
             menu.addMenu(columns_menu)
 
@@ -202,12 +242,12 @@ class InteractiveHeader(QHeaderView):
         """Get the file table view that this header belongs to."""
         # The header's parent should be the table view
         parent = self.parent()
-        if parent and hasattr(parent, "_toggle_column_visibility"):
+        if parent and hasattr(parent, "_column_mgmt_behavior"):
             return parent
         return None
 
     def _toggle_column_visibility(self, column_key: str):
-        """Toggle visibility of a specific column via the file table view."""
+        """Toggle visibility of a specific column via canonical column management API."""
         file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, "_toggle_column_visibility"):
-            file_table_view._toggle_column_visibility(column_key)
+        if file_table_view and hasattr(file_table_view, "_column_mgmt_behavior"):
+            file_table_view._column_mgmt_behavior.toggle_column_visibility(column_key)

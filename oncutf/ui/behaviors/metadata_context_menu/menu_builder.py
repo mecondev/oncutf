@@ -16,9 +16,6 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from PyQt5.QtCore import QPoint
 
-    from oncutf.ui.behaviors.metadata_context_menu.column_integration import (
-        ColumnIntegration,
-    )
     from oncutf.ui.behaviors.metadata_context_menu.protocols import ContextMenuWidget
 
 logger = get_cached_logger(__name__)
@@ -27,19 +24,13 @@ logger = get_cached_logger(__name__)
 class MenuBuilder:
     """Builds and displays metadata context menus."""
 
-    def __init__(
-        self,
-        widget: "ContextMenuWidget",
-        column_integration: "ColumnIntegration",
-    ):
+    def __init__(self, widget: "ContextMenuWidget"):
         """Initialize menu builder.
 
         Args:
             widget: The host widget
-            column_integration: Column integration handler
         """
         self._widget = widget
-        self._column_integration = column_integration
 
     def show_context_menu(self, position: "QPoint") -> None:
         """Display context menu with available options.
@@ -98,8 +89,6 @@ class MenuBuilder:
             menu, key_path, has_multiple_selection, current_field_value
         )
 
-        menu.addSeparator()
-        self._add_column_visibility_action(menu, key_path)
         menu.addSeparator()
         self._add_history_menu(menu)
         menu.addSeparator()
@@ -261,32 +250,6 @@ class MenuBuilder:
             )
 
         menu.addAction(set_zero_action)
-
-    def _add_column_visibility_action(self, menu: QMenu, key_path: str) -> None:
-        """Add column visibility toggle action.
-
-        Args:
-            menu: Target menu
-            key_path: Metadata key path
-        """
-        is_column_visible = self._column_integration.is_column_visible_in_file_view(key_path)
-
-        if is_column_visible:
-            file_view_action = QAction("Remove from File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("minus-circle"))
-            file_view_action.setToolTip(f"Remove '{key_path}' column from file view")
-            file_view_action.triggered.connect(
-                lambda: self._column_integration.remove_column_from_file_view(key_path)
-            )
-        else:
-            file_view_action = QAction("Add to File View", menu)
-            file_view_action.setIcon(self._get_menu_icon("plus-circle"))
-            file_view_action.setToolTip(f"Add '{key_path}' column to file view")
-            file_view_action.triggered.connect(
-                lambda: self._column_integration.add_column_to_file_view(key_path)
-            )
-
-        menu.addAction(file_view_action)
 
     def _add_history_menu(self, menu: QMenu) -> None:
         """Add history submenu with undo/redo actions.

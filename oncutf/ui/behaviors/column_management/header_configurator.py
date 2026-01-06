@@ -61,6 +61,11 @@ class HeaderConfigurator:
             if not header or not self._widget.model():
                 return
 
+            # Store current selection before reconfiguration
+            saved_selection = set()
+            if hasattr(self._widget, "_selection_behavior"):
+                saved_selection = self._widget._selection_behavior.get_current_selection_safe()
+
             header.show()
 
             # Configure status column (always column 0)
@@ -98,12 +103,22 @@ class HeaderConfigurator:
                 header.sectionResized.connect(self._on_resize_callback)
                 self._header_resize_connected = True
 
-            # Force viewport update
+            # Update header visibility
+            self._update_header_visibility()
+
+            # Setup column-specific delegates (e.g., color column)
+            if hasattr(self._widget, "_setup_column_delegates"):
+                self._widget._setup_column_delegates()
+
+            # Force complete viewport refresh to clear artifacts
             self._widget.viewport().update()
             self._widget.updateGeometry()
 
-            # Update header visibility
-            self._update_header_visibility()
+            # Restore selection if we had one
+            if saved_selection and hasattr(self._widget, "_selection_behavior"):
+                self._widget._selection_behavior.update_selection_store(
+                    saved_selection, emit_signal=True
+                )
 
         finally:
             self._configuring_columns = False

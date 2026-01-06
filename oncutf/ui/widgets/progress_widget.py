@@ -34,6 +34,7 @@ Usage Examples:
     widget.set_progress_mode("count") # Switch back to count-based
 """
 
+import math
 import time
 
 from typing_extensions import deprecated
@@ -45,6 +46,7 @@ from oncutf.config import (
     QLABEL_TERTIARY_TEXT,
 )
 from oncutf.core.pyqt_imports import (
+    QFontMetrics,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -93,6 +95,8 @@ class ProgressWidget(QWidget):
         """
         super().__init__(parent)
         self.setFixedWidth(fixed_width)
+
+        self._size_label_width_total: int | None = None
 
         # Get default colors from theme if not provided
         if bar_color is None or bar_bg_color is None:
@@ -216,28 +220,30 @@ class ProgressWidget(QWidget):
             self.size_current_label = QLabel("")
             self.size_current_label.setObjectName("size_current_label")
             self.size_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
-            # Keep a stable width and align towards 'of'
+            # Fixed width + AlignRight for stability (text flows towards 'of')
+            # Width will be adjusted via QFontMetrics when total size is known.
             self.size_current_label.setFixedWidth(70)
             self.size_current_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             self.size_of_label = QLabel("of")
             self.size_of_label.setObjectName("size_of_label")
             self.size_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
-            # Keep 'of' centered with stable spacing around it
+            # Fixed small width to act as stable anchor
             self.size_of_label.setFixedWidth(18)
             self.size_of_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             self.size_total_label = QLabel("")
             self.size_total_label.setObjectName("size_total_label")
             self.size_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
-            # Keep a stable width and align towards 'of'
-            self.size_total_label.setFixedWidth(70)
-            self.size_total_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+            # Minimum width + AlignLeft (text sticks to 'of', grows as needed)
+            # Width will be adjusted via QFontMetrics when total size is known.
+            self.size_total_label.setMinimumWidth(70)
+            self.size_total_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
             size_container.addWidget(self.size_current_label)
             size_container.addWidget(self.size_of_label)
             size_container.addWidget(self.size_total_label)
-            size_container.addStretch()
+            # No addStretch() here - let labels stay on the left side
 
             enhanced_row.addLayout(size_container)
 
@@ -487,8 +493,10 @@ class ProgressWidget(QWidget):
             if total_size > 0:
                 total_str = format_file_size_system_compatible(total_size)
                 self.size_total_label.setText(total_str)
+                self._update_size_label_widths(total_size)
             else:
                 self.size_total_label.setText("0 B")
+                self._update_size_label_widths(0)
 
         if self.show_time_info and hasattr(self, "time_label"):
             self.time_label.setText("0s")
@@ -552,16 +560,81 @@ class ProgressWidget(QWidget):
 
     def _update_size_display(self):
         """Update size information display with improved formatting (split labels)."""
-        from oncutf.utils.naming.text_helpers import format_file_size_stable
+        # For split labels, avoid padded/monospace strings.
+        # Alignment + fixed/min widths handle stability; padding would add visible gaps.
+        from oncutf.utils.filesystem.file_size_formatter import (
+            format_file_size_system_compatible,
+        )
 
-        processed_str = format_file_size_stable(self.processed_size)
+        processed_str = format_file_size_system_compatible(self.processed_size)
         self.size_current_label.setText(processed_str)
 
         if self.total_size > 0:
-            total_str = format_file_size_stable(self.total_size)
+            total_str = format_file_size_system_compatible(self.total_size)
             self.size_total_label.setText(total_str)
         else:
             self.size_total_label.setText("")
+
+    def _update_size_label_widths(self, total_size: int) -> None:
+        """Adjust size label widths using font metrics for compact, stable alignment.
+
+        Goal:
+        - Keep current label stable (fixed width) and right-aligned, so it hugs 'of'.
+        - Keep total label left-aligned so it starts immediately after 'of'.
+        - Reduce wasted space vs. a large hard-coded fixed width.
+
+        Widths are derived from the formatted total size plus a couple of
+        worst-case candidates near unit boundaries to avoid truncation.
+        """
+        if not (self.show_size_info and hasattr(self, "size_current_label") and hasattr(self, "size_total_label")):
+            return
+
+        if self._size_label_width_total == total_size:
+            return
+
+        from oncutf.utils.filesystem.file_size_formatter import (
+            format_file_size_system_compatible,
+        )
+
+        font_metrics = QFontMetrics(self.size_current_label.font())
+        padding_px = 6
+
+        candidates: list[str] = ["0 B"]
+        if total_size > 0:
+            candidates.append(format_file_size_system_compatible(total_size))
+            candidates.append(format_file_size_system_compatible(max(0, total_size - 1)))
+
+            unit_index = int(math.log(total_size, 1024)) if total_size > 0 else 0
+            unit_index = max(0, min(unit_index, 5))
+
+            # Add a couple of near-boundary candidates to cover cases like
+            # total "1.0 GB" but current shown as "1023 MB".
+            try:
+                bytes_this_unit = int(999.9 * (1024**unit_index))
+                candidates.append(format_file_size_system_compatible(bytes_this_unit))
+            except OverflowError:
+                pass
+
+            if unit_index > 0:
+                try:
+                    bytes_lower_unit = int(1023.0 * (1024 ** (unit_index - 1)))
+                    candidates.append(format_file_size_system_compatible(bytes_lower_unit))
+                except OverflowError:
+                    pass
+
+        max_text_width = 0
+        for text in candidates:
+            max_text_width = max(max_text_width, font_metrics.horizontalAdvance(text))
+
+        target_width = max(10, max_text_width + padding_px)
+
+        # Current: fixed + AlignRight for stability.
+        self.size_current_label.setFixedWidth(target_width)
+
+        # Total: minimum + AlignLeft so it sticks to 'of'.
+        self.size_total_label.setMinimumWidth(target_width)
+
+        self._size_label_width_total = total_size
 
     def _update_time_display(self):
         """Update time display with elapsed and estimated time in HH:MM:SS format.

@@ -420,17 +420,26 @@ class FileTableView(QTableView):
         self.refresh_view_state()
 
     def _setup_column_delegates(self) -> None:
-        """Setup column-specific delegates (e.g., color column)."""
+        """Setup column-specific delegates (e.g., color column).
+
+        This method is called automatically when column configuration changes.
+        It clears all previous delegates and sets up new ones based on visible columns.
+        """
         if not self.model():
             return
 
         from oncutf.core.ui_managers import get_column_service
 
+        # Clear all existing delegates (except default delegate)
+        for col_idx in range(self.model().columnCount()):
+            # Reset to default delegate (None removes delegate)
+            self.setItemDelegateForColumn(col_idx, None)
+
         visible_columns_list = get_column_service().get_visible_columns()
 
         try:
             color_column_logical_index = visible_columns_list.index("color")
-            color_column_view_index = color_column_logical_index + 1
+            color_column_view_index = color_column_logical_index + 1  # +1 for status column
 
             from oncutf.ui.delegates.color_column_delegate import ColorColumnDelegate
 
@@ -438,7 +447,12 @@ class FileTableView(QTableView):
             self.setItemDelegateForColumn(color_column_view_index, color_delegate)
             logger.debug("Set ColorColumnDelegate for column %d", color_column_view_index)
         except (ValueError, AttributeError):
-            pass
+            # Color column not visible or error occurred
+            logger.debug("Color column not visible or error setting delegate")
+
+        # Force complete repaint to clear any delegate artifacts
+        self.viewport().update()
+        self.repaint()
 
     def _ensure_no_word_wrap(self) -> None:
         """Ensure word wrap is disabled and text is properly elided."""
