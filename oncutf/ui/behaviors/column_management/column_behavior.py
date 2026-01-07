@@ -8,7 +8,7 @@ Date: 2026-01-05
 """
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import Qt, QTimer
+from oncutf.core.pyqt_imports import Qt
 from oncutf.ui.behaviors.column_management.header_configurator import HeaderConfigurator
 from oncutf.ui.behaviors.column_management.protocols import ColumnManageableWidget
 from oncutf.ui.behaviors.column_management.visibility_manager import ColumnVisibilityManager
@@ -76,8 +76,15 @@ class ColumnManagementBehavior:
         Should be called after model is set up. Uses delayed configuration
         to ensure model synchronization.
         """
+        from oncutf.utils.shared.timer_manager import TimerPriority, TimerType, get_timer_manager
+
         self._header_configurator.is_configuring = True
-        QTimer.singleShot(0, self._header_configurator.configure_columns_delayed)
+        get_timer_manager().schedule(
+            lambda: self._header_configurator.configure_columns_delayed(),
+            delay=0,
+            priority=TimerPriority.IMMEDIATE,
+            timer_type=TimerType.UI_UPDATE,
+        )
 
     def ensure_all_columns_proper_width(self) -> None:
         """Ensure all visible columns have proper widths."""

@@ -12,7 +12,19 @@ Features:
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
-from oncutf.core.pyqt_imports import QAction, QHeaderView, QMenu, QPoint, Qt
+from contextlib import suppress
+
+from oncutf.core.pyqt_imports import (
+    QAction,
+    QColor,
+    QHeaderView,
+    QMenu,
+    QPainter,
+    QPen,
+    QPoint,
+    QRect,
+    Qt,
+)
 
 # ApplicationContext integration
 try:
@@ -35,11 +47,37 @@ class InteractiveHeader(QHeaderView):
         self.setSortIndicatorShown(True)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.contextMenuEvent)
-
         self.header_enabled = True
+
+        # When False, header clicks won't trigger app actions (sort/toggle).
+        # Kept separate from Qt's sectionsClickable so we can still get the
+        # pressed state for visual feedback during drag.
+        self._click_actions_enabled: bool = True
 
         self._press_pos: QPoint = QPoint()
         self._pressed_index: int = -1
+        self._drag_active: bool = False
+        self._interaction_qss_applied: bool = False
+
+        # Drag overlay state (follows mouse)
+        self._drag_overlay_width: int = 0
+        self._drag_overlay_offset_x: int = 0
+        self._drag_overlay_mouse_x: int = 0
+
+        # Ensure drag feedback is activated based on actual section movement.
+        # This is more reliable than depending on mouseMoveEvent across styles.
+        with suppress(Exception):
+            self.sectionMoved.connect(self._on_section_moved)
+
+        self._ensure_interaction_qss()
+        self._set_interaction_state(locked=not self.sectionsMovable(), dragging=False)
+
+    def setSectionsMovable(self, movable: bool) -> None:  # type: ignore[override]
+        """Override to keep UI interaction feedback consistent with lock state."""
+        super().setSectionsMovable(movable)
+        if not movable:
+            self._drag_active = False
+        self._set_interaction_state(locked=not movable, dragging=self._drag_active)
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -70,9 +108,38 @@ class InteractiveHeader(QHeaderView):
     def mousePressEvent(self, event) -> None:
         self._press_pos = event.pos()
         self._pressed_index = self.logicalIndexAt(event.pos())
+        self._drag_active = False
+        self._drag_overlay_width = 0
+        self._drag_overlay_offset_x = 0
+        self._drag_overlay_mouse_x = event.pos().x()
+        self._set_interaction_state(dragging=False)
         super().mousePressEvent(event)
 
+    def mouseMoveEvent(self, event) -> None:
+        # Drag feedback only when reordering is enabled.
+        if not self.sectionsMovable():
+            super().mouseMoveEvent(event)
+            return
+
+        if (event.buttons() & Qt.LeftButton) and self._pressed_index >= 0:
+            if (event.pos() - self._press_pos).manhattanLength() > 4:
+                if not self._drag_active:
+                    self._drag_active = True
+                    self._init_drag_overlay()
+                    self._set_interaction_state(dragging=True)
+
+                if self._drag_active:
+                    self._drag_overlay_mouse_x = event.pos().x()
+                    self.viewport().update()
+
+        super().mouseMoveEvent(event)
+
     def mouseReleaseEvent(self, event) -> None:
+        if self._drag_active:
+            self._drag_active = False
+            self._set_interaction_state(dragging=False)
+            self.viewport().update()
+
         released_index = self.logicalIndexAt(event.pos())
 
         if released_index != self._pressed_index:
@@ -84,6 +151,10 @@ class InteractiveHeader(QHeaderView):
             return
 
         # Section was clicked without drag or resize intent
+        if not self._click_actions_enabled:
+            super().mouseReleaseEvent(event)
+            return
+
         main_window = self._get_main_window_via_context()
 
         if released_index == 0:
@@ -96,11 +167,123 @@ class InteractiveHeader(QHeaderView):
 
         super().mouseReleaseEvent(event)
 
+    def _on_section_moved(self, logical_index: int, _old_visual_index: int, _new_visual_index: int) -> None:
+        # Drag feedback only when reordering is enabled.
+        if not self.sectionsMovable():
+            return
+
+        # Ensure drag feedback stays active once an actual move is happening.
+        if not self._drag_active:
+            self._drag_active = True
+            self._init_drag_overlay()
+            self._set_interaction_state(dragging=True)
+
+        self.viewport().update()
+
+    def _init_drag_overlay(self) -> None:
+        if self._pressed_index < 0:
+            return
+
+        self._drag_overlay_width = self.sectionSize(self._pressed_index)
+        left = self.sectionViewportPosition(self._pressed_index)
+        left = max(left, 0)
+        self._drag_overlay_offset_x = max(0, self._press_pos.x() - left)
+
+    def set_click_actions_enabled(self, enabled: bool) -> None:
+        """Enable/disable click-triggered actions (sort/toggle).
+
+        Note: This does not change Qt's sectionsClickable, which is needed
+        for pressed/drag visual feedback.
+        """
+        self._click_actions_enabled = enabled
+
+    def _ensure_interaction_qss(self) -> None:
+        if self._interaction_qss_applied:
+            return
+
+        try:
+            from oncutf.core.theme_manager import get_theme_manager
+
+            theme = get_theme_manager()
+            header_bg = theme.get_color("table_header_bg")
+            header_text = theme.get_color("table_header_text")
+
+            # While locked: neutralize hover.
+            qss = (
+                "\nQHeaderView[oncutf_locked=\"true\"]::section:hover {"
+                f"background-color: {header_bg};"
+                f"color: {header_text};"
+                "}"
+            )
+
+            self.setStyleSheet((self.styleSheet() or "") + qss)
+            self._interaction_qss_applied = True
+        except Exception:
+            self._interaction_qss_applied = False
+
+    def _set_interaction_state(self, *, locked: bool | None = None, dragging: bool | None = None) -> None:
+        if locked is not None:
+            self.setProperty("oncutf_locked", locked)
+        if dragging is not None:
+            self.setProperty("oncutf_dragging", dragging)
+
+        with suppress(Exception):
+            self.style().unpolish(self)
+            self.style().polish(self)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+
+        # Drag highlight that follows the mouse.
+        if not self.sectionsMovable():
+            return
+
+        if not self._drag_active:
+            return
+
+        if self._drag_overlay_width <= 0:
+            return
+
+        try:
+            from oncutf.core.theme_manager import get_theme_manager
+
+            theme = get_theme_manager()
+            selection_bg = theme.get_color("table_selection_bg")
+            border = theme.get_color("table_grid")
+
+            w = self._drag_overlay_width
+            left = self._drag_overlay_mouse_x - self._drag_overlay_offset_x
+            max_left = max(0, self.viewport().width() - w)
+            if left < 0:
+                left = 0
+            elif left > max_left:
+                left = max_left
+
+            rect = QRect(left, 0, w, self.viewport().height())
+
+            painter = QPainter(self.viewport())
+            painter.save()
+
+            color = QColor(selection_bg)
+            color.setAlpha(255)
+            painter.fillRect(rect, color)
+
+            pen = QPen(QColor(border))
+            pen.setWidth(2)
+            painter.setPen(pen)
+            painter.drawRect(rect.adjusted(1, 1, -2, -2))
+
+            painter.restore()
+        except Exception:
+            return
+
     def contextMenuEvent(self, position):
-        """Show unified right-click context menu for header with sorting and column visibility options."""
+        """Show unified right-click context menu for header."""
         logical_index = self.logicalIndexAt(position)
 
         menu = QMenu(self)
+
         # Apply theme styling
         from oncutf.core.theme_manager import get_theme_manager
 
@@ -231,6 +414,15 @@ class InteractiveHeader(QHeaderView):
 
             menu.addMenu(columns_menu)
 
+            # Add separator before lock toggle
+            menu.addSeparator()
+
+            # Add lock columns toggle
+            self._add_lock_columns_toggle(menu, file_table_view)
+
+            # Add reset column order option
+            self._add_reset_column_order(menu, file_table_view)
+
         except Exception as e:
             # Fallback: just add a simple label if configuration fails
             from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -245,6 +437,127 @@ class InteractiveHeader(QHeaderView):
         if parent and hasattr(parent, "_column_mgmt_behavior"):
             return parent
         return None
+
+    def _add_lock_columns_toggle(self, menu, file_table_view):
+        """Add lock/unlock columns toggle to menu."""
+        try:
+            from oncutf.utils.ui.icons_loader import get_menu_icon
+
+            # Check current lock state
+            is_locked = self._is_columns_locked()
+
+            # Use toggle switch icons: toggle-left (off/locked), toggle-right (on/unlocked)
+            if is_locked:
+                lock_action = QAction("Unlock Columns", menu)
+                lock_action.setIcon(get_menu_icon("toggle-left"))  # Off = Locked
+            else:
+                lock_action = QAction("Lock Columns", menu)
+                lock_action.setIcon(get_menu_icon("toggle-right"))  # On = Unlocked
+
+            lock_action.triggered.connect(self._toggle_columns_lock)
+            menu.addAction(lock_action)
+
+        except Exception as e:
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+
+            logger = get_cached_logger(__name__)
+            logger.warning("Failed to add lock columns toggle: %s", e)
+
+    def _is_columns_locked(self) -> bool:
+        """Check if columns are currently locked (not movable)."""
+        # Try to load from config first
+        try:
+            main_window = self._get_main_window_via_context()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                return window_config.get("columns_locked", False)
+        except Exception:
+            pass
+
+        # Fallback: check current header state
+        return not self.sectionsMovable()
+
+    def _toggle_columns_lock(self):
+        """Toggle lock state of columns (enable/disable reordering)."""
+        current_state = self.sectionsMovable()
+        new_state = not current_state
+
+        # Update header
+        self.setSectionsMovable(new_state)
+
+        # Save to config
+        try:
+            main_window = self._get_main_window_via_context()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                window_config.set("columns_locked", not new_state)
+                config_manager.mark_dirty()
+
+                from oncutf.utils.logging.logger_factory import get_cached_logger
+
+                logger = get_cached_logger(__name__)
+                logger.info(
+                    "Columns %s", "locked" if not new_state else "unlocked"
+                )
+        except Exception as e:
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+
+            logger = get_cached_logger(__name__)
+            logger.warning("Failed to save columns lock state: %s", e)
+
+    def _add_reset_column_order(self, menu, file_table_view):
+        """Add reset column order option to menu."""
+        try:
+            from oncutf.utils.ui.icons_loader import get_menu_icon
+
+            reset_action = QAction("Reset Column Order", menu)
+            reset_action.setIcon(get_menu_icon("refresh"))
+            reset_action.triggered.connect(self._reset_column_order)
+
+            # Disable if columns are locked
+            if self._is_columns_locked():
+                reset_action.setEnabled(False)
+
+            menu.addAction(reset_action)
+
+        except Exception as e:
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+
+            logger = get_cached_logger(__name__)
+            logger.warning("Failed to add reset column order option: %s", e)
+
+    def _reset_column_order(self):
+        """Reset column order to default."""
+        try:
+            # Clear saved order from config
+            main_window = self._get_main_window_via_context()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                window_config.set("column_order", None)
+                config_manager.mark_dirty()
+
+            # Reset visual order immediately
+            header = self.parent().horizontalHeader() if self.parent() else None
+            if header:
+                # Move sections back to their logical order
+                for logical_index in range(1, header.count()):  # Skip status column (0)
+                    current_visual = header.visualIndex(logical_index)
+                    if current_visual != logical_index:
+                        header.moveSection(current_visual, logical_index)
+
+                from oncutf.utils.logging.logger_factory import get_cached_logger
+
+                logger = get_cached_logger(__name__)
+                logger.info("Reset column order to default")
+
+        except Exception as e:
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+
+            logger = get_cached_logger(__name__)
+            logger.warning("Failed to reset column order: %s", e)
 
     def _toggle_column_visibility(self, column_key: str):
         """Toggle visibility of a specific column via canonical column management API."""

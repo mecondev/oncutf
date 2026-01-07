@@ -43,6 +43,7 @@ class HeaderConfigurator:
         self._width_manager = width_manager
         self._visibility_manager = visibility_manager
         self._header_resize_connected = False
+        self._section_moved_connected = False
         self._configuring_columns = False
         self._on_resize_callback: callable | None = None
 
@@ -53,6 +54,131 @@ class HeaderConfigurator:
             callback: Function to call on resize (logical_index, old_size, new_size)
         """
         self._on_resize_callback = callback
+
+    def _load_columns_lock_state(self) -> bool:
+        """Load columns lock state from config.
+
+        Returns:
+            True if columns are locked (not movable), False otherwise
+        """
+        try:
+            main_window = self._widget._get_main_window()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                return window_config.get("columns_locked", False)
+        except Exception:
+            pass
+
+        # Default: unlocked (movable)
+        return False
+
+    def _load_column_order(self) -> list[str] | None:
+        """Load saved column order from config.
+
+        Returns:
+            List of column keys in visual order, or None if no saved order
+        """
+        try:
+            main_window = self._widget._get_main_window()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                return window_config.get("column_order", None)
+        except Exception:
+            pass
+        return None
+
+    def _save_column_order(self) -> None:
+        """Save current visual column order to config."""
+        try:
+            header = self._widget.horizontalHeader()
+            if not header:
+                return
+
+            # Get current visual order (skip status column 0)
+            visual_order = []
+            for visual_index in range(1, header.count()):
+                logical_index = header.logicalIndex(visual_index)
+                column_key = self.get_column_key_from_index(logical_index)
+                if column_key:  # Skip status column (empty string)
+                    visual_order.append(column_key)
+
+            # Save to config
+            main_window = self._widget._get_main_window()
+            if main_window and hasattr(main_window, "window_config_manager"):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category("window")
+                window_config.set("column_order", visual_order)
+                config_manager.mark_dirty()
+
+                logger.info("Saved column order: %s", visual_order)
+        except Exception as e:
+            logger.warning("Failed to save column order: %s", e)
+
+    def _restore_column_order(self) -> None:
+        """Restore saved visual column order."""
+        try:
+            saved_order = self._load_column_order()
+            if not saved_order:
+                return  # No saved order, use default
+
+            header = self._widget.horizontalHeader()
+            if not header:
+                return
+
+            visible_columns = self._visibility_manager.get_visible_columns_list()
+
+            # Build mapping: column_key -> logical_index
+            key_to_logical = {}
+            for logical_index, column_key in enumerate(visible_columns):
+                key_to_logical[column_key] = logical_index + 1  # +1 for status column
+
+            # Apply saved visual order
+            for target_visual_index, column_key in enumerate(saved_order):
+                if column_key not in key_to_logical:
+                    continue  # Column not visible, skip
+
+                logical_index = key_to_logical[column_key]
+                current_visual_index = header.visualIndex(logical_index)
+                target_position = target_visual_index + 1  # +1 for status column
+
+                if current_visual_index != target_position:
+                    header.moveSection(current_visual_index, target_position)
+
+            logger.info("Restored column order from config")
+        except Exception as e:
+            logger.warning("Failed to restore column order: %s", e)
+
+    def _on_section_moved(self, logical_index: int, old_visual: int, new_visual: int) -> None:
+        """Handle column reordering via drag & drop.
+
+        Args:
+            logical_index: The logical index of the moved section
+            old_visual: Previous visual index
+            new_visual: New visual index
+        """
+        # Don't save during configuration
+        if self._configuring_columns:
+            return
+
+        # Prevent status column (0) from being moved
+        if logical_index == 0 or old_visual == 0 or new_visual == 0:
+            header = self._widget.horizontalHeader()
+            if header and header.visualIndex(0) != 0:
+                # Status column was moved, restore it to position 0
+                header.moveSection(header.visualIndex(0), 0)
+            return
+
+        logger.debug(
+            "Column moved: logical=%d, visual %d -> %d",
+            logical_index,
+            old_visual,
+            new_visual,
+        )
+
+        # Save new order
+        self._save_column_order()
 
     def configure_columns_delayed(self) -> None:
         """Delayed column configuration to ensure model synchronization."""
@@ -68,9 +194,17 @@ class HeaderConfigurator:
 
             header.show()
 
+            # Configure column reordering based on saved lock state
+            columns_locked = self._load_columns_lock_state()
+            header.setSectionsMovable(not columns_locked)
+
             # Configure status column (always column 0)
             self._widget.setColumnWidth(0, 45)
             header.setSectionResizeMode(0, header.Fixed)
+            # Make status column truly immovable
+            if hasattr(header, 'setSectionsMovable'):
+                # Qt doesn't have per-section movable, but we can prevent it in the handler
+                pass
 
             # Get visible columns from model
             visible_columns = []
@@ -91,6 +225,7 @@ class HeaderConfigurator:
                     column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                     is_resizable = column_config.get("resizable", True)
 
+                    # Set resize mode (Fixed = can't resize width, but can still move position)
                     if is_resizable:
                         header.setSectionResizeMode(actual_column_index, header.Interactive)
                     else:
@@ -103,8 +238,16 @@ class HeaderConfigurator:
                 header.sectionResized.connect(self._on_resize_callback)
                 self._header_resize_connected = True
 
+            # Connect section moved signal for order persistence
+            if not self._section_moved_connected:
+                header.sectionMoved.connect(self._on_section_moved)
+                self._section_moved_connected = True
+
             # Update header visibility
             self._update_header_visibility()
+
+            # Restore saved column order (after configuration, before delegates)
+            self._restore_column_order()
 
             # Setup column-specific delegates (e.g., color column)
             if hasattr(self._widget, "_setup_column_delegates"):

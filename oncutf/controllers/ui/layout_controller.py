@@ -289,8 +289,11 @@ class LayoutController:
         if hasattr(self.parent_window.header, "setDefaultAlignment"):
             self.parent_window.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.parent_window.header.setSortIndicatorShown(False)
-        self.parent_window.header.setSectionsClickable(False)
+
+        self.parent_window.header.setSectionsClickable(True)
         self.parent_window.header.setHighlightSections(False)
+        if hasattr(self.parent_window.header, "set_click_actions_enabled"):
+            self.parent_window.header.set_click_actions_enabled(True)
 
         self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
         self.parent_window.file_table_view.setAlternatingRowColors(True)
