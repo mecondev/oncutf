@@ -37,6 +37,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize the validated line edit with filename validation."""
         QLineEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 

@@ -34,6 +34,7 @@ class BaseValidatedInput:
     """
 
     def __init__(self):
+        """Initialize validation state tracking."""
         # Validation state tracking
         self._is_valid = True
         self._has_had_content = False

@@ -29,12 +29,14 @@ class DialogManager:
     _instance = None
 
     def __new__(cls):
+        """Ensure only one DialogManager instance exists (singleton pattern)."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
+        """Initialize the dialog manager (only once due to singleton pattern)."""
         if self._initialized:
             return
 

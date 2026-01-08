@@ -29,6 +29,7 @@ class NameTransformWidget(BaseRenameModule):
     LABEL_WIDTH = 70  # Reduce label width to bring controls more to the left
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize the name transform widget with Greeklish, case, and separator controls."""
         super().__init__(parent)
         self.setObjectName("NameTransformWidget")
 

@@ -161,6 +161,7 @@ class ExecutionResult:
     conflicts_count: int = 0
 
     def __post_init__(self) -> None:
+        """Compute success, error, skipped, and conflicts counts from items."""
         self.success_count = sum(1 for item in self.items if item.success)
         self.error_count = sum(1 for item in self.items if not item.success and item.error_message)
         self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)

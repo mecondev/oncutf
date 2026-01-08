@@ -48,6 +48,7 @@ class CompanionFilesWidget(QWidget):
     settings_changed = pyqtSignal(dict)  # Emits updated settings dictionary
 
     def __init__(self, parent=None):
+        """Initialize the companion files widget with UI setup and current settings."""
         super().__init__(parent)
         self.setup_ui()
         self.load_current_settings()
@@ -288,6 +289,7 @@ class CompanionFilesDialog(QWidget):
     """
 
     def __init__(self, parent=None):
+        """Initialize the standalone companion files settings dialog."""
         super().__init__(parent)
         self.setWindowTitle("Companion Files Settings")
         self.setMinimumSize(500, 400)

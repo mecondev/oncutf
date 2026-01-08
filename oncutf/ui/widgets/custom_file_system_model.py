@@ -100,6 +100,7 @@ class CustomFileSystemModel(QFileSystemModel):
     }
 
     def __init__(self, parent=None):
+        """Initialize the file system model with icon caching and preloading."""
         super().__init__(parent)
 
         # Cache for icons to avoid recreating them

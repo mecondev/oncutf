@@ -24,6 +24,7 @@ class RealTimeValidationWidget(QWidget):
     """Widget for real-time validation feedback."""
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize the real-time validation widget with auto-update timer."""
         super().__init__(parent)
         self.setObjectName("RealTimeValidationWidget")
         self.setProperty("class", "RealTimeValidationWidget")

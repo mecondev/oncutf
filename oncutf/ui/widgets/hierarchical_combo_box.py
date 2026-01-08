@@ -44,6 +44,7 @@ class HierarchicalComboBox(QComboBox):
     selection_confirmed = pyqtSignal(str, object)  # text, user_data
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the hierarchical combo box with tree view for nested items."""
         super().__init__(parent)
 
         # Internal state for reliable data retrieval
