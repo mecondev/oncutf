@@ -98,6 +98,12 @@ def get_logger(name: str | None = None) -> logging.Logger:
 
 
 class DevOnlyFilter(logging.Filter):
+    """Logging filter to suppress dev-only messages in production.
+
+    Filters out log records marked with dev_only=True extra field
+    unless SHOW_DEV_ONLY_IN_CONSOLE is enabled.
+    """
+
     def filter(self, record: logging.LogRecord) -> bool:
         if SHOW_DEV_ONLY_IN_CONSOLE:
             return True

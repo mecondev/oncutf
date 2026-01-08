@@ -25,6 +25,24 @@ logger = get_cached_logger(__name__)
 
 
 class ExifToolWrapper:
+    """Persistent ExifTool process wrapper with thread-safe operations.
+
+    Manages a long-running exiftool process using -stay_open mode for
+    better performance when processing multiple files.
+
+    Features:
+    - Thread-safe access via locking
+    - Health monitoring and error tracking
+    - Batch metadata extraction
+    - Metadata writing support
+    - Graceful cleanup on shutdown
+
+    Attributes:
+        process: Subprocess running exiftool
+        lock: Thread lock for safe concurrent access
+        counter: Unique tag counter for commands
+    """
+
     def __init__(self) -> None:
         """Starts the persistent ExifTool process with -stay_open enabled."""
         self.process = subprocess.Popen(

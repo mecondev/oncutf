@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import datetime as dt
+import sys
 from pathlib import Path
 from textwrap import shorten
 
@@ -363,7 +365,11 @@ def generate_structure_report(
 
 
 def generate_structure_full_report(
-    project_root: Path, output_path: Path, recursive: bool = True, extra_ignored: set | None = None
+    project_root: Path,
+    output_path: Path,
+    recursive: bool = True,
+    extra_ignored: set | None = None,
+    missing_items_out: list[str] | None = None,
 ) -> None:
     """Generate structure-full report: complete docstring coverage for modules, classes, functions."""
     py_files = find_python_files(project_root, recursive, extra_ignored)
@@ -418,7 +424,7 @@ def generate_structure_full_report(
             # Module docstring
             if not coverage["module_doc"]:
                 f.write("- [X] Module docstring missing\n")
-                missing_items.append(f"{rel_path}: module docstring")
+                missing_items.append(f"{rel_path}:1 module")
 
             # Classes
             for cls in coverage["classes"]:
@@ -459,6 +465,10 @@ def generate_structure_full_report(
     print(f"[STATS] Full Docstring Coverage: {documented_all} / {total_all} ({overall_pct:.1f}%)")
     if missing_items:
         print(f"[WARNING] {len(missing_items)} missing docstrings")
+
+    if missing_items_out is not None:
+        missing_items_out.clear()
+        missing_items_out.extend(missing_items)
 
 
 # --- Content Mode (AI Context) ---------------------------------------------
@@ -657,6 +667,16 @@ Mode details:
         help="Max characters for docstring previews (default: 300)",
     )
 
+    parser.add_argument(
+        "-m",
+        "--missing",
+        action="store_true",
+        help=(
+            "Print missing docstring items to stdout (structure-full only). "
+            "Format: path:line kind name"
+        ),
+    )
+
     args = parser.parse_args()
 
     # Determine project root
@@ -690,7 +710,22 @@ Mode details:
     if args.mode == "structure":
         generate_structure_report(project_root, output_path, recursive, extra_ignored)
     elif args.mode == "structure-full":
-        generate_structure_full_report(project_root, output_path, recursive, extra_ignored)
+        missing_items: list[str] | None = [] if args.missing else None
+        generate_structure_full_report(
+            project_root,
+            output_path,
+            recursive,
+            extra_ignored,
+            missing_items_out=missing_items,
+        )
+        if missing_items:
+            try:
+                for item in missing_items:
+                    print(item)
+            except BrokenPipeError:
+                with contextlib.suppress(Exception):
+                    sys.stdout.close()
+                return
     else:  # content
         generate_content_report(
             project_root, output_path, recursive, extra_ignored, args.max_doc_length

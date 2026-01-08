@@ -21,31 +21,23 @@ Large files are maintenance risks: hidden interactions, difficult testing, refac
 
 ## Monster Files Inventory
 
-### [CRIT] Critical Priority (>900 lines) — ✅ ALL ELIMINATED
+### [CRIT] Critical Priority (>900 lines) — ALL ELIMINATED
+
 
 | File | Lines | Category | Split Strategy | Status |
 |------|-------|----------|----------------|--------|
-| ~~`ui/widgets/file_tree_view.py`~~ | ~~1629~~ → 448 | UI | Extract behaviors | [DONE] Split to package (72% ↓) |
-| ~~`ui/widgets/file_table_view.py`~~ | ~~1321~~ → 707 | UI | Extract handlers | [DONE] Split to package (46.5% ↓) |
-| ~~`ui/widgets/metadata_tree/view.py`~~ | ~~1272~~ → 1082 | UI | ~~Handlers partially extracted~~ | [DONE] Delegation cleanup (18% ↓) |
-| ~~`core/database/database_manager.py`~~ | ~~1615~~ → 424 | Core | Split by concern | [DONE] Split to 6 modules |
-| ~~`config.py`~~ | ~~1298~~ → 26 | Config | Split to package | [DONE] Split to 7 modules |
-| ~~`core/events/context_menu_handlers.py`~~ | ~~1289~~ → 11 | Core | Split by domain | [DONE] Split to package + 4 handlers |
-| ~~`core/rename/unified_rename_engine.py`~~ | ~~1259~~ → 244 | Core | Extract validators | [DONE] Split to 10 modules (80.6% ↓) |
-| ~~`ui/behaviors/metadata_edit_behavior.py`~~ | ~~1120~~ → 328 | UI | Split by operation | [DONE] Split to 8 modules (70.7% ↓) |
-| ~~`models/file_table_model.py`~~ | ~~1082~~ → 301 | Model | Extract delegates | [DONE] Split to 7 modules (72.1% ↓) |
-| ~~`ui_manager.py`~~ | ~~982~~ → 133 | Legacy | Migrate to controllers | [DONE] Split to 4 controllers (86.5% ↓) |
-| ~~`column_management_behavior.py`~~ | ~~928~~ → 15 | UI | Split to package | [DONE] Split to 6 modules (98.4% ↓) |
-| ~~`core/file/load_manager.py`~~ | ~~873~~ → 551 | Core | Proper layering | [DONE] 3 layers + UI service (36.9% ↓) |
-
-### [WARN] Warning Priority (600-900 lines) — ✅ ALL ELIMINATED
-
-| File | Lines | Category | Split Strategy | Status |
-|------|-------|----------|----------------|--------|
-| ~~`ui/behaviors/metadata_context_menu_behavior.py`~~ | ~~718~~ → 14 | UI | Split to package | [DONE] Split to 6 modules (98.1% ↓) |
-| ~~`ui/behaviors/selection_behavior.py`~~ | ~~631~~ → 11 | UI | Split to package | [DONE] Split to 3 modules (98.3% ↓) |
-
-## Detailed Split Plans
+| ~~`ui/widgets/file_tree_view.py`~~ | ~~1629~~ -> 448 | UI | Extract behaviors | [DONE] Split to package (72% down) |
+| ~~`ui/widgets/file_table_view.py`~~ | ~~1321~~ -> 707 | UI | Extract handlers | [DONE] Split to package (46.5% down) |
+| ~~`ui/widgets/metadata_tree/view.py`~~ | ~~1272~~ -> 1082 | UI | Handlers partially extracted | [DONE] Delegation cleanup (18% down) |
+| ~~`core/database/database_manager.py`~~ | ~~1615~~ -> 424 | Core | Split by concern | [DONE] Split to 6 modules |
+| ~~`config.py`~~ | ~~1298~~ -> 26 | Config | Split to package | [DONE] Split to 7 modules |
+| ~~`core/events/context_menu_handlers.py`~~ | ~~1289~~ -> 11 | Core | Split by domain | [DONE] Split to package + 4 handlers |
+| ~~`core/rename/unified_rename_engine.py`~~ | ~~1259~~ -> 244 | Core | Extract validators | [DONE] Split to 10 modules (80.6% down) |
+| ~~`ui/behaviors/metadata_edit_behavior.py`~~ | ~~1120~~ -> 328 | UI | Split by operation | [DONE] Split to 8 modules (70.7% down) |
+| ~~`models/file_table_model.py`~~ | ~~1082~~ -> 301 | Model | Extract delegates | [DONE] Split to 7 modules (72.1% down) |
+| ~~`ui_manager.py`~~ | ~~982~~ -> 133 | Legacy | Migrate to controllers | [DONE] Split to 4 controllers (86.5% down) |
+| ~~`column_management_behavior.py`~~ | ~~928~~ -> 15 | UI | Split to package | [DONE] Split to 6 modules (98.4% down) |
+| ~~`core/file/load_manager.py`~~ | ~~873~~ -> 551 | Core | Proper layering | [DONE] 3 layers + UI service (36.9% down) |
 
 ### 1. `config.py` (1298 lines) -> Package [DONE]
 
@@ -282,7 +274,7 @@ core/rename/
 - MetadataLoader (metadata loading)
 - **HashLoadingService (hash loading)** ← NEW
 
-**Quality Gates:** ✅ 949 tests passed, ✅ ruff clean, ✅ mypy clean
+**Quality Gates:** [PASS] 949 tests passed, [PASS] ruff clean, [PASS] mypy clean
 
 **Result:** UnifiedMetadataManager is now a pure facade with no embedded business logic.
 
@@ -345,7 +337,19 @@ UnifiedColumnService (canonical - 515 lines)
 
 **Changes Made:**
 
-1. **Enhanced UnifiedColumnService** (391 → 515 lines, +124 lines):
+1. **Enhanced UnifiedColumnService** (391 -> 515 lines, +124 lines):
+   - Added `analyze_column_content_type()` for content detection
+   - Added `get_recommended_width_for_content_type()` for smart sizing
+   - Added `validate_column_width()` for bounds checking
+   - Added `get_visible_column_configs()` for bulk operations
+   - Added `reset_column_width()` and `reset_all_widths()`
+   - Added `get_column_keys()` for key enumeration
+   - Added `analyze_column_content_type()` for content detection
+   - Added `get_recommended_width_for_content_type()` for smart sizing
+   - Added `validate_column_width()` for bounds checking
+   - Added `get_visible_column_configs()` for bulk operations
+   - Added `reset_column_width()` and `reset_all_widths()`
+   - Added `get_column_keys()` for key enumeration
    - Added `analyze_column_content_type()` for content detection
    - Added `get_recommended_width_for_content_type()` for smart sizing
    - Added `validate_column_width()` for bounds checking
@@ -353,7 +357,26 @@ UnifiedColumnService (canonical - 515 lines)
    - Added `reset_column_width()` and `reset_all_widths()`
    - Added `get_column_keys()` for key enumeration
 
-2. **Refactored ColumnManager** (853 → 329 lines, 61% reduction):
+2. **Refactored ColumnManager** (853 -> 329 lines, 61% reduction):
+
+- All business logic delegated to UnifiedColumnService.
+- Retains only Qt-specific integration:
+   - Signal connection and handling
+   - Scrollbar detection and management
+   - Splitter integration
+   - Header configuration
+- Removed hardcoded configurations; now sourced from the service.
+- Eliminated duplicate width and config management.
+- Backward compatible: all public API preserved.
+   - All business logic delegated to UnifiedColumnService
+   - Kept only Qt-specific integration:
+     * Signal connection and handling
+     * Scrollbar detection and management
+     * Splitter integration
+     * Header configuration
+   - Removed hardcoded configurations (now from service)
+   - Removed duplicate width/config management
+   - Backward compatible (all public API preserved)
    - All business logic delegated to UnifiedColumnService
    - Kept only Qt-specific integration:
      * Signal connection and handling
@@ -364,7 +387,16 @@ UnifiedColumnService (canonical - 515 lines)
    - Removed duplicate width/config management
    - Backward compatible (all public API preserved)
 
-3. **Simplified ColumnManagementBehavior** (965 → 928 lines, 3.8% reduction):
+3. Simplified ColumnManagementBehavior (965 -> 928 lines, 3.8% reduction):
+
+- Delegated to service:
+   * Content type analysis
+   * Width recommendation
+   * Width reset operations
+   * Configuration queries
+- Removed duplicated config-loading code
+- Removed 11 local calls to `get_column_service()`
+- Retains UI-only responsibilities (events, timers, shutdown hooks)
    - Delegated to service:
      * Content type analysis
      * Width recommendations
@@ -378,14 +410,14 @@ UnifiedColumnService (canonical - 515 lines)
 it contains significant UI interaction logic that cannot be further delegated. However,
 all business logic is now properly delegated to the service, achieving the architectural goal.
 
-**Quality Gates:** ✅ 949 tests passed, ✅ ruff clean, ✅ mypy clean
-
-**Total System Reduction:** 2209 → 1772 lines (437 lines saved, 19.8% reduction)
+**Total System Reduction:** 2209 -> 1772 lines (437 lines saved, 19.8% reduction)
 
 **Migration:**
 1. Move all business logic to `UnifiedColumnService`
 2. `ColumnManager` becomes pass-through to service
 3. `ColumnManagementBehavior` keeps only UI interactions
+
+**Quality Gates:** 949 tests passed, ruff clean, mypy clean
 
 ---
 

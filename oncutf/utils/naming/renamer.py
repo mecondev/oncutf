@@ -34,6 +34,16 @@ logger = get_cached_logger(__name__)
 
 
 class RenameResult:
+    """Result of a single file rename operation.
+
+    Attributes:
+        old_path: Original file path
+        new_path: New file path (if successful)
+        success: True if rename succeeded
+        skip_reason: Reason for skipping (if applicable)
+        error: Error message (if failed)
+    """
+
     def __init__(
         self,
         old_path: str,
@@ -50,6 +60,25 @@ class RenameResult:
 
 
 class Renamer:
+    """Batch file renaming engine with preview, validation, and conflict resolution.
+
+    Orchestrates the complete rename workflow:
+    1. Generate preview names from modules
+    2. Apply post-transformations (case, separators)
+    3. Validate filenames
+    4. Handle conflicts
+    5. Execute filesystem renames
+
+    Attributes:
+        files: List of FileItem objects to rename
+        modules_data: Serialized rename module configurations
+        metadata_cache: Metadata lookup cache
+        post_transform: Case and separator transformations
+        parent: Parent widget for dialogs
+        conflict_callback: Function to resolve filename conflicts
+        validator: Filename validation function
+    """
+
     def __init__(
         self,
         files: list[FileItem],

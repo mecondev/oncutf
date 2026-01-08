@@ -68,7 +68,8 @@ class MetadataEntry:
         """Returns a copy of the raw metadata dictionary."""
         return self.data.copy()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a compact debug representation."""
         return f"<MetadataEntry(extended={self.is_extended}, keys={len(self.data)}, modified={self.modified})>"
 
 
@@ -379,12 +380,15 @@ class PersistentMetadataCache:
 
     # Dictionary-like interface for backward compatibility
     def __getitem__(self, file_path: str) -> dict[str, Any]:
+        """Return metadata dict for a path (dict-style access)."""
         return self.get(file_path)
 
     def __contains__(self, file_path: str) -> bool:
+        """Return True if metadata exists for the given path."""
         return self.has(file_path)
 
     def __len__(self) -> int:
+        """Return number of entries currently kept in the in-memory cache."""
         # This would require a count query to be accurate
         return len(self._memory_cache)
 
@@ -442,36 +446,43 @@ class DummyMetadataCache:
         self._memory_cache: dict[str, dict[str, Any]] = {}
 
     def has(self, _file_path: str) -> bool:
+        """Return False (dummy cache never has metadata)."""
         return False
 
     def get(self, _file_path: str) -> dict[str, Any]:
+        """Return an empty metadata dict (dummy cache)."""
         return {}
 
     def set(self, _file_path: str, _metadata: dict[str, Any], **kwargs) -> None:
-        pass
+        """No-op setter for dummy cache."""
 
     def get_entry(self, path: str) -> MetadataEntry | None:
+        """Return None (dummy cache has no persistent entries)."""
         return None
 
     def get_entries_batch(self, file_paths: list[str]) -> dict[str, MetadataEntry | None]:
+        """Return a mapping of normalized paths to None entries."""
         return {normalize_path(p): None for p in file_paths}
 
     def _normalize_path(self, path: str) -> str:
+        """Normalize a path using the shared normalizer."""
         return normalize_path(path)
 
     def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False) -> None:
-        pass
+        """No-op add for dummy cache."""
 
-    def update(self, other: dict[str, Any]):
-        pass
+    def update(self, other: dict[str, Any]) -> None:
+        """No-op bulk update for dummy cache."""
 
-    def clear(self):
-        pass
+    def clear(self) -> None:
+        """No-op clear for dummy cache."""
 
     def remove(self, file_path: str) -> bool:
+        """Return True to indicate removal succeeded (dummy behavior)."""
         return True
 
     def get_cache_stats(self) -> dict[str, Any]:
+        """Return fixed zero stats for dummy cache."""
         return {
             "memory_entries": 0,
             "cache_hits": 0,

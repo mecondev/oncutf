@@ -43,6 +43,11 @@ class SpecifiedTextModule(BaseRenameModule):
     updated = pyqtSignal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize specified text module with input field and validation.
+
+        Args:
+            parent: Optional parent widget
+        """
         super().__init__(parent)
 
         # Store reference to current file for "Original Name" feature
@@ -302,7 +307,9 @@ class SpecifiedTextModule(BaseRenameModule):
             # Widget was deleted
             text = ""
         return {"type": "specified_text", "text": text}
+
     def reset(self) -> None:
+        """Clear the text input field and reset validation state."""
         self._has_had_content = False  # Reset tracking
         self._is_input_valid = True  # Reset validation state
         self.text_input.clear()
@@ -311,6 +318,16 @@ class SpecifiedTextModule(BaseRenameModule):
     def apply(
         self, file_item: Any, index: int = 0, metadata_cache: dict[str, Any] | None = None
     ) -> str:
+        """Apply specified text module using current widget value.
+
+        Args:
+            file_item: FileItem being renamed
+            index: Index in file list
+            metadata_cache: Optional metadata cache
+
+        Returns:
+            The custom text from input field
+        """
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
@@ -320,6 +337,17 @@ class SpecifiedTextModule(BaseRenameModule):
         _index: int = 0,
         _metadata_cache: dict[str, Any] | None = None,
     ) -> str:
+        """Generate custom text from module data.
+
+        Args:
+            data: Module configuration with 'text' key
+            _file_item: FileItem being renamed (unused)
+            _index: Index in file list (unused)
+            _metadata_cache: Optional metadata cache (unused)
+
+        Returns:
+            The custom text string, or INVALID_FILENAME_MARKER if invalid
+        """
         logger.debug(
             "[SpecifiedTextModule] apply_from_data called with data: %s",
             data,
@@ -347,4 +375,12 @@ class SpecifiedTextModule(BaseRenameModule):
 
     @staticmethod
     def is_effective_data(data: dict[str, Any]) -> bool:
+        """Check if specified text module data is effective.
+
+        Args:
+            data: Module configuration with 'text' key
+
+        Returns:
+            True if text is non-empty, False otherwise
+        """
         return bool(data.get("text", ""))

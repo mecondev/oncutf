@@ -52,6 +52,11 @@ class CounterModule(BaseRenameModule):
     LABEL_WIDTH = 110  # pixels - increased by 10px for better text fit
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize counter module with start number, padding, increment, and scope controls.
+
+        Args:
+            parent: Optional parent widget
+        """
         super().__init__(parent)
         self.setProperty("module", True)
 
@@ -219,6 +224,16 @@ class CounterModule(BaseRenameModule):
         }
 
     def apply(self, file_item: Any, index: int = 0, metadata_cache: Any = None) -> str:
+        """Apply counter module using current widget configuration.
+
+        Args:
+            file_item: FileItem being renamed
+            index: Index in the file list
+            metadata_cache: Optional metadata cache
+
+        Returns:
+            Formatted counter string (zero-padded)
+        """
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
@@ -278,4 +293,14 @@ class CounterModule(BaseRenameModule):
 
     @staticmethod
     def is_effective_data(_data: dict[str, Any]) -> bool:
+        """Check if counter module data is effective (always True).
+
+        Counter module is always active regardless of configuration.
+
+        Args:
+            _data: Module configuration dictionary (unused)
+
+        Returns:
+            Always True
+        """
         return True
