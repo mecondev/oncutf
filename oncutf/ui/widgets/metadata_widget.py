@@ -234,6 +234,7 @@ class MetadataWidget(QWidget):
             return None
 
     def _get_metadata_cache_via_context(self):
+        """Get metadata cache from ApplicationContext if available."""
         try:
             from oncutf.core.application_context import get_app_context
 
@@ -632,8 +633,10 @@ class MetadataWidget(QWidget):
         )
 
     def _on_selection_changed(self):
+        """Handle file selection change by updating category options and preview."""
         self._category_manager.update_options()
         self.force_preview_update()
 
     def _on_metadata_loaded(self):
+        """Handle metadata loaded event by updating category options."""
         self._category_manager.update_options()

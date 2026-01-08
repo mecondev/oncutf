@@ -69,6 +69,7 @@ class PerformanceMonitor:
     """Performance monitor for UnifiedRenameEngine."""
 
     def __init__(self) -> None:
+        """Initialize performance monitor with metric tracking and thresholds."""
         self.metrics: list[PerformanceMetric] = []
         self.stats_by_operation: dict[str, PerformanceStats] = defaultdict(PerformanceStats)
         self.operation_timers: dict[str, float] = {}
@@ -183,10 +184,12 @@ class PerformanceDecorator:
     """Decorator for automatic performance monitoring."""
 
     def __init__(self, monitor: PerformanceMonitor, operation_name: str) -> None:
+        """Initialize decorator with monitor and operation name."""
         self.monitor = monitor
         self.operation_name = operation_name
 
     def __call__(self, func: Any) -> Any:
+        """Wrap function with performance monitoring."""
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Start timing
             self.monitor.start_operation(self.operation_name)

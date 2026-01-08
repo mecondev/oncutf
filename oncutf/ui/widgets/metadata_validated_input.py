@@ -35,6 +35,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
     def __init__(self, field_name: str = "", parent: QWidget | None = None):
+        """Initialize validated line edit for specific metadata field."""
         QLineEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 
@@ -150,6 +151,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
     def __init__(self, field_name: str = "", parent: QWidget | None = None):
+        """Initialize validated text edit for specific metadata field."""
         QTextEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 
@@ -276,6 +278,7 @@ class MetadataRotationComboBox(StyledComboBox):
     validation_changed = pyqtSignal(bool)
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize rotation combo box with predefined rotation values."""
         super().__init__(parent)
 
         # Setup rotation values

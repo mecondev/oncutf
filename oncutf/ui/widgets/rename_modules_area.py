@@ -54,6 +54,7 @@ class RenameModulesArea(QWidget):
     updated = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
+        """Initialize rename modules area with orchestrator and scroll container."""
         super().__init__(parent)
         self.parent_window = parent_window  # Keep for backward compatibility
         self.module_widgets: list[RenameModuleWidget] = []
@@ -163,6 +164,7 @@ class RenameModulesArea(QWidget):
         self.updated.emit()
 
     def remove_module(self, module: RenameModuleWidget):
+        """Remove specific module widget (keeps at least one module)."""
         # Prevent removal of the last module (keep at least one)
         if len(self.module_widgets) > 1 and module in self.module_widgets:
             # Remove separator handling since we're using margins now
@@ -549,6 +551,7 @@ class RenameModulesArea(QWidget):
             self.scroll_layout.addWidget(placeholder)
 
     def _remove_drag_placeholder(self) -> None:
+        """Remove drag placeholder widget from layout."""
         if self._drag_placeholder is not None:
             self.scroll_layout.removeWidget(self._drag_placeholder)
             self._drag_placeholder.setParent(None)
