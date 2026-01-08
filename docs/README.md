@@ -3,13 +3,18 @@
 ## Project Status & Planning
 
 **Primary Reference:**
-- **[PROJECT_STATUS_2026-01-04.md](../PROJECT_STATUS_2026-01-04.md)** — Current project status (root), metrics, completed refactorings
+- **[PROJECT_STATUS_2026-01-04.md](../PROJECT_STATUS_2026-01-04.md)** — Project status snapshot (root directory)
 
-**Architecture Evolution:**
-- **[REFACTORING_ROADMAP.md](REFACTORING_ROADMAP.md)** — Monster files tracker (Phase 4+ active)
-- **[MIGRATION_STANCE.md](MIGRATION_STANCE.md)** — Architecture migration policy: legacy vs modern patterns
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture (4-tier MVC, core layers)
-- **[UI_ARCHITECTURE_PATTERNS.md](UI_ARCHITECTURE_PATTERNS.md)** — UI patterns: Behaviors vs Mixins vs Handlers
+**Active Architecture Documentation:**
+- **[migration_stance.md](migration_stance.md)** — Architecture migration policy: legacy vs modern patterns
+- **[architecture.md](architecture.md)** — System architecture (4-tier MVC, core layers)
+
+**Completed & Archived:**
+- **[_archive/REFACTORING_ROADMAP_COMPLETED.md](_archive/REFACTORING_ROADMAP_COMPLETED.md)** — Monster files eliminated (DONE)
+- **[_archive/PHASE5_SUMMARY_COMPLETED.md](_archive/PHASE5_SUMMARY_COMPLETED.md)** — 5-phase refactoring complete (DONE)
+- **[_archive/BEHAVIORS_REFACTORING_PLAN_COMPLETED.md](_archive/BEHAVIORS_REFACTORING_PLAN_COMPLETED.md)** — Behaviors extraction complete (DONE)
+- **[_archive/UI_ARCHITECTURE_PATTERNS_COMPLETED.md](_archive/UI_ARCHITECTURE_PATTERNS_COMPLETED.md)** — UI patterns guide (DONE)
+- **[_archive/mixin_to_behavior_extraction_COMPLETED.md](_archive/mixin_to_behavior_extraction_COMPLETED.md)** — Mixin migration log (DONE)
 
 ## Application Systems
 
@@ -27,16 +32,18 @@
 - **[database_split_plan.md](database_split_plan.md)** — Database manager refactoring
 - **[progress_manager_system.md](progress_manager_system.md)** — Progress tracking API
 - **[json_config_system.md](json_config_system.md)** — Configuration management
-- **[PHASE5_SUMMARY.md](PHASE5_SUMMARY.md)** — Phase 5 completion summary
-- **[WINDOWS_FIXES.md](WINDOWS_FIXES.md)** — Windows-specific issues and solutions
+- **[windows_fixes.md](windows_fixes.md)** — Windows-specific issues and solutions
 
-## Archived Documentation
+## Planning Documents (Future Features)
 
-Completed refactoring plans are in **[_archive/](_archive/)** — implementation complete.
+- **[color_column_implementation_plan.md](color_column_implementation_plan.md)** — Color column feature plan
+- **[color_database_implementation.md](color_database_implementation.md)** — Color database design
+- **[node_editor_integration_plan.md](node_editor_integration_plan.md)** — Node editor future integration
+- **[file_table_header.md](file_table_header.md)** — File table header design
 
 ---
 
-**Last Updated:** 2026-01-04 | **Active Phase:** Final Polish (Phase 7) | **Status:** 949/949 tests ✅
+**Last Updated:** 2026-01-09 | **Status:** Production Ready | **Tests:** 986/986 passing | **Docstring Coverage:** 99.9%+
 
 Layered structure with controllers separating UI from core services:
 
@@ -64,20 +71,34 @@ oncutf/
 └── tests/                   # Comprehensive test suite
 ```
 
-## Key Features
+## Architecture Highlights
 
+**Layered Design:**
+- **Controllers** (`controllers/`) — UI-agnostic orchestration, testable without Qt
+- **Core Services** (`core/`) — Business logic, caching, metadata, rename engine
+- **Behaviors** (`ui/behaviors/`) — Reusable UI interactions (composition over mixins)
+- **Domain Models** (`models/`) — Pure data structures
+
+**Key Features:**
 - Persistent metadata and hash caching with SQLite-backed LRU
 - Modular rename pipeline (specified text, counters, metadata, transforms)
 - Safe rename workflow with conflict resolution and undo/redo
 - Rich PyQt5 UI with drag-and-drop, previews, and keyboard shortcuts
-- Profiling scripts for startup and memory: see `scripts/profile_startup.py`, `scripts/profile_memory.py`
+- 99.9%+ docstring coverage for maintainability
+
+## Quality Metrics
+
+- **Tests:** 986 passing, 6 skipped
+- **Type Safety:** mypy clean (478 source files)
+- **Linting:** ruff clean
+- **Docstring Coverage:** 99.9%+ (only auto-generated files excluded)
+- **Architecture:** Monster files eliminated, all behaviors <600 lines
 
 ## Developer Notes
 
-- Documentation and code comments are in English; user-facing text follows app locale guidelines.
-- Tests: run `pytest`; type checks via `mypy`; linting via `ruff`.
-- For historical phase documentation, see `_archive/refactor-runs/`.
-
----
-
-**Last Updated**: December 20, 2025
+- Documentation and code comments are in English
+- Run tests: `pytest`
+- Type checks: `mypy .`
+- Linting: `ruff check .`
+- Docstring coverage: `python scripts/generate_project_report.py --mode structure-full --missing`
+- Historical refactoring documentation in `_archive/`
