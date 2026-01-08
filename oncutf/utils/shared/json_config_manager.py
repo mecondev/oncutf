@@ -28,6 +28,7 @@ class ConfigCategory[T]:
     """Base class for configuration categories with type safety and defaults."""
 
     def __init__(self, name: str, defaults: dict[str, Any]):
+        """Initialize configuration category with name and default values."""
         self.name = name
         self.defaults = defaults
         self._data = defaults.copy()
@@ -62,6 +63,7 @@ class WindowConfig(ConfigCategory[Any]):
     """Window-specific configuration category for GUI applications."""
 
     def __init__(self) -> None:
+        """Initialize window configuration with geometry, splitters, columns, and sort settings."""
         defaults = {
             "geometry": None,  # No default geometry - will trigger smart sizing
             "window_state": "normal",
@@ -85,6 +87,7 @@ class FileHashConfig(ConfigCategory[Any]):
     """File hash tracking configuration category."""
 
     def __init__(self) -> None:
+        """Initialize file hash configuration with algorithm, cache, and cleanup settings."""
         defaults = {
             "enabled": True,
             "algorithm": "CRC32",
@@ -114,6 +117,7 @@ class AppConfig(ConfigCategory[Any]):
     """General application configuration category."""
 
     def __init__(self) -> None:
+        """Initialize application configuration with theme, language, and recent folders."""
         defaults = {
             "theme": "dark",
             "language": "en",
@@ -141,6 +145,7 @@ class DialogsConfig(ConfigCategory[Any]):
     """Configuration for dialog windows (geometry, column widths, etc.)."""
 
     def __init__(self) -> None:
+        """Initialize empty dialogs configuration."""
         defaults: dict[str, Any] = {}
         super().__init__("dialogs", defaults)
 
@@ -149,6 +154,7 @@ class JSONConfigManager:
     """Comprehensive JSON-based configuration manager with auto-save and cache."""
 
     def __init__(self, app_name: str = "app", config_dir: str | None = None):
+        """Initialize configuration manager with app name and config directory."""
         self.app_name = app_name
         self.config_dir = Path(config_dir or self._get_default_config_dir())
         self.config_file = self.config_dir / "config.json"

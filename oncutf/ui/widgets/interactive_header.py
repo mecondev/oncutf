@@ -42,6 +42,7 @@ class InteractiveHeader(QHeaderView):
     """
 
     def __init__(self, orientation, parent=None, parent_window=None):
+        """Initialize interactive header with orientation and optional parent window."""
         super().__init__(orientation, parent)
         self.parent_window = parent_window  # Keep for backward compatibility
         self.setSectionsClickable(True)
@@ -153,6 +154,7 @@ class InteractiveHeader(QHeaderView):
         return find_parent_with_attribute(self, "handle_header_toggle")
 
     def mousePressEvent(self, event) -> None:
+        """Handle mouse press to track position and index for drag detection."""
         self._press_pos = event.pos()
         self._pressed_index = self.logicalIndexAt(event.pos())
         self._drag_active = False
@@ -173,6 +175,7 @@ class InteractiveHeader(QHeaderView):
         super().enterEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        """Handle mouse move to create and update drag overlay for column reordering."""
         if not self.sectionsMovable():
             super().mouseMoveEvent(event)
             return
@@ -195,6 +198,7 @@ class InteractiveHeader(QHeaderView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        """Handle mouse release to finalize drag or trigger column actions (sort/toggle)."""
         if self._drag_active:
             self._drag_active = False
             self._hide_drag_overlay()
@@ -233,6 +237,7 @@ class InteractiveHeader(QHeaderView):
         self._click_actions_enabled = enabled
 
     def _ensure_interaction_qss(self) -> None:
+        """Apply QSS for locked state interaction (neutralize hover when locked)."""
         if self._interaction_qss_applied:
             return
 
@@ -257,6 +262,7 @@ class InteractiveHeader(QHeaderView):
             self._interaction_qss_applied = False
 
     def _set_interaction_state(self, *, locked: bool | None = None) -> None:
+        """Update header lock state property and trigger style refresh."""
         if locked is not None:
             self.setProperty("oncutf_locked", locked)
 

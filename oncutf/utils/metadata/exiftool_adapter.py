@@ -41,6 +41,7 @@ class ExifToolMetadataAdapter:
     """
 
     def __init__(self, exiftool_path: str = "exiftool") -> None:
+        """Initialize ExifTool adapter with path and ExifToolWrapper."""
         self.exiftool_path = exiftool_path
         self._active_proc: subprocess.Popen | None = None
         self._cancel_requested = threading.Event()
@@ -51,6 +52,7 @@ class ExifToolMetadataAdapter:
     def load(
         self, files: list[FileItem], force: bool = False, use_extended: bool = False, cache=None
     ) -> None:
+        """Load metadata for multiple files with optional extended mode and caching."""
         logger.debug(
             "[Loader] load() final params: use_extended=%s, force=%s",
             use_extended,
@@ -231,13 +233,16 @@ class ExifToolMetadataAdapter:
         return {}
 
     def read(self, filepath: str, use_extended: bool = False) -> dict[str, str]:
+        """Read metadata for a single file path."""
         return self.read_metadata(filepath, use_extended=use_extended) or {}
 
     def has_extended(self, file_path: str, cache) -> bool:
+        """Check if extended metadata has been loaded for file."""
         entry = cache.get_entry(file_path)
         return entry.is_extended if entry else False
 
     def cancel_active(self) -> None:
+        """Cancel any active metadata loading subprocess."""
         logger.info("[Loader] Cancel requested.")
         self._cancel_requested.set()
         with self._lock:
@@ -249,6 +254,7 @@ class ExifToolMetadataAdapter:
                     logger.error("[Loader] Termination failed: %s", e)
 
     def close(self) -> None:
+        """Close the ExifTool wrapper and release resources."""
         if self.exiftool:
             self.exiftool.close()
             logger.info("[Loader] ExifTool closed.")

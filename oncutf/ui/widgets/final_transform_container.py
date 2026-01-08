@@ -42,6 +42,7 @@ class FinalTransformContainer(QWidget):
     remove_module_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize final transform container with controls and rename engine."""
         super().__init__(parent)
         self.setObjectName("FinalTransformContainer")
 
@@ -253,13 +254,15 @@ class FinalTransformContainer(QWidget):
             disabled_icon = QIcon(disabled_pixmap)
             self.remove_button.setIcon(disabled_icon)
 
-        # Simple toggle with QLabel (no hover)
 
 
 class GreeklishToggle(QLabel):
+    """Custom toggle switch widget for Greeklish transformation."""
+
     toggled = pyqtSignal(bool)
 
     def __init__(self, parent=None):
+        """Initialize toggle with icons and default unchecked state."""
         super().__init__(parent)
         self._checked = False
         self._icon_left = get_menu_icon("toggle-left")
@@ -270,18 +273,22 @@ class GreeklishToggle(QLabel):
         self._update_icon()
 
     def mousePressEvent(self, event):
+        """Toggle state on mouse click."""
         self.setChecked(not self._checked)
         self.toggled.emit(self._checked)
         super().mousePressEvent(event)
 
     def setChecked(self, checked: bool):
+        """Set toggle state and update icon."""
         self._checked = bool(checked)
         self._update_icon()
 
     def isChecked(self) -> bool:
+        """Return current toggle state."""
         return self._checked
 
     def _update_icon(self):
+        """Update icon based on current toggle state."""
         # Get QPixmap ~19x19 from QIcon, 20% larger than 16x16
         icon = self._icon_right if self._checked else self._icon_left
         pixmap = icon.pixmap(19, 19)
