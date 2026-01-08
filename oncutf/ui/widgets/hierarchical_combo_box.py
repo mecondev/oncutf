@@ -32,6 +32,7 @@ class _AliasHeaderTreeView(QTreeView):
     """QTreeView subclass providing a headerHidden() alias for compatibility tests."""
 
     def headerHidden(self) -> bool:
+        """Return whether header is hidden (compatibility alias for isHeaderHidden)."""
         return self.isHeaderHidden()
 
 

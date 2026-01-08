@@ -33,7 +33,9 @@ class NullNodeHostBridge:
     """Default no-op host bridge."""
 
     def get(self, _node_sid: str, _key: str) -> object | None:
+        """Return None (no-op implementation)."""
         return None
 
     def set(self, _node_sid: str, _key: str, _value: object) -> None:
+        """Do nothing (no-op implementation)."""
         return

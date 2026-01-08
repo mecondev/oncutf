@@ -86,6 +86,7 @@ class MetadataProxyModel(QSortFilterProxyModel):
     """Custom proxy model for metadata tree filtering."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the proxy model with case-insensitive recursive filtering."""
         super().__init__(parent)
         self.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.setRecursiveFilteringEnabled(True)
@@ -154,6 +155,7 @@ class MetadataTreeView(QTreeView):
     rebuild_requested = pyqtSignal(dict, str)  # metadata, context
 
     def __init__(self, parent: QWidget | None = None, controller=None) -> None:
+        """Initialize the metadata tree view with drag-drop support and controller."""
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)

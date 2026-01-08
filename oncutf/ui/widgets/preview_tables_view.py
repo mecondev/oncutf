@@ -49,6 +49,7 @@ class PreviewTableWidget(QTableWidget):
     resized = pyqtSignal()  # Emitted when table is resized
 
     def __init__(self, rows=0, columns=1, parent=None):
+        """Initialize the preview table widget with mouse tracking for tooltips."""
         super().__init__(rows, columns, parent)
 
         # Enable mouse tracking for tooltips
@@ -106,6 +107,7 @@ class PreviewTablesView(QWidget):
     refresh_requested = pyqtSignal()  # Emitted when F5 refresh is requested
 
     def __init__(self, parent=None):
+        """Initialize the preview tables view with synchronized scrolling and placeholders."""
         super().__init__(parent)
 
         # Allow widget to receive keyboard focus for shortcuts

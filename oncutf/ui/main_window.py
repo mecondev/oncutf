@@ -38,6 +38,8 @@ logger = get_cached_logger(__name__)
 
 
 class MainWindow(QMainWindow):
+    """Main application window for oncutf file renaming tool."""
+
     def __init__(self, theme_callback=None) -> None:
         """Initializes the main window and sets up the layout.
 

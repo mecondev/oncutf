@@ -27,6 +27,7 @@ _CROCKFORD_BASE32_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 
 def _encode_crockford_base32(value: int, length: int) -> str:
+    """Encode an integer as Crockford Base32 string with specified length."""
     if value < 0:
         raise ValueError("value must be non-negative")
 

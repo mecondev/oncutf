@@ -52,6 +52,7 @@ class RenameResult:
         skip_reason: str | None = None,
         error: str | None = None,
     ):
+        """Initialize the rename result with paths and status."""
         self.old_path = old_path
         self.new_path = new_path
         self.success = success

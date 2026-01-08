@@ -36,6 +36,7 @@ class InterFonts:
     }
 
     def __init__(self) -> None:
+        """Initialize the Inter fonts manager and load all font variants."""
         self.loaded_fonts: dict[str, int] = {}
         self.font_families: dict[str, str] = {}
         self._load_fonts_from_resources()

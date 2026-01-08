@@ -62,6 +62,7 @@ class TimerManager(QObject):
     timer_finished = pyqtSignal(str)  # timer_id
 
     def __init__(self, parent: QObject | None = None):
+        """Initialize the timer manager with thread safety and performance tracking."""
         super().__init__(parent)
 
         # Thread safety

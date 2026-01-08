@@ -53,6 +53,7 @@ class MetadataWorker(QObject):
     def __init__(
         self, reader=None, metadata_cache=None, files=None, use_extended: bool = False, parent=None
     ):
+        """Initialize the metadata worker with files and extended metadata flag."""
         super().__init__(parent)
         # Handle both old-style (reader, metadata_cache) and new-style (files) initialization
         if files is not None:

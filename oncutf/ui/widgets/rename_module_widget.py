@@ -135,6 +135,7 @@ class RenameModuleWidget(QWidget):
         return heights
 
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
+        """Initialize the rename module widget with dynamic module loading."""
         super().__init__(parent)
 
         self.parent_window = parent_window  # Keep for backward compatibility

@@ -105,6 +105,7 @@ class DevOnlyFilter(logging.Filter):
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Return False for dev-only records unless console debugging is enabled."""
         if SHOW_DEV_ONLY_IN_CONSOLE:
             return True
         return not getattr(record, "dev_only", False)

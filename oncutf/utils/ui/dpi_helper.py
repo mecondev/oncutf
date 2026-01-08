@@ -25,6 +25,7 @@ class DPIHelper:
     """
 
     def __init__(self):
+        """Initialize the DPI helper with calculated scaling factors."""
         self.system = platform.system()
         self.dpi_scale = 1.0
         self.font_scale = 1.0
