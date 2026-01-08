@@ -357,6 +357,7 @@ class ShutdownLifecycleHandler:
             logger.error("[CloseEvent] Error in pre-coordinator cleanup: %s", e)
 
     def _pre_cleanup_stop_periodic_backups(self) -> None:
+        """Stop periodic backup timer to avoid blocking UI during shutdown."""
         # Database backup on shutdown can block the UI thread (large file copy).
         # We rely on periodic backups instead and only stop the timer here.
         if hasattr(self.main_window, "backup_manager") and self.main_window.backup_manager:
@@ -368,6 +369,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Failed to stop periodic backups: %s", e)
 
     def _pre_cleanup_save_window_config(self) -> None:
+        """Save window configuration before shutdown."""
         if hasattr(self.main_window, "window_config_manager") and self.main_window.window_config_manager:
             try:
                 self.main_window.window_config_manager.save_window_config()
@@ -376,6 +378,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Failed to save window config: %s", e)
 
     def _pre_cleanup_flush_batch_operations(self) -> None:
+        """Flush pending batch operations before shutdown."""
         if hasattr(self.main_window, "batch_manager") and self.main_window.batch_manager:
             try:
                 if hasattr(self.main_window.batch_manager, "flush_operations"):
@@ -385,6 +388,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Batch flush failed: %s", e)
 
     def _pre_cleanup_cleanup_drag_manager(self) -> None:
+        """Force cleanup of drag manager state."""
         if hasattr(self.main_window, "drag_manager") and self.main_window.drag_manager:
             try:
                 self.main_window.drag_manager.force_cleanup()  # type: ignore[union-attr]
@@ -393,6 +397,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
 
     def _pre_cleanup_cleanup_dialogs(self) -> None:
+        """Close all dialogs via dialog manager."""
         if hasattr(self.main_window, "dialog_manager") and self.main_window.dialog_manager:
             try:
                 self.main_window.dialog_manager.cleanup()  # type: ignore[union-attr]
@@ -401,6 +406,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
 
     def _pre_cleanup_cleanup_metadata_thread(self) -> None:
+        """Cleanup metadata manager and thread before shutdown."""
         # First, cleanup the metadata manager (handles ParallelMetadataLoader)
         if hasattr(self.main_window, "metadata_manager") and self.main_window.metadata_manager:
             try:

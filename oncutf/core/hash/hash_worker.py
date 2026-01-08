@@ -34,9 +34,17 @@ logger = get_cached_logger(__name__)
 class HashStore(Protocol):
     """Protocol for hash storage operations."""
 
-    def store_hash(self, file_path: str, hash_value: str, algorithm: str) -> None: ...
-    def get_cached_hash(self, file_path: str) -> str | None: ...
-    def calculate_hash(self, file_path: str, **kwargs: Any) -> str | None: ...
+    def store_hash(self, file_path: str, hash_value: str, algorithm: str) -> None:
+        """Store hash value for file path."""
+        ...
+
+    def get_cached_hash(self, file_path: str) -> str | None:
+        """Get cached hash for file path if available."""
+        ...
+
+    def calculate_hash(self, file_path: str, **kwargs: Any) -> str | None:
+        """Calculate hash for file path."""
+        ...
 
 
 class HashWorker(QThread):
@@ -70,6 +78,7 @@ class HashWorker(QThread):
     )  # file_path - emitted when individual file hash is calculated
 
     def __init__(self, parent=None):
+        """Initialize hash worker with mutex, hash manager, and operation state."""
         super().__init__(parent)
         self._mutex = QMutex()
         self._cancelled = False

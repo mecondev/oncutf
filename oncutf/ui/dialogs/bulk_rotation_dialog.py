@@ -39,6 +39,7 @@ class BulkRotationDialog(QDialog):
     """Dialog for bulk rotation operations with file analysis and checkboxes."""
 
     def __init__(self, parent=None, selected_files=None, metadata_cache=None):
+        """Initialize bulk rotation dialog with files and metadata cache."""
         super().__init__(parent)
         self.selected_files = selected_files or []
         self.metadata_cache = metadata_cache
@@ -111,6 +112,7 @@ class BulkRotationDialog(QDialog):
         )
 
     def _setup_ui(self):
+        """Setup dialog UI with title, scroll area, and buttons."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
@@ -214,6 +216,7 @@ class BulkRotationDialog(QDialog):
         layout.addLayout(button_layout)
 
     def _analyze_files(self):
+        """Analyze selected files and group by type with rotation needs."""
         if not self.selected_files:
             self.info_label.setText("No files selected.")
             return
@@ -317,6 +320,7 @@ class BulkRotationDialog(QDialog):
         total_files_in_group: int,
         extensions: list[str],
     ):
+        """Create widget for a file type group with checkbox and file count."""
         frame = QFrame()
         frame.setFrameStyle(QFrame.StyledPanel)
 
@@ -358,6 +362,7 @@ class BulkRotationDialog(QDialog):
         self.file_groups[file_type] = files_needing_change
 
     def get_selected_files(self) -> list:
+        """Return list of files from checked file type groups."""
         selected = []
         for file_type, checkbox in self.checkboxes.items():
             if checkbox.isChecked():
