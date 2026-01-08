@@ -16,15 +16,17 @@ from contextlib import suppress
 
 from oncutf.core.pyqt_imports import (
     QAction,
-    QColor,
     QHeaderView,
+    QLabel,
     QMenu,
-    QPainter,
-    QPen,
     QPoint,
-    QRect,
     Qt,
+    QWidget,
 )
+from oncutf.utils.logging.logger_factory import get_cached_logger
+
+logger = get_cached_logger(__name__)
+
 
 # ApplicationContext integration
 try:
@@ -50,34 +52,79 @@ class InteractiveHeader(QHeaderView):
         self.header_enabled = True
 
         # When False, header clicks won't trigger app actions (sort/toggle).
-        # Kept separate from Qt's sectionsClickable so we can still get the
-        # pressed state for visual feedback during drag.
         self._click_actions_enabled: bool = True
 
         self._press_pos: QPoint = QPoint()
         self._pressed_index: int = -1
         self._drag_active: bool = False
+        self._drag_grab_offset: int = 0
         self._interaction_qss_applied: bool = False
 
-        # Drag overlay state (follows mouse)
-        self._drag_overlay_width: int = 0
-        self._drag_overlay_offset_x: int = 0
-        self._drag_overlay_mouse_x: int = 0
-
-        # Ensure drag feedback is activated based on actual section movement.
-        # This is more reliable than depending on mouseMoveEvent across styles.
-        with suppress(Exception):
-            self.sectionMoved.connect(self._on_section_moved)
+        # Floating overlay widget for drag feedback
+        self._drag_overlay: QWidget | None = None
 
         self._ensure_interaction_qss()
-        self._set_interaction_state(locked=not self.sectionsMovable(), dragging=False)
+        self._set_interaction_state(locked=not self.sectionsMovable())
 
     def setSectionsMovable(self, movable: bool) -> None:  # type: ignore[override]
         """Override to keep UI interaction feedback consistent with lock state."""
         super().setSectionsMovable(movable)
         if not movable:
             self._drag_active = False
-        self._set_interaction_state(locked=not movable, dragging=self._drag_active)
+            self._hide_drag_overlay()
+        self._set_interaction_state(locked=not movable)
+
+    def _create_drag_overlay(self, width: int, title: str) -> None:
+        """Create a floating overlay widget for drag feedback."""
+        if self._drag_overlay:
+            self._drag_overlay.deleteLater()
+
+        try:
+            from oncutf.core.theme_manager import get_theme_manager
+            theme = get_theme_manager()
+            bg_color = theme.get_color("table_selection_bg")
+            # text_color = theme.get_color("table_selection_text")
+            text_color = theme.get_color("table_header_text")
+
+            logger.debug("[INTERACTIVE_HEADER] Drag overlay colors from theme: bg=%s, text=%s", bg_color, text_color)
+        except Exception as e:
+            # Fallback colors should never be used
+            logger.error("[INTERACTIVE_HEADER] Failed to get theme colors for drag overlay: %s", e)
+
+        self._drag_overlay = QLabel(title, self)
+        self._drag_overlay.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self._drag_overlay.setFixedSize(width, self.height())
+        self._drag_overlay.setStyleSheet(
+            f"QLabel {{"
+            f"  background-color: {bg_color};"
+            f"  color: {text_color};"
+            f"  padding-left: 6px;"
+            # f"  border: 2px dotted {text_color};"
+            # f"  font-weight: 600;"
+            f"}}"
+        )
+        self._drag_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._drag_overlay.show()
+        self._drag_overlay.raise_()
+
+    def _update_drag_overlay_position(self, mouse_x: int) -> None:
+        """Update the position of the drag overlay."""
+        if not self._drag_overlay:
+            return
+
+        left = mouse_x - self._drag_grab_offset
+        # Clamp to header bounds
+        max_left = self.width() - self._drag_overlay.width()
+        left = max(0, min(left, max_left))
+
+        self._drag_overlay.move(left, 0)
+
+    def _hide_drag_overlay(self) -> None:
+        """Hide and destroy the drag overlay."""
+        if self._drag_overlay:
+            self._drag_overlay.hide()
+            self._drag_overlay.deleteLater()
+            self._drag_overlay = None
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -109,85 +156,65 @@ class InteractiveHeader(QHeaderView):
         self._press_pos = event.pos()
         self._pressed_index = self.logicalIndexAt(event.pos())
         self._drag_active = False
-        self._drag_overlay_width = 0
-        self._drag_overlay_offset_x = 0
-        self._drag_overlay_mouse_x = event.pos().x()
-        self._set_interaction_state(dragging=False)
+
+        # Store grab offset for drag overlay positioning
+        if self._pressed_index >= 0:
+            section_left = self.sectionViewportPosition(self._pressed_index)
+            self._drag_grab_offset = event.pos().x() - section_left
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
-        # Drag feedback only when reordering is enabled.
         if not self.sectionsMovable():
             super().mouseMoveEvent(event)
             return
 
         if (event.buttons() & Qt.LeftButton) and self._pressed_index >= 0:
-            if (event.pos() - self._press_pos).manhattanLength() > 4:
-                if not self._drag_active:
+            if not self._drag_active:
+                if (event.pos() - self._press_pos).manhattanLength() > 4:
                     self._drag_active = True
-                    self._init_drag_overlay()
-                    self._set_interaction_state(dragging=True)
+                    # Get column title and width
+                    width = self.sectionSize(self._pressed_index)
+                    title = ""
+                    model = self.model()
+                    if model and 0 <= self._pressed_index < model.columnCount():
+                        title = str(model.headerData(self._pressed_index, Qt.Horizontal, Qt.DisplayRole) or "")
+                    self._create_drag_overlay(width, title)
 
-                if self._drag_active:
-                    self._drag_overlay_mouse_x = event.pos().x()
-                    self.viewport().update()
+            if self._drag_active:
+                self._update_drag_overlay_position(event.pos().x())
 
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
         if self._drag_active:
             self._drag_active = False
-            self._set_interaction_state(dragging=False)
-            self.viewport().update()
-
-        released_index = self.logicalIndexAt(event.pos())
-
-        if released_index != self._pressed_index:
-            super().mouseReleaseEvent(event)
-            return
-
-        if (event.pos() - self._press_pos).manhattanLength() > 4:
-            super().mouseReleaseEvent(event)
-            return
-
-        # Section was clicked without drag or resize intent
-        if not self._click_actions_enabled:
-            super().mouseReleaseEvent(event)
-            return
-
-        main_window = self._get_main_window_via_context()
-
-        if released_index == 0:
-            if main_window and hasattr(main_window, "handle_header_toggle"):
-                # Qt.Checked may not always exist as attribute
-                checked = getattr(Qt, "Checked", 2)
-                main_window.handle_header_toggle(checked)
-        elif main_window and hasattr(main_window, "sort_by_column"):
-            main_window.sort_by_column(released_index)
+            self._hide_drag_overlay()
 
         super().mouseReleaseEvent(event)
 
-    def _on_section_moved(self, logical_index: int, _old_visual_index: int, _new_visual_index: int) -> None:
-        # Drag feedback only when reordering is enabled.
-        if not self.sectionsMovable():
+        if not self._click_actions_enabled:
             return
 
-        # Ensure drag feedback stays active once an actual move is happening.
-        if not self._drag_active:
-            self._drag_active = True
-            self._init_drag_overlay()
-            self._set_interaction_state(dragging=True)
-
-        self.viewport().update()
-
-    def _init_drag_overlay(self) -> None:
-        if self._pressed_index < 0:
+        # Check for drag
+        if (event.pos() - self._press_pos).manhattanLength() > 4:
             return
 
-        self._drag_overlay_width = self.sectionSize(self._pressed_index)
-        left = self.sectionViewportPosition(self._pressed_index)
-        left = max(left, 0)
-        self._drag_overlay_offset_x = max(0, self._press_pos.x() - left)
+        released_index = self.logicalIndexAt(event.pos())
+        if released_index != self._pressed_index or released_index == -1:
+            return
+
+        main_window = self._get_main_window_via_context()
+        if not main_window:
+            return
+
+        if released_index == 0:
+            if hasattr(main_window, "handle_header_toggle"):
+                checked = getattr(Qt, "Checked", 2)
+                main_window.handle_header_toggle(checked)
+        elif hasattr(main_window, "sort_by_column"):
+            main_window.sort_by_column(released_index)
+
 
     def set_click_actions_enabled(self, enabled: bool) -> None:
         """Enable/disable click-triggered actions (sort/toggle).
@@ -221,62 +248,16 @@ class InteractiveHeader(QHeaderView):
         except Exception:
             self._interaction_qss_applied = False
 
-    def _set_interaction_state(self, *, locked: bool | None = None, dragging: bool | None = None) -> None:
+    def _set_interaction_state(self, *, locked: bool | None = None) -> None:
         if locked is not None:
             self.setProperty("oncutf_locked", locked)
-        if dragging is not None:
-            self.setProperty("oncutf_dragging", dragging)
 
         with suppress(Exception):
             self.style().unpolish(self)
             self.style().polish(self)
         self.update()
 
-    def paintEvent(self, event) -> None:
-        super().paintEvent(event)
 
-        # Drag highlight that follows the mouse.
-        if not self.sectionsMovable():
-            return
-
-        if not self._drag_active:
-            return
-
-        if self._drag_overlay_width <= 0:
-            return
-
-        try:
-            from oncutf.core.theme_manager import get_theme_manager
-
-            theme = get_theme_manager()
-            selection_bg = theme.get_color("table_selection_bg")
-            border = theme.get_color("table_grid")
-
-            w = self._drag_overlay_width
-            left = self._drag_overlay_mouse_x - self._drag_overlay_offset_x
-            max_left = max(0, self.viewport().width() - w)
-            if left < 0:
-                left = 0
-            elif left > max_left:
-                left = max_left
-
-            rect = QRect(left, 0, w, self.viewport().height())
-
-            painter = QPainter(self.viewport())
-            painter.save()
-
-            color = QColor(selection_bg)
-            color.setAlpha(255)
-            painter.fillRect(rect, color)
-
-            pen = QPen(QColor(border))
-            pen.setWidth(2)
-            painter.setPen(pen)
-            painter.drawRect(rect.adjusted(1, 1, -2, -2))
-
-            painter.restore()
-        except Exception:
-            return
 
     def contextMenuEvent(self, position):
         """Show unified right-click context menu for header."""
