@@ -33,6 +33,7 @@ class UnifiedExecutionManager:
     """
 
     def __init__(self):
+        """Initialize the execution manager with no conflict callback or validator."""
         self.conflict_callback: Callable[[Any, str], str] | None = None
         self.validator: Callable[[str], tuple[bool, str]] | None = None
 

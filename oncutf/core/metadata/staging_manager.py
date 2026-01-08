@@ -34,6 +34,7 @@ class MetadataStagingManager(QObject):
     all_cleared = pyqtSignal()
 
     def __init__(self, parent=None):
+        """Initialize the staging manager with empty change tracking."""
         super().__init__(parent)
         # Structure: { normalized_file_path: { key: value } }
         self._staged_changes: dict[str, dict[str, str]] = {}

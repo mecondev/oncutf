@@ -24,6 +24,7 @@ class StructuredMetadataManager:
     """
 
     def __init__(self):
+        """Initialize the structured manager with database connection and caches."""
         self.db_manager = get_database_manager()
         self._field_cache = {}
         self._category_cache = {}

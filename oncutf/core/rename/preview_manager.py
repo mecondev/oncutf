@@ -34,6 +34,7 @@ class UnifiedPreviewManager:
     """
 
     def __init__(self, batch_query_manager: BatchQueryManager, cache_manager: SmartCacheManager):
+        """Initialize the preview manager with batch query and cache managers."""
         self.batch_query_manager = batch_query_manager
         self.cache_manager = cache_manager
 

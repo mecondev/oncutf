@@ -46,6 +46,7 @@ class SelectionStore(QObject):
     checked_sync_requested = pyqtSignal()  # Request sync from checked to selection
 
     def __init__(self, parent: QObject | None = None):
+        """Initialize the selection store with empty selection state."""
         super().__init__(parent)
 
         # Core selection state

@@ -46,6 +46,7 @@ class FileStore(QObject):
     files_filtered = pyqtSignal(list)  # Emitted when files are filtered
 
     def __init__(self, parent: QObject | None = None):
+        """Initialize the file store with empty state."""
         super().__init__(parent)
 
         # Current state

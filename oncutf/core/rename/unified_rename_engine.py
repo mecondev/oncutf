@@ -80,6 +80,7 @@ class UnifiedRenameEngine(QObject):
     state_changed = pyqtSignal()
 
     def __init__(self):
+        """Initialize the rename engine with all managers and caches."""
         super().__init__()
 
         # Initialize managers

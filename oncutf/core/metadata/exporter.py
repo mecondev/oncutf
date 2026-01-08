@@ -27,6 +27,7 @@ class MetadataExporter:
     """
 
     def __init__(self, parent_window: Any = None) -> None:
+        """Initialize the exporter with optional parent window for dialogs."""
         self.parent_window = parent_window
         self.app_name = APP_NAME
         self.app_version = f"v{APP_VERSION}"

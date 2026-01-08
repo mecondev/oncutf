@@ -20,6 +20,7 @@ class RenameStateManager:
     """
 
     def __init__(self):
+        """Initialize the state manager with a new empty state."""
         self.current_state = RenameState()
         self._previous_state: RenameState | None = None
 

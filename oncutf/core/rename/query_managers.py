@@ -32,6 +32,7 @@ class BatchQueryManager:
     """
 
     def __init__(self):
+        """Initialize the batch query manager with empty cache references."""
         self._hash_cache = None
         self._metadata_cache = None
 
@@ -147,6 +148,7 @@ class SmartCacheManager:
     """
 
     def __init__(self) -> None:
+        """Initialize the cache manager with empty caches and 100ms TTL."""
         self._preview_cache: dict[str, tuple[PreviewResult, float]] = {}
         self._validation_cache: dict[str, tuple[ValidationResult, float]] = {}
         self._execution_cache: dict[str, tuple[Any, float]] = {}

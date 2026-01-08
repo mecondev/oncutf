@@ -26,6 +26,7 @@ class UnifiedValidationManager:
     """
 
     def __init__(self, cache_manager: SmartCacheManager):
+        """Initialize the validation manager with a smart cache manager."""
         self.cache_manager = cache_manager
 
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> ValidationResult:
