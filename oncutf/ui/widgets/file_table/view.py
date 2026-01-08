@@ -141,6 +141,7 @@ class FileTableView(QTableView):
         self._selection_behavior = SelectionBehavior(self)
         self._drag_drop_behavior = DragDropBehavior(self)
         self._column_mgmt_behavior = ColumnManagementBehavior(self)
+        self._keyboard_behavior = None  # Initialized after header is set
 
         # Load column config after behavior exists
         self._visible_columns = self._load_column_visibility_config()
@@ -190,6 +191,18 @@ class FileTableView(QTableView):
         self.viewport().setAcceptDrops(True)
 
         self.setSizeAdjustPolicy(QAbstractItemView.AdjustIgnored)
+
+    def setup_header_keyboard_shortcuts(self) -> None:
+        """Initialize header keyboard shortcuts after header is set.
+
+        Must be called after setHorizontalHeader() in layout controller.
+        """
+        from oncutf.ui.behaviors.header_keyboard_behavior import HeaderKeyboardBehavior
+
+        header = self.horizontalHeader()
+        if header and not self._keyboard_behavior:
+            self._keyboard_behavior = HeaderKeyboardBehavior(self, header)
+            logger.debug("Header keyboard shortcuts initialized")
 
     # =====================================
     # Qt Event Overrides (delegate to handlers)
@@ -687,3 +700,13 @@ class FileTableView(QTableView):
     def _get_selection_store(self):
         """Get SelectionStore instance."""
         return self._selection_behavior.selection_store
+
+    # =====================================
+    # Cleanup
+    # =====================================
+
+    def cleanup(self) -> None:
+        """Clean up resources."""
+        if self._keyboard_behavior:
+            self._keyboard_behavior.cleanup()
+            self._keyboard_behavior = None

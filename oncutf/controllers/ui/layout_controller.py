@@ -296,6 +296,10 @@ class LayoutController:
             self.parent_window.header.set_click_actions_enabled(True)
 
         self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
+
+        # Setup keyboard shortcuts for column reordering (Ctrl+Left/Right)
+        self.parent_window.file_table_view.setup_header_keyboard_shortcuts()
+
         self.parent_window.file_table_view.setAlternatingRowColors(True)
         self.parent_window.file_table_view.setShowGrid(False)
         self.parent_window.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
