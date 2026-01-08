@@ -43,6 +43,7 @@ class EventHandlerManager:
     """
 
     def __init__(self, parent_window: Any) -> None:
+        """Initialize event handler manager with lazy-loaded handlers."""
         self.parent_window = parent_window
 
         # Lazy-initialized specialized handlers

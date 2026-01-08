@@ -61,6 +61,7 @@ class BatchOperationsManager:
     """
 
     def __init__(self, parent_window: Any | None = None) -> None:
+        """Initialize batch operations manager with configuration and locks."""
         self.parent_window = parent_window
 
         # Batch storage by operation type

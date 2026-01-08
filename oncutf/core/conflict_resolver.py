@@ -47,6 +47,7 @@ class UndoStack:
     """Simple undo stack for operations."""
 
     def __init__(self, max_size: int = 100):
+        """Initialize undo stack with maximum size."""
         self.stack: deque[ConflictOperation] = deque(maxlen=max_size)
         self.redo_stack: deque[ConflictOperation] = deque(maxlen=max_size)
 
@@ -82,6 +83,7 @@ class ConflictResolver:
     """Simple but reliable conflict resolver."""
 
     def __init__(self, backup_dir: str | None = None):
+        """Initialize conflict resolver with backup directory and strategies."""
         if backup_dir is None:
             backup_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "backups")
 

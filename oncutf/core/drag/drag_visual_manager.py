@@ -75,6 +75,7 @@ class DragVisualManager:
     _instance: "DragVisualManager | None" = None
 
     def __init__(self):
+        """Initialize singleton drag visual manager with state and caches."""
         # Ensure singleton
         if DragVisualManager._instance is not None:
             raise RuntimeError("DragVisualManager is a singleton. Use get_instance()")

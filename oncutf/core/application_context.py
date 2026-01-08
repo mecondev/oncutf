@@ -52,6 +52,7 @@ class ApplicationContext(QObject):
     _instance: ApplicationContext | None = None
 
     def __init__(self, parent: QObject | None = None):
+        """Initialize singleton application context with stores and managers."""
         super().__init__(parent)
 
         # Ensure singleton

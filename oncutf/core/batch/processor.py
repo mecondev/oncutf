@@ -19,6 +19,7 @@ class BatchProcessor:
     """Simple batch processor for speed optimization."""
 
     def __init__(self, batch_size: int = 100, max_workers: int = 4):
+        """Initialize batch processor with size, workers, and executor."""
         self.batch_size = batch_size
         self.max_workers = max_workers
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
@@ -134,6 +135,7 @@ class SmartBatchProcessor(BatchProcessor):
     def __init__(
         self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs: object
     ) -> None:  # noqa: ARG002
+        """Initialize smart processor with dynamic batch size optimization."""
         super().__init__(initial_batch_size, max_workers)
         self.initial_batch_size = initial_batch_size
         self.performance_history: list[float] = []

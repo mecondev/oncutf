@@ -24,6 +24,7 @@ class DragManager(QObject):
     _instance: "DragManager | None" = None
 
     def __init__(self, parent: QObject | None = None):
+        """Initialize singleton drag manager with state tracking."""
         super().__init__(parent)
 
         # Ensure singleton
