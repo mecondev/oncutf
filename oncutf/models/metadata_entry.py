@@ -276,6 +276,7 @@ class MetadataEntry:
         return clean_data
 
     def __repr__(self) -> str:
+        """Return detailed debug representation with extended status, field count, modified flag, and age."""
         return (
             f"<MetadataEntry("
             f"extended={self.is_extended}, "
@@ -286,4 +287,5 @@ class MetadataEntry:
         )
 
     def __str__(self) -> str:
+        """Return simple string representation with field count and extended status."""
         return f"MetadataEntry({self.field_count} fields, extended={self.is_extended})"

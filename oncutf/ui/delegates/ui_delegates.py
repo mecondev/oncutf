@@ -45,6 +45,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
     """
 
     def __init__(self, parent: QWidget | None = None, theme: "ThemeManager | None" = None) -> None:
+        """Initialize the delegate with optional theme manager."""
         super().__init__(parent)
         self.theme = theme
 
@@ -351,6 +352,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     """Custom delegate for TreeView items that properly handles background painting."""
 
     def __init__(self, parent: QWidget | None = None, theme: "ThemeManager | None" = None) -> None:
+        """Initialize the delegate with optional theme manager and hover tracking."""
         super().__init__(parent)
         self.theme = theme
         self.hovered_index: QModelIndex | None = None

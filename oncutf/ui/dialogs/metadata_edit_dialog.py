@@ -43,6 +43,7 @@ class MetadataEditDialog(QDialog):
         field_name: str = "Title",
         field_value: str = "",
     ):
+        """Initialize the metadata edit dialog with field name, value, and selected files."""
         super().__init__(parent)
         self.selected_files = selected_files or []
         self.metadata_cache = metadata_cache

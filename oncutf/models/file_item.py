@@ -69,9 +69,11 @@ class FileItem:
             self.color = "none"
 
     def __str__(self) -> str:
+        """Return simple string representation with filename only."""
         return f"FileItem({self.filename})"
 
     def __repr__(self) -> str:
+        """Return detailed string representation with path, extension, and modified time."""
         return f"FileItem(full_path='{self.full_path}', extension='{self.extension}', modified='{self.modified}')"
 
     @classmethod

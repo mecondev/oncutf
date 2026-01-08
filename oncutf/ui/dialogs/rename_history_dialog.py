@@ -45,6 +45,7 @@ class RenameHistoryDialog(QDialog):
     """
 
     def __init__(self, parent: QWidget | None = None):
+        """Initialize the rename history dialog with history manager."""
         super().__init__(parent)
         self.parent_window = parent
         self.history_manager = get_rename_history_manager()
