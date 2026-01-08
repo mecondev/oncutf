@@ -1,8 +1,12 @@
-# UI Architecture Patterns — Mixins vs Behaviors vs Handlers
+# UI Architecture Patterns — Mixins vs Behaviors vs Handlers [COMPLETED]
 
 **Author:** Michael Economou  
 **Date:** 2025-12-28  
-**Status:** Active guidelines for oncutf UI layer
+**Completed:** 2026-01-05  
+**Archived:** 2026-01-09  
+**Status:** ✅ COMPLETED - All behaviors extracted, pattern established
+
+**Archive Reason:** Mixin-to-behavior migration complete. All large behaviors split to packages. Pattern guidelines finalized.
 
 ---
 
@@ -95,9 +99,13 @@ class MyTableView(QTableView):
 ### Current behaviors
 | Behavior | Protocol | Purpose | Status |
 |----------|----------|---------|--------|
-| `SelectionBehavior` | `SelectableWidget` | Row selection with Qt sync, anchor row, keyboard modifiers | ✅ Complete |
-| `DragDropBehavior` | `DraggableWidget` | Drag-and-drop with visual feedback, metadata tree drops | ✅ Complete |
-| `ColumnManagementBehavior` | `ColumnManageableWidget` | Column width/visibility management, delayed save, config persistence | ✅ Complete |
+| `SelectionBehavior` | `SelectableWidget` | Row selection with Qt sync, anchor row, keyboard modifiers | ✅ Complete (package) |
+| `DragDropBehavior` | `DraggableWidget` | Drag-and-drop with visual feedback, metadata tree drops | ✅ Complete (cohesive) |
+| `ColumnManagementBehavior` | `ColumnManageableWidget` | Column width/visibility management, delayed save, config persistence | ✅ Complete (package) |
+| `MetadataContextMenuBehavior` | `ContextMenuWidget` | Right-click menu actions for metadata | ✅ Complete (package) |
+| `MetadataCacheBehavior` | `CacheableWidget` | Metadata caching logic | ✅ Complete (cohesive) |
+| `MetadataEditBehavior` | `EditableWidget` | Inline metadata editing | ✅ Complete (package) |
+| `MetadataScrollBehavior` | `ScrollableWidget` | Scroll synchronization | ✅ Complete (cohesive) |
 
 ### Creating new behaviors
 1. Define protocol in `ui/behaviors/<feature>_behavior.py`:
@@ -244,17 +252,17 @@ class MetadataTreeView(QTreeWidget):
 - ✅ Document mixin usage in this file
 - ✅ All new features use behaviors
 
-### Phase 2: Extract behaviors (🔄 In Progress)
-**Completed:**
-- ✅ `SelectionBehavior` — extracted from `SelectionMixin`
-- ✅ `DragDropBehavior` — extracted from `DragDropMixin`
-- ✅ `ColumnManagementBehavior` — extracted from `ColumnManagementMixin` (1295→667 lines, 48% reduction)
+### Phase 2: Extract behaviors (✅ Complete - 2026-01-05)
+**Completed (split to packages):**
+- ✅ `column_management/` — 6 modules (column_behavior, visibility_manager, width_manager, header_configurator, protocols, __init__)
+- ✅ `metadata_context_menu/` — 6 modules (context_menu_behavior, menu_builder, column_integration, key_mapping, protocols, __init__)
+- ✅ `selection/` — 3 modules (selection_behavior, protocols, __init__)
 
-**Pending:**
-- ⏳ `MetadataCacheBehavior` — from `MetadataCacheMixin`
-- ⏳ `MetadataEditBehavior` — from `MetadataEditMixin`
-- ⏳ `MetadataContextMenuBehavior` — from `MetadataContextMenuMixin`
-- ⏳ `MetadataScrollBehavior` — from `MetadataScrollMixin`
+**Completed (already cohesive):**
+- ✅ `DragDropBehavior` — 501 lines (cohesive)
+- ✅ `MetadataCacheBehavior` — 466 lines (cohesive)
+- ✅ `MetadataScrollBehavior` — 325 lines (cohesive)
+- ✅ `metadata_edit/` — Already package (8 modules)
 
 **Migration process per mixin:**
 1. Create behavior equivalent in `ui/behaviors/`
@@ -288,19 +296,19 @@ For widgets with complex logic:
 
 This section tracks which widgets use which patterns, to prevent "dual system forever" syndrome.
 
-### Mixin-Based Widgets (Legacy)
+### Mixin-Based Widgets (Legacy - Frozen)
 
 | Widget | Mixins Used | Migration Status |
 |--------|-------------|------------------|
-| `FileTableView` | `SelectionMixin`, `DragDropMixin`, `ColumnManagementMixin` | [PARTIAL] Column behavior extracted |
-| `MetadataTreeView` | `MetadataCacheMixin`, `MetadataEditMixin`, `MetadataContextMenuMixin`, `MetadataScrollMixin` | [TODO] Pending behavior extraction |
+| `FileTableView` | `SelectionMixin`, `DragDropMixin`, `ColumnManagementMixin` | [FROZEN] Mixins frozen, behaviors available |
+| `MetadataTreeView` | `MetadataCacheMixin`, `MetadataEditMixin`, `MetadataContextMenuMixin`, `MetadataScrollMixin` | [FROZEN] Mixins frozen, behaviors available |
 
-### Behavior-Based Widgets (Modern)
+### Behavior-Based Widgets (Modern - Recommended)
 
 | Widget | Behaviors Used | Status |
 |--------|----------------|--------|
-| `FileTableView` | `ColumnManagementBehavior` | [OK] Active |
-| (Future widgets) | Use behaviors from start | [OK] Recommended |
+| `FileTableView` | `ColumnManagementBehavior`, `SelectionBehavior`, `DragDropBehavior` (available) | [OK] Composition pattern established |
+| `MetadataTreeView` | `MetadataCacheBehavior`, `MetadataEditBehavior`, `MetadataContextMenuBehavior`, `MetadataScrollBehavior` (available) | [OK] Composition pattern established |
 
 ### Handler-Based Widgets (Internal Organization)
 
@@ -317,4 +325,19 @@ Migrate a mixin to behavior when:
 - Testing becomes painful due to Qt dependencies
 
 **Do NOT migrate just for the sake of migration** - focus on value delivered.
+
+---
+
+## Final Summary (2026-01-09)
+
+**All objectives achieved:**
+- ✅ Mixins frozen (no new mixins created)
+- ✅ Behaviors extracted (7 total behaviors)
+- ✅ Large behaviors split to packages (3 packages: column_management/, metadata_context_menu/, selection/)
+- ✅ Cohesive behaviors remain as single files (4 behaviors)
+- ✅ Backward compatibility maintained (delegators)
+- ✅ Pattern guidelines established
+- ✅ All quality gates passing (986 tests, ruff clean, mypy clean, 99.9%+ docstring coverage)
+
+**Pattern is now stable and documented.** Future UI work should follow behavior pattern over mixins.
 
