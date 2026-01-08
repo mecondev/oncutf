@@ -29,22 +29,35 @@ logger = get_cached_logger(__name__)
 class RenameHistoryDB(Protocol):
     """Protocol for database operations needed by rename history manager."""
 
-    def record_rename_operation(self, *args: Any, **kwargs: Any) -> bool: ...
-    def get_operation_details(self, operation_id: str) -> list[dict[str, Any]] | None: ...
-    def cleanup_orphaned_records(self) -> int: ...
-    def get_database_stats(self) -> dict[str, Any]: ...
+    def record_rename_operation(self, *args: Any, **kwargs: Any) -> bool:
+        """Record a rename operation in the database."""
+        ...
+
+    def get_operation_details(self, operation_id: str) -> list[dict[str, Any]] | None:
+        """Retrieve details for a specific operation ID."""
+        ...
+
+    def cleanup_orphaned_records(self) -> int:
+        """Clean up orphaned records and return count of removed entries."""
+        ...
+
+    def get_database_stats(self) -> dict[str, Any]:
+        """Get database statistics for rename history."""
+        ...
 
 
 class RenameOperation:
     """Represents a single rename operation within a batch."""
 
     def __init__(self, old_path: str, new_path: str, old_filename: str, new_filename: str):
+        """Initialize rename operation with old and new paths/filenames."""
         self.old_path = old_path
         self.new_path = new_path
         self.old_filename = old_filename
         self.new_filename = new_filename
 
     def __repr__(self):
+        """Return string representation of rename operation."""
         return f"<RenameOperation({self.old_filename} -> {self.new_filename})>"
 
 
@@ -59,6 +72,7 @@ class RenameBatch:
         post_transform_data: dict[str, Any] | None = None,
         timestamp: str | None = None,
     ):
+        """Initialize rename batch with operations and optional metadata."""
         self.operation_id = operation_id
         self.operations = operations
         self.modules_data = modules_data
@@ -67,9 +81,11 @@ class RenameBatch:
 
     @property
     def file_count(self) -> int:
+        """Return the number of files in this batch."""
         return len(self.operations)
 
     def __repr__(self):
+        """Return string representation of rename batch."""
         return f"<RenameBatch(id={self.operation_id[:8]}..., files={self.file_count})>"
 
 

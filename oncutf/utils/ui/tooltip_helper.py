@@ -30,6 +30,7 @@ class WidgetTooltipFilter(QObject):
     """Event filter for persistent tooltips on widgets"""
 
     def __init__(self, widget: QWidget, tooltip: "CustomTooltip", parent: QObject | None = None):
+        """Initialize tooltip filter for widget with hover delay."""
         super().__init__(parent)
         self.widget = widget
         self.tooltip = tooltip
@@ -94,6 +95,7 @@ class CustomTooltip(QLabel):
         tooltip_type: str = TooltipType.DEFAULT,
         persistent: bool = False,
     ):
+        """Initialize custom tooltip with text, type, and persistence mode."""
         super().__init__(text, parent)
         self.tooltip_type = tooltip_type
         self.persistent = persistent
@@ -181,6 +183,7 @@ class ActionTooltipFilter(QObject):
     """Event filter for QMenu to show custom tooltips on QAction hover"""
 
     def __init__(self, menu: QMenu, parent: QObject | None = None):
+        """Initialize action tooltip filter for menu."""
         super().__init__(parent)
         self.menu = menu
         self.current_tooltip: CustomTooltip | None = None
@@ -264,6 +267,7 @@ class ItemTooltipFilter(QObject):
     """Event filter for QListWidget/QTableWidget to show custom tooltips on item hover"""
 
     def __init__(self, widget: QListWidget | QTableWidget, parent: QObject | None = None):
+        """Initialize item tooltip filter for list/table widget."""
         super().__init__(parent)
         self.widget = widget
         self.current_tooltip: CustomTooltip | None = None
@@ -556,22 +560,26 @@ class TooltipHelper:
 
     @classmethod
     def show_error_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:
+        """Show error-styled tooltip on widget."""
         cls.show_tooltip(widget, message, TooltipType.ERROR, duration)
 
     @classmethod
     def show_warning_tooltip(
         cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
+        """Show warning-styled tooltip on widget."""
         cls.show_tooltip(widget, message, TooltipType.WARNING, duration)
 
     @classmethod
     def show_info_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:
+        """Show info-styled tooltip on widget."""
         cls.show_tooltip(widget, message, TooltipType.INFO, duration)
 
     @classmethod
     def show_success_tooltip(
         cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
+        """Show success-styled tooltip on widget."""
         cls.show_tooltip(widget, message, TooltipType.SUCCESS, duration)
 
     @classmethod
