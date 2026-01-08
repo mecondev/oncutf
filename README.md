@@ -157,6 +157,12 @@ python3.12 main.py
 - **Ctrl+T**: Auto-fit columns to content
 - **Ctrl+Shift+T**: Reset columns to default widths
 
+#### Column Management Shortcuts (when hovering over column header)
+- **Ctrl+Left**: Move hovered column left (columns must be unlocked)
+- **Ctrl+Right**: Move hovered column right (columns must be unlocked)
+
+**Note:** Column reordering is hover-based — no need to click the column header. Simply hover over it and press Ctrl+Left/Right. Columns must be unlocked via the header context menu (right-click on any column header).
+
 **Drag & Drop Modifiers:**
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
 - **Ctrl**: Load basic metadata

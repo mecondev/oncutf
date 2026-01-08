@@ -164,6 +164,14 @@ class InteractiveHeader(QHeaderView):
 
         super().mousePressEvent(event)
 
+    def enterEvent(self, event) -> None:
+        """Clear table hover when mouse enters header."""
+        # Get file table view to clear its hover state
+        file_table_view = self._get_file_table_view()
+        if file_table_view and hasattr(file_table_view, '_hover_handler'):
+            file_table_view._hover_handler.clear_hover()
+        super().enterEvent(event)
+
     def mouseMoveEvent(self, event) -> None:
         if not self.sectionsMovable():
             super().mouseMoveEvent(event)

@@ -152,8 +152,43 @@ class FileTableView(QTableView):
         # Install event filter for tooltips
         self.viewport().installEventFilter(self)
 
+        # Install event filters on scrollbars to clear hover when mouse enters them
+        self._setup_scrollbar_hover_clear()
+
         # Schedule header visibility update
         schedule_ui_update(self._column_mgmt_behavior._update_header_visibility, delay=100)
+
+    def _setup_scrollbar_hover_clear(self) -> None:
+        """Setup event filters on scrollbars to clear table hover."""
+        from oncutf.core.pyqt_imports import QEvent, QObject
+
+        class ScrollbarHoverFilter(QObject):
+            """Event filter that clears table hover when mouse enters scrollbar."""
+            def __init__(self, table_view, parent=None):
+                super().__init__(parent)
+                self.table_view = table_view
+
+            def eventFilter(self, obj, event):
+                if event.type() == QEvent.Enter:
+                    if hasattr(self.table_view, '_hover_handler'):
+                        self.table_view._hover_handler.clear_hover()
+                return False
+
+        # Horizontal scrollbar
+        h_scrollbar = self.horizontalScrollBar()
+        if h_scrollbar:
+            h_filter = ScrollbarHoverFilter(self, h_scrollbar)
+            h_scrollbar.installEventFilter(h_filter)
+            # Keep reference to prevent garbage collection
+            h_scrollbar._hover_clear_filter = h_filter
+
+        # Vertical scrollbar
+        v_scrollbar = self.verticalScrollBar()
+        if v_scrollbar:
+            v_filter = ScrollbarHoverFilter(self, v_scrollbar)
+            v_scrollbar.installEventFilter(v_filter)
+            # Keep reference to prevent garbage collection
+            v_scrollbar._hover_clear_filter = v_filter
 
     def _setup_qt_properties(self) -> None:
         """Setup Qt widget properties."""

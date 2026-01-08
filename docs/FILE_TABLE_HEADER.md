@@ -1,47 +1,46 @@
-# Column Reordering Implementation Plan
+# File Table Header — Features & Shortcuts
 
 **Author:** Michael Economou  
 **Date:** 2026-01-08  
-**Last Updated:** 2026-01-08 (Final Implementation Complete)
-**Status:** [COMPLETE] FULLY IMPLEMENTED & TESTED
+**Last Updated:** 2026-01-08  
+**Type:** Feature Documentation
 
 ---
 
 ## Overview
 
-Full column reordering with drag & drop, persistence, lock/unlock toggle, and visual feedback.
+The File Table Header provides interactive column management with drag & drop reordering, visibility controls, sorting, and keyboard shortcuts.
 
-**Current Status:** Production Ready
+**Status:** Production Ready
 
 ---
 
-## Implementation Summary (Completed)
+## Features
 
-### [COMPLETE] Features Delivered (Phase 1-4)
+### Column Reordering
 
-#### Phase 1: Lock/Unlock Columns
+#### Lock/Unlock Columns
 - [x] Toggle lock state via context menu
 - [x] Persist lock state in config: `window.columns_locked`
 - [x] UI feedback: lock state displayed in context menu
 - [x] Header styling reflects lock state (no hover when locked)
 
-#### Phase 2: Column Reordering (Drag & Drop)
+#### Drag & Drop Reordering
 - [x] Drag column headers to reorder
 - [x] Visual drag overlay with column name
-- [x] Drag overlay shows table selection background color (#748cab)
-- [x] Drag overlay shows table header text color (#f0ebd8)
-- [x] Drag overlay has opacity/transparency (0.3 alpha for subtle effect)
+- [x] Drag overlay uses table selection background color
+- [x] Drag overlay uses table header text color
 - [x] Drag overlay positioned dynamically during mouse movement
 - [x] Status column (0) is locked and non-movable
 - [x] Sections movable state toggled via lock mechanism
 
-#### Phase 3: Order Persistence
+#### Order Persistence
 - [x] Save column order to config: `window.column_order`
 - [x] Restore order on app startup
 - [x] Column order stored as `list[column_key]`
 - [x] Status column excluded from saved order
 
-#### Phase 4: Model Sync & Edge Cases
+#### Model Synchronization
 - [x] Visual indices properly synchronized with model
 - [x] Color column delegate appears in correct position
 - [x] Sorting works correctly after reordering
@@ -50,10 +49,10 @@ Full column reordering with drag & drop, persistence, lock/unlock toggle, and vi
 - [x] Reset Column Order action restores default order
 - [x] Reset action disabled when columns locked
 
-#### Phase 5: Polish (Latest)
+#### Visual Polish
 - [x] Drag overlay visual improvements
 - [x] Better color theming for drag feedback
-- [x] Responsive opacity handling with RGBA colors
+- [x] Theme-aware color adaptation
 - [x] Context menu grouped by column categories
 - [x] Column visibility toggle with visual indicators
 - [x] Lock/unlock icons in context menu
@@ -65,7 +64,8 @@ Full column reordering with drag & drop, persistence, lock/unlock toggle, and vi
 def _create_drag_overlay(self, width: int, title: str):
     # Creates floating label for column drag feedback
     # Colors from theme: table_selection_bg + table_header_text
-    # RGBA transparency: rgba(116, 138, 171, 0.3) = semi-transparent blue
+    # Background: table selection color (no additional transparency)
+    # Text: table header text color
     # Tracks mouse position and updates overlay dynamically
 ```
 
@@ -73,7 +73,7 @@ def _create_drag_overlay(self, width: int, title: str):
 - Follows mouse cursor during drag
 - Shows column name/title
 - Theme-aware colors (auto-adapts to light/dark mode)
-- Semi-transparent (30% opacity) for clean look
+- Uses table selection background color
 - WA_TransparentForMouseEvents to prevent interference
 
 ### Notes
@@ -82,7 +82,7 @@ def _create_drag_overlay(self, width: int, title: str):
 - Columns with fixed resize behavior remain responsive
 - Lock state UI: toggle-left icon = locked, toggle-right = unlocked
 - All column operations use canonical UnifiedColumnService API
-- Theme colors: bg=#748cab (blue-gray), text=#f0ebd8 (cream)
+- Drag overlay uses theme colors (table_selection_bg + table_header_text)
 
 ### Testing
 
@@ -97,26 +97,37 @@ pytest          # project test suite (requires exiftool)
 ## Phase 6: Future Enhancements (Optional, Not Started)
 
 **Priority:** Low  
-**Time Estimate:** 30-50 minutes total
+**Note:** The core column reordering functionality is complete and production-ready. These items represent potential future enhancements that are NOT currently scheduled for implementation.
 
 ### Possible Features
 
-1. **Column presets** (20 min)
+1. **Column presets**
    - Save/load named column configurations
    - "Photography", "Video Editing", "Audio" presets
    - Quick switch between presets
-   - Status: NOT STARTED
 
-2. **Keyboard shortcuts** (10 min)
-   - Ctrl+Left/Right to move focused column
-   - Ctrl+R to reset order
-   - Status: NOT STARTED
-
-3. **Column grouping** (30 min)
+2. **Column grouping**
    - Keep related columns together
    - "File Info", "Image Data", "Device Info" groups
    - Groups can't be split when reordering
-   - Status: NOT STARTED
+
+---
+
+## Keyboard Shortcuts
+
+### Column Reordering
+
+| Shortcut | Action | Requirements |
+|----------|--------|--------------|
+| **Ctrl+Left** | Move hovered column left | Columns unlocked, not first column |
+| **Ctrl+Right** | Move hovered column right | Columns unlocked, not last column |
+
+**Notes:**
+- Column reordering is **hover-based** — no need to click the column
+- Simply hover over the column header and press Ctrl+Left or Ctrl+Right
+- Works seamlessly with mouse drag & drop reordering
+- Columns must be unlocked (toggle via context menu)
+- Visual feedback during keyboard movement (same as drag & drop)
 
 ---
 
@@ -175,27 +186,20 @@ pytest          # project test suite (requires exiftool)
 ### [PASSED] Phase 5 Tests (PASSED)
 - [x] Drag overlay displays with correct colors
 - [x] Drag overlay positioned accurately
-- [x] Opacity/transparency works (RGBA colors)
+- [x] Theme-aware color adaptation
 - [x] Column name shows in drag overlay
 - [x] Overlay follows mouse movement
-- [x] Theme-aware color adaptation
 - [x] No visual glitches during drag
 - [x] Responsive on different resolutions
 
 ### Quality Gates
-- [OK] 974+ tests passing
+- [OK] 986+ tests passing
 - [OK] ruff check . — CLEAN
 - [OK] mypy . — CLEAN (strict typing for Protocols)
 
 ---
 
-## Migration Path
-
-### Existing Users
-
-1. **No saved order:** Default FILE_TABLE_COLUMN_CONFIG order used
-2. **First drag:** Order saved to config automatically
-3. **Upgrade:** No breaking changes, feature is additive
+## Configuration
 
 ### Config Format
 
@@ -220,24 +224,23 @@ pytest          # project test suite (requires exiftool)
 }
 ```
 
+### Existing Users
+
+1. **No saved order:** Default FILE_TABLE_COLUMN_CONFIG order used
+2. **First drag:** Order saved to config automatically
+3. **Upgrade:** No breaking changes, feature is additive
+
 ---
 
-## Implementation Priority
+## Implementation Status
 
-**Phase 1 (Lock/Unlock Toggle):** [DONE] COMPLETE (Jan 8, 2026)  
-**Phase 2 (Drag & Drop):** [DONE] COMPLETE (Jan 8, 2026)  
-**Phase 3 (Persistence):** [DONE] COMPLETE (Jan 8, 2026)  
-**Phase 4 (Model Sync & Polish):** [DONE] COMPLETE (Jan 8, 2026)  
-**Phase 5 (Visual Polish):** [DONE] COMPLETE (Jan 8, 2026)  
-
-**Total Implementation Time:** ~150 minutes (2.5 hours)  
+**All Features:** [DONE] COMPLETE (Jan 8-9, 2026)  
+**Total Implementation Time:** ~160 minutes (2.7 hours)  
 **Status:** Production Ready [OK]
 
----
+### What's Completed
 
-## What's Completed
-
-[+] Full column reordering workflow  
+[+] Full column reordering workflow (drag & drop + keyboard)  
 [+] Lock/unlock mechanism with UI controls  
 [+] Persistent configuration (config.json)  
 [+] Drag & drop visual feedback (overlay)  
@@ -245,18 +248,16 @@ pytest          # project test suite (requires exiftool)
 [+] Context menu integration  
 [+] Reset to default functionality  
 [+] Column visibility toggle  
-[+] All tests passing (974+)  
+[+] Keyboard shortcuts (Ctrl+Left/Right)  
+[+] All tests passing (986+)  
 [+] Code quality gates (ruff, mypy clean)  
 
----
+### Future Considerations (NOT CURRENTLY PLANNED)
 
-## What's NOT Completed (Future Work)
+The following enhancements are potential future additions but are NOT scheduled:
 
-[-] **Column presets** - Save/load named configurations (20 min)  
-[-] **Keyboard shortcuts** - Ctrl+Left/Right for movement (10 min)  
-[-] **Column grouping** - Keep related columns together (30 min)  
-
-These are **OPTIONAL enhancements** for future consideration. The core feature is fully complete and production-ready.
+- **Column presets** - Save/load named configurations
+- **Column grouping** - Keep related columns together during reordering
 
 ---
 
