@@ -209,9 +209,10 @@ class TreeUiStateHandler:
             )
 
     def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
-        """Display metadata for a specific file item.
+        """Display metadata for a specific file item with selection-aware logic.
 
-        Handles metadata extraction from file_item or cache automatically.
+        Respects selection count - only displays metadata if single file is selected.
+        Otherwise shows appropriate empty state.
 
         Args:
             file_item: FileItem object with metadata
@@ -250,9 +251,15 @@ class TreeUiStateHandler:
                 if paths_equal(normalized_path, self.view._current_file_path):
                     self.view.modified_items.clear()
 
-            self.display_metadata(display_metadata, context=context)
+            # Use smart display logic that respects selection count
+            selection_count = self.view._selection_handler.get_current_selection_count()
+            self.view.smart_display_metadata_or_empty_state(
+                display_metadata, selection_count, context
+            )
         else:
-            self.clear_tree()
+            # No metadata available - use smart display to show appropriate state
+            selection_count = self.view._selection_handler.get_current_selection_count()
+            self.view.smart_display_metadata_or_empty_state(None, selection_count, context)
 
         # Update header visibility after file metadata display
         self.view._update_header_visibility()

@@ -31,6 +31,35 @@ class MetadataTreeSelectionHandler:
         """
         self._view = view
 
+    def get_current_selection_count(self) -> int:
+        """Get current selection count from parent file table.
+
+        Returns:
+            Number of currently selected files
+
+        """
+        parent_window = self._view._get_parent_with_file_table()
+        if not parent_window:
+            return 0
+
+        # Try SelectionStore first (most reliable)
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            if context and hasattr(context, "selection_store"):
+                return len(context.selection_store.get_selected_rows())
+        except Exception:
+            pass
+
+        # Fallback: check file_table_view selection
+        if hasattr(parent_window, "file_table_view"):
+            selection_model = parent_window.file_table_view.selectionModel()
+            if selection_model:
+                return len(selection_model.selectedRows())
+
+        return 0
+
     def get_current_selection(self):
         """Get current selection via parent traversal."""
         parent_window = self._view._get_parent_with_file_table()

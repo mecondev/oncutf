@@ -309,16 +309,84 @@ class MetadataLoader:
         if self._parent_window and hasattr(self._parent_window, "file_model"):
             self._parent_window.file_model.refresh_icons()
 
-        # Display metadata for the last item (or single item)
-        if metadata_tree_view and items:
+        # Smart display: respect selection count
+        if items:
+            # Get metadata from the appropriate file
             display_file = items[0] if len(items) == 1 else items[-1]
-            metadata_tree_view.display_file_metadata(display_file)
+            metadata = None
+            if hasattr(display_file, "metadata") and display_file.metadata:
+                metadata = display_file.metadata
+            elif self._parent_window and hasattr(self._parent_window, "metadata_cache"):
+                from oncutf.utils.filesystem.path_normalizer import normalize_path
+
+                cache_entry = self._parent_window.metadata_cache.get_entry(
+                    normalize_path(display_file.full_path)
+                )
+                if cache_entry and hasattr(cache_entry, "data"):
+                    metadata = cache_entry.data
+
+            self._smart_display_metadata(metadata, context="all_cached")
 
     def _get_metadata_tree_view(self) -> Any:
         """Get metadata tree view reference from parent window."""
         if self._parent_window and hasattr(self._parent_window, "metadata_tree_view"):
             return self._parent_window.metadata_tree_view
         return None
+
+    def _get_current_selection_count(self) -> int:
+        """Get current selection count from file table."""
+        if not self._parent_window:
+            return 0
+
+        # Try SelectionStore first (most reliable)
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            if context and hasattr(context, "selection_store"):
+                return len(context.selection_store.get_selected_rows())
+        except Exception:
+            pass
+
+        # Fallback: check file_table_view selection
+        if hasattr(self._parent_window, "file_table_view"):
+            selection_model = self._parent_window.file_table_view.selectionModel()
+            if selection_model:
+                return len(selection_model.selectedRows())
+
+        return 0
+
+    def _smart_display_metadata(self, metadata: dict[str, Any] | None, context: str = "") -> None:
+        """Smart display metadata respecting selection count rules.
+
+        Args:
+            metadata: Metadata to display (or None)
+            context: Context string for logging
+
+        """
+        metadata_tree_view = self._get_metadata_tree_view()
+        if not metadata_tree_view:
+            return
+
+        selection_count = self._get_current_selection_count()
+
+        # Use smart display method if available
+        if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
+            metadata_tree_view.smart_display_metadata_or_empty_state(
+                metadata, selection_count, context
+            )
+        elif selection_count == 1 and metadata:
+            # Fallback: only display if single selection
+            if hasattr(metadata_tree_view, "display_metadata"):
+                metadata_tree_view.display_metadata(metadata, context)
+        elif hasattr(metadata_tree_view, "show_empty_state"):
+            # Multiple selection or no metadata - show empty state
+            if selection_count > 1:
+                metadata_tree_view.show_empty_state(f"{selection_count} files selected")
+            elif selection_count == 0:
+                metadata_tree_view.show_empty_state("No file selected")
+            else:
+                metadata_tree_view.show_empty_state("No metadata available")
 
     # =========================================================================
     # Single File Loading
@@ -365,9 +433,10 @@ class MetadataLoader:
                     if self._parent_window and hasattr(self._parent_window, "file_model"):
                         self._parent_window.file_model.refresh_icons()
 
-                    # Display in metadata tree
-                    if metadata_tree_view:
-                        metadata_tree_view.display_file_metadata(item)
+                    # Smart display: respect selection count
+                    self._smart_display_metadata(
+                        enhanced_metadata, context="single_file_load"
+                    )
 
                     logger.debug(
                         "[MetadataLoader] Loaded %s metadata for %s",
@@ -500,10 +569,14 @@ class MetadataLoader:
             """Called when parallel loading completes."""
             loading_dialog.close()
 
-            # Display metadata for the last loaded file
-            if metadata_tree_view and needs_loading:
+            # Smart display: respect selection count
+            if needs_loading:
                 display_file = needs_loading[-1]
-                metadata_tree_view.display_file_metadata(display_file)
+                metadata = None
+                if hasattr(display_file, "metadata") and display_file.metadata:
+                    metadata = display_file.metadata
+
+                self._smart_display_metadata(metadata, context="parallel_load_complete")
 
             logger.info(
                 "[%s] Completed loading metadata for %d files",

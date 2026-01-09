@@ -61,7 +61,7 @@ class InitializationOrchestrator:
         self._phase2_attributes_and_state()
         self._phase3_ui_setup()
         self._phase4_configuration_and_finalization(theme_callback)
-        logger.info("MainWindow initialization orchestration complete")
+        logger.info("[MAINWINDOW] MainWindow initialization orchestration complete")
 
     def _phase1_core_infrastructure(self) -> None:
         """Phase 1: Initialize core infrastructure.
