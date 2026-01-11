@@ -151,14 +151,24 @@ class WindowConfigManager:
             # Save file table column widths (ALL columns, not just visible)
             if hasattr(self.main_window, "file_table_view"):
                 file_model = self.main_window.file_table_view.model()
-                if file_model and hasattr(file_model, "get_all_columns"):
+                if file_model:
                     column_widths = {}
 
                     # Save status column (always column 0)
                     column_widths["status"] = self.main_window.file_table_view.columnWidth(0)
 
+                    # Get all columns via the column manager service, not the model
+                    if hasattr(self.main_window, "column_manager") and hasattr(
+                        self.main_window.column_manager, "column_service"
+                    ):
+                        all_columns = self.main_window.column_manager.column_service.get_all_columns()
+                    elif hasattr(file_model, "get_all_columns"):
+                        all_columns = file_model.get_all_columns()
+                    else:
+                        # Fallback: get visible columns
+                        all_columns = dict.fromkeys(file_model.get_visible_columns())
+
                     # Save ALL columns by their keys (including hidden ones)
-                    all_columns = file_model.get_all_columns()
                     for i, column_key in enumerate(all_columns.keys()):
                         column_index = i + 1  # +1 because status is column 0
                         if column_index < self.main_window.file_table_view.columnCount():
@@ -167,7 +177,7 @@ class WindowConfigManager:
                             )
 
                     window_config.set("file_table_column_widths", column_widths)
-                    logger.debug(
+                    logger.info(
                         "[Config] Saved file table column widths for %d columns: %s",
                         len(column_widths),
                         list(column_widths.keys()),
