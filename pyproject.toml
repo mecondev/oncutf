@@ -79,7 +79,7 @@ no_implicit_optional = true
 strict_equality = true
 show_error_codes = true
 pretty = true
-exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)|fonts_rc'
+exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)'
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
@@ -91,7 +91,7 @@ ignore_missing_imports = false
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.utils.ui.fonts_rc",
+    "oncutf.ui.resources_rc",
     "oncutf.ui.widgets.node_editor.*"
 ]
 ignore_errors = true

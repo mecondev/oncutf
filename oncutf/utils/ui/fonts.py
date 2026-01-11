@@ -10,7 +10,7 @@ Manages loading and providing access to the Inter font family
 import logging
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QFont, QFontDatabase, QResource
+from oncutf.core.pyqt_imports import QFont, QFontDatabase
 
 if TYPE_CHECKING:
     from oncutf.ui import resources_rc  # noqa: F401
@@ -49,133 +49,45 @@ class InterFonts:
         """Load all Inter fonts from filesystem or QResource based on configuration"""
         import os
 
-        from oncutf.config import USE_EMBEDDED_FONTS
         from oncutf.utils.filesystem.path_utils import get_fonts_dir
 
-        if USE_EMBEDDED_FONTS:
-            # Use QRC embedded fonts
-            self._load_from_qresource()
-        else:
-            # Try to load from filesystem first (more stable)
-            fonts_dir = str(get_fonts_dir())
+        # Note: USE_EMBEDDED_FONTS is always False (embedded mode removed)
+        # Load from filesystem only
+        fonts_dir = str(get_fonts_dir())
 
-            if os.path.exists(fonts_dir):
-                for font_key, font_file in self.FONT_FILES.items():
-                    font_path = os.path.join(fonts_dir, font_file)
-
-                    if os.path.exists(font_path):
-                        # Load font from file path (more stable than QResource data)
-                        font_id = QFontDatabase.addApplicationFont(font_path)
-                        if font_id != -1:
-                            families = QFontDatabase.applicationFontFamilies(font_id)
-                            if families:
-                                self.loaded_fonts[font_key] = font_id
-                                self.font_families[font_key] = families[0]
-                                logger.debug(
-                                    "Loaded %s: %s from %s",
-                                    font_key,
-                                    families[0],
-                                    font_path,
-                                    extra={"dev_only": True},
-                                )
-                            else:
-                                logger.warning("No families found for %s", font_key)
-                        else:
-                            logger.error("Failed to load font %s from %s", font_key, font_path)
-                    else:
-                        logger.error("Font file not found: %s", font_path)
-            else:
-                logger.error("Fonts directory not found: %s", fonts_dir)
-
-        # Fallback: try QResource if filesystem loading failed
-        if not self.loaded_fonts and not USE_EMBEDDED_FONTS:
-            logger.debug("Trying QResource fallback...", extra={"dev_only": True})
-            try:
-                # Import is used for side effects to register resources
-                import oncutf.utils.ui.fonts_rc  # noqa: F401
-
-                for font_key, font_file in self.FONT_FILES.items():
-                    if font_key not in self.loaded_fonts:
-                        resource_path = f":/fonts/{font_file}"
-
-                        # Load font from Qt resources (may cause issues on some systems)
-                        font_data = QResource(resource_path).data()
-                        if font_data:
-                            # Use temporary file approach for problematic systems
-                            import tempfile
-
-                            with tempfile.NamedTemporaryFile(
-                                suffix=".ttf", delete=False
-                            ) as tmp_file:
-                                tmp_file.write(font_data)
-                                tmp_path = tmp_file.name
-
-                            font_id = QFontDatabase.addApplicationFont(tmp_path)
-                            os.unlink(tmp_path)  # Clean up temp file
-
-                            if font_id != -1:
-                                families = QFontDatabase.applicationFontFamilies(font_id)
-                                if families:
-                                    self.loaded_fonts[font_key] = font_id
-                                    self.font_families[font_key] = families[0]
-                                    logger.debug(
-                                        "Loaded %s: %s from resources",
-                                        font_key,
-                                        families[0],
-                                        extra={"dev_only": True},
-                                    )
-
-            except ImportError as e:
-                logger.error("Could not import fonts_rc: %s", e)
-                logger.info("Run: pyrcc5 resources/fonts.qrc -o resources/fonts_rc.py")
-
-    def _load_from_qresource(self) -> None:
-        """Load fonts from QResource (embedded mode)"""
-        import os
-        import tempfile
-
-        logger.debug("Loading fonts from embedded QResource...", extra={"dev_only": True})
-        try:
-            # Import is used for side effects to register resources
-            import oncutf.utils.ui.fonts_rc  # noqa: F401
-
+        if os.path.exists(fonts_dir):
             for font_key, font_file in self.FONT_FILES.items():
-                resource_path = f":/fonts/{font_file}"
+                font_path = os.path.join(fonts_dir, font_file)
 
-                # Load font from Qt resources
-                font_data = QResource(resource_path).data()
-                if font_data:
-                    # Use temporary file approach for problematic systems
-                    with tempfile.NamedTemporaryFile(suffix=".ttf", delete=False) as tmp_file:
-                        tmp_file.write(font_data)
-                        tmp_path = tmp_file.name
-
-                    font_id = QFontDatabase.addApplicationFont(tmp_path)
-                    os.unlink(tmp_path)  # Clean up temp file
-
+                if os.path.exists(font_path):
+                    # Load font from file path (more stable than QResource data)
+                    font_id = QFontDatabase.addApplicationFont(font_path)
                     if font_id != -1:
                         families = QFontDatabase.applicationFontFamilies(font_id)
                         if families:
                             self.loaded_fonts[font_key] = font_id
                             self.font_families[font_key] = families[0]
                             logger.debug(
-                                "Loaded %s: %s from embedded resources",
+                                "Loaded %s: %s from %s",
                                 font_key,
                                 families[0],
+                                font_path,
                                 extra={"dev_only": True},
                             )
                         else:
-                            logger.warning("No families found for embedded %s", font_key)
+                            logger.warning("No families found for %s", font_key)
                     else:
-                        logger.error("Failed to load embedded font %s", font_key)
+                        logger.error("Failed to load font %s from %s", font_key, font_path)
                 else:
-                    logger.error(
-                        "No data found for embedded font %s at %s", font_key, resource_path
-                    )
+                    logger.error("Font file not found: %s", font_path)
+        else:
+            logger.error("Fonts directory not found: %s", fonts_dir)
 
-        except ImportError as e:
-            logger.error("Could not import fonts_rc for embedded fonts: %s", e)
-            logger.info("Run: pyrcc5 resources/fonts.qrc -o utils/fonts_rc.py")
+        # Note: Fallback QResource loading removed (dead code)
+        # All fonts now load from resources_rc.py via JetBrainsMonoFonts class
+
+    # Note: _load_from_qresource removed (dead code - embedded mode disabled)
+    # All fonts now load from resources_rc.py
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
         """Get a QFont for specific use case with DPI scaling
