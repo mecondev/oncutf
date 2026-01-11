@@ -131,18 +131,25 @@ class MetadataTreeViewConfig:
         # Save current widths to runtime before switching to placeholder
         # This preserves user's column widths when switching between files
         header = view.header()
-        if header and header.count() >= 2 and not self._runtime_widths:
-            # Only save if not already saved (first time or after restart)
+        if header and header.count() >= 2:
             current_key = view.columnWidth(0)
             current_value = view.columnWidth(1)
+            # Save if widths are valid (not placeholder widths)
             if current_key > 0 and current_value > 0:
-                self._runtime_widths["key"] = current_key
-                self._runtime_widths["value"] = current_value
+                # Don't overwrite runtime widths with placeholder widths (140, 250)
+                if current_key != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"] or \
+                   current_value != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"]:
+                    self._runtime_widths["key"] = current_key
+                    self._runtime_widths["value"] = current_value
 
         # Use batch updates to prevent flickering
         view.setUpdatesEnabled(False)
 
         try:
+            # Disconnect resize signal to prevent placeholder widths from being saved
+            with contextlib.suppress(AttributeError, RuntimeError, TypeError):
+                header.sectionResized.disconnect()
+
             # Show placeholder using unified helper
             if view.placeholder_helper:
                 view.placeholder_helper.show()
@@ -154,7 +161,7 @@ class MetadataTreeViewConfig:
 
             header.setSectionResizeMode(0, QHeaderView.Fixed)
             header.setSectionResizeMode(1, QHeaderView.Fixed)
-            # Use placeholder widths for placeholder mode (don't update runtime widths)
+            # Use placeholder widths for placeholder mode (won't trigger save due to disconnected signal)
             header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
             header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 

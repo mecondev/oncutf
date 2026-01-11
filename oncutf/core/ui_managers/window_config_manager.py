@@ -227,8 +227,23 @@ class WindowConfigManager:
             except Exception as e:
                 logger.warning("[Config] Failed to save file table column visibility: %s", e)
 
-            # Note: Metadata tree column widths are saved immediately on user resize
-            # via view_config._on_column_resized (mark_dirty + auto-save)
+            # Save metadata tree column widths from runtime tracking
+            # These are preserved in view_config._runtime_widths during file selection changes
+            try:
+                if hasattr(self.main_window, "metadata_tree_view"):
+                    view_config = getattr(self.main_window.metadata_tree_view, "_view_config", None)
+                    if view_config and hasattr(view_config, "_runtime_widths"):
+                        runtime_widths = view_config._runtime_widths
+                        if runtime_widths:
+                            window_config.set("metadata_tree_column_widths", runtime_widths)
+                            logger.debug(
+                                "[Config] Saved metadata tree runtime widths: %s",
+                                runtime_widths,
+                                extra={"dev_only": True},
+                            )
+            except Exception as e:
+                logger.warning("[Config] Failed to save metadata tree runtime widths: %s", e)
+
             if hasattr(self.main_window, "file_tree_view"):
                 expanded_paths = self.main_window.file_tree_view._save_expanded_state()
                 window_config.set("file_tree_expanded_paths", expanded_paths)
@@ -395,6 +410,12 @@ class WindowConfigManager:
                             self.main_window.metadata_tree_view.setColumnWidth(
                                 1, metadata_tree_columns["value"]
                             )
+
+                        # Initialize runtime widths in view_config so they persist during session
+                        view_config = getattr(self.main_window.metadata_tree_view, "_view_config", None)
+                        if view_config and hasattr(view_config, "_runtime_widths"):
+                            view_config._runtime_widths = metadata_tree_columns.copy()
+
                         logger.debug(
                             "[Config] Loaded metadata tree column widths: %s",
                             metadata_tree_columns,
