@@ -227,7 +227,28 @@ class WindowConfigManager:
             except Exception as e:
                 logger.warning("[Config] Failed to save file table column visibility: %s", e)
 
-            # Save file tree expanded state
+            # Save metadata tree column widths (mark dirty on user resize)
+            # Note: Metadata tree has fixed 2 columns (key, value) so no visibility state
+            # But we track if user explicitly resized them
+            try:
+                if hasattr(self.main_window, "metadata_tree_view"):
+                    tree_header = self.main_window.metadata_tree_view.header()
+                    if tree_header and tree_header.count() >= 2:
+                        # Check if user has resized from defaults
+                        key_width = self.main_window.metadata_tree_view.columnWidth(0)
+                        value_width = self.main_window.metadata_tree_view.columnWidth(1)
+
+                        # Only save if widths differ from defaults (140, 600)
+                        if key_width != 140 or value_width != 600:
+                            metadata_tree_columns = {"key": key_width, "value": value_width}
+                            window_config.set("metadata_tree_columns", metadata_tree_columns)
+                            logger.debug(
+                                "[Config] Saved metadata tree column widths: %s",
+                                metadata_tree_columns,
+                                extra={"dev_only": True},
+                            )
+            except Exception as e:
+                logger.warning("[Config] Failed to save metadata tree columns: %s", e)
             if hasattr(self.main_window, "file_tree_view"):
                 expanded_paths = self.main_window.file_tree_view._save_expanded_state()
                 window_config.set("file_tree_expanded_paths", expanded_paths)
@@ -378,7 +399,30 @@ class WindowConfigManager:
             except Exception as e:
                 logger.warning("[Config] Failed to load file table column visibility: %s", e)
 
+            # Load metadata tree column widths
+            try:
+                metadata_tree_columns = window_config.get("metadata_tree_columns", {})
+                if metadata_tree_columns and hasattr(self.main_window, "metadata_tree_view"):
+                    tree_header = self.main_window.metadata_tree_view.header()
+                    if tree_header and tree_header.count() >= 2:
+                        if "key" in metadata_tree_columns:
+                            self.main_window.metadata_tree_view.setColumnWidth(
+                                0, metadata_tree_columns["key"]
+                            )
+                        if "value" in metadata_tree_columns:
+                            self.main_window.metadata_tree_view.setColumnWidth(
+                                1, metadata_tree_columns["value"]
+                            )
+                        logger.debug(
+                            "[Config] Loaded metadata tree column widths: %s",
+                            metadata_tree_columns,
+                            extra={"dev_only": True},
+                        )
+            except Exception as e:
+                logger.warning("[Config] Failed to load metadata tree column widths: %s", e)
+
             # Load column states using ColumnManager (legacy compatibility)
+            if hasattr(self.main_window, "column_manager"):
                 column_states = window_config.get("column_states", {})
                 if column_states:
                     for table_type, state_data in column_states.items():
