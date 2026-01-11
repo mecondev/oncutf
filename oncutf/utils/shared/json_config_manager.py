@@ -476,9 +476,10 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     manager.register_category(AppConfig())
     manager.register_category(DialogsConfig())
 
-    # NOTE: Do NOT call manager.load() here!
-    # Loading happens explicitly via load_window_config() and similar methods
-    # calling load() here would prevent programmatic config updates from being saved
+    # Load config if file exists (but don't create one from defaults)
+    # This ensures previously saved config is available
+    if manager.config_file.exists():
+        manager.load()
 
     # Enable cache if configured
     try:
