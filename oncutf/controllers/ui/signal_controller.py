@@ -223,8 +223,9 @@ class SignalController:
         """Show custom context menu for the search field."""
         menu = QMenu(line_edit)
 
-        menu.setStyleSheet(
-            """
+        from oncutf.utils.ui.stylesheet_utils import inject_font_family
+
+        menu_qss = """
             QMenu {
                 background-color: #232323;
                 color: #f0ebd8;
@@ -259,7 +260,8 @@ class SignalController:
                 margin: 4px 8px;
             }
         """
-        )
+        menu_qss = inject_font_family(menu_qss)
+        menu.setStyleSheet(menu_qss)
 
         undo_action = QAction("Undo", menu)
         undo_action.setIcon(get_menu_icon("rotate-ccw"))

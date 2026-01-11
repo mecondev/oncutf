@@ -17,7 +17,6 @@ from oncutf.config import APP_VERSION
 from oncutf.core.pyqt_imports import (
     QApplication,
     QColor,
-    QFont,
     QFontMetrics,
     QPainter,
     QPen,
@@ -89,12 +88,12 @@ class CustomSplashScreen(QSplashScreen):
             painter.setPen(QPen(Qt.white))  # type: ignore
 
             # Use our custom InterDisplay-SemiBold for title
-            from oncutf.utils.ui.fonts import get_inter_font
+            from oncutf.utils.ui.fonts import get_default_ui_font, get_inter_font
 
             try:
                 font = get_inter_font("titles", 24)  # Uses InterDisplay-SemiBold
             except (ImportError, AttributeError):
-                font = QFont("Inter", 24, QFont.Bold)  # Fallback
+                font = get_default_ui_font(size=24, style="bold")  # Fallback
             painter.setFont(font)
             painter.drawText(fallback_pixmap.rect(), Qt.AlignCenter, "oncutf")
             painter.end()
@@ -313,15 +312,15 @@ class CustomSplashScreen(QSplashScreen):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Set up fonts using our custom font system
-        from oncutf.utils.ui.fonts import get_inter_font
+        from oncutf.utils.ui.fonts import get_default_ui_font, get_inter_font
 
         try:
             version_font = get_inter_font("base", 11)  # Uses Inter-Regular
             init_font = get_inter_font("base", 9)  # Uses Inter-Regular
         except (ImportError, AttributeError):
-            # Fallback to system fonts
-            version_font = QFont("Inter", 11, QFont.Normal)
-            init_font = QFont("Inter", 9, QFont.Normal)
+            # Fallback to default UI font
+            version_font = get_default_ui_font(size=11)
+            init_font = get_default_ui_font(size=9)
 
         # Draw version in bottom left
         painter.setFont(version_font)

@@ -12,6 +12,70 @@ UI settings: themes, colors, fonts, margins, icons, dialogs.
 
 USE_EMBEDDED_FONTS = False
 
+# Default UI font: "inter" or "jetbrains" (used for dialogs, buttons, labels, etc.)
+DEFAULT_UI_FONT = "inter"
+
+# Font for data-heavy widgets: tables, trees, text inputs, code editors
+# Use monospace fonts for better alignment and readability
+DEFAULT_DATA_FONT = "jetbrains"
+
+# Font size adjustments per font (JetBrains is slightly smaller visually)
+FONT_SIZE_ADJUSTMENTS = {
+    "inter": 0,       # No adjustment needed
+    "jetbrains": 1,   # JetBrains is slightly smaller, add 1pt
+}
+
+# Font family definitions with fallbacks
+FONT_FAMILIES = {
+    "inter": '"Inter", "Segoe UI", Arial, sans-serif',
+    "jetbrains": '"JetBrains Mono", "Courier New", monospace',
+}
+
+# Per-widget-type font overrides (empty = use DEFAULT_UI_FONT)
+# Rule: UI elements (labels, buttons, dialogs) = Inter
+#       Input/Output/Data (tables, trees, editors, inputs) = JetBrains
+WIDGET_FONTS = {
+    "table": "jetbrains",        # QTableWidget, QTableView - data display
+    "tree": "jetbrains",         # QTreeWidget, QTreeView - hierarchical data
+    "list": "jetbrains",         # QListWidget, QListView - list data
+    "text_edit": "jetbrains",    # QTextEdit, QPlainTextEdit - multiline input
+    "line_edit": "jetbrains",    # QLineEdit - single line input/output
+    "spin_box": "jetbrains",     # QSpinBox, QDoubleSpinBox - numeric input
+    "time_edit": "jetbrains",    # QTimeEdit - time input
+    "date_edit": "jetbrains",    # QDateEdit - date input
+    "datetime_edit": "jetbrains",# QDateTimeEdit - datetime input
+    "combo_box": "inter",        # QComboBox - dropdown selection (UI element)
+    "label": "inter",            # QLabel - display text (UI element)
+    "button": "inter",           # QPushButton - UI control
+    "dialog": "inter",           # QDialog - UI container
+    "menu": "inter",             # QMenu - UI navigation
+    "context_menu": "inter",     # QMenu (context) - right-click menus
+    "status_bar": "inter",       # QStatusBar - UI feedback
+    "file_table_header": "inter",# QHeaderView - table column headers
+    "metadata_tree_header": "inter",  # QHeaderView - tree column headers
+}
+
+
+def get_ui_font_family(widget_type: str | None = None) -> str:
+    """Get CSS font-family string based on widget type or current configuration.
+
+    Args:
+        widget_type: Widget type (e.g., 'table', 'tree', 'dialog'). If None, uses DEFAULT_UI_FONT.
+
+    Returns:
+        CSS font-family string with appropriate fallbacks
+
+    Example:
+        >>> get_ui_font_family()  # Uses DEFAULT_UI_FONT (inter)
+        '"Inter", "Segoe UI", Arial, sans-serif'
+        >>> get_ui_font_family("table")  # Uses monospace for tables
+        '"JetBrains Mono", "Courier New", monospace'
+    """
+    if widget_type and widget_type in WIDGET_FONTS:
+        font_key = WIDGET_FONTS[widget_type]
+        return FONT_FAMILIES.get(font_key, FONT_FAMILIES["inter"])
+    return FONT_FAMILIES.get(DEFAULT_UI_FONT, FONT_FAMILIES["inter"])
+
 # =====================================
 # LAYOUT MARGINS
 # =====================================

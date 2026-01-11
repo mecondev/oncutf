@@ -183,6 +183,14 @@ class ThemeManager(QObject):
             # Replace theme_name placeholder
             template = template.replace("{{theme_name}}", self._current_theme)
 
+            # Replace widget-specific font families
+            from oncutf.config.ui import get_ui_font_family
+
+            template = template.replace("{{global_font}}", get_ui_font_family())
+            template = template.replace("{{table_font}}", get_ui_font_family("table"))
+            template = template.replace("{{tree_font}}", get_ui_font_family("tree"))
+            template = template.replace("{{menu_font}}", get_ui_font_family("context_menu"))
+
             # Resolve chevron icon paths to absolute file URLs to avoid CWD issues
             project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
             icons_dir = os.path.join(project_root, "resources", "icons")

@@ -34,7 +34,7 @@ from oncutf.ui.main_window import MainWindow
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 from oncutf.utils.logging.logger_setup import ConfigureLogger
 from oncutf.utils.paths import AppPaths
-from oncutf.utils.ui.fonts import _get_inter_fonts
+from oncutf.utils.ui.fonts import _get_inter_fonts, _get_jetbrains_fonts
 
 # Configure logging to use centralized user data directory
 logs_dir = str(AppPaths.get_logs_dir())
@@ -185,6 +185,10 @@ def main() -> int:
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
+
+        # Load JetBrains Mono fonts
+        logger.debug("Initializing JetBrains Mono fonts...", extra={"dev_only": True})
+        _get_jetbrains_fonts()
 
         # Initialize theme manager (singleton)
         theme_manager = get_theme_manager()

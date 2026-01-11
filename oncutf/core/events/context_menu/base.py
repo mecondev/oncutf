@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 from oncutf.core.pyqt_imports import QAction, QMenu
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.stylesheet_utils import inject_font_family
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
@@ -113,8 +114,7 @@ class ContextMenuHandlers:
         theme = get_theme_manager()
 
         # Enhanced styling for better appearance and spacing
-        menu.setStyleSheet(
-            f"""
+        menu_qss = f"""
             QMenu {{
                 background-color: {theme.get_color('menu_background')};
                 color: {theme.get_color('menu_text')};
@@ -149,7 +149,7 @@ class ContextMenuHandlers:
                 margin: 4px 8px;
             }}
         """
-        )
+        menu.setStyleSheet(inject_font_family(menu_qss))
 
         # Smart Metadata actions - only analyze selected files for speed
         selected_analysis = self.metadata_handlers._analyze_metadata_state(selected_files)

@@ -5,5 +5,13 @@
         <file>fonts/inter/Inter-Medium.ttf</file>
         <file>fonts/inter/Inter-Italic.ttf</file>
         <file>fonts/inter/InterDisplay-SemiBold.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMono-Regular.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMono-Bold.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMono-Italic.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMono-BoldItalic.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMonoNL-Regular.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMonoNL-Bold.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMonoNL-Italic.ttf</file>
+        <file>fonts/jetbrains/JetBrainsMonoNL-BoldItalic.ttf</file>
     </qresource>
 </RCC>

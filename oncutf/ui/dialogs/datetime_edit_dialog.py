@@ -25,6 +25,7 @@ from oncutf.core.pyqt_imports import (
 )
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.stylesheet_utils import inject_font_family
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
@@ -57,8 +58,7 @@ class DateTimeEditDialog(QDialog):
         self.setMinimumSize(500, 400)
 
         theme = get_theme_manager()
-        self.setStyleSheet(
-            f"""
+        dialog_qss = f"""
             QDialog {{
                 background-color: {theme.get_color('dialog_background')};
                 color: {theme.get_color('text')};
@@ -126,7 +126,7 @@ class DateTimeEditDialog(QDialog):
                 background-color: transparent;
             }}
         """
-        )
+        self.setStyleSheet(inject_font_family(dialog_qss))
 
         self._setup_ui()
 
@@ -210,8 +210,7 @@ class DateTimeEditDialog(QDialog):
         self.cancel_button.clicked.connect(self.reject)
 
         theme = get_theme_manager()
-        self.cancel_button.setStyleSheet(
-            f"""
+        cancel_qss = f"""
             QPushButton {{
                 background-color: {theme.get_color('button_bg')};
                 color: {theme.get_color('text')};
@@ -228,15 +227,14 @@ class DateTimeEditDialog(QDialog):
                 background-color: {theme.get_color('pressed')};
             }}
         """
-        )
+        self.cancel_button.setStyleSheet(inject_font_family(cancel_qss))
 
         # Apply button
         self.apply_button = QPushButton("Apply")
         self.apply_button.clicked.connect(self.accept)
 
         theme = get_theme_manager()
-        self.apply_button.setStyleSheet(
-            f"""
+        apply_qss = f"""
             QPushButton {{
                 background-color: {theme.get_color('button_bg')};
                 color: {theme.get_color('text')};
@@ -253,7 +251,7 @@ class DateTimeEditDialog(QDialog):
                 background-color: {theme.get_color('pressed')};
             }}
         """
-        )
+        self.apply_button.setStyleSheet(inject_font_family(apply_qss))
 
         button_layout.addStretch()
         button_layout.addWidget(self.cancel_button)
