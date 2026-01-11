@@ -8,12 +8,8 @@ Manages loading and providing access to the Inter font family
 """
 
 import logging
-from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import QFont, QFontDatabase
-
-if TYPE_CHECKING:
-    from oncutf.ui import resources_rc  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

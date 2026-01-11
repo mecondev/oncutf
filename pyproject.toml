@@ -91,7 +91,6 @@ ignore_missing_imports = false
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.ui.resources_rc",
     "oncutf.ui.widgets.node_editor.*"
 ]
 ignore_errors = true
