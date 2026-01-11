@@ -227,28 +227,8 @@ class WindowConfigManager:
             except Exception as e:
                 logger.warning("[Config] Failed to save file table column visibility: %s", e)
 
-            # Save metadata tree column widths (mark dirty on user resize)
-            # Note: Metadata tree has fixed 2 columns (key, value) so no visibility state
-            # But we track if user explicitly resized them
-            try:
-                if hasattr(self.main_window, "metadata_tree_view"):
-                    tree_header = self.main_window.metadata_tree_view.header()
-                    if tree_header and tree_header.count() >= 2:
-                        # Check if user has resized from defaults
-                        key_width = self.main_window.metadata_tree_view.columnWidth(0)
-                        value_width = self.main_window.metadata_tree_view.columnWidth(1)
-
-                        # Only save if widths differ from defaults (140, 600)
-                        if key_width != 140 or value_width != 600:
-                            metadata_tree_columns = {"key": key_width, "value": value_width}
-                            window_config.set("metadata_tree_columns", metadata_tree_columns)
-                            logger.debug(
-                                "[Config] Saved metadata tree column widths: %s",
-                                metadata_tree_columns,
-                                extra={"dev_only": True},
-                            )
-            except Exception as e:
-                logger.warning("[Config] Failed to save metadata tree columns: %s", e)
+            # Note: Metadata tree column widths are saved immediately on user resize
+            # via view_config._on_column_resized (mark_dirty + auto-save)
             if hasattr(self.main_window, "file_tree_view"):
                 expanded_paths = self.main_window.file_tree_view._save_expanded_state()
                 window_config.set("file_tree_expanded_paths", expanded_paths)
@@ -400,8 +380,10 @@ class WindowConfigManager:
                 logger.warning("[Config] Failed to load file table column visibility: %s", e)
 
             # Load metadata tree column widths
+            # Note: Metadata tree columns are loaded once at startup
+            # Runtime widths are preserved by view_config._runtime_widths
             try:
-                metadata_tree_columns = window_config.get("metadata_tree_columns", {})
+                metadata_tree_columns = window_config.get("metadata_tree_column_widths", {})
                 if metadata_tree_columns and hasattr(self.main_window, "metadata_tree_view"):
                     tree_header = self.main_window.metadata_tree_view.header()
                     if tree_header and tree_header.count() >= 2:

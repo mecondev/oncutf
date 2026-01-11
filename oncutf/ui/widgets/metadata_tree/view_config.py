@@ -58,6 +58,8 @@ class MetadataTreeViewConfig:
 
         """
         self._tree_view = tree_view
+        # Runtime column width tracking (preserved across file selection changes)
+        self._runtime_widths: dict[str, int] = {}
 
     def setup_tree_view_properties(self) -> None:
         """Configure standard tree view properties."""
@@ -195,14 +197,23 @@ class MetadataTreeViewConfig:
             # Show header when there's content
             header.show()
 
-            # Try to load saved column widths from config
-            saved_widths = self._get_saved_column_widths()
-            if saved_widths:
-                key_width = saved_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
-                value_width = saved_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+            # Try to use runtime widths first (preserved across file selections)
+            # Fall back to saved config on first load, then to defaults
+            if self._runtime_widths:
+                key_width = self._runtime_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+                value_width = self._runtime_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
             else:
-                key_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"]
-                value_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"]
+                # First load: try saved config
+                saved_widths = self._get_saved_column_widths()
+                if saved_widths:
+                    key_width = saved_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+                    value_width = saved_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+                    # Store in runtime widths for future use
+                    self._runtime_widths["key"] = key_width
+                    self._runtime_widths["value"] = value_width
+                else:
+                    key_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"]
+                    value_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"]
 
             # Key column: min 80px, initial width, max 800px
             header.setSectionResizeMode(0, QHeaderView.Interactive)
@@ -276,9 +287,37 @@ class MetadataTreeViewConfig:
             # Connect to immediate update
             header.sectionResized.connect(self._on_column_resized)
 
-    def _on_column_resized(self, _logical_index: int, _old_size: int, _new_size: int) -> None:
-        """Handle column resize events to update display immediately."""
+    def _on_column_resized(self, logical_index: int, _old_size: int, new_size: int) -> None:
+        """Handle column resize events to update display immediately and save to config."""
         view = self._tree_view
+
+        # Update runtime widths (preserved across file selection changes)
+        column_key = "key" if logical_index == 0 else "value"
+        self._runtime_widths[column_key] = new_size
+
+        # Save to config (mark dirty for auto-save)
+        try:
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
+
+            config_manager = get_app_config_manager()
+            window_config = config_manager.get_category("window")
+
+            # Get current metadata_tree_column_widths or create new dict
+            metadata_widths = window_config.get("metadata_tree_column_widths", {})
+            metadata_widths[column_key] = new_size
+
+            window_config.set("metadata_tree_column_widths", metadata_widths)
+            config_manager.mark_dirty()
+
+            logger.debug(
+                "[MetadataTree] Column '%s' resized to %dpx, marked dirty",
+                column_key,
+                new_size,
+                extra={"dev_only": True},
+            )
+        except Exception as e:
+            logger.warning("[MetadataTree] Failed to save column width: %s", e)
+
         # Force immediate viewport update
         view.viewport().update()
 
