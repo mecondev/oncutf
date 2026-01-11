@@ -100,7 +100,7 @@ from oncutf.config.ui import (
 
 def check_font_config():
     """Example: Inspect current font configuration."""
-    from oncutf.utils.logger_factory import get_cached_logger
+    from oncutf.utils.logging.logger_factory import get_cached_logger
 
     logger = get_cached_logger(__name__)
     logger.info("Current font: %s", DEFAULT_UI_FONT)
@@ -215,7 +215,7 @@ SIZE ADJUSTMENTS:
 
 def run_all_examples():
     """Run all examples to verify font system works."""
-    from oncutf.utils.logger_factory import get_cached_logger
+    from oncutf.utils.logging.logger_factory import get_cached_logger
 
     logger = get_cached_logger(__name__)
     logger.info("Testing font system...")
