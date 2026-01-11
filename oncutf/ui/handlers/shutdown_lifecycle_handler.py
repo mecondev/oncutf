@@ -374,6 +374,16 @@ class ShutdownLifecycleHandler:
             try:
                 self.main_window.window_config_manager.save_window_config()
                 logger.info("[CloseEvent] Window configuration saved")
+
+                # Force immediate save to disk after marking config as dirty
+                try:
+                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
+
+                    get_app_config_manager().save_immediate()
+                    logger.info("[CloseEvent] Configuration saved to disk immediately")
+                except Exception as save_error:
+                    logger.warning("[CloseEvent] Failed to save config immediately: %s", save_error)
+
             except Exception as e:
                 logger.warning("[CloseEvent] Failed to save window config: %s", e)
 
