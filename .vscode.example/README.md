@@ -1,6 +1,6 @@
 # VSCode Configuration
 
-This directory contains recommended VSCode settings for OnCutF development.
+This directory contains recommended VSCode settings for oncutf development.
 
 ## Setup
 

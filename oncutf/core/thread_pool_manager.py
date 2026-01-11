@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-06-25
 
 Thread Pool Manager Module
-This module provides an optimized thread pool management system for OnCutF.
+This module provides an optimized thread pool management system for oncutf.
 It handles intelligent work distribution, resource management optimization,
 and advanced thread pool features for better performance.
 Features:

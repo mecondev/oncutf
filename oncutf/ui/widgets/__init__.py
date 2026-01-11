@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-05-09
 
 widgets package initialization
-This package contains all custom widgets used in the OnCutF application.
+This package contains all custom widgets used in the oncutf application.
 
 NOTE: Dialog imports removed to fix circular import issue.
 Import dialogs directly from oncutf.ui.dialogs instead.

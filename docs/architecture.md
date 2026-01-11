@@ -1,4 +1,4 @@
-# OnCutF Architecture Guide
+# oncutf Architecture Guide
 
 **Last Updated:** 2025-12-29  
 **Status:** Phase 7 (Final Polish) - Documentation Cleanup ⚡

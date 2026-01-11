@@ -146,7 +146,7 @@ class CompanionFilesWidget(QWidget):
             "• Sony cameras: C8227.MP4 + C8227M01.XML (metadata)\n"
             "• RAW images: IMG_1234.CR2 + IMG_1234.xmp (editing data)\n"
             "• Videos: movie.mp4 + movie.srt (subtitles)\n\n"
-            "OnCutF can automatically detect and handle these files to keep them "
+            "oncutf can automatically detect and handle these files to keep them "
             "synchronized with your main files."
         )
         info_text.setWordWrap(True)

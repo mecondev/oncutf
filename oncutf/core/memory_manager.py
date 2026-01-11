@@ -180,7 +180,7 @@ class LRUCache:
 
 
 class MemoryManager(QObject):
-    """Comprehensive memory management system for OnCutF.
+    """Comprehensive memory management system for oncutf.
 
     Features:
     - Automatic cache cleanup

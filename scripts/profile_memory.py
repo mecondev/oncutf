@@ -202,7 +202,7 @@ def main() -> int:
     args = parser.parse_args()
 
     print("=" * 50)
-    print("OnCutF Memory Profiler")
+    print("oncutf Memory Profiler")
     print("=" * 50)
 
     current, peak, report_lines = profile_startup_memory(args.detailed)

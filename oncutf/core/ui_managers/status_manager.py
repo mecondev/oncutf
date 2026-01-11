@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-05-31
 
 status_manager.py
-Enhanced Status Manager for OnCutF Application
+Enhanced Status Manager for oncutf Application
 Manages status bar updates and UI feedback with specialized methods for different operations,
 progress integration, status history tracking, and smart context awareness.
 Key Features:

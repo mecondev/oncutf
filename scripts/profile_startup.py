@@ -212,7 +212,7 @@ def main() -> int:
     args = parser.parse_args()
 
     print("=" * 50)
-    print("OnCutF Startup Profiler")
+    print("oncutf Startup Profiler")
     print("=" * 50)
 
     # Measure imports

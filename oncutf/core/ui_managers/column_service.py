@@ -3,7 +3,7 @@
 Author: Michael Economou
 Date: 2025-08-24
 
-Unified Column Service for OnCutF Application
+Unified Column Service for oncutf Application
 
 This module provides a centralized, simplified column management system that replaces
 the complex multi-layer configuration approach with a single source of truth.

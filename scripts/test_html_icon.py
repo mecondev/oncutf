@@ -3,7 +3,7 @@
 Author: Michael Economou
 Date: 2025-06-14
 
-This module provides functionality for the OnCutF batch file renaming application.
+This module provides functionality for the oncutf batch file renaming application.
 """
 
 from PyQt5.QtWidgets import QApplication, QTextEdit

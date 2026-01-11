@@ -1,11 +1,11 @@
-OnCutF – Sync Session Feature
+oncutf – Sync Session Feature
 Final Consolidated Specification
 ================================
 
 GOAL
 ----
 Integrate a professional multi-camera + audio synchronization system
-directly into the OnCutF (Python / Qt) application.
+directly into the oncutf (Python / Qt) application.
 
 The system synchronizes video and audio files selected by the user,
 builds a timeline-based representation, and exports the result to NLEs
@@ -16,7 +16,7 @@ builds a timeline-based representation, and exports the result to NLEs
 -------------------
 - Sync operates ONLY on user-selected files from the File Table.
 - No global folder-based automatic sync.
-- Uses existing OnCutF infrastructure:
+- Uses existing oncutf infrastructure:
   - file table selection
   - metadata cache
   - folder-based color flags
@@ -169,7 +169,7 @@ Tracks:
   A1 = Recorder 1, etc.
 
 Visual styling:
-- Color derived from existing OnCutF folder color flags.
+- Color derived from existing oncutf folder color flags.
 - Filenames visible.
 - Dashed borders for unknown clips.
 
@@ -234,7 +234,7 @@ EDL support:
 16. UX ENTRY POINT
 ------------------
 - Sync is initiated from File Table selection.
-- New "Sync Session" area inside OnCutF.
+- New "Sync Session" area inside oncutf.
 - Sync menu includes:
   - Run sync
   - Manual anchor tools

@@ -433,7 +433,7 @@ class ComprehensiveTestRunner:
 def main():
     """Main function for command-line interface."""
     parser = argparse.ArgumentParser(
-        description="OnCutF Comprehensive Test Runner",
+        description="oncutf Comprehensive Test Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

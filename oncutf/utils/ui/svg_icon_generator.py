@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-06-20
 
 svg_icon_generator.py
-SVG Icon Generator for OnCutF metadata status icons.
+SVG Icon Generator for oncutf metadata status icons.
 Creates colored SVG icons from feather icons with proper theming.
 This replaces the old PNG-based system with scalable SVG icons that match
 the application's color scheme and progress bar colors.
@@ -24,7 +24,7 @@ logger = get_cached_logger(__name__)
 class SVGIconGenerator:
     """Generates colored SVG icons for metadata status display.
 
-    Uses feather icons as base and applies OnCutF color scheme from config.
+    Uses feather icons as base and applies oncutf color scheme from config.
     """
 
     # Icon mappings - feather icon name for each status

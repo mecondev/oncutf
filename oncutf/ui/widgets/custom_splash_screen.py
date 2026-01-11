@@ -96,7 +96,7 @@ class CustomSplashScreen(QSplashScreen):
             except (ImportError, AttributeError):
                 font = QFont("Inter", 24, QFont.Bold)  # Fallback
             painter.setFont(font)
-            painter.drawText(fallback_pixmap.rect(), Qt.AlignCenter, "OnCutF")
+            painter.drawText(fallback_pixmap.rect(), Qt.AlignCenter, "oncutf")
             painter.end()
 
             super().__init__(fallback_pixmap)

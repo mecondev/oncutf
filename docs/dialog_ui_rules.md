@@ -1,7 +1,7 @@
-Dialog UI Ruleset — OnCutF
+Dialog UI Ruleset — oncutf
 0. Purpose
 
-This document defines mandatory UI/UX rules for all dialogs in the OnCutF application.
+This document defines mandatory UI/UX rules for all dialogs in the oncutf application.
 
 Goals:
 
@@ -24,7 +24,7 @@ Primary platforms: Windows / Linux
 UI toolkit: Qt (PyQt / PySide)
 
 Note: macOS uses reversed button order.
-OnCutF is not mac-first.
+oncutf is not mac-first.
 Platform-specific switching may be added later if needed.
 
 2. Button Order (Mandatory)
@@ -306,7 +306,7 @@ button_box.rejected.connect(self.reject)
 
 Manual keyPressEvent overrides are forbidden unless strictly necessary.
 
-9. OnCutF Default Policy Summary
+9. oncutf Default Policy Summary
 
 Platform: Windows / Linux
 
@@ -330,7 +330,7 @@ Any refactored dialog MUST be updated to comply.
 
 Violations should be treated as UI bugs, not stylistic differences.
 
-Button width policy (OnCutF)
+Button width policy (oncutf)
 
 Default
 

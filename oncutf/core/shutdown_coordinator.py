@@ -6,7 +6,7 @@ Date: 2025-11-21
 Shutdown Coordinator Module
 
 Provides centralized, ordered shutdown coordination for all concurrent components
-in OnCutF. Ensures safe, graceful termination with health checks and timeout handling.
+in oncutf. Ensures safe, graceful termination with health checks and timeout handling.
 
 Features:
 - Ordered shutdown phases (timers → async → threads → database → exiftool)

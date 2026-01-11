@@ -4,7 +4,7 @@
 Author: Michael Economou
 Date: 2025-12-09
 
-Performance profiling script for OnCutF with 1000+ files.
+Performance profiling script for oncutf with 1000+ files.
 
 Measures:
 - Load time (directory scanning + file listing)
@@ -211,7 +211,7 @@ def generate_report(file_count, load_time, metadata_time, render_time, preview_t
 def main():
     """Run performance profiling."""
     print("\n" + "=" * 60)
-    print("OnCutF Performance Profiling")
+    print("oncutf Performance Profiling")
     print("=" * 60)
     print(f"Start time: {datetime.now().isoformat()}")
 
@@ -239,7 +239,7 @@ def main():
         report_file.parent.mkdir(exist_ok=True)
 
         with open(report_file, "w") as f:
-            f.write("OnCutF Performance Baseline (2025-12-09)\n")
+            f.write("oncutf Performance Baseline (2025-12-09)\n")
             f.write("=" * 60 + "\n")
             for key, value in report.items():
                 f.write(f"{key}: {value}\n")

@@ -279,7 +279,7 @@ class ShutdownLifecycleHandler:
         # Keep output ASCII-safe.
         try:
             with open(dump_path, "w", encoding="utf-8", errors="backslashreplace") as f:
-                f.write("OnCutF shutdown watchdog armed.\n")
+                f.write("oncutf shutdown watchdog armed.\n")
                 f.write(f"Timestamp: {timestamp}\n")
                 f.write(f"Timeout: {timeout_s:.1f}s\n")
                 f.write(f"Repeat: {repeat}\n")
