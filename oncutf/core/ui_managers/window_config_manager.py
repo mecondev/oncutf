@@ -9,6 +9,7 @@ Separates window management logic from MainWindow for better code organization.
 """
 
 from oncutf.core.pyqt_imports import QApplication, QMainWindow
+from oncutf.core.ui_managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
@@ -80,15 +81,9 @@ class WindowConfigManager:
         3. Headers (column widths for all columns, not just visible)
         """
         try:
-            # IMPORTANT: Reload config from file FIRST before making changes
-            # This ensures we preserve other config data while updating window state
-            if self.config_manager.config_file.exists():
-                logger.debug(
-                    "[Config] Reloading config before save to preserve other data",
-                    extra={"dev_only": True},
-                )
-                self.config_manager.load()
-
+            # Config is already loaded at startup and kept in memory.
+            # All changes are made in memory and saved via mark_dirty() + auto-save
+            # or force save on shutdown. No need to reload here.
             window_config = self.config_manager.get_category("window")
 
             # ====================================================================
@@ -166,24 +161,25 @@ class WindowConfigManager:
                     # Save status column (always column 0)
                     column_widths["status"] = self.main_window.file_table_view.columnWidth(0)
 
-                    # Get all columns via the column manager service, not the model
-                    if hasattr(self.main_window, "column_manager") and hasattr(
-                        self.main_window.column_manager, "column_service"
-                    ):
-                        all_columns = self.main_window.column_manager.column_service.get_all_columns()
-                    elif hasattr(file_model, "get_all_columns"):
-                        all_columns = file_model.get_all_columns()
-                    else:
-                        # Fallback: get visible columns
-                        all_columns = dict.fromkeys(file_model.get_visible_columns())
+                    # Get all columns from the unified service to include hidden ones
+                    column_service = None
+                    if hasattr(self.main_window, "column_manager"):
+                        column_service = getattr(self.main_window.column_manager, "_service", None)
+                    if column_service is None:
+                        column_service = get_column_service()
+
+                    all_columns = column_service.get_all_columns() if column_service else {}
 
                     # Save ALL columns by their keys (including hidden ones)
                     for i, column_key in enumerate(all_columns.keys()):
                         column_index = i + 1  # +1 because status is column 0
                         if column_index < self.main_window.file_table_view.columnCount():
-                            column_widths[column_key] = self.main_window.file_table_view.columnWidth(
-                                column_index
-                            )
+                            width = self.main_window.file_table_view.columnWidth(column_index)
+                        else:
+                            # Hidden columns are not in the view; persist the service width
+                            width = column_service.get_column_width(column_key)
+
+                        column_widths[column_key] = width
 
                     window_config.set("file_table_column_widths", column_widths)
                     logger.info(

@@ -476,9 +476,10 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     manager.register_category(AppConfig())
     manager.register_category(DialogsConfig())
 
-    # NOTE: Do NOT load here! save_immediate() will reload before saving.
-    # This ensures defaults are used if no file exists, and file is
-    # merged-in only at save time, not at creation time.
+    # Load config from file if it exists, otherwise use defaults
+    # This is the Single Source of Truth pattern: load at startup, keep in memory,
+    # save on changes (dirty flag + auto-save + force save on shutdown)
+    manager.load()
 
     # Enable cache if configured
     try:
