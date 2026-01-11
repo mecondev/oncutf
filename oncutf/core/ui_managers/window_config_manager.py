@@ -191,18 +191,22 @@ class WindowConfigManager:
 
             # Save metadata tree column widths
             if hasattr(self.main_window, "metadata_tree_view"):
-                metadata_model = self.main_window.metadata_tree_view.model()
-                if metadata_model:
-                    metadata_column_widths = {}
+                try:
                     # Metadata tree has "key" and "value" columns (indices 0 and 1)
-                    metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
-                    metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
-                    window_config.set("metadata_tree_column_widths", metadata_column_widths)
-                    logger.debug(
-                        "[Config] Saved metadata tree column widths: %s",
-                        metadata_column_widths,
-                        extra={"dev_only": True},
-                    )
+                    # Get header to check column count (tree may not have model initially)
+                    tree_header = self.main_window.metadata_tree_view.header()
+                    if tree_header and tree_header.count() >= 2:
+                        metadata_column_widths = {}
+                        metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
+                        metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
+                        window_config.set("metadata_tree_column_widths", metadata_column_widths)
+                        logger.debug(
+                            "[Config] Saved metadata tree column widths: %s",
+                            metadata_column_widths,
+                            extra={"dev_only": True},
+                        )
+                except Exception as e:
+                    logger.warning("[Config] Failed to save metadata tree column widths: %s", e)
 
             # Save column visibility states
             if hasattr(self.main_window, "column_manager"):
