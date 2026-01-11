@@ -128,6 +128,17 @@ class MetadataTreeViewConfig:
         # Only reset current file path when entering placeholder mode
         view._current_file_path = None
 
+        # Save current widths to runtime before switching to placeholder
+        # This preserves user's column widths when switching between files
+        header = view.header()
+        if header and header.count() >= 2 and not self._runtime_widths:
+            # Only save if not already saved (first time or after restart)
+            current_key = view.columnWidth(0)
+            current_value = view.columnWidth(1)
+            if current_key > 0 and current_value > 0:
+                self._runtime_widths["key"] = current_key
+                self._runtime_widths["value"] = current_value
+
         # Use batch updates to prevent flickering
         view.setUpdatesEnabled(False)
 
@@ -141,10 +152,9 @@ class MetadataTreeViewConfig:
             # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
             view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
 
-            header = view.header()
             header.setSectionResizeMode(0, QHeaderView.Fixed)
             header.setSectionResizeMode(1, QHeaderView.Fixed)
-            # Use placeholder widths for placeholder mode
+            # Use placeholder widths for placeholder mode (don't update runtime widths)
             header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
             header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
