@@ -72,9 +72,19 @@ class WindowConfigManager:
             self._set_smart_default_geometry()
 
     def save_window_config(self) -> None:
-        """Save current window state to config manager."""
+        """Save current window state to config manager.
+
+        Saves in logical order:
+        1. UI Geometry (window size, position, state)
+        2. Splitters (layout proportions)
+        3. Headers (column widths for all columns, not just visible)
+        """
         try:
             window_config = self.config_manager.get_category("window")
+
+            # ====================================================================
+            # SECTION 1: UI GEOMETRY
+            # ====================================================================
 
             # Save geometry (use normal geometry if maximized)
             if self.main_window.isMaximized():
@@ -97,17 +107,7 @@ class WindowConfigManager:
                 window_state = "normal"
             window_config.set("window_state", window_state)
 
-            # Save splitter states
-            splitter_states = {}
-            if hasattr(self.main_window, "horizontal_splitter"):
-                splitter_states["horizontal"] = self.main_window.horizontal_splitter.sizes()
-            if hasattr(self.main_window, "vertical_splitter"):
-                splitter_states["vertical"] = self.main_window.vertical_splitter.sizes()
-            if hasattr(self.main_window, "lower_section_splitter"):
-                splitter_states["lower_section"] = self.main_window.lower_section_splitter.sizes()
-            window_config.set("splitter_states", splitter_states)
-
-            # Save other window-related settings
+            # Save sort order and other window-related settings
             if hasattr(self.main_window, "context") and self.main_window.context:
                 window_config.set("last_folder", self.main_window.context.get_current_folder() or "")
                 window_config.set("recursive_mode", self.main_window.context.is_recursive_mode())
@@ -116,32 +116,70 @@ class WindowConfigManager:
             if hasattr(self.main_window, "current_sort_order"):
                 window_config.set("sort_order", int(self.main_window.current_sort_order))
 
-            # Save column widths using new dictionary format
+            # ====================================================================
+            # SECTION 2: SPLITTERS (layout proportions)
+            # ====================================================================
+
+            splitter_states = {}
+            if hasattr(self.main_window, "horizontal_splitter"):
+                splitter_states["horizontal"] = self.main_window.horizontal_splitter.sizes()
+                logger.debug(
+                    "[Config] Saved horizontal splitter: %s",
+                    splitter_states["horizontal"],
+                    extra={"dev_only": True},
+                )
+            if hasattr(self.main_window, "vertical_splitter"):
+                splitter_states["vertical"] = self.main_window.vertical_splitter.sizes()
+                logger.debug(
+                    "[Config] Saved vertical splitter: %s",
+                    splitter_states["vertical"],
+                    extra={"dev_only": True},
+                )
+            if hasattr(self.main_window, "lower_section_splitter"):
+                splitter_states["lower_section"] = self.main_window.lower_section_splitter.sizes()
+                logger.debug(
+                    "[Config] Saved lower section splitter: %s",
+                    splitter_states["lower_section"],
+                    extra={"dev_only": True},
+                )
+            window_config.set("splitter_states", splitter_states)
+
+            # ====================================================================
+            # SECTION 3: HEADERS (column widths for ALL columns)
+            # ====================================================================
+
+            # Save file table column widths (ALL columns, not just visible)
             if hasattr(self.main_window, "file_table_view"):
                 file_model = self.main_window.file_table_view.model()
-                if file_model:
+                if file_model and hasattr(file_model, "get_all_columns"):
                     column_widths = {}
-                    # Get visible columns from the model
-                    visible_columns = file_model.get_visible_columns()
 
                     # Save status column (always column 0)
                     column_widths["status"] = self.main_window.file_table_view.columnWidth(0)
 
-                    # Save other columns by their keys
-                    for i, column_key in enumerate(visible_columns):
+                    # Save ALL columns by their keys (including hidden ones)
+                    all_columns = file_model.get_all_columns()
+                    for i, column_key in enumerate(all_columns.keys()):
                         column_index = i + 1  # +1 because status is column 0
-                        column_widths[column_key] = self.main_window.file_table_view.columnWidth(
-                            column_index
-                        )
+                        if column_index < self.main_window.file_table_view.columnCount():
+                            column_widths[column_key] = self.main_window.file_table_view.columnWidth(
+                                column_index
+                            )
 
                     window_config.set("file_table_column_widths", column_widths)
+                    logger.debug(
+                        "[Config] Saved file table column widths for %d columns: %s",
+                        len(column_widths),
+                        list(column_widths.keys()),
+                        extra={"dev_only": True},
+                    )
 
             # Save metadata tree column widths
             if hasattr(self.main_window, "metadata_tree_view"):
                 metadata_model = self.main_window.metadata_tree_view.model()
                 if metadata_model:
                     metadata_column_widths = {}
-                    # Assuming metadata tree has "key" and "value" columns (indices 0 and 1)
+                    # Metadata tree has "key" and "value" columns (indices 0 and 1)
                     metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
                     metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
                     window_config.set("metadata_tree_column_widths", metadata_column_widths)
@@ -150,6 +188,8 @@ class WindowConfigManager:
                         metadata_column_widths,
                         extra={"dev_only": True},
                     )
+
+            # Save column visibility states
             if hasattr(self.main_window, "column_manager"):
                 column_states = {
                     "file_table": self.main_window.column_manager.save_column_state("file_table"),
