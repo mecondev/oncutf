@@ -79,7 +79,7 @@ no_implicit_optional = true
 strict_equality = true
 show_error_codes = true
 pretty = true
-exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)'
+exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)|oncutf/ui/resources_rc\.py'
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
