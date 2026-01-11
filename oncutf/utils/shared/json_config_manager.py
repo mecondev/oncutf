@@ -340,7 +340,7 @@ class JSONConfigManager:
 
         """
         with self._lock:
-            # Cancel pending auto-save timer first
+            # Cancel pending auto-save timer
             if self._auto_save_timer_id:
                 try:
                     from oncutf.utils.shared.timer_manager import get_timer_manager

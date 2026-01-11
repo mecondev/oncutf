@@ -80,6 +80,15 @@ class WindowConfigManager:
         3. Headers (column widths for all columns, not just visible)
         """
         try:
+            # IMPORTANT: Reload config from file FIRST before making changes
+            # This ensures we preserve other config data while updating window state
+            if self.config_manager.config_file.exists():
+                logger.debug(
+                    "[Config] Reloading config before save to preserve other data",
+                    extra={"dev_only": True},
+                )
+                self.config_manager.load()
+
             window_config = self.config_manager.get_category("window")
 
             # ====================================================================
