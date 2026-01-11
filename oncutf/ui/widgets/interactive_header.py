@@ -16,13 +16,21 @@ from contextlib import suppress
 
 from oncutf.core.pyqt_imports import (
     QAction,
+    QEvent,
     QHeaderView,
     QLabel,
     QMenu,
     QPoint,
+    QStyle,
     Qt,
     QWidget,
 )
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
+
+try:
+    from PyQt5.QtGui import QHelpEvent
+except ImportError:  # pragma: no cover - fallback
+    QHelpEvent = None  # type: ignore
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -63,6 +71,59 @@ class InteractiveHeader(QHeaderView):
 
         # Floating overlay widget for drag feedback
         self._drag_overlay: QWidget | None = None
+
+        # Internal flag to allow controlled section moves (used by configurator)
+        self._allow_forced_section_move: bool = False
+
+        # Track last tooltip section to avoid redundant rendering
+        self._last_tooltip_section: int = -1
+
+        # Tooltip hover delay timer ID (managed by TimerManager)
+        self._tooltip_timer_id: str | None = None
+        self._pending_tooltip_section: int = -1
+
+        # Header tooltip texts (rendered via TooltipHelper for consistent styling)
+        self._header_tooltips_by_key: dict[str, str] = {
+            "color": (
+                "Color flag for files. You can set it per selection.\n"
+                "When multiple folders are loaded, the context menu\n"
+                "can auto-assign random colors per folder to keep\n"
+                "them visually separated."
+            ),
+            "filename": "Original filename (base name).",
+            "extension": "File extension (lowercase).",
+            "folder": "Parent folder path (normalized).",
+            "type": "Media type/category derived from\nmetadata and extension.",
+            "file_size": "File size in human-readable units.",
+            "modified": "Last modified timestamp.",
+            "duration": "Media duration when available\n(audio/video).",
+            "video_fps": "Video frames per second\n(reported or detected).",
+            "video_format": "Video container/format info.",
+            "video_codec": "Video codec name.",
+            "video_avg_bitrate": "Average video bitrate.",
+            "image_size": "Image resolution\n(width x height).",
+            "rotation": "Image/video rotation metadata.",
+            "iso": "Capture ISO value (if present).",
+            "aperture": "Capture aperture (F-stop).",
+            "shutter_speed": "Capture shutter speed.",
+            "white_balance": "White balance setting.",
+            "compression": "Image compression/quality\ninfo.",
+            "color_space": "Color space / profile info.",
+            "audio_channels": "Audio channel count\n(mono/stereo/etc).",
+            "audio_format": "Audio codec/format info.",
+            "artist": "Metadata artist/creator tag.",
+            "copyright": "Metadata copyright tag.",
+            "owner_name": "Metadata owner name tag.",
+            "device_manufacturer": "Capture device manufacturer\n(metadata).",
+            "device_model": "Capture device model\n(metadata).",
+            "device_serial_no": "Capture device serial\n(metadata).",
+            "target_umid": "Target UMID / unique media\nidentifier if present.",
+            "file_hash": "Hash value status\n(cached when computed).",
+        }
+
+        # Disable Qt default tooltips on the header viewport (we render our own)
+        with suppress(Exception):
+            self.viewport().setToolTip("")
 
         self._ensure_interaction_qss()
         self._set_interaction_state(locked=not self.sectionsMovable())
@@ -155,9 +216,25 @@ class InteractiveHeader(QHeaderView):
 
     def mousePressEvent(self, event) -> None:
         """Handle mouse press to track position and index for drag detection."""
+        if event.button() != Qt.LeftButton:
+            self._pressed_index = -1
+            super().mousePressEvent(event)
+            return
+
         self._press_pos = event.pos()
         self._pressed_index = self.logicalIndexAt(event.pos())
         self._drag_active = False
+
+        from oncutf.utils.logging.logger_factory import get_cached_logger
+        logger = get_cached_logger(__name__)
+        logger.info("[HEADER PRESS] logical=%d, pos=%s", self._pressed_index, event.pos())
+
+        # Prevent dragging status column (0)
+        if self._pressed_index == 0:
+            # Keep column 0 fixed but allow click to toggle select all
+            self._drag_grab_offset = 0
+            event.accept()
+            return
 
         # Store grab offset for drag overlay positioning
         if self._pressed_index >= 0:
@@ -180,6 +257,9 @@ class InteractiveHeader(QHeaderView):
             super().mouseMoveEvent(event)
             return
 
+        if self._pressed_index == 0:
+            return
+
         if (event.buttons() & Qt.LeftButton) and self._pressed_index >= 0:
             if not self._drag_active:
                 if (event.pos() - self._press_pos).manhattanLength() > 4:
@@ -199,11 +279,28 @@ class InteractiveHeader(QHeaderView):
 
     def mouseReleaseEvent(self, event) -> None:
         """Handle mouse release to finalize drag or trigger column actions (sort/toggle)."""
+        from oncutf.utils.logging.logger_factory import get_cached_logger
+        logger = get_cached_logger(__name__)
+
+        if event.button() != Qt.LeftButton:
+            self._pressed_index = -1
+            super().mouseReleaseEvent(event)
+            return
+
         if self._drag_active:
             self._drag_active = False
             self._hide_drag_overlay()
 
         super().mouseReleaseEvent(event)
+
+        released_index = self.logicalIndexAt(event.pos())
+        logger.info(
+            "[HEADER RELEASE] released=%d, pressed=%d, enabled=%s, manhattan=%d",
+            released_index,
+            self._pressed_index,
+            self._click_actions_enabled,
+            (event.pos() - self._press_pos).manhattanLength()
+        )
 
         if not self._click_actions_enabled:
             return
@@ -212,12 +309,27 @@ class InteractiveHeader(QHeaderView):
         if (event.pos() - self._press_pos).manhattanLength() > 4:
             return
 
-        released_index = self.logicalIndexAt(event.pos())
         if released_index != self._pressed_index or released_index == -1:
             return
 
         main_window = self._get_main_window_via_context()
         if not main_window:
+            logger.warning("[HEADER RELEASE] No main window found!")
+            return
+
+        # Column 0: Toggle select all/unselect all
+        if released_index == 0:
+            logger.info("[HEADER RELEASE] Column 0 clicked - calling handle_header_toggle")
+            if hasattr(main_window, "handle_header_toggle"):
+                checked = getattr(Qt, "Checked", 2)
+                main_window.handle_header_toggle(checked)
+            else:
+                logger.warning("[HEADER RELEASE] main_window has no handle_header_toggle!")
+            return
+
+        # Other columns: Sort
+        if hasattr(main_window, "sort_by_column"):
+            main_window.sort_by_column(released_index)
             return
 
         if released_index == 0:
@@ -227,6 +339,117 @@ class InteractiveHeader(QHeaderView):
         elif hasattr(main_window, "sort_by_column"):
             main_window.sort_by_column(released_index)
 
+
+    def _get_header_tooltip_text(self, logical_index: int) -> str | None:
+        if logical_index == 0:
+            return "Select/Deselect all files (toggle status column)."
+
+        file_table_view = self._get_file_table_view()
+        if not file_table_view or not hasattr(file_table_view, "_column_mgmt_behavior"):
+            return None
+
+        visible_columns = file_table_view._column_mgmt_behavior.get_visible_columns_list()
+        column_index = logical_index - 1  # -1 for status column
+        if not (0 <= column_index < len(visible_columns)):
+            return None
+
+        column_key = visible_columns[column_index]
+        return self._header_tooltips_by_key.get(column_key)
+
+    def viewportEvent(self, event):  # type: ignore[override]
+        """Handle tooltip events on the header viewport to suppress Qt default tooltips."""
+        if event.type() == QEvent.ToolTip:
+            from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
+
+            logical_index = self.logicalIndexAt(event.pos())
+            text = self._get_header_tooltip_text(logical_index)
+
+            if text:
+                # Only show tooltip when section changes (avoid flickering on mouse move)
+                if logical_index != self._last_tooltip_section:
+                    # Cancel previous timer
+                    if self._tooltip_timer_id:
+                        cancel_timer(self._tooltip_timer_id)
+
+                    TooltipHelper.clear_tooltips_for_widget(self)
+                    self._last_tooltip_section = logical_index
+                    self._pending_tooltip_section = logical_index
+                    # Schedule tooltip with 500ms delay (consistent with other UI tooltips)
+                    self._tooltip_timer_id = schedule_dialog_close(self._show_pending_tooltip)
+            else:
+                # No tooltip text for this section
+                if self._tooltip_timer_id:
+                    cancel_timer(self._tooltip_timer_id)
+                    self._tooltip_timer_id = None
+                if self._last_tooltip_section != -1:
+                    TooltipHelper.clear_tooltips_for_widget(self)
+                    self._last_tooltip_section = -1
+
+            event.accept()
+            return True
+
+        if event.type() == QEvent.Leave:
+            if self._tooltip_timer_id:
+                from oncutf.utils.shared.timer_manager import cancel_timer
+                cancel_timer(self._tooltip_timer_id)
+                self._tooltip_timer_id = None
+            TooltipHelper.clear_tooltips_for_widget(self)
+            self._last_tooltip_section = -1
+
+        return super().viewportEvent(event)
+
+
+    def moveSection(self, from_visual: int, to_visual: int) -> bool:  # type: ignore[override]
+        """Block any move that would involve the status column (logical 0 or visual 0)."""
+        if self._allow_forced_section_move:
+            # Bypass safeguards when restoration logic explicitly requests it
+            QHeaderView.moveSection(self, from_visual, to_visual)
+            return True
+
+        if from_visual == 0 or to_visual == 0:
+            return False
+        super().moveSection(from_visual, to_visual)
+        return True
+
+
+    def paintSection(self, painter, rect, logical_index: int) -> None:  # type: ignore[override]
+        """Disable hover highlight for status column while keeping others intact."""
+        if logical_index == 0:
+            try:
+                from PyQt5.QtWidgets import QStyleOptionHeader
+            except ImportError:
+                super().paintSection(painter, rect, logical_index)
+                return
+
+            option = QStyleOptionHeader()
+            self.initStyleOption(option)
+            option.rect = rect
+            option.section = logical_index
+            option.state &= ~QStyle.State_MouseOver
+            option.state &= ~QStyle.State_Sunken
+            self.style().drawControl(QStyle.CE_Header, option, painter, self)
+            return
+
+        super().paintSection(painter, rect, logical_index)
+
+
+    def helpEvent(self, event):  # type: ignore[override]
+        # Tooltips are handled in viewportEvent.
+        return super().helpEvent(event)
+
+    def _show_pending_tooltip(self) -> None:
+        """Show tooltip for pending section after delay expires."""
+        if self._pending_tooltip_section < 0:
+            return
+
+        text = self._get_header_tooltip_text(self._pending_tooltip_section)
+        if text:
+            TooltipHelper.show_tooltip(
+                self,
+                text,
+                TooltipType.INFO,
+                duration=0,
+            )
 
     def set_click_actions_enabled(self, enabled: bool) -> None:
         """Enable/disable click-triggered actions (sort/toggle).
@@ -276,6 +499,10 @@ class InteractiveHeader(QHeaderView):
     def contextMenuEvent(self, position):
         """Show unified right-click context menu for header."""
         logical_index = self.logicalIndexAt(position)
+
+        # Don't show context menu for status column (0)
+        if logical_index == 0:
+            return
 
         menu = QMenu(self)
 
@@ -390,6 +617,7 @@ class InteractiveHeader(QHeaderView):
 
                 # Add group columns
                 for column_key, column_config in group_columns:
+                    # Always use full title in menu
                     action = QAction(column_config["title"], columns_menu)
 
                     # Get visibility state via canonical API
@@ -524,29 +752,53 @@ class InteractiveHeader(QHeaderView):
             logger.warning("Failed to add reset column order option: %s", e)
 
     def _reset_column_order(self):
-        """Reset column order to default."""
+        """Reset column order, widths, and visibility to defaults."""
         try:
-            # Clear saved order from config
             main_window = self._get_main_window_via_context()
-            if main_window and hasattr(main_window, "window_config_manager"):
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category("window")
-                window_config.set("column_order", None)
-                config_manager.mark_dirty()
+            if not main_window or not hasattr(main_window, "window_config_manager"):
+                return
 
-            # Reset visual order immediately
+            # Get file table view
+            file_table_view = self._get_file_table_view()
+            if not file_table_view:
+                return
+
+            config_manager = main_window.window_config_manager.config_manager
+            window_config = config_manager.get_category("window")
+
+            # 1. Clear saved column order
+            window_config.set("column_order", None)
+
+            # 2. Reset all column widths to defaults
+            window_config.set("file_table_column_widths", {})
+
+            # 3. Reset column visibility to defaults (from FILE_TABLE_COLUMN_CONFIG)
+            from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+            default_visibility = {
+                key: config.get("default_visible", True)
+                for key, config in FILE_TABLE_COLUMN_CONFIG.items()
+            }
+            window_config.set("file_table_columns", default_visibility)
+
+            config_manager.mark_dirty()
+
+            # 4. Reset visual order immediately
             header = self.parent().horizontalHeader() if self.parent() else None
             if header:
                 # Move sections back to their logical order
-                for logical_index in range(1, header.count()):  # Skip status column (0)
+                for logical_index in range(header.count()):
                     current_visual = header.visualIndex(logical_index)
                     if current_visual != logical_index:
                         header.moveSection(current_visual, logical_index)
 
-                from oncutf.utils.logging.logger_factory import get_cached_logger
+            # 5. Reconfigure columns to apply defaults
+            if hasattr(file_table_view, "_column_mgmt_behavior"):
+                file_table_view._column_mgmt_behavior.configure_columns()
 
-                logger = get_cached_logger(__name__)
-                logger.info("Reset column order to default")
+            from oncutf.utils.logging.logger_factory import get_cached_logger
+
+            logger = get_cached_logger(__name__)
+            logger.info("Reset columns to default (order, widths, visibility)")
 
         except Exception as e:
             from oncutf.utils.logging.logger_factory import get_cached_logger

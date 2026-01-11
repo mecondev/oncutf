@@ -104,6 +104,11 @@ class InitializationManager:
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)
         )
 
+        # Skip state management during shutdown (model becomes unavailable)
+        if getattr(self.main_window, "_shutdown_in_progress", False):
+            logger.info("[InitializationManager] Skipping state management (shutdown in progress)")
+            return
+
         # Show wait cursor during UI update (runs in main thread - visible to user)
         with wait_cursor():
             context = get_app_context()

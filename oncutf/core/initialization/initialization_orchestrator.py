@@ -9,7 +9,7 @@ Separates initialization logic from MainWindow class to reduce complexity.
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import Qt, QTimer
+from oncutf.core.pyqt_imports import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icon_cache import load_preview_status_icons, prepare_status_icons
 from oncutf.utils.ui.icon_utilities import create_colored_icon
@@ -294,11 +294,6 @@ class InitializationOrchestrator:
         # Re-enable updates after UI is fully constructed
         self.window.setUpdatesEnabled(True)
         logger.info("[Phase4C] UI setup completed via controllers", extra={"dev_only": True})
-
-        # Preview update timer
-        self.window.preview_update_timer = QTimer(self.window)
-        self.window.preview_update_timer.setSingleShot(True)
-        self.window.preview_update_timer.setInterval(100)
 
         logger.debug("Phase 3: UI setup complete", extra={"dev_only": True})
 

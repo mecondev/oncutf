@@ -7,8 +7,8 @@ Date: 2026-01-05
 """
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QTimer
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
 
 if TYPE_CHECKING:
     from oncutf.core.ui_managers.column_service import UnifiedColumnService
@@ -34,7 +34,7 @@ class ColumnWidthManager:
         self._widget = widget
         self._service = service
         self._pending_column_changes: dict[str, int] = {}
-        self._config_save_timer: QTimer | None = None
+        self._config_save_timer_id: str | None = None
 
     def load_column_width(self, column_key: str) -> int:
         """Load column width from config with fallback to defaults.
@@ -116,15 +116,12 @@ class ColumnWidthManager:
         self._pending_column_changes[column_key] = width
 
         # Cancel existing timer
-        if self._config_save_timer:
-            self._config_save_timer.stop()
-            self._config_save_timer = None
+        if self._config_save_timer_id:
+            cancel_timer(self._config_save_timer_id)
+            self._config_save_timer_id = None
 
-        # Start new timer (7 seconds)
-        self._config_save_timer = QTimer()
-        self._config_save_timer.setSingleShot(True)
-        self._config_save_timer.timeout.connect(self._save_pending_changes)
-        self._config_save_timer.start(7000)
+        # Start new timer (7 seconds) via TimerManager
+        self._config_save_timer_id = schedule_dialog_close(self._save_pending_changes, delay=7000)
 
         logger.debug(
             "[FileTable] Scheduled delayed save for '%s' width %dpx", column_key, width

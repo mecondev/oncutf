@@ -1,7 +1,7 @@
 # File Engine Subsystem
 
 > **Status**: Architecture Documentation (Phase 7)  
-> **Last Updated**: 2026-01-01 (Refactored: I/O/State Separation)  
+> **Last Updated**: 2026-01-11 (TimerManager Integration)  
 > **Author**: Michael Economou
 
 ## Overview
@@ -9,7 +9,7 @@
 The File Engine is responsible for **file discovery, loading, storage, and UI display**. It implements a **separation of concerns** pattern with clear I/O/State boundaries:
 
 ```
-Filesystem → FileLoadManager (I/O) → FileStore (State) → FileTableModel → UI
+Filesystem -> FileLoadManager (I/O) -> FileStore (State) -> FileTableModel -> UI
 ```
 
 Key capabilities:
@@ -33,9 +33,9 @@ The File Engine **owns**:
 - Color tagging
 
 The File Engine **does NOT own**:
-- Metadata extraction (→ Metadata Engine)
-- Rename operations (→ Rename Engine)
-- Hash computation (→ Metadata Engine)
+- Metadata extraction (-> Metadata Engine)
+- Rename operations (-> Rename Engine)
+- Hash computation (-> Metadata Engine)
 
 ---
 
@@ -122,55 +122,38 @@ The File Engine **does NOT own**:
 ### File Loading Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│ 1. ENTRY POINTS                                                      │
-│    • FileTreeView drag → item_dropped signal                         │
-│    • FileTableView drop → files_dropped signal                       │
-│    • Import button → direct path selection                           │
-│    • MainWindow folder change → reload trigger                       │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│ 2. FileLoadController                                                │
-│    → Validates paths exist                                           │
-│    → Filters by ALLOWED_EXTENSIONS                                   │
-│    → Checks file readability                                         │
-│    → Parses keyboard modifiers (Ctrl=recursive, Shift=merge)         │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│ 3. FileLoadManager (I/O LAYER)                                       │
-│    → os.listdir() + os.path.isfile() for folder scanning             │
-│    → Companion file filtering (RAW+JPG grouping)                     │
-│    → Creates FileItem instances via FileItem.from_path()             │
-│    → Streaming loading for >200 files (batch_size=100)               │
-│    → Coordinates with FileStore for cache read/write                 │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│ 4. FileStore (STATE LAYER)                                           │
-│    → Stores in _loaded_files: list[FileItem]                         │
-│    → Provides cache accessors (get/set/invalidate)                   │
-│    → Emits files_loaded signal                                       │
-│    → NO I/O OPERATIONS (delegated to FileLoadManager)                │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│ 5. FileTableModel                                                    │
-│    → set_files() receives FileItem list                              │
-│    → Manages Qt model/view data binding                              │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│ 6. FileTableView                                                     │
-│    → Displays files with selection, sorting, hover                   │
-│    → Emits selection_changed for downstream consumers                │
-└─────────────────────────────────────────────────────────────────────┘
+POINT 1: ENTRY POINTS
+  FileTreeView drag -> item_dropped signal
+  FileTableView drop -> files_dropped signal
+  Import button -> direct path selection
+  MainWindow folder change -> reload trigger
+
+POINT 2: FileLoadController
+  -> Validates paths exist
+  -> Filters by ALLOWED_EXTENSIONS
+  -> Checks file readability
+  -> Parses keyboard modifiers (Ctrl=recursive, Shift=merge)
+
+POINT 3: FileLoadManager (I/O LAYER)
+  -> os.listdir() + os.path.isfile() for folder scanning
+  -> Companion file filtering (RAW+JPG grouping)
+  -> Creates FileItem instances via FileItem.from_path()
+  -> Streaming loading for >200 files (batch_size=100)
+  -> Coordinates with FileStore for cache read/write
+
+POINT 4: FileStore (STATE LAYER)
+  -> Stores in _loaded_files: list[FileItem]
+  -> Provides cache accessors (get/set/invalidate)
+  -> Emits files_loaded signal
+  -> NO I/O OPERATIONS (delegated to FileLoadManager)
+
+POINT 5: FileTableModel
+  -> set_files() receives FileItem list
+  -> Manages Qt model/view data binding
+
+POINT 6: FileTableView
+  -> Displays files with selection, sorting, hover
+  -> Emits selection_changed for downstream consumers
 ```
 
 ### Loading Triggers
@@ -289,7 +272,7 @@ Cache invalidation:
 
 - FileStore is **NOT thread-safe** - main thread only
 - Uses Qt signals for async communication
-- Streaming loading uses `QTimer.singleShot()` for batches
+- Streaming loading uses TimerManager (schedule with 5ms UI_UPDATE priority) for batches
 
 ---
 
@@ -307,7 +290,7 @@ Cache invalidation:
 
 - **File**: `oncutf/core/file/load_manager.py`
 - **Role**: I/O operations layer (folder scanning, filesystem refresh)
-- **Key Methods**: `get_file_items_from_folder()`, `refresh_loaded_folders()`, `load_folder()`, `load_from_paths()`
+- **Key Methods**: `get_file_items_from_folder()`, `refresh_loaded_folders()`, `load_folder()`, `load_files_from_paths()`
 - **Features**: 
   - Streaming for >200 files, companion filtering
   - Coordinates with FileStore for cache read/write
@@ -318,7 +301,7 @@ Cache invalidation:
 
 - **File**: `oncutf/controllers/file_load_controller.py`
 - **Role**: UI-agnostic loading orchestration
-- **Key Methods**: `load_files()`, `load_folder()`, `process_drop()`
+- **Key Methods**: `load_files()`, `load_folder()`, `load_single_item_from_drop()`, `load_files_from_dropped_items()`
 
 ### FileTableView
 
@@ -339,7 +322,7 @@ Cache invalidation:
 - **Role**: Directory watching, drive mount events
 - **Signals**: `drive_added`, `drive_removed`, `directory_changed`, `file_changed`
 - **Design**: Delegates I/O to FileLoadManager, reads state from FileStore
-- **Pattern**: FileMonitor → FileLoadManager.refresh_loaded_folders() → FileStore.set_loaded_files()
+- **Pattern**: FileMonitor -> FileLoadManager.refresh_loaded_folders() -> FileStore.set_loaded_files()
 
 ---
 
@@ -431,11 +414,9 @@ file_item.color          # "#ff0000" or "none"
 
 ## Known Issues & Technical Debt
 
-### ~~1. FileStore/FileLoadManager Overlap~~ ✅ RESOLVED (2026-01-01)
+### 1. FileStore/FileLoadManager Separation
 
-**Was**: FileStore had both I/O operations (get_file_items_from_folder) and state management.  
-**Now**: Clean separation — FileStore = state-only, FileLoadManager = I/O-only.  
-**Result**: Better testability, clearer architecture, proper backend/frontend separation.
+**Status**: FileStore is pure state-only, FileLoadManager handles all I/O operations. Clean separation enables better testability and proper backend/frontend separation.
 
 ### 1. Dual State Management
 
@@ -455,11 +436,9 @@ FileLoadManager handles both loading logic AND UI updates (`wait_cursor`, widget
 
 **Recommendation**: Extract UI refresh to separate manager or use event-driven updates.
 
-### 4. Streaming Loading Complexity
+### 4. Streaming Loading
 
-Uses `QTimer.singleShot()` and recursive scheduling. Difficult to track state and cancel mid-stream.
-
-**Recommendation**: Consider QThreadPool with progress signals.
+**Status**: Uses TimerManager.schedule() with 5ms batching for responsive UI. Centralized timer management, cancellable loading via timer_id.
 
 ### 5. Extension Filtering Duplication
 
@@ -483,14 +462,14 @@ Named `backup_manager.py` but handles DATABASE backups, not file backups.
 
 | Aspect | Status |
 |--------|--------|
-| File loading | ✅ Complete |
-| Streaming loading | ✅ For >200 files |
-| Folder caching | ✅ Per-folder cache |
-| Filesystem monitoring | ✅ watchdog integration |
-| Color tagging | ✅ Database persistence |
-| Architecture clarity | ✅ I/O/State separation (2026-01-01 refactor) |
-| Backend/Frontend separation | ✅ FileLoadManager (I/O) / FileStore (State) |
-| Documentation | 📝 This document |
+| File loading | [OK] Complete |
+| Streaming loading | [OK] For >200 files |
+| Folder caching | [OK] Per-folder cache |
+| Filesystem monitoring | [OK] watchdog integration |
+| Color tagging | [OK] Database persistence |
+| Architecture clarity | [OK] I/O/State separation (2026-01-01 refactor) |
+| Backend/Frontend separation | [OK] FileLoadManager (I/O) / FileStore (State) |
+| Documentation | [WIP] This document |
 
 The File Engine is **production-ready** and provides:
 - Fast file loading with streaming for large sets

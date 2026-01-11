@@ -7,9 +7,9 @@ Author: Michael Economou
 Date: 2025-05-31
 """
 
-from oncutf.core.pyqt_imports import QApplication, QEvent, QObject, Qt, QTimer
+from oncutf.core.pyqt_imports import QApplication, QEvent, QObject, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import schedule_drag_cleanup
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_drag_cleanup
 
 logger = get_cached_logger(__name__)
 
@@ -39,10 +39,8 @@ class DragManager(QObject):
         self._cleanup_count = 0  # Track cleanup attempts
         self._last_cleanup_time = None  # Prevent excessive cleanup
 
-        # Primary cleanup timer - only one timer active at a time
-        self._cleanup_timer = QTimer(self)
-        self._cleanup_timer.setSingleShot(True)
-        self._cleanup_timer.timeout.connect(self._safety_cleanup)
+        # Safety cleanup timer ID (managed by TimerManager)
+        self._cleanup_timer_id: str | None = None
 
         # Install global event filter
         app = QApplication.instance()
@@ -82,8 +80,11 @@ class DragManager(QObject):
         # Reset cleanup count for new drag
         self._cleanup_count = 0
 
-        # Start safety timer (longer timeout - 10 seconds)
-        self._cleanup_timer.start(10000)
+        # Start safety timer via TimerManager (10 second timeout)
+        # Cancel previous timer if still active
+        if self._cleanup_timer_id:
+            cancel_timer(self._cleanup_timer_id)
+        self._cleanup_timer_id = schedule_drag_cleanup(self._safety_cleanup, delay=10000)
 
         logger.debug("[DragManager] Drag started from: %s", source, extra={"dev_only": True})
 
@@ -150,9 +151,10 @@ class DragManager(QObject):
         self._last_cleanup_time = time.time()
         self._cleanup_count += 1
 
-        # Stop timer
-        if self._cleanup_timer.isActive():
-            self._cleanup_timer.stop()
+        # Stop timer via TimerManager
+        if self._cleanup_timer_id:
+            cancel_timer(self._cleanup_timer_id)
+            self._cleanup_timer_id = None
 
         # Restore all override cursors (with safety limit)
         cursor_count = 0

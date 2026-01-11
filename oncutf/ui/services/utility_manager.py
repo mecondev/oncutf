@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import QApplication, QEvent, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
@@ -46,6 +47,8 @@ class UtilityManager:
         # Cache for avoiding unnecessary preview generation
         self._last_selected_files_hash = None
         self._last_rename_data_hash = None
+        # Preview update timer ID (managed by TimerManager)
+        self._preview_timer_id: str | None = None
         logger.debug("[UtilityManager] Initialized", extra={"dev_only": True})
 
     def event_filter(self, obj, event):
@@ -64,16 +67,19 @@ class UtilityManager:
 
     def request_preview_update(self) -> None:
         """Schedules a delayed update of the name previews.
-        Instead of calling generate_preview_names directly every time something changes,
-        the timer is restarted so that the actual update occurs only when
-        changes stop for the specified duration (250ms).
+        Debounces preview generation so it only happens when changes stop
+        for the specified duration (300ms default).
         """
         logger.debug("[UtilityManager] request_preview_update called", extra={"dev_only": True})
 
-        if self.main_window.preview_update_timer.isActive():
-            self.main_window.preview_update_timer.stop()
+        # Cancel existing timer
+        if self._preview_timer_id:
+            cancel_timer(self._preview_timer_id)
 
-        self.main_window.preview_update_timer.start()
+        # Schedule preview update with 300ms debounce (consistent with UI refresh)
+        self._preview_timer_id = schedule_preview_update(
+            self.generate_preview_names, delay=300
+        )
 
     def force_reload(self) -> None:
         """Triggered by F5.

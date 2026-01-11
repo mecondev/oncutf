@@ -31,6 +31,7 @@ COLUMN_RESIZE_BEHAVIOR = {
 FILE_TABLE_COLUMN_CONFIG = {
     "color": {
         "title": "Color Flag",
+        "display_title": "Color",
         "key": "color",
         "default_visible": True,
         "removable": True,
@@ -45,7 +46,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": False,
         "resizable": True,
-        "width": 524,
+        "width": 500,
         "alignment": "left",
         "min_width": 80,
     },
@@ -61,6 +62,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "type": {
         "title": "File Type",
+        "display_title": "Type",
         "key": "type",
         "default_visible": True,
         "removable": True,

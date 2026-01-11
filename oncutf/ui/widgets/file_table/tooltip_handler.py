@@ -13,17 +13,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QEvent, QModelIndex, Qt, QTimer
+from oncutf.core.pyqt_imports import QEvent, QModelIndex, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.file_table.view import FileTableView
 
 logger = get_cached_logger(__name__)
-
-# Tooltip hover delay in milliseconds
-TOOLTIP_HOVER_DELAY = 600
 
 
 class TooltipHandler:
@@ -47,9 +45,7 @@ class TooltipHandler:
             view: The parent FileTableView widget
         """
         self._view = view
-        self._timer = QTimer()
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._show_tooltip)
+        self._timer_id: str | None = None
         self._current_index = QModelIndex()
 
     def handle_event(self, event_type: int, index: QModelIndex | None = None) -> bool:
@@ -74,7 +70,8 @@ class TooltipHandler:
                 self.clear()
                 self._current_index = index
                 if index.isValid():
-                    self._timer.start(TOOLTIP_HOVER_DELAY)
+                    # Use TimerManager to schedule tooltip with consistent delay
+                    self._timer_id = schedule_dialog_close(self._show_tooltip)
             if not index.isValid():
                 self.clear()
             return False
@@ -94,7 +91,9 @@ class TooltipHandler:
     def clear(self) -> None:
         """Clear active tooltip and stop timer."""
         TooltipHelper.clear_tooltips_for_widget(self._view.viewport())
-        self._timer.stop()
+        if self._timer_id:
+            cancel_timer(self._timer_id)
+            self._timer_id = None
         self._current_index = QModelIndex()
 
     def clear_for_widget(self) -> None:

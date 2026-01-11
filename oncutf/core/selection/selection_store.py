@@ -16,8 +16,9 @@ Features:
 import time
 from typing import Any
 
-from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
+from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 logger = get_cached_logger(__name__)
 
@@ -63,11 +64,8 @@ class SelectionStore(QObject):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
-        # OPTIMIZED: Faster debouncing timer for better responsiveness
-        self._update_timer = QTimer(self)
-        self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(5)  # 5ms debounce for faster response
-        self._update_timer.timeout.connect(self._emit_deferred_signals)
+        # Debounce timer ID (managed by TimerManager for better responsiveness)
+        self._update_timer_id: str | None = None
 
         # Pending signal emissions (for debouncing)
         self._pending_selection_signal = False
@@ -430,17 +428,25 @@ class SelectionStore(QObject):
     def _schedule_selection_signal(self) -> None:
         """Schedule selection_changed signal emission with debouncing."""
         self._pending_selection_signal = True
-        if not self._update_timer.isActive():
-            self._update_timer.start()
+        if not self._update_timer_id:
+            # Schedule with 15ms debounce for UI updates (via TimerManager)
+            self._update_timer_id = schedule_ui_update(
+                self._emit_deferred_signals, delay=15
+            )
 
     def _schedule_checked_signal(self) -> None:
         """Schedule checked_changed signal emission with debouncing."""
         self._pending_checked_signal = True
-        if not self._update_timer.isActive():
-            self._update_timer.start()
+        if not self._update_timer_id:
+            # Schedule with 15ms debounce for UI updates (via TimerManager)
+            self._update_timer_id = schedule_ui_update(
+                self._emit_deferred_signals, delay=15
+            )
 
     def _emit_deferred_signals(self) -> None:
         """Emit pending signals after debounce timer."""
+        # Reset timer ID
+        self._update_timer_id = None
         if self._pending_selection_signal:
             self.selection_changed.emit(list(self._selected_rows))
             self._pending_selection_signal = False

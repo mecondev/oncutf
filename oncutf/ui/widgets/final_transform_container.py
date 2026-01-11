@@ -17,13 +17,13 @@ from oncutf.core.pyqt_imports import (
     QPushButton,
     QSize,
     Qt,
-    QTimer,
     QVBoxLayout,
     QWidget,
     pyqtSignal,
 )
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 from oncutf.utils.ui.icons_loader import get_menu_icon
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
@@ -58,11 +58,8 @@ class FinalTransformContainer(QWidget):
         # Initialize last value for change detection
         self._last_value = str(self.get_data())
 
-        # Central preview update timer
-        self._preview_timer = QTimer()
-        self._preview_timer.setSingleShot(True)
-        self._preview_timer.setInterval(50)  # 50ms delay
-        self._preview_timer.timeout.connect(self._trigger_central_preview_update)
+        # Central preview update timer ID (managed by TimerManager)
+        self._preview_timer_id: str | None = None
 
     def _setup_ui(self):
         """Setup the UI with grid layout for better alignment."""
@@ -184,9 +181,12 @@ class FinalTransformContainer(QWidget):
 
     def _schedule_central_preview_update(self):
         """Schedule central preview update with delay."""
-        if self._preview_timer.isActive():
-            self._preview_timer.stop()
-        self._preview_timer.start()
+        if self._preview_timer_id:
+            cancel_timer(self._preview_timer_id)
+        # Schedule with 50ms debounce via TimerManager
+        self._preview_timer_id = schedule_ui_update(
+            self._trigger_central_preview_update, delay=50
+        )
 
     def _trigger_central_preview_update(self):
         """Trigger central preview update."""

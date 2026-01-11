@@ -152,17 +152,15 @@ class SignalCoordinator:
     def setup_timer_signals(self) -> None:
         """Connect timer signals for debounced operations.
 
-        Currently handles preview update timer.
+        Note: Preview update timing is now handled by UtilityManager via TimerManager
+        instead of a central preview_update_timer, providing better decoupling.
         """
-        if hasattr(self.parent_window, "preview_update_timer"):
-            self.parent_window.preview_update_timer.timeout.connect(
-                self.parent_window.generate_preview_names
-            )
-            self._connected_signals.append("preview_update_timer.timeout → generate_preview_names")
-            logger.debug(
-                "[SignalCoordinator] Connected preview_update_timer signal",
-                extra={"dev_only": True},
-            )
+        # Preview update timer signals are now handled by UtilityManager.request_preview_update()
+        # via TimerManager.schedule_preview_update() for better architecture
+        logger.debug(
+            "[SignalCoordinator] Timer signals setup (preview handled by UtilityManager)",
+            extra={"dev_only": True},
+        )
 
     def get_connected_signals(self) -> list[str]:
         """Get list of all connected signals for debugging.

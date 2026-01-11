@@ -23,8 +23,8 @@ from enum import Enum
 from typing import Any
 
 from oncutf.config import STATUS_COLORS
-from oncutf.core.pyqt_imports import QTimer
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
 
 logger = get_cached_logger(__name__)
 
@@ -80,7 +80,7 @@ class StatusManager:
     def __init__(self, status_label=None) -> None:
         """Initialize StatusManager with status label reference."""
         self.status_label = status_label
-        self._status_timer: QTimer | None = None
+        self._status_timer_id: str | None = None
         self._status_history: list[StatusEntry] = []
         self._max_history_size: int = 100
         self._current_operation: str | None = None
@@ -677,27 +677,24 @@ class StatusManager:
     # =====================================
 
     def _start_auto_reset(self, delay: int) -> None:
-        """Enhanced auto-reset timer with better cleanup."""  # If delay is None or invalid, don't start timer
+        """Enhanced auto-reset timer with better cleanup."""
+        # If delay is None or invalid, don't start timer
         if delay is None or delay <= 0:
             return
-            # Stop existing timer if running
-        if self._status_timer:
-            self._status_timer.stop()
-            self._status_timer.deleteLater()
-            self._status_timer = None
 
-        # Create new timer
-        self._status_timer = QTimer()
-        self._status_timer.setSingleShot(True)
-        self._status_timer.timeout.connect(self.set_ready)
-        self._status_timer.start(delay)
+        # Cancel existing timer if running
+        if self._status_timer_id:
+            cancel_timer(self._status_timer_id)
+            self._status_timer_id = None
+
+        # Schedule auto-reset via TimerManager
+        self._status_timer_id = schedule_dialog_close(self.set_ready, delay=delay)
 
     def stop_auto_reset(self) -> None:
         """Stop any running auto-reset timer."""
-        if self._status_timer:
-            self._status_timer.stop()
-            self._status_timer.deleteLater()
-            self._status_timer = None
+        if self._status_timer_id:
+            cancel_timer(self._status_timer_id)
+            self._status_timer_id = None
 
     def cleanup(self) -> None:
         """Cleanup resources when shutting down."""

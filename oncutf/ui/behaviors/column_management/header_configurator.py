@@ -7,6 +7,8 @@ Date: 2026-01-05
 """
 from typing import TYPE_CHECKING
 
+from PyQt5.QtWidgets import QHeaderView
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -162,12 +164,25 @@ class HeaderConfigurator:
         if self._configuring_columns:
             return
 
-        # Prevent status column (0) from being moved
+        # Prevent status column (0) from being moved - CRITICAL CHECK
         if logical_index == 0 or old_visual == 0 or new_visual == 0:
             header = self._widget.horizontalHeader()
-            if header and header.visualIndex(0) != 0:
-                # Status column was moved, restore it to position 0
-                header.moveSection(header.visualIndex(0), 0)
+            if header:
+                # Find where status column ended up
+                current_visual = header.visualIndex(0)
+                # Only restore if it's not already at position 0 (avoid infinite loop)
+                if current_visual != 0:
+                    logger.info("[COLUMN_LOCK] Restoring status column from visual %d to 0", current_visual)
+                    header.blockSignals(True)
+                    try:
+                        # Allow controlled move even if InteractiveHeader blocks normal moves
+                        header._allow_forced_section_move = True
+                        QHeaderView.moveSection(header, current_visual, 0)
+                    except Exception:
+                        logger.warning("[COLUMN_LOCK] Failed to force status column restore", exc_info=True)
+                    finally:
+                        header._allow_forced_section_move = False
+                        header.blockSignals(False)
             return
 
         logger.debug(
@@ -201,10 +216,8 @@ class HeaderConfigurator:
             # Configure status column (always column 0)
             self._widget.setColumnWidth(0, 45)
             header.setSectionResizeMode(0, header.Fixed)
-            # Make status column truly immovable
-            if hasattr(header, 'setSectionsMovable'):
-                # Qt doesn't have per-section movable, but we can prevent it in the handler
-                pass
+            # Set property to disable hover for status column
+            header.setProperty("oncutf_status_column_no_hover", True)
 
             # Get visible columns from model
             visible_columns = []

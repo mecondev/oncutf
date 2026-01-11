@@ -344,29 +344,36 @@ class DataProvider:
             Header data for the section
 
         """
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            if section == 0:
-                return ""  # Don't display title in status column
+        if orientation == Qt.Horizontal:
+            if role == Qt.DisplayRole:
+                if section == 0:
+                    return ""  # Don't display title in status column
 
-            col_key = self.column_manager.get_column_key(section)
-            if col_key:
-                # Get the proper title from configuration
-                from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+                col_key = self.column_manager.get_column_key(section)
+                if col_key:
+                    # Get the proper title from configuration
+                    from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
-                title = FILE_TABLE_COLUMN_CONFIG.get(col_key, {}).get("title", col_key)
-                logger.debug(
-                    "[HeaderData] Section %d -> column '%s' -> title '%s'",
-                    section,
-                    col_key,
-                    title,
-                    extra={"dev_only": True},
-                )
-                return title
-            else:
+                    config = FILE_TABLE_COLUMN_CONFIG.get(col_key, {})
+                    # Use display_title if available (for headers), fallback to title
+                    title = config.get("display_title") or config.get("title", col_key)
+
+                    logger.debug(
+                        "[HeaderData] Section %d -> column '%s' -> display_title '%s'",
+                        section,
+                        col_key,
+                        title,
+                        extra={"dev_only": True},
+                    )
+                    return title
                 logger.warning(
                     "[HeaderData] No column mapping found for section %d",
                     section,
                 )
                 return ""
 
+            # NOTE: Header tooltips are rendered by InteractiveHeader via TooltipHelper
+            # for consistent styling across platforms.
+
         return None
+

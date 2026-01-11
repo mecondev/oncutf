@@ -1,0 +1,246 @@
+OnCutF – Sync Session Feature
+Final Consolidated Specification
+================================
+
+GOAL
+----
+Integrate a professional multi-camera + audio synchronization system
+directly into the OnCutF (Python / Qt) application.
+
+The system synchronizes video and audio files selected by the user,
+builds a timeline-based representation, and exports the result to NLEs
+(mainly Avid via linked AAF).
+
+
+1. INTEGRATION SCOPE
+-------------------
+- Sync operates ONLY on user-selected files from the File Table.
+- No global folder-based automatic sync.
+- Uses existing OnCutF infrastructure:
+  - file table selection
+  - metadata cache
+  - folder-based color flags
+  - path-based device identity
+
+
+2. SUPPORTED DEVICES / DATA
+---------------------------
+Cameras (typical):
+- Canon 80D, R5, R6
+- Sony A7III, A7IV, a6500
+- Nikon D6
+(No tested embedded timecode devices)
+
+Video formats:
+- MP4, MOV, MTS, MXF
+
+Audio formats:
+- WAV (including 32-bit float)
+- MP3
+- AAC
+
+Audio characteristics:
+- 44.1 kHz / 48 kHz
+- mono or stereo per file
+- no tested multi-track (4/6/8ch) WAV yet
+
+
+3. TIME & METADATA MODEL
+------------------------
+- Best-effort extraction of real wall-clock time from metadata.
+- No assumption that device clocks are correct.
+- No LTC audio timecode support yet (TODO).
+- Embedded timecode support is future-ready (TODO).
+
+Internal timeline time representation:
+- Seconds or samples (continuous, float)
+- FPS / timebase is ONLY a formatting layer for export (AAF/XML).
+
+
+4. PROJECT TIMEBASE
+-------------------
+- User can define project timebase (e.g. 25 fps).
+- Timebase affects:
+  - HH:MM:SS:FF display
+  - AAF / EDL / XML export
+- Timebase does NOT affect internal sync calculations.
+
+
+5. MANUAL ANCHOR / USER ASSIST
+------------------------------
+Two supported modes:
+
+A) Clip-to-clip assist
+- User selects two clips:
+  e.g. Camera1 clip 101 ~ Camera2 clip 222
+- System refines alignment using audio (if possible).
+
+B) Explicit time mapping
+- User defines:
+  "At 00:00:41:18 of clip 101 equals 00:01:23:12 of clip 222"
+- System computes device offset from this mapping.
+- Audio refine may follow if possible.
+
+Both methods may coexist.
+
+
+6. AUDIO-BASED SYNC (PRIMARY METHOD)
+------------------------------------
+- Audio is the primary sync mechanism.
+- Metadata time is used only for rough alignment / candidate windows.
+
+Audio preprocessing (conceptual):
+- downmix to mono
+- resample to internal reference rate
+- normalization (handle very low / very high levels)
+- transient / noise-robust feature extraction
+
+Matching principles:
+- No brute-force comparison of all clips.
+- Candidate windows are derived from rough time overlap.
+- Confidence scoring is mandatory.
+
+
+7. REAL-WORLD WEDDING SCENARIOS
+--------------------------------
+The system MUST support mixed situations:
+
+A) Sections WITH audio recorder
+- Recorder acts as master reference.
+- Cameras are synced against recorder.
+
+B) Sections WITHOUT recorder but parallel cameras
+- Camera-to-camera audio sync is attempted.
+
+C) Parallel recordings in different locations
+- No forced sync.
+- These become separate logical clusters.
+- Optional merge by wall-clock time (user-controlled).
+
+Clustering is REQUIRED before final timeline build.
+
+
+8. FILENAME / SEQUENCE HEURISTICS
+---------------------------------
+- Filenames are analyzed for sequence anomalies:
+  e.g. 101 → 102 → 105 → 103 → 104
+- Filename order is a SIGNAL, not ground truth.
+- Used for:
+  - detecting gaps
+  - assisting placement of unknown clips
+  - diagnostics / reporting
+
+
+9. UNKNOWN / UNMATCHED CLIPS POLICY
+-----------------------------------
+Unmatched clips are NEVER treated as synced.
+
+Two placement modes (user selectable):
+
+Mode 1: Near-gap stack (default)
+- Unmatched clips are placed near their logical gap
+  based on filename order or surrounding matches.
+- Placed in extra tracks (e.g. V3, V4).
+- Visually marked as UNMATCHED.
+
+Mode 2: Tail bin (PluralEyes-style)
+- All unmatched clips are appended at the end
+  of their respective device track.
+
+Visual rules:
+- Dashed border
+- Clear UNMATCHED labeling
+- No false sense of sync
+
+
+10. TIMELINE VIEWPORT (UI)
+--------------------------
+- Rectangle-based timeline (no playback required).
+- Real-time gaps proportional to time.
+- Zoom in / zoom out
+- Horizontal scroll
+
+Tracks:
+- One video track per camera:
+  V1 = Camera 1 (all clips)
+  V2 = Camera 2
+  V3 = Camera 3
+- One audio track per recorder:
+  A1 = Recorder 1, etc.
+
+Visual styling:
+- Color derived from existing OnCutF folder color flags.
+- Filenames visible.
+- Dashed borders for unknown clips.
+
+
+11. EXPORT
+----------
+Primary export target:
+- Avid AAF (linked media)
+
+AAF rules:
+- Linked media only (no embedded media).
+- Absolute paths:
+  e.g. D:\wedding_1\cam1\file1.mp4
+- Relink responsibility is on the user.
+
+Other NLEs:
+- Future support:
+  - FCPXML
+  - Resolve-compatible formats
+- Premiere primarily via AAF.
+
+EDL support:
+- Possible but not yet validated.
+
+
+12. REPORTING
+-------------
+- Internal visual reporting via timeline UI.
+- Optional export to JSON / CSV:
+  - device offsets
+  - matched / unmatched clips
+  - confidence scores
+  - detected anomalies (gaps, jumps)
+- Report export is optional and user-triggered.
+
+
+13. PERFORMANCE & ARCHITECTURE
+-------------------------------
+- Core logic in Python.
+- Audio engine designed to be replaceable by C++ accelerator later.
+- No mandatory proxy generation.
+- No mandatory waveform caching in MVP.
+
+
+14. AI / ADVANCED AUDIO
+-----------------------
+- Local-only processing preferred (commercial reasons).
+- No dependency on cloud services.
+- "AI" here refers to robust audio matching, not LLMs.
+- Future enhancement area, not MVP requirement.
+
+
+15. OPEN TODO (INTENTIONAL)
+---------------------------
+- LTC audio timecode support.
+- Embedded camera timecode support.
+- Advanced drift correction for very long takes.
+- Multichannel WAV support.
+- Resolve/Premiere edge-case exporter testing.
+
+
+16. UX ENTRY POINT
+------------------
+- Sync is initiated from File Table selection.
+- New "Sync Session" area inside OnCutF.
+- Sync menu includes:
+  - Run sync
+  - Manual anchor tools
+  - Unknown placement mode
+  - Confidence strictness
+  - Export options
+
+
+END OF SPEC

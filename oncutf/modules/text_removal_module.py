@@ -22,13 +22,13 @@ from oncutf.core.pyqt_imports import (
     QLabel,
     QLineEdit,
     Qt,
-    QTimer,
     QVBoxLayout,
     QWidget,
 )
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 
 logger = get_cached_logger(__name__)
 
@@ -62,7 +62,7 @@ class TextRemovalModule(BaseRenameModule):
     def __init__(self, parent: QWidget | None = None):
         """Initialize the text removal module."""
         super().__init__(parent)
-        self._preview_timer: QTimer | None = None
+        self._preview_timer_id: str | None = None
         self._sample_text = "example_file_name"
         self.setup_ui()
 
@@ -142,13 +142,12 @@ class TextRemovalModule(BaseRenameModule):
         text = self.text_input.text()
         logger.debug("[TextRemoval] Setting changed, text: '%s'", text, extra={"dev_only": True})
 
-        if self._preview_timer is None:
-            self._preview_timer = QTimer()
-            self._preview_timer.setSingleShot(True)
-            self._preview_timer.timeout.connect(self._update_preview)
+        # Cancel existing timer
+        if self._preview_timer_id:
+            cancel_timer(self._preview_timer_id)
 
-        self._preview_timer.stop()
-        self._preview_timer.start(150)
+        # Schedule preview update with 150ms debounce via TimerManager
+        self._preview_timer_id = schedule_preview_update(self._update_preview, delay=150)
 
         self.updated.emit(self)
 

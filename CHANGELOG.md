@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [Unreleased] - 2026-01-11
 
-### Deprecated
+Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and comprehensive testing.
 - **Legacy Methods** (marked for removal in v2.0):
   - `ApplicationContext.set_files()` - Use `FileStore.set_loaded_files()` instead
   - `TextRemovalModule.on_text_changed()` - Connect to `module_changed` signal instead
@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
   - `oncutf.ui.behaviors.metadata_context_menu_behavior` - Import from `oncutf.ui.behaviors.metadata_context_menu` instead
 
 ### Code Quality
-- **Audit-driven improvements** (2026-01-03):
+- **Audit-driven improvements** (2026-01-11):
   - Standardized all logging to `get_cached_logger(__name__)` pattern
   - Added `@deprecated` decorator to legacy methods with migration guidance
   - Converted critical error handlers to `logger.exception()` for stack traces
@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
   - Removed duplicate `OperationDialog` class (use `ProgressDialog` instead)
   - Added deprecation warnings to delegator files
   - Removed dead `_legacy_selection_mode` flag (SelectionStore is always enabled)
+  - **Total test coverage**: 1006 comprehensive tests across all modules
 
 ### Performance
 - **Phase 7 - Final Polish**: Major performance optimizations and polish
@@ -48,20 +49,12 @@ All notable changes to this project will be documented in this file.
     - Created docs/PERFORMANCE_BASELINE.md for tracking improvements
 
 ### Added
-- **Phase 1D - MainWindowController**: High-level orchestration controller
-  - New MainWindowController coordinating FileLoad, Metadata, and Rename controllers
-  - `restore_last_session_workflow()`: Orchestrates session restoration (folder validation, file loading, optional metadata, sort config)
-  - `coordinate_shutdown_workflow()`: Orchestrates graceful shutdown with progress callbacks
-  - 17 comprehensive tests for all orchestration workflows
-  - Integration with WindowConfigManager for session restore
-  - Testable orchestration layer separating UI from business logic
-
-### Changed
-- **Phase 1D - Architecture Improvements**:
-  - Session restoration now uses MainWindowController instead of direct manager calls
-  - Shutdown orchestration extracted from MainWindow to MainWindowController
-  - Improved code organization following MVC-inspired controller pattern
-  - Enhanced testability of complex multi-service workflows
+- **MainWindowController**: High-level multi-service orchestration
+  - Coordinates FileLoad, Metadata, and Rename controllers
+  - `restore_last_session_workflow()`: Session restoration orchestration
+  - `coordinate_shutdown_workflow()`: Graceful shutdown with progress callbacks
+  - Integration with WindowConfigManager for session state
+  - Full test coverage with comprehensive integration tests
 
 ### Refactoring
 - **Mixin Extraction from FileTableView** (Day 8 - 2025-12-04):
@@ -103,7 +96,6 @@ All notable changes to this project will be documented in this file.
     - Enhanced metadata displayed in unified metadata view
     - Seamless integration with existing metadata loading workflows
 
-### Fixed
 - **CRITICAL (Windows)**: Fixed application crash on exit with "Debug/Close Program" dialog
   - Added timeout parameter to `thread.wait()` after `terminate()` to prevent infinite hang
   - Fixed double cleanup race condition with ExifTool processes

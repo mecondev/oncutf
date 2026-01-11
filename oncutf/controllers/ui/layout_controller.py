@@ -10,18 +10,21 @@ import platform
 from typing import cast
 
 from PyQt5.QtCore import QDir, QStringListModel, Qt
-from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
+from PyQt5.QtGui import QIcon, QKeySequence, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QAction,
+    QButtonGroup,
     QCompleter,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QShortcut,
     QSizePolicy,
     QSplitter,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -37,6 +40,12 @@ from oncutf.config import (
     TOP_BOTTOM_SPLIT_RATIO,
 )
 from oncutf.controllers.ui.protocols import LayoutContext
+from oncutf.ui.viewport_specs import (
+    FILES_HEADER_HEIGHT,
+    VIEWPORT_BUTTON_SIZE,
+    VIEWPORT_BUTTON_SPACING,
+    VIEWPORT_SPECS,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_menu_icon
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
@@ -270,8 +279,66 @@ class LayoutController:
         self.parent_window.center_frame = QFrame()
         center_layout = QVBoxLayout(self.parent_window.center_frame)
 
+        # Create header row for label + viewport buttons
+        files_header_widget = QWidget()
+        files_header_widget.setFixedHeight(FILES_HEADER_HEIGHT)
+        files_header_layout = QHBoxLayout(files_header_widget)
+        files_header_layout.setContentsMargins(0, 0, 0, 0)
+        files_header_layout.setSpacing(0)
+
+        # Files label
         self.parent_window.files_label = QLabel("Files")
-        center_layout.addWidget(self.parent_window.files_label)
+        files_header_layout.addWidget(self.parent_window.files_label)
+
+        # Stretch to push buttons right
+        files_header_layout.addStretch()
+
+        # Viewport buttons container
+        viewport_container = QWidget()
+        buttons_layout = QHBoxLayout(viewport_container)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(VIEWPORT_BUTTON_SPACING)
+
+        # Button group for mutual exclusion (radio-like behavior)
+        self.parent_window.viewport_button_group = QButtonGroup()
+        self.parent_window.viewport_button_group.setExclusive(True)
+
+        # Create buttons from specs (data-driven)
+        self.parent_window.viewport_buttons = {}
+        parent_widget = cast("QWidget", self.parent_window)
+
+        for i, spec in enumerate(VIEWPORT_SPECS):
+            btn = QToolButton()
+            btn.setIcon(get_menu_icon(spec.icon_name))
+            btn.setFixedSize(VIEWPORT_BUTTON_SIZE, VIEWPORT_BUTTON_SIZE)
+            btn.setFocusPolicy(Qt.NoFocus)
+            btn.setCheckable(True)
+            btn.setAutoRaise(True)  # Flat appearance until hover/checked
+            btn.setObjectName(f"viewport{spec.id.title()}Button")
+
+            # Tooltip includes shortcut hint
+            tooltip_text = f"{spec.tooltip} ({spec.shortcut})"
+            TooltipHelper.setup_tooltip(btn, tooltip_text, TooltipType.INFO)
+
+            # Keyboard shortcut
+            shortcut = QShortcut(QKeySequence(spec.shortcut), parent_widget)
+            shortcut.activated.connect(btn.click)
+
+            # Add to button group (mutual exclusion)
+            self.parent_window.viewport_button_group.addButton(btn, i)
+
+            # Store in dict for easy access
+            self.parent_window.viewport_buttons[spec.id] = btn
+            buttons_layout.addWidget(btn)
+
+        # Set default selection (first button)
+        if VIEWPORT_SPECS:
+            self.parent_window.viewport_buttons[VIEWPORT_SPECS[0].id].setChecked(True)
+
+        files_header_layout.addWidget(viewport_container)
+
+        # Add header to center layout
+        center_layout.addWidget(files_header_widget)
 
         parent_widget = cast("QWidget", self.parent_window)
         self.parent_window.file_table_view = FileTableView(parent=parent_widget)

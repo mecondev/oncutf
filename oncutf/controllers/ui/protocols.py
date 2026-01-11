@@ -21,12 +21,14 @@ if TYPE_CHECKING:
     from PyQt5.QtCore import QStringListModel
     from PyQt5.QtWidgets import (
         QAction,
+        QButtonGroup,
         QCompleter,
         QFrame,
         QLabel,
         QLineEdit,
         QPushButton,
         QSplitter,
+        QToolButton,
         QVBoxLayout,
     )
 
@@ -285,6 +287,8 @@ class LayoutContext(Protocol):
     file_table_view: "FileTableView"
     file_model: "FileTableModel"
     header: "InteractiveHeader"  # type: ignore[name-defined]  # noqa: F821
+    viewport_buttons: dict[str, "QToolButton"]
+    viewport_button_group: "QButtonGroup"
 
     # Right panel
     information_label: "QLabel"
