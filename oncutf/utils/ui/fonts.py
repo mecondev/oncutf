@@ -8,8 +8,12 @@ Manages loading and providing access to the Inter font family
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import QFont, QFontDatabase, QResource
+
+if TYPE_CHECKING:
+    from oncutf.ui import resources_rc  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +326,7 @@ class JetBrainsFonts:
         """Load all JetBrains Mono fonts from embedded QRC resources."""
         try:
             # Import is used for side effects to register resources
-            from oncutf.ui import resources_rc  # noqa: F401
+            import oncutf.ui.resources_rc  # noqa: F401
 
             for font_key, font_file in self.FONT_FILES.items():
                 resource_path = f":/fonts/fonts/jetbrains/{font_file}"
