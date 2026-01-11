@@ -42,48 +42,35 @@ class InterFonts:
         self._load_fonts_from_resources()
 
     def _load_fonts_from_resources(self) -> None:
-        """Load all Inter fonts from filesystem or QResource based on configuration"""
-        import os
+        """Load all Inter fonts from Qt resources."""
+        try:
+            # Import is used for side effects to register resources
+            import oncutf.ui.resources_rc  # noqa: F401
 
-        from oncutf.utils.filesystem.path_utils import get_fonts_dir
-
-        # Note: USE_EMBEDDED_FONTS is always False (embedded mode removed)
-        # Load from filesystem only
-        fonts_dir = str(get_fonts_dir())
-
-        if os.path.exists(fonts_dir):
             for font_key, font_file in self.FONT_FILES.items():
-                font_path = os.path.join(fonts_dir, font_file)
+                resource_path = f":/fonts/fonts/inter/{font_file}"
 
-                if os.path.exists(font_path):
-                    # Load font from file path (more stable than QResource data)
-                    font_id = QFontDatabase.addApplicationFont(font_path)
-                    if font_id != -1:
-                        families = QFontDatabase.applicationFontFamilies(font_id)
-                        if families:
-                            self.loaded_fonts[font_key] = font_id
-                            self.font_families[font_key] = families[0]
-                            logger.debug(
-                                "Loaded %s: %s from %s",
-                                font_key,
-                                families[0],
-                                font_path,
-                                extra={"dev_only": True},
-                            )
-                        else:
-                            logger.warning("No families found for %s", font_key)
+                # Load font from Qt resources
+                font_id = QFontDatabase.addApplicationFont(resource_path)
+                if font_id != -1:
+                    families = QFontDatabase.applicationFontFamilies(font_id)
+                    if families:
+                        self.loaded_fonts[font_key] = font_id
+                        self.font_families[font_key] = families[0]
+                        logger.debug(
+                            "Loaded %s: %s from %s",
+                            font_key,
+                            families[0],
+                            resource_path,
+                            extra={"dev_only": True},
+                        )
                     else:
-                        logger.error("Failed to load font %s from %s", font_key, font_path)
+                        logger.warning("No families found for %s", font_key)
                 else:
-                    logger.error("Font file not found: %s", font_path)
-        else:
-            logger.error("Fonts directory not found: %s", fonts_dir)
+                    logger.error("Failed to load font %s from %s", font_key, resource_path)
 
-        # Note: Fallback QResource loading removed (dead code)
-        # All fonts now load from resources_rc.py via JetBrainsMonoFonts class
-
-    # Note: _load_from_qresource removed (dead code - embedded mode disabled)
-    # All fonts now load from resources_rc.py
+        except Exception as e:
+            logger.error("Failed to load Inter fonts from resources: %s", e)
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
         """Get a QFont for specific use case with DPI scaling
