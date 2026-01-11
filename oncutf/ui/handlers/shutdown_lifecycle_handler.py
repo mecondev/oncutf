@@ -381,8 +381,16 @@ class ShutdownLifecycleHandler:
                 try:
                     from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
+                    config_mgr = get_app_config_manager()
+                    logger.debug(
+                        "[CloseEvent] Reloading config before save to preserve other data",
+                        extra={"dev_only": True},
+                    )
+                    if config_mgr.config_file.exists():
+                        config_mgr.load()
+
                     logger.debug("[CloseEvent] Calling save_immediate()", extra={"dev_only": True})
-                    result = get_app_config_manager().save_immediate()
+                    result = config_mgr.save_immediate()
                     logger.info(
                         "[CloseEvent] Configuration saved to disk immediately (result: %s)", result
                     )

@@ -340,7 +340,7 @@ class JSONConfigManager:
 
         """
         with self._lock:
-            # Cancel pending auto-save timer
+            # Cancel pending auto-save timer first
             if self._auto_save_timer_id:
                 try:
                     from oncutf.utils.shared.timer_manager import get_timer_manager
@@ -476,10 +476,9 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     manager.register_category(AppConfig())
     manager.register_category(DialogsConfig())
 
-    # Load config if file exists (but don't create one from defaults)
-    # This ensures previously saved config is available
-    if manager.config_file.exists():
-        manager.load()
+    # NOTE: Do NOT load here! save_immediate() will reload before saving.
+    # This ensures defaults are used if no file exists, and file is
+    # merged-in only at save time, not at creation time.
 
     # Enable cache if configured
     try:
