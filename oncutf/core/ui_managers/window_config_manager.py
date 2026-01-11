@@ -136,7 +136,20 @@ class WindowConfigManager:
 
                     window_config.set("file_table_column_widths", column_widths)
 
-            # Save column states using ColumnManager
+            # Save metadata tree column widths
+            if hasattr(self.main_window, "metadata_tree_view"):
+                metadata_model = self.main_window.metadata_tree_view.model()
+                if metadata_model:
+                    metadata_column_widths = {}
+                    # Assuming metadata tree has "key" and "value" columns (indices 0 and 1)
+                    metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
+                    metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
+                    window_config.set("metadata_tree_column_widths", metadata_column_widths)
+                    logger.debug(
+                        "[Config] Saved metadata tree column widths: %s",
+                        metadata_column_widths,
+                        extra={"dev_only": True},
+                    )
             if hasattr(self.main_window, "column_manager"):
                 column_states = {
                     "file_table": self.main_window.column_manager.save_column_state("file_table"),

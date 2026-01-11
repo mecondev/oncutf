@@ -195,14 +195,23 @@ class MetadataTreeViewConfig:
             # Show header when there's content
             header.show()
 
-            # Key column: min 80px, initial 180px, max 800px
+            # Try to load saved column widths from config
+            saved_widths = self._get_saved_column_widths()
+            if saved_widths:
+                key_width = saved_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+                value_width = saved_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+            else:
+                key_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"]
+                value_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"]
+
+            # Key column: min 80px, initial width, max 800px
             header.setSectionResizeMode(0, QHeaderView.Interactive)
             header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
-            header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+            header.resizeSection(0, key_width)
 
-            # Value column: min 250px, initial 500px, allows wide content without stretching
+            # Value column: min 250px, initial width, allows wide content without stretching
             header.setSectionResizeMode(1, QHeaderView.Interactive)
-            header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+            header.resizeSection(1, value_width)
 
             # Set specific min/max sizes per column
             header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
@@ -307,3 +316,33 @@ class MetadataTreeViewConfig:
         value_item = root.child(0, 1)
         if value_item:
             value_item.setSelectable(False)
+
+    def _get_saved_column_widths(self) -> dict[str, int] | None:
+        """Load saved column widths from config.
+
+        Returns:
+            Dictionary with saved widths or None if not available
+
+        """
+        try:
+            from oncutf.utils.shared.json_config_manager import ConfigManager
+
+            config_manager = ConfigManager()
+            window_config = config_manager.get_category("window")
+            saved_widths = window_config.get("metadata_tree_column_widths")
+
+            if saved_widths and isinstance(saved_widths, dict):
+                logger.debug(
+                    "[MetadataTree] Loaded saved column widths: %s",
+                    saved_widths,
+                    extra={"dev_only": True},
+                )
+                return saved_widths
+        except Exception as e:
+            logger.debug(
+                "[MetadataTree] Could not load saved column widths: %s",
+                e,
+                extra={"dev_only": True},
+            )
+
+        return None
