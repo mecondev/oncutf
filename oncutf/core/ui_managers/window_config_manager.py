@@ -208,15 +208,24 @@ class WindowConfigManager:
                 except Exception as e:
                     logger.warning("[Config] Failed to save metadata tree column widths: %s", e)
 
-            # Save column visibility states
-            if hasattr(self.main_window, "column_manager"):
-                column_states = {
-                    "file_table": self.main_window.column_manager.save_column_state("file_table"),
-                    "metadata_tree": self.main_window.column_manager.save_column_state(
-                        "metadata_tree"
-                    ),
-                }
-                window_config.set("column_states", column_states)
+            # Save column visibility states for file table
+            # Get current visibility from column service
+            try:
+                column_service = get_column_service()
+
+                # Save file table column visibility (which columns are visible)
+                file_table_columns = {}
+                for column_key in column_service.get_column_keys():
+                    file_table_columns[column_key] = column_service.is_column_visible(column_key)
+
+                window_config.set("file_table_columns", file_table_columns)
+                logger.debug(
+                    "[Config] Saved file table column visibility: %s",
+                    list(file_table_columns.keys()),
+                    extra={"dev_only": True},
+                )
+            except Exception as e:
+                logger.warning("[Config] Failed to save file table column visibility: %s", e)
 
             # Save file tree expanded state
             if hasattr(self.main_window, "file_tree_view"):
@@ -350,8 +359,26 @@ class WindowConfigManager:
             self.main_window._sort_column_from_config = window_config.get("sort_column", 2)
             self.main_window._sort_order_from_config = window_config.get("sort_order", 0)
 
-            # Load column states using ColumnManager
-            if hasattr(self.main_window, "column_manager"):
+            # Load column visibility states for file table
+            try:
+                from oncutf.core.ui_managers.column_service import get_column_service
+
+                column_service = get_column_service()
+                file_table_columns = window_config.get("file_table_columns", {})
+
+                if file_table_columns:
+                    for column_key, visible in file_table_columns.items():
+                        column_service.set_column_visibility(column_key, visible)
+
+                    logger.debug(
+                        "[Config] Loaded file table column visibility for %d columns",
+                        len(file_table_columns),
+                        extra={"dev_only": True},
+                    )
+            except Exception as e:
+                logger.warning("[Config] Failed to load file table column visibility: %s", e)
+
+            # Load column states using ColumnManager (legacy compatibility)
                 column_states = window_config.get("column_states", {})
                 if column_states:
                     for table_type, state_data in column_states.items():
