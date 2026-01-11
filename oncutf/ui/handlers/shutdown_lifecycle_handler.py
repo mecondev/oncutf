@@ -370,22 +370,29 @@ class ShutdownLifecycleHandler:
 
     def _pre_cleanup_save_window_config(self) -> None:
         """Save window configuration before shutdown."""
+        logger.info("[CloseEvent] Starting window config save...")
         if hasattr(self.main_window, "window_config_manager") and self.main_window.window_config_manager:
             try:
+                logger.debug("[CloseEvent] Calling save_window_config()", extra={"dev_only": True})
                 self.main_window.window_config_manager.save_window_config()
-                logger.info("[CloseEvent] Window configuration saved")
+                logger.info("[CloseEvent] Window configuration saved to config manager")
 
                 # Force immediate save to disk after marking config as dirty
                 try:
                     from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
-                    get_app_config_manager().save_immediate()
-                    logger.info("[CloseEvent] Configuration saved to disk immediately")
+                    logger.debug("[CloseEvent] Calling save_immediate()", extra={"dev_only": True})
+                    result = get_app_config_manager().save_immediate()
+                    logger.info(
+                        "[CloseEvent] Configuration saved to disk immediately (result: %s)", result
+                    )
                 except Exception as save_error:
-                    logger.warning("[CloseEvent] Failed to save config immediately: %s", save_error)
+                    logger.error("[CloseEvent] Failed to save config immediately: %s", save_error)
 
             except Exception as e:
-                logger.warning("[CloseEvent] Failed to save window config: %s", e)
+                logger.error("[CloseEvent] Failed to save window config: %s", e)
+        else:
+            logger.warning("[CloseEvent] window_config_manager not available")
 
     def _pre_cleanup_flush_batch_operations(self) -> None:
         """Flush pending batch operations before shutdown."""
