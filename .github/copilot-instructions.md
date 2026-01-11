@@ -9,6 +9,12 @@
 - **Status:** Phase 7 (Final Polish) — 592+ tests, controllers complete.
 - Prefer **stable, extendable** solutions over "clever" ones.
 
+## Naming & Branding (IMPORTANT)
+
+- **Brand name:** oncut (lowercase in all contexts)
+- **Product name:** oncutf (lowercase in code, packages, technical contexts) — the application itself
+- **Trademark:** Both names are trademarks of the oncut project. Use consistently, always lowercase.
+
 ---
 
 ## Communication & style
@@ -100,8 +106,7 @@ mypy .                   # Type check (many modules have ignore_errors=true)
 - New column logic goes in `UnifiedColumnService`.
 - New features: controller → core service → domain. NO new logic in `ui_managers/` or `MainWindow`.
 
-See [REFACTORING_ROADMAP.md](../docs/REFACTORING_ROADMAP.md) for technical debt tracking.
-See [MIGRATION_STANCE.md](../docs/MIGRATION_STANCE.md) for architecture migration policy.
+See [MIGRATION_STANCE.md](../docs/migration_stance.md) for architecture migration policy and detailed patterns.
 
 ---
 
