@@ -194,10 +194,10 @@ SCREEN_SIZE_BREAKPOINTS = {
 }
 
 SCREEN_SIZE_PERCENTAGES = {
-    "large_4k": {"width": 0.75, "height": 0.75},
-    "full_hd": {"width": 0.80, "height": 0.80},
-    "laptop": {"width": 0.85, "height": 0.85},
-    "small": {"width": 0.90, "height": 0.90},
+    "large_4k": {"width": 0.80, "height": 0.80},
+    "full_hd": {"width": 0.85, "height": 0.85},
+    "laptop": {"width": 0.90, "height": 0.90},
+    "small": {"width": 0.95, "height": 0.95},
 }
 
 WINDOW_MIN_SMART_WIDTH = 1000
@@ -221,11 +221,10 @@ SPLASH_SCREEN_DURATION = 2000
 WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS = 1000
 
 # =====================================
-# SPLITTER SIZES
+# SPLITTER CONSTRAINTS
 # =====================================
 
-TOP_BOTTOM_SPLIT_RATIO = [500, 400]
-LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
+TOP_BOTTOM_SPLIT_RATIO = [500, 300]
 LOWER_SECTION_SPLIT_RATIO = [1, 1]
 LOWER_SECTION_LEFT_MIN_SIZE = 300
 LOWER_SECTION_RIGHT_MIN_SIZE = 500

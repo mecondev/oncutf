@@ -49,7 +49,6 @@ class ColumnWidthManager:
             column_cfg = self._service.get_column_config(column_key)
             default_width = column_cfg.width if column_cfg else 100
 
-            # Try main config system
             main_window = self._widget._get_main_window()
             if main_window and hasattr(main_window, "window_config_manager"):
                 try:
@@ -59,23 +58,76 @@ class ColumnWidthManager:
 
                     if column_key in column_widths:
                         saved_width = column_widths[column_key]
-                        # Avoid suspicious 100px widths
                         if saved_width == 100 and default_width > 120:
                             return default_width
                         return saved_width
+
+                    if column_key == "filename":
+                        return self._calculate_dynamic_filename_width()
                 except Exception:
                     pass
 
-            # Fallback to old method
             from oncutf.utils.shared.json_config_manager import load_config
 
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
+
+            if column_key == "filename" and column_key not in column_widths:
+                return self._calculate_dynamic_filename_width()
+
             return column_widths.get(column_key, default_width)
 
         except Exception as e:
             logger.warning("Error loading column width for %s: %s", column_key, e)
             return 100
+
+    def _calculate_dynamic_filename_width(self) -> int:
+        """Calculate dynamic filename width based on available space.
+
+        Returns:
+            Calculated filename width in pixels
+        """
+        try:
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
+            from oncutf.utils.ui.layout_calculators import calculate_dynamic_filename_width
+
+            config_manager = get_app_config_manager()
+            window_config = config_manager.get_category("window")
+            fixed_columns = window_config.get("file_table_fixed_columns", {
+                "color": 50,
+                "file_size": 75,
+                "type": 50,
+                "modified": 159,
+            })
+
+            viewport = self._widget.viewport()
+            if viewport:
+                panel_width = viewport.width()
+            else:
+                main_window = self._widget._get_main_window()
+                if main_window and hasattr(main_window, "horizontal_splitter"):
+                    splitter_sizes = main_window.horizontal_splitter.sizes()
+                    panel_width = splitter_sizes[1] if len(splitter_sizes) > 1 else 800
+                else:
+                    panel_width = 800
+
+            width = calculate_dynamic_filename_width(
+                panel_width=panel_width,
+                fixed_column_widths=fixed_columns,
+                min_width=80,
+                reserved_space=50,
+            )
+
+            logger.debug(
+                "[WidthManager] Calculated dynamic filename width: %dpx (panel: %dpx)",
+                width,
+                panel_width
+            )
+            return width
+
+        except Exception as e:
+            logger.warning("Error calculating dynamic filename width: %s", e)
+            return 300
 
     def ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on content type.

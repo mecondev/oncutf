@@ -209,28 +209,42 @@ class MetadataTreeViewConfig:
             # Re-enable header interactions
             header.setEnabled(True)
             header.setSectionsClickable(True)
-            header.setSortIndicatorShown(False)  # Keep sorting disabled
+            header.setSortIndicatorShown(False)
 
-            # Show header when there's content
             header.show()
 
-            # Try to use runtime widths first (preserved across file selections)
-            # Fall back to saved config on first load, then to defaults
             if self._runtime_widths:
                 key_width = self._runtime_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
                 value_width = self._runtime_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
             else:
-                # First load: try saved config
                 saved_widths = self._get_saved_column_widths()
                 if saved_widths:
                     key_width = saved_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
                     value_width = saved_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
-                    # Store in runtime widths for future use
                     self._runtime_widths["key"] = key_width
                     self._runtime_widths["value"] = value_width
                 else:
-                    key_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"]
-                    value_width = METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"]
+                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
+                    from oncutf.utils.ui.layout_calculators import (
+                        get_metadata_tree_widths_from_ratios,
+                    )
+
+                    config_manager = get_app_config_manager()
+                    window_config = config_manager.get_category("window")
+                    ratios = window_config.get("metadata_tree_column_ratios", {"key": 0.38, "value": 0.62})
+
+                    panel_width = view.viewport().width() if view.viewport() else 868
+                    min_widths = {
+                        "key": METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"],
+                        "value": METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"],
+                    }
+                    max_widths = {"key": METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"]}
+
+                    calculated_widths = get_metadata_tree_widths_from_ratios(
+                        panel_width, ratios, min_widths, max_widths
+                    )
+                    key_width = calculated_widths["key"]
+                    value_width = calculated_widths["value"]
 
             # Key column: min 80px, initial width, max 800px
             header.setSectionResizeMode(0, QHeaderView.Interactive)

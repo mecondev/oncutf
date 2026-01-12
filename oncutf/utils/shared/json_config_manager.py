@@ -65,20 +65,38 @@ class WindowConfig(ConfigCategory[Any]):
     def __init__(self) -> None:
         """Initialize window configuration with geometry, splitters, columns, and sort settings."""
         defaults = {
-            "geometry": None,  # No default geometry - will trigger smart sizing
+            "geometry": None,
             "window_state": "normal",
-            "splitter_states": {"horizontal": [250, 674, 250], "vertical": [500, 300]},
-            # Dictionary-based column configuration (safer than arrays)
-            "file_table_column_widths": {},  # Individual column widths by key
-            "file_table_columns": {},  # Column visibility by key
-            "metadata_tree_column_widths": {},  # Metadata tree column widths (key, value)
-            # Note: Metadata tree has only 2 fixed columns, no visibility toggle needed
+            "splitter_ratios": {
+                "horizontal": [0.159, 0.452, 0.388],
+                "vertical": [0.625, 0.375],
+                "lower_section": [0.5, 0.5],
+            },
+            "splitter_states": {
+                "horizontal": [250, 674, 250],
+                "vertical": [500, 300],
+                "lower_section": [868, 867],
+            },
+            "metadata_tree_column_ratios": {
+                "key": 0.38,
+                "value": 0.62,
+            },
+            "file_table_fixed_columns": {
+                "color": 50,
+                "file_size": 75,
+                "type": 50,
+                "modified": 159,
+            },
+            "file_table_column_widths": {},
+            "file_table_columns": {},
+            "metadata_tree_column_widths": {},
+            "metadata_tree_columns": {},
             "last_folder": "",
             "recursive_mode": False,
-            # NOTE: Sort column restoration feature tracked in TODO.md
-            # Default to filename column (2) instead of color (1)
             "sort_column": 2,
             "sort_order": 0,
+            "columns_locked": False,
+            "column_order": None,
         }
         super().__init__("window", defaults)
 

@@ -37,7 +37,6 @@ from oncutf.config import (
     LOWER_SECTION_RIGHT_MIN_SIZE,
     LOWER_SECTION_SPLIT_RATIO,
     METADATA_TREE_USE_CUSTOM_DELEGATE,
-    TOP_BOTTOM_SPLIT_RATIO,
 )
 from oncutf.controllers.ui.protocols import LayoutContext
 from oncutf.ui.viewport_specs import (
@@ -182,9 +181,23 @@ class LayoutController:
 
         self.parent_window.horizontal_splitter = QSplitter(Qt.Horizontal)
         self.parent_window.vertical_splitter.addWidget(self.parent_window.horizontal_splitter)
-        self.parent_window.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
 
-        # Set minimum sizes for all panels to 80px
+        from oncutf.utils.shared.json_config_manager import get_app_config_manager
+        from oncutf.utils.ui.layout_calculators import calculate_splitter_sizes_from_ratios
+
+        config_manager = get_app_config_manager()
+        window_config = config_manager.get_category("window")
+        if window_config:
+            splitter_ratios = window_config.get("splitter_ratios", {})
+            vertical_ratios = splitter_ratios.get("vertical", [0.625, 0.375])
+
+            try:
+                window_height = self.parent_window.height()  # type: ignore[attr-defined]
+                vertical_sizes = calculate_splitter_sizes_from_ratios(vertical_ratios, window_height)
+                self.parent_window.vertical_splitter.setSizes(vertical_sizes)
+            except (AttributeError, TypeError):
+                pass
+
         self.parent_window.horizontal_splitter.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
         )

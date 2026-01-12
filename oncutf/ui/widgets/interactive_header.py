@@ -47,6 +47,57 @@ except ImportError:
     get_app_context = None
 
 
+class DropIndicatorWidget(QWidget):
+    """Transparent widget for drawing column drop indicator on top of everything."""
+
+    def __init__(self, parent, indicator_x: int, height: int):
+        """Initialize drop indicator widget.
+
+        Args:
+            parent: Parent header widget.
+            indicator_x: X position of the drop indicator.
+            height: Height of the indicator.
+        """
+        super().__init__(parent)
+        self.indicator_x = indicator_x
+        self.indicator_height = height
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+
+    def paintEvent(self, event):
+        """Paint the drop indicator line and triangle."""
+        from PyQt5.QtCore import QPoint
+        from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygon
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        # Get text color from theme for indicator
+        from oncutf.core.theme_manager import get_theme_manager
+        theme = get_theme_manager()
+        text_color = theme.get_color("table_header_text")
+        indicator_color = QColor(text_color) if isinstance(text_color, str) else text_color
+
+        x = self.indicator_x
+        h = self.indicator_height
+
+        # Draw vertical line (thinner)
+        pen = QPen(indicator_color)
+        pen.setWidth(1)
+        painter.setPen(pen)
+        painter.drawLine(x, 0, x, h)
+
+        # Draw triangle marker at top (pointing down)
+        tri = 5
+        poly = QPolygon([QPoint(x - tri, 0), QPoint(x + tri, 0), QPoint(x, tri)])
+        brush = QBrush(indicator_color)
+        painter.setBrush(brush)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(poly)
+
+        painter.end()
+
+
 class InteractiveHeader(QHeaderView):
     """A custom QHeaderView that toggles selection on column 0 click,
     and performs manual sorting for other columns. Prevents accidental sort
@@ -75,7 +126,8 @@ class InteractiveHeader(QHeaderView):
         # Floating overlay widget for drag feedback
         self._drag_overlay: QWidget | None = None
 
-        # Drop indicator (Excel-like) state while dragging columns
+        # Drop indicator (Excel-like) widget - separate widget to stay on top
+        self._drop_indicator_widget: QWidget | None = None
         self._drop_indicator_visible: bool = False
         self._drop_indicator_x: int = -1
         self._drop_indicator_to_visual: int = -1
@@ -213,14 +265,40 @@ class InteractiveHeader(QHeaderView):
             self._drag_overlay.deleteLater()
             self._drag_overlay = None
 
+    def _create_drop_indicator_widget(self) -> None:
+        """Create a transparent widget for drawing the drop indicator on top."""
+        if self._drop_indicator_widget:
+            self._drop_indicator_widget.deleteLater()
+
+        # Create custom drop indicator widget with paintEvent
+        self._drop_indicator_widget = DropIndicatorWidget(
+            self,
+            self._drop_indicator_x,
+            self.height()
+        )
+        self._drop_indicator_widget.setGeometry(0, 0, self.width(), self.height())
+        self._drop_indicator_widget.show()
+        self._drop_indicator_widget.raise_()  # Always on top
+
+    def _update_drop_indicator_widget_geometry(self) -> None:
+        """Update drop indicator widget geometry and position."""
+        if self._drop_indicator_widget:
+            self._drop_indicator_widget.indicator_x = self._drop_indicator_x
+            self._drop_indicator_widget.indicator_height = self.height()
+            self._drop_indicator_widget.setGeometry(0, 0, self.width(), self.height())
+            self._drop_indicator_widget.raise_()  # Ensure it stays on top
+            self._drop_indicator_widget.update()  # Trigger repaint
+
     def _hide_drop_indicator(self) -> None:
         """Hide drop indicator and request repaint."""
         if self._drop_indicator_visible:
             self._drop_indicator_visible = False
             self._drop_indicator_x = -1
             self._drop_indicator_to_visual = -1
-            with suppress(Exception):
-                self.viewport().update()
+            if self._drop_indicator_widget:
+                self._drop_indicator_widget.hide()
+                self._drop_indicator_widget.deleteLater()
+                self._drop_indicator_widget = None
 
     def _update_drop_indicator(self, mouse_x: int) -> None:
         """Compute and show an Excel-like drop indicator for the current drag position.
@@ -272,8 +350,17 @@ class InteractiveHeader(QHeaderView):
         self._drop_indicator_visible = True
         self._drop_indicator_to_visual = insert_visual
         self._drop_indicator_x = boundary_x
+
+        # Create/update drop indicator widget
+        if not self._drop_indicator_widget:
+            self._create_drop_indicator_widget()
+        else:
+            self._update_drop_indicator_widget_geometry()
+
+        # Trigger repaint of indicator widget
         with suppress(Exception):
-            self.viewport().update()
+            if self._drop_indicator_widget:
+                self._drop_indicator_widget.update()
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -512,49 +599,8 @@ class InteractiveHeader(QHeaderView):
         super().paintSection(painter, rect, logical_index)
 
     def paintEvent(self, event) -> None:
-        """Paint header and draw an Excel-like drop indicator while dragging.
-
-        The indicator consists of:
-        - A vertical line at the insertion boundary
-        - A small triangle marker at the top pointing down
-        """
+        """Paint header sections."""
         super().paintEvent(event)
-
-        if not self._drop_indicator_visible or self._drop_indicator_x < 0:
-            return
-
-        from PyQt5.QtCore import QPoint
-        from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygon
-
-        painter = QPainter(self.viewport())
-        painter.setRenderHint(QPainter.Antialiasing, True)
-
-        # Get text color from theme for indicator (same as column headers)
-        from oncutf.core.theme_manager import get_theme_manager
-        theme = get_theme_manager()
-        text_color = theme.get_color("table_header_text")
-
-        # Convert string color to QColor if needed
-        indicator_color = QColor(text_color) if isinstance(text_color, str) else text_color
-
-        x = self._drop_indicator_x
-        h = self.height()
-
-        # Draw vertical line
-        pen = QPen(indicator_color)
-        pen.setWidth(2)
-        painter.setPen(pen)
-        painter.drawLine(x, 0, x, h)
-
-        # Draw triangle marker at top (pointing down) with solid fill
-        tri = 7
-        poly = QPolygon([QPoint(x - tri, 0), QPoint(x + tri, 0), QPoint(x, tri)])
-        brush = QBrush(indicator_color)
-        painter.setBrush(brush)
-        painter.setPen(Qt.NoPen)  # No outline for triangle
-        painter.drawPolygon(poly)
-
-        painter.end()
 
     def helpEvent(self, event: QHelpEvent) -> bool:
         # Tooltips are handled in viewportEvent.
@@ -619,9 +665,9 @@ class InteractiveHeader(QHeaderView):
 
 
 
-    def contextMenuEvent(self, position):
+    def contextMenuEvent(self, event):
         """Show unified right-click context menu for header."""
-        logical_index = self.logicalIndexAt(position)
+        logical_index = self.logicalIndexAt(event.pos())
 
         # Don't show context menu for status column (0)
         if logical_index == 0:
@@ -660,7 +706,7 @@ class InteractiveHeader(QHeaderView):
         # Add column visibility options
         self._add_column_visibility_menu(menu)
 
-        menu.exec_(self.mapToGlobal(position))
+        menu.exec_(self.mapToGlobal(event.pos()))
 
     def _sort(self, column: int, order: Qt.SortOrder) -> None:
         """Calls controller.handle_sort() with forced order from context menu."""
