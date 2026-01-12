@@ -72,6 +72,11 @@ class InteractiveHeader(QHeaderView):
         # Floating overlay widget for drag feedback
         self._drag_overlay: QWidget | None = None
 
+        # Drop indicator (Excel-like) state while dragging columns
+        self._drop_indicator_visible: bool = False
+        self._drop_indicator_x: int = -1
+        self._drop_indicator_to_visual: int = -1
+
         # Internal flag to allow controlled section moves (used by configurator)
         self._allow_forced_section_move: bool = False
 
@@ -134,37 +139,67 @@ class InteractiveHeader(QHeaderView):
         if not movable:
             self._drag_active = False
             self._hide_drag_overlay()
+            self._hide_drop_indicator()
         self._set_interaction_state(locked=not movable)
 
+    def _hex_to_rgba(self, hex_color: str, alpha: int) -> str:
+        """Return an 'rgba(r,g,b,a)' string from a '#RRGGBB' color.
+
+        Args:
+            hex_color: Color in '#RRGGBB' or '#RGB' format.
+            alpha: Alpha value 0-255.
+
+        Returns:
+            String like 'rgba(255, 128, 0, 102)' or original if parsing fails.
+        """
+        try:
+            color_str = str(hex_color).strip()
+            if color_str.startswith("#"):
+                color_str = color_str[1:]
+            if len(color_str) == 3:
+                # Expand #RGB to #RRGGBB
+                color_str = "".join(c * 2 for c in color_str)
+            if len(color_str) != 6:
+                return hex_color
+            r = int(color_str[0:2], 16)
+            g = int(color_str[2:4], 16)
+            b = int(color_str[4:6], 16)
+            return f"rgba({r}, {g}, {b}, {alpha})"
+        except Exception:
+            return hex_color
+
     def _create_drag_overlay(self, width: int, title: str) -> None:
-        """Create a floating overlay widget for drag feedback."""
+        """Create a floating overlay widget for drag feedback.
+
+        The overlay appears 60% transparent (alpha ~102/255) to indicate
+        that the column is being dragged.
+        """
         if self._drag_overlay:
             self._drag_overlay.deleteLater()
 
-        try:
-            from oncutf.core.theme_manager import get_theme_manager
-            theme = get_theme_manager()
-            bg_color = theme.get_color("table_selection_bg")
-            # text_color = theme.get_color("table_selection_text")
-            text_color = theme.get_color("table_header_text")
+        from oncutf.core.theme_manager import get_theme_manager
+        theme = get_theme_manager()
+        bg_color = theme.get_color("table_selection_bg")
+        text_color = theme.get_color("table_header_text")
 
-            logger.debug("[INTERACTIVE_HEADER] Drag overlay colors from theme: bg=%s, text=%s", bg_color, text_color)
-        except Exception as e:
-            # Fallback colors should never be used
-            logger.error("[INTERACTIVE_HEADER] Failed to get theme colors for drag overlay: %s", e)
+        logger.debug("[INTERACTIVE_HEADER] Drag overlay colors from theme: bg=%s, text=%s", bg_color, text_color)
 
         self._drag_overlay = QLabel(title, self)
         self._drag_overlay.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self._drag_overlay.setFixedSize(width, self.height())
+
+        # Use solid colors in stylesheet - transparency controlled by setWindowOpacity
         self._drag_overlay.setStyleSheet(
             f"QLabel {{"
             f"  background-color: {bg_color};"
             f"  color: {text_color};"
             f"  padding-left: 6px;"
-            # f"  border: 2px dotted {text_color};"
-            # f"  font-weight: 600;"
             f"}}"
         )
+
+        # Set 30% opacity for the entire overlay (70% transparent)
+        self._drag_overlay.setWindowOpacity(0.3)
+
         self._drag_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._drag_overlay.show()
         self._drag_overlay.raise_()
@@ -187,6 +222,68 @@ class InteractiveHeader(QHeaderView):
             self._drag_overlay.hide()
             self._drag_overlay.deleteLater()
             self._drag_overlay = None
+
+    def _hide_drop_indicator(self) -> None:
+        """Hide drop indicator and request repaint."""
+        if self._drop_indicator_visible:
+            self._drop_indicator_visible = False
+            self._drop_indicator_x = -1
+            self._drop_indicator_to_visual = -1
+            with suppress(Exception):
+                self.viewport().update()
+
+    def _update_drop_indicator(self, mouse_x: int) -> None:
+        """Compute and show an Excel-like drop indicator for the current drag position.
+
+        The indicator represents the insertion boundary between sections.
+        Coordinates are in header viewport space.
+
+        Args:
+            mouse_x: Current mouse X position in viewport coordinates.
+        """
+        # Don't show indicator if not dragging a valid column
+        if self._pressed_index < 0 or self._pressed_index == 0:
+            self._hide_drop_indicator()
+            return
+
+        target_logical = self.logicalIndexAt(mouse_x)
+        # Never indicate insertion into status column area (logical 0)
+        if target_logical <= 0:
+            self._hide_drop_indicator()
+            return
+
+        dragged_visual = self.visualIndex(self._pressed_index)
+        target_visual = self.visualIndex(target_logical)
+        if dragged_visual < 0 or target_visual < 0:
+            self._hide_drop_indicator()
+            return
+
+        # Determine before/after target section by comparing mouse_x with section midpoint
+        section_left = self.sectionViewportPosition(target_logical)
+        section_width = self.sectionSize(target_logical)
+        midpoint = section_left + (section_width // 2)
+        insert_visual = target_visual + (1 if mouse_x > midpoint else 0)
+
+        # Clamp insert_visual to [1, self.count()] (never insert at position 0)
+        insert_visual = max(1, min(insert_visual, self.count()))
+
+        # Adjust when dragging from left to right so the boundary feels correct
+        if dragged_visual < insert_visual:
+            insert_visual = max(1, insert_visual - 1)
+
+        # Convert insert_visual to boundary x coordinate
+        if insert_visual >= self.count():
+            last_logical = self.logicalIndex(self.count() - 1)
+            boundary_x = self.sectionViewportPosition(last_logical) + self.sectionSize(last_logical)
+        else:
+            logical_at_insert = self.logicalIndex(insert_visual)
+            boundary_x = self.sectionViewportPosition(logical_at_insert)
+
+        self._drop_indicator_visible = True
+        self._drop_indicator_to_visual = insert_visual
+        self._drop_indicator_x = boundary_x
+        with suppress(Exception):
+            self.viewport().update()
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -254,10 +351,12 @@ class InteractiveHeader(QHeaderView):
     def mouseMoveEvent(self, event) -> None:
         """Handle mouse move to create and update drag overlay for column reordering."""
         if not self.sectionsMovable():
+            self._hide_drop_indicator()
             super().mouseMoveEvent(event)
             return
 
         if self._pressed_index == 0:
+            self._hide_drop_indicator()
             return
 
         if (event.buttons() & Qt.LeftButton) and self._pressed_index >= 0:
@@ -274,6 +373,10 @@ class InteractiveHeader(QHeaderView):
 
             if self._drag_active:
                 self._update_drag_overlay_position(event.pos().x())
+                self._update_drop_indicator(event.pos().x())
+        elif not self._drag_active:
+            # Not dragging - ensure indicator is hidden
+            self._hide_drop_indicator()
 
         super().mouseMoveEvent(event)
 
@@ -290,6 +393,7 @@ class InteractiveHeader(QHeaderView):
         if self._drag_active:
             self._drag_active = False
             self._hide_drag_overlay()
+            self._hide_drop_indicator()
 
         super().mouseReleaseEvent(event)
 
@@ -432,6 +536,50 @@ class InteractiveHeader(QHeaderView):
 
         super().paintSection(painter, rect, logical_index)
 
+    def paintEvent(self, event) -> None:
+        """Paint header and draw an Excel-like drop indicator while dragging.
+
+        The indicator consists of:
+        - A vertical line at the insertion boundary
+        - A small triangle marker at the top pointing down
+        """
+        super().paintEvent(event)
+
+        if not self._drop_indicator_visible or self._drop_indicator_x < 0:
+            return
+
+        from PyQt5.QtCore import QPoint
+        from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygon
+
+        painter = QPainter(self.viewport())
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        # Get text color from theme for indicator (same as column headers)
+        from oncutf.core.theme_manager import get_theme_manager
+        theme = get_theme_manager()
+        text_color = theme.get_color("table_header_text")
+
+        # Convert string color to QColor if needed
+        indicator_color = QColor(text_color) if isinstance(text_color, str) else text_color
+
+        x = self._drop_indicator_x
+        h = self.height()
+
+        # Draw vertical line
+        pen = QPen(indicator_color)
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawLine(x, 0, x, h)
+
+        # Draw triangle marker at top (pointing down) with solid fill
+        tri = 7
+        poly = QPolygon([QPoint(x - tri, 0), QPoint(x + tri, 0), QPoint(x, tri)])
+        brush = QBrush(indicator_color)
+        painter.setBrush(brush)
+        painter.setPen(Qt.NoPen)  # No outline for triangle
+        painter.drawPolygon(poly)
+
+        painter.end()
 
     def helpEvent(self, event):  # type: ignore[override]
         # Tooltips are handled in viewportEvent.
