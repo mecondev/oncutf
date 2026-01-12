@@ -12,8 +12,12 @@ Features:
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
-from contextlib import suppress
+from __future__ import annotations
 
+from contextlib import suppress
+from typing import TYPE_CHECKING
+
+from oncutf.controllers.header_interaction_controller import HeaderInteractionController
 from oncutf.core.pyqt_imports import (
     QAction,
     QEvent,
@@ -25,13 +29,13 @@ from oncutf.core.pyqt_imports import (
     Qt,
     QWidget,
 )
+from oncutf.ui.behaviors.column_visibility_menu_builder import ColumnVisibilityMenuBuilder
+from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
-try:
-    from PyQt5.QtGui import QHelpEvent
-except ImportError:  # pragma: no cover - fallback
-    QHelpEvent = None  # type: ignore
-from oncutf.utils.logging.logger_factory import get_cached_logger
+if TYPE_CHECKING:
+    from PyQt5.QtCore import QRect
+    from PyQt5.QtGui import QHelpEvent, QPainter
 
 logger = get_cached_logger(__name__)
 
@@ -56,8 +60,7 @@ class InteractiveHeader(QHeaderView):
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.contextMenuEvent)
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.header_enabled = True
 
         # When False, header clicks won't trigger app actions (sort/toggle).
@@ -130,10 +133,23 @@ class InteractiveHeader(QHeaderView):
         with suppress(Exception):
             self.viewport().setToolTip("")
 
+        # Initialize controller (will be set properly after main window is available)
+        self._controller: HeaderInteractionController | None = None
+
         self._ensure_interaction_qss()
         self._set_interaction_state(locked=not self.sectionsMovable())
 
-    def setSectionsMovable(self, movable: bool) -> None:  # type: ignore[override]
+    def _ensure_controller(self) -> HeaderInteractionController | None:
+        """Ensure controller is initialized. Returns None if main window not available yet."""
+        if self._controller is not None:
+            return self._controller
+
+        main_window = self._get_main_window_via_context()
+        if main_window:
+            self._controller = HeaderInteractionController(main_window)
+        return self._controller
+
+    def setSectionsMovable(self, movable: bool) -> None:
         """Override to keep UI interaction feedback consistent with lock state."""
         super().setSectionsMovable(movable)
         if not movable:
@@ -141,32 +157,6 @@ class InteractiveHeader(QHeaderView):
             self._hide_drag_overlay()
             self._hide_drop_indicator()
         self._set_interaction_state(locked=not movable)
-
-    def _hex_to_rgba(self, hex_color: str, alpha: int) -> str:
-        """Return an 'rgba(r,g,b,a)' string from a '#RRGGBB' color.
-
-        Args:
-            hex_color: Color in '#RRGGBB' or '#RGB' format.
-            alpha: Alpha value 0-255.
-
-        Returns:
-            String like 'rgba(255, 128, 0, 102)' or original if parsing fails.
-        """
-        try:
-            color_str = str(hex_color).strip()
-            if color_str.startswith("#"):
-                color_str = color_str[1:]
-            if len(color_str) == 3:
-                # Expand #RGB to #RRGGBB
-                color_str = "".join(c * 2 for c in color_str)
-            if len(color_str) != 6:
-                return hex_color
-            r = int(color_str[0:2], 16)
-            g = int(color_str[2:4], 16)
-            b = int(color_str[4:6], 16)
-            return f"rgba({r}, {g}, {b}, {alpha})"
-        except Exception:
-            return hex_color
 
     def _create_drag_overlay(self, width: int, title: str) -> None:
         """Create a floating overlay widget for drag feedback.
@@ -322,14 +312,14 @@ class InteractiveHeader(QHeaderView):
         self._pressed_index = self.logicalIndexAt(event.pos())
         self._drag_active = False
 
-        from oncutf.utils.logging.logger_factory import get_cached_logger
-        logger = get_cached_logger(__name__)
         logger.info("[HEADER PRESS] logical=%d, pos=%s", self._pressed_index, event.pos())
 
         # Prevent dragging status column (0)
         if self._pressed_index == 0:
             # Keep column 0 fixed but allow click to toggle select all
             self._drag_grab_offset = 0
+            # Accept event here to prevent base class from handling it
+            # (stops propagation but preserves visual feedback)
             event.accept()
             return
 
@@ -382,9 +372,6 @@ class InteractiveHeader(QHeaderView):
 
     def mouseReleaseEvent(self, event) -> None:
         """Handle mouse release to finalize drag or trigger column actions (sort/toggle)."""
-        from oncutf.utils.logging.logger_factory import get_cached_logger
-        logger = get_cached_logger(__name__)
-
         if event.button() != Qt.LeftButton:
             self._pressed_index = -1
             super().mouseReleaseEvent(event)
@@ -406,42 +393,30 @@ class InteractiveHeader(QHeaderView):
             (event.pos() - self._press_pos).manhattanLength()
         )
 
-        if not self._click_actions_enabled:
+        # Use controller to determine if click should be handled
+        controller = self._ensure_controller()
+        if not controller:
+            logger.warning("[HEADER RELEASE] No controller available!")
             return
 
-        # Check for drag
-        if (event.pos() - self._press_pos).manhattanLength() > 4:
+        manhattan = (event.pos() - self._press_pos).manhattanLength()
+        should_handle, action_type = controller.should_handle_click(
+            self._pressed_index,
+            released_index,
+            manhattan,
+            self._click_actions_enabled,
+        )
+
+        if not should_handle:
             return
 
-        if released_index != self._pressed_index or released_index == -1:
-            return
-
-        main_window = self._get_main_window_via_context()
-        if not main_window:
-            logger.warning("[HEADER RELEASE] No main window found!")
-            return
-
-        # Column 0: Toggle select all/unselect all
-        if released_index == 0:
-            logger.info("[HEADER RELEASE] Column 0 clicked - calling handle_header_toggle")
-            if hasattr(main_window, "handle_header_toggle"):
-                checked = getattr(Qt, "Checked", 2)
-                main_window.handle_header_toggle(checked)
-            else:
-                logger.warning("[HEADER RELEASE] main_window has no handle_header_toggle!")
-            return
-
-        # Other columns: Sort
-        if hasattr(main_window, "sort_by_column"):
-            main_window.sort_by_column(released_index)
-            return
-
-        if released_index == 0:
-            if hasattr(main_window, "handle_header_toggle"):
-                checked = getattr(Qt, "Checked", 2)
-                main_window.handle_header_toggle(checked)
-        elif hasattr(main_window, "sort_by_column"):
-            main_window.sort_by_column(released_index)
+        # Execute the appropriate action via controller
+        if action_type == "toggle":
+            logger.info("[HEADER RELEASE] Column 0 clicked - calling controller.handle_toggle_all")
+            controller.handle_toggle_all()
+        elif action_type == "sort":
+            logger.info("[HEADER RELEASE] Column %d clicked - calling controller.handle_sort", released_index)
+            controller.handle_sort(released_index)
 
 
     def _get_header_tooltip_text(self, logical_index: int) -> str | None:
@@ -460,7 +435,7 @@ class InteractiveHeader(QHeaderView):
         column_key = visible_columns[column_index]
         return self._header_tooltips_by_key.get(column_key)
 
-    def viewportEvent(self, event):  # type: ignore[override]
+    def viewportEvent(self, event: QEvent) -> bool:
         """Handle tooltip events on the header viewport to suppress Qt default tooltips."""
         if event.type() == QEvent.ToolTip:
             from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
@@ -502,21 +477,21 @@ class InteractiveHeader(QHeaderView):
 
         return super().viewportEvent(event)
 
-
-    def moveSection(self, from_visual: int, to_visual: int) -> bool:  # type: ignore[override]
+    def moveSection(self, from_visual: int, to_visual: int) -> None:
         """Block any move that would involve the status column (logical 0 or visual 0)."""
         if self._allow_forced_section_move:
             # Bypass safeguards when restoration logic explicitly requests it
             QHeaderView.moveSection(self, from_visual, to_visual)
-            return True
+            return
 
-        if from_visual == 0 or to_visual == 0:
-            return False
+        # Use controller to validate drag
+        controller = self._ensure_controller()
+        if controller and not controller.validate_column_drag(from_visual, to_visual):
+            return
+
         super().moveSection(from_visual, to_visual)
-        return True
 
-
-    def paintSection(self, painter, rect, logical_index: int) -> None:  # type: ignore[override]
+    def paintSection(self, painter: QPainter, rect: QRect, logical_index: int) -> None:
         """Disable hover highlight for status column while keeping others intact."""
         if logical_index == 0:
             try:
@@ -581,7 +556,7 @@ class InteractiveHeader(QHeaderView):
 
         painter.end()
 
-    def helpEvent(self, event):  # type: ignore[override]
+    def helpEvent(self, event: QHelpEvent) -> bool:
         # Tooltips are handled in viewportEvent.
         return super().helpEvent(event)
 
@@ -688,118 +663,29 @@ class InteractiveHeader(QHeaderView):
         menu.exec_(self.mapToGlobal(position))
 
     def _sort(self, column: int, order: Qt.SortOrder) -> None:
-        """Calls MainWindow.sort_by_column() with forced order from context menu."""
-        main_window = self._get_main_window_via_context()
-        if main_window and hasattr(main_window, "sort_by_column"):
-            main_window.sort_by_column(column, force_order=order)
+        """Calls controller.handle_sort() with forced order from context menu."""
+        controller = self._ensure_controller()
+        if controller:
+            controller.handle_sort(column, force_order=order)
 
     def _add_column_visibility_menu(self, menu):
         """Add column visibility toggle options to the menu with grouped sections."""
-        try:
-            # Get the file table view to access column configuration
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
+        file_table_view = self._get_file_table_view()
+        if not file_table_view:
+            return
 
-            # Use canonical column management behavior API
-            if not hasattr(file_table_view, "_column_mgmt_behavior"):
-                return
+        # Use builder to create column visibility submenu
+        builder = ColumnVisibilityMenuBuilder(file_table_view)
+        builder.build_menu(menu, self._toggle_column_visibility)
 
-            from oncutf.config import FILE_TABLE_COLUMN_CONFIG
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+        # Add separator before lock toggle
+        menu.addSeparator()
 
-            # Add submenu title
-            columns_menu = QMenu("Show Columns", menu)
-            columns_menu.setIcon(get_menu_icon("columns"))
+        # Add lock columns toggle
+        self._add_lock_columns_toggle(menu, file_table_view)
 
-            # Get current visible columns via canonical API
-            visible_columns_list = file_table_view._column_mgmt_behavior.get_visible_columns_list()
-
-            # Group columns by category
-            column_groups = {
-                "File": [],
-                "Image": [],
-                "Video": [],
-                "Audio": [],
-                "Metadata": [],
-                "Device": [],
-                "Other": [],
-            }
-
-            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-                if not column_config.get("removable", True):
-                    continue  # Skip non-removable columns like filename
-
-                # Categorize columns
-                if column_key in ["color", "type", "file_size", "modified", "file_hash", "duration"]:
-                    column_groups["File"].append((column_key, column_config))
-                elif column_key in ["image_size", "rotation", "iso", "aperture", "shutter_speed",
-                                   "white_balance", "compression", "color_space"]:
-                    column_groups["Image"].append((column_key, column_config))
-                elif column_key in ["video_fps", "video_avg_bitrate", "video_codec", "video_format"]:
-                    column_groups["Video"].append((column_key, column_config))
-                elif column_key in ["audio_channels", "audio_format"]:
-                    column_groups["Audio"].append((column_key, column_config))
-                elif column_key in ["artist", "copyright", "owner_name"]:
-                    column_groups["Metadata"].append((column_key, column_config))
-                elif column_key in ["device_manufacturer", "device_model", "device_serial_no", "target_umid"]:
-                    column_groups["Device"].append((column_key, column_config))
-                else:
-                    column_groups["Other"].append((column_key, column_config))
-
-            # Add grouped columns to menu
-            first_group = True
-            for group_name in ["File", "Image", "Video", "Audio", "Metadata", "Device", "Other"]:
-                group_columns = column_groups[group_name]
-                if not group_columns:
-                    continue
-
-                # Add separator between groups (except before first group)
-                if not first_group:
-                    columns_menu.addSeparator()
-                first_group = False
-
-                # Sort columns within group alphabetically
-                from typing import cast
-                group_columns.sort(key=lambda x: cast("str", x[1]["title"]))
-
-                # Add group columns
-                for column_key, column_config in group_columns:
-                    # Always use full title in menu
-                    action = QAction(column_config["title"], columns_menu)
-
-                    # Get visibility state via canonical API
-                    is_visible = column_key in visible_columns_list
-
-                    # Set icon based on visibility
-                    if is_visible:
-                        action.setIcon(get_menu_icon("toggle-right"))
-                    else:
-                        action.setIcon(get_menu_icon("toggle-left"))
-
-                    # Connect toggle action
-                    action.triggered.connect(
-                        lambda _checked=False, key=column_key: self._toggle_column_visibility(key)
-                    )
-                    columns_menu.addAction(action)
-
-            menu.addMenu(columns_menu)
-
-            # Add separator before lock toggle
-            menu.addSeparator()
-
-            # Add lock columns toggle
-            self._add_lock_columns_toggle(menu, file_table_view)
-
-            # Add reset column order option
-            self._add_reset_column_order(menu, file_table_view)
-
-        except Exception as e:
-            # Fallback: just add a simple label if configuration fails
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
-            logger.warning("Failed to add column visibility menu: %s", e)
+        # Add reset column order option
+        self._add_reset_column_order(menu, file_table_view)
 
     def _get_file_table_view(self):
         """Get the file table view that this header belongs to."""
@@ -829,9 +715,6 @@ class InteractiveHeader(QHeaderView):
             menu.addAction(lock_action)
 
         except Exception as e:
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
             logger.warning("Failed to add lock columns toggle: %s", e)
 
     def _is_columns_locked(self) -> bool:
@@ -866,16 +749,10 @@ class InteractiveHeader(QHeaderView):
                 window_config.set("columns_locked", not new_state)
                 config_manager.mark_dirty()
 
-                from oncutf.utils.logging.logger_factory import get_cached_logger
-
-                logger = get_cached_logger(__name__)
                 logger.info(
                     "Columns %s", "locked" if not new_state else "unlocked"
                 )
         except Exception as e:
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
             logger.warning("Failed to save columns lock state: %s", e)
 
     def _add_reset_column_order(self, menu, file_table_view):
@@ -894,9 +771,6 @@ class InteractiveHeader(QHeaderView):
             menu.addAction(reset_action)
 
         except Exception as e:
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
             logger.warning("Failed to add reset column order option: %s", e)
 
     def _reset_column_order(self):
@@ -943,15 +817,9 @@ class InteractiveHeader(QHeaderView):
             if hasattr(file_table_view, "_column_mgmt_behavior"):
                 file_table_view._column_mgmt_behavior.configure_columns()
 
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
             logger.info("Reset columns to default (order, widths, visibility)")
 
         except Exception as e:
-            from oncutf.utils.logging.logger_factory import get_cached_logger
-
-            logger = get_cached_logger(__name__)
             logger.warning("Failed to reset column order: %s", e)
 
     def _toggle_column_visibility(self, column_key: str):
