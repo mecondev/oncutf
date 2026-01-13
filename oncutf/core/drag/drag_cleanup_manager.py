@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from oncutf.config import STATUS_COLORS
 from oncutf.core.drag.drag_manager import DragManager
-from oncutf.core.pyqt_imports import QApplication, Qt
+from oncutf.core.pyqt_imports import QApplication, QEvent, QKeyEvent, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -49,6 +49,15 @@ class DragCleanupManager:
         Triggered by Escape key globally.
         """
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
+
+        # Check if header is doing a column drag - let it handle ESC first
+        if hasattr(self.main_window, 'header') and self.main_window.header:
+            if hasattr(self.main_window.header, '_drag_active') and self.main_window.header._drag_active:
+                logger.info("[MainWindow] FORCE CLEANUP: Column drag active - delegating to header")
+                # Create a synthetic ESC key event and send it to the header
+                key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
+                self.main_window.header.keyPressEvent(key_event)
+                return
 
         drag_manager = DragManager.get_instance()
 

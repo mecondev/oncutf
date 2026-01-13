@@ -256,9 +256,11 @@ class InteractiveHeader(QHeaderView):
             return
 
         left = mouse_x - self._drag_grab_offset
-        # Clamp to header bounds
-        max_left = self.width() - self._drag_overlay.width()
-        left = max(0, min(left, max_left))
+        # Allow overlay to extend beyond viewport by one column width
+        # This ensures the overlay remains visible during auto-scroll
+        overlay_width = self._drag_overlay.width()
+        max_left = self.width() + overlay_width
+        left = max(-overlay_width, min(left, max_left))
 
         self._drag_overlay.move(left, 0)
 
@@ -319,6 +321,31 @@ class InteractiveHeader(QHeaderView):
             return
 
         target_logical = self.logicalIndexAt(mouse_x)
+
+        # If mouse is beyond all columns (returns -1), treat as "after last column"
+        if target_logical == -1:
+            # Place indicator after the last visible column
+            target_logical = self.logicalIndex(self.count() - 1)
+            target_visual = self.count() - 1
+            # Force insertion at the end
+            insert_visual = self.count()
+            last_logical = self.logicalIndex(self.count() - 1)
+            boundary_x = self.sectionViewportPosition(last_logical) + self.sectionSize(last_logical)
+
+            self._drop_indicator_visible = True
+            self._drop_indicator_to_visual = insert_visual
+            self._drop_indicator_x = boundary_x
+
+            if not self._drop_indicator_widget:
+                self._create_drop_indicator_widget()
+            else:
+                self._update_drop_indicator_widget_geometry()
+
+            with suppress(Exception):
+                if self._drop_indicator_widget:
+                    self._drop_indicator_widget.update()
+            return
+
         # Never indicate insertion into status column area (logical 0)
         if target_logical <= 0:
             self._hide_drop_indicator()
@@ -499,6 +526,21 @@ class InteractiveHeader(QHeaderView):
             self._drag_grab_offset = event.pos().x() - section_left
 
         super().mousePressEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        """Handle keyboard events during drag operations."""
+        # ESC cancels column drag
+        if event.key() == Qt.Key_Escape and self._drag_active:
+            logger.info("[HEADER] ESC pressed - canceling column drag")
+            self._drag_active = False
+            self._pressed_index = -1
+            self._hide_drag_overlay()
+            self._hide_drop_indicator()
+            self._stop_auto_scroll()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
 
     def enterEvent(self, event) -> None:
         """Clear table hover when mouse enters header."""
