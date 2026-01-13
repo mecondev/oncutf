@@ -173,7 +173,7 @@ class WindowConfigManager:
                     # Save ALL columns by their keys (including hidden ones)
                     for i, column_key in enumerate(all_columns.keys()):
                         column_index = i + 1  # +1 because status is column 0
-                        if column_index < self.main_window.file_table_view.columnCount():
+                        if column_index < file_model.columnCount():
                             width = self.main_window.file_table_view.columnWidth(column_index)
                         else:
                             # Hidden columns are not in the view; persist the service width

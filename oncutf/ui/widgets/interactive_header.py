@@ -142,6 +142,10 @@ class InteractiveHeader(QHeaderView):
         self._tooltip_timer_id: str | None = None
         self._pending_tooltip_section: int = -1
 
+        # Auto-scroll support during column drag (using QTimer for repeating scroll)
+        self._auto_scroll_timer = None  # Created on demand
+        self._auto_scroll_direction: int = 0  # -1 for left, 1 for right, 0 for none
+
         # Header tooltip texts (rendered via TooltipHelper for consistent styling)
         self._header_tooltips_by_key: dict[str, str] = {
             "color": (
@@ -362,6 +366,85 @@ class InteractiveHeader(QHeaderView):
             if self._drop_indicator_widget:
                 self._drop_indicator_widget.update()
 
+    def _check_auto_scroll(self, mouse_x: int) -> None:
+        """Check if auto-scroll should be triggered based on mouse position.
+
+        Args:
+            mouse_x: Current mouse X position in widget coordinates.
+        """
+        # Define edge zone width (pixels from edge to trigger scroll)
+        edge_zone = 50
+
+        viewport_width = self.width()
+        new_direction = 0
+
+        # Check if mouse is near left edge
+        if mouse_x < edge_zone:
+            new_direction = -1
+        # Check if mouse is near right edge
+        elif mouse_x > viewport_width - edge_zone:
+            new_direction = 1
+
+        # Start/stop/update auto-scroll timer based on direction change
+        if new_direction != self._auto_scroll_direction:
+            self._auto_scroll_direction = new_direction
+            if new_direction == 0:
+                self._stop_auto_scroll()
+            else:
+                self._start_auto_scroll()
+
+    def _start_auto_scroll(self) -> None:
+        """Start auto-scroll timer for smooth scrolling during drag."""
+        # Stop existing timer if any
+        self._stop_auto_scroll()
+
+        # Create and start timer (scroll every 50ms for smooth animation)
+        from PyQt5.QtCore import QTimer
+
+        self._auto_scroll_timer = QTimer()
+        self._auto_scroll_timer.setSingleShot(False)
+        self._auto_scroll_timer.timeout.connect(self._perform_auto_scroll)
+        self._auto_scroll_timer.start(50)  # 50ms interval
+
+    def _stop_auto_scroll(self) -> None:
+        """Stop auto-scroll timer."""
+        if self._auto_scroll_timer:
+            self._auto_scroll_timer.stop()
+            self._auto_scroll_timer.deleteLater()
+            self._auto_scroll_timer = None
+        self._auto_scroll_direction = 0
+
+    def _perform_auto_scroll(self) -> None:
+        """Perform one step of auto-scroll in the current direction."""
+        if self._auto_scroll_direction == 0:
+            return
+
+        # Get the file table view to access its horizontal scroll bar
+        file_table_view = self._get_file_table_view()
+        if not file_table_view:
+            return
+
+        h_scroll = file_table_view.horizontalScrollBar()
+        if not h_scroll:
+            return
+
+        # Scroll by small increments (10 pixels per step)
+        scroll_step = 10 * self._auto_scroll_direction
+        new_value = h_scroll.value() + scroll_step
+
+        # Clamp to valid range
+        new_value = max(h_scroll.minimum(), min(new_value, h_scroll.maximum()))
+        h_scroll.setValue(new_value)
+
+        # Update overlay and indicator positions after scroll
+        # The scroll will trigger events, but we need to ensure visual feedback
+        # stays consistent during auto-scroll
+        with suppress(Exception):
+            if self._drag_overlay:
+                # Recalculate overlay position based on current mouse position
+                # (stored implicitly in the drag state)
+                pass  # Position is already managed by mouseMoveEvent updates
+
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
         if get_app_context is None:
@@ -451,6 +534,8 @@ class InteractiveHeader(QHeaderView):
             if self._drag_active:
                 self._update_drag_overlay_position(event.pos().x())
                 self._update_drop_indicator(event.pos().x())
+                # Trigger auto-scroll if near viewport edges
+                self._check_auto_scroll(event.pos().x())
         elif not self._drag_active:
             # Not dragging - ensure indicator is hidden
             self._hide_drop_indicator()
@@ -468,6 +553,7 @@ class InteractiveHeader(QHeaderView):
             self._drag_active = False
             self._hide_drag_overlay()
             self._hide_drop_indicator()
+            self._stop_auto_scroll()
 
         super().mouseReleaseEvent(event)
 
