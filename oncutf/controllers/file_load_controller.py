@@ -259,7 +259,7 @@ class FileLoadController:
             return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
     def handle_drop(
-        self, paths: list[str], modifiers: "Qt.KeyboardModifiers" = Qt.NoModifier  # type: ignore
+        self, paths: list[str], modifiers: "Qt.KeyboardModifiers" = Qt.KeyboardModifiers()
     ) -> dict[str, Any]:
         """Handle file/folder drop with keyboard modifiers.
 

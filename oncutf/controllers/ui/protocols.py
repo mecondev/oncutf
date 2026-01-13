@@ -27,16 +27,26 @@ if TYPE_CHECKING:
         QLabel,
         QLineEdit,
         QPushButton,
+        QShortcut,
         QSplitter,
         QToolButton,
         QVBoxLayout,
     )
 
     from oncutf.core.application_context import ApplicationContext
+    from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
+    from oncutf.core.ui_managers.splitter_manager import SplitterManager
+    from oncutf.core.ui_managers.status_manager import StatusManager
     from oncutf.models.file_table_model import FileTableModel
+    from oncutf.ui.services.utility_manager import UtilityManager
+    from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
     from oncutf.ui.widgets.file_table_view import FileTableView
     from oncutf.ui.widgets.file_tree_view import FileTreeView
+    from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
+    from oncutf.ui.widgets.interactive_header import InteractiveHeader
     from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel, MetadataTreeView
+    from oncutf.ui.widgets.preview_tables_view import PreviewTablesView
+    from oncutf.ui.widgets.rename_modules_area import RenameModulesArea
 
 
 # =============================================================================
@@ -80,9 +90,9 @@ class ShortcutContext(Protocol):
     Attributes needed for keyboard shortcut registration.
     """
 
-    shortcuts: list["QShortcut"]  # type: ignore[name-defined]  # noqa: F821
+    shortcuts: list["QShortcut"]
     file_table_view: "FileTableView"
-    shortcut_manager: "ShortcutManager"  # type: ignore[name-defined]  # noqa: F821
+    shortcut_manager: "ShortcutManager"
 
     # File table shortcuts
     def select_all_rows(self) -> None:
@@ -151,7 +161,7 @@ class SignalContext(Protocol):
     """
 
     # Widgets
-    header: "InteractiveHeader"  # type: ignore[name-defined]  # noqa: F821
+    header: "InteractiveHeader"
     select_folder_button: "QPushButton"
     browse_folder_button: "QPushButton"
     rename_button: "QPushButton"
@@ -159,9 +169,9 @@ class SignalContext(Protocol):
     file_table_view: "FileTableView"
     file_model: "FileTableModel"
     metadata_tree_view: "MetadataTreeView"
-    preview_tables_view: "PreviewTablesView"  # type: ignore[name-defined]  # noqa: F821
-    rename_modules_area: "RenameModulesArea"  # type: ignore[name-defined]  # noqa: F821
-    final_transform_container: "FinalTransformContainer"  # type: ignore[name-defined]  # noqa: F821
+    preview_tables_view: "PreviewTablesView"
+    rename_modules_area: "RenameModulesArea"
+    final_transform_container: "FinalTransformContainer"
 
     # Splitters
     horizontal_splitter: "QSplitter"
@@ -169,9 +179,9 @@ class SignalContext(Protocol):
     lower_section_splitter: "QSplitter"
 
     # Managers
-    splitter_manager: "SplitterManager"  # type: ignore[name-defined]  # noqa: F821
-    utility_manager: "UtilityManager"  # type: ignore[name-defined]  # noqa: F821
-    status_manager: "StatusManager"  # type: ignore[name-defined]  # noqa: F821
+    splitter_manager: "SplitterManager"
+    utility_manager: "UtilityManager"
+    status_manager: "StatusManager"
 
     # Search components
     metadata_search_field: "QLineEdit"
@@ -278,7 +288,7 @@ class LayoutContext(Protocol):
 
     # Left panel
     folder_tree: "FileTreeView"
-    dir_model: "CustomFileSystemModel"  # type: ignore[name-defined]  # noqa: F821
+    dir_model: "CustomFileSystemModel"
     select_folder_button: "QPushButton"
     browse_folder_button: "QPushButton"
 
@@ -286,7 +296,7 @@ class LayoutContext(Protocol):
     files_label: "QLabel"
     file_table_view: "FileTableView"
     file_model: "FileTableModel"
-    header: "InteractiveHeader"  # type: ignore[name-defined]  # noqa: F821
+    header: "InteractiveHeader"
     viewport_buttons: dict[str, "QToolButton"]
     viewport_button_group: "QButtonGroup"
 
@@ -303,11 +313,11 @@ class LayoutContext(Protocol):
 
     # Bottom panel
     bottom_layout: "QVBoxLayout"
-    rename_modules_area: "RenameModulesArea"  # type: ignore[name-defined]  # noqa: F821
-    final_transform_container: "FinalTransformContainer"  # type: ignore[name-defined]  # noqa: F821
-    preview_tables_view: "PreviewTablesView"  # type: ignore[name-defined]  # noqa: F821
+    rename_modules_area: "RenameModulesArea"
+    final_transform_container: "FinalTransformContainer"
+    preview_tables_view: "PreviewTablesView"
     status_label: "QLabel"
-    status_manager: "StatusManager"  # type: ignore[name-defined]  # noqa: F821
+    status_manager: "StatusManager"
     rename_button: "QPushButton"
 
     # Footer
@@ -315,7 +325,7 @@ class LayoutContext(Protocol):
     version_label: "QLabel"
 
     # Managers
-    splitter_manager: "SplitterManager"  # type: ignore[name-defined]  # noqa: F821
+    splitter_manager: "SplitterManager"
 
     # QMainWindow methods
     def setCentralWidget(self, widget: "QWidget") -> None:

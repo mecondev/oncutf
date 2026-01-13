@@ -191,12 +191,13 @@ class LayoutController:
             splitter_ratios = window_config.get("splitter_ratios", {})
             vertical_ratios = splitter_ratios.get("vertical", [0.625, 0.375])
 
-            try:
-                window_height = self.parent_window.height()  # type: ignore[attr-defined]
-                vertical_sizes = calculate_splitter_sizes_from_ratios(vertical_ratios, window_height)
-                self.parent_window.vertical_splitter.setSizes(vertical_sizes)
-            except (AttributeError, TypeError):
-                pass
+            if hasattr(self.parent_window, "height") and callable(self.parent_window.height):
+                try:
+                    window_height = self.parent_window.height()
+                    vertical_sizes = calculate_splitter_sizes_from_ratios(vertical_ratios, window_height)
+                    self.parent_window.vertical_splitter.setSizes(vertical_sizes)
+                except (AttributeError, TypeError):
+                    pass
 
         self.parent_window.horizontal_splitter.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
@@ -355,7 +356,7 @@ class LayoutController:
 
         parent_widget = cast("QWidget", self.parent_window)
         self.parent_window.file_table_view = FileTableView(parent=parent_widget)
-        self.parent_window.file_table_view.parent_window = parent_widget  # type: ignore[attr-defined]
+        self.parent_window.file_table_view.parent_window = parent_widget
         self.parent_window.file_table_view.verticalHeader().setVisible(False)
         self.parent_window.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.parent_window.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)

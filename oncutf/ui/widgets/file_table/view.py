@@ -22,6 +22,7 @@ Architecture:
 """
 
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
@@ -34,6 +35,9 @@ from oncutf.core.pyqt_imports import (
     QTableView,
     pyqtSignal,
 )
+
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QWidget
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.behaviors import (
     ColumnManagementBehavior,
@@ -81,6 +85,9 @@ class FileTableView(QTableView):
     def __init__(self, parent=None):
         """Initialize the file table view with all configurations."""
         super().__init__(parent)
+
+        # Parent window reference (set externally by layout controller)
+        self.parent_window: QWidget | None = None
 
         # Core state
         self._manual_anchor_index: QModelIndex | None = None

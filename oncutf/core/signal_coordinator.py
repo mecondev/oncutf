@@ -71,7 +71,7 @@ class SignalCoordinator:
             try:
                 self.parent_window.event_handler_manager.hash_worker.file_hash_calculated.connect(
                     self.parent_window.refresh_metadata_widgets
-                )  # type: ignore
+                )
                 self._connected_signals.append(
                     "hash_worker.file_hash_calculated → refresh_metadata_widgets"
                 )

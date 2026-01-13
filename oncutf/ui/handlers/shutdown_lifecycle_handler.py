@@ -125,15 +125,16 @@ class ShutdownLifecycleHandler:
             from oncutf.utils.ui.cursor_helper import wait_cursor
         except Exception:
             # Shutdown must never crash due to helper import issues.
+            from collections.abc import Generator
             from contextlib import contextmanager
 
             @contextmanager
-            def wait_cursor() -> None:
+            def wait_cursor(show_wait: bool = True) -> Generator[None, None, None]:  # noqa: ARG001
                 yield
 
         # Watchdog disabled: user requested to stop creating temp watchdog logs.
         self._shutdown_watchdog_cancel = None
-        self._shutdown_wait_cursor_cm = wait_cursor  # type: ignore[assignment]
+        self._shutdown_wait_cursor_cm = wait_cursor
 
         logger.info("[CloseEvent] Starting coordinated shutdown")
 
