@@ -211,6 +211,23 @@ class MetadataTreeViewConfig:
             header.setSectionsClickable(True)
             header.setSortIndicatorShown(False)
 
+            # Disable hover effect on metadata tree header
+            try:
+                from oncutf.core.theme_manager import get_theme_manager
+                theme = get_theme_manager()
+                header_bg = theme.get_color("table_header_bg")
+                header_text = theme.get_color("table_header_text")
+
+                # Apply no-hover style to metadata tree header
+                header.setStyleSheet(
+                    f"QHeaderView::section:hover {{"
+                    f"  background-color: {header_bg};"
+                    f"  color: {header_text};"
+                    f"}}"
+                )
+            except Exception as e:
+                logger.debug("[MetadataTree] Failed to set header no-hover style: %s", e)
+
             header.show()
 
             if self._runtime_widths:
@@ -233,7 +250,12 @@ class MetadataTreeViewConfig:
                     window_config = config_manager.get_category("window")
                     ratios = window_config.get("metadata_tree_column_ratios", {"key": 0.38, "value": 0.62})
 
-                    panel_width = view.viewport().width() if view.viewport() else 868
+                    # Add extra pixels to force horizontal scrollbar when content is wide
+                    # This makes total width exceed viewport, allowing scroll
+                    EXTRA_WIDTH_FOR_SCROLLBAR = 100
+                    viewport_width = view.viewport().width() if view.viewport() else 868
+                    panel_width = viewport_width + EXTRA_WIDTH_FOR_SCROLLBAR
+                    
                     min_widths = {
                         "key": METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"],
                         "value": METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"],
@@ -245,6 +267,12 @@ class MetadataTreeViewConfig:
                     )
                     key_width = calculated_widths["key"]
                     value_width = calculated_widths["value"]
+                    
+                    # Log width calculations for debugging
+                    logger.info(
+                        "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d, Value: %d, Total: %d",
+                        viewport_width, panel_width, key_width, value_width, key_width + value_width
+                    )
 
             # Key column: min 80px, initial width, max 800px
             header.setSectionResizeMode(0, QHeaderView.Interactive)
@@ -261,6 +289,9 @@ class MetadataTreeViewConfig:
 
             # Connect resize signals to immediately update display
             self._connect_column_resize_signals()
+
+            # Initial scrollbar check after setting column widths
+            self._update_scrollbar_after_resize()
 
             # Re-enable tree interactions
             view.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -349,6 +380,9 @@ class MetadataTreeViewConfig:
         except Exception as e:
             logger.warning("[MetadataTree] Failed to save column width: %s", e)
 
+        # Update scrollbar policy based on new total width
+        self._update_scrollbar_after_resize()
+
         # Force immediate viewport update
         view.viewport().update()
 
@@ -357,6 +391,42 @@ class MetadataTreeViewConfig:
 
         # Force a repaint to ensure changes are visible immediately
         view.repaint()
+
+    def _update_scrollbar_after_resize(self) -> None:
+        """Update horizontal scrollbar visibility after column resize."""
+        view = self._tree_view
+        header = view.header()
+        
+        # Calculate total column width
+        total_width = sum(header.sectionSize(i) for i in range(header.count()))
+        viewport_width = view.viewport().width()
+        
+        # Show scrollbar if content exceeds viewport
+        if total_width > viewport_width:
+            view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            logger.debug(
+                "[MetadataTree] Scrollbar enabled - Total: %dpx > Viewport: %dpx",
+                total_width,
+                viewport_width,
+                extra={"dev_only": True},
+            )
+        else:
+            # Keep AsNeeded but log when content fits
+            logger.debug(
+                "[MetadataTree] Scrollbar not needed - Total: %dpx <= Viewport: %dpx",
+                total_width,
+                viewport_width,
+                extra={"dev_only": True},
+            )
+        
+        # Force Qt to recalculate scrollbar geometries and range
+        view.updateGeometries()
+        
+        # Also update the horizontal scrollbar range explicitly
+        h_scrollbar = view.horizontalScrollBar()
+        if h_scrollbar and total_width > viewport_width:
+            h_scrollbar.setRange(0, total_width - viewport_width)
+            h_scrollbar.setPageStep(viewport_width)
 
     def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
         """Update scrollbar policy only if different from current."""

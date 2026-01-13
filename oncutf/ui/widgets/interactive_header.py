@@ -22,7 +22,6 @@ from oncutf.core.pyqt_imports import (
     QAction,
     QEvent,
     QHeaderView,
-    QLabel,
     QMenu,
     QPoint,
     QStyle,
@@ -123,9 +122,6 @@ class InteractiveHeader(QHeaderView):
         self._drag_grab_offset: int = 0
         self._interaction_qss_applied: bool = False
 
-        # Floating overlay widget for drag feedback
-        self._drag_overlay: QWidget | None = None
-
         # Drop indicator (Excel-like) widget - separate widget to stay on top
         self._drop_indicator_widget: QWidget | None = None
         self._drop_indicator_visible: bool = False
@@ -210,66 +206,8 @@ class InteractiveHeader(QHeaderView):
         super().setSectionsMovable(movable)
         if not movable:
             self._drag_active = False
-            self._hide_drag_overlay()
             self._hide_drop_indicator()
         self._set_interaction_state(locked=not movable)
-
-    def _create_drag_overlay(self, width: int, title: str) -> None:
-        """Create a floating overlay widget for drag feedback.
-
-        The overlay appears 60% transparent (alpha ~102/255) to indicate
-        that the column is being dragged.
-        """
-        if self._drag_overlay:
-            self._drag_overlay.deleteLater()
-
-        from oncutf.core.theme_manager import get_theme_manager
-        theme = get_theme_manager()
-        bg_color = theme.get_color("table_selection_bg")
-        text_color = theme.get_color("table_header_text")
-
-        logger.debug("[INTERACTIVE_HEADER] Drag overlay colors from theme: bg=%s, text=%s", bg_color, text_color)
-
-        self._drag_overlay = QLabel(title, self)
-        self._drag_overlay.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self._drag_overlay.setFixedSize(width, self.height())
-
-        # Use solid colors in stylesheet - transparency controlled by setWindowOpacity
-        self._drag_overlay.setStyleSheet(
-            f"QLabel {{"
-            f"  background-color: {bg_color};"
-            f"  color: {text_color};"
-            f"  padding-left: 6px;"
-            f"}}"
-        )
-
-        # Set 30% opacity for the entire overlay (70% transparent)
-        self._drag_overlay.setWindowOpacity(0.3)
-
-        self._drag_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self._drag_overlay.show()
-        self._drag_overlay.raise_()
-
-    def _update_drag_overlay_position(self, mouse_x: int) -> None:
-        """Update the position of the drag overlay."""
-        if not self._drag_overlay:
-            return
-
-        left = mouse_x - self._drag_grab_offset
-        # Allow overlay to extend beyond viewport by one column width
-        # This ensures the overlay remains visible during auto-scroll
-        overlay_width = self._drag_overlay.width()
-        max_left = self.width() + overlay_width
-        left = max(-overlay_width, min(left, max_left))
-
-        self._drag_overlay.move(left, 0)
-
-    def _hide_drag_overlay(self) -> None:
-        """Hide and destroy the drag overlay."""
-        if self._drag_overlay:
-            self._drag_overlay.hide()
-            self._drag_overlay.deleteLater()
-            self._drag_overlay = None
 
     def _create_drop_indicator_widget(self) -> None:
         """Create a transparent widget for drawing the drop indicator on top."""
@@ -534,7 +472,6 @@ class InteractiveHeader(QHeaderView):
             logger.info("[HEADER] ESC pressed - canceling column drag")
             self._drag_active = False
             self._pressed_index = -1
-            self._hide_drag_overlay()
             self._hide_drop_indicator()
             self._stop_auto_scroll()
             event.accept()
@@ -565,16 +502,8 @@ class InteractiveHeader(QHeaderView):
             if not self._drag_active:
                 if (event.pos() - self._press_pos).manhattanLength() > 4:
                     self._drag_active = True
-                    # Get column title and width
-                    width = self.sectionSize(self._pressed_index)
-                    title = ""
-                    model = self.model()
-                    if model and 0 <= self._pressed_index < model.columnCount():
-                        title = str(model.headerData(self._pressed_index, Qt.Horizontal, Qt.DisplayRole) or "")
-                    self._create_drag_overlay(width, title)
 
             if self._drag_active:
-                self._update_drag_overlay_position(event.pos().x())
                 self._update_drop_indicator(event.pos().x())
                 # Trigger auto-scroll if near viewport edges
                 self._check_auto_scroll(event.pos().x())
@@ -593,7 +522,6 @@ class InteractiveHeader(QHeaderView):
 
         if self._drag_active:
             self._drag_active = False
-            self._hide_drag_overlay()
             self._hide_drop_indicator()
             self._stop_auto_scroll()
 

@@ -319,8 +319,19 @@ class SelectionManager:
             if rename_modules_area and hasattr(rename_modules_area, "set_current_file_for_modules"):
                 rename_modules_area.set_current_file_for_modules(file_item)
 
-            # Display metadata
+            # Display metadata only if file changed
             if len(selected_rows) == 1:
+                # Check if this is the same file currently displayed
+                current_file_path = getattr(metadata_tree_view, "_current_file_path", None)
+                if current_file_path == file_item.full_path:
+                    # Same file - skip metadata reload to avoid flicker
+                    logger.debug(
+                        "[SelectionManager] Skipping metadata reload - same file: %s",
+                        file_item.full_path,
+                        extra={"dev_only": True},
+                    )
+                    return
+                
                 metadata = get_metadata_for_file(file_item.full_path)
                 if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
                     metadata_tree_view.smart_display_metadata_or_empty_state(
