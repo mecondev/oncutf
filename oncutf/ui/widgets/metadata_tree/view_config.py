@@ -252,10 +252,10 @@ class MetadataTreeViewConfig:
 
                     # Add extra pixels to force horizontal scrollbar when content is wide
                     # This makes total width exceed viewport, allowing scroll
-                    EXTRA_WIDTH_FOR_SCROLLBAR = 100
+                    extra_width_for_scrollbar = 100
                     viewport_width = view.viewport().width() if view.viewport() else 868
-                    panel_width = viewport_width + EXTRA_WIDTH_FOR_SCROLLBAR
-                    
+                    panel_width = viewport_width + extra_width_for_scrollbar
+
                     min_widths = {
                         "key": METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"],
                         "value": METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"],
@@ -267,7 +267,7 @@ class MetadataTreeViewConfig:
                     )
                     key_width = calculated_widths["key"]
                     value_width = calculated_widths["value"]
-                    
+
                     # Log width calculations for debugging
                     logger.info(
                         "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d, Value: %d, Total: %d",
@@ -396,11 +396,11 @@ class MetadataTreeViewConfig:
         """Update horizontal scrollbar visibility after column resize."""
         view = self._tree_view
         header = view.header()
-        
+
         # Calculate total column width
         total_width = sum(header.sectionSize(i) for i in range(header.count()))
         viewport_width = view.viewport().width()
-        
+
         # Show scrollbar if content exceeds viewport
         if total_width > viewport_width:
             view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -418,10 +418,10 @@ class MetadataTreeViewConfig:
                 viewport_width,
                 extra={"dev_only": True},
             )
-        
+
         # Force Qt to recalculate scrollbar geometries and range
         view.updateGeometries()
-        
+
         # Also update the horizontal scrollbar range explicitly
         h_scrollbar = view.horizontalScrollBar()
         if h_scrollbar and total_width > viewport_width:

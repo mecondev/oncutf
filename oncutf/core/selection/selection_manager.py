@@ -331,7 +331,7 @@ class SelectionManager:
                         extra={"dev_only": True},
                     )
                     return
-                
+
                 metadata = get_metadata_for_file(file_item.full_path)
                 if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
                     metadata_tree_view.smart_display_metadata_or_empty_state(
