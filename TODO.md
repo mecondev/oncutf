@@ -1,10 +1,39 @@
 # oncutf - TODO List
 
-Consolidated list of all TODO items extracted from codebase (2026-01-01).
+Consolidated list of all TODO items extracted from codebase.
+
+**Last Updated:** 2026-01-14
 
 ---
 
 ## High Priority Features
+
+### 0. Metadata Key Simplification
+**Status:** Planned  
+**Priority:** High  
+**Description:** Implement algorithmic simplification of long metadata keys with semantic aliasing for cross-format consistency.
+
+**Implementation Roadmap:** See [docs/metadata_key_simplification_plan.md](docs/metadata_key_simplification_plan.md)
+
+**Key Features:**
+- SmartKeySimplifier: Algorithmic key simplification (removes common prefixes, repetitions)
+- SimplifiedMetadata: Bidirectional wrapper (original <-> simplified)
+- MetadataKeyRegistry: Undo/redo, conflict resolution, export/import
+- Semantic Aliases: Fixed predefined aliases (Lightroom-style)
+- User Config: Auto-created at ~/.oncutf/semantic_metadata_aliases.json
+
+**Components:**
+1. Phase 1 (Core): SmartKeySimplifier, SimplifiedMetadata, MetadataKeyRegistry
+2. Phase 2 (Config): Semantic aliases file
+3. Phase 3 (Integration): Update UnifiedMetadataManager, metadata module
+4. Phase 4 (UI): Configuration dialog
+5. Phase 5 (Testing): Integration and performance tests
+
+**Estimated Duration:** 8-11 working days
+
+**Current Status:** Planning complete, ready for implementation
+
+---
 
 ### 1. Last State Restoration (Sort Column Persistence)
 **Status:** Planned  
@@ -86,9 +115,56 @@ Consolidated list of all TODO items extracted from codebase (2026-01-01).
 
 ---
 
+## Architecture/Refactoring Tasks
+
+### 5. Backup Store Extraction
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Extract rename history methods from DatabaseManager to BackupStore for better separation of concerns.
+
+**Location:** [oncutf/core/database/backup_store.py#L35](oncutf/core/database/backup_store.py#L35)
+
+**Methods to extract:**
+- `store_rename_operation`
+- `get_rename_history`
+- `get_rename_operations_by_id`
+- `get_last_operation_id`
+- `clear_rename_history`
+
+**Technical notes:**
+- Part of database split plan
+- Improves modularity of database layer
+- BackupStore already has basic structure
+- Should maintain backward compatibility
+
+---
+
+### 6. Hash Duplicates Migration
+**Status:** Not Started  
+**Priority:** Medium  
+**Description:** Migrate duplicate detection to use HashLoadingService callbacks instead of legacy HashWorkerCoordinator.
+
+**Location:** [oncutf/core/hash/hash_operations_manager.py#L64](oncutf/core/hash/hash_operations_manager.py#L64)
+
+**Current behavior:**
+- Uses legacy `HashWorkerCoordinator` for backward compatibility
+- Duplicates feature not using modern callback architecture
+
+**Desired behavior:**
+- Use `HashLoadingService` with callbacks
+- Remove dependency on `HashWorkerCoordinator`
+- Consistent architecture with other hash operations
+
+**Technical notes:**
+- Part of hash system modernization
+- May require changes to duplicate detection UI
+- Test thoroughly with large file sets
+
+---
+
 ## Development/Testing Tasks
 
-### 4. Rename Preview Profiling
+### 7. Rename Preview Profiling
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Complete profiling implementation for rename preview performance testing.
@@ -114,6 +190,140 @@ Consolidated list of all TODO items extracted from codebase (2026-01-01).
 
 ---
 
+## Node Editor Implementation (Future)
+
+### 8. Module-to-Graph Conversion
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Implement conversion from linear module list to node graph representation.
+
+**Location:** [oncutf/controllers/rename_graph_controller.py#L196](oncutf/controllers/rename_graph_controller.py#L196)
+
+**Implementation steps:**
+1. Create appropriate nodes for each module
+2. Connect nodes in sequence
+3. Add OutputNode at end
+
+**Technical notes:**
+- Part of future Node Editor feature (see migration_stance.md)
+- Foundation already exists in ModuleOrchestrator
+- Should preserve existing linear UI
+
+---
+
+### 9. Graph-to-Module Conversion
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Implement conversion from node graph back to linear module list.
+
+**Location:** [oncutf/controllers/rename_graph_controller.py#L212](oncutf/controllers/rename_graph_controller.py#L212)
+
+**Implementation steps:**
+1. Traverse graph in execution order
+2. Convert each node to module config
+3. Return list compatible with existing system
+
+**Technical notes:**
+- Required for bidirectional editing (linear ↔ graph)
+- Should use topological sort from graph_model
+- Output must be compatible with get_all_data() format
+
+---
+
+### 10. Node Factory Implementation
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Create node instances by type name using NodeRegistry.
+
+**Location:** [oncutf/controllers/rename_graph_controller.py#L232](oncutf/controllers/rename_graph_controller.py#L232)
+
+**Technical notes:**
+- Use node_editor NodeRegistry to create nodes
+- Should support all module types (counter, original_name, etc.)
+- Part of node creation workflow
+
+---
+
+### 11. Edge Creation Implementation
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Implement node connection logic for graph building.
+
+**Location:** [oncutf/controllers/rename_graph_controller.py#L255](oncutf/controllers/rename_graph_controller.py#L255)
+
+**Technical notes:**
+- Validate socket compatibility before connecting
+- Should use GraphValidator for connection rules
+- Part of interactive graph editing
+
+---
+
+### 12. Graph Cycle Detection
+**Status:** Not Started  
+**Priority:** Medium  
+**Description:** Implement proper cycle detection using Depth-First Search for graph validation.
+
+**Location:** [oncutf/core/rename_graph/graph_validator.py#L138](oncutf/core/rename_graph/graph_validator.py#L138)
+
+**Current behavior:**
+- Placeholder returns empty list (assumes no cycles)
+
+**Desired behavior:**
+- DFS-based cycle detection
+- Return list of error messages with cycle details
+- Prevent invalid graph execution
+
+**Technical notes:**
+- Critical for graph validation
+- Should detect all cycles, not just first one
+- Consider performance with large graphs
+
+---
+
+### 13. Graph Topological Sort
+**Status:** Not Started  
+**Priority:** Medium  
+**Description:** Implement topological sort for proper node execution order.
+
+**Location:** [oncutf/core/rename_graph/graph_model.py#L152](oncutf/core/rename_graph/graph_model.py#L152)
+
+**Current behavior:**
+- Returns nodes as-is (insertion order)
+
+**Desired behavior:**
+- Kahn's algorithm or DFS-based topological sort
+- Order nodes for execution (dependencies first)
+- Handle multiple valid orderings
+
+**Technical notes:**
+- Required for correct graph execution
+- Should work with cycle detection
+- Consider caching for performance
+
+---
+
+### 14. Graph Deserialization
+**Status:** Not Started  
+**Priority:** Low  
+**Description:** Implement loading of saved graph configurations from dict representation.
+
+**Location:** [oncutf/core/rename_graph/graph_model.py#L177](oncutf/core/rename_graph/graph_model.py#L177)
+
+**Current behavior:**
+- Placeholder returns True without loading
+
+**Desired behavior:**
+- Reconstruct graph from serialized dict
+- Restore nodes, edges, and metadata
+- Validate deserialized graph
+
+**Technical notes:**
+- Counterpart to serialize() method
+- Should handle version compatibility
+- Part of graph persistence system
+
+---
+
 ## Completed Items
 
 None yet - this is the initial TODO consolidation.
@@ -122,8 +332,19 @@ None yet - this is the initial TODO consolidation.
 
 ## Notes
 
-- All TODOs extracted from codebase on 2026-01-01
-- Sort column restoration (5 instances) is the most recurring item
+- TODOs initially extracted on 2026-01-01, updated 2026-01-15
+- **Total:** 15 TODO items tracked (added metadata key simplification)
+- **By Category:**
+  - High Priority Features: 4 (was 3, now includes metadata simplification)
+  - Architecture/Refactoring: 2
+  - Development/Testing: 1
+  - Node Editor Implementation: 7
+  - Infrastructure: 1 (sort column - 5 locations)
+- **Priority Breakdown:**
+  - High: 1 (Metadata Key Simplification - estimated 8-11 days)
+  - Medium: 5 (Sort Column, Conflict Resolution, Cycle Detection, Topological Sort, Hash Migration)
+  - Low: 9
 - No critical or blocking TODOs identified
 - All items are future enhancements, not bugs
+- Node Editor items are foundation for future visual rename editor (see migration_stance.md)
 
