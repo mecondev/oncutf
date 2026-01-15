@@ -686,15 +686,15 @@ class TooltipHelper:
 
 class TreeViewTooltipFilter(QObject):
     """Event filter for QTreeView/QTableView to show custom themed tooltips.
-    
+
     This filter intercepts tooltip events and replaces default Qt tooltips
     with CustomTooltip widgets that match the application theme.
-    
+
     Usage:
         tree_view = QTreeView()
         tooltip_filter = TreeViewTooltipFilter(tree_view, parent=tree_view)
         tree_view.viewport().installEventFilter(tooltip_filter)
-    
+
     """
 
     def __init__(self, view_widget, parent: QObject | None = None, tooltip_type: str = TooltipType.INFO):
@@ -743,7 +743,7 @@ class TreeViewTooltipFilter(QObject):
             try:
                 pos = event.pos()
                 current_index = self.view_widget.indexAt(pos)
-                
+
                 # If we moved to a different item, clear existing tooltips
                 if current_index != self._last_index:
                     TooltipHelper.clear_tooltips_for_widget(self.view_widget)
@@ -776,7 +776,6 @@ class TreeViewTooltipFilter(QObject):
             if tooltip_text:
                 # Show custom tooltip
                 try:
-                    global_pos = viewport.mapToGlobal(pos)
                     TooltipHelper.show_tooltip(
                         self.view_widget,
                         tooltip_text,
