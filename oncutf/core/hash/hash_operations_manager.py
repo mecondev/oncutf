@@ -1,19 +1,17 @@
 """Hash Operations Management Service.
 
 Author: Michael Economou
-Date: 2025-06-15 (Refactored: 2026-01-04)
+Date: 2025-06-15 (Refactored: 2026-01-15)
 
 Orchestrates hash-related operations for file duplicate detection, comparison, and checksum calculations.
 
-This module has been refactored into specialized components:
-- HashResultsPresenter: UI presentation layer
-- HashWorkerCoordinator: Worker thread and progress management
-- HashOperationsManager: High-level orchestration (this file)
-
-Features:
+This module uses HashLoadingService for all hash operations:
 - Duplicate file detection within selected or all files
 - External folder comparison for finding matching/different files
 - CRC32 checksum calculation with progress tracking
+
+Refactored 2026-01-15: Migrated from HashWorkerCoordinator to unified HashLoadingService
+for consistent callback architecture across all hash operations.
 """
 
 from __future__ import annotations
@@ -25,7 +23,6 @@ if TYPE_CHECKING:
 
 from oncutf.config import STATUS_COLORS
 from oncutf.core.hash.hash_results_presenter import HashResultsPresenter
-from oncutf.core.hash.hash_worker_coordinator import HashWorkerCoordinator
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.file_status_helpers import has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -36,13 +33,13 @@ logger = get_cached_logger(__name__)
 class HashOperationsManager:
     """Orchestrates hash-related operations using unified HashLoadingService.
 
-    This manager now uses HashLoadingService for all hash loading operations,
-    eliminating code duplication between shortcuts (Ctrl+H) and context menu.
+    This manager uses HashLoadingService for all hash loading operations,
+    providing a consistent callback architecture for duplicates, comparison,
+    and checksum operations.
 
     Delegates to:
-    - HashLoadingService: Unified hash loading with progress tracking
+    - HashLoadingService: Unified hash operations with progress tracking
     - HashResultsPresenter: UI presentation and dialogs
-    - HashWorkerCoordinator: Legacy support for complex operations (deprecated)
     """
 
     def __init__(self, parent_window: QWidget) -> None:
@@ -54,15 +51,11 @@ class HashOperationsManager:
         """
         self.parent_window: Any = parent_window
 
-        # Use unified HashLoadingService
+        # Use unified HashLoadingService for all operations
         from oncutf.core.metadata.hash_loading_service import HashLoadingService
 
         self._hash_service = HashLoadingService(parent_window, cache_service=None)
         self._results_presenter = HashResultsPresenter(parent_window)
-
-        # Keep legacy coordinator for backward compatibility with duplicates feature
-        # TODO: Migrate duplicates to use HashLoadingService callbacks
-        self._worker_coordinator = HashWorkerCoordinator(parent_window)
 
         logger.debug("HashOperationsManager initialized", extra={"dev_only": True})
 
@@ -162,13 +155,12 @@ class HashOperationsManager:
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in files_to_check]
 
-        # Start hash operation using worker thread
-        self._worker_coordinator.start_hash_operation(
-            "duplicates",
+        # Start hash operation using unified HashLoadingService
+        self._hash_service.start_duplicate_scan(
             file_paths,
+            scope=scope,
             on_duplicates=self._on_duplicates_found,
             on_progress=self._update_operation_progress,
-            on_size_progress=self._update_operation_size_progress,
             on_file_hash=self._on_file_hash_calculated,
             on_finished=self._on_hash_operation_finished,
             on_error=self._on_hash_operation_error,
@@ -217,14 +209,12 @@ class HashOperationsManager:
             # Convert FileItem objects to file paths
             file_paths = [item.full_path for item in selected_files]
 
-            # Start hash operation using worker thread
-            self._worker_coordinator.start_hash_operation(
-                "compare",
+            # Start hash operation using unified HashLoadingService
+            self._hash_service.start_external_comparison(
                 file_paths,
-                external_folder=external_folder,
+                external_folder,
                 on_comparison=self._on_comparison_result,
                 on_progress=self._update_operation_progress,
-                on_size_progress=self._update_operation_size_progress,
                 on_file_hash=self._on_file_hash_calculated,
                 on_finished=self._on_hash_operation_finished,
                 on_error=self._on_hash_operation_error,
@@ -260,13 +250,11 @@ class HashOperationsManager:
             # Single file - use wait cursor (fast, simple)
             self._calculate_single_file_hash_fast(selected_files[0])
         else:
-            # Multiple files - use worker thread with progress dialog
-            self._worker_coordinator.start_hash_operation(
-                "checksums",
+            # Multiple files - use HashLoadingService with progress dialog
+            self._hash_service.start_checksum_calculation(
                 file_paths,
                 on_checksums=self._on_checksums_calculated,
                 on_progress=self._update_operation_progress,
-                on_size_progress=self._update_operation_size_progress,
                 on_file_hash=self._on_file_hash_calculated,
                 on_finished=self._on_hash_operation_finished,
                 on_error=self._on_hash_operation_error,
@@ -309,7 +297,10 @@ class HashOperationsManager:
     # ===== Worker Callbacks =====
 
     def _update_operation_progress(self, current: int, total: int, message: str) -> None:
-        """Update operation progress in dialog.
+        """Update operation progress - handled by HashLoadingService.
+
+        This callback is kept for logging purposes; actual progress updates
+        are handled internally by HashLoadingService.
 
         Args:
             current: Current progress value
@@ -317,26 +308,21 @@ class HashOperationsManager:
             message: Progress message to display
 
         """
-        self._worker_coordinator.update_progress(current, total, message)
+        logger.debug(
+            "[HashManager] Progress: %d/%d - %s",
+            current,
+            total,
+            message,
+            extra={"dev_only": True},
+        )
 
-    def _update_operation_size_progress(
-        self, current_bytes: int, total_bytes: int
-    ) -> None:
-        """Update size-based progress in dialog.
-
-        Args:
-            current_bytes: Current bytes processed
-            total_bytes: Total bytes to process
-
-        """
-        self._worker_coordinator.update_size_progress(current_bytes, total_bytes)
-
-    def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
+    def _on_file_hash_calculated(self, file_path: str, hash_value: str, _size: int = 0) -> None:
         """Handle individual file hash calculation completion.
 
         Args:
             file_path: Path to the file
             hash_value: Calculated hash value
+            _size: File size (unused, for callback compatibility)
 
         """
         # Update file table view to show new hash
@@ -421,12 +407,12 @@ class HashOperationsManager:
         force_restore_cursor()
 
         # Check if operation was cancelled
-        was_cancelled = self._worker_coordinator.is_cancelled()
+        was_cancelled = self._hash_service.is_cancelled()
 
         self._results_presenter.show_hash_results(hash_results, was_cancelled)
 
         # Reset the cancellation flag
-        self._worker_coordinator.reset_cancelled()
+        self._hash_service.reset_cancelled()
 
     def _on_hash_operation_finished(self, _success: bool) -> None:
         """Handle hash operation completion.
@@ -454,9 +440,6 @@ class HashOperationsManager:
         ):
             self.parent_window.preview_manager.on_hash_calculation_completed()
 
-        # Clean up worker and dialog
-        self._worker_coordinator.cleanup_worker()
-
     def _on_hash_operation_error(self, error_message: str) -> None:
         """Handle hash operation error.
 
@@ -480,9 +463,6 @@ class HashOperationsManager:
                 color=STATUS_COLORS["critical_error"],
                 auto_reset=True,
             )
-
-        # Clean up worker and dialog
-        self._worker_coordinator.cleanup_worker()
 
     # ===== Status Check Methods =====
 

@@ -87,7 +87,7 @@ Consolidated list of all TODO items extracted from codebase.
 - oncutf/core/file/operations_manager.py - Updated conflict_callback to use dialog
 
 **User Workflow:**
-1. User initiates rename operation
+1. User initiates rename operation  
 2. If target file exists, dialog appears with conflict details
 3. User chooses action: Skip, Overwrite, Rename with suffix, Skip All, or Cancel
 4. Optional: Check "Apply to All" to use same action for remaining conflicts
@@ -207,25 +207,35 @@ Moved to Database (session_state table):
 ---
 
 ### 6. Hash Duplicates Migration
-**Status:** Not Started  
+**Status:** COMPLETED (2026-01-15)  
 **Priority:** Medium  
 **Description:** Migrate duplicate detection to use HashLoadingService callbacks instead of legacy HashWorkerCoordinator.
 
-**Location:** [oncutf/core/hash/hash_operations_manager.py#L64](oncutf/core/hash/hash_operations_manager.py#L64)
+**Implementation Completed:**
 
-**Current behavior:**
-- Uses legacy `HashWorkerCoordinator` for backward compatibility
-- Duplicates feature not using modern callback architecture
+**Changes Made:**
+- Extended `HashLoadingService` with new methods:
+  - `start_duplicate_scan()` - duplicate file detection
+  - `start_external_comparison()` - external folder comparison  
+  - `start_checksum_calculation()` - checksum display
+- Updated `HashOperationsManager` to use unified `HashLoadingService` for all operations
+- Removed `HashWorkerCoordinator` dependency from `HashOperationsManager`
+- Added proper type annotations for all callbacks
 
-**Desired behavior:**
-- Use `HashLoadingService` with callbacks
-- Remove dependency on `HashWorkerCoordinator`
-- Consistent architecture with other hash operations
+**Files Modified:**
+- [oncutf/core/metadata/hash_loading_service.py](oncutf/core/metadata/hash_loading_service.py) - Extended with advanced operations
+- [oncutf/core/hash/hash_operations_manager.py](oncutf/core/hash/hash_operations_manager.py) - Migrated to HashLoadingService
 
-**Technical notes:**
-- Part of hash system modernization
-- May require changes to duplicate detection UI
-- Test thoroughly with large file sets
+**Benefits:**
+- Unified callback architecture for all hash operations
+- Consistent progress dialog handling
+- Simplified codebase (one service instead of two)
+- Better separation of concerns
+
+**Test Results:** 1173 tests passing, ruff clean, mypy clean
+
+**Files Removed:**
+- [oncutf/core/hash/hash_worker_coordinator.py](oncutf/core/hash/hash_worker_coordinator.py) - Legacy coordinator deleted (no longer used)
 
 ---
 
@@ -453,11 +463,11 @@ Moved to Database (session_state table):
 
 - TODOs initially extracted on 2026-01-01, updated 2026-01-15
 - **Total:** 15 TODO items tracked
-- **Completed in Phase 7:** Major architecture and performance improvements
-- **Next Priority:** Metadata Key Simplification (8-11 days estimated)
+- **Completed:** 5 (Metadata Key Simplification, Sort Column, Conflict Resolution, Hybrid Config, Hash Migration)
+- **Remaining:** 10 (mostly Node Editor foundation + minor improvements)
 - **By Category:**
-  - High Priority Features: 4
-  - Architecture/Refactoring: 2
+  - High Priority Features: 4 (all completed)
+  - Architecture/Refactoring: 2 (1 completed)
   - Development/Testing: 1
   - Node Editor Implementation: 7
 - **Priority Breakdown:**
