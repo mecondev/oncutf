@@ -11,9 +11,9 @@ The project is in **very good shape** after extensive refactoring. Most monster 
 
 ---
 
-## ✅ Completed Refactorings (from REFACTORING_ROADMAP.md)
+## [x] Completed Refactorings (from REFACTORING_ROADMAP.md)
 
-### Critical Priority (>900 lines) — ALL DONE ✅
+### Critical Priority (>900 lines) — ALL DONE [x]
 
 1. ~~`file_tree_view.py`~~ → Split to package (1629 → 448 lines, **72% reduction**)
 2. ~~`file_table_view.py`~~ → [SKIP] Already optimal with 3 behaviors (1318 lines)
@@ -43,18 +43,18 @@ The project is in **very good shape** after extensive refactoring. Most monster 
 
 ## 🗑️ Dead Code / Candidates for Removal
 
-### 1. **Backup File (Safe to Delete)** ✅ DONE
+### 1. **Backup File (Safe to Delete)** [x] DONE
 
 **File:** `oncutf/core/ui_managers/column_manager_legacy_backup.py` (853 lines)
 - **Status:** DELETED (commit `184e235d`)
-- **Action:** ✅ Removed
+- **Action:** [x] Removed
 - **Impact:** Zero — pure backup file
 
-### 2. **UIManager Delegator** ✅ DONE
+### 2. **UIManager Delegator** [x] DONE
 
 **File:** `oncutf/core/ui_managers/ui_manager.py` (130 lines)
 - **Status:** DELETED (commit `32470384`)
-- **Action:** ✅ Removed — replaced with direct controller usage
+- **Action:** [x] Removed — replaced with direct controller usage
 - **Impact:** Zero — pure delegator, all functionality in controllers
 - **Changes:**
   * Updated `initialization_orchestrator.py` to use controllers directly
@@ -76,9 +76,9 @@ The project is in **very good shape** after extensive refactoring. Most monster 
 ### Files by Size Category
 
 ```
-Files >900 lines: 0 (was 11)  ✅ TARGET ACHIEVED
+Files >900 lines: 0 (was 11)  [x] TARGET ACHIEVED
 Files >600 lines: 28 (was 16)  ⚠️ Slightly increased but most are auto-generated/config
-Average LOC/file: ~200  ✅ GOOD
+Average LOC/file: ~200  [x] GOOD
 ```
 
 ### Largest Files (excluding auto-generated)
@@ -97,28 +97,28 @@ Average LOC/file: ~200  ✅ GOOD
 
 ### Active Delegators (Backward Compatibility)
 
-1. **~~`ui_manager.py`~~** ✅ **REMOVED**
+1. **~~`ui_manager.py`~~** [x] **REMOVED**
    - Was: Pure delegator to 4 controllers (130 lines)
    - Used ONLY in `initialization_orchestrator.py`
-   - ✅ **DONE:** Removed — initialization now uses controllers directly
+   - [x] **DONE:** Removed — initialization now uses controllers directly
    - Commit: `32470384`
 
 2. **`models/file_table_model.py`** (14 lines)
    - Re-export for backward compatibility
-   - ✅ **Keep** — widely used import path
+   - [x] **Keep** — widely used import path
 
 3. **`ui/behaviors/metadata_edit_behavior.py`** (17 lines)
    - Re-export for backward compatibility
-   - ✅ **Keep** — widely used import path
+   - [x] **Keep** — widely used import path
 
 ---
 
 ## 🎯 Recommendations
 
-### ~~High Priority (Do Now)~~ ✅ COMPLETED
+### ~~High Priority (Do Now)~~ [x] COMPLETED
 
-1. ✅ **DONE:** Delete backup file (commit `184e235d`)
-2. ✅ **DONE:** Remove UIManager delegator (commit `32470384`)
+1. [x] **DONE:** Delete backup file (commit `184e235d`)
+2. [x] **DONE:** Remove UIManager delegator (commit `32470384`)
    - Updated initialization_orchestrator.py to use controllers directly
    - Saved 130 lines of pure delegation code
    - All tests passing (949/949)
@@ -152,30 +152,30 @@ Average LOC/file: ~200  ✅ GOOD
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Tests passing | ✅ 949+ | All green |
-| Ruff lint | ✅ Clean | No issues |
-| Mypy type check | ✅ Clean | Strict Protocol typing |
-| Docstring coverage | ✅ 96.2% | Excellent |
-| Monster files (>900) | ✅ 0 | Target achieved |
+| Tests passing | [x] 949+ | All green |
+| Ruff lint | [x] Clean | No issues |
+| Mypy type check | [x] Clean | Strict Protocol typing |
+| Docstring coverage | [x] 96.2% | Excellent |
+| Monster files (>900) | [x] 0 | Target achieved |
 | Large files (>600) | ⚠️ 28 | Mostly justified |
 
 ---
 
 ## 🏗️ Architecture State
 
-### Modern Patterns (✅ Active Development)
+### Modern Patterns ([x] Active Development)
 
-- Controllers (`oncutf/controllers/`) — ✅ 4 controllers implemented
-- Services (`oncutf/core/`) — ✅ Extensive service layer
-- Behaviors (`oncutf/ui/behaviors/`) — ✅ UI interaction layer
-- Protocols (`oncutf/controllers/ui/protocols.py`) — ✅ Type safety
-- Handlers (`oncutf/ui/handlers/`) — ✅ Event handling
+- Controllers (`oncutf/controllers/`) — [x] 4 controllers implemented
+- Services (`oncutf/core/`) — [x] Extensive service layer
+- Behaviors (`oncutf/ui/behaviors/`) — [x] UI interaction layer
+- Protocols (`oncutf/controllers/ui/protocols.py`) — [x] Type safety
+- Handlers (`oncutf/ui/handlers/`) — [x] Event handling
 
 ### Legacy Patterns (⏸️ Maintenance Mode)
 
 - Managers in `ui_managers/` — ⏸️ Being phased out
 - Direct MainWindow methods — ⏸️ Moving to controllers
-- Mixins — ✅ **ALL REMOVED** (converted to behaviors)
+- Mixins — [x] **ALL REMOVED** (converted to behaviors)
 
 ---
 
@@ -183,7 +183,7 @@ Average LOC/file: ~200  ✅ GOOD
 
 ### Immediate Actions
 
-1. ✅ Delete `column_manager_legacy_backup.py`
+1. [x] Delete `column_manager_legacy_backup.py`
 2. 🔄 Consider removing `UIManager` delegator
 3. 🔄 Update REFACTORING_ROADMAP.md with new large files
 
@@ -195,14 +195,14 @@ Average LOC/file: ~200  ✅ GOOD
 
 ---
 
-## 📝 Conclusion
+##  Conclusion
 
 **Overall Status:** 🟢 **Excellent**
 
-- ✅ All critical refactorings complete
-- ✅ No monster files (>900 lines) remain
-- ✅ Modern architecture patterns established
-- ✅ All tests passing
+- [x] All critical refactorings complete
+- [x] No monster files (>900 lines) remain
+- [x] Modern architecture patterns established
+- [x] All tests passing
 - ⚠️ Some cleanup opportunities (1 backup file)
 - 🔄 Medium priority: 3 files in 700-900 range could be split
 

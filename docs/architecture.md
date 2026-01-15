@@ -78,7 +78,7 @@
 ### Phase 7: Final Polish ⚡ (NEW - Dec 2025)
 **Goal:** Performance optimization, documentation, and final polish
 
-#### Performance Optimizations ✅
+#### Performance Optimizations [x]
 - **Startup Time:** 31% faster (1426ms → 989ms)
   - Lazy-loaded ExifToolWrapper: -12% (1426ms → 1261ms)
   - Lazy-loaded CompanionFilesHelper: -21% (1261ms → 989ms)
@@ -101,28 +101,28 @@
 
 ---
 
-### Phase 1: Controllers Architecture ✅ (Dec 2025)
+### Phase 1: Controllers Architecture [x] (Dec 2025)
 **Goal:** Separate UI from business logic with testable controller layer
 
-#### Phase 1A: FileLoadController ✅
+#### Phase 1A: FileLoadController [x]
 - **Orchestrates:** File loading, drag & drop, directory scanning
 - **Methods:** `load_files_from_drop()`, `load_folder()`, `clear_files()`
 - **Tests:** 11 comprehensive tests (100% coverage)
 - **Benefit:** File loading logic testable without Qt/GUI
 
-#### Phase 1B: MetadataController ✅
+#### Phase 1B: MetadataController [x]
 - **Orchestrates:** Metadata loading, cache management
 - **Methods:** `load_metadata()`, `reload_metadata()`, `clear_metadata_cache()`
 - **Tests:** 13 comprehensive tests (100% coverage)
 - **Benefit:** Metadata workflows testable independently
 
-#### Phase 1C: RenameController ✅
+#### Phase 1C: RenameController [x]
 - **Orchestrates:** Rename preview, validation, execution
 - **Methods:** `preview_rename()`, `execute_rename()`, `update_preview()`
 - **Tests:** 16 comprehensive tests (100% coverage)
 - **Benefit:** Rename logic testable with mock dependencies
 
-#### Phase 1D: MainWindowController ✅
+#### Phase 1D: MainWindowController [x]
 - **Orchestrates:** High-level multi-service workflows
 - **Methods:** `restore_last_session_workflow()`, `coordinate_shutdown_workflow()`
 - **Tests:** 17 comprehensive tests (100% coverage)
@@ -136,7 +136,7 @@
 
 ---
 
-### Phase 0: Widget Decomposition ✅
+### Phase 0: Widget Decomposition [x]
 - **FileTableView:** 2715 → 976 LOC (-64%)
   - Extracted: Column management (34 methods)
   - Created: `ColumnManagementBehavior` (composition-based)
@@ -145,17 +145,17 @@
   - Extracted: 4 specialized behaviors
   - Improved: Testability and maintainability
 
-### Domain Models ✅
+### Domain Models [x]
 - Created: `FileEntry` (type-safe file representation)
 - Created: `MetadataEntry` (structured metadata)
 - Benefit: Type safety, memory efficiency, clarity
 
-### Selection Unification ✅
+### Selection Unification [x]
 - Created: `SelectionProvider` (unified interface)
 - Replaced: 50+ ad-hoc selection patterns
 - Benefit: Single source of truth, 500x faster (cached)
 
-### Code Quality ✅
+### Code Quality [x]
 - Translated: Greek → English (38 instances)
 - Synced: Docstring dates to git history (75 files)
 - Tests: 592 passing (100%)
@@ -351,7 +351,7 @@ Multi-layer caching:
 - FileTableView: 2715 → 976 LOC (-64%)
 - MetadataTreeView: 3102 → 1768 LOC (-43%)
 
-**Test Suite:** 592 tests, 100% passing ✅
+**Test Suite:** 592 tests, 100% passing [x]
 
 ---
 
@@ -391,7 +391,7 @@ Multi-layer caching:
 
 ## Current Status Summary
 
-### ✅ Completed
+### [x] Completed
 - **Phase 1: Controllers Architecture** (Dec 2025)
   - FileLoadController, MetadataController, RenameController, MainWindowController
   - 57 new tests (592 total, 100% passing)
@@ -433,8 +433,8 @@ For detailed development plans, see documentation in `docs/` folder:
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [README.md](README.md) | Documentation index | ✅ Active |
-| [PHASE5_SUMMARY.md](PHASE5_SUMMARY.md) | Phase 5 summary | ✅ Reference |
+| [README.md](README.md) | Documentation index | [x] Active |
+| [PHASE5_SUMMARY.md](PHASE5_SUMMARY.md) | Phase 5 summary | [x] Reference |
 
 Historical phase execution plans are archived in `_archive/`.
 
@@ -550,7 +550,7 @@ Is it a pure helper function?
 
 ### Examples in Current Codebase
 
-✅ **Good (follows rules):**
+[x] **Good (follows rules):**
 - `controllers/file_load_controller.py` — UI flow orchestration
 - `services/exiftool_service.py` — External tool adapter
 - `core/metadata/unified_manager.py` — Stateful metadata orchestration

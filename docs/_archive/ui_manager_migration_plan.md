@@ -278,7 +278,7 @@ class UIManager:
 
 ## Next Steps
 
-1. ✅ Create migration plan
+1. [x] Create migration plan
 2. ⏭️ Create controller package structure
 3. ⏭️ Extract WindowSetupController
 4. ⏭️ Extract LayoutController

@@ -4,7 +4,7 @@
 **Date:** 2025-12-28  
 **Completed:** 2026-01-05  
 **Archived:** 2026-01-09  
-**Status:** ✅ COMPLETED - All behaviors extracted, pattern established
+**Status:** [x] COMPLETED - All behaviors extracted, pattern established
 
 **Archive Reason:** Mixin-to-behavior migration complete. All large behaviors split to packages. Pattern guidelines finalized.
 
@@ -99,13 +99,13 @@ class MyTableView(QTableView):
 ### Current behaviors
 | Behavior | Protocol | Purpose | Status |
 |----------|----------|---------|--------|
-| `SelectionBehavior` | `SelectableWidget` | Row selection with Qt sync, anchor row, keyboard modifiers | ✅ Complete (package) |
-| `DragDropBehavior` | `DraggableWidget` | Drag-and-drop with visual feedback, metadata tree drops | ✅ Complete (cohesive) |
-| `ColumnManagementBehavior` | `ColumnManageableWidget` | Column width/visibility management, delayed save, config persistence | ✅ Complete (package) |
-| `MetadataContextMenuBehavior` | `ContextMenuWidget` | Right-click menu actions for metadata | ✅ Complete (package) |
-| `MetadataCacheBehavior` | `CacheableWidget` | Metadata caching logic | ✅ Complete (cohesive) |
-| `MetadataEditBehavior` | `EditableWidget` | Inline metadata editing | ✅ Complete (package) |
-| `MetadataScrollBehavior` | `ScrollableWidget` | Scroll synchronization | ✅ Complete (cohesive) |
+| `SelectionBehavior` | `SelectableWidget` | Row selection with Qt sync, anchor row, keyboard modifiers | [x] Complete (package) |
+| `DragDropBehavior` | `DraggableWidget` | Drag-and-drop with visual feedback, metadata tree drops | [x] Complete (cohesive) |
+| `ColumnManagementBehavior` | `ColumnManageableWidget` | Column width/visibility management, delayed save, config persistence | [x] Complete (package) |
+| `MetadataContextMenuBehavior` | `ContextMenuWidget` | Right-click menu actions for metadata | [x] Complete (package) |
+| `MetadataCacheBehavior` | `CacheableWidget` | Metadata caching logic | [x] Complete (cohesive) |
+| `MetadataEditBehavior` | `EditableWidget` | Inline metadata editing | [x] Complete (package) |
+| `MetadataScrollBehavior` | `ScrollableWidget` | Scroll synchronization | [x] Complete (cohesive) |
 
 ### Creating new behaviors
 1. Define protocol in `ui/behaviors/<feature>_behavior.py`:
@@ -202,7 +202,7 @@ Need UI functionality?
 
 ## Anti-Patterns
 
-### ❌ Don't: Create new mixins
+### [FAIL] Don't: Create new mixins
 ```python
 # WRONG — new features should use behaviors
 class NewFeatureMixin:
@@ -210,7 +210,7 @@ class NewFeatureMixin:
         pass
 ```
 
-### ✅ Do: Create new behaviors
+### [x] Do: Create new behaviors
 ```python
 # CORRECT — composition-based
 class NewFeatureBehavior:
@@ -218,7 +218,7 @@ class NewFeatureBehavior:
         self._widget = widget
 ```
 
-### ❌ Don't: Put reusable logic in handlers
+### [FAIL] Don't: Put reusable logic in handlers
 ```python
 # WRONG — if FileTableView and MetadataTreeView both need this,
 # it should be a behavior, not a handler
@@ -227,7 +227,7 @@ class SelectionHandler:  # in file_table_view/handlers/
         pass
 ```
 
-### ✅ Do: Use behaviors for shared logic
+### [x] Do: Use behaviors for shared logic
 ```python
 # CORRECT — one behavior, many widgets
 class SelectionBehavior:
@@ -247,22 +247,22 @@ class MetadataTreeView(QTreeWidget):
 
 ## Migration Strategy
 
-### Phase 1: Freeze mixins (✅ Complete)
-- ✅ Do not add functionality to existing mixins
-- ✅ Document mixin usage in this file
-- ✅ All new features use behaviors
+### Phase 1: Freeze mixins ([x] Complete)
+- [x] Do not add functionality to existing mixins
+- [x] Document mixin usage in this file
+- [x] All new features use behaviors
 
-### Phase 2: Extract behaviors (✅ Complete - 2026-01-05)
+### Phase 2: Extract behaviors ([x] Complete - 2026-01-05)
 **Completed (split to packages):**
-- ✅ `column_management/` — 6 modules (column_behavior, visibility_manager, width_manager, header_configurator, protocols, __init__)
-- ✅ `metadata_context_menu/` — 6 modules (context_menu_behavior, menu_builder, column_integration, key_mapping, protocols, __init__)
-- ✅ `selection/` — 3 modules (selection_behavior, protocols, __init__)
+- [x] `column_management/` — 6 modules (column_behavior, visibility_manager, width_manager, header_configurator, protocols, __init__)
+- [x] `metadata_context_menu/` — 6 modules (context_menu_behavior, menu_builder, column_integration, key_mapping, protocols, __init__)
+- [x] `selection/` — 3 modules (selection_behavior, protocols, __init__)
 
 **Completed (already cohesive):**
-- ✅ `DragDropBehavior` — 501 lines (cohesive)
-- ✅ `MetadataCacheBehavior` — 466 lines (cohesive)
-- ✅ `MetadataScrollBehavior` — 325 lines (cohesive)
-- ✅ `metadata_edit/` — Already package (8 modules)
+- [x] `DragDropBehavior` — 501 lines (cohesive)
+- [x] `MetadataCacheBehavior` — 466 lines (cohesive)
+- [x] `MetadataScrollBehavior` — 325 lines (cohesive)
+- [x] `metadata_edit/` — Already package (8 modules)
 
 **Migration process per mixin:**
 1. Create behavior equivalent in `ui/behaviors/`
@@ -331,13 +331,13 @@ Migrate a mixin to behavior when:
 ## Final Summary (2026-01-09)
 
 **All objectives achieved:**
-- ✅ Mixins frozen (no new mixins created)
-- ✅ Behaviors extracted (7 total behaviors)
-- ✅ Large behaviors split to packages (3 packages: column_management/, metadata_context_menu/, selection/)
-- ✅ Cohesive behaviors remain as single files (4 behaviors)
-- ✅ Backward compatibility maintained (delegators)
-- ✅ Pattern guidelines established
-- ✅ All quality gates passing (986 tests, ruff clean, mypy clean, 99.9%+ docstring coverage)
+- [x] Mixins frozen (no new mixins created)
+- [x] Behaviors extracted (7 total behaviors)
+- [x] Large behaviors split to packages (3 packages: column_management/, metadata_context_menu/, selection/)
+- [x] Cohesive behaviors remain as single files (4 behaviors)
+- [x] Backward compatibility maintained (delegators)
+- [x] Pattern guidelines established
+- [x] All quality gates passing (986 tests, ruff clean, mypy clean, 99.9%+ docstring coverage)
 
 **Pattern is now stable and documented.** Future UI work should follow behavior pattern over mixins.
 

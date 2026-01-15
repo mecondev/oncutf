@@ -12,7 +12,7 @@
 
 ## Completed Extractions
 
-### 3. ColumnManagementBehavior ✅ [SPLIT TO PACKAGE]
+### 3. ColumnManagementBehavior [x] [SPLIT TO PACKAGE]
 - **Source:** `ui/mixins/column_management_mixin.py` (1295 lines) 🔥 **LARGEST**
 - **Target:** `ui/behaviors/column_management/` (6 modules, 1104 total lines)
 - **Protocol:** `ColumnManageableWidget`
@@ -41,14 +41,14 @@ column_management/
 
 **Quality gates:**
 ```bash
-✅ Syntax check passed
-✅ Ruff clean
-✅ Mypy passing (4 source files)
+[x] Syntax check passed
+[x] Ruff clean
+[x] Mypy passing (4 source files)
 ```
 
 ---
 
-### 1. SelectionBehavior ✅
+### 1. SelectionBehavior [x]
 - **Source:** `ui/mixins/selection_mixin.py` (513 lines)
 - **Target:** `ui/behaviors/selection_behavior.py` (257 lines)
 - **Protocol:** `SelectableWidget`
@@ -63,7 +63,7 @@ column_management/
 
 ---
 
-### 2. DragDropBehavior ✅
+### 2. DragDropBehavior [x]
 - **Source:** `ui/mixins/drag_drop_mixin.py` (449 lines)
 - **Target:** `ui/behaviors/drag_drop_behavior.py` (550 lines)
 - **Protocol:** `DraggableWidget`
@@ -97,20 +97,20 @@ class DraggableWidget(Protocol):
 **Quality gates:**
 ```bash
 $ python -m py_compile oncutf/ui/behaviors/drag_drop_behavior.py
-✅ No syntax errors
+[x] No syntax errors
 
 $ ruff check oncutf/ui/behaviors/drag_drop_behavior.py
-✅ All checks passed!
+[x] All checks passed!
 
 $ mypy oncutf/ui/behaviors/
-✅ Success: no issues found in 3 source files
+[x] Success: no issues found in 3 source files
 ```
 
 ---
 
 ## Completed Extractions (All Behaviors)
 
-### 4. MetadataContextMenuBehavior ✅ [SPLIT TO PACKAGE]
+### 4. MetadataContextMenuBehavior [x] [SPLIT TO PACKAGE]
 - **Source:** `ui/mixins/metadata_context_menu_mixin.py` (718 lines)
 - **Target:** `ui/behaviors/metadata_context_menu/` (6 modules, 884 total lines)
 - **Protocol:** `ContextMenuWidget`
@@ -130,7 +130,7 @@ metadata_context_menu/
 
 ---
 
-### 5. SelectionBehavior ✅ [SPLIT TO PACKAGE]
+### 5. SelectionBehavior [x] [SPLIT TO PACKAGE]
 - **Source:** `ui/mixins/selection_mixin.py` (631 lines)
 - **Target:** `ui/behaviors/selection/` (3 modules, 615 total lines)
 - **Protocol:** `SelectableWidget`
@@ -147,28 +147,28 @@ selection/
 
 ---
 
-### 6. MetadataCacheBehavior ✅ [COHESIVE]
+### 6. MetadataCacheBehavior [x] [COHESIVE]
 - **Source:** `ui/mixins/metadata_cache_mixin.py` (466 lines)
 - **Target:** `ui/behaviors/metadata_cache_behavior.py` (466 lines)
 - **Status:** Already cohesive, no split needed
 
 ---
 
-### 7. MetadataEditBehavior ✅ [ALREADY SPLIT]
+### 7. MetadataEditBehavior [x] [ALREADY SPLIT]
 - **Source:** `ui/mixins/metadata_edit_mixin.py` (960 lines)
 - **Target:** `ui/behaviors/metadata_edit/` (8 modules, 1520 total lines)
 - **Status:** Already split to package before 2025-12-28
 
 ---
 
-### 8. DragDropBehavior ✅ [COHESIVE]
+### 8. DragDropBehavior [x] [COHESIVE]
 - **Source:** `ui/mixins/drag_drop_mixin.py` (501 lines)
 - **Target:** `ui/behaviors/drag_drop_behavior.py` (501 lines)
 - **Status:** Already cohesive, no split needed
 
 ---
 
-### 9. MetadataScrollBehavior ✅ [COHESIVE]
+### 9. MetadataScrollBehavior [x] [COHESIVE]
 - **Source:** `ui/mixins/metadata_scroll_mixin.py` (325 lines)
 - **Target:** `ui/behaviors/metadata_scroll_behavior.py` (325 lines)
 - **Status:** Already cohesive, no split needed
@@ -179,18 +179,18 @@ selection/
 
 **All behavior extractions completed (2026-01-05):**
 
-✅ **3 behaviors split to packages:**
+[x] **3 behaviors split to packages:**
 - `column_management/` (6 modules, 1104 lines)
 - `metadata_context_menu/` (6 modules, 884 lines)
 - `selection/` (3 modules, 615 lines)
 
-✅ **4 behaviors already cohesive:**
+[x] **4 behaviors already cohesive:**
 - `drag_drop_behavior.py` (501 lines)
 - `metadata_cache_behavior.py` (466 lines)
 - `metadata_scroll_behavior.py` (325 lines)
 - `metadata_edit/` (already package, 8 modules)
 
-✅ **Backward compatibility:**
+[x] **Backward compatibility:**
 - All delegator files in place
 - Old imports still work
 - Gradual migration path available
@@ -199,12 +199,12 @@ selection/
 
 ## Success Metrics (Final - 2026-01-09)
 
-- ✅ All 986 tests passing (6 skipped)
-- ✅ Ruff clean (all checks passed)
-- ✅ Mypy passing (478 source files, 0 errors)
-- ✅ Docstring coverage 99.9%+
-- ✅ No performance regressions (drag-drop, selection)
-- ✅ Code is more maintainable (clear protocols, testable behaviors)
-- ✅ All large behaviors (<600 lines) split to packages
-- ✅ Backward compatibility maintained (delegators in place)
+- [x] All 986 tests passing (6 skipped)
+- [x] Ruff clean (all checks passed)
+- [x] Mypy passing (478 source files, 0 errors)
+- [x] Docstring coverage 99.9%+
+- [x] No performance regressions (drag-drop, selection)
+- [x] Code is more maintainable (clear protocols, testable behaviors)
+- [x] All large behaviors (<600 lines) split to packages
+- [x] Backward compatibility maintained (delegators in place)
 

@@ -35,8 +35,8 @@ Key capabilities:
 
 | Entry Point | Status | Migration Path |
 |-------------|--------|----------------|
-| `MetadataCacheHelper` | ❌ Removed 2026-01-01 | Use `file_status_helpers` functions |
-| `DirectMetadataLoader` | ❌ Removed 2026-01-01 | Was dead code, use `UnifiedMetadataManager` |
+| `MetadataCacheHelper` | [FAIL] Removed 2026-01-01 | Use `file_status_helpers` functions |
+| `DirectMetadataLoader` | [FAIL] Removed 2026-01-01 | Was dead code, use `UnifiedMetadataManager` |
 
 ---
 
@@ -453,7 +453,7 @@ if has_hash(file_path):
 
 **Recommendation**: Add `remove(path)` method for explicit invalidation.
 
-### 2. ~~Multiple Entry Points~~ ✅ RESOLVED (2026-01-01)
+### 2. ~~Multiple Entry Points~~ [x] RESOLVED (2026-01-01)
 
 ~~Metadata can be accessed via multiple entry points.~~
 
@@ -465,7 +465,7 @@ if has_hash(file_path):
   - `UnifiedMetadataManager` for complex Qt-integrated operations
   - `MetadataController` for UI-agnostic external access
 
-### 3. ~~DirectMetadataLoader vs MetadataLoader~~ ✅ RESOLVED (2026-01-01)
+### 3. ~~DirectMetadataLoader vs MetadataLoader~~ [x] RESOLVED (2026-01-01)
 
 ~~Both loaders existed with unclear distinction.~~
 
@@ -485,13 +485,13 @@ Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata load
 
 | Aspect | Status |
 |--------|--------|
-| Metadata extraction | ✅ Complete (exiftool) |
-| Two-tier caching | ✅ Memory + SQLite |
-| Parallel loading | ✅ ThreadPoolExecutor |
-| Hash computation | ✅ CRC32 with caching |
-| Metadata editing | ✅ Stage → Save workflow |
-| Architecture clarity | ✅ Entry points consolidated |
-| Documentation | 📝 This document |
+| Metadata extraction | [x] Complete (exiftool) |
+| Two-tier caching | [x] Memory + SQLite |
+| Parallel loading | [x] ThreadPoolExecutor |
+| Hash computation | [x] CRC32 with caching |
+| Metadata editing | [x] Stage → Save workflow |
+| Architecture clarity | [x] Entry points consolidated |
+| Documentation |  This document |
 
 The Metadata Engine is **production-ready** and provides:
 - Fast cached access for previously-loaded files

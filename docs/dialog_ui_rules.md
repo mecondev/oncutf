@@ -148,7 +148,7 @@ Delete
 
 Rename anyway
 
-❌ Avoid generic OK
+[FAIL] Avoid generic OK
 
 This preserves platform consistency while enforcing safe defaults.
 
@@ -157,11 +157,11 @@ This preserves platform consistency while enforcing safe defaults.
 
 Avoid generic labels when the action is specific.
 
-❌ Bad:
+[FAIL] Bad:
 
 OK
 
-✅ Good:
+[x] Good:
 
 Rename
 
@@ -267,7 +267,7 @@ Default MUST be safe action
 
 All dialogs MUST use QDialogButtonBox.
 
-❌ Forbidden:
+[FAIL] Forbidden:
 
 Ad-hoc QPushButton layouts
 

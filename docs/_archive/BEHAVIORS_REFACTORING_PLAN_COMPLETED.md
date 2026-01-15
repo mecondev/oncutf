@@ -4,7 +4,7 @@
 **Date:** 2026-01-04  
 **Completed:** 2026-01-05  
 **Archived:** 2026-01-09  
-**Status:** ✅ COMPLETED - All behaviors refactored and split to packages
+**Status:** [x] COMPLETED - All behaviors refactored and split to packages
 
 **Archive Reason:** All large behaviors successfully refactored. Monster files eliminated, package structure established.
 
@@ -25,8 +25,8 @@
 | `metadata_scroll_behavior.py` | 325 | 325 | - | Already good |
 
 **Total:** 5087 lines refactored to 3859 lines across 15 focused modules
-**Test Status:** 986/986 passing ✅ (as of 2026-01-09)
-**Code Quality:** ruff + mypy clean ✅
+**Test Status:** 986/986 passing [x] (as of 2026-01-09)
+**Code Quality:** ruff + mypy clean [x]
 
 ---
 
@@ -140,15 +140,15 @@ selection_behavior.py (11 lines) <- Backward compatibility delegator
 
 ---
 
-## Quality Gates — ALL PASSED ✅
+## Quality Gates — ALL PASSED [x]
 
 **Final Verification (2026-01-09):**
-- ✅ All tests pass: 986/986
-- ✅ ruff clean: No errors
-- ✅ mypy clean: No issues (478 source files)
-- ✅ Docstring coverage: 99.9%+
-- ✅ No business logic in behaviors
-- ✅ All behaviors follow package pattern
+- [x] All tests pass: 986/986
+- [x] ruff clean: No errors
+- [x] mypy clean: No issues (478 source files)
+- [x] Docstring coverage: 99.9%+
+- [x] No business logic in behaviors
+- [x] All behaviors follow package pattern
 
 ---
 
@@ -202,9 +202,9 @@ Both work due to backward-compatible delegators. Gradual migration to new import
 - Keep `metadata_edit/` package (already split to 8 modules)
 
 ### Related Work
-- Update REFACTORING_ROADMAP.md ✅ (Done)
-- Update PROJECT_STATUS_2026-01-04.md ✅ (Done)
-- Commit changes ✅ (Done)
+- Update REFACTORING_ROADMAP.md [x] (Done)
+- Update PROJECT_STATUS_2026-01-04.md [x] (Done)
+- Commit changes [x] (Done)
 
 ---
 

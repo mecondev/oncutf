@@ -428,12 +428,12 @@ The Node Editor would:
 
 | Aspect | Status |
 |--------|--------|
-| Core functionality | ✅ Complete |
-| Module system | ✅ Extensible |
-| Preview/Validation | ✅ Working |
-| Undo/Redo | ✅ Persistent |
+| Core functionality | [x] Complete |
+| Module system | [x] Extensible |
+| Preview/Validation | [x] Working |
+| Undo/Redo | [x] Persistent |
 | Architecture clarity | ⚠️ Some overlap |
-| Documentation | 📝 This document |
+| Documentation |  This document |
 
 The Rename Engine is **production-ready** but would benefit from:
 1. Consolidating dual preview paths

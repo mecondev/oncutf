@@ -388,8 +388,17 @@ Phase 5 (Testing)
   - [x] Code quality verified (ruff + mypy clean)
 
 ### Phase 2: Semantic Aliases
-- [ ] 2.1 Default aliases file
-- [ ] 2.2 JsonConfigManager update
+- [x] 2.1 Default aliases file (Completed: 2026-01-15)
+  - [x] SemanticAliasesManager implementation
+  - [x] Auto-create semantic_metadata_aliases.json with defaults
+  - [x] Load/save/reload functionality
+  - [x] Corrupted file backup with timestamps
+  - [x] Add/remove/reset individual aliases
+  - [x] Unicode support
+  - [x] 21 unit tests (all passing)
+  - [x] Code quality verified (ruff + mypy clean)
+- [N/A] 2.2 JsonConfigManager update
+  - [SKIP] Already has get_user_data_dir() via AppPaths
 
 ### Phase 3: Integration
 - [ ] 3.1 UnifiedMetadataManager

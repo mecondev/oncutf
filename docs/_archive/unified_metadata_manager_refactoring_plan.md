@@ -19,7 +19,7 @@ Extract remaining business logic from UnifiedMetadataManager (838 lines) by movi
 
 ### UnifiedMetadataManager (838 lines, 53 methods)
 
-**Already Delegated (✅):**
+**Already Delegated ([x]):**
 - `MetadataCacheService` — Cache operations
 - `CompanionMetadataHandler` — Companion files
 - `MetadataWriter` — Save operations  
@@ -27,7 +27,7 @@ Extract remaining business logic from UnifiedMetadataManager (838 lines) by movi
 - `MetadataProgressHandler` — Progress dialogs
 - `MetadataLoader` — Metadata loading
 
-**NOT Delegated (❌ Extract these):**
+**NOT Delegated ([FAIL] Extract these):**
 - **Hash Loading** (~140 lines, lines 260-400):
   * `load_hashes_for_files()` — Orchestration
   * `_show_hash_progress_dialog()` — Progress UI
@@ -155,21 +155,21 @@ class UnifiedMetadataManager(QObject):
 | **Net Change** | 838 lines | ~700 lines | **-138 lines (16%)** |
 
 **Benefits:**
-- ✅ Clearer separation of concerns
-- ✅ HashLoadingService independently testable
-- ✅ UnifiedMetadataManager becomes purer facade
-- ✅ Better code organization
+- [x] Clearer separation of concerns
+- [x] HashLoadingService independently testable
+- [x] UnifiedMetadataManager becomes purer facade
+- [x] Better code organization
 
 ---
 
 ## Success Metrics
 
-- ✅ 949 tests passing (no regressions)
-- ✅ ruff clean
-- ✅ mypy clean
-- ✅ Hash loading functionality unchanged
-- ✅ Progress dialogs work correctly
-- ✅ Cancellation works correctly
+- [x] 949 tests passing (no regressions)
+- [x] ruff clean
+- [x] mypy clean
+- [x] Hash loading functionality unchanged
+- [x] Progress dialogs work correctly
+- [x] Cancellation works correctly
 
 ---
 
@@ -186,7 +186,7 @@ class UnifiedMetadataManager(QObject):
 
 ## Next Steps
 
-1. ✅ Create migration plan
+1. [x] Create migration plan
 2. ⏭️ Create HashLoadingService
 3. ⏭️ Extract hash loading methods
 4. ⏭️ Update UnifiedMetadataManager to delegate

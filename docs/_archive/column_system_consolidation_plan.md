@@ -48,7 +48,7 @@ UnifiedColumnService (canonical business logic)
 - `set_column_visibility(column_key, visible)` — Set visibility
 - `invalidate_cache()` — Force reload
 
-**Status:** ✅ Complete - This is the canonical service
+**Status:** [x] Complete - This is the canonical service
 
 ---
 
@@ -134,7 +134,7 @@ UnifiedColumnService (canonical business logic)
 
 **Purpose:** Model-level column operations (different from UI management)
 
-**Status:** ✅ Keep as-is - Different responsibility (model data, not UI config)
+**Status:** [x] Keep as-is - Different responsibility (model data, not UI config)
 
 ---
 
@@ -298,7 +298,7 @@ Currently minimal direct usage — designed to be the future canonical API
 **Files Changed:**
 - `oncutf/core/ui_managers/column_manager.py` (853 → ~150 lines)
 
-**Backward Compatibility:** ✅ Public API unchanged
+**Backward Compatibility:** [x] Public API unchanged
 
 ---
 
@@ -313,7 +313,7 @@ Currently minimal direct usage — designed to be the future canonical API
 **Files Changed:**
 - `oncutf/ui/behaviors/column_management_behavior.py` (964 → ~400 lines)
 
-**Backward Compatibility:** ✅ Public API unchanged
+**Backward Compatibility:** [x] Public API unchanged
 
 ---
 
@@ -387,7 +387,7 @@ Currently minimal direct usage — designed to be the future canonical API
 
 ## Next Steps
 
-1. ✅ Create migration plan (this document)
+1. [x] Create migration plan (this document)
 2. ⏭️ Enhance UnifiedColumnService with missing methods
 3. ⏭️ Refactor ColumnManager to thin adapter
 4. ⏭️ Simplify ColumnManagementBehavior
