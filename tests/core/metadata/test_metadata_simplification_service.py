@@ -257,15 +257,14 @@ class TestMetadataSimplificationService:
             "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
-            mock_manager.get_aliases_file_path.return_value = Path(
-                "/test/aliases.json"
-            )
+            expected_path = Path("/test/aliases.json")
+            mock_manager.get_aliases_file_path.return_value = expected_path
             mock_manager_class.return_value = mock_manager
 
             service = MetadataSimplificationService()
             path = service.get_aliases_file_path()
 
-            assert path == "/test/aliases.json"
+            assert Path(path) == expected_path
 
     def test_repr(self):
         """Test string representation."""

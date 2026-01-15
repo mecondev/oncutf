@@ -54,7 +54,7 @@ See the full list of 25+ semantic aliases in the [Configuration File](#configura
 When a metadata key has been simplified, you can hover over it to see the original technical name:
 
 - **Displayed:** `Creation Date`
-- **Tooltip:** `Original key: EXIF:DateTimeOriginal`
+- **Tooltip:** `EXIF:DateTimeOriginal`
 
 This helps when you need to know the exact metadata field being used.
 

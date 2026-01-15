@@ -196,10 +196,9 @@ class MetadataTreeController:
 
         # Add custom tooltip with original key if it was simplified
         if formatted_key != field_node.key:
-            tooltip_text = f"Original key: {field_node.key}"
             TooltipHelper.set_tooltip(
                 key_item,
-                tooltip_text,
+                field_node.key,
                 tooltip_type=TooltipType.INFO
             )
 
