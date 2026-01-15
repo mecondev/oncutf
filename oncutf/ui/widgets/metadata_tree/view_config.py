@@ -230,17 +230,21 @@ class MetadataTreeViewConfig:
 
             header.show()
 
+            # Get or calculate column widths using ratio-based system
             if self._runtime_widths:
-                key_width = self._runtime_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
-                value_width = self._runtime_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+                # Use runtime widths (preserved across file selection changes)
+                key_width = self._runtime_widths["key"]
+                value_width = self._runtime_widths["value"]
             else:
+                # Check for saved widths in config/database
                 saved_widths = self._get_saved_column_widths()
                 if saved_widths:
-                    key_width = saved_widths.get("key", METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
-                    value_width = saved_widths.get("value", METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+                    key_width = saved_widths["key"]
+                    value_width = saved_widths["value"]
                     self._runtime_widths["key"] = key_width
                     self._runtime_widths["value"] = value_width
                 else:
+                    # Calculate from ratios (always ratio-based, no hardcoded fallback)
                     from oncutf.utils.shared.json_config_manager import get_app_config_manager
                     from oncutf.utils.ui.layout_calculators import (
                         get_metadata_tree_widths_from_ratios,
@@ -269,9 +273,12 @@ class MetadataTreeViewConfig:
                     value_width = calculated_widths["value"]
 
                     # Log width calculations for debugging
+                    actual_ratio_key = key_width / (key_width + value_width) if (key_width + value_width) > 0 else 0
+                    actual_ratio_value = value_width / (key_width + value_width) if (key_width + value_width) > 0 else 0
                     logger.info(
-                        "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d, Value: %d, Total: %d",
-                        viewport_width, panel_width, key_width, value_width, key_width + value_width
+                        "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d (%.1f%%), Value: %d (%.1f%%), Total: %d, Target: %.1f%%/%.1f%%",
+                        viewport_width, panel_width, key_width, actual_ratio_key * 100, value_width, actual_ratio_value * 100,
+                        key_width + value_width, ratios["key"] * 100, ratios["value"] * 100
                     )
 
             # Key column: min 80px, initial width, max 800px
