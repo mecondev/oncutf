@@ -2,7 +2,7 @@
 
 **Author:** Michael Economou  
 **Date:** 2026-01-15  
-**Status:** Planned
+**Status:** In Progress (Phases 1-3 Complete)
 
 ---
 
@@ -105,7 +105,7 @@
 
 ### 2.1 Semantic Aliases File
 
-**Location:** `~/.oncutf/semantic_metadata_aliases.json` (auto-created)
+**Location:** `~/.local/share/oncutf/semantic_metadata_aliases.json` (auto-created)
 
 **Behavior:**
 - Auto-create with defaults on first run
@@ -269,35 +269,38 @@
 oncutf/
   core/
     metadata/
-      key_simplifier.py              # NEW - Phase 1.1
-      simplified_metadata.py         # NEW - Phase 1.2
-      metadata_key_registry.py       # NEW - Phase 1.3
-      unified_metadata_manager.py    # MODIFY - Phase 3.1
-  modules/
-    metadata.py                      # MODIFY - Phase 3.3
+      key_simplifier.py                      # DONE - Phase 1.1
+      simplified_metadata.py                 # DONE - Phase 1.2
+      metadata_key_registry.py               # DONE - Phase 1.3
+      semantic_aliases_manager.py            # DONE - Phase 2.1
+      metadata_simplification_service.py     # DONE - Phase 3.1
   ui/
-    dialogs/
-      metadata_key_selection_dialog.py  # NEW/MODIFY - Phase 4.1
     widgets/
-      metadata_viewer.py             # MODIFY - Phase 3.2
+      metadata_tree/
+        service.py                           # MODIFIED - Phase 3.2
+        controller.py                        # MODIFIED - Phase 3.2
+      metadata/
+        metadata_keys_handler.py             # MODIFIED - Phase 3.3
+    dialogs/
+      metadata_key_selection_dialog.py       # TODO - Phase 4.1
 
 tests/
   core/
     metadata/
-      test_key_simplifier.py         # NEW
-      test_simplified_metadata.py    # NEW
-      test_metadata_key_registry.py  # NEW
-  modules/
-    test_metadata_module_simplified.py  # NEW
+      test_key_simplifier.py                     # DONE (23 tests)
+      test_simplified_metadata.py                # DONE (23 tests)
+      test_metadata_key_registry.py              # DONE (33 tests)
+      test_semantic_aliases_manager.py           # DONE (21 tests)
+      test_metadata_simplification_service.py    # DONE (17 tests)
   integration/
-    test_metadata_simplification_workflow.py  # NEW
+    test_metadata_simplification_workflow.py     # TODO - Phase 5
 
 docs/
   metadata_key_simplification.md     # NEW (user-facing)
 
-~/.oncutf/
-  semantic_metadata_aliases.json     # AUTO-CREATED
-  custom_metadata_mappings.json      # CREATED ON EXPORT
+~/.local/share/oncutf/
+  semantic_metadata_aliases.json     # DONE - AUTO-CREATED
+  custom_metadata_mappings.json      # TODO - EXPORT FEATURE
 ```
 
 ---
@@ -327,15 +330,15 @@ Phase 5 (Testing)
 
 ## Estimated Duration
 
-| Phase | Duration | Cumulative |
-|-------|----------|------------|
-| Phase 1 | 2-3 days | 2-3 days |
-| Phase 2 | 1 day | 3-4 days |
-| Phase 3 | 2-3 days | 5-7 days |
-| Phase 4 | 1-2 days | 6-9 days |
-| Phase 5 | 2 days | 8-11 days |
+| Phase | Duration | Status | Actual |
+|-------|----------|--------|--------|
+| Phase 1 | 2-3 days | DONE | 1 day (2026-01-15) |
+| Phase 2 | 1 day | DONE | 0.5 days (2026-01-15) |
+| Phase 3 | 2-3 days | DONE | 1 day (2026-01-15) |
+| Phase 4 | 1-2 days | TODO | - |
+| Phase 5 | 2 days | TODO | - |
 
-**Total: 8-11 working days**
+**Total: 8-11 working days (2.5 days completed, 3-4 days remaining)**
 
 ---
 
@@ -401,9 +404,32 @@ Phase 5 (Testing)
   - [SKIP] Already has get_user_data_dir() via AppPaths
 
 ### Phase 3: Integration
-- [ ] 3.1 UnifiedMetadataManager
-- [ ] 3.2 Metadata Viewer
-- [ ] 3.3 Metadata Rename Module
+- [x] 3.1 MetadataSimplificationService (Completed: 2026-01-15)
+  - [x] Integration service layer combining all Phase 1 & 2 components
+  - [x] get_simplified_metadata() for FileItem wrapping
+  - [x] get_metadata_value() with semantic fallback
+  - [x] get_simplified_keys() for UI dropdowns
+  - [x] get_semantic_groups() for category grouping
+  - [x] Singleton pattern with factory method
+  - [x] 17 unit tests (all passing)
+  - [x] Code quality verified (ruff + mypy clean)
+- [x] 3.2 Metadata Viewer (Completed: 2026-01-15)
+  - [x] MetadataTreeService.format_key() uses simplification
+  - [x] Semantic aliases displayed (Creation Date vs EXIF:DateTimeOriginal)
+  - [x] Smart algorithmic simplification (Audio Codec vs Audio Format Audio Rec Port Audio Codec)
+  - [x] Tooltips show original keys when simplified
+  - [x] Fallback to camelCase splitting for unprefixed keys
+  - [x] 121 metadata tests passing
+  - [x] Code quality verified (ruff + mypy clean)
+- [x] 3.3 Metadata Rename Module (Completed: 2026-01-15)
+  - [x] MetadataKeysHandler uses simplification service
+  - [x] "Common Fields" group at top of hierarchical combo
+  - [x] Displays semantic aliases with high priority
+  - [x] Auto-selects first available semantic alias
+  - [x] All category keys simplified for display
+  - [x] Original keys preserved for operations
+  - [x] 121 metadata tests passing
+  - [x] Code quality verified (ruff + mypy clean)
 
 ### Phase 4: UI
 - [ ] 4.1 Metadata Key Selection Dialog
@@ -419,6 +445,89 @@ Phase 5 (Testing)
 ## Notes
 
 - Semantic aliases are NOT user-editable from UI (like Lightroom)
-- Advanced users can manually edit `~/.oncutf/semantic_metadata_aliases.json`
+- Advanced users can manually edit `~/.local/share/oncutf/semantic_metadata_aliases.json`
 - Custom user alias management is out of scope (YAGNI)
 - Localization (Greek field names) is out of scope
+
+---
+
+## Implementation Summary (Phases 1-3)
+
+### Architecture
+
+**Service Layer Pattern:**
+```
+UI Layer (MetadataTreeView, MetadataWidget)
+    ↓
+MetadataSimplificationService (singleton)
+    ↓
+┌─────────────────────┬─────────────────────┬─────────────────────┐
+│ SmartKeySimplifier  │ SimplifiedMetadata  │ MetadataKeyRegistry │
+│ (algorithm)         │ (wrapper)           │ (aliases + history) │
+└─────────────────────┴─────────────────────┴─────────────────────┘
+    ↓
+SemanticAliasesManager (JSON persistence)
+    ↓
+~/.local/share/oncutf/semantic_metadata_aliases.json
+```
+
+### Key Design Decisions
+
+1. **No Direct UnifiedMetadataManager Modification**
+   - UnifiedMetadataManager is a facade delegating to specialized handlers
+   - Created MetadataSimplificationService as separate integration layer
+   - Preserves existing architecture without breaking delegation pattern
+
+2. **Tooltip Strategy**
+   - Tooltips show original keys ONLY when simplification occurred
+   - Example: "Creation Date" shows tooltip "Original key: EXIF:DateTimeOriginal"
+   - Unprefixed keys like "FileName" have no tooltip (no simplification needed)
+
+3. **Common Fields Priority**
+   - Semantic aliases grouped at top of metadata selection combo
+   - Uses first available key from priority list (e.g., EXIF > XMP > File)
+   - Remaining keys categorized by domain (Camera Settings, GPS, etc.)
+
+4. **Backward Compatibility**
+   - Original keys preserved in all operations
+   - Simplified keys are display-only
+   - FileItem.metadata remains unchanged (dict[str, Any])
+   - Rename modules use original keys for metadata extraction
+
+### Git Commits
+
+| Commit | Phase | Description |
+|--------|-------|-------------|
+| 762fcf66 | 2.1 | SemanticAliasesManager with 21 tests |
+| 6dcfd2a2 | Docs | Removed all emojis from documentation |
+| 2efd11ea | 3.1 | MetadataSimplificationService with 17 tests |
+| a8c058c5 | 3.2 | MetadataTreeView integration (simplified keys + tooltips) |
+| 6751bc40 | 3.3 | MetadataWidget integration (Common Fields group) |
+
+### Test Coverage
+
+**Total: 117 tests passing**
+- SmartKeySimplifier: 23 tests
+- SimplifiedMetadata: 23 tests
+- MetadataKeyRegistry: 33 tests
+- SemanticAliasesManager: 21 tests
+- MetadataSimplificationService: 17 tests
+
+### Performance Notes
+
+- Simplification is lazy (computed on-demand)
+- Registry loads once at startup
+- Semantic aliases cached in memory
+- No impact on file loading performance (metadata extraction unchanged)
+
+### Next Steps (Phases 4-5)
+
+1. **Phase 4:** Optional UI for metadata key management
+   - Undo/redo dialog for registry changes
+   - Export/import user mappings
+   - Key conflict resolution UI
+
+2. **Phase 5:** Testing and documentation
+   - Integration tests with real media files
+   - Performance benchmarks (1000+ files)
+   - User-facing documentation
