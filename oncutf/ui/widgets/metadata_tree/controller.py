@@ -28,6 +28,7 @@ from oncutf.ui.widgets.metadata_tree.model import (
 )
 from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.core.metadata import MetadataStagingManager
@@ -193,9 +194,14 @@ class MetadataTreeController:
         key_item = QStandardItem(formatted_key)
         value_item = QStandardItem(field_node.value)
 
-        # Add tooltip with original key if it was simplified
+        # Add custom tooltip with original key if it was simplified
         if formatted_key != field_node.key:
-            key_item.setToolTip(f"Original key: {field_node.key}")
+            tooltip_text = f"Original key: {field_node.key}"
+            TooltipHelper.set_tooltip(
+                key_item,
+                tooltip_text,
+                tooltip_type=TooltipType.INFO
+            )
 
         # Apply styling based on status
         self._apply_field_styling(key_item, value_item, field_node.status, formatted_key)
