@@ -67,11 +67,11 @@ class DatabaseManager:
             self.db_path = AppPaths.get_database_path()
 
         # Debug: Reset database if requested
-        from oncutf.config import DEBUG_RESET_DATABASE
+        from oncutf.config import DEBUG_FRESH_START
 
-        if DEBUG_RESET_DATABASE:
+        if DEBUG_FRESH_START:
             if self.db_path.exists():
-                logger.info("[DatabaseManager] DEBUG_RESET_DATABASE enabled - deleting: %s", self.db_path)
+                logger.info("[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s", self.db_path)
                 try:
                     self.db_path.unlink()
                     # Also remove WAL and SHM files if they exist

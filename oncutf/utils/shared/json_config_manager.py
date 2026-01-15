@@ -230,24 +230,6 @@ class JSONConfigManager:
         """Load configuration from JSON file."""
         with self._lock:
             try:
-                # Debug: Reset config if requested
-                from oncutf.config import DEBUG_RESET_CONFIG
-
-                if DEBUG_RESET_CONFIG:
-                    if self.config_file.exists():
-                        logger.info(
-                            "[DEBUG] Deleting config file for fresh start: %s",
-                            self.config_file,
-                        )
-                        try:
-                            self.config_file.unlink()
-                            # Also remove backup if it exists
-                            if self.backup_file.exists():
-                                self.backup_file.unlink()
-                            logger.info("[DEBUG] Config files deleted successfully")
-                        except Exception as e:
-                            logger.error("[DEBUG] Failed to delete config file: %s", e)
-
                 if not self.config_file.exists():
                     logger.info(
                         "[JSONConfigManager] No config file found, using defaults",

@@ -10,11 +10,8 @@ Application-level configuration: app info, debug flags, logging settings.
 # DEBUG SETTINGS
 # =====================================
 
-# Database reset - if True, deletes database on startup
-DEBUG_RESET_DATABASE = True
-
-# Config reset - if True, deletes config.json on startup
-DEBUG_RESET_CONFIG = False
+# Fresh start - if True, deletes database AND config.json on startup
+DEBUG_FRESH_START = True
 
 # Development/Testing Settings
 DEV_SIMULATE_SCREEN = False
