@@ -27,6 +27,7 @@ from oncutf.core.database.hash_store import HashStore
 from oncutf.core.database.metadata_store import MetadataStore
 from oncutf.core.database.migrations import create_indexes, create_schema, migrate_schema
 from oncutf.core.database.path_store import PathStore
+from oncutf.core.database.session_state_store import SessionStateStore
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -167,6 +168,7 @@ class DatabaseManager:
         self.hash_store = HashStore(self._conn, self.path_store, self._write_lock)
         self.metadata_store = MetadataStore(self._conn, self.path_store, self._write_lock)
         self.backup_store = BackupStore(self._conn, self.path_store)
+        self.session_state_store = SessionStateStore(self._conn, self._write_lock)
 
         logger.debug("[DatabaseManager] Store instances initialized", extra={"dev_only": True})
 
@@ -342,6 +344,38 @@ class DatabaseManager:
 
     # ====================================================================
     # Stats (kept in orchestrator - queries multiple tables)
+    # ====================================================================
+
+    # ====================================================================
+    # SessionStateStore delegation (6 methods)
+    # ====================================================================
+
+    def get_session_state(self, key: str, default: Any = None) -> Any:
+        """Get session state value by key."""
+        return self.session_state_store.get(key, default)
+
+    def set_session_state(self, key: str, value: Any) -> bool:
+        """Set session state value."""
+        return self.session_state_store.set(key, value)
+
+    def get_all_session_state(self) -> dict[str, Any]:
+        """Get all session state values."""
+        return self.session_state_store.get_all()
+
+    def set_many_session_state(self, data: dict[str, Any]) -> bool:
+        """Set multiple session state values atomically."""
+        return self.session_state_store.set_many(data)
+
+    def delete_session_state(self, key: str) -> bool:
+        """Delete session state value."""
+        return self.session_state_store.delete(key)
+
+    def session_state_exists(self, key: str) -> bool:
+        """Check if session state key exists."""
+        return self.session_state_store.exists(key)
+
+    # ====================================================================
+    # Statistics and maintenance
     # ====================================================================
 
     def get_database_stats(self) -> dict[str, int]:

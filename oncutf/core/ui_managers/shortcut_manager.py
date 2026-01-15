@@ -16,7 +16,6 @@ Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 import os
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.pyqt_imports import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -57,14 +56,18 @@ class ShortcutManager:
                 )
             return
 
+        # Save current sort state before clearing
+        saved_sort_column = self.main_window.current_sort_column
+        saved_sort_order = self.main_window.current_sort_order
+
         # Clear the file table
         self.main_window.clear_file_table("Press Escape to clear, or drag folders here")
         # Clear folder state via ApplicationContext (centralized state management)
         self.main_window.context.set_current_folder(None, False)
-        # NOTE: Sort column restoration feature tracked in TODO.md
-        # For now, reset to filename column (index 2, not color at index 1)
-        self.main_window.current_sort_column = 2
-        self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
+
+        # Restore previous sort state (maintains user preference)
+        self.main_window.current_sort_column = saved_sort_column
+        self.main_window.current_sort_order = saved_sort_order
 
         if hasattr(self.main_window, "status_manager"):
             self.main_window.status_manager.set_file_operation_status(

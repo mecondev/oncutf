@@ -8,7 +8,7 @@ Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
 
-from oncutf.core.pyqt_imports import QApplication, QMainWindow
+from oncutf.core.pyqt_imports import QApplication, QMainWindow, Qt
 from oncutf.core.ui_managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.json_config_manager import get_app_config_manager
@@ -111,14 +111,22 @@ class WindowConfigManager:
                 window_state = "normal"
             window_config.set("window_state", window_state)
 
-            # Save sort order and other window-related settings
-            if hasattr(self.main_window, "context") and self.main_window.context:
-                window_config.set("last_folder", self.main_window.context.get_current_folder() or "")
-                window_config.set("recursive_mode", self.main_window.context.is_recursive_mode())
+            # Save session state to database (ACID-safe, atomic)
+            from oncutf.core.session_state_manager import get_session_state_manager
+            session_manager = get_session_state_manager()
+
+            # Save sort state
             if hasattr(self.main_window, "current_sort_column"):
-                window_config.set("sort_column", self.main_window.current_sort_column)
+                session_manager.set_sort_column(self.main_window.current_sort_column)
             if hasattr(self.main_window, "current_sort_order"):
-                window_config.set("sort_order", int(self.main_window.current_sort_order))
+                session_manager.set_sort_order(int(self.main_window.current_sort_order))
+
+            # Save folder state
+            if hasattr(self.main_window, "context") and self.main_window.context:
+                last_folder = self.main_window.context.get_current_folder() or ""
+                recursive_mode = self.main_window.context.is_recursive_mode()
+                session_manager.set_last_folder(last_folder)
+                session_manager.set_recursive_mode(recursive_mode)
 
             # ====================================================================
             # SECTION 2: SPLITTERS (layout proportions)
@@ -181,7 +189,8 @@ class WindowConfigManager:
 
                         column_widths[column_key] = width
 
-                    window_config.set("file_table_column_widths", column_widths)
+                    # Save to database (ACID-safe)
+                    session_manager.set_file_table_column_widths(column_widths)
                     logger.info(
                         "[Config] Saved file table column widths for %d columns: %s",
                         len(column_widths),
@@ -199,7 +208,8 @@ class WindowConfigManager:
                         metadata_column_widths = {}
                         metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
                         metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
-                        window_config.set("metadata_tree_column_widths", metadata_column_widths)
+                        # Save to database (ACID-safe)
+                        session_manager.set_metadata_tree_column_widths(metadata_column_widths)
                         logger.debug(
                             "[Config] Saved metadata tree column widths: %s",
                             metadata_column_widths,
@@ -218,7 +228,8 @@ class WindowConfigManager:
                 for column_key in column_service.get_column_keys():
                     file_table_columns[column_key] = column_service.is_column_visible(column_key)
 
-                window_config.set("file_table_columns", file_table_columns)
+                # Save to database (ACID-safe)
+                session_manager.set_file_table_columns(file_table_columns)
                 logger.debug(
                     "[Config] Saved file table column visibility: %s",
                     list(file_table_columns.keys()),
@@ -365,22 +376,27 @@ class WindowConfigManager:
                     extra={"dev_only": True},
                 )
 
-            # Store config values for later use
-            self.main_window._last_folder_from_config = window_config.get("last_folder", "")
-            self.main_window._recursive_mode_from_config = window_config.get(
-                "recursive_mode", False
-            )
-            # NOTE: Sort column restoration feature tracked in TODO.md
-            # For now, default to filename (column 2) instead of color (column 1)
-            self.main_window._sort_column_from_config = window_config.get("sort_column", 2)
-            self.main_window._sort_order_from_config = window_config.get("sort_order", 0)
+            # Load session state from database (ACID-safe)
+            from oncutf.core.session_state_manager import get_session_state_manager
+            session_manager = get_session_state_manager()
 
-            # Load column visibility states for file table
+            # Load folder state from database
+            self.main_window._last_folder_from_config = session_manager.get_last_folder()
+            self.main_window._recursive_mode_from_config = session_manager.get_recursive_mode()
+
+            # Load sort state from database (defaults to filename column 2 if not saved)
+            self.main_window._sort_column_from_config = session_manager.get_sort_column()
+            self.main_window._sort_order_from_config = session_manager.get_sort_order()
+            # Apply sort state immediately
+            self.main_window.current_sort_column = self.main_window._sort_column_from_config
+            self.main_window.current_sort_order = Qt.SortOrder(self.main_window._sort_order_from_config)
+
+            # Load column visibility states from database
             try:
                 from oncutf.core.ui_managers.column_service import get_column_service
 
                 column_service = get_column_service()
-                file_table_columns = window_config.get("file_table_columns", {})
+                file_table_columns = session_manager.get_file_table_columns()
 
                 if file_table_columns:
                     for column_key, visible in file_table_columns.items():
@@ -394,11 +410,11 @@ class WindowConfigManager:
             except Exception as e:
                 logger.warning("[Config] Failed to load file table column visibility: %s", e)
 
-            # Load metadata tree column widths
+            # Load metadata tree column widths from database
             # Note: Metadata tree columns are loaded once at startup
             # Runtime widths are preserved by view_config._runtime_widths
             try:
-                metadata_tree_columns = window_config.get("metadata_tree_column_widths", {})
+                metadata_tree_columns = session_manager.get_metadata_tree_column_widths()
                 if metadata_tree_columns and hasattr(self.main_window, "metadata_tree_view"):
                     tree_header = self.main_window.metadata_tree_view.header()
                     if tree_header and tree_header.count() >= 2:
