@@ -721,7 +721,14 @@ class TreeViewTooltipFilter(QObject):
             True if event was handled, False otherwise
 
         """
-        if obj != self.view_widget.viewport():
+        # Safety check: widget might be deleted during shutdown
+        try:
+            viewport = self.view_widget.viewport()
+        except RuntimeError:
+            # Widget has been deleted (C++ object destroyed)
+            return False
+
+        if obj != viewport:
             return False
 
         # Handle ToolTip event
@@ -733,7 +740,11 @@ class TreeViewTooltipFilter(QObject):
 
             # Get item at cursor position
             pos = event.pos()
-            index = self.view_widget.indexAt(pos)
+            try:
+                index = self.view_widget.indexAt(pos)
+            except RuntimeError:
+                # Widget deleted during event handling
+                return False
 
             if not index.isValid():
                 return False
@@ -743,14 +754,18 @@ class TreeViewTooltipFilter(QObject):
 
             if tooltip_text:
                 # Show custom tooltip
-                global_pos = self.view_widget.viewport().mapToGlobal(pos)
-                TooltipHelper.show_tooltip(
-                    self.view_widget,
-                    tooltip_text,
-                    tooltip_type=self.tooltip_type,
-                    duration=5000,  # 5 seconds
-                )
-                return True  # Event handled
+                try:
+                    global_pos = viewport.mapToGlobal(pos)
+                    TooltipHelper.show_tooltip(
+                        self.view_widget,
+                        tooltip_text,
+                        tooltip_type=self.tooltip_type,
+                        duration=5000,  # 5 seconds
+                    )
+                    return True  # Event handled
+                except RuntimeError:
+                    # Widget deleted during tooltip display
+                    return False
 
             return False
 
