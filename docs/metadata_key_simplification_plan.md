@@ -371,7 +371,13 @@ Phase 5 (Testing)
   - ✅ 23 unit tests (all passing)
   - ✅ Edge case handling (unicode, camelCase, URL encoding, etc.)
   - ✅ Code quality verified (ruff + mypy clean)
-- [ ] 1.2 SimplifiedMetadata
+- [x] 1.2 SimplifiedMetadata (Completed: 2026-01-15)
+  - ✅ Bidirectional mapping (original <-> simplified)
+  - ✅ Transparent access with both key types
+  - ✅ User override support
+  - ✅ Collision detection method
+  - ✅ 23 unit tests (all passing)
+  - ✅ Code quality verified (ruff + mypy clean)
 - [ ] 1.3 MetadataKeyRegistry
 
 ### Phase 2: Semantic Aliases
