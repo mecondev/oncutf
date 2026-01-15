@@ -299,7 +299,7 @@ class MetadataTreeViewConfig:
 
                     # Add extra pixels to force horizontal scrollbar when content is wide
                     # This makes total width exceed viewport, allowing scroll
-                    extra_width_for_scrollbar = 100
+                    extra_width_for_scrollbar = 280
                     viewport_width = view.viewport().width() if view.viewport() else 868
                     panel_width = viewport_width + extra_width_for_scrollbar
 
