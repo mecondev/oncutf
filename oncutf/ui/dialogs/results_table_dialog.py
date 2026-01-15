@@ -158,23 +158,23 @@ class ResultsTableDialog(QDialog):
         # Button bar
         button_layout = QHBoxLayout()
 
-        # Export button (left side)
-        try:
-            self.export_button = QPushButton("Export")
-            self.export_button.setObjectName("dialog_action_button")
-            button_layout.addWidget(self.export_button)
-        except Exception:
-            pass
-
-        button_layout.addStretch()
-
-        # Close button (right side) - with focus
+        # Close button (left side - primary action) - with focus
         self.close_button = QPushButton("Close")
         self.close_button.clicked.connect(self.accept)
         self.close_button.setObjectName("dialog_action_button")
         self.close_button.setFocus()
         self.close_button.setDefault(True)
         button_layout.addWidget(self.close_button)
+
+        button_layout.addStretch()
+
+        # Export button (right side - secondary action)
+        try:
+            self.export_button = QPushButton("Export")
+            self.export_button.setObjectName("dialog_action_button")
+            button_layout.addWidget(self.export_button)
+        except Exception:
+            pass
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
