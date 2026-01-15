@@ -97,7 +97,7 @@ class ColumnWidthManager:
                 "color": 50,
                 "file_size": 75,
                 "type": 50,
-                "modified": 159,
+                "modified": 174,
             })
 
             viewport = self._widget.viewport()
