@@ -235,6 +235,12 @@ class MetadataTreeViewConfig:
                 # Use runtime widths (preserved across file selection changes)
                 key_width = self._runtime_widths["key"]
                 value_width = self._runtime_widths["value"]
+                logger.info(
+                    "[MetadataTree] Using runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
+                    key_width, value_width,
+                    100 * key_width / (key_width + value_width),
+                    100 * value_width / (key_width + value_width)
+                )
             else:
                 # Check for saved widths in config/database
                 saved_widths = self._get_saved_column_widths()
@@ -243,6 +249,12 @@ class MetadataTreeViewConfig:
                     value_width = saved_widths["value"]
                     self._runtime_widths["key"] = key_width
                     self._runtime_widths["value"] = value_width
+                    logger.info(
+                        "[MetadataTree] Using saved widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
+                        key_width, value_width,
+                        100 * key_width / (key_width + value_width),
+                        100 * value_width / (key_width + value_width)
+                    )
                 else:
                     # Calculate from ratios (always ratio-based, no hardcoded fallback)
                     from oncutf.utils.shared.json_config_manager import get_app_config_manager
