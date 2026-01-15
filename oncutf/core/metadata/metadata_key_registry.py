@@ -334,6 +334,23 @@ class MetadataKeyRegistry:
         logger.debug("Could not resolve key: %s", key)
         return None
 
+    def get_semantic_name_for_key(self, original_key: str) -> str | None:
+        """Get semantic name for an original key.
+
+        Args:
+            original_key: Original metadata key
+
+        Returns:
+            Semantic name or None if key has no semantic alias
+        """
+        # Check if this key has a mapping with semantic name
+        mapping = self._mappings.get(original_key)
+        if mapping and mapping.semantic:
+            return mapping.semantic
+
+        # Not in mappings, return None
+        return None
+
     def load_semantic_aliases(
         self, custom_aliases: dict[str, list[str]] | None = None
     ) -> None:

@@ -169,6 +169,52 @@ class MetadataSimplificationService:
 
         return result
 
+    def simplify_single_key(self, key: str) -> str:
+        """Simplify a single metadata key with semantic alias resolution.
+
+        Applies the following simplification strategy:
+        1. Check for semantic alias match in registry
+        2. Check for user override in registry
+        3. Apply algorithmic simplification
+        4. Return original key if no simplification possible
+
+        Args:
+            key: Original metadata key to simplify
+
+        Returns:
+            Simplified key (or original if no simplification available)
+
+        Example:
+            >>> service.simplify_single_key("EXIF:DateTimeOriginal")
+            "Creation Date"  # semantic alias
+            >>> service.simplify_single_key("Audio Format Audio Rec Port Audio Codec")
+            "Audio Codec"  # algorithmic simplification
+        """
+        self._ensure_initialized()
+
+        # Try semantic alias resolution first
+        resolved = self._registry.resolve_key_with_fallback(key, [key])
+        if resolved and resolved != key:
+            # Found semantic alias
+            semantic_name = self._registry.get_semantic_name_for_key(key)
+            if semantic_name:
+                return semantic_name
+
+        # Try registry override
+        mapping = self._registry.get_mapping(key)
+        if mapping and mapping.simplified != key:
+            return mapping.simplified
+
+        # Apply algorithmic simplification
+        simplified_keys = self._simplifier.simplify_keys([key])
+        if simplified_keys and key in simplified_keys:
+            simplified = simplified_keys[key]
+            if simplified != key:
+                return simplified
+
+        # No simplification possible
+        return key
+
     def get_semantic_groups(
         self, file_item: FileItem
     ) -> dict[str, list[tuple[str, str, Any]]]:
