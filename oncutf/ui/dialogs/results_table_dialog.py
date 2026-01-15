@@ -157,23 +157,24 @@ class ResultsTableDialog(QDialog):
 
         # Button bar
         button_layout = QHBoxLayout()
-        button_layout.addStretch()
 
-        # Cancel button (index 1) - with focus
-        self.close_button = QPushButton("Cancel")
-        self.close_button.clicked.connect(self.reject)
-        self.close_button.setObjectName("dialog_action_button")
-        self.close_button.setFocus()
-        self.close_button.setDefault(True)
-        button_layout.addWidget(self.close_button)
-
-        # Export button (index 2)
+        # Export button (left side)
         try:
             self.export_button = QPushButton("Export")
             self.export_button.setObjectName("dialog_action_button")
             button_layout.addWidget(self.export_button)
         except Exception:
             pass
+
+        button_layout.addStretch()
+
+        # Close button (right side) - with focus
+        self.close_button = QPushButton("Close")
+        self.close_button.clicked.connect(self.accept)
+        self.close_button.setObjectName("dialog_action_button")
+        self.close_button.setFocus()
+        self.close_button.setDefault(True)
+        button_layout.addWidget(self.close_button)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
@@ -425,7 +426,11 @@ class ResultsTableDialog(QDialog):
         display_data = {}
         for file_path, hash_value in hash_results.items():
             filename = Path(file_path).name
-            display_data[filename] = hash_value
+            # Extract hash from dict if needed (handle both dict and str)
+            if isinstance(hash_value, dict):
+                display_data[filename] = hash_value.get("hash", str(hash_value))
+            else:
+                display_data[filename] = hash_value
 
         title_suffix = " (Partial)" if was_cancelled else ""
         title = f"Checksum Results{title_suffix}"

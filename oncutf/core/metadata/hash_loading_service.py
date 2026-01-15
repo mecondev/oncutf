@@ -739,16 +739,14 @@ class HashLoadingService:
 
     def _cleanup_operation(self) -> None:
         """Clean up operation resources."""
-        # Close dialog
+        # Close dialog immediately
         if self._hash_progress_dialog:
-            from oncutf.utils.shared.timer_manager import schedule_dialog_close
-
-            def close_dialog() -> None:
-                if self._hash_progress_dialog:
-                    self._hash_progress_dialog.close()
-
-            schedule_dialog_close(close_dialog, 500)
-            self._hash_progress_dialog = None
+            try:
+                self._hash_progress_dialog.close()
+            except Exception as e:
+                logger.debug("[HashLoadingService] Error closing dialog: %s", e)
+            finally:
+                self._hash_progress_dialog = None
 
         # Clean up worker
         self._cleanup_hash_worker()
