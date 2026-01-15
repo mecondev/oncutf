@@ -777,21 +777,26 @@ class TreeViewTooltipFilter(QObject):
             # This ensures consistent tooltip across both key and value columns
             key_index = index.sibling(index.row(), 0)
             tooltip_text = key_index.data(Qt.ToolTipRole)
+            current_row = index.row()
 
             if tooltip_text:
-                # Show custom tooltip
-                try:
-                    TooltipHelper.show_tooltip(
-                        self.view_widget,
-                        tooltip_text,
-                        tooltip_type=self.tooltip_type,
-                        duration=5000,  # 5 seconds
-                    )
-                    self._last_row = index.row()  # Update last row
-                    return True  # Event handled
-                except RuntimeError:
-                    # Widget deleted during tooltip display
-                    return False
+                # Only show tooltip if we're on a different row or no tooltip is showing
+                # This prevents constant re-triggering on the same row
+                if self._last_row != current_row:
+                    # Show custom tooltip for new row
+                    try:
+                        TooltipHelper.show_tooltip(
+                            self.view_widget,
+                            tooltip_text,
+                            tooltip_type=self.tooltip_type,
+                            duration=5000,  # 5 seconds
+                        )
+                        self._last_row = current_row  # Update last row
+                    except RuntimeError:
+                        # Widget deleted during tooltip display
+                        return False
+                # Tooltip already showing for this row - do nothing, let it stay
+                return True  # Event handled
             else:
                 # No tooltip for this item - clear any existing tooltips
                 TooltipHelper.clear_tooltips_for_widget(self.view_widget)
