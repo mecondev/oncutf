@@ -709,6 +709,7 @@ class TreeViewTooltipFilter(QObject):
         super().__init__(parent)
         self.view_widget = view_widget
         self.tooltip_type = tooltip_type
+        self._last_index = None  # Track last index to detect mouse moves to different items
 
     def eventFilter(self, obj: QObject, event) -> bool:
         """Filter events to show custom tooltips.
@@ -729,6 +730,26 @@ class TreeViewTooltipFilter(QObject):
             return False
 
         if obj != viewport:
+            return False
+
+        # Handle mouse leave - clear tooltips when mouse leaves the widget
+        if event.type() == QEvent.Leave:
+            TooltipHelper.clear_tooltips_for_widget(self.view_widget)
+            self._last_index = None
+            return False
+
+        # Handle mouse move - clear tooltip if moved to different item
+        if event.type() == QEvent.MouseMove:
+            try:
+                pos = event.pos()
+                current_index = self.view_widget.indexAt(pos)
+                
+                # If we moved to a different item, clear existing tooltips
+                if current_index != self._last_index:
+                    TooltipHelper.clear_tooltips_for_widget(self.view_widget)
+                    self._last_index = current_index
+            except RuntimeError:
+                return False
             return False
 
         # Handle ToolTip event
@@ -762,10 +783,15 @@ class TreeViewTooltipFilter(QObject):
                         tooltip_type=self.tooltip_type,
                         duration=5000,  # 5 seconds
                     )
+                    self._last_index = index  # Update last index
                     return True  # Event handled
                 except RuntimeError:
                     # Widget deleted during tooltip display
                     return False
+            else:
+                # No tooltip for this item - clear any existing tooltips
+                TooltipHelper.clear_tooltips_for_widget(self.view_widget)
+                self._last_index = None
 
             return False
 
