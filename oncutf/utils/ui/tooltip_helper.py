@@ -709,7 +709,7 @@ class TreeViewTooltipFilter(QObject):
         super().__init__(parent)
         self.view_widget = view_widget
         self.tooltip_type = tooltip_type
-        self._last_index = None  # Track last index to detect mouse moves to different items
+        self._last_row = None  # Track last row to detect mouse moves to different rows
 
     def eventFilter(self, obj: QObject, event) -> bool:
         """Filter events to show custom tooltips.
@@ -735,19 +735,22 @@ class TreeViewTooltipFilter(QObject):
         # Handle mouse leave - clear tooltips when mouse leaves the widget
         if event.type() == QEvent.Leave:
             TooltipHelper.clear_tooltips_for_widget(self.view_widget)
-            self._last_index = None
+            self._last_row = None
             return False
 
-        # Handle mouse move - clear tooltip if moved to different item
+        # Handle mouse move - clear tooltip if moved to different row (not column)
         if event.type() == QEvent.MouseMove:
             try:
                 pos = event.pos()
                 current_index = self.view_widget.indexAt(pos)
 
-                # If we moved to a different item, clear existing tooltips
-                if current_index != self._last_index:
+                # Extract row from index (ignore column changes)
+                current_row = current_index.row() if current_index.isValid() else None
+
+                # If we moved to a different row, clear existing tooltips
+                if current_row != self._last_row:
                     TooltipHelper.clear_tooltips_for_widget(self.view_widget)
-                    self._last_index = current_index
+                    self._last_row = current_row
             except RuntimeError:
                 return False
             return False
@@ -770,8 +773,10 @@ class TreeViewTooltipFilter(QObject):
             if not index.isValid():
                 return False
 
-            # Get tooltip text from model
-            tooltip_text = index.data(Qt.ToolTipRole)
+            # Get tooltip text from model - use column 0 (key) for entire row
+            # This ensures consistent tooltip across both key and value columns
+            key_index = index.sibling(index.row(), 0)
+            tooltip_text = key_index.data(Qt.ToolTipRole)
 
             if tooltip_text:
                 # Show custom tooltip
@@ -782,7 +787,7 @@ class TreeViewTooltipFilter(QObject):
                         tooltip_type=self.tooltip_type,
                         duration=5000,  # 5 seconds
                     )
-                    self._last_index = index  # Update last index
+                    self._last_row = index.row()  # Update last row
                     return True  # Event handled
                 except RuntimeError:
                     # Widget deleted during tooltip display
@@ -790,7 +795,7 @@ class TreeViewTooltipFilter(QObject):
             else:
                 # No tooltip for this item - clear any existing tooltips
                 TooltipHelper.clear_tooltips_for_widget(self.view_widget)
-                self._last_index = None
+                self._last_row = None
 
             return False
 
