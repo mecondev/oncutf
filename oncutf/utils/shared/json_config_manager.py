@@ -73,13 +73,13 @@ class WindowConfig(ConfigCategory[Any]):
                 "lower_section": [0.5, 0.5],
             },
             "splitter_states": {
-                "horizontal": [250, 674, 250],
+                "horizontal": [187, 531, 456],
                 "vertical": [500, 300],
                 "lower_section": [868, 867],
             },
             "metadata_tree_column_ratios": {
-                "key": 0.38,
-                "value": 0.62,
+                "key": 0.30,
+                "value": 0.70,
             },
             "file_table_fixed_columns": {
                 "color": 50,
