@@ -85,6 +85,16 @@ class DatabaseManager:
                 except Exception as e:
                     logger.error("[DatabaseManager] Failed to delete database: %s", e)
 
+            # Also reset JSON config to avoid stale references
+            try:
+                from oncutf.utils.paths import AppPaths
+                config_path = AppPaths.get_config_path()
+                if config_path.exists():
+                    config_path.unlink()
+                    logger.info("[DatabaseManager] Config file deleted for fresh start")
+            except Exception as e:
+                logger.error("[DatabaseManager] Failed to delete config: %s", e)
+
         # Thread safety lock for concurrent access from parallel workers
         self._write_lock = threading.RLock()
 
