@@ -7,7 +7,7 @@ Business logic layer for the metadata tree widget.
 
 This module contains the service layer that handles:
 - Metadata grouping and classification
-- Key formatting and normalization
+- Key formatting and normalization with smart simplification
 - Modified/extended key detection
 - Tree data structure building (pure data, no Qt)
 
@@ -20,6 +20,9 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
+from oncutf.core.metadata.metadata_simplification_service import (
+    get_metadata_simplification_service,
+)
 from oncutf.ui.widgets.metadata_tree.model import (
     EXTENDED_ONLY_PATTERNS,
     FieldStatus,
@@ -40,7 +43,7 @@ class MetadataTreeService:
 
     This class handles all business logic related to metadata processing:
     - Classifying keys into groups (File Info, Camera Settings, GPS, etc.)
-    - Formatting keys for display (ImageSensorType -> Image Sensor Type)
+    - Formatting keys with smart simplification (EXIF:DateTimeOriginal -> Creation Date)
     - Detecting modified and extended metadata keys
     - Building TreeNodeData hierarchies (pure data structures)
     - Applying staged changes from the staging manager
@@ -56,26 +59,41 @@ class MetadataTreeService:
     def __init__(self) -> None:
         """Initialize the service."""
         self._staging_manager: MetadataStagingManager | None = None
+        self._simplification_service = get_metadata_simplification_service()
 
     def set_staging_manager(self, manager: MetadataStagingManager) -> None:
         """Set the staging manager for modification tracking."""
         self._staging_manager = manager
 
     def format_key(self, key: str) -> str:
-        """Convert camelCase/PascalCase keys to readable format.
+        """Convert metadata keys to readable format with smart simplification.
+
+        Uses MetadataSimplificationService to apply:
+        1. Semantic aliases (EXIF:DateTimeOriginal -> Creation Date)
+        2. Registry overrides (user customizations)
+        3. Smart algorithmic simplification (Audio Format Codec -> Audio Codec)
+        4. Fallback to camelCase splitting (ImageSensorType -> Image Sensor Type)
 
         Examples:
-            'ImageSensorType' -> 'Image Sensor Type'
-            'GPSLatitude' -> 'GPS Latitude'
-            'ISOSpeed' -> 'ISO Speed'
+            'EXIF:DateTimeOriginal' -> 'Creation Date' (semantic alias)
+            'Audio Format Audio Rec Port Audio Codec' -> 'Audio Codec' (smart simplification)
+            'ImageSensorType' -> 'Image Sensor Type' (camelCase fallback)
 
         Args:
             key: The metadata key to format
 
         Returns:
-            Human-readable formatted key
+            Human-readable simplified key
 
         """
+        # Try simplification service first
+        simplified = self._simplification_service.simplify_single_key(key)
+
+        if simplified != key:
+            # Simplification successful
+            return simplified
+
+        # Fallback: camelCase splitting for keys without prefixes
         return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
 
     def classify_key(self, key: str) -> str:
