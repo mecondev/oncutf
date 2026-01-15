@@ -70,7 +70,7 @@ class FileOperationsManager:
         from oncutf.utils.naming.filename_validator import validate_filename_part
 
         # State for "Apply to All" functionality
-        remembered_action = None
+        remembered_action: str | None = None
 
         # Conflict resolution callback with UI dialog
         def conflict_callback(_parent, filename):
@@ -88,12 +88,7 @@ class FileOperationsManager:
 
             try:
                 # If user previously chose "Apply to All", use that action
-                if remembered_action:
-                    logger.info(
-                        "[Rename] Using remembered action '%s' for conflict: %s",
-                        remembered_action,
-                        filename,
-                    )
+                if remembered_action is not None:
                     return remembered_action
 
                 # Get original filename from FileItem
