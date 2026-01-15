@@ -378,7 +378,14 @@ Phase 5 (Testing)
   - [x] Collision detection method
   - [x] 23 unit tests (all passing)
   - [x] Code quality verified (ruff + mypy clean)
-- [ ] 1.3 MetadataKeyRegistry
+- [x] 1.3 MetadataKeyRegistry (Completed: 2026-01-15)
+  - [x] Undo/redo with history snapshots (max 50)
+  - [x] Semantic aliases with priority-based resolution
+  - [x] Export/import JSON functionality
+  - [x] 25+ default semantic aliases (Lightroom-style)
+  - [x] resolve_key_with_fallback() method
+  - [x] 33 unit tests (all passing)
+  - [x] Code quality verified (ruff + mypy clean)
 
 ### Phase 2: Semantic Aliases
 - [ ] 2.1 Default aliases file
