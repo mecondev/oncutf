@@ -57,6 +57,7 @@ from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
+from oncutf.utils.ui.tooltip_helper import TreeViewTooltipFilter
 
 # ApplicationContext integration
 try:
@@ -269,6 +270,10 @@ class MetadataTreeView(QTreeView):
 
         # Setup local keyboard shortcuts for undo/redo
         self._setup_shortcuts()
+
+        # Install custom tooltip handler to use themed tooltips
+        self._tooltip_filter = TreeViewTooltipFilter(self, parent=self)
+        self.viewport().installEventFilter(self._tooltip_filter)
 
     def _setup_shortcuts(self) -> None:
         """Setup local keyboard shortcuts for metadata tree."""

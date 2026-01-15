@@ -682,3 +682,76 @@ class TooltipHelper:
         except Exception as e:
             logger.debug("[TooltipHelper] Could not adjust position to screen: %s", e)
             return position
+
+
+class TreeViewTooltipFilter(QObject):
+    """Event filter for QTreeView/QTableView to show custom themed tooltips.
+    
+    This filter intercepts tooltip events and replaces default Qt tooltips
+    with CustomTooltip widgets that match the application theme.
+    
+    Usage:
+        tree_view = QTreeView()
+        tooltip_filter = TreeViewTooltipFilter(tree_view, parent=tree_view)
+        tree_view.viewport().installEventFilter(tooltip_filter)
+    
+    """
+
+    def __init__(self, view_widget, parent: QObject | None = None, tooltip_type: str = TooltipType.INFO):
+        """Initialize tooltip filter for tree/table view.
+
+        Args:
+            view_widget: The QTreeView or QTableView to attach tooltip handling to
+            parent: Optional parent QObject
+            tooltip_type: Type of tooltip styling (default: INFO)
+
+        """
+        super().__init__(parent)
+        self.view_widget = view_widget
+        self.tooltip_type = tooltip_type
+
+    def eventFilter(self, obj: QObject, event) -> bool:
+        """Filter events to show custom tooltips.
+
+        Args:
+            obj: The object that received the event
+            event: The event to filter
+
+        Returns:
+            True if event was handled, False otherwise
+
+        """
+        if obj != self.view_widget.viewport():
+            return False
+
+        # Handle ToolTip event
+        if event.type() == QEvent.ToolTip:
+            from oncutf.core.pyqt_imports import QHelpEvent
+
+            if not isinstance(event, QHelpEvent):
+                return False
+
+            # Get item at cursor position
+            pos = event.pos()
+            index = self.view_widget.indexAt(pos)
+
+            if not index.isValid():
+                return False
+
+            # Get tooltip text from model
+            tooltip_text = index.data(Qt.ToolTipRole)
+
+            if tooltip_text:
+                # Show custom tooltip
+                global_pos = self.view_widget.viewport().mapToGlobal(pos)
+                TooltipHelper.show_tooltip(
+                    self.view_widget,
+                    tooltip_text,
+                    tooltip_type=self.tooltip_type,
+                    duration=5000,  # 5 seconds
+                )
+                return True  # Event handled
+
+            return False
+
+        return False
