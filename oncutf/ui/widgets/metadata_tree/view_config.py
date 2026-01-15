@@ -248,7 +248,7 @@ class MetadataTreeViewConfig:
 
                     config_manager = get_app_config_manager()
                     window_config = config_manager.get_category("window")
-                    ratios = window_config.get("metadata_tree_column_ratios", {"key": 0.38, "value": 0.62})
+                    ratios = window_config.get("metadata_tree_column_ratios", {"key": 0.30, "value": 0.70})
 
                     # Add extra pixels to force horizontal scrollbar when content is wide
                     # This makes total width exceed viewport, allowing scroll
