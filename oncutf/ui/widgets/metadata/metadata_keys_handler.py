@@ -11,7 +11,9 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from oncutf.ui.widgets.metadata.field_formatter import FieldFormatter
+from oncutf.core.metadata.metadata_simplification_service import (
+    get_metadata_simplification_service,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -30,10 +32,11 @@ class MetadataKeysHandler:
             widget: The MetadataWidget instance
         """
         self._widget = widget
+        self._simplification_service = get_metadata_simplification_service()
 
     def populate_metadata_keys(self) -> None:
         """Populate the hierarchical combo box with available metadata keys.
-        Keys are grouped by category for better organization.
+        Keys are grouped by category with Common Fields (semantic aliases) at top.
         """
         keys = self.get_available_metadata_keys()
         self._widget.options_combo.clear()
@@ -51,17 +54,25 @@ class MetadataKeysHandler:
             logger.debug("No metadata keys available, showing placeholder")
             return
 
-        # Group keys by category
+        # Build hierarchical data structure
+        hierarchical_data = {}
+
+        # Add Common Fields group first (semantic aliases)
+        common_fields = self._build_common_fields_group(keys)
+        if common_fields:
+            hierarchical_data["Common Fields"] = common_fields
+            logger.debug("Added %d common fields", len(common_fields))
+
+        # Group remaining keys by category
         grouped_keys = self.group_metadata_keys(keys)
         logger.debug("Grouped keys: %s", grouped_keys)
 
-        # Build hierarchical data structure
-        hierarchical_data = {}
         for category, category_keys in grouped_keys.items():
             if category_keys:  # Only add categories that have items
                 hierarchical_data[category] = []
                 for key in sorted(category_keys):
-                    display_text = FieldFormatter.format_metadata_key_name(key)
+                    # Use simplification service for display text
+                    display_text = self._simplification_service.simplify_single_key(key)
                     hierarchical_data[category].append((display_text, key))
                     logger.debug("Added %s -> %s to %s", display_text, key, category)
 
@@ -213,6 +224,32 @@ class MetadataKeysHandler:
             return "Technical Info"
 
         return "Other"
+
+    def _build_common_fields_group(self, available_keys: set[str]) -> list[tuple[str, str]]:
+        """Build Common Fields group from semantic aliases present in available keys.
+
+        Args:
+            available_keys: Set of available metadata keys
+
+        Returns:
+            List of (display_text, original_key) tuples for common fields
+        """
+        common_fields = []
+
+        # Access registry semantic index directly
+        semantic_index = self._simplification_service._registry._semantic_index
+
+        for semantic_name, original_keys_list in semantic_index.items():
+            # Find first available key for this semantic alias
+            for original_key in original_keys_list:
+                if original_key in available_keys:
+                    # Use semantic name as display text
+                    common_fields.append((semantic_name, original_key))
+                    break  # Use first match only
+
+        # Sort by display name for consistent order
+        common_fields.sort(key=lambda x: x[0])
+        return common_fields
 
     def get_available_metadata_keys(self) -> set[str]:
         """Get all available metadata keys from selected files.
