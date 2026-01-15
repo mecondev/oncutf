@@ -230,6 +230,21 @@ class MetadataTreeViewConfig:
 
             header.show()
 
+            # Clear invalid runtime widths (from Qt default initialization)
+            # Only keep runtime widths if they represent a reasonable ratio (20-40% for key)
+            if self._runtime_widths:
+                key_w = self._runtime_widths.get("key", 0)
+                value_w = self._runtime_widths.get("value", 0)
+                if key_w > 0 and value_w > 0:
+                    ratio = key_w / (key_w + value_w)
+                    # Clear if ratio is outside reasonable range (e.g., Qt defaults like 100/538 = 15.7%)
+                    if ratio < 0.20 or ratio > 0.40:
+                        logger.info(
+                            "[MetadataTree] Clearing invalid runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f%%",
+                            key_w, value_w, ratio * 100
+                        )
+                        self._runtime_widths.clear()
+
             # Get or calculate column widths using ratio-based system
             # Clear invalid runtime widths (from placeholder/Qt defaults)
             if self._runtime_widths:
