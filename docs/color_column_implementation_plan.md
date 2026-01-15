@@ -9,7 +9,7 @@ Implement color indicators in the new "color" column with SVG-based icons and co
 
 ---
 
-## Current Status ✅
+## Current Status [COMPLETE]
 
 ### Already Completed
 1. **Column Configuration** - Added to `config.py`:
@@ -34,7 +34,7 @@ Current metadata status icons (left column in screenshot):
 - **System:** SVG-based via `SVGIconGenerator` class
 - **Location:** `oncutf/utils/svg_icon_generator.py`
 - **Base icons:** Feather icon set in `resources/icons/feather_icons/`
-- **Available:** `square.svg` ✅ Perfect for color swatches!
+- **Available:** `square.svg` [OK] Perfect for color swatches!
 - **Colors:** Defined in `config.py` → `METADATA_ICON_COLORS`
 
 **Current metadata icons use:**
@@ -423,8 +423,8 @@ def generate_color_icon(color_key: str) -> QPixmap:
 5. `icons_loader.py` - Icon caching
 
 **Dependencies:**
-- Existing SVG icon system ✅
-- Feather `square.svg` icon ✅
+- Existing SVG icon system [OK]
+- Feather `square.svg` icon [OK]
 - Database schema update ⚠️
 - File model color property ⚠️
 
