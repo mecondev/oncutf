@@ -206,8 +206,12 @@ class DataProvider:
                 if context and context.has_manager("thumbnail"):
                     thumbnail_manager = context.get_manager("thumbnail")
                     # Request thumbnail (returns None if not cached, triggers async load)
-                    return thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
-            except Exception:
+                    logger.debug("[DataProvider] Requesting thumbnail for: %s", file.full_path)
+                    pixmap = thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
+                    logger.debug("[DataProvider] Thumbnail manager returned: %s", "pixmap" if pixmap and not pixmap.isNull() else "placeholder/None")
+                    return pixmap
+            except Exception as e:
+                logger.warning("[DataProvider] Error getting thumbnail: %s", e)
                 pass  # Silently fall through to column logic
 
         if index.column() == 0:

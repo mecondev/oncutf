@@ -468,11 +468,13 @@ class ThumbnailViewportWidget(QWidget):
             file_path: Absolute path to file
             pixmap: Loaded thumbnail pixmap
         """
+        logger.debug("[ThumbnailViewport] thumbnail_ready signal received: %s (pixmap valid=%s)", file_path, not pixmap.isNull())
         # Find the row for this file
         for row, file_item in enumerate(self._model.files):
             if file_item.full_path == file_path:
                 # Update the view for this item
                 index = self._model.index(row, 0)
                 self._list_view.update(index)
-                logger.debug("[ThumbnailViewport] Updated thumbnail for %s", file_path)
-                break
+                logger.debug("[ThumbnailViewport] Updated view for row=%d, file=%s", row, file_path)
+                return
+        logger.warning("[ThumbnailViewport] Could not find file in model: %s", file_path)

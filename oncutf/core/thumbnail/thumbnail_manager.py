@@ -154,19 +154,21 @@ class ThumbnailManager(QObject):
 
         """
         # Validate file exists
+        logger.debug("[ThumbnailManager] get_thumbnail() called: %s (size=%d)", file_path, size_px)
         if not os.path.exists(file_path):
-            logger.warning("File not found for thumbnail: %s", file_path)
+            logger.warning("[ThumbnailManager] File not found for thumbnail: %s", file_path)
             return self._get_placeholder()
 
         # Check cache first
         cached = self._check_cache(file_path, size_px)
         if cached:
-            logger.debug("Cache hit: %s", file_path)
+            logger.debug("[ThumbnailManager] Cache hit: %s", file_path)
             return cached
 
         # Queue for generation
-        logger.debug("Cache miss, queuing: %s", file_path)
+        logger.debug("[ThumbnailManager] Cache miss, queuing: %s", file_path)
         self._queue_request(file_path, size_px)
+        logger.debug("[ThumbnailManager] Returning placeholder for: %s", file_path)
 
         return self._get_placeholder()
 
@@ -218,6 +220,7 @@ class ThumbnailManager(QObject):
             size_px: Requested thumbnail size
 
         """
+        logger.debug("[ThumbnailManager] _queue_request() called for: %s", file_path)
         folder_path = str(Path(file_path).parent)
         request = ThumbnailRequest(
             file_path=file_path, folder_path=folder_path, size_px=size_px
@@ -225,6 +228,7 @@ class ThumbnailManager(QObject):
 
         self._request_queue.put(request)
         self._total_requests += 1
+        logger.debug("[ThumbnailManager] Request queued (queue size: %d, total requests: %d)", self._request_queue.qsize(), self._total_requests)
 
         # Start workers if not running
         self._ensure_workers_running()
@@ -232,9 +236,13 @@ class ThumbnailManager(QObject):
     def _ensure_workers_running(self) -> None:
         """Start worker threads if not already running."""
         # Clean up dead workers
+        initial_count = len(self._workers)
         self._workers = [w for w in self._workers if w.isRunning()]
+        if len(self._workers) < initial_count:
+            logger.debug("[ThumbnailManager] Cleaned up %d dead workers", initial_count - len(self._workers))
 
         # Start new workers if needed
+        logger.debug("[ThumbnailManager] Current workers: %d, max: %d", len(self._workers), self._max_workers)
         while len(self._workers) < self._max_workers and not self._shutdown_flag:
             from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
 
@@ -264,6 +272,7 @@ class ThumbnailManager(QObject):
             pixmap: Generated thumbnail
 
         """
+        logger.debug("[ThumbnailManager] _on_worker_thumbnail_ready() called: %s (valid=%s)", file_path, not pixmap.isNull())
         self._completed_requests += 1
 
         # Emit progress
@@ -273,10 +282,11 @@ class ThumbnailManager(QObject):
             )
 
         # Forward to UI
+        logger.debug("[ThumbnailManager] Emitting thumbnail_ready signal for: %s", file_path)
         self.thumbnail_ready.emit(file_path, pixmap)
 
         logger.debug(
-            "Thumbnail ready: %s (progress: %d/%d)",
+            "[ThumbnailManager] Thumbnail ready: %s (progress: %d/%d)",
             file_path,
             self._completed_requests,
             self._total_requests,

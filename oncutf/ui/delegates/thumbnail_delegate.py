@@ -135,6 +135,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             option: Style options (includes hover/selection state)
             index: Model index
         """
+        logger.debug("[ThumbnailDelegate] paint() called for index row=%d", index.row())
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -164,8 +165,10 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Draw thumbnail or placeholder
         thumbnail_pixmap = index.data(Qt.DecorationRole)
         if isinstance(thumbnail_pixmap, QPixmap) and not thumbnail_pixmap.isNull():
+            logger.debug("[ThumbnailDelegate] Drawing actual thumbnail for row=%d", index.row())
             self._draw_thumbnail(painter, thumbnail_rect, thumbnail_pixmap)
         else:
+            logger.debug("[ThumbnailDelegate] Drawing placeholder for row=%d (pixmap=%s)", index.row(), type(thumbnail_pixmap).__name__)
             self._draw_placeholder(painter, thumbnail_rect, file_item)
 
         # Draw color flag indicator (if set)
