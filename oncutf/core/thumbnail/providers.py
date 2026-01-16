@@ -194,16 +194,31 @@ class VideoThumbnailProvider(ThumbnailProvider):
     MIN_LUMA_THRESHOLD = 10  # Reject frames with avg brightness < 10 (0-255)
     MIN_CONTRAST_THRESHOLD = 5  # Reject frames with low contrast
 
-    def __init__(self, max_size: int = 256, ffmpeg_path: str = "ffmpeg"):
+    def __init__(self, max_size: int = 256, ffmpeg_path: str | None = None):
         """Initialize video thumbnail provider.
 
         Args:
             max_size: Maximum thumbnail dimension in pixels
-            ffmpeg_path: Path to ffmpeg executable (default: "ffmpeg" in PATH)
+            ffmpeg_path: Path to ffmpeg executable (None = auto-detect bundled/system)
 
         """
         super().__init__(max_size)
-        self.ffmpeg_path = ffmpeg_path
+
+        # Auto-detect ffmpeg path if not provided
+        if ffmpeg_path is None:
+            from oncutf.utils.shared.external_tools import ToolName, get_tool_path
+
+            try:
+                self.ffmpeg_path = get_tool_path(ToolName.FFMPEG, prefer_bundled=True)
+                logger.debug("Using ffmpeg at: %s", self.ffmpeg_path)
+            except FileNotFoundError:
+                logger.warning(
+                    "FFmpeg not found. Video thumbnail generation will fail. "
+                    "Install ffmpeg or place it in bin/ directory."
+                )
+                self.ffmpeg_path = "ffmpeg"  # Fallback (will fail gracefully)
+        else:
+            self.ffmpeg_path = ffmpeg_path
 
     def supports(self, file_path: str) -> bool:
         """Check if file is a supported video format.

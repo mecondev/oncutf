@@ -45,8 +45,20 @@ class ExifToolWrapper:
 
     def __init__(self) -> None:
         """Starts the persistent ExifTool process with -stay_open enabled."""
+        # Get exiftool path from external_tools (bundled or system)
+        from oncutf.utils.shared.external_tools import ToolName, get_tool_path
+
+        try:
+            exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
+        except FileNotFoundError as e:
+            logger.error("ExifTool not found: %s", e)
+            raise RuntimeError(
+                "ExifTool is required but not found. "
+                "Please install it or place it in bin/ directory."
+            ) from e
+
         self.process = subprocess.Popen(
-            ["exiftool", "-stay_open", "True", "-@", "-"],
+            [exiftool_path, "-stay_open", "True", "-@", "-"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -57,6 +69,9 @@ class ExifToolWrapper:
         )
         self.lock = threading.Lock()  # Ensure thread-safe access
         self.counter = 0  # To generate unique termination tags
+
+        # Store path for subprocess calls
+        self._exiftool_path = exiftool_path
 
         # Health tracking
         self._last_error: str | None = None
@@ -124,7 +139,7 @@ class ExifToolWrapper:
 
         # Use -api largefilesupport=1 for files larger than 2GB
         cmd = [
-            "exiftool",
+            self._exiftool_path,
             "-api",
             "largefilesupport=1",
             "-json",
@@ -213,7 +228,7 @@ class ExifToolWrapper:
             return []
 
         try:
-            cmd = ["exiftool", "-json", "-G"]
+            cmd = [self._exiftool_path, "-json", "-G"]
             if use_extended:
                 cmd.append("-a")  # All tags for extended mode
             cmd.extend(file_paths)
@@ -276,7 +291,7 @@ class ExifToolWrapper:
             return None
 
         # Construct command with -ee flag for extended metadata and -api largefilesupport=1 for large files
-        cmd = ["exiftool", "-api", "largefilesupport=1", "-j", "-ee", file_path]
+        cmd = [self._exiftool_path, "-api", "largefilesupport=1", "-j", "-ee", file_path]
         logger.info("[ExtendedReader] Running command: %s", " ".join(cmd))
 
         try:
@@ -413,7 +428,7 @@ class ExifToolWrapper:
 
         try:
             # Build exiftool command
-            cmd = ["exiftool", "-overwrite_original"]
+            cmd = [self._exiftool_path, "-overwrite_original"]
 
             # Use the centralized metadata field mapping helper
             from oncutf.core.metadata.field_mapping_helper import MetadataFieldMappingHelper
