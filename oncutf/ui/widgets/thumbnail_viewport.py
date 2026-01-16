@@ -38,8 +38,8 @@ from PyQt5.QtWidgets import (
 
 from oncutf.ui.delegates.thumbnail_delegate import ThumbnailDelegate
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.shared.timer_manager import cancel_timer
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
@@ -96,7 +96,7 @@ class ThumbnailViewportWidget(QWidget):
 
         # Tooltip state
         self._tooltip_timer_id: int | None = None
-        self._tooltip_index: "QModelIndex" | None = None
+        self._tooltip_index: QModelIndex | None = None
 
         self._setup_ui()
         self._connect_signals()

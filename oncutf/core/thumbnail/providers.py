@@ -359,6 +359,9 @@ class VideoThumbnailProvider(ThumbnailProvider):
     def _extract_frame(self, file_path: str, timestamp: float) -> QPixmap:
         """Extract single frame from video at timestamp using FFmpeg.
 
+        Uses fast seeking by placing -ss after -i (keyframe-based seek).
+        This is MUCH faster for large files as it avoids decoding from start.
+
         Args:
             file_path: Absolute file path to video
             timestamp: Time position in seconds
@@ -371,13 +374,14 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
         """
         try:
-            # Use FFmpeg to extract frame to stdout as PNG
+            # Use FFmpeg with FAST seeking (-ss after -i)
+            # This uses keyframe seeking instead of decoding from start
             cmd = [
                 self.ffmpeg_path,
-                "-ss",
-                str(timestamp),
                 "-i",
                 file_path,
+                "-ss",
+                str(timestamp),
                 "-vframes",
                 "1",
                 "-f",
