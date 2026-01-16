@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         QPushButton,
         QShortcut,
         QSplitter,
+        QStackedWidget,
         QToolButton,
         QVBoxLayout,
     )
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel, MetadataTreeView
     from oncutf.ui.widgets.preview_tables_view import PreviewTablesView
     from oncutf.ui.widgets.rename_modules_area import RenameModulesArea
+    from oncutf.ui.widgets.thumbnail_viewport import ThumbnailViewportWidget
 
 
 # =============================================================================
@@ -295,6 +297,8 @@ class LayoutContext(Protocol):
     # Center panel
     files_label: "QLabel"
     file_table_view: "FileTableView"
+    thumbnail_viewport: "ThumbnailViewportWidget"
+    viewport_stack: "QStackedWidget"
     file_model: "FileTableModel"
     header: "InteractiveHeader"
     viewport_buttons: dict[str, "QToolButton"]

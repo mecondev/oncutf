@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
     QShortcut,
     QSizePolicy,
     QSplitter,
+    QStackedWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -394,9 +395,55 @@ class LayoutController:
         # Show placeholder after setup is complete
         self.parent_window.file_table_view.set_placeholder_visible(True)
 
-        center_layout.addWidget(self.parent_window.file_table_view)
+        # Create ThumbnailViewportWidget
+        from oncutf.ui.widgets.thumbnail_viewport import ThumbnailViewportWidget
+
+        self.parent_window.thumbnail_viewport = ThumbnailViewportWidget(
+            model=self.parent_window.file_model, parent=parent_widget
+        )
+
+        # Create QStackedWidget to hold both views
+        self.parent_window.viewport_stack = QStackedWidget()
+        self.parent_window.viewport_stack.addWidget(self.parent_window.file_table_view)  # Index 0 (details)
+        self.parent_window.viewport_stack.addWidget(self.parent_window.thumbnail_viewport)  # Index 1 (thumbs)
+
+        # Set default view (details)
+        self.parent_window.viewport_stack.setCurrentIndex(0)
+
+        # Connect viewport toggle signal
+        self.parent_window.viewport_button_group.buttonClicked.connect(self._on_viewport_changed)
+
+        center_layout.addWidget(self.parent_window.viewport_stack)
         self.parent_window.center_frame.setMinimumWidth(230)
         self.parent_window.horizontal_splitter.addWidget(self.parent_window.center_frame)
+
+    def _on_viewport_changed(self, button: "QToolButton") -> None:
+        """Handle viewport toggle button click.
+
+        Args:
+            button: The clicked button from viewport_button_group
+        """
+        # Get button ID from viewport_buttons dict
+        button_id = None
+        for spec_id, btn in self.parent_window.viewport_buttons.items():
+            if btn == button:
+                button_id = spec_id
+                break
+
+        if button_id is None:
+            logger.warning("[LayoutController] Viewport button clicked but ID not found")
+            return
+
+        # Map button ID to stack index
+        # VIEWPORT_SPECS order: ["details", "thumbs"]
+        if button_id == "details":
+            self.parent_window.viewport_stack.setCurrentIndex(0)
+            logger.info("[LayoutController] Switched to details view")
+        elif button_id == "thumbs":
+            self.parent_window.viewport_stack.setCurrentIndex(1)
+            logger.info("[LayoutController] Switched to thumbnail view")
+        else:
+            logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
 
     def _setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""

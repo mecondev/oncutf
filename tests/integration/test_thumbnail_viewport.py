@@ -1,4 +1,4 @@
-"""Integration test for Thumbnail Viewport (Phase 3).
+"""Integration test for Thumbnail Viewport.
 
 Author: Michael Economou
 Date: 2026-01-17
@@ -10,7 +10,7 @@ Tests the integration of:
 - Zoom and selection
 - DB persistence (mock)
 
-Run with: python -m pytest tests/integration/test_thumbnail_viewport_phase3.py -v
+Run with: python -m pytest tests/integration/test_thumbnail_viewport.py -v
 """
 
 import sys
