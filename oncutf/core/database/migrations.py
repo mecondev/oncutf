@@ -136,6 +136,36 @@ def create_schema(cursor: sqlite3.Cursor) -> None:
     """
     )
 
+    # 8. Thumbnail cache index table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS thumbnail_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            folder_path TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            file_mtime REAL NOT NULL,
+            file_size INTEGER NOT NULL,
+            cache_filename TEXT NOT NULL,
+            video_frame_time REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(file_path, file_mtime)
+        )
+    """
+    )
+
+    # 9. Thumbnail manual order table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS thumbnail_order (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            folder_path TEXT NOT NULL UNIQUE,
+            file_paths TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """
+    )
+
     logger.debug("[migrations] Schema v2 created")
 
 
@@ -292,6 +322,10 @@ def create_indexes(cursor: sqlite3.Cursor) -> None:
         "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_id ON file_metadata_structured (path_id)",
         "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_field_id ON file_metadata_structured (field_id)",
         "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_field ON file_metadata_structured (path_id, field_id)",
+        # Thumbnail cache indexes
+        "CREATE INDEX IF NOT EXISTS idx_thumbnail_cache_folder ON thumbnail_cache(folder_path)",
+        "CREATE INDEX IF NOT EXISTS idx_thumbnail_cache_file ON thumbnail_cache(file_path)",
+        "CREATE INDEX IF NOT EXISTS idx_thumbnail_order_folder ON thumbnail_order(folder_path)",
         # Composite indexes for faster common queries
         "CREATE INDEX IF NOT EXISTS idx_metadata_path_type ON file_metadata (path_id, metadata_type)",
         "CREATE INDEX IF NOT EXISTS idx_hashes_path_algo ON file_hashes (path_id, algorithm)",
