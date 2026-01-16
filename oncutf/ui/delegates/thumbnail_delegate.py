@@ -173,8 +173,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
             self._draw_color_flag(painter, frame_rect, file_item.color)
 
         # Draw video duration badge (if video)
-        if file_item.duration:
-            self._draw_video_badge(painter, frame_rect, file_item.duration)
+        duration = getattr(file_item, "duration", None)
+        if duration:
+            self._draw_video_badge(painter, frame_rect, duration)
 
         # Draw filename
         self._draw_filename(painter, filename_rect, file_item.filename, is_selected)
