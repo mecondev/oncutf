@@ -192,6 +192,10 @@ class DataProvider:
 
         file = self.model.files[index.row()]
 
+        # Support Qt.UserRole for thumbnail viewport (returns FileItem)
+        if role == Qt.UserRole:
+            return file
+
         if index.column() == 0:
             # Status column logic
             return self._get_status_column_data(file, role)
