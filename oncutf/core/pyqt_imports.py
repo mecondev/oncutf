@@ -190,6 +190,7 @@ __all__ = [
     "QFontMetrics",
     "QHelpEvent",
     "QIcon",
+    "QImage",
     "QIntValidator",
     "QKeyEvent",
     "QKeySequence",
