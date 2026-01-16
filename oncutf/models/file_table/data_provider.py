@@ -196,6 +196,20 @@ class DataProvider:
         if role == Qt.UserRole:
             return file
 
+        # Support Qt.DecorationRole for thumbnail viewport (returns QPixmap)
+        if role == Qt.DecorationRole and index.column() == 0:
+            # Try to get thumbnail from manager
+            try:
+                from oncutf.core.application_context import ApplicationContext
+
+                context = ApplicationContext.get_instance()
+                if context and context.has_manager("thumbnail"):
+                    thumbnail_manager = context.get_manager("thumbnail")
+                    # Request thumbnail (returns None if not cached, triggers async load)
+                    return thumbnail_manager.get_thumbnail(file.full_path, size=128)
+            except Exception:
+                pass  # Silently fall through to column logic
+
         if index.column() == 0:
             # Status column logic
             return self._get_status_column_data(file, role)

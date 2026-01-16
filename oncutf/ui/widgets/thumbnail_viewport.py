@@ -41,6 +41,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
+    from PyQt5.QtGui import QPixmap
 
     from oncutf.models.file_table.file_table_model import FileTableModel
 
@@ -138,6 +139,18 @@ class ThumbnailViewportWidget(QWidget):
 
         # Model changes (for manual order save)
         self._model.layoutChanged.connect(self._on_model_layout_changed)
+
+        # Connect thumbnail_ready signal from ThumbnailManager
+        try:
+            from oncutf.core.application_context import ApplicationContext
+
+            context = ApplicationContext.get_instance()
+            if context and context.has_manager("thumbnail"):
+                thumbnail_manager = context.get_manager("thumbnail")
+                thumbnail_manager.thumbnail_ready.connect(self._on_thumbnail_ready)
+                logger.debug("[ThumbnailViewport] Connected to thumbnail_ready signal")
+        except Exception as e:
+            logger.warning("[ThumbnailViewport] Could not connect to ThumbnailManager: %s", e)
 
     def set_order_mode(self, mode: Literal["manual", "sorted"]) -> None:
         """Set the order mode (manual drag or sorted).
@@ -445,3 +458,21 @@ class ThumbnailViewportWidget(QWidget):
             self._model.save_manual_order()
             self.files_reordered.emit()
             logger.debug("[ThumbnailViewport] Manual order saved to DB")
+
+    def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
+        """Handle thumbnail_ready signal from ThumbnailManager.
+
+        Updates the view to show the newly loaded thumbnail.
+
+        Args:
+            file_path: Absolute path to file
+            pixmap: Loaded thumbnail pixmap
+        """
+        # Find the row for this file
+        for row, file_item in enumerate(self._model.files):
+            if file_item.full_path == file_path:
+                # Update the view for this item
+                index = self._model.index(row, 0)
+                self._list_view.update(index)
+                logger.debug("[ThumbnailViewport] Updated thumbnail for %s", file_path)
+                break

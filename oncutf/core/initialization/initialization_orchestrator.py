@@ -110,6 +110,11 @@ class InitializationOrchestrator:
         self.window.rename_history_manager = get_rename_history_manager()
         self.window.backup_manager = get_backup_manager(str(self.window.db_manager.db_path))
 
+        # Thumbnail System Initialization
+        from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager
+
+        self.window.thumbnail_manager = ThumbnailManager(db_store=self.window.db_manager.thumbnail_store)
+
         logger.debug("Phase 1: Core infrastructure initialized", extra={"dev_only": True})
 
     def _phase2_attributes_and_state(self) -> None:
@@ -379,6 +384,7 @@ class InitializationOrchestrator:
         self.window.context.register_manager("column", self.window.column_manager)
         self.window.context.register_manager("config", self.window.config_manager)
         self.window.context.register_manager("window_config", self.window.window_config_manager)
+        self.window.context.register_manager("thumbnail", self.window.thumbnail_manager)
 
         logger.debug("UI managers registered in context", extra={"dev_only": True})
 
