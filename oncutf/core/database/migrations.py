@@ -14,7 +14,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 # Database schema version for migrations
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def create_schema(cursor: sqlite3.Cursor) -> None:
@@ -215,6 +215,53 @@ def migrate_schema(cursor: sqlite3.Cursor, from_version: int, to_version: int) -
         )
 
         logger.info("[migrations] color_tag column added successfully")
+
+    # Migration from version 4 to 5: Add thumbnail cache tables
+    if from_version == 4 and to_version >= 5:
+        logger.info("[migrations] Adding thumbnail cache tables...")
+
+        # Thumbnail cache index table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS thumbnail_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                folder_path TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                file_mtime REAL NOT NULL,
+                file_size INTEGER NOT NULL,
+                cache_filename TEXT NOT NULL,
+                video_frame_time REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(file_path, file_mtime)
+            )
+            """
+        )
+
+        # Thumbnail manual order table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS thumbnail_order (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                folder_path TEXT NOT NULL UNIQUE,
+                file_paths TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
+        # Create indexes for thumbnail tables
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_thumbnail_cache_folder ON thumbnail_cache(folder_path)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_thumbnail_cache_file ON thumbnail_cache(file_path)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_thumbnail_order_folder ON thumbnail_order(folder_path)"
+        )
+
+        logger.info("[migrations] Thumbnail cache tables added successfully")
 
 
 def create_indexes(cursor: sqlite3.Cursor) -> None:

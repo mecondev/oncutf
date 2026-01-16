@@ -60,6 +60,7 @@ from PyQt5.QtGui import (
     QFontMetrics,
     QHelpEvent,
     QIcon,
+    QImage,
     QIntValidator,
     QKeyEvent,
     QKeySequence,

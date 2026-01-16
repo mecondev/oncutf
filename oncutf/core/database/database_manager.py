@@ -28,6 +28,7 @@ from oncutf.core.database.metadata_store import MetadataStore
 from oncutf.core.database.migrations import create_indexes, create_schema, migrate_schema
 from oncutf.core.database.path_store import PathStore
 from oncutf.core.database.session_state_store import SessionStateStore
+from oncutf.core.database.thumbnail_store import ThumbnailStore
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -49,7 +50,7 @@ class DatabaseManager:
     - Backward compatible API
     """
 
-    SCHEMA_VERSION = 4
+    SCHEMA_VERSION = 5
 
     def __init__(self, db_path: str | None = None):
         """Initialize database manager with store composition.
@@ -179,6 +180,7 @@ class DatabaseManager:
         self.metadata_store = MetadataStore(self._conn, self.path_store, self._write_lock)
         self.backup_store = BackupStore(self._conn, self.path_store)
         self.session_state_store = SessionStateStore(self._conn, self._write_lock)
+        self.thumbnail_store = ThumbnailStore(self._conn)
 
         logger.debug("[DatabaseManager] Store instances initialized", extra={"dev_only": True})
 
@@ -440,7 +442,95 @@ class DatabaseManager:
                 logger.debug("[DatabaseManager] Connection closed", extra={"dev_only": True})
             except Exception as e:
                 logger.error("[DatabaseManager] Error closing connection: %s", e)
+    # ====================================================================
+    # ThumbnailStore delegation (6 methods)
+    # ====================================================================
 
+    def get_cached_thumbnail(self, file_path: str, mtime: float) -> dict[str, Any] | None:
+        """Get cached thumbnail metadata for a file.
+
+        Args:
+            file_path: Absolute file path
+            mtime: File modification time
+
+        Returns:
+            Dict with cache metadata if found, None otherwise
+
+        """
+        return self.thumbnail_store.get_cached_entry(file_path, mtime)
+
+    def save_thumbnail_cache(
+        self,
+        folder_path: str,
+        file_path: str,
+        file_mtime: float,
+        file_size: int,
+        cache_filename: str,
+        video_frame_time: float | None = None,
+    ) -> bool:
+        """Save thumbnail cache metadata.
+
+        Args:
+            folder_path: Parent folder path
+            file_path: Absolute file path
+            file_mtime: File modification time
+            file_size: File size in bytes
+            cache_filename: Cached thumbnail filename
+            video_frame_time: Video frame timestamp if applicable
+
+        Returns:
+            True if saved successfully
+
+        """
+        return self.thumbnail_store.save_cache_entry(
+            folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time
+        )
+
+    def get_thumbnail_folder_order(self, folder_path: str) -> list[str] | None:
+        """Get manual file order for a folder.
+
+        Args:
+            folder_path: Absolute folder path
+
+        Returns:
+            Ordered list of file paths, or None if no manual order
+
+        """
+        return self.thumbnail_store.get_folder_order(folder_path)
+
+    def save_thumbnail_folder_order(self, folder_path: str, file_paths: list[str]) -> bool:
+        """Save manual file order for a folder.
+
+        Args:
+            folder_path: Absolute folder path
+            file_paths: Ordered list of file paths
+
+        Returns:
+            True if saved successfully
+
+        """
+        return self.thumbnail_store.save_folder_order(folder_path, file_paths)
+
+    def clear_thumbnail_folder_order(self, folder_path: str) -> bool:
+        """Clear manual order for a folder.
+
+        Args:
+            folder_path: Absolute folder path
+
+        Returns:
+            True if entry was removed
+
+        """
+        return self.thumbnail_store.clear_folder_order(folder_path)
+
+    def get_thumbnail_cache_stats(self) -> dict[str, int]:
+        """Get thumbnail cache statistics.
+
+        Returns:
+            Dict with cache stats (total_entries, total_folders, total_manual_orders)
+
+        """
+        return self.thumbnail_store.get_cache_stats()
 
 # ====================================================================
 # Module-level functions for global instance
