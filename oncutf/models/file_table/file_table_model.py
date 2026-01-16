@@ -10,7 +10,7 @@ Author: Michael Economou
 Date: 2026-01-01
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from oncutf.core.application_context import get_app_context
 from oncutf.core.pyqt_imports import (
@@ -60,6 +60,12 @@ class FileTableModel(QAbstractTableModel):
         self.files: list[FileItem] = []
         self._direct_loader = None
         self._table_view_ref = None
+
+        # Order mode tracking (for thumbnail viewport integration)
+        self._order_mode: Literal["manual", "sorted"] = "sorted"  # Default to sorted
+        self._current_sort_key: str | None = None
+        self._current_sort_reverse: bool = False
+        self._current_folder_path: str | None = None
 
         # Initialize managers
         self._icon_manager = IconManager(parent_window)
@@ -286,6 +292,175 @@ class FileTableModel(QAbstractTableModel):
         except RuntimeError:
             if self.parent_window:
                 self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+
+    # ==================== Order Mode Management (for Thumbnail Viewport) ====================
+
+    @property
+    def order_mode(self) -> Literal["manual", "sorted"]:
+        """Get current order mode.
+
+        Returns:
+            "manual" if manual drag reorder active, "sorted" if Qt sort active
+
+        """
+        return self._order_mode
+
+    def set_order_mode(
+        self,
+        mode: Literal["manual", "sorted"],
+        sort_key: str | None = None,
+        reverse: bool = False,
+    ) -> None:
+        """Set order mode and apply sorting if needed.
+
+        Args:
+            mode: "manual" for manual drag order, "sorted" for automatic sort
+            sort_key: Column key to sort by (if mode is "sorted")
+            reverse: Reverse sort order
+
+        """
+        self._order_mode = mode
+        self._current_sort_key = sort_key
+        self._current_sort_reverse = reverse
+
+        if mode == "sorted" and sort_key:
+            # Apply sort
+            self._apply_sort_by_key(sort_key, reverse)
+            # Clear manual order from DB
+            self._clear_manual_order_db()
+            logger.info(
+                "[FileTableModel] Order mode set to sorted: %s (reverse=%s)",
+                sort_key,
+                reverse,
+            )
+        elif mode == "manual":
+            # Load manual order from DB
+            self._load_manual_order_db()
+            logger.info("[FileTableModel] Order mode set to manual")
+
+        self.layoutChanged.emit()
+
+    def _apply_sort_by_key(self, key: str, reverse: bool) -> None:
+        """Apply sorting by key.
+
+        Args:
+            key: Sort key ("filename", "color", etc.)
+            reverse: Reverse order
+
+        """
+        if not self.files:
+            return
+
+        # Sort using sort manager
+        self.files = self._sort_manager.sort_files(self.files, key, reverse)
+        logger.debug("[FileTableModel] Sorted %d files by %s", len(self.files), key)
+
+    def _load_manual_order_db(self) -> None:
+        """Load manual order from database and reorder files."""
+        if not self._current_folder_path:
+            logger.debug("[FileTableModel] No folder path set, skipping manual order load")
+            return
+
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            db_manager = get_app_context().get_manager("database")
+            if not db_manager:
+                logger.warning("[FileTableModel] Database manager not available")
+                return
+
+            thumbnail_store = db_manager.thumbnail_store
+            file_paths = thumbnail_store.get_folder_order(self._current_folder_path)
+
+            if not file_paths:
+                logger.debug(
+                    "[FileTableModel] No manual order found for folder: %s",
+                    self._current_folder_path,
+                )
+                return
+
+            # Reorder files based on DB order
+            file_map = {f.full_path: f for f in self.files}
+            ordered_files = []
+
+            # Add files in DB order
+            for path in file_paths:
+                if path in file_map:
+                    ordered_files.append(file_map[path])
+
+            # Add any files not in DB order (new files)
+            for file in self.files:
+                if file not in ordered_files:
+                    ordered_files.append(file)
+
+            self.files = ordered_files
+            logger.info(
+                "[FileTableModel] Loaded manual order: %d files",
+                len(file_paths),
+            )
+
+        except Exception as e:
+            logger.error("[FileTableModel] Failed to load manual order: %s", e)
+
+    def _clear_manual_order_db(self) -> None:
+        """Clear manual order from database when switching to sorted mode."""
+        if not self._current_folder_path:
+            return
+
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            db_manager = get_app_context().get_manager("database")
+            if not db_manager:
+                return
+
+            thumbnail_store = db_manager.thumbnail_store
+            thumbnail_store.clear_folder_order(self._current_folder_path)
+            logger.debug(
+                "[FileTableModel] Cleared manual order for folder: %s",
+                self._current_folder_path,
+            )
+
+        except Exception as e:
+            logger.error("[FileTableModel] Failed to clear manual order: %s", e)
+
+    def save_manual_order(self) -> None:
+        """Save current file order to database (for manual mode).
+
+        Called by ThumbnailViewportWidget after drag reorder.
+
+        """
+        if self._order_mode != "manual" or not self._current_folder_path:
+            return
+
+        try:
+            from oncutf.core.application_context import get_app_context
+
+            db_manager = get_app_context().get_manager("database")
+            if not db_manager:
+                return
+
+            thumbnail_store = db_manager.thumbnail_store
+            file_paths = [f.full_path for f in self.files]
+            thumbnail_store.save_folder_order(self._current_folder_path, file_paths)
+
+            logger.info(
+                "[FileTableModel] Saved manual order: %d files",
+                len(file_paths),
+            )
+
+        except Exception as e:
+            logger.error("[FileTableModel] Failed to save manual order: %s", e)
+
+    def set_current_folder(self, folder_path: str) -> None:
+        """Set current folder path for order persistence.
+
+        Args:
+            folder_path: Absolute folder path
+
+        """
+        self._current_folder_path = folder_path
+        logger.debug("[FileTableModel] Current folder set to: %s", folder_path)
 
     # ==================== Internal Methods ====================
 

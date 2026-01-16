@@ -82,7 +82,6 @@ class ThumbnailViewportWidget(QWidget):
         super().__init__(parent)
         self._model = model
         self._thumbnail_size = self.DEFAULT_THUMBNAIL_SIZE
-        self._order_mode: Literal["manual", "sorted"] = "manual"
 
         # Lasso selection state
         self._rubber_band: QRubberBand | None = None
@@ -137,13 +136,19 @@ class ThumbnailViewportWidget(QWidget):
         # Context menu
         self._list_view.customContextMenuRequested.connect(self._on_context_menu)
 
+        # Model changes (for manual order save)
+        self._model.layoutChanged.connect(self._on_model_layout_changed)
+
     def set_order_mode(self, mode: Literal["manual", "sorted"]) -> None:
         """Set the order mode (manual drag or sorted).
 
         Args:
             mode: "manual" for drag reorder, "sorted" for Qt sort
         """
-        self._order_mode = mode
+        # Delegate to model
+        if mode == "manual":
+            self._model.set_order_mode("manual")
+        # Note: sorted mode set by _sort_by() with specific key
 
         # Enable/disable drag reorder based on mode
         if mode == "manual":
@@ -317,7 +322,7 @@ class ThumbnailViewportWidget(QWidget):
         menu.addSeparator()
 
         # Order mode toggle
-        if self._order_mode == "sorted":
+        if self._model.order_mode == "sorted":
             menu.addAction("Return to Manual Order", lambda: self._return_to_manual_order())
         else:
             menu.addAction("Manual Order Active", None).setEnabled(False)
@@ -340,24 +345,21 @@ class ThumbnailViewportWidget(QWidget):
         """
         logger.info("[ThumbnailViewport] Sorting by %s (reverse=%s)", key, reverse)
 
-        # Switch to sorted mode
-        self.set_order_mode("sorted")
+        # Delegate to model
+        self._model.set_order_mode("sorted", sort_key=key, reverse=reverse)
 
-        # Sort model (delegate to FileTableModel sort logic)
-        # TODO: Implement FileTableModel.set_order_mode() and sort_by()
-        # For now, just log
-        logger.warning("[ThumbnailViewport] FileTableModel sorting not yet implemented")
+        # Update local UI state
+        self.set_order_mode("sorted")
 
     def _return_to_manual_order(self) -> None:
         """Return to manual order mode and load from DB."""
         logger.info("[ThumbnailViewport] Returning to manual order")
 
-        # Switch back to manual mode
-        self.set_order_mode("manual")
+        # Delegate to model (will load from DB)
+        self._model.set_order_mode("manual")
 
-        # Load manual order from DB
-        # TODO: Integrate with ThumbnailStore.get_folder_order()
-        logger.warning("[ThumbnailViewport] Manual order DB loading not yet implemented")
+        # Update local UI state
+        self.set_order_mode("manual")
 
     def _open_file_location(self) -> None:
         """Open file location in system file manager."""
@@ -432,4 +434,14 @@ class ThumbnailViewportWidget(QWidget):
         Returns:
             Current order mode
         """
-        return self._order_mode
+        return self._model.order_mode
+
+    def _on_model_layout_changed(self) -> None:
+        """Handle model layout changes (e.g., after drag reorder).
+
+        Save manual order to DB if in manual mode.
+        """
+        if self._model.order_mode == "manual":
+            self._model.save_manual_order()
+            self.files_reordered.emit()
+            logger.debug("[ThumbnailViewport] Manual order saved to DB")
