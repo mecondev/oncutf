@@ -400,7 +400,7 @@ class ThumbnailViewportWidget(QWidget):
         for index in selected_indexes:
             file_item = index.data(Qt.UserRole)
             if file_item:
-                file_paths.append(file_item.file_path)
+                file_paths.append(file_item.full_path)
 
         return file_paths
 
@@ -421,7 +421,7 @@ class ThumbnailViewportWidget(QWidget):
             index = self._model.index(row, 0)
             file_item = index.data(Qt.UserRole)
 
-            if file_item and file_item.file_path in file_path_set:
+            if file_item and file_item.full_path in file_path_set:
                 selection.append(QItemSelectionRange(index))
 
         selection_model.select(selection, QItemSelectionModel.ClearAndSelect)

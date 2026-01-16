@@ -206,7 +206,7 @@ class DataProvider:
                 if context and context.has_manager("thumbnail"):
                     thumbnail_manager = context.get_manager("thumbnail")
                     # Request thumbnail (returns None if not cached, triggers async load)
-                    return thumbnail_manager.get_thumbnail(file.full_path, size=128)
+                    return thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
             except Exception:
                 pass  # Silently fall through to column logic
 
