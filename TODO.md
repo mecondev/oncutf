@@ -73,11 +73,56 @@ Consolidated list of all TODO items extracted from codebase.
 - Conditional branching support (future)
 - Reusable pipeline templates
 
-**Related TODOs:** Items 8-14 (graph implementation details)
+**Related TODOs:** Items 9-14 (graph implementation details)
 
 ---
 
-### 3. Metadata Database Search Functionality
+### 3. Dockable Widgets System
+**Status:** Not Started  
+**Priority:** High  
+**Description:** Implement docking/undocking system for main application panels (file table, metadata panel, preview, etc.).
+
+**Current State:**
+- Fixed layout with splitters
+- No ability to detach panels into separate windows
+- Limited customization for multi-monitor setups
+
+**Proposed Features:**
+- **Dockable Panels:** All main widgets can be docked/undocked
+  - File Table
+  - Metadata Panel (tree view)
+  - Preview Panel
+  - Rename Modules Panel
+  - Properties/Info Panel
+- **Floating Windows:** Detached panels as independent windows
+- **Multi-Monitor Support:** Position panels across multiple screens
+- **Drag & Drop Docking:** Visual feedback during dock operations
+- **Dock Areas:** Top, bottom, left, right, center tabbed areas
+- **State Persistence:** Save/restore dock layout across sessions
+- **Reset to Default:** One-click layout restoration
+
+**Technical Considerations:**
+- Use QDockWidget for dock-able panels
+- Store dock state in session database (hybrid config system)
+- Handle window close events for floating panels
+- Maintain controller orchestration (no business logic in dock widgets)
+- Support both docked and floating modes simultaneously
+
+**Benefits:**
+- Flexible workspace customization
+- Better multi-monitor workflow
+- Industry-standard UI pattern (like Photoshop, Blender, VS Code)
+- Power user feature for complex workflows
+
+**Integration Points:**
+- oncutf/ui/main_window.py - Convert splitter layout to dock system
+- oncutf/core/session_state_manager.py - Persist dock geometry and state
+- oncutf/ui/widgets/* - Wrap panels in QDockWidget containers
+- oncutf/controllers/main_window_controller.py - Handle dock events
+
+---
+
+### 4. Metadata Database Search Functionality
 **Status:** Planned  
 **Priority:** Low  
 **Description:** Implement full-text search across metadata database for finding files by metadata values.
@@ -104,7 +149,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ## Architecture/Refactoring Tasks
 
-### 4. Backup Store Extraction
+### 5. Backup Store Extraction
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Extract rename history methods from DatabaseManager to BackupStore for better separation of concerns.
@@ -128,7 +173,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ## Development/Testing Tasks
 
-### 5. Rename Preview Profiling
+### 6. Rename Preview Profiling
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Complete profiling implementation for rename preview performance testing.
@@ -156,7 +201,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ## Node Editor Implementation (Foundation)
 
-### 6. Module-to-Graph Conversion
+### 7. Module-to-Graph Conversion
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement conversion from linear module list to node graph representation.
@@ -175,7 +220,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 7. Graph-to-Module Conversion
+### 8. Graph-to-Module Conversion
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement conversion from node graph back to linear module list.
@@ -194,7 +239,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 8. Node Factory Implementation
+### 9. Node Factory Implementation
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Create node instances by type name using NodeRegistry.
@@ -208,7 +253,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 9. Edge Creation Implementation
+### 10. Edge Creation Implementation
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement node connection logic for graph building.
@@ -222,7 +267,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 10. Graph Cycle Detection
+### 11. Graph Cycle Detection
 **Status:** Not Started  
 **Priority:** Medium  
 **Description:** Implement proper cycle detection using Depth-First Search for graph validation.
@@ -244,7 +289,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 11. Graph Topological Sort
+### 12. Graph Topological Sort
 **Status:** Not Started  
 **Priority:** Medium  
 **Description:** Implement topological sort for proper node execution order.
@@ -266,7 +311,7 @@ Consolidated list of all TODO items extracted from codebase.
 
 ---
 
-### 12. Graph Deserialization
+### 13. Graph Deserialization
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement loading of saved graph configurations from dict representation.
@@ -349,15 +394,15 @@ Consolidated list of all TODO items extracted from codebase.
 ## Notes
 
 - TODOs initially extracted on 2026-01-01, reorganized 2026-01-16
-- **Total:** 12 active TODO items (5 completed items archived)
-- **Remaining:** 12 active tasks
+- **Total:** 13 active TODO items (5 completed items archived)
+- **Remaining:** 13 active tasks
 - **By Category:**
-  - High Priority Features: 3 (Thumbnails Layout, Node Editor, Metadata Search)
+  - High Priority Features: 4 (Thumbnails Layout, Node Editor, Dockable Widgets, Metadata Search)
   - Architecture/Refactoring: 1 (Backup Store Extraction)
   - Development/Testing: 1 (Rename Preview Profiling)
   - Node Editor Foundation: 7 (technical implementation details)
 - **Priority Breakdown:**
-  - High: 3 (Thumbnails Layout, Node Editor Implementation, Metadata Search)
+  - High: 4 (Thumbnails Layout, Node Editor Implementation, Dockable Widgets, Metadata Search)
   - Medium: 2 (Cycle Detection, Topological Sort)
   - Low: 7 (remaining implementation details)
 - **Completed (Archived):**
