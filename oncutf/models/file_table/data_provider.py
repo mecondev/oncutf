@@ -212,7 +212,7 @@ class DataProvider:
                     return pixmap
             except Exception as e:
                 logger.warning("[DataProvider] Error getting thumbnail: %s", e)
-                pass  # Silently fall through to column logic
+                # Silently fall through to column logic
 
         if index.column() == 0:
             # Status column logic

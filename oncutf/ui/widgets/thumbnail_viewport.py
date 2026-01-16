@@ -38,6 +38,8 @@ from PyQt5.QtWidgets import (
 
 from oncutf.ui.delegates.thumbnail_delegate import ThumbnailDelegate
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
+from oncutf.utils.shared.timer_manager import cancel_timer
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
@@ -92,6 +94,10 @@ class ThumbnailViewportWidget(QWidget):
         self._is_panning = False
         self._pan_start_pos: QPoint | None = None
 
+        # Tooltip state
+        self._tooltip_timer_id: int | None = None
+        self._tooltip_index: "QModelIndex" | None = None
+
         self._setup_ui()
         self._connect_signals()
 
@@ -114,6 +120,9 @@ class ThumbnailViewportWidget(QWidget):
 
         # Set model
         self._list_view.setModel(self._model)
+
+        # Install event filter for tooltips
+        self._list_view.viewport().installEventFilter(self)
 
         # Create and set delegate
         self._delegate = ThumbnailDelegate(self._list_view)
@@ -284,6 +293,23 @@ class ThumbnailViewportWidget(QWidget):
                 self._rubber_band_origin = None
                 return False  # Let QListView handle the release
 
+        elif event_type == QEvent.MouseMove:
+            # Handle hover for tooltips (when not panning or lasso selecting)
+            if not self._is_panning and not (self._rubber_band and self._rubber_band.isVisible()):
+                index = self._list_view.indexAt(event.pos())
+                if index.isValid() and index != self._tooltip_index:
+                    # New item hovered
+                    self._cancel_tooltip()
+                    self._tooltip_index = index
+                    self._schedule_tooltip()
+                elif not index.isValid() and self._tooltip_index:
+                    # Left item area
+                    self._cancel_tooltip()
+
+        elif event_type == QEvent.Leave:
+            # Clear tooltip when mouse leaves viewport
+            self._cancel_tooltip()
+
         return super().eventFilter(obj, event)
 
     def _update_lasso_selection(self) -> None:
@@ -315,7 +341,7 @@ class ThumbnailViewportWidget(QWidget):
         """
         file_item = index.data(Qt.UserRole)
         if file_item:
-            self.file_activated.emit(file_item.file_path)
+            self.file_activated.emit(file_item.full_path)
             logger.debug("[ThumbnailViewport] File activated: %s", file_item.filename)
 
     def _on_context_menu(self, position: QPoint) -> None:
@@ -338,7 +364,8 @@ class ThumbnailViewportWidget(QWidget):
         if self._model.order_mode == "sorted":
             menu.addAction("Return to Manual Order", lambda: self._return_to_manual_order())
         else:
-            menu.addAction("Manual Order Active", None).setEnabled(False)
+            action = menu.addAction("Manual Order Active")
+            action.setEnabled(False)
 
         menu.addSeparator()
 
@@ -478,3 +505,62 @@ class ThumbnailViewportWidget(QWidget):
                 logger.debug("[ThumbnailViewport] Updated view for row=%d, file=%s", row, file_path)
                 return
         logger.warning("[ThumbnailViewport] Could not find file in model: %s", file_path)
+
+    # ========== Tooltip Helpers ==========
+
+    def _schedule_tooltip(self) -> None:
+        """Schedule tooltip display after hover delay."""
+        from oncutf.config import TOOLTIP_DELAY
+        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+
+        if self._tooltip_timer_id:
+            cancel_timer(self._tooltip_timer_id)
+
+        timer_manager = get_timer_manager()
+        self._tooltip_timer_id = timer_manager.schedule(
+            TOOLTIP_DELAY, self._show_tooltip, TimerType.TOOLTIP
+        )
+
+    def _cancel_tooltip(self) -> None:
+        """Cancel pending tooltip and clear active tooltip."""
+        if self._tooltip_timer_id:
+            cancel_timer(self._tooltip_timer_id)
+            self._tooltip_timer_id = None
+
+        TooltipHelper.clear_tooltips_for_widget(self._list_view.viewport())
+        self._tooltip_index = None
+
+    def _show_tooltip(self) -> None:
+        """Show tooltip for currently hovered item."""
+        if not self._tooltip_index or not self._tooltip_index.isValid():
+            return
+
+        file_item = self._tooltip_index.data(Qt.UserRole)
+        if not file_item:
+            return
+
+        # Build tooltip text
+        tooltip_lines = [
+            f"<b>{file_item.filename}</b>",
+            f"Type: {file_item.type or 'Unknown'}",
+        ]
+
+        # Add metadata if available
+        if hasattr(file_item, "duration") and file_item.duration:
+            tooltip_lines.append(f"Duration: {file_item.duration}")
+        if hasattr(file_item, "image_size") and file_item.image_size:
+            tooltip_lines.append(f"Size: {file_item.image_size}")
+        if file_item.color and file_item.color.lower() != "none":
+            tooltip_lines.append(f"Color: {file_item.color}")
+
+        tooltip_text = "<br>".join(tooltip_lines)
+
+        from oncutf.config import TOOLTIP_DURATION
+
+        TooltipHelper.show_tooltip(
+            self._list_view.viewport(),
+            tooltip_text,
+            TooltipType.INFO,
+            duration=TOOLTIP_DURATION,
+            persistent=False,
+        )
