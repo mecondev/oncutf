@@ -419,6 +419,34 @@ QLabel[class="SuccessTooltip"] {
     border-radius: 6px;
 }
 
+/* ===== QToolButton (Viewport Toggle Buttons) ===== */
+QToolButton {
+    background-color: transparent;
+    color: {{text}};
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+QToolButton:hover {
+    background-color: {{button_hover_bg}};
+    border-color: {{border}};
+}
+
+QToolButton:pressed {
+    background-color: {{button_pressed_bg}};
+}
+
+QToolButton:checked {
+    background-color: {{selected}};
+    border-color: {{outline}};
+}
+
+QToolButton:checked:hover {
+    background-color: {{selected_hover}};
+    border-color: {{outline}};
+}
+
 /* ===== QSplitter ===== */
 QSplitter::handle {
     background-color: {{border}};
