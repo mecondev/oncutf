@@ -106,8 +106,8 @@ Include license files in distribution package:
 Test tool detection:
 ```bash
 # Run from project root
-python -c "from oncutf.utils.external_tools import *; print(get_tool_path(ToolName.EXIFTOOL))"
-python -c "from oncutf.utils.external_tools import *; print(is_tool_available(ToolName.FFMPEG))"
+python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.EXIFTOOL))"
+python -c "from oncutf.utils.shared.external_tools import *; print(is_tool_available(ToolName.FFMPEG))"
 ```
 
 ## Maintenance

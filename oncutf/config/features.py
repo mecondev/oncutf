@@ -17,7 +17,7 @@ class FeatureAvailability:
     This class tracks which external tools are available and enables/disables
     features accordingly. It provides graceful degradation when tools are missing.
 
-    Updated automatically by oncutf.utils.external_tools module during initialization.
+    Updated automatically by oncutf.utils.shared.external_tools module during initialization.
     """
 
     exiftool_available: bool = False
