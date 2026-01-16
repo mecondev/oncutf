@@ -7,6 +7,7 @@ Components:
 - ThumbnailStore: Database operations for cache index and manual order
 - ThumbnailProvider: Abstract factory for image/video thumbnail generation
 - ThumbnailManager: Orchestrator for thumbnail requests and background generation
+- ThumbnailWorker: Background worker thread for async thumbnail generation
 
 Author: Michael Economou
 Date: 2026-01-16
@@ -18,10 +19,15 @@ from oncutf.core.thumbnail.thumbnail_cache import (
     ThumbnailDiskCache,
     ThumbnailMemoryCache,
 )
+from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager, ThumbnailRequest
+from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
 
 __all__ = [
     "ThumbnailCache",
     "ThumbnailCacheConfig",
     "ThumbnailDiskCache",
     "ThumbnailMemoryCache",
+    "ThumbnailManager",
+    "ThumbnailRequest",
+    "ThumbnailWorker",
 ]

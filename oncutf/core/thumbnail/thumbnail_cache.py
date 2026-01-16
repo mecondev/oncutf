@@ -30,6 +30,7 @@ from pathlib import Path
 
 from oncutf.core.pyqt_imports import QPixmap
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.paths import AppPaths
 
 logger = get_cached_logger(__name__)
 
@@ -59,7 +60,6 @@ class ThumbnailCacheConfig:
             ThumbnailCacheConfig with default settings
 
         """
-        from oncutf.utils.paths import AppPaths
 
         cache_dir = AppPaths.get_thumbnails_dir()
         return cls(cache_dir=cache_dir)

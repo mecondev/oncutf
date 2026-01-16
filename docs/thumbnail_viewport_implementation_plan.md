@@ -165,6 +165,10 @@ Model Updated + Sync to FileTable
 - Thumbnail centered with aspect ratio fit
 - Filename word-wrapped below (Qt.TextWordWrap)
 - Color flag circle (top-left, 12px diameter)
+- **Star rating overlay (top-right, 5 stars, 0-5 rating)**
+  - Display: 12px gold stars, semi-transparent background
+  - Read from: `FileItem.rating` (0-5 integer)
+  - Visual: Filled stars for rating value, empty/outlined for remainder
 - Video duration badge (bottom-right, semi-transparent, "HH:MM:SS")
 - Loading spinner while generating
 - Placeholder (folder icon + "Loading...") for failed thumbnails
@@ -199,17 +203,30 @@ Model Updated + Sync to FileTable
   - Drop: Reorder in model + emit signal
   - Auto-save to DB via ThumbnailOrderStore
 - **Context Menu:**
+  - **Set Rating:** Submenu with 0-5 stars (sets rating for selected files)
+  - ---
   - Sort Ascending (A-Z filename)
   - Sort Descending (Z-A filename)
   - Sort by Color Flag
+  - **Sort by Rating (High to Low / Low to High)**
   - Sort by Folder Path (if multi-folder view)
   - Manual Order (toggle back from sort)
+  - ---
+  - **Hide/Show Filters:**
+    - Hide Unrated (0 stars)
+    - Hide Below 1 Star
+    - Hide Below 2 Stars
+    - Hide Below 3 Stars
+    - Hide Below 4 Stars
+    - Show All (clear filters)
   - ---
   - File operations (same as table context menu): Open, Rename, Delete, etc.
 - **Keyboard Navigation:**
   - Arrow keys: Move selection
   - Home/End: Jump to start/end
   - PageUp/PageDown: Scroll viewport
+  - **0-5 keys: Set star rating for selected files**
+  - **R key: Clear rating (set to 0)**
 
 #### 3.3 Video Preview Dialog
 - **File:** `oncutf/ui/dialogs/video_preview_dialog.py`
@@ -263,6 +280,8 @@ Model Updated + Sync to FileTable
   - **Sort Ascending:** `files.sort(key=lambda f: f.filename.lower())`
   - **Sort Descending:** `files.sort(key=lambda f: f.filename.lower(), reverse=True)`
   - **Sort by Color:** `files.sort(key=lambda f: (f.color == "none", f.color))`
+  - **Sort by Rating (High to Low):** `files.sort(key=lambda f: f.rating, reverse=True)`
+  - **Sort by Rating (Low to High):** `files.sort(key=lambda f: f.rating)`
   - **Sort by Folder:** If applicable, group by parent folder
 - **After Sort:** Clear manual order DB entry (user switched to deterministic sort)
 - **Return to Manual:** Click "Manual Order" → manual mode, load saved order or restore previous
@@ -550,6 +569,11 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] Sort modes toggle correctly
 - [ ] Selection sync (table ↔ viewport)
 - [ ] Color flag display
+- [ ] **Star rating display (0-5 stars, top-right overlay)**
+- [ ] **Star rating keyboard shortcuts (0-5 keys, R to clear)**
+- [ ] **Star rating context menu (submenu with 0-5 options)**
+- [ ] **Sort by rating (high to low / low to high)**
+- [ ] **Hide/show filters (unrated, below 1-4 stars)**
 - [ ] Video duration badge
 - [ ] Zoom in/out smoothly
 - [ ] Pan navigation responsive
@@ -586,13 +610,15 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 ## Future Enhancements (Out of Scope)
 
 1. **Conditional branching in graph:** Rule engine for folder-based organizing
-2. **Metadata display:** Show exif fields as overlays on thumbnails
+2. **Metadata display:** Show exif fields as overlays on thumbnails (beyond star rating)
 3. **Batch editing:** Select thumbnails → edit metadata/rename rules
 4. **Slideshow mode:** Auto-advance through thumbnails
 5. **Custom frame picker UI:** Visual timeline for video frame selection
 6. **GPU rendering:** Use OpenGL for thumbnails (high-performance mode)
 7. **Network drive support:** Cache network files locally
 8. **Animated GIF thumbnails:** Show first 3 frames in carousel
+9. **Half-star ratings:** 0.5 increments for more granular rating
+10. **Tag-based filtering:** Combine rating filters with color flags (e.g., "3+ stars AND red flag")
 
 ---
 
