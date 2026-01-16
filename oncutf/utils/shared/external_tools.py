@@ -185,10 +185,14 @@ def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
         logger.info("[ExternalTools] Using system %s: %s", tool_name.value, system_path)
         return system_path
 
-    # Not found anywhere
+    # Not found anywhere - use same platform mapping as bundled path
+    system = platform.system()
+    platform_dir = {"Windows": "windows", "Darwin": "macos", "Linux": "linux"}.get(
+        system, system.lower()
+    )
     raise FileNotFoundError(
         f"{tool_name.value} not found. "
-        f"Please install it or place it in the bin/{platform.system().lower()} directory. "
+        f"Please install it or place it in the bin/{platform_dir} directory. "
         f"Download from: {_get_download_url(tool_name)}"
     )
 
