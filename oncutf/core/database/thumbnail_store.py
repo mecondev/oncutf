@@ -50,6 +50,20 @@ class ThumbnailStore:
         self._connection = connection
         logger.debug("[ThumbnailStore] Initialized")
 
+    def _is_connection_open(self) -> bool:
+        """Check if database connection is open.
+
+        Returns:
+            True if connection is open and usable
+
+        """
+        try:
+            # Try to execute a simple query
+            self._connection.execute("SELECT 1")
+            return True
+        except (sqlite3.ProgrammingError, AttributeError):
+            return False
+
     def get_cached_entry(
         self, file_path: str, mtime: float
     ) -> dict[str, Any] | None:
@@ -70,6 +84,14 @@ class ThumbnailStore:
             None if not cached or file changed
 
         """
+        # Check if connection is still open
+        if not self._is_connection_open():
+            logger.debug(
+                "[ThumbnailStore] Database closed, skipping cache lookup for: %s",
+                Path(file_path).name,
+            )
+            return None
+
         cursor = self._connection.cursor()
         cursor.execute(
             """
@@ -122,6 +144,14 @@ class ThumbnailStore:
             True if saved successfully
 
         """
+        # Check if connection is still open (may be closed during shutdown)
+        if not self._is_connection_open():
+            logger.debug(
+                "[ThumbnailStore] Database closed, skipping cache save for: %s",
+                Path(file_path).name,
+            )
+            return False
+
         cursor = self._connection.cursor()
 
         try:

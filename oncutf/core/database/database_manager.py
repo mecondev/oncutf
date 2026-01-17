@@ -96,6 +96,20 @@ class DatabaseManager:
             except Exception as e:
                 logger.error("[DatabaseManager] Failed to delete config: %s", e)
 
+            # Also clean thumbnail cache to ensure fresh start
+            try:
+                import shutil
+
+                from oncutf.utils.paths import AppPaths
+
+                thumbnails_dir = AppPaths.get_thumbnails_dir()
+                if thumbnails_dir.exists():
+                    shutil.rmtree(thumbnails_dir)
+                    thumbnails_dir.mkdir(parents=True, exist_ok=True)
+                    logger.info("[DatabaseManager] Thumbnail cache cleared for fresh start")
+            except Exception as e:
+                logger.error("[DatabaseManager] Failed to clear thumbnail cache: %s", e)
+
         # Thread safety lock for concurrent access from parallel workers
         self._write_lock = threading.RLock()
 

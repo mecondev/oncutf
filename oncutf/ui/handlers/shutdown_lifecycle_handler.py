@@ -615,6 +615,10 @@ class ShutdownLifecycleHandler:
             if hasattr(self.main_window, "db_manager") and self.main_window.db_manager:
                 self.main_window.shutdown_coordinator.register_database_manager(self.main_window.db_manager)
 
+            # Register thumbnail manager (must shutdown before database)
+            if hasattr(self.main_window, "thumbnail_manager") and self.main_window.thumbnail_manager:
+                self.main_window.shutdown_coordinator.register_thumbnail_manager(self.main_window.thumbnail_manager)
+
             # Register ExifTool wrapper (get active instance if any)
             try:
                 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper

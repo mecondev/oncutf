@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 import queue
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -117,6 +118,10 @@ class ThumbnailManager(QObject):
 
         # Request queue (thread-safe)
         self._request_queue: queue.Queue[ThumbnailRequest] = queue.Queue()
+
+        # Track pending requests to avoid duplicates
+        self._pending_requests: set[str] = set()
+        self._pending_lock = threading.Lock()
 
         # Worker threads
         self._workers: list[ThumbnailWorker] = []
@@ -220,6 +225,13 @@ class ThumbnailManager(QObject):
             size_px: Requested thumbnail size
 
         """
+        # Check if already pending (avoid duplicate requests)
+        with self._pending_lock:
+            if file_path in self._pending_requests:
+                logger.debug("[ThumbnailManager] Request already pending for: %s", file_path)
+                return
+            self._pending_requests.add(file_path)
+
         logger.debug("[ThumbnailManager] _queue_request() called for: %s", file_path)
         folder_path = str(Path(file_path).parent)
         request = ThumbnailRequest(
@@ -275,6 +287,10 @@ class ThumbnailManager(QObject):
         logger.debug("[ThumbnailManager] _on_worker_thumbnail_ready() called: %s (valid=%s)", file_path, not pixmap.isNull())
         self._completed_requests += 1
 
+        # Remove from pending set
+        with self._pending_lock:
+            self._pending_requests.discard(file_path)
+
         # Emit progress
         if self._total_requests > 0:
             self.generation_progress.emit(
@@ -301,6 +317,11 @@ class ThumbnailManager(QObject):
 
         """
         self._completed_requests += 1
+
+        # Remove from pending set
+        with self._pending_lock:
+            self._pending_requests.discard(file_path)
+
         self.generation_error.emit(file_path, error_msg)
 
         logger.warning("Thumbnail generation error for %s: %s", file_path, error_msg)
@@ -399,4 +420,20 @@ class ThumbnailManager(QObject):
             worker.wait(1000)  # 1 second timeout
 
         self._workers.clear()
+
+        # Cleanup any orphan ffmpeg processes
+        self._cleanup_ffmpeg_processes()
+
         logger.info("ThumbnailManager shutdown complete")
+
+    def _cleanup_ffmpeg_processes(self) -> None:
+        """Kill any orphan ffmpeg processes started by this application."""
+        try:
+            from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+            VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes(
+                max_scan_s=0.5,
+                graceful_wait_s=0.5,
+            )
+        except Exception as e:
+            logger.debug("Error cleaning up ffmpeg processes: %s", e)

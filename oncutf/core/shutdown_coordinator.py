@@ -34,6 +34,7 @@ class ShutdownPhase(Enum):
 
     TIMERS = "timers"
     THREAD_POOL = "thread_pool"
+    THUMBNAILS = "thumbnails"  # Must shutdown before database
     DATABASE = "database"
     EXIFTOOL = "exiftool"
     FINALIZE = "finalize"
@@ -74,11 +75,12 @@ class ShutdownCoordinator(QObject):
     DEFAULT_TIMEOUTS = {
         ShutdownPhase.TIMERS: 0.5,
         ShutdownPhase.THREAD_POOL: 2.0,
+        ShutdownPhase.THUMBNAILS: 1.0,
         ShutdownPhase.DATABASE: 1.0,
         ShutdownPhase.EXIFTOOL: 0.5,
         ShutdownPhase.FINALIZE: 0.5,
     }
-    # Total worst-case: 4.0 seconds
+    # Total worst-case: 5.0 seconds
 
     def __init__(self, parent=None):
         """Initialize shutdown coordinator.
@@ -99,6 +101,7 @@ class ShutdownCoordinator(QObject):
 
         # Component references (set via register methods)
         self._timer_manager = None
+        self._thumbnail_manager = None
         self._thread_pool_manager = None
         self._database_manager = None
         self._exiftool_wrapper = None
@@ -122,9 +125,15 @@ class ShutdownCoordinator(QObject):
         self._thread_pool_manager = thread_pool_manager
         logger.debug("[ShutdownCoordinator] Thread pool manager registered")
 
+    def register_thumbnail_manager(self, thumbnail_manager):
+        """Register thumbnail manager for shutdown."""
+        self._thumbnail_manager = thumbnail_manager
+        logger.debug("[ShutdownCoordinator] Thumbnail manager registered")
+
     def register_database_manager(self, database_manager):
         """Register database manager for shutdown."""
         self._database_manager = database_manager
+        logger.debug("[ShutdownCoordinator] Database manager registered")
         logger.debug("[ShutdownCoordinator] Database manager registered")
 
     def register_exiftool_wrapper(self, exiftool_wrapper):
@@ -277,6 +286,7 @@ class ShutdownCoordinator(QObject):
         self._async_phases = [
             (ShutdownPhase.TIMERS, self._shutdown_timers),
             (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
+            (ShutdownPhase.THUMBNAILS, self._shutdown_thumbnails),
             (ShutdownPhase.DATABASE, self._shutdown_database),
             (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
             (ShutdownPhase.FINALIZE, self._shutdown_finalize),
@@ -484,6 +494,58 @@ class ShutdownCoordinator(QObject):
         except Exception as e:
             logger.exception("Thread pool shutdown failed: %s", e)
             return False, f"Thread pool shutdown failed: {e}"
+
+    def _shutdown_thumbnails(self) -> tuple[bool, str | None]:
+        """Shutdown thumbnail manager (must run before database)."""
+        import threading
+
+        if not self._thumbnail_manager:
+            # Still do force cleanup even if no manager registered
+            try:
+                from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+                threading.Thread(
+                    target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                    kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                    daemon=True,
+                    name="FFmpegForceCleanup",
+                ).start()
+            except Exception:
+                pass
+            return True, None
+
+        try:
+            if hasattr(self._thumbnail_manager, "shutdown"):
+                self._thumbnail_manager.shutdown()
+
+            # Force cleanup all FFmpeg processes (like ExifTool)
+            # This is critical to prevent zombie ffmpeg processes
+            from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+            # Run in background thread to avoid UI freezes
+            threading.Thread(
+                target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                daemon=True,
+                name="FFmpegForceCleanup",
+            ).start()
+
+            return True, None
+        except Exception as e:
+            logger.exception("Thumbnail manager shutdown failed: %s", e)
+            # Even on error, try force cleanup
+            try:
+                from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+                threading.Thread(
+                    target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                    kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                    daemon=True,
+                    name="FFmpegForceCleanup",
+                ).start()
+            except Exception:
+                pass
+            return False, f"Thumbnail manager shutdown failed: {e}"
 
     def _shutdown_database(self) -> tuple[bool, str | None]:
         """Shutdown database manager with proper connection closure."""

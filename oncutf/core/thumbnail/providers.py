@@ -246,33 +246,55 @@ class VideoThumbnailProvider(ThumbnailProvider):
             ThumbnailGenerationError: If frame extraction fails
 
         """
+        import time
+
         if not Path(file_path).exists():
             raise ThumbnailGenerationError(f"File not found: {file_path}")
 
+        start_time = time.perf_counter()
+
         # Get video duration
+        duration_start = time.perf_counter()
         duration = self._get_video_duration(file_path)
+        duration_time = time.perf_counter() - duration_start
+
         if duration is None or duration <= 0:
             raise ThumbnailGenerationError(f"Failed to get video duration: {file_path}")
+
+        logger.debug(
+            "[VideoThumbnailProvider] Duration probe took %.3fs for %s (duration=%.1fs)",
+            duration_time,
+            Path(file_path).name,
+            duration,
+        )
 
         # Try extraction at optimal timestamps
         frame_times = self._calculate_frame_times(duration)
 
-        for frame_time in frame_times:
+        for attempt, frame_time in enumerate(frame_times, 1):
             try:
+                extract_start = time.perf_counter()
                 pixmap = self._extract_frame(file_path, frame_time)
+                extract_time = time.perf_counter() - extract_start
 
                 # Validate frame quality (skip dark/flat frames)
                 if self._is_valid_frame(pixmap):
+                    total_time = time.perf_counter() - start_time
                     logger.debug(
-                        "[VideoThumbnailProvider] Generated thumbnail: %s at %.2fs",
+                        "[VideoThumbnailProvider] SUCCESS: %s in %.3fs (probe: %.3fs, extract: %.3fs, attempt: %d/%d)",
                         Path(file_path).name,
-                        frame_time,
+                        total_time,
+                        duration_time,
+                        extract_time,
+                        attempt,
+                        len(frame_times),
                     )
                     return pixmap
 
                 logger.debug(
-                    "[VideoThumbnailProvider] Frame at %.2fs failed quality check, trying next",
+                    "[VideoThumbnailProvider] Frame at %.2fs failed quality check (%.3fs), trying next",
                     frame_time,
+                    extract_time,
                 )
 
             except ThumbnailGenerationError as e:
@@ -296,12 +318,16 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
         """
         try:
+            # Optimized: Use -select_streams v:0 to only probe first video stream
+            # This is faster than probing the entire format
             cmd = [
                 "ffprobe",
                 "-v",
                 "error",
+                "-select_streams",
+                "v:0",
                 "-show_entries",
-                "format=duration",
+                "stream=duration",
                 "-of",
                 "default=noprint_wrappers=1:nokey=1",
                 file_path,
@@ -315,7 +341,29 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 check=True,
             )
 
-            duration = float(result.stdout.strip())
+            duration_str = result.stdout.strip()
+            if not duration_str or duration_str == "N/A":
+                # Fallback to format duration if stream duration not available
+                cmd = [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    file_path,
+                ]
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=True,
+                )
+                duration_str = result.stdout.strip()
+
+            duration = float(duration_str)
             logger.debug(
                 "[VideoThumbnailProvider] Duration: %.2fs for %s",
                 duration,
@@ -359,7 +407,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
     def _extract_frame(self, file_path: str, timestamp: float) -> QPixmap:
         """Extract single frame from video at timestamp using FFmpeg.
 
-        Uses fast seeking by placing -ss after -i (keyframe-based seek).
+        Uses fast seeking by placing -ss BEFORE -i (keyframe-based seek).
         This is MUCH faster for large files as it avoids decoding from start.
 
         Args:
@@ -374,20 +422,29 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
         """
         try:
-            # Use FFmpeg with FAST seeking (-ss after -i)
+            # Use FFmpeg with FAST seeking (-ss BEFORE -i)
             # This uses keyframe seeking instead of decoding from start
+            # IMPORTANT: -ss must come BEFORE -i for fast seeking!
+            # Additional optimizations:
+            # - Scale down to thumbnail size during extraction (faster than scaling later)
+            # - Use JPEG instead of PNG (faster encoding, smaller output)
+            # - vsync 0: drop frames to speed up seeking
             cmd = [
                 self.ffmpeg_path,
-                "-i",
-                file_path,
                 "-ss",
                 str(timestamp),
+                "-i",
+                file_path,
                 "-vframes",
                 "1",
+                "-vf",
+                f"scale={self.max_size}:{self.max_size}:force_original_aspect_ratio=decrease",
+                "-q:v",
+                "2",  # High quality JPEG
                 "-f",
                 "image2pipe",
                 "-vcodec",
-                "png",
+                "mjpeg",  # JPEG is faster than PNG
                 "-",
             ]
 
@@ -398,10 +455,10 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 check=True,
             )
 
-            # Load image from bytes
-            image = QImage.fromData(result.stdout, "PNG")
+            # Load image from bytes (JPEG format)
+            image = QImage.fromData(result.stdout, "JPEG")
             if image.isNull():
-                raise ThumbnailGenerationError("Failed to decode frame PNG data")
+                raise ThumbnailGenerationError("Failed to decode frame JPEG data")
 
             # Scale to thumbnail size
             scaled_image = image.scaled(
@@ -475,3 +532,96 @@ class VideoThumbnailProvider(ThumbnailProvider):
             )
 
         return is_valid
+
+    @staticmethod
+    def force_cleanup_all_ffmpeg_processes(
+        *,
+        max_scan_s: float = 0.5,
+        graceful_wait_s: float = 0.5,
+    ) -> None:
+        """Force cleanup all FFmpeg processes system-wide.
+
+        Similar to ExifToolWrapper.force_cleanup_all_exiftool_processes().
+        This runs during app shutdown to prevent orphan ffmpeg processes.
+
+        Args:
+            max_scan_s: Maximum time to spend scanning processes
+            graceful_wait_s: Maximum time to wait for terminate() before kill()
+
+        """
+        import contextlib
+        import time
+
+        try:
+            import psutil
+
+            ffmpeg_processes = []
+            scan_start = time.perf_counter()
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+                try:
+                    if (time.perf_counter() - scan_start) > max_scan_s:
+                        logger.debug(
+                            "[VideoThumbnailProvider] Process scan time limit reached (%.2fs)",
+                            max_scan_s,
+                        )
+                        break
+                    if proc.info["name"] and "ffmpeg" in proc.info["name"].lower():
+                        ffmpeg_processes.append(proc)
+                    elif proc.info["cmdline"]:
+                        cmdline = " ".join(proc.info["cmdline"]).lower()
+                        if "ffmpeg" in cmdline:
+                            ffmpeg_processes.append(proc)
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+
+            if not ffmpeg_processes:
+                logger.debug("[VideoThumbnailProvider] No orphaned FFmpeg processes found")
+                return
+
+            logger.warning(
+                "[VideoThumbnailProvider] Found %d orphaned FFmpeg processes",
+                len(ffmpeg_processes),
+            )
+
+            # Try to terminate gracefully first
+            for proc in ffmpeg_processes:
+                with contextlib.suppress(psutil.NoSuchProcess):
+                    proc.terminate()
+
+            # Wait briefly for graceful termination (bounded)
+            wait_deadline = time.perf_counter() + max(0.0, graceful_wait_s)
+            while time.perf_counter() < wait_deadline:
+                remaining_count = 0
+                for proc in ffmpeg_processes:
+                    try:
+                        if proc.is_running():
+                            remaining_count += 1
+                    except psutil.NoSuchProcess:
+                        pass
+
+                if remaining_count == 0:
+                    break
+                time.sleep(0.01)
+
+            # Force kill any remaining processes
+            remaining_processes = []
+            for proc in ffmpeg_processes:
+                try:
+                    if proc.is_running():
+                        remaining_processes.append(proc)
+                except psutil.NoSuchProcess:
+                    pass
+
+            if remaining_processes:
+                logger.warning(
+                    "[VideoThumbnailProvider] Force killing %d FFmpeg processes",
+                    len(remaining_processes),
+                )
+                for proc in remaining_processes:
+                    with contextlib.suppress(psutil.NoSuchProcess):
+                        proc.kill()
+
+        except ImportError:
+            logger.debug("[VideoThumbnailProvider] psutil not available for FFmpeg cleanup")
+        except Exception as e:
+            logger.debug("[VideoThumbnailProvider] Error during FFmpeg cleanup: %s", e)

@@ -76,7 +76,15 @@ def cleanup_on_exit() -> None:
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("[App] Emergency ExifTool cleanup completed")
     except Exception as e:
-        logger.warning("[App] Error in emergency cleanup: %s", e)
+        logger.warning("[App] Error in emergency ExifTool cleanup: %s", e)
+
+    try:
+        from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+        VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes()
+        logger.info("[App] Emergency FFmpeg cleanup completed")
+    except Exception as e:
+        logger.warning("[App] Error in emergency FFmpeg cleanup: %s", e)
 
 
 def signal_handler(signum, _frame) -> None:
