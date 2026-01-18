@@ -3,9 +3,15 @@ Thumbnail Viewport Implementation Plan
 
 Author: Michael Economou
 Date: 2026-01-16
+Last Updated: 2026-01-18
 
 A comprehensive plan for implementing the Thumbnail Viewport as an integrated browsing/ordering UI
 alongside the existing file table, with manual ordering support and persistent caching.
+
+ARCHIVING POLICY:
+- This document will be moved to docs/_archive/ upon Phase 6 completion
+- Deferred features (lasso selection, video preview) remain in TODO.md
+- Core implementation details (architecture, DB schema) remain in ARCHITECTURE.md
 -->
 
 # Thumbnail Viewport Implementation Plan
@@ -302,9 +308,9 @@ Model Updated + Sync to FileTable
 ### Phase 3: UI Layer - Thumbnail Viewport (Week 3-4) [NOT STARTED]
 
 **Status:** NOT STARTED  
-**Next Steps:** Implement ThumbnailDelegate, ThumbnailViewportWidget, FileTableModel.order_mode
+**Next Steps:** Implement ThumbnailDelegate (with 2-circle indicators from theme + frame tinting), ThumbnailViewportWidget (with multipurpose progress widget + zoom slider), FileTableModel.order_mode, Lasso Selection (Phase 3.4)
 
-**Note:** Phase 3 now includes complex lasso selection (3.5) - budget extra time for edge cases.
+**Note:** Phase 3 includes lasso selection (3.4) - budget extra time for edge cases.
 
 #### 3.1 Thumbnail Delegate
 - **File:** `oncutf/ui/delegates/thumbnail_delegate.py`
@@ -312,9 +318,22 @@ Model Updated + Sync to FileTable
 
 **Rendering:**
 - Rectangle frame (photo slide style, ~3px border)
+  - **Color flag tinting:** Frame border and background tinted with FileItem.color (if set)
+  - Non-colored files: default theme border (neutral gray/white)
+  - Colored files: border color matches flag, background subtle tint (~10% opacity)
 - Thumbnail centered with aspect ratio fit
 - Filename word-wrapped below (Qt.TextWordWrap)
-- Color flag circle (top-left, 12px diameter)
+- **Metadata/Hash indicators (top-left, 2 circles, 12px diameter each):**
+  - **First circle (left): Metadata status**
+    - No metadata: `#404040` (dark gray) - `METADATA_ICON_COLORS["none"]`
+    - Fast metadata loaded: `#51cf66` (green) - `METADATA_ICON_COLORS["loaded"]`
+    - Extended metadata loaded: `#fabf65` (yellowish-orange) - `EXTENDED_METADATA_COLOR`
+  - **Second circle (right): Hash status**
+    - No hash: `#404040` (dark gray) - `METADATA_ICON_COLORS["none"]`
+    - Hash cached: `#ce93d8` (pink-purple) - `METADATA_ICON_COLORS["hash"]`
+  - Same visual design as FileTable status columns (12px circles with 2px white border)
+  - Tooltip on hover: "Metadata: Extended" / "Hash: Cached"
+  - Spacing: 4px between circles, 8px margin from top-left corner
 - **Star rating overlay (top-right, 5 stars, 0-5 rating)** [FUTURE]
   - Display: 12px gold stars, semi-transparent background
   - **Note:** Requires `FileItem.rating` field + DB storage (not yet implemented)
@@ -335,10 +354,26 @@ Model Updated + Sync to FileTable
 - **Class:** `ThumbnailViewportWidget(QWidget)`
 
 **Layout:**
-- QListView (IconMode)
-- Uses **same FileTableModel** as table view (not a wrapper)
-- FileTableModel provides `order_mode` property: "manual" | "sorted"
-- Delegate set from Phase 3.1
+- **Main Layout (QVBoxLayout):**
+  - Top: **Existing status label widget** (already exists, no changes)
+    - Same widget used for FileTable (managed by StatusManager)
+    - Updates automatically when viewport changes (same as FileTable)
+    - No new implementation needed - just connect signals
+  - Center: QListView (IconMode)
+    - Uses **same FileTableModel** as table view (not a wrapper)
+    - FileTableModel provides `order_mode` property: "manual" | "sorted"
+    - Delegate set from Phase 3.1
+  - Bottom: Toolbar (QWidget with QHBoxLayout)
+    - **Left side: Multipurpose widget area**
+      - Initially: Thumbnail generation progress (QProgressBar)
+      - Format: "Generating thumbnails: 45/128 (35%)"
+      - Hides when generation complete
+      - Future: Can be reused for other operations (batch rename preview, etc.)
+    - **Right side: Zoom Slider**
+      - Icon (zoom-out, 16px) | QSlider (Qt.Horizontal, 64-256px range) | Icon (zoom-in, 16px)
+      - **NO label** - use tooltip instead: "Thumbnail Size: 128px" (updates on hover)
+      - Saves preference to config on change
+      - Connects to: `self._list_view.setIconSize(QSize(value, value))`
 
 **Model Integration:**
 - Viewport and table share the same model instance
@@ -353,7 +388,7 @@ Model Updated + Sync to FileTable
 - **Selection:**
   - Ctrl+Click: Toggle individual thumbnail
   - Shift+Click: Range select
-  - **Lasso (Complex - Phase 3.5):**
+  - **Lasso Selection (Complex):**
     - QRubberBand on drag in empty space
     - Calculate item rects with `visualRect(index)`
     - Intersect with rubber band rect
@@ -391,18 +426,7 @@ Model Updated + Sync to FileTable
   - **0-5 keys: Set star rating** [FUTURE - requires rating storage]
   - **R key: Clear rating** [FUTURE]
 
-#### 3.3 Video Preview Dialog
-- **File:** `oncutf/ui/dialogs/video_preview_dialog.py`
-- **Class:** `VideoPreviewDialog(QDialog)`
-
-**Features:**
-- Display video with playback controls (play, pause, seek bar)
-- Frame-by-frame stepping (arrow keys or buttons)
-- Status bar showing current time / total duration
-- Context menu action: "Set This Frame as Thumbnail"
-  - On action: Extract frame, save to cache, update DB, re-render viewport thumbnail
-
-#### 3.4 FileTableModel Order Mode Extension
+#### 3.3 FileTableModel Order Mode Extension
 
 **File:** `oncutf/models/file_table/file_table_model.py`
 
@@ -428,7 +452,7 @@ class FileTableModel:
         self.dataChanged.emit(...)  # Notify views
 ```
 
-#### 3.5 Lasso Selection (Complex)
+#### 3.4 Lasso Selection (Complex)
 
 **File:** `oncutf/ui/widgets/thumbnail_viewport.py` (event filter extension)
 
@@ -905,11 +929,18 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] Double-click opens file
 - [ ] Right-click context menu
 
-### Phase 3.3: Video Preview
-- [ ] Video preview dialog opens
-- [ ] Frame-by-frame stepping
-- [ ] "Set as Thumbnail" action
-- [ ] Custom frame replaces auto-selected frame
+### Phase 3: UI Rendering & Interaction
+- [ ] Status label updates from both viewports (FileTable + Thumbs)
+- [ ] Metadata circle colors match theme: none=#404040, loaded=#51cf66 (green), extended=#fabf65 (orange)
+- [ ] Hash circle colors match theme: none=#404040, hash=#ce93d8 (pink-purple)
+- [ ] 2-circle spacing and positioning correct (8px margin, 4px apart)
+- [ ] Color flag tints frame border and background
+- [ ] Colored vs non-colored files visually distinct
+- [ ] Multipurpose progress widget shows thumbnail generation
+- [ ] Progress widget hides when generation complete
+- [ ] Zoom slider functional (64-256px range)
+- [ ] Zoom slider tooltip updates (no label)
+- [ ] Zoom slider saves preference to config
 
 ### Phase 4-5: Integration & Persistence
 - [ ] App restart preserves manual order
@@ -944,24 +975,35 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 
 ## Future Enhancements (Out of Scope)
 
-1. **Star Rating System (Phase 6+):**
+1. **Video Preview Dialog (Deferred from Phase 3):**
+   - **File:** `oncutf/ui/dialogs/video_preview_dialog.py`
+   - **Features:**
+     - Display video with playback controls (play, pause, seek bar)
+     - Frame-by-frame stepping (arrow keys or buttons)
+     - Status bar showing current time / total duration
+     - Context menu action: "Set This Frame as Thumbnail"
+     - On action: Extract frame, save to cache, update DB, re-render viewport thumbnail
+   - **Estimated effort:** 3-5 days
+   - **Priority:** Medium (nice-to-have, not critical for Phase 3)
+
+2. **Star Rating System (Phase 6+):**
    - Requires DB schema changes: `file_table.rating INTEGER DEFAULT 0`
    - FileItem dataclass extension: `rating: int = 0`
    - UI components: star overlay, shortcuts (0-5, R), context menu
-   - Sync layer: thumbnail \u2192 FileItem \u2192 file_table \u2192 metadata write
+   - Sync layer: thumbnail → FileItem → file_table → metadata write
    - Sort/filter by rating
    - **Estimated effort:** 1-2 weeks (storage + UI + sync)
 
-2. **Conditional branching in graph:** Rule engine for folder-based organizing
-3. **Metadata display:** Show exif fields as overlays on thumbnails (beyond star rating)
-4. **Batch editing:** Select thumbnails \u2192 edit metadata/rename rules
-5. **Slideshow mode:** Auto-advance through thumbnails
-6. **Custom frame picker UI:** Visual timeline for video frame selection
-7. **GPU rendering:** Use OpenGL for thumbnails (high-performance mode)
-8. **Network drive support:** Cache network files locally
-9. **Animated GIF thumbnails:** Show first 3 frames in carousel
-10. **Half-star ratings:** 0.5 increments for more granular rating (requires rating system first)
-11. **Tag-based filtering:** Combine rating filters with color flags (e.g., \"3+ stars AND red flag\")
+3. **Conditional branching in graph:** Rule engine for folder-based organizing
+4. **Metadata display:** Show exif fields as overlays on thumbnails (beyond star rating)
+5. **Batch editing:** Select thumbnails → edit metadata/rename rules
+6. **Slideshow mode:** Auto-advance through thumbnails
+7. **Custom frame picker UI:** Visual timeline for video frame selection (enhanced version of #1)
+8. **GPU rendering:** Use OpenGL for thumbnails (high-performance mode)
+9. **Network drive support:** Cache network files locally
+10. **Animated GIF thumbnails:** Show first 3 frames in carousel
+11. **Half-star ratings:** 0.5 increments for more granular rating (requires rating system first)
+12. **Tag-based filtering:** Combine rating filters with color flags (e.g., "3+ stars AND red flag")
 
 ---
 

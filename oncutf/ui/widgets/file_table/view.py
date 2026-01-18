@@ -47,13 +47,6 @@ from oncutf.ui.behaviors import (
 from oncutf.ui.widgets.file_table.event_handler import EventHandler
 from oncutf.ui.widgets.file_table.hover_handler import HoverHandler
 from oncutf.ui.widgets.file_table.tooltip_handler import TooltipHandler
-from oncutf.ui.widgets.file_table.utils import (
-    clear_preview_and_metadata,
-    emergency_cursor_cleanup,
-    force_cursor_cleanup,
-    get_main_window,
-    get_metadata_tree,
-)
 from oncutf.ui.widgets.file_table.viewport_handler import ViewportHandler
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
@@ -387,26 +380,6 @@ class FileTableView(QTableView):
             return True
         files = getattr(self.model(), "files", [])
         return not files or len(files) == 0
-
-    def _force_cursor_cleanup(self):
-        """Force cleanup of any stuck cursor states."""
-        force_cursor_cleanup(self)
-
-    def _emergency_cursor_cleanup(self):
-        """Emergency cursor cleanup with aggressive reset."""
-        emergency_cursor_cleanup(self)
-
-    def _get_metadata_tree(self):
-        """Get the metadata tree widget from parent hierarchy."""
-        return get_metadata_tree(self)
-
-    def _get_main_window(self):
-        """Get the main window from parent hierarchy."""
-        return get_main_window(self)
-
-    def _clear_preview_and_metadata(self) -> None:
-        """Clear preview and metadata displays."""
-        clear_preview_and_metadata(self)
 
     # =====================================
     # Model & Table Setup

@@ -9,26 +9,25 @@ Consolidated list of all TODO items extracted from codebase.
 ## High Priority Features
 
 ### 1. Thumbnails Layout System
-**Status:** Not Started  
+**Status:** In Progress (Phase 3 - UI Layer)  
 **Priority:** High  
 **Description:** Implement thumbnail view mode for visual file browsing alongside the current table view.
 
-**Proposed Features:**
-- Grid-based thumbnail layout for image/video files
-- Configurable thumbnail size (small, medium, large)
-- Toggle between table view and thumbnail view
-- Lazy loading for performance with large file sets
-- File selection and multi-selection support
-- Context menu integration
-- Drag & drop support in thumbnail mode
-- Display filename overlays on thumbnails
+**Current Progress:**
+- ✅ Phase 1: Core Infrastructure (ThumbnailCache, Providers, DB migrations)
+- ✅ Phase 2: ThumbnailManager & Workers (background generation)
+- ⏳ Phase 3: UI Layer (ThumbnailDelegate, ThumbnailViewportWidget, Lasso Selection)
+- ⏳ Phase 4: Integration & Sync (model synchronization, sorting)
+- 📋 Phase 6: Testing & Polish
 
-**Technical Considerations:**
-- Use QListView or QTableWidget with custom delegates
-- Integrate with existing metadata/preview system
-- Maintain MVC separation (controller orchestration)
-- Cache thumbnail generation for performance
-- Support both image and video thumbnails
+**See:** [thumbnail_viewport_implementation_plan.md](docs/thumbnail_viewport_implementation_plan.md)
+
+**Deferred Features (Post-MVP):**
+- **Video Preview Dialog:** Frame-by-frame video preview with custom frame picker
+  - Playback controls (play, pause, seek)
+  - Frame stepping (arrow keys)
+  - "Set This Frame as Thumbnail" action
+  - Estimated effort: 3-5 days
 
 **Benefits:**
 - Easier visual file identification
