@@ -163,7 +163,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self._draw_frame(painter, frame_rect, is_selected, is_hover)
 
         # Draw thumbnail or placeholder
-        thumbnail_pixmap = index.data(Qt.DecorationRole)
+        # Use Qt.UserRole + 1 for thumbnail pixmaps (separate from status icons)
+        thumbnail_pixmap = index.data(Qt.UserRole + 1)
         if isinstance(thumbnail_pixmap, QPixmap) and not thumbnail_pixmap.isNull():
             logger.debug("[ThumbnailDelegate] Drawing actual thumbnail for row=%d", index.row())
             self._draw_thumbnail(painter, thumbnail_rect, thumbnail_pixmap)

@@ -196,8 +196,23 @@ class DataProvider:
         if role == Qt.UserRole:
             return file
 
+        # Support Qt.UserRole + 1 for thumbnail pixmaps (thumbnail viewport only)
+        if role == Qt.UserRole + 1:
+            try:
+                from oncutf.core.application_context import ApplicationContext
+
+                context = ApplicationContext.get_instance()
+                if context and context.has_manager("thumbnail"):
+                    thumbnail_manager = context.get_manager("thumbnail")
+                    # Request thumbnail (returns placeholder if not cached, triggers async load)
+                    pixmap = thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
+                    return pixmap
+            except Exception as e:
+                logger.debug("[DataProvider] Thumbnail request failed: %s", e, extra={"dev_only": True})
+            return QVariant()
+
         if index.column() == 0:
-            # Status column logic
+            # Status column logic (status icons for file table)
             return self._get_status_column_data(file, role)
 
         col_key = self.column_manager.get_column_key(index.column())
