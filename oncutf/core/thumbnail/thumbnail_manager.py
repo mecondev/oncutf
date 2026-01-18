@@ -123,6 +123,9 @@ class ThumbnailManager(QObject):
         self._pending_requests: set[str] = set()
         self._pending_lock = threading.Lock()
 
+        # Track files that failed thumbnail generation (to avoid retrying)
+        self._failed_files: set[str] = set()
+
         # Worker threads
         self._workers: list[ThumbnailWorker] = []
         self._max_workers = max_workers
@@ -225,10 +228,13 @@ class ThumbnailManager(QObject):
             size_px: Requested thumbnail size
 
         """
-        # Check if already pending (avoid duplicate requests)
+        # Check if already pending or previously failed (avoid duplicate requests)
         with self._pending_lock:
             if file_path in self._pending_requests:
                 logger.debug("[ThumbnailManager] Request already pending for: %s", file_path)
+                return
+            if file_path in self._failed_files:
+                # Don't retry failed files until files are reloaded
                 return
             self._pending_requests.add(file_path)
 
@@ -318,9 +324,10 @@ class ThumbnailManager(QObject):
         """
         self._completed_requests += 1
 
-        # Remove from pending set
+        # Remove from pending set and add to failed set
         with self._pending_lock:
             self._pending_requests.discard(file_path)
+            self._failed_files.add(file_path)
 
         self.generation_error.emit(file_path, error_msg)
 
@@ -389,6 +396,37 @@ class ThumbnailManager(QObject):
         # Note: DB cleanup handled by ThumbnailStore.cleanup_orphaned_entries()
         logger.info("Cache cleared")
 
+    def clear_pending_requests(self) -> None:
+        """Clear all pending thumbnail requests from the queue.
+
+        Call this when files are removed from the model to prevent
+        'file not found' warnings from stale requests.
+        Also clears the failed files set to allow retry on next load.
+        """
+        cleared_count = 0
+        while not self._request_queue.empty():
+            try:
+                self._request_queue.get_nowait()
+                self._request_queue.task_done()
+                cleared_count += 1
+            except Exception:
+                break
+
+        # Clear pending and failed sets
+        with self._pending_lock:
+            pending_count = len(self._pending_requests)
+            failed_count = len(self._failed_files)
+            self._pending_requests.clear()
+            self._failed_files.clear()
+
+        if cleared_count > 0 or pending_count > 0 or failed_count > 0:
+            logger.debug(
+                "Cleared %d queued, %d pending, %d failed thumbnail requests",
+                cleared_count,
+                pending_count,
+                failed_count,
+            )
+
     def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics.
 
@@ -417,7 +455,11 @@ class ThumbnailManager(QObject):
 
         # Wait for workers to finish (with timeout)
         for worker in self._workers:
-            worker.wait(1000)  # 1 second timeout
+            if not worker.wait(2000):  # 2 second timeout
+                # Worker didn't finish in time, terminate it
+                logger.warning("ThumbnailWorker did not stop in time, terminating")
+                worker.terminate()
+                worker.wait(500)  # Brief wait after terminate
 
         self._workers.clear()
 

@@ -85,6 +85,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
     """Thumbnail generation for image files using Qt image readers.
 
     Supports: JPEG, PNG, GIF, BMP, TIFF, WebP, HEIC (if Qt supports).
+    Also supports RAW formats via rawpy: CR2, CR3, NEF, ORF, RW2, ARW, DNG, RAF.
 
     Thread-safe: Can be used from worker threads.
 
@@ -103,6 +104,20 @@ class ImageThumbnailProvider(ThumbnailProvider):
         ".heif",
     }
 
+    # RAW formats supported via rawpy
+    RAW_EXTENSIONS = {
+        ".cr2",
+        ".cr3",
+        ".nef",
+        ".orf",
+        ".rw2",
+        ".arw",
+        ".dng",
+        ".raf",
+        ".pef",  # Pentax
+        ".srw",  # Samsung
+    }
+
     def supports(self, file_path: str) -> bool:
         """Check if file is a supported image format.
 
@@ -110,11 +125,11 @@ class ImageThumbnailProvider(ThumbnailProvider):
             file_path: Absolute file path
 
         Returns:
-            True if extension is in SUPPORTED_EXTENSIONS
+            True if extension is in SUPPORTED_EXTENSIONS or RAW_EXTENSIONS
 
         """
         ext = Path(file_path).suffix.lower()
-        return ext in self.SUPPORTED_EXTENSIONS
+        return ext in self.SUPPORTED_EXTENSIONS or ext in self.RAW_EXTENSIONS
 
     def generate(self, file_path: str) -> QPixmap:
         """Generate thumbnail for image file.
@@ -132,7 +147,13 @@ class ImageThumbnailProvider(ThumbnailProvider):
         if not Path(file_path).exists():
             raise ThumbnailGenerationError(f"File not found: {file_path}")
 
-        # Load image
+        ext = Path(file_path).suffix.lower()
+
+        # Use rawpy for RAW files
+        if ext in self.RAW_EXTENSIONS:
+            return self._generate_raw_thumbnail(file_path)
+
+        # Standard Qt image loading for regular formats
         image = QImage(file_path)
         if image.isNull():
             raise ThumbnailGenerationError(f"Failed to load image: {file_path}")
@@ -157,6 +178,130 @@ class ImageThumbnailProvider(ThumbnailProvider):
         )
 
         return pixmap
+
+    def _generate_raw_thumbnail(self, file_path: str) -> QPixmap:
+        """Generate thumbnail for RAW file using rawpy.
+
+        Attempts to extract embedded JPEG preview first (fast).
+        Falls back to full RAW processing if no preview exists.
+
+        Args:
+            file_path: Absolute path to RAW file
+
+        Returns:
+            QPixmap scaled to max_size
+
+        Raises:
+            ThumbnailGenerationError: If RAW processing fails
+
+        """
+        try:
+            import rawpy
+        except ImportError as e:
+            raise ThumbnailGenerationError(
+                f"rawpy not installed, cannot process RAW file: {file_path}"
+            ) from e
+
+        try:
+            with rawpy.imread(file_path) as raw:
+                # Try to extract embedded thumbnail (fast path)
+                try:
+                    thumb = raw.extract_thumb()
+                    if thumb.format == rawpy.ThumbFormat.JPEG:
+                        # Embedded JPEG - load directly
+                        image = QImage()
+                        if image.loadFromData(thumb.data):
+                            scaled = image.scaled(
+                                self.max_size,
+                                self.max_size,
+                                Qt.KeepAspectRatio,
+                                Qt.SmoothTransformation,
+                            )
+                            pixmap = QPixmap.fromImage(scaled)
+                            if not pixmap.isNull():
+                                logger.debug(
+                                    "[ImageThumbnailProvider] RAW embedded JPEG: %s (%dx%d)",
+                                    Path(file_path).name,
+                                    pixmap.width(),
+                                    pixmap.height(),
+                                )
+                                return pixmap
+                    elif thumb.format == rawpy.ThumbFormat.BITMAP:
+                        # RGB bitmap array
+                        import io
+
+                        from PIL import Image
+
+                        pil_image = Image.fromarray(thumb.data)
+                        # Convert to QImage via bytes
+                        buffer = io.BytesIO()
+                        pil_image.save(buffer, format="PNG")
+                        buffer.seek(0)
+
+                        image = QImage()
+                        if image.loadFromData(buffer.getvalue()):
+                            scaled = image.scaled(
+                                self.max_size,
+                                self.max_size,
+                                Qt.KeepAspectRatio,
+                                Qt.SmoothTransformation,
+                            )
+                            pixmap = QPixmap.fromImage(scaled)
+                            if not pixmap.isNull():
+                                logger.debug(
+                                    "[ImageThumbnailProvider] RAW embedded bitmap: %s (%dx%d)",
+                                    Path(file_path).name,
+                                    pixmap.width(),
+                                    pixmap.height(),
+                                )
+                                return pixmap
+                except rawpy.LibRawNoThumbnailError:
+                    logger.debug("[ImageThumbnailProvider] No embedded thumbnail in: %s", file_path)
+                except rawpy.LibRawUnsupportedThumbnailError:
+                    logger.debug("[ImageThumbnailProvider] Unsupported thumbnail format in: %s", file_path)
+
+                # Fallback: Full RAW processing (slower but always works)
+                logger.debug("[ImageThumbnailProvider] Full RAW processing for: %s", file_path)
+                rgb = raw.postprocess(
+                    use_camera_wb=True,
+                    half_size=True,  # Faster, sufficient for thumbnail
+                    no_auto_bright=False,
+                    output_bps=8,
+                )
+
+                import io
+
+                from PIL import Image
+
+                pil_image = Image.fromarray(rgb)
+                buffer = io.BytesIO()
+                pil_image.save(buffer, format="PNG")
+                buffer.seek(0)
+
+                image = QImage()
+                if image.loadFromData(buffer.getvalue()):
+                    scaled = image.scaled(
+                        self.max_size,
+                        self.max_size,
+                        Qt.KeepAspectRatio,
+                        Qt.SmoothTransformation,
+                    )
+                    pixmap = QPixmap.fromImage(scaled)
+                    if not pixmap.isNull():
+                        logger.debug(
+                            "[ImageThumbnailProvider] RAW full process: %s (%dx%d)",
+                            Path(file_path).name,
+                            pixmap.width(),
+                            pixmap.height(),
+                        )
+                        return pixmap
+
+                raise ThumbnailGenerationError(f"Failed to create pixmap from RAW: {file_path}")
+
+        except rawpy.LibRawError as e:
+            raise ThumbnailGenerationError(f"RAW processing error for {file_path}: {e}") from e
+        except Exception as e:
+            raise ThumbnailGenerationError(f"Unexpected error processing RAW {file_path}: {e}") from e
 
 
 class VideoThumbnailProvider(ThumbnailProvider):
@@ -183,6 +328,9 @@ class VideoThumbnailProvider(ThumbnailProvider):
         ".mpg",
         ".mpeg",
         ".3gp",
+        ".mts",
+        ".m2ts",
+        ".mxf",
     }
 
     # Frame extraction heuristic
@@ -362,6 +510,18 @@ class VideoThumbnailProvider(ThumbnailProvider):
                     check=True,
                 )
                 duration_str = result.stdout.strip()
+
+            # Handle multiple lines (some formats return multiple stream durations)
+            # Take the first valid numeric line
+            if "\n" in duration_str:
+                for line in duration_str.split("\n"):
+                    line = line.strip()
+                    if line and line != "N/A":
+                        try:
+                            duration_str = line
+                            break
+                        except ValueError:
+                            continue
 
             duration = float(duration_str)
             logger.debug(

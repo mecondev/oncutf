@@ -471,8 +471,11 @@ class LayoutController:
             self._on_file_table_selection_changed
         )
 
-        # Note: ThumbnailViewport doesn't emit selection_changed signal
-        # Selection sync happens on viewport toggle instead
+        # ThumbnailViewport selection changed -> update rename preview and sync to FileTable
+        self.parent_window.thumbnail_viewport.selection_changed.connect(
+            self._on_thumbnail_selection_changed
+        )
+
         logger.debug("[LayoutController] Selection sync configured between views")
 
     def _on_file_table_selection_changed(self, selected_rows: list[int]) -> None:
@@ -486,6 +489,36 @@ class LayoutController:
         # Only sync if thumbnail view is active
         if self.parent_window.viewport_stack.currentIndex() == 1:
             self._sync_selection_to_viewport()
+
+    def _on_thumbnail_selection_changed(self, selected_rows: list[int]) -> None:
+        """Handle ThumbnailViewport selection change.
+
+        Updates rename preview and metadata tree when selection changes in thumbnail view.
+        Only processes if thumbnail view is currently active.
+
+        Args:
+            selected_rows: List of selected row indices
+        """
+        # Only process if thumbnail view is active
+        if self.parent_window.viewport_stack.currentIndex() != 1:
+            return
+
+        try:
+            # Update rename preview
+            if hasattr(self.parent_window, 'request_preview_update'):
+                self.parent_window.request_preview_update()
+
+            # Update metadata tree from selection
+            if hasattr(self.parent_window, 'metadata_tree_view'):
+                self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+
+            logger.debug(
+                "[LayoutController] Thumbnail selection changed: %d items, updated preview",
+                len(selected_rows),
+                extra={"dev_only": True}
+            )
+        except Exception as e:
+            logger.error("[LayoutController] Error handling thumbnail selection: %s", e)
 
     def _sync_selection_to_viewport(self) -> None:
         """Sync current FileTable selection to ThumbnailViewport."""

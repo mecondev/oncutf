@@ -171,29 +171,50 @@ class TableManager:
     def get_selected_files(self) -> list[FileItem]:
         """Returns a list of currently selected files (blue highlighted) in table display order.
 
+        Gets selection from the currently active viewport (FileTable or ThumbnailViewport).
+
         Returns:
-            List of FileItem objects that are currently selected in the table view,
+            List of FileItem objects that are currently selected in the active view,
             sorted by their row position to maintain consistent rename order
 
         """
         if not self.parent_window.file_model or not self.parent_window.file_model.files:
             return []
 
-        # Get currently selected rows from the file table view
-        if not hasattr(self.parent_window, "file_table_view"):
-            return []
+        # Check which viewport is active and get selection from it
+        selection_model = None
+        use_selected_indexes = False  # QListView needs selectedIndexes(), QTreeView uses selectedRows()
 
-        selection_model = self.parent_window.file_table_view.selectionModel()
+        # If viewport_stack exists, check which view is active
+        if hasattr(self.parent_window, "viewport_stack"):
+            current_index = self.parent_window.viewport_stack.currentIndex()
+
+            if current_index == 1 and hasattr(self.parent_window, "thumbnail_viewport"):
+                # Thumbnail view (index 1) - QListView uses selectedIndexes
+                selection_model = self.parent_window.thumbnail_viewport.selection_model()
+                use_selected_indexes = True
+            elif hasattr(self.parent_window, "file_table_view"):
+                # Details view (index 0) or fallback - QTreeView uses selectedRows
+                selection_model = self.parent_window.file_table_view.selectionModel()
+        elif hasattr(self.parent_window, "file_table_view"):
+            # Fallback to file_table_view only (no viewport_stack)
+            selection_model = self.parent_window.file_table_view.selectionModel()
+
         if not selection_model:
             return []
 
-        selected_indexes = selection_model.selectedRows()
-        # Sort by row number to maintain table display order (critical for consistent rename sequence)
-        sorted_indexes = sorted(selected_indexes, key=lambda idx: idx.row())
-        selected_files = []
+        # Get selected rows based on view type
+        if use_selected_indexes:
+            # QListView: get unique rows from selectedIndexes
+            selected_indexes = selection_model.selectedIndexes()
+            unique_rows = sorted({idx.row() for idx in selected_indexes})
+        else:
+            # QTreeView: use selectedRows directly
+            selected_indexes = selection_model.selectedRows()
+            unique_rows = sorted(idx.row() for idx in selected_indexes)
 
-        for index in sorted_indexes:
-            row = index.row()
+        selected_files = []
+        for row in unique_rows:
             if 0 <= row < len(self.parent_window.file_model.files):
                 selected_files.append(self.parent_window.file_model.files[row])
 

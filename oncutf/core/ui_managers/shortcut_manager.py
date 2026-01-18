@@ -73,10 +73,14 @@ class ShortcutManager:
             self.main_window.status_manager.set_file_operation_status(
                 "File table cleared", success=True, auto_reset=True
             )
-            # Override the reset delay for quick feedback
-            if self.main_window.status_manager._status_timer:
-                self.main_window.status_manager._status_timer.stop()
-                self.main_window.status_manager._status_timer.start(1000)  # 1 second
+            # Cancel existing timer and schedule a faster reset (1 second)
+            from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
+
+            if self.main_window.status_manager._status_timer_id:
+                cancel_timer(self.main_window.status_manager._status_timer_id)
+            self.main_window.status_manager._status_timer_id = schedule_dialog_close(
+                self.main_window.status_manager.set_ready, delay=1000
+            )
 
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 

@@ -247,7 +247,8 @@ def create_placeholder_helper(
 
     Args:
         widget: The widget to add placeholder to
-        placeholder_type: Type of placeholder ('file_table', 'metadata_tree', 'preview_old', 'preview_new')
+        placeholder_type: Type of placeholder ('file_table', 'metadata_tree', 'preview_old',
+                         'preview_new', 'thumbnail_viewport')
         text: Optional placeholder text
         icon_size: Size of the placeholder icon
 
@@ -260,6 +261,7 @@ def create_placeholder_helper(
         "metadata_tree": "metadata_tree_placeholder_fixed",
         "preview_old": "old_names-preview_placeholder",
         "preview_new": "new_names-preview_placeholder",
+        "thumbnail_viewport": "File_table_placeholder_fixed",  # Re-use file table icon
     }
 
     icon_name = icon_mapping.get(placeholder_type, "File_table_placeholder_fixed")

@@ -103,6 +103,18 @@ class ThumbnailWorker(QThread):
             ".tif",
             ".webp",
             ".heic",
+            ".heif",
+            # RAW formats (supported via rawpy)
+            ".cr2",
+            ".cr3",
+            ".nef",
+            ".orf",
+            ".rw2",
+            ".arw",
+            ".dng",
+            ".raf",
+            ".pef",
+            ".srw",
         }
         self._video_extensions = {
             ".mp4",
@@ -113,6 +125,9 @@ class ThumbnailWorker(QThread):
             ".flv",
             ".webm",
             ".m4v",
+            ".mts",
+            ".m2ts",
+            ".mxf",
         }
 
     def run(self) -> None:
@@ -211,10 +226,13 @@ class ThumbnailWorker(QThread):
             logger.debug("Thumbnail generated successfully: %s", file_path)
 
         except ThumbnailGenerationError as e:
-            logger.warning("Thumbnail generation failed for %s: %s", file_path, e)
+            # Expected errors (unsupported formats, corrupted files, etc.)
+            # Logged as warning in manager when signal is received
+            logger.debug("Thumbnail generation failed for %s: %s", file_path, e)
             self.generation_error.emit(file_path, str(e))
 
         except Exception as e:
+            # Unexpected errors - log as exception here for debugging
             logger.exception("Unexpected error generating thumbnail for %s", file_path)
             self.generation_error.emit(file_path, f"Unexpected error: {e}")
 

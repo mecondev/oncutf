@@ -39,6 +39,7 @@ from PyQt5.QtWidgets import (
 from oncutf.ui.delegates.thumbnail_delegate import ThumbnailDelegate
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer
+from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
@@ -68,6 +69,7 @@ class ThumbnailViewportWidget(QWidget):
     file_activated = pyqtSignal(str)  # file_path - emitted on double-click
     files_reordered = pyqtSignal()  # Emitted when manual order changes
     viewport_mode_changed = pyqtSignal(str)  # "manual" or "sorted"
+    selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
 
     # Zoom limits
     MIN_THUMBNAIL_SIZE = 64
@@ -105,6 +107,8 @@ class ThumbnailViewportWidget(QWidget):
 
     def _setup_ui(self) -> None:
         """Set up the UI components."""
+        from oncutf.core.theme_manager import get_theme_manager
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -117,6 +121,17 @@ class ThumbnailViewportWidget(QWidget):
         self._list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._list_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self._list_view.setMovement(QListView.Free)  # Allow drag rearrange
+
+        # Apply styling from theme to match FileTable appearance
+        theme = get_theme_manager()
+        bg_color = theme.get_color("table_background")
+        border_color = theme.get_color("border")
+        self._list_view.setStyleSheet(f"""
+            QListView {{
+                border: 1px solid {border_color};
+                background-color: {bg_color};
+            }}
+        """)
 
         # Set model
         self._list_view.setModel(self._model)
@@ -138,6 +153,14 @@ class ThumbnailViewportWidget(QWidget):
 
         layout.addWidget(self._list_view)
 
+        # Setup placeholder for empty state
+        # Note: Parent is self._list_view since placeholder_helper uses viewport()
+        self.placeholder_helper = create_placeholder_helper(
+            self._list_view, "thumbnail_viewport", text="No files loaded", icon_size=160
+        )
+        # Show placeholder initially if model is empty
+        self._update_placeholder_visibility()
+
     def _connect_signals(self) -> None:
         """Connect Qt signals."""
         # Double-click activation
@@ -146,8 +169,14 @@ class ThumbnailViewportWidget(QWidget):
         # Context menu
         self._list_view.customContextMenuRequested.connect(self._on_context_menu)
 
-        # Model changes (for manual order save)
+        # Model changes (for manual order save and placeholder visibility)
         self._model.layoutChanged.connect(self._on_model_layout_changed)
+        self._model.rowsInserted.connect(self._update_placeholder_visibility)
+        self._model.rowsRemoved.connect(self._update_placeholder_visibility)
+        self._model.modelReset.connect(self._update_placeholder_visibility)
+
+        # Selection changes - emit for rename preview sync
+        self._list_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
 
         # Connect thumbnail_ready signal from ThumbnailManager
         try:
@@ -349,6 +378,31 @@ class ThumbnailViewportWidget(QWidget):
             self.file_activated.emit(file_item.full_path)
             logger.debug("[ThumbnailViewport] File activated: %s", file_item.filename)
 
+    def _on_selection_changed(self, selected: QItemSelection, deselected: QItemSelection) -> None:
+        """Handle selection change in thumbnail view.
+
+        Emits selection_changed signal for rename preview sync.
+
+        Args:
+            selected: Newly selected items
+            deselected: Newly deselected items
+        """
+        # Get all selected rows
+        selection_model = self._list_view.selectionModel()
+        if not selection_model:
+            return
+
+        selected_indexes = selection_model.selectedIndexes()
+        selected_rows = sorted({index.row() for index in selected_indexes})
+
+        # Emit signal for rename preview and other listeners
+        self.selection_changed.emit(selected_rows)
+        logger.debug(
+            "[ThumbnailViewport] Selection changed: %d items selected",
+            len(selected_rows),
+            extra={"dev_only": True}
+        )
+
     def _on_context_menu(self, position: QPoint) -> None:
         """Show context menu for thumbnail operations.
 
@@ -465,6 +519,17 @@ class ThumbnailViewportWidget(QWidget):
         if selection_model:
             selection_model.clearSelection()
 
+    def selection_model(self) -> QItemSelectionModel | None:
+        """Get the selection model for this viewport.
+
+        Used for integration with table_manager to get selected files
+        from the currently active viewport.
+
+        Returns:
+            QItemSelectionModel or None if not available
+        """
+        return self._list_view.selectionModel()
+
     def get_thumbnail_size(self) -> int:
         """Get current thumbnail size.
 
@@ -491,6 +556,48 @@ class ThumbnailViewportWidget(QWidget):
             self.files_reordered.emit()
             logger.debug("[ThumbnailViewport] Manual order saved to DB")
 
+        # Update placeholder visibility after layout changes
+        self._update_placeholder_visibility()
+
+    def _update_placeholder_visibility(self) -> None:
+        """Update placeholder visibility based on model row count."""
+        if not hasattr(self, "placeholder_helper"):
+            return
+
+        row_count = self._model.rowCount()
+        if row_count == 0:
+            # Clear pending thumbnail requests when model is empty
+            self._clear_pending_thumbnail_requests()
+
+            self.placeholder_helper.show()
+            # Center the placeholder after showing
+            self.placeholder_helper.update_position()
+            logger.debug("[ThumbnailViewport] Showing placeholder (no files)")
+        else:
+            self.placeholder_helper.hide()
+            logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
+
+    def _clear_pending_thumbnail_requests(self) -> None:
+        """Clear pending thumbnail requests from ThumbnailManager.
+
+        Called when files are cleared to prevent stale thumbnail updates.
+        """
+        try:
+            from oncutf.core.application_context import ApplicationContext
+
+            context = ApplicationContext.get_instance()
+            if context and context.has_manager("thumbnail"):
+                thumbnail_manager = context.get_manager("thumbnail")
+                thumbnail_manager.clear_pending_requests()
+        except Exception as e:
+            logger.debug("[ThumbnailViewport] Could not clear pending requests: %s", e)
+
+    def resizeEvent(self, event) -> None:
+        """Handle resize events - update placeholder position."""
+        super().resizeEvent(event)
+        if hasattr(self, "placeholder_helper"):
+            self.placeholder_helper.update_position()
+
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.
 
@@ -500,6 +607,10 @@ class ThumbnailViewportWidget(QWidget):
             file_path: Absolute path to file
             pixmap: Loaded thumbnail pixmap
         """
+        # Check if model still has files (may have been cleared)
+        if not self._model or not self._model.files:
+            return
+
         logger.debug("[ThumbnailViewport] thumbnail_ready signal received: %s (pixmap valid=%s)", file_path, not pixmap.isNull())
         # Find the row for this file
         for row, file_item in enumerate(self._model.files):
@@ -509,22 +620,20 @@ class ThumbnailViewportWidget(QWidget):
                 self._list_view.update(index)
                 logger.debug("[ThumbnailViewport] Updated view for row=%d, file=%s", row, file_path)
                 return
-        logger.warning("[ThumbnailViewport] Could not find file in model: %s", file_path)
+        # File not in model - likely cleared while thumbnails were loading (expected behavior)
+        # No warning needed as this is a normal race condition during clear operations
 
     # ========== Tooltip Helpers ==========
 
     def _schedule_tooltip(self) -> None:
         """Schedule tooltip display after hover delay."""
-        from oncutf.config import TOOLTIP_DELAY
-        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+        from oncutf.utils.shared.timer_manager import schedule_dialog_close
 
         if self._tooltip_timer_id:
             cancel_timer(self._tooltip_timer_id)
 
-        timer_manager = get_timer_manager()
-        self._tooltip_timer_id = timer_manager.schedule(
-            TOOLTIP_DELAY, self._show_tooltip, TimerType.TOOLTIP
-        )
+        # Use schedule_dialog_close for consistent tooltip delay (default 500ms)
+        self._tooltip_timer_id = schedule_dialog_close(self._show_tooltip)
 
     def _cancel_tooltip(self) -> None:
         """Cancel pending tooltip and clear active tooltip."""
@@ -547,7 +656,7 @@ class ThumbnailViewportWidget(QWidget):
         # Build tooltip text
         tooltip_lines = [
             f"<b>{file_item.filename}</b>",
-            f"Type: {file_item.type or 'Unknown'}",
+            f"Type: {file_item.extension.upper() if file_item.extension else 'Unknown'}",
         ]
 
         # Add metadata if available
