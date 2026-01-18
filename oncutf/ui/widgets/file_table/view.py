@@ -716,6 +716,17 @@ class FileTableView(QTableView):
         """Get SelectionStore instance."""
         return self._selection_behavior.selection_store
 
+    def _get_main_window(self):
+        """Get reference to main window for column management protocol."""
+        # Try parent_window reference first (set by layout controller)
+        if self.parent_window:
+            return self.parent_window
+
+        # Fallback: traverse parents to find main window
+        from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
+
+        return find_parent_with_attribute(self, "handle_header_toggle")
+
     # =====================================
     # Cleanup
     # =====================================

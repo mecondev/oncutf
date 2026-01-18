@@ -128,6 +128,10 @@ def emergency_cursor_cleanup() -> int:
         Number of cursors cleaned up
 
     """
+    # Guard against calls when QApplication is not available
+    if not QApplication.instance():
+        return 0
+
     cursor_count = 0
     while QApplication.overrideCursor() and cursor_count < 10:
         QApplication.restoreOverrideCursor()
@@ -147,6 +151,10 @@ def force_restore_cursor() -> None:
     """Force restoration of cursor to default state.
     Removes all override cursors without limit checking.
     """
+    # Guard against calls when QApplication is not available (e.g., during test teardown)
+    if not QApplication.instance():
+        return
+
     count = 0
     while QApplication.overrideCursor():
         QApplication.restoreOverrideCursor()
@@ -169,6 +177,10 @@ def get_current_cursor_info() -> str | None:
         String description of current cursor or None if no override
 
     """
+    # Guard against calls when QApplication is not available
+    if not QApplication.instance():
+        return None
+
     current = QApplication.overrideCursor()
     if not current:
         return None
@@ -195,6 +207,10 @@ def is_drag_cursor_active() -> bool:
         True if a drag cursor is active
 
     """
+    # Guard against calls when QApplication is not available
+    if not QApplication.instance():
+        return False
+
     current = QApplication.overrideCursor()
     if not current:
         return False

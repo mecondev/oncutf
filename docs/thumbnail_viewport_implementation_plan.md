@@ -26,11 +26,11 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - Cache thumbnails persistently (disk + SQLite DB) for fast folder reload
 - Generate thumbnails in background threads without UI freeze
 
-**Status:** In Progress - Phase 2 Complete  
+**Status:** In Progress - Phase 4 Complete  
 **Priority:** High  
 **Estimated Duration:** 5-7 weeks (phased implementation)  
-**Time Elapsed:** 2 weeks (as of 2026-01-16)  
-**Completion:** 40% (Phase 1-2 done, bundled tools integration complete)
+**Time Elapsed:** 2 weeks (as of 2026-01-18)  
+**Completion:** 80% (Phase 1-4 done, testing pending)
 
 ---
 
@@ -52,6 +52,19 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - Progress signals and error handling
 - 650 lines of code added
 
+**Phase 3: UI Layer & Delegate [COMPLETE]**
+- ThumbnailDelegate with metadata/hash indicators
+- Color flag frame tinting
+- ThumbnailViewportWidget with lasso selection
+- FileTableModel.order_mode integration
+- 250+ lines of code added (delegate enhancements)
+
+**Phase 4: Integration & Selection Sync [COMPLETE]**
+- Viewport toggle via LayoutController
+- Bidirectional selection synchronization
+- FileTable <-> ThumbnailViewport selection sync on view switch
+- 130+ lines of code added (selection sync logic)
+
 **Bonus: Bundled Tools Integration [COMPLETE]**
 - ExifToolWrapper: Uses bundled exiftool (bin/<platform>/)
 - VideoThumbnailProvider: Auto-detects bundled ffmpeg
@@ -60,10 +73,10 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - 472 lines of code + documentation
 
 **Total Progress:**
-- Lines of code: 3154+
+- Lines of code: 3530+
 - Files created: 11
-- Files modified: 8
-- Commits: 3 (pushed to GitHub)
+- Files modified: 10
+- Commits: 5 (ready to push to GitHub)
 - Test coverage: Unit tests pending (Phase 6)
 
 ### Remaining Work (Weeks 3-7)
@@ -305,16 +318,36 @@ Model Updated + Sync to FileTable
 
 ---
 
-### Phase 3: UI Layer - Thumbnail Viewport (Week 3-4) [NOT STARTED]
+### Phase 3: UI Layer - Thumbnail Viewport (Week 3-4) [COMPLETE]
 
-**Status:** NOT STARTED  
-**Next Steps:** Implement ThumbnailDelegate (with 2-circle indicators from theme + frame tinting), ThumbnailViewportWidget (with multipurpose progress widget + zoom slider), FileTableModel.order_mode, Lasso Selection (Phase 3.4)
+**Status:** COMPLETE (2026-01-18)  
+**Deliverables:** ThumbnailDelegate with metadata indicators, color tinting, ThumbnailViewportWidget with lasso selection, FileTableModel.order_mode
 
-**Note:** Phase 3 includes lasso selection (3.4) - budget extra time for edge cases.
+**Note:** Lasso selection (3.4) completed - all edge cases handled.
 
-#### 3.1 Thumbnail Delegate
+#### 3.1 Thumbnail Delegate [COMPLETE]
 - **File:** `oncutf/ui/delegates/thumbnail_delegate.py`
 - **Class:** `ThumbnailDelegate(QStyledItemDelegate)`
+
+**Implementation Status:**
+- [DONE] Rectangle frame (photo slide style, 3px border)
+- [DONE] **Color flag tinting:** Frame border and background tinted with FileItem.color
+  - Colored files: border color matches flag, background 10% opacity tint
+  - Non-colored files: default theme border (neutral gray/white)
+  - Selection/hover brightening (10-20% lighter)
+- [DONE] Thumbnail centered with aspect ratio fit
+- [DONE] Filename word-wrapped below (Qt.TextWordWrap)
+- [DONE] **Metadata/Hash indicators (top-left, 2 circles, 12px diameter):**
+  - First circle (left): Metadata status (none/loaded/extended)
+  - Second circle (right): Hash status (none/cached)
+  - Same colors as FileTable: `METADATA_ICON_COLORS` from theme
+  - 2px white border, 4px spacing, 8px margin
+- [DONE] Video duration badge (bottom-right, semi-transparent, "MM:SS" or "HH:MM:SS")
+- [DONE] Placeholder for loading/failed thumbnails (file extension + "Loading...")
+- [DONE] Hover/selection visual states
+
+**Deferred Features:**
+- Star rating overlay (top-right) - requires `FileItem.rating` field + DB storage [FUTURE]
 
 **Rendering:**
 - Rectangle frame (photo slide style, ~3px border)
@@ -423,8 +456,7 @@ Model Updated + Sync to FileTable
   - Arrow keys: Move selection
   - Home/End: Jump to start/end
   - PageUp/PageDown: Scroll viewport
-  - **0-5 keys: Set star rating** [FUTURE - requires rating storage]
-  - **R key: Clear rating** [FUTURE]
+  - **0-5 keys: Set star rating (0 = no rating)** [FUTURE - requires rating storage]
 
 #### 3.3 FileTableModel Order Mode Extension
 
@@ -511,22 +543,29 @@ class ThumbnailViewport:
 
 ---
 
-### Phase 4: Integration & Sync (Week 4-5) [NOT STARTED]
+### Phase 4: Integration & Sync (Week 4-5) [COMPLETE]
 
-**Status:** NOT STARTED  
-**Dependencies:** Phase 3 complete
+**Status:** COMPLETE (2026-01-18)  
+**Deliverables:** Viewport toggle, bidirectional selection sync, MainWindow integration
 
-#### 4.1 Viewport Toggle
-- **Integration:** Use existing `viewport_button_group` infrastructure
-- Add signal handler in `SignalController` (or new controller)
-- Connect: `viewport_button_group.buttonClicked` → `_on_viewport_changed(button_id)`
+#### 4.1 Viewport Toggle [COMPLETE]
+- **Integration:** Uses existing `viewport_button_group` infrastructure in LayoutController
+- Button click handler: `_on_viewport_changed(button)` (already implemented)
+- QStackedWidget with FileTableView (index 0) and ThumbnailViewportWidget (index 1)
+- Keyboard shortcuts: F1 (details), F2 (thumbs)
+
+**Implementation Status:**
+- [DONE] Viewport toggle button group (completed in earlier phase)
+- [DONE] QStackedWidget with both views
+- [DONE] Signal connection: `viewport_button_group.buttonClicked` → `_on_viewport_changed()`
+- [DONE] Viewport switching logic with logging
 
 **Logic:**
-- If button "details": Show FileTableView
-- If button "thumbs": Show ThumbnailViewportWidget
-- Use QStackedWidget in center panel or toggle visibility
+- If button "details": `viewport_stack.setCurrentIndex(0)` → Show FileTableView
+- If button "thumbs": `viewport_stack.setCurrentIndex(1)` → Show ThumbnailViewportWidget
+- Selection sync on view switch (see 4.2)
 
-#### 4.2 Model Synchronization
+#### 4.2 Model Synchronization & Selection Sync [COMPLETE]
 - **Shared File List:** Both views display `FileTableModel.files` (no duplication)
 - **Manual Order Lookup:**
   - On file load: Query `ThumbnailOrderStore.get_folder_order(folder_path)`
@@ -536,11 +575,27 @@ class ThumbnailViewport:
   - Thumbnail drag → reorder in model
   - Emit `files_reordered` signal
   - FileTable updates immediately (both views same list)
-  - Save to DB via `ThumbnailOrderStore.update_folder_order()`
-- **Selection Sync:**
-  - Viewport selection → update shared selection store
-  - Table selection → update shared selection store
-  - Both views reflect same selection (via selection model signals)
+  - Save to DB via `ThumbnailOrderStore.save_folder_order()`
+
+**Implementation Status:**
+- [DONE] Shared FileTableModel instance between views
+- [DONE] Selection sync infrastructure: `_setup_selection_sync()`
+- [DONE] Bidirectional sync methods:
+  - `_sync_selection_to_viewport()`: FileTable → ThumbnailViewport
+  - `_sync_selection_to_table()`: ThumbnailViewport → FileTable
+- [DONE] Sync on viewport switch (details/thumbs toggle)
+- [DONE] FileTable selection change listener (when thumbs view active)
+
+**Selection Sync Workflow:**
+1. User switches to thumbnail view → `_sync_selection_to_viewport()` called
+2. FileTable selection changes while thumbs view active → auto-sync to viewport
+3. User switches to details view → `_sync_selection_to_table()` called
+
+**Technical Details:**
+- FileTable selection tracked via `selectionModel().selectedRows()`
+- ThumbnailViewport selection via `select_files(file_paths)` and `get_selected_files()`
+- Selection conversion: row indices → file paths (via Qt.UserRole FileItem)
+- Full row selection in FileTable maintained
 
 #### 4.3 Color Flag & File Properties
 - Color flag already loaded in `FileItem.color`
@@ -952,7 +1007,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 
 ### Phase 6: Future - Rating System
 - [ ] **[DEFERRED]** Star rating display (0-5 stars, top-right overlay)
-- [ ] **[DEFERRED]** Star rating keyboard shortcuts (0-5 keys, R to clear)
+- [ ] **[DEFERRED]** Star rating keyboard shortcuts (0-5 keys, 0 = no rating)
 - [ ] **[DEFERRED]** Star rating context menu (submenu with 0-5 options)
 - [ ] **[DEFERRED]** Sort by rating (high to low / low to high)
 - [ ] **[DEFERRED]** Hide/show filters (unrated, below 1-4 stars)

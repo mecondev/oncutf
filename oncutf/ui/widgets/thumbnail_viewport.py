@@ -269,7 +269,7 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # Lasso selection
-            elif self._rubber_band.isVisible() and self._rubber_band_origin:
+            elif self._rubber_band and self._rubber_band.isVisible() and self._rubber_band_origin:
                 # Update rubber band geometry
                 self._rubber_band.setGeometry(
                     QRect(self._rubber_band_origin, event.pos()).normalized()
@@ -279,23 +279,8 @@ class ThumbnailViewportWidget(QWidget):
                 self._update_lasso_selection()
                 return True
 
-        elif event_type == QEvent.MouseButtonRelease:
-            # End pan
-            if event.button() == Qt.MiddleButton and self._is_panning:
-                self._is_panning = False
-                self._pan_start_pos = None
-                self._list_view.viewport().setCursor(Qt.ArrowCursor)
-                return True
-
-            # End lasso
-            elif event.button() == Qt.LeftButton and self._rubber_band.isVisible():
-                self._rubber_band.hide()
-                self._rubber_band_origin = None
-                return False  # Let QListView handle the release
-
-        elif event_type == QEvent.MouseMove:
             # Handle hover for tooltips (when not panning or lasso selecting)
-            if not self._is_panning and not (self._rubber_band and self._rubber_band.isVisible()):
+            elif not self._is_panning:
                 index = self._list_view.indexAt(event.pos())
                 if index.isValid() and index != self._tooltip_index:
                     # New item hovered
@@ -306,6 +291,20 @@ class ThumbnailViewportWidget(QWidget):
                     # Left item area
                     self._cancel_tooltip()
 
+        elif event_type == QEvent.MouseButtonRelease:
+            # End pan
+            if event.button() == Qt.MiddleButton and self._is_panning:
+                self._is_panning = False
+                self._pan_start_pos = None
+                self._list_view.viewport().setCursor(Qt.ArrowCursor)
+                return True
+
+            # End lasso
+            elif event.button() == Qt.LeftButton and self._rubber_band and self._rubber_band.isVisible():
+                self._rubber_band.hide()
+                self._rubber_band_origin = None
+                return False  # Let QListView handle the release
+
         elif event_type == QEvent.Leave:
             # Clear tooltip when mouse leaves viewport
             self._cancel_tooltip()
@@ -314,7 +313,10 @@ class ThumbnailViewportWidget(QWidget):
 
     def _update_lasso_selection(self) -> None:
         """Update selection based on rubber band intersection."""
-        if not self._rubber_band.isVisible():
+        if not self._rubber_band or not self._rubber_band.isVisible():
+            return
+
+        if not self._model or self._model.rowCount() == 0:
             return
 
         rubber_rect = self._rubber_band.geometry()
@@ -323,6 +325,9 @@ class ThumbnailViewportWidget(QWidget):
         # Check all items for intersection
         for row in range(self._model.rowCount()):
             index = self._model.index(row, 0)
+            if not index.isValid():
+                continue
+
             item_rect = self._list_view.visualRect(index)
 
             if rubber_rect.intersects(item_rect):

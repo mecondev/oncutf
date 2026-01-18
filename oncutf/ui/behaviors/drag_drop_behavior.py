@@ -255,7 +255,7 @@ class DragDropBehavior:
                 self._drag_feedback_timer_id = None
 
             # Force cursor cleanup
-            self._widget._force_cursor_cleanup()
+            self._force_cursor_cleanup()
 
             # Deactivate drag cancel filter
             from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
@@ -430,6 +430,12 @@ class DragDropBehavior:
                 QEvent.MouseMove, local_pos, Qt.NoButton, Qt.NoButton, Qt.NoModifier
             )
             QApplication.postEvent(self._widget, fake_move_event)
+
+    def _force_cursor_cleanup(self) -> None:
+        """Force cleanup of any stuck cursors during drag operations."""
+        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+
+        force_restore_cursor()
 
     def _handle_drop_on_metadata_tree(self) -> bool:
         """Handle drop on metadata tree.

@@ -413,6 +413,9 @@ class LayoutController:
         # Connect viewport toggle signal
         self.parent_window.viewport_button_group.buttonClicked.connect(self._on_viewport_changed)
 
+        # Connect selection synchronization between FileTable and ThumbnailViewport
+        self._setup_selection_sync()
+
         center_layout.addWidget(self.parent_window.viewport_stack)
         self.parent_window.center_frame.setMinimumWidth(230)
         self.parent_window.horizontal_splitter.addWidget(self.parent_window.center_frame)
@@ -423,27 +426,142 @@ class LayoutController:
         Args:
             button: The clicked button from viewport_button_group
         """
-        # Get button ID from viewport_buttons dict
-        button_id = None
-        for spec_id, btn in self.parent_window.viewport_buttons.items():
-            if btn == button:
-                button_id = spec_id
-                break
+        try:
+            # Get button ID from viewport_buttons dict
+            button_id = None
+            for spec_id, btn in self.parent_window.viewport_buttons.items():
+                if btn == button:
+                    button_id = spec_id
+                    break
 
-        if button_id is None:
-            logger.warning("[LayoutController] Viewport button clicked but ID not found")
-            return
+            if button_id is None:
+                logger.warning("[LayoutController] Viewport button clicked but ID not found")
+                return
 
-        # Map button ID to stack index
-        # VIEWPORT_SPECS order: ["details", "thumbs"]
-        if button_id == "details":
-            self.parent_window.viewport_stack.setCurrentIndex(0)
-            logger.info("[LayoutController] Switched to details view")
-        elif button_id == "thumbs":
-            self.parent_window.viewport_stack.setCurrentIndex(1)
-            logger.info("[LayoutController] Switched to thumbnail view")
-        else:
-            logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
+            # Map button ID to stack index
+            # VIEWPORT_SPECS order: ["details", "thumbs"]
+            if button_id == "details":
+                self.parent_window.viewport_stack.setCurrentIndex(0)
+                # Sync selection from thumbnail viewport to file table
+                self._sync_selection_to_table()
+                logger.info("[LayoutController] Switched to details view")
+            elif button_id == "thumbs":
+                # Safety check: ensure thumbnail viewport is initialized
+                if not hasattr(self.parent_window, 'thumbnail_viewport') or not self.parent_window.thumbnail_viewport:
+                    logger.error("[LayoutController] ThumbnailViewport not initialized!")
+                    return
+
+                self.parent_window.viewport_stack.setCurrentIndex(1)
+                # Sync selection from file table to thumbnail viewport
+                self._sync_selection_to_viewport()
+                logger.info("[LayoutController] Switched to thumbnail view")
+            else:
+                logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
+
+        except Exception as e:
+            logger.exception("[LayoutController] Error switching viewport: %s", e)
+
+    def _setup_selection_sync(self) -> None:
+        """Setup bidirectional selection synchronization between FileTable and ThumbnailViewport.
+
+        Connects selection change signals from both views to sync methods.
+        """
+        # FileTable selection changed -> update ThumbnailViewport (but only when thumbs view is active)
+        self.parent_window.file_table_view.selection_changed.connect(
+            self._on_file_table_selection_changed
+        )
+
+        # Note: ThumbnailViewport doesn't emit selection_changed signal
+        # Selection sync happens on viewport toggle instead
+        logger.debug("[LayoutController] Selection sync configured between views")
+
+    def _on_file_table_selection_changed(self, selected_rows: list[int]) -> None:
+        """Handle FileTable selection change.
+
+        Syncs selection to ThumbnailViewport only if thumbnail view is currently active.
+
+        Args:
+            selected_rows: List of selected row indices
+        """
+        # Only sync if thumbnail view is active
+        if self.parent_window.viewport_stack.currentIndex() == 1:
+            self._sync_selection_to_viewport()
+
+    def _sync_selection_to_viewport(self) -> None:
+        """Sync current FileTable selection to ThumbnailViewport."""
+        try:
+            # Get selected files from FileTable
+            selected_files = []
+            selection_model = self.parent_window.file_table_view.selectionModel()
+            if selection_model:
+                selected_indexes = selection_model.selectedRows()
+                for index in selected_indexes:
+                    file_item = index.data(Qt.UserRole)
+                    if file_item:
+                        selected_files.append(file_item.full_path)
+
+            # Apply to ThumbnailViewport
+            if selected_files:
+                self.parent_window.thumbnail_viewport.select_files(selected_files)
+                logger.debug(
+                    "[LayoutController] Synced %d files to thumbnail viewport",
+                    len(selected_files),
+                )
+            else:
+                self.parent_window.thumbnail_viewport.clear_selection()
+
+        except Exception as e:
+            logger.error("[LayoutController] Error syncing selection to viewport: %s", e)
+
+    def _sync_selection_to_table(self) -> None:
+        """Sync current ThumbnailViewport selection to FileTable."""
+        try:
+            # Get selected files from ThumbnailViewport
+            selected_files = self.parent_window.thumbnail_viewport.get_selected_files()
+
+            # Find corresponding rows in FileTable
+            selection_model = self.parent_window.file_table_view.selectionModel()
+            if not selection_model:
+                return
+
+            model = self.parent_window.file_table_view.model()
+            if not model:
+                return
+
+            # Clear current selection
+            selection_model.clearSelection()
+
+            if not selected_files:
+                return
+
+            # Build selection
+            from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionRange
+
+            selection = QItemSelection()
+            selected_file_set = set(selected_files)
+
+            for row in range(model.rowCount()):
+                index = model.index(row, 0)
+                file_item = index.data(Qt.UserRole)
+
+                if file_item and file_item.full_path in selected_file_set:
+                    # Select entire row
+                    left_index = model.index(row, 0)
+                    right_index = model.index(row, model.columnCount() - 1)
+                    selection.append(QItemSelectionRange(left_index, right_index))
+
+            # Apply selection
+            if not selection.isEmpty():
+                from oncutf.core.pyqt_imports import QItemSelectionModel
+
+                selection_model.select(selection, QItemSelectionModel.Select)
+                logger.debug(
+                    "[LayoutController] Synced %d files to file table",
+                    len(selected_files),
+                )
+
+        except Exception as e:
+            logger.error("[LayoutController] Error syncing selection to table: %s", e)
 
     def _setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""

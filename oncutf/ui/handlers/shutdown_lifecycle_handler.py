@@ -254,9 +254,11 @@ class ShutdownLifecycleHandler:
     def _emergency_quit(self) -> None:
         """Emergency fallback quit path - must never raise."""
         with contextlib.suppress(Exception):
-            QApplication.restoreOverrideCursor()
+            if QApplication.instance():
+                QApplication.restoreOverrideCursor()
         with contextlib.suppress(Exception):
-            QApplication.quit()
+            if QApplication.instance():
+                QApplication.quit()
 
     def _start_shutdown_watchdog(self, timeout_s: float, *, repeat: bool = False):
         """Start a watchdog that dumps stack traces if shutdown appears hung.
@@ -320,12 +322,14 @@ class ShutdownLifecycleHandler:
         try:
             # Restore any remaining override cursors
             with contextlib.suppress(RuntimeError):
-                while QApplication.overrideCursor():
-                    QApplication.restoreOverrideCursor()
+                if QApplication.instance():
+                    while QApplication.overrideCursor():
+                        QApplication.restoreOverrideCursor()
 
             # Single processEvents to clear pending events
             with contextlib.suppress(RuntimeError):
-                QApplication.processEvents()
+                if QApplication.instance():
+                    QApplication.processEvents()
 
             # Log completion
             status = "successfully" if success else "with errors"

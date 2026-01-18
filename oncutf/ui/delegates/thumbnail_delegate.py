@@ -28,6 +28,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
+from oncutf.config import METADATA_ICON_COLORS
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -59,7 +60,13 @@ class ThumbnailDelegate(QStyledItemDelegate):
     FRAME_PADDING = 8  # Space between frame and thumbnail
     FILENAME_HEIGHT = 40  # Space below thumbnail for filename
     FILENAME_MARGIN = 8  # Vertical margin above filename
-    COLOR_FLAG_SIZE = 12  # Diameter of color flag circle
+
+    # Metadata/Hash indicators (2 circles in top corners)
+    INDICATOR_CIRCLE_SIZE = 12  # Diameter of each circle
+    INDICATOR_MARGIN = 8  # Distance from corners of frame
+    INDICATOR_BORDER_WIDTH = 2  # Border width for outline style
+
+    COLOR_FLAG_SIZE = 12  # Diameter of color flag circle (deprecated, use indicators)
     COLOR_FLAG_MARGIN = 4  # Distance from top-left corner
     VIDEO_BADGE_MARGIN = 4  # Distance from bottom-right corner
     VIDEO_BADGE_PADDING = 4  # Padding inside badge
@@ -159,8 +166,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         thumbnail_rect = self._calculate_thumbnail_rect(frame_rect)
         filename_rect = self._calculate_filename_rect(option.rect, frame_rect)
 
-        # Draw frame border
-        self._draw_frame(painter, frame_rect, is_selected, is_hover)
+        # Draw frame border with color tinting
+        self._draw_frame(painter, frame_rect, file_item, is_selected, is_hover)
 
         # Draw thumbnail or placeholder
         # Use Qt.UserRole + 1 for thumbnail pixmaps (separate from status icons)
@@ -172,9 +179,12 @@ class ThumbnailDelegate(QStyledItemDelegate):
             logger.debug("[ThumbnailDelegate] Drawing placeholder for row=%d (pixmap=%s)", index.row(), type(thumbnail_pixmap).__name__)
             self._draw_placeholder(painter, thumbnail_rect, file_item)
 
-        # Draw color flag indicator (if set)
-        if file_item.color and file_item.color.lower() != "none":
-            self._draw_color_flag(painter, frame_rect, file_item.color)
+        # Draw metadata/hash indicators (two circles, top-left)
+        self._draw_metadata_indicators(painter, frame_rect, file_item)
+
+        # Draw color flag indicator (if set) - DEPRECATED, kept for compatibility
+        # if file_item.color and file_item.color.lower() != "none":
+        #     self._draw_color_flag(painter, frame_rect, file_item.color)
 
         # Draw video duration badge (if video)
         duration = getattr(file_item, "duration", None)
@@ -240,29 +250,64 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         frame_rect: QRect,
+        file_item: FileItem,
         is_selected: bool,
         is_hover: bool,
     ) -> None:
-        """Draw the thumbnail frame border.
+        """Draw the thumbnail frame border with optional color tinting.
+
+        If file has a color flag set, the frame border and background are tinted
+        with that color. Otherwise, standard theme colors are used.
 
         Args:
             painter: QPainter
             frame_rect: Frame rectangle
+            file_item: File item (for color flag)
             is_selected: Whether item is selected
             is_hover: Whether item is hovered
         """
-        # Choose border color based on state
-        if is_selected:
-            border_color = self.FRAME_COLOR_SELECTED
-        elif is_hover:
-            border_color = self.FRAME_COLOR_HOVER
+        # Check if file has a color flag
+        has_color = file_item.color and file_item.color.lower() != "none"
+
+        if has_color:
+            # Parse color flag
+            color = QColor(file_item.color)
+            if not color.isValid():
+                color = self.FRAME_COLOR_NORMAL
+
+            # Use color flag for border (slightly brighter on hover/selection)
+            if is_selected:
+                # Brighten color for selection
+                border_color = color.lighter(120)
+            elif is_hover:
+                # Slightly brighten for hover
+                border_color = color.lighter(110)
+            else:
+                border_color = color
+
+            # Background tint (10% opacity of color flag)
+            bg_color = QColor(color)
+            bg_color.setAlpha(25)  # ~10% opacity
         else:
-            border_color = self.FRAME_COLOR_NORMAL
+            # No color flag - use standard theme colors
+            if is_selected:
+                border_color = self.FRAME_COLOR_SELECTED
+            elif is_hover:
+                border_color = self.FRAME_COLOR_HOVER
+            else:
+                border_color = self.FRAME_COLOR_NORMAL
+
+            bg_color = Qt.white
+
+        # Draw background fill
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(bg_color))
+        painter.drawRect(frame_rect)
 
         # Draw border
         pen = QPen(border_color, self.FRAME_BORDER_WIDTH)
         painter.setPen(pen)
-        painter.setBrush(QBrush(Qt.white))
+        painter.setBrush(Qt.NoBrush)
         painter.drawRect(frame_rect)
 
     def _draw_thumbnail(
@@ -327,6 +372,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw the color flag indicator circle.
 
+        DEPRECATED: This method is kept for compatibility.
+        Use _draw_metadata_indicators() instead which shows metadata/hash status.
+
         Args:
             painter: QPainter
             frame_rect: Frame rectangle (flag drawn at top-left)
@@ -350,6 +398,124 @@ class ThumbnailDelegate(QStyledItemDelegate):
             center_y - self.COLOR_FLAG_SIZE // 2,
             self.COLOR_FLAG_SIZE,
             self.COLOR_FLAG_SIZE,
+        )
+
+    def _draw_metadata_indicators(
+        self,
+        painter: QPainter,
+        frame_rect: QRect,
+        file_item: FileItem,
+    ) -> None:
+        """Draw metadata and hash status indicators (2 circles in top corners).
+
+        Top-left circle: Metadata status
+        - No metadata: dark gray outline (#404040)
+        - Fast metadata loaded: green filled (#51cf66)
+        - Extended metadata loaded: yellowish-orange filled (#fabf65)
+
+        Top-right circle: Hash status
+        - No hash: dark gray outline (#404040)
+        - Hash cached: pink-purple filled (#ce93d8)
+
+        Args:
+            painter: QPainter
+            frame_rect: Frame rectangle
+            file_item: File item with metadata/hash status
+        """
+        # Determine metadata status color and style
+        metadata_status = getattr(file_item, "metadata_status", "none")
+        if metadata_status == "extended":
+            metadata_color_hex = METADATA_ICON_COLORS["extended"]
+            metadata_filled = True
+        elif metadata_status in ("loaded", "modified"):
+            metadata_color_hex = METADATA_ICON_COLORS["loaded"]
+            metadata_filled = True
+        else:
+            metadata_color_hex = METADATA_ICON_COLORS["none"]
+            metadata_filled = False  # Outline for none
+
+        # Determine hash status color and style
+        hash_value = getattr(file_item, "hash_value", None)
+        if hash_value:
+            hash_color_hex = METADATA_ICON_COLORS["hash"]
+            hash_filled = True
+        else:
+            hash_color_hex = METADATA_ICON_COLORS["none"]
+            hash_filled = False  # Outline for none
+
+        # Draw metadata circle (top-left corner)
+        self._draw_status_circle(
+            painter,
+            frame_rect,
+            "top-left",
+            metadata_color_hex,
+            metadata_filled,
+        )
+
+        # Draw hash circle (top-right corner)
+        self._draw_status_circle(
+            painter,
+            frame_rect,
+            "top-right",
+            hash_color_hex,
+            hash_filled,
+        )
+
+    def _draw_status_circle(
+        self,
+        painter: QPainter,
+        frame_rect: QRect,
+        corner: str,
+        color_hex: str,
+        filled: bool,
+    ) -> None:
+        """Draw a single status indicator circle.
+
+        Args:
+            painter: QPainter
+            frame_rect: Frame rectangle
+            corner: Corner position ("top-left" or "top-right")
+            color_hex: Hex color for the circle
+            filled: True for filled circle, False for outline only
+        """
+        # Calculate center position based on corner
+        if corner == "top-left":
+            center_x = (
+                frame_rect.left()
+                + self.INDICATOR_MARGIN
+                + self.INDICATOR_CIRCLE_SIZE // 2
+            )
+        else:  # top-right
+            center_x = (
+                frame_rect.right()
+                - self.INDICATOR_MARGIN
+                - self.INDICATOR_CIRCLE_SIZE // 2
+            )
+
+        center_y = (
+            frame_rect.top() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
+        )
+
+        # Parse color
+        color = QColor(color_hex)
+        if not color.isValid():
+            color = QColor(METADATA_ICON_COLORS["none"])
+
+        # Draw circle - filled or outline based on status
+        if filled:
+            # Filled circle with subtle border
+            painter.setPen(QPen(color.darker(120), 1))
+            painter.setBrush(QBrush(color))
+        else:
+            # Outline only for none status (like file table)
+            painter.setPen(QPen(color, self.INDICATOR_BORDER_WIDTH))
+            painter.setBrush(Qt.NoBrush)
+
+        painter.drawEllipse(
+            center_x - self.INDICATOR_CIRCLE_SIZE // 2,
+            center_y - self.INDICATOR_CIRCLE_SIZE // 2,
+            self.INDICATOR_CIRCLE_SIZE,
+            self.INDICATOR_CIRCLE_SIZE,
         )
 
     def _draw_video_badge(
