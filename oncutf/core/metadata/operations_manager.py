@@ -111,12 +111,12 @@ class MetadataOperationsManager:
 
         """
         if (
-            not hasattr(self.parent_window, "file_table_model")
-            or not self.parent_window.file_table_model
+            not hasattr(self.parent_window, "file_model")
+            or not self.parent_window.file_model
         ):
             return False
 
-        all_files = self.parent_window.file_table_model.get_all_file_items()
+        all_files = self.parent_window.file_model.get_all_file_items()
         return any(self._file_has_metadata(f) for f in all_files)
 
     # ===== Metadata Export =====

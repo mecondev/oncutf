@@ -184,8 +184,8 @@ class MetadataTreeDragHandler:
                 item.checked = True
 
         # Update file table model to reflect changes and restore selection
-        if hasattr(parent_window, "file_table_model"):
-            parent_window.file_table_model.layoutChanged.emit()
+        if hasattr(parent_window, "file_model"):
+            parent_window.file_model.layoutChanged.emit()
 
             # Restore preserved selection after layoutChanged (which clears selection)
             if preserved_selection and hasattr(parent_window, "file_table"):

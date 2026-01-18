@@ -578,9 +578,9 @@ class ContextMenuHandlers:
 
         elif action == action_export_all:
             all_files = (
-                self.parent_window.file_table_model.get_all_file_items()
-                if hasattr(self.parent_window, "file_table_model")
-                and self.parent_window.file_table_model
+                self.parent_window.file_model.get_all_file_items()
+                if hasattr(self.parent_window, "file_model")
+                and self.parent_window.file_model
                 else []
             )
             self.metadata_ops.handle_export_metadata(all_files, "all")

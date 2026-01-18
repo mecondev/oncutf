@@ -695,11 +695,11 @@ class HashLoadingService:
         """
         # Refresh file table icons
         if (
-            hasattr(self.parent_window, "file_table_model")
-            and self.parent_window.file_table_model
+            hasattr(self.parent_window, "file_model")
+            and self.parent_window.file_model
         ):
-            if hasattr(self.parent_window.file_table_model, "refresh_icons"):
-                self.parent_window.file_table_model.refresh_icons()
+            if hasattr(self.parent_window.file_model, "refresh_icons"):
+                self.parent_window.file_model.refresh_icons()
 
         # Notify preview manager
         if (

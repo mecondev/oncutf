@@ -442,4 +442,4 @@ class TestShutdownPhase:
     def test_shutdown_phases_count(self):
         """Test that we have the expected number of phases."""
         phases = list(ShutdownPhase)
-        assert len(phases) == 5
+        assert len(phases) == 6

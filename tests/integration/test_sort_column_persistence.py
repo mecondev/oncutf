@@ -105,8 +105,8 @@ class TestSortColumnPersistence:
         # Set custom sort state
         mock_main_window.current_sort_column = 5
         mock_main_window.current_sort_order = Qt.DescendingOrder
-        mock_main_window.file_table_model = Mock()
-        mock_main_window.file_table_model.rowCount.return_value = 10
+        mock_main_window.file_model = Mock()
+        mock_main_window.file_model.rowCount.return_value = 10
         mock_main_window.status_manager = Mock()
         mock_main_window.context = Mock()
 

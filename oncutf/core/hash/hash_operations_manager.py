@@ -111,12 +111,12 @@ class HashOperationsManager:
 
         """
         if (
-            not hasattr(self.parent_window, "file_table_model")
-            or not self.parent_window.file_table_model
+            not hasattr(self.parent_window, "file_model")
+            or not self.parent_window.file_model
         ):
             return []
 
-        all_files = self.parent_window.file_table_model.get_all_file_items()
+        all_files = self.parent_window.file_model.get_all_file_items()
         return [f for f in all_files if not self._file_has_hash(f)]
 
     # ===== Hash Operation Workflow =====
@@ -135,12 +135,12 @@ class HashOperationsManager:
         else:
             scope = "all"
             if (
-                not hasattr(self.parent_window, "file_table_model")
-                or not self.parent_window.file_table_model
+                not hasattr(self.parent_window, "file_model")
+                or not self.parent_window.file_model
             ):
                 logger.warning("[HashManager] No file model available")
                 return
-            files_to_check = self.parent_window.file_table_model.get_all_file_items()
+            files_to_check = self.parent_window.file_model.get_all_file_items()
 
         if not files_to_check:
             logger.warning("[HashManager] No files to check for duplicates (scope: %s)", scope)
@@ -423,11 +423,11 @@ class HashOperationsManager:
         """
         # Refresh file table icons to show new hash status
         if (
-            hasattr(self.parent_window, "file_table_model")
-            and self.parent_window.file_table_model
+            hasattr(self.parent_window, "file_model")
+            and self.parent_window.file_model
         ):
-            if hasattr(self.parent_window.file_table_model, "refresh_icons"):
-                self.parent_window.file_table_model.refresh_icons()
+            if hasattr(self.parent_window.file_model, "refresh_icons"):
+                self.parent_window.file_model.refresh_icons()
                 logger.debug(
                     "[HashManager] Refreshed file table icons after hash operation",
                     extra={"dev_only": True},
@@ -479,11 +479,11 @@ class HashOperationsManager:
         if files is None:
             # Check all files
             if (
-                not hasattr(self.parent_window, "file_table_model")
-                or not self.parent_window.file_table_model
+                not hasattr(self.parent_window, "file_model")
+                or not self.parent_window.file_model
             ):
                 return False
-            files = self.parent_window.file_table_model.get_all_file_items()
+            files = self.parent_window.file_model.get_all_file_items()
 
         if not files:
             return False
