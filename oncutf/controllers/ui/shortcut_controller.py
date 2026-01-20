@@ -51,16 +51,12 @@ class ShortcutController:
             (FILE_TABLE_SHORTCUTS["SELECT_ALL"], self.parent_window.select_all_rows),
             (FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"], self.parent_window.clear_all_selection),
             (FILE_TABLE_SHORTCUTS["INVERT_SELECTION"], self.parent_window.invert_selection),
-            (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
-            (
-                FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"],
-                self.parent_window.shortcut_load_extended_metadata,
-            ),
             (
                 FILE_TABLE_SHORTCUTS["CALCULATE_HASH"],
                 self.parent_window.shortcut_calculate_hash_selected,
             ),
             # NOTE: REFRESH (F5) removed - now handled via FileTableView.keyPressEvent
+            # NOTE: LOAD_METADATA and LOAD_EXTENDED_METADATA moved to global shortcuts
         ]
 
         for key, handler in file_table_shortcuts:
@@ -70,7 +66,7 @@ class ShortcutController:
 
     def _setup_global_shortcuts(self) -> None:
         """Setup global shortcuts (attached to main window, work regardless of focus)."""
-        from oncutf.config import GLOBAL_SHORTCUTS
+        from oncutf.config import FILE_TABLE_SHORTCUTS, GLOBAL_SHORTCUTS
 
         global_shortcuts = [
             (GLOBAL_SHORTCUTS["BROWSE_FOLDER"], self.parent_window.handle_browse),
@@ -80,6 +76,12 @@ class ShortcutController:
             (GLOBAL_SHORTCUTS["UNDO"], self.parent_window.global_undo),
             (GLOBAL_SHORTCUTS["REDO"], self.parent_window.global_redo),
             (GLOBAL_SHORTCUTS["SHOW_HISTORY"], self.parent_window.show_command_history),
+            # Metadata shortcuts - global so they work in both file table and thumbnail views
+            (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
+            (
+                FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"],
+                self.parent_window.shortcut_load_extended_metadata,
+            ),
         ]
 
         for key, handler in global_shortcuts:
