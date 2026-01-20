@@ -240,13 +240,15 @@ class ThumbnailManager(QObject):
 
         logger.debug("[ThumbnailManager] _queue_request() called for: %s", file_path)
         folder_path = str(Path(file_path).parent)
-        request = ThumbnailRequest(
-            file_path=file_path, folder_path=folder_path, size_px=size_px
-        )
+        request = ThumbnailRequest(file_path=file_path, folder_path=folder_path, size_px=size_px)
 
         self._request_queue.put(request)
         self._total_requests += 1
-        logger.debug("[ThumbnailManager] Request queued (queue size: %d, total requests: %d)", self._request_queue.qsize(), self._total_requests)
+        logger.debug(
+            "[ThumbnailManager] Request queued (queue size: %d, total requests: %d)",
+            self._request_queue.qsize(),
+            self._total_requests,
+        )
 
         # Start workers if not running
         self._ensure_workers_running()
@@ -257,10 +259,14 @@ class ThumbnailManager(QObject):
         initial_count = len(self._workers)
         self._workers = [w for w in self._workers if w.isRunning()]
         if len(self._workers) < initial_count:
-            logger.debug("[ThumbnailManager] Cleaned up %d dead workers", initial_count - len(self._workers))
+            logger.debug(
+                "[ThumbnailManager] Cleaned up %d dead workers", initial_count - len(self._workers)
+            )
 
         # Start new workers if needed
-        logger.debug("[ThumbnailManager] Current workers: %d, max: %d", len(self._workers), self._max_workers)
+        logger.debug(
+            "[ThumbnailManager] Current workers: %d, max: %d", len(self._workers), self._max_workers
+        )
         while len(self._workers) < self._max_workers and not self._shutdown_flag:
             from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
 
@@ -268,6 +274,7 @@ class ThumbnailManager(QObject):
                 request_queue=self._request_queue,
                 cache=self._cache,
                 db_store=self._db_store,
+                parent=self,  # Pass parent for proper Qt cleanup
             )
 
             # Connect signals
@@ -290,7 +297,11 @@ class ThumbnailManager(QObject):
             pixmap: Generated thumbnail
 
         """
-        logger.debug("[ThumbnailManager] _on_worker_thumbnail_ready() called: %s (valid=%s)", file_path, not pixmap.isNull())
+        logger.debug(
+            "[ThumbnailManager] _on_worker_thumbnail_ready() called: %s (valid=%s)",
+            file_path,
+            not pixmap.isNull(),
+        )
         self._completed_requests += 1
 
         # Remove from pending set
@@ -299,9 +310,7 @@ class ThumbnailManager(QObject):
 
         # Emit progress
         if self._total_requests > 0:
-            self.generation_progress.emit(
-                self._completed_requests, self._total_requests
-            )
+            self.generation_progress.emit(self._completed_requests, self._total_requests)
 
         # Forward to UI
         logger.debug("[ThumbnailManager] Emitting thumbnail_ready signal for: %s", file_path)

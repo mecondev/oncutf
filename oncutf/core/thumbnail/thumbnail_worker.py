@@ -29,7 +29,7 @@ import queue
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QPixmap, QThread, pyqtSignal
+from oncutf.core.pyqt_imports import QObject, QPixmap, QThread, pyqtSignal
 from oncutf.core.thumbnail.providers import (
     ImageThumbnailProvider,
     ThumbnailGenerationError,
@@ -69,6 +69,7 @@ class ThumbnailWorker(QThread):
         request_queue: queue.Queue[ThumbnailRequest],
         cache: ThumbnailCache,
         db_store: ThumbnailStore,
+        parent: QObject | None = None,
     ):
         """Initialize worker.
 
@@ -76,9 +77,10 @@ class ThumbnailWorker(QThread):
             request_queue: Shared queue of thumbnail requests
             cache: Thumbnail cache for storage
             db_store: Database store for cache index
+            parent: Parent QObject for proper cleanup
 
         """
-        super().__init__()
+        super().__init__(parent)
 
         self._request_queue = request_queue
         self._cache = cache
@@ -148,9 +150,7 @@ class ThumbnailWorker(QThread):
             # Mark task done
             self._request_queue.task_done()
 
-        logger.debug(
-            "ThumbnailWorker stopped (processed: %d)", self._processed_count
-        )
+        logger.debug("ThumbnailWorker stopped (processed: %d)", self._processed_count)
 
     def _process_request(self, request: ThumbnailRequest) -> None:
         """Process single thumbnail request.
@@ -182,9 +182,7 @@ class ThumbnailWorker(QThread):
                 provider = self._video_provider
                 video_frame_time = None  # Will be set by provider
             else:
-                raise ThumbnailGenerationError(
-                    f"Unsupported file type: {ext} for {file_path}"
-                )
+                raise ThumbnailGenerationError(f"Unsupported file type: {ext} for {file_path}")
 
             # Generate thumbnail
             logger.debug("Generating thumbnail: %s (size: %d)", file_path, size_px)
@@ -204,9 +202,7 @@ class ThumbnailWorker(QThread):
 
             # Update DB
             # For video, extract frame time if available (provider-specific)
-            if ext in self._video_extensions and hasattr(
-                provider, "last_frame_time"
-            ):
+            if ext in self._video_extensions and hasattr(provider, "last_frame_time"):
                 video_frame_time = getattr(provider, "last_frame_time", None)
 
             folder_path = str(Path(file_path).parent)
