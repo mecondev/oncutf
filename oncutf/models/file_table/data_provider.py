@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
-    from oncutf.models.file_table.column_manager import ColumnManager
     from oncutf.models.file_table.icon_manager import IconManager
+    from oncutf.models.file_table.model_column_manager import ColumnManager
 
 from oncutf.core.application_context import get_app_context
 from oncutf.core.pyqt_imports import QModelIndex, Qt, QVariant
@@ -208,7 +208,9 @@ class DataProvider:
                     pixmap = thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
                     return pixmap
             except Exception as e:
-                logger.debug("[DataProvider] Thumbnail request failed: %s", e, extra={"dev_only": True})
+                logger.debug(
+                    "[DataProvider] Thumbnail request failed: %s", e, extra={"dev_only": True}
+                )
             return QVariant()
 
         if index.column() == 0:
@@ -395,4 +397,3 @@ class DataProvider:
             # for consistent styling across platforms.
 
         return None
-
