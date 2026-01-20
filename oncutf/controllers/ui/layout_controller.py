@@ -195,7 +195,9 @@ class LayoutController:
             if hasattr(self.parent_window, "height") and callable(self.parent_window.height):
                 try:
                     window_height = self.parent_window.height()
-                    vertical_sizes = calculate_splitter_sizes_from_ratios(vertical_ratios, window_height)
+                    vertical_sizes = calculate_splitter_sizes_from_ratios(
+                        vertical_ratios, window_height
+                    )
                     self.parent_window.vertical_splitter.setSizes(vertical_sizes)
                 except (AttributeError, TypeError):
                     pass
@@ -208,7 +210,7 @@ class LayoutController:
         """Setup left panel (folder tree)."""
         # Lazy import: Only load when setting up left panel
         from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-        from oncutf.ui.widgets.file_tree_view import FileTreeView
+        from oncutf.ui.widgets.file_tree import FileTreeView
 
         self.parent_window.left_frame = QFrame()
         left_layout = QVBoxLayout(self.parent_window.left_frame)
@@ -276,6 +278,7 @@ class LayoutController:
         # Linux/macOS: Show root directory
         if platform.system() == "Windows":
             from PyQt5.QtCore import QModelIndex
+
             # Use invalid/empty index to show all drives at root level
             self.parent_window.folder_tree.setRootIndex(QModelIndex())
         else:
@@ -288,7 +291,7 @@ class LayoutController:
     def _setup_center_panel(self) -> None:
         """Setup center panel (file table view)."""
         # Lazy import: Only load when setting up center panel
-        from oncutf.ui.widgets.file_table_view import FileTableView
+        from oncutf.ui.widgets.file_table import FileTableView
         from oncutf.ui.widgets.interactive_header import InteractiveHeader
 
         self.parent_window.center_frame = QFrame()
@@ -404,8 +407,12 @@ class LayoutController:
 
         # Create QStackedWidget to hold both views
         self.parent_window.viewport_stack = QStackedWidget()
-        self.parent_window.viewport_stack.addWidget(self.parent_window.file_table_view)  # Index 0 (details)
-        self.parent_window.viewport_stack.addWidget(self.parent_window.thumbnail_viewport)  # Index 1 (thumbs)
+        self.parent_window.viewport_stack.addWidget(
+            self.parent_window.file_table_view
+        )  # Index 0 (details)
+        self.parent_window.viewport_stack.addWidget(
+            self.parent_window.thumbnail_viewport
+        )  # Index 1 (thumbs)
 
         # Set default view (details)
         self.parent_window.viewport_stack.setCurrentIndex(0)
@@ -447,7 +454,10 @@ class LayoutController:
                 logger.info("[LayoutController] Switched to details view")
             elif button_id == "thumbs":
                 # Safety check: ensure thumbnail viewport is initialized
-                if not hasattr(self.parent_window, 'thumbnail_viewport') or not self.parent_window.thumbnail_viewport:
+                if (
+                    not hasattr(self.parent_window, "thumbnail_viewport")
+                    or not self.parent_window.thumbnail_viewport
+                ):
                     logger.error("[LayoutController] ThumbnailViewport not initialized!")
                     return
 
@@ -505,17 +515,17 @@ class LayoutController:
 
         try:
             # Update rename preview
-            if hasattr(self.parent_window, 'request_preview_update'):
+            if hasattr(self.parent_window, "request_preview_update"):
                 self.parent_window.request_preview_update()
 
             # Update metadata tree from selection
-            if hasattr(self.parent_window, 'metadata_tree_view'):
+            if hasattr(self.parent_window, "metadata_tree_view"):
                 self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
 
             logger.debug(
                 "[LayoutController] Thumbnail selection changed: %d items, updated preview",
                 len(selected_rows),
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
         except Exception as e:
             logger.error("[LayoutController] Error handling thumbnail selection: %s", e)

@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
-    from oncutf.ui.widgets.file_table_view import FileTableView
+    from oncutf.ui.widgets.file_table import FileTableView
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,9 @@ class FileTableStateHelper:
             if scroll_bar:
                 scroll_position = scroll_bar.value()
                 logger.debug(
-                    "[StateHelper] Saved scroll position: %d", scroll_position, extra={"dev_only": True}
+                    "[StateHelper] Saved scroll position: %d",
+                    scroll_position,
+                    extra={"dev_only": True},
                 )
 
         except Exception as e:
@@ -263,7 +265,9 @@ class FileTableStateHelper:
         )
 
         logger.debug(
-            "[StateHelper] Scheduled state restoration with %dms delay", delay_ms, extra={"dev_only": True}
+            "[StateHelper] Scheduled state restoration with %dms delay",
+            delay_ms,
+            extra={"dev_only": True},
         )
 
     @staticmethod
@@ -298,9 +302,7 @@ class FileTableStateHelper:
             # Restore checked state
             restored_checked = 0
             for file_item in file_items:
-                path = (
-                    file_item.full_path if hasattr(file_item, "full_path") else str(file_item)
-                )
+                path = file_item.full_path if hasattr(file_item, "full_path") else str(file_item)
                 if path in state.checked_paths:
                     file_item.checked = True
                     restored_checked += 1
@@ -312,9 +314,7 @@ class FileTableStateHelper:
                 rows_to_select = set()
                 for row, file_item in enumerate(file_items):
                     path = (
-                        file_item.full_path
-                        if hasattr(file_item, "full_path")
-                        else str(file_item)
+                        file_item.full_path if hasattr(file_item, "full_path") else str(file_item)
                     )
                     if path in state.selected_paths:
                         rows_to_select.add(row)

@@ -139,6 +139,30 @@ module = [
     "oncutf.core.selection.*",
     "oncutf.core.pyqt_imports",
 
+    # Qt-heavy core modules (added 2026-01-19)
+    "oncutf.core.metadata.*",
+    "oncutf.core.file.load_manager",
+    "oncutf.core.hash.hash_operations_manager",
+    "oncutf.core.thumbnail.*",
+    "oncutf.core.application_service",
+
+    # Qt-heavy controllers (added 2026-01-19)
+    "oncutf.controllers.ui.layout_controller",
+    "oncutf.controllers.ui.window_setup_controller",
+    "oncutf.controllers.ui.signal_controller",
+    "oncutf.controllers.module_drag_drop_manager",
+    "oncutf.controllers.header_interaction_controller",
+
+    # Qt-heavy models (added 2026-01-19)
+    "oncutf.models.file_table.*",
+    "oncutf.models.results_table_model",
+
+    # Qt-heavy modules (added 2026-01-19)
+    "oncutf.modules.*",
+
+    # Main entry point (added 2026-01-19)
+    "main",
+
     # utils: UI/Qt glue ONLY (whitelist) - updated paths for new structure
     "oncutf.utils.ui.tooltip_helper",
     "oncutf.utils.ui.dpi_helper",
@@ -156,25 +180,28 @@ module = [
     "oncutf.utils.ui.theme_font_generator",
     "oncutf.utils.ui.placeholder_helper",
     "oncutf.utils.ui.combo_popup_helper",
+    "oncutf.utils.ui.file_table_state_helper",
+    "oncutf.utils.ui.fonts_rc",
     "oncutf.utils.metadata.exiftool_adapter"
 ]
 ignore_errors = false
+# NOTE: Only Qt-stub-specific errors remain disabled (2026-01-20)
+# Removed from original: index (now enforced - 0 errors)
 disable_error_code = [
-    "attr-defined",
-    "call-arg",
-    "arg-type",
-    "override",
-    "valid-type",
-    "misc",
-    "assignment",
-    "unreachable",
-    "unused-ignore",
-    "union-attr",
-    "has-type",
-    "call-overload",
-    "index",
-    "var-annotated",
-    "comparison-overlap",
+    "attr-defined",       # Qt dynamic attributes (e.g. Qt.AlignCenter)
+    "call-arg",           # Qt signal/slot argument mismatches
+    "arg-type",           # Qt widget type mismatches
+    "override",           # Qt method signatures
+    "valid-type",         # Qt type expressions
+    "misc",               # Qt misc stub issues
+    "call-overload",      # Qt overload resolution
+    "assignment",         # Qt property type assignments
+    "union-attr",         # Qt Optional patterns (many in widgets)
+    "unreachable",        # False positives from Qt control flow
+    "unused-ignore",      # Keep until type:ignore cleanup is done
+    "has-type",           # Qt forward references
+    "var-annotated",      # Qt widget attributes
+    "comparison-overlap", # Qt enum comparisons
 ]
 
 # ============================================================

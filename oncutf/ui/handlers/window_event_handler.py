@@ -37,11 +37,11 @@ class WindowEventHandler:
     # Qt Event Handlers
     # -------------------------------------------------------------------------
 
-    def changeEvent(self, event) -> None:
+    def changeEvent(self, event: QEvent) -> None:
         """Handle window state changes (maximize, minimize, restore)."""
         super(self.main_window.__class__, self.main_window).changeEvent(event)
 
-        if event.type() == QEvent.WindowStateChange:  # type: ignore[union-attr]
+        if event.type() == QEvent.WindowStateChange:
             self._handle_window_state_change()
 
     def resizeEvent(self, event) -> None:
@@ -63,9 +63,7 @@ class WindowEventHandler:
 
             def update_splitters():
                 """Update splitter proportions for new window width."""
-                self.main_window.splitter_manager.update_splitter_sizes_for_window_width(
-                    new_width
-                )
+                self.main_window.splitter_manager.update_splitter_sizes_for_window_width(new_width)
 
             # Schedule the update to avoid conflicts with other resize operations
             schedule_resize_adjust(update_splitters, 50)
@@ -83,9 +81,7 @@ class WindowEventHandler:
     def _handle_window_state_change(self) -> None:
         """Handle maximize/restore geometry and file table refresh."""
         # Handle maximize: store appropriate geometry for restore
-        if self.main_window.isMaximized() and not hasattr(
-            self.main_window, "_restore_geometry"
-        ):
+        if self.main_window.isMaximized() and not hasattr(self.main_window, "_restore_geometry"):
             current_geo = self.main_window.geometry()
             initial_size = self.main_window._initial_geometry.size()
 
@@ -105,9 +101,7 @@ class WindowEventHandler:
             )
 
         # Handle restore: restore stored geometry
-        elif not self.main_window.isMaximized() and hasattr(
-            self.main_window, "_restore_geometry"
-        ):
+        elif not self.main_window.isMaximized() and hasattr(self.main_window, "_restore_geometry"):
             self.main_window.setGeometry(self.main_window._restore_geometry)
             delattr(self.main_window, "_restore_geometry")
             logger.debug("[MainWindow] Restored geometry")
@@ -149,8 +143,9 @@ class WindowEventHandler:
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size."""
-        if hasattr(self.main_window.window_config_manager, "set_smart_default_geometry"):
-            self.main_window.window_config_manager.set_smart_default_geometry()  # type: ignore[union-attr]
+        config_mgr = self.main_window.window_config_manager
+        if config_mgr is not None and hasattr(config_mgr, "set_smart_default_geometry"):
+            config_mgr.set_smart_default_geometry()
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""

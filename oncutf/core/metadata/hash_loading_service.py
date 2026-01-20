@@ -65,7 +65,7 @@ class HashLoadingService:
         self._hash_progress_dialog: ProgressDialog | None = None
 
         # Callbacks for basic hash loading
-        self._on_finished_callback: Callable[[], None] | None = None
+        self._on_finished_callback: Callable[[], None] | Callable[[bool], None] | None = None
         self._on_file_hash_callback: Callable[[str, str, int], None] | None = None
         self._on_progress_callback: Callable[[int, int, str], None] | None = None
 
@@ -262,6 +262,7 @@ class HashLoadingService:
         # Call custom callback if provided
         if self._on_file_hash_callback:
             import os
+
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             self._on_file_hash_callback(file_path, hash_value, file_size)
 
@@ -286,6 +287,7 @@ class HashLoadingService:
 
             # Force immediate UI update to show out-of-order completion
             from oncutf.core.pyqt_imports import QApplication
+
             QApplication.processEvents()
 
     def _on_hash_finished(self) -> None:
@@ -360,7 +362,7 @@ class HashLoadingService:
         self._on_duplicates_callback = on_duplicates
         self._on_progress_callback = on_progress
         self._on_file_hash_callback = on_file_hash
-        self._on_finished_callback = on_finished  # type: ignore[assignment]
+        self._on_finished_callback = on_finished
         self._on_error_callback = on_error
 
         self._start_operation(file_paths, "duplicates")
@@ -392,7 +394,7 @@ class HashLoadingService:
         self._on_comparison_callback = on_comparison
         self._on_progress_callback = on_progress
         self._on_file_hash_callback = on_file_hash
-        self._on_finished_callback = on_finished  # type: ignore[assignment]
+        self._on_finished_callback = on_finished
         self._on_error_callback = on_error
 
         self._start_operation(file_paths, "compare", external_folder=external_folder)
@@ -421,7 +423,7 @@ class HashLoadingService:
         self._on_checksums_callback = on_checksums
         self._on_progress_callback = on_progress
         self._on_file_hash_callback = on_file_hash
-        self._on_finished_callback = on_finished  # type: ignore[assignment]
+        self._on_finished_callback = on_finished
         self._on_error_callback = on_error
 
         self._start_operation(file_paths, "checksums")
@@ -538,6 +540,7 @@ class HashLoadingService:
         # Connect status updates from worker
         if self._hash_worker and hasattr(self._hash_worker, "status_updated"):
             from typing import cast
+
             cast("Any", self._hash_worker.status_updated).connect(
                 dialog.set_status, Qt.QueuedConnection
             )
@@ -573,6 +576,7 @@ class HashLoadingService:
 
             # Force UI update
             from oncutf.core.pyqt_imports import QApplication
+
             app_instance = QApplication.instance()
             if app_instance:
                 app_instance.processEvents()
@@ -595,6 +599,7 @@ class HashLoadingService:
             # Update time info
             if self._operation_start_time:
                 import time
+
                 elapsed = time.time() - self._operation_start_time
 
                 if current_bytes > 0 and total_bytes > 0:
@@ -607,6 +612,7 @@ class HashLoadingService:
 
             # Force UI update
             from oncutf.core.pyqt_imports import QApplication
+
             app_instance = QApplication.instance()
             if app_instance:
                 app_instance.processEvents()
@@ -619,10 +625,7 @@ class HashLoadingService:
             hash_value: Calculated hash value
         """
         # Update file table view to show new hash
-        if (
-            hasattr(self.parent_window, "file_table_view")
-            and self.parent_window.file_table_view
-        ):
+        if hasattr(self.parent_window, "file_table_view") and self.parent_window.file_table_view:
             try:
                 from oncutf.core.application_context import get_app_context
 
@@ -638,6 +641,7 @@ class HashLoadingService:
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
 
                             from oncutf.core.pyqt_imports import QApplication
+
                             app_instance = QApplication.instance()
                             if app_instance:
                                 app_instance.processEvents()
@@ -652,6 +656,7 @@ class HashLoadingService:
         # Call custom callback
         if self._on_file_hash_callback:
             import os
+
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             self._on_file_hash_callback(file_path, hash_value, file_size)
 
@@ -682,6 +687,7 @@ class HashLoadingService:
         """
         # Force restore cursor before showing results dialog
         from oncutf.utils.ui.cursor_helper import force_restore_cursor
+
         force_restore_cursor()
 
         if self._on_checksums_callback:
@@ -694,18 +700,12 @@ class HashLoadingService:
             success: Whether the operation completed successfully
         """
         # Refresh file table icons
-        if (
-            hasattr(self.parent_window, "file_model")
-            and self.parent_window.file_model
-        ):
+        if hasattr(self.parent_window, "file_model") and self.parent_window.file_model:
             if hasattr(self.parent_window.file_model, "refresh_icons"):
                 self.parent_window.file_model.refresh_icons()
 
         # Notify preview manager
-        if (
-            hasattr(self.parent_window, "preview_manager")
-            and self.parent_window.preview_manager
-        ):
+        if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:
             self.parent_window.preview_manager.on_hash_calculation_completed()
 
         # Clean up

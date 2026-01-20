@@ -131,7 +131,7 @@ class FileTableView(QTableView):
 """
 
 # Export all public interfaces
-from oncutf.ui.behaviors.column_management_behavior import (
+from oncutf.ui.behaviors.column_management import (
     ColumnManageableWidget,
     ColumnManagementBehavior,
 )
@@ -140,11 +140,11 @@ from oncutf.ui.behaviors.metadata_cache_behavior import (
     CacheableWidget,
     MetadataCacheBehavior,
 )
-from oncutf.ui.behaviors.metadata_context_menu_behavior import (
+from oncutf.ui.behaviors.metadata_context_menu import (
     ContextMenuWidget,
     MetadataContextMenuBehavior,
 )
-from oncutf.ui.behaviors.metadata_edit_behavior import (
+from oncutf.ui.behaviors.metadata_edit import (
     EditableWidget,
     MetadataEditBehavior,
 )
@@ -152,7 +152,7 @@ from oncutf.ui.behaviors.metadata_scroll_behavior import (
     MetadataScrollBehavior,
     ScrollableTreeWidget,
 )
-from oncutf.ui.behaviors.selection_behavior import SelectableWidget, SelectionBehavior
+from oncutf.ui.behaviors.selection import SelectableWidget, SelectionBehavior
 
 __all__ = [
     # Protocols

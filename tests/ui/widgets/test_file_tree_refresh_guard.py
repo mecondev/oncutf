@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.ui.widgets.file_tree_view import FileTreeView
+from oncutf.ui.widgets.file_tree import FileTreeView
 
 
 @pytest.fixture

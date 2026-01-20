@@ -49,7 +49,10 @@ class ShutdownLifecycleHandler:
         Ensures all resources are properly released and threads are stopped.
         """
         # If shutdown is already in progress, ignore additional close events
-        if hasattr(self.main_window, "_shutdown_in_progress") and self.main_window._shutdown_in_progress:
+        if (
+            hasattr(self.main_window, "_shutdown_in_progress")
+            and self.main_window._shutdown_in_progress
+        ):
             event.ignore()
             return
 
@@ -68,9 +71,14 @@ class ShutdownLifecycleHandler:
                 # User wants to save changes before closing
                 try:
                     # Save all modified metadata with exit save flag
-                    if hasattr(self.main_window, "metadata_manager") and self.main_window.metadata_manager:
+                    if (
+                        hasattr(self.main_window, "metadata_manager")
+                        and self.main_window.metadata_manager
+                    ):
                         if hasattr(self.main_window.metadata_manager, "save_all_modified_metadata"):
-                            self.main_window.metadata_manager.save_all_modified_metadata(is_exit_save=True)
+                            self.main_window.metadata_manager.save_all_modified_metadata(
+                                is_exit_save=True
+                            )
                             logger.info("[CloseEvent] Saved all metadata changes before closing")
                         else:
                             logger.warning(
@@ -290,7 +298,9 @@ class ShutdownLifecycleHandler:
                 f.write("\n")
                 f.flush()
 
-                logger.info("[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path)
+                logger.info(
+                    "[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path
+                )
 
                 # Ensure faulthandler is enabled and configured to include all threads.
                 # NOTE: enable() is idempotent.
@@ -365,10 +375,11 @@ class ShutdownLifecycleHandler:
         """Stop periodic backup timer to avoid blocking UI during shutdown."""
         # Database backup on shutdown can block the UI thread (large file copy).
         # We rely on periodic backups instead and only stop the timer here.
-        if hasattr(self.main_window, "backup_manager") and self.main_window.backup_manager:
+        backup_mgr = getattr(self.main_window, "backup_manager", None)
+        if backup_mgr is not None:
             try:
-                if hasattr(self.main_window.backup_manager, "stop_periodic_backups"):
-                    self.main_window.backup_manager.stop_periodic_backups()  # type: ignore[union-attr]
+                if hasattr(backup_mgr, "stop_periodic_backups"):
+                    backup_mgr.stop_periodic_backups()
                 logger.info("[CloseEvent] Periodic backups stopped (skipping shutdown backup)")
             except Exception as e:
                 logger.warning("[CloseEvent] Failed to stop periodic backups: %s", e)
@@ -376,7 +387,10 @@ class ShutdownLifecycleHandler:
     def _pre_cleanup_save_window_config(self) -> None:
         """Save window configuration before shutdown."""
         logger.info("[CloseEvent] Starting window config save...")
-        if hasattr(self.main_window, "window_config_manager") and self.main_window.window_config_manager:
+        if (
+            hasattr(self.main_window, "window_config_manager")
+            and self.main_window.window_config_manager
+        ):
             try:
                 logger.debug("[CloseEvent] Calling save_window_config()", extra={"dev_only": True})
                 self.main_window.window_config_manager.save_window_config()
@@ -402,28 +416,31 @@ class ShutdownLifecycleHandler:
 
     def _pre_cleanup_flush_batch_operations(self) -> None:
         """Flush pending batch operations before shutdown."""
-        if hasattr(self.main_window, "batch_manager") and self.main_window.batch_manager:
+        batch_mgr = getattr(self.main_window, "batch_manager", None)
+        if batch_mgr is not None:
             try:
-                if hasattr(self.main_window.batch_manager, "flush_operations"):
-                    self.main_window.batch_manager.flush_operations()  # type: ignore[union-attr]
+                if hasattr(batch_mgr, "flush_operations"):
+                    batch_mgr.flush_operations()
                     logger.info("[CloseEvent] Batch operations flushed")
             except Exception as e:
                 logger.warning("[CloseEvent] Batch flush failed: %s", e)
 
     def _pre_cleanup_cleanup_drag_manager(self) -> None:
         """Force cleanup of drag manager state."""
-        if hasattr(self.main_window, "drag_manager") and self.main_window.drag_manager:
+        drag_mgr = getattr(self.main_window, "drag_manager", None)
+        if drag_mgr is not None:
             try:
-                self.main_window.drag_manager.force_cleanup()  # type: ignore[union-attr]
+                drag_mgr.force_cleanup()
                 logger.info("[CloseEvent] Drag manager cleaned up")
             except Exception as e:
                 logger.warning("[CloseEvent] Drag cleanup failed: %s", e)
 
     def _pre_cleanup_cleanup_dialogs(self) -> None:
         """Close all dialogs via dialog manager."""
-        if hasattr(self.main_window, "dialog_manager") and self.main_window.dialog_manager:
+        dialog_mgr = getattr(self.main_window, "dialog_manager", None)
+        if dialog_mgr is not None:
             try:
-                self.main_window.dialog_manager.cleanup()  # type: ignore[union-attr]
+                dialog_mgr.cleanup()
                 logger.info("[CloseEvent] All dialogs closed")
             except Exception as e:
                 logger.warning("[CloseEvent] Dialog cleanup failed: %s", e)
@@ -473,8 +490,8 @@ class ShutdownLifecycleHandler:
                 from oncutf.core.application_context import ApplicationContext
 
                 context = ApplicationContext.get_instance()
-                if context:
-                    context.cleanup()  # type: ignore[union-attr]
+                if context is not None:
+                    context.cleanup()
                     logger.info("[CloseEvent] Application context cleaned up")
             except Exception as ctx_error:
                 logger.warning("[CloseEvent] Context cleanup failed: %s", ctx_error)
@@ -510,7 +527,9 @@ class ShutdownLifecycleHandler:
                     )
 
             # Get all modified metadata for all files
-            all_modifications = self.main_window.metadata_tree_view.get_all_modified_metadata_for_files()
+            all_modifications = (
+                self.main_window.metadata_tree_view.get_all_modified_metadata_for_files()
+            )
 
             # Check if there are any actual modifications
             has_modifications = any(modifications for modifications in all_modifications.values())
@@ -617,11 +636,18 @@ class ShutdownLifecycleHandler:
 
             # Register database manager
             if hasattr(self.main_window, "db_manager") and self.main_window.db_manager:
-                self.main_window.shutdown_coordinator.register_database_manager(self.main_window.db_manager)
+                self.main_window.shutdown_coordinator.register_database_manager(
+                    self.main_window.db_manager
+                )
 
             # Register thumbnail manager (must shutdown before database)
-            if hasattr(self.main_window, "thumbnail_manager") and self.main_window.thumbnail_manager:
-                self.main_window.shutdown_coordinator.register_thumbnail_manager(self.main_window.thumbnail_manager)
+            if (
+                hasattr(self.main_window, "thumbnail_manager")
+                and self.main_window.thumbnail_manager
+            ):
+                self.main_window.shutdown_coordinator.register_thumbnail_manager(
+                    self.main_window.thumbnail_manager
+                )
 
             # Register ExifTool wrapper (get active instance if any)
             try:

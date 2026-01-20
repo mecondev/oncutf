@@ -158,7 +158,7 @@ class DragDropBehavior:
 
         # Check if model and files are available
         model = self._widget.model()
-        if not model or not hasattr(model, 'files'):
+        if not model or not hasattr(model, "files"):
             logger.debug("[DragDropBehavior] Model or files not available, cannot start drag")
             return
 
@@ -168,20 +168,12 @@ class DragDropBehavior:
 
         # For small selections (<100), collect all paths immediately
         if file_count < 100:
-            file_items = [
-                model.files[r]
-                for r in rows
-                if 0 <= r < len(model.files)
-            ]
+            file_items = [model.files[r] for r in rows if 0 <= r < len(model.files)]
             file_paths = [f.full_path for f in file_items if f.full_path]
         else:
             # Large selection: collect only first 3 paths for preview
             preview_rows = rows[:3]
-            preview_items = [
-                model.files[r]
-                for r in preview_rows
-                if 0 <= r < len(model.files)
-            ]
+            preview_items = [model.files[r] for r in preview_rows if 0 <= r < len(model.files)]
             file_paths = [f.full_path for f in preview_items if f.full_path]
             self._drag_pending_rows = rows
 
@@ -189,7 +181,9 @@ class DragDropBehavior:
             return
 
         # Activate drag cancel filter
-        from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
+        from oncutf.ui.widgets.file_tree import get_drag_cancel_filter
+
+        _drag_cancel_filter = get_drag_cancel_filter()
 
         _drag_cancel_filter.activate()
         _drag_cancel_filter.preserve_selection(selected_rows)
@@ -258,7 +252,9 @@ class DragDropBehavior:
             self._force_cursor_cleanup()
 
             # Deactivate drag cancel filter
-            from oncutf.ui.widgets.file_tree_view import _drag_cancel_filter
+            from oncutf.ui.widgets.file_tree import get_drag_cancel_filter
+
+            _drag_cancel_filter = get_drag_cancel_filter()
 
             if _drag_cancel_filter.is_active():
                 _drag_cancel_filter.deactivate()
@@ -332,6 +328,7 @@ class DragDropBehavior:
         import time
 
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         t0 = time.time()
@@ -341,13 +338,22 @@ class DragDropBehavior:
 
         # Ignore internal drags
         if mime_data.hasFormat("application/x-oncutf-filetable"):
-            logger.debug("[DROP-BEHAVIOR] Internal drag ignored at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-BEHAVIOR] Internal drag ignored at +%.3fms",
+                (time.time() - t0) * 1000,
+                extra={"dev_only": True},
+            )
             return None
 
         # Extract dropped paths
         modifiers = event.keyboardModifiers()
         dropped_paths = extract_file_paths(mime_data)
-        logger.debug("[DROP-BEHAVIOR] Extracted %d paths at +%.3fms", len(dropped_paths) if dropped_paths else 0, (time.time()-t0)*1000, extra={"dev_only": True})
+        logger.debug(
+            "[DROP-BEHAVIOR] Extracted %d paths at +%.3fms",
+            len(dropped_paths) if dropped_paths else 0,
+            (time.time() - t0) * 1000,
+            extra={"dev_only": True},
+        )
 
         if not dropped_paths:
             return None
@@ -356,14 +362,24 @@ class DragDropBehavior:
         if self._widget.model() and hasattr(self._widget.model(), "files"):
             existing_paths = {f.full_path for f in self._widget.model().files}
             new_paths = [p for p in dropped_paths if p not in existing_paths]
-            logger.debug("[DROP-BEHAVIOR] Filtered to %d new paths at +%.3fms", len(new_paths), (time.time()-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-BEHAVIOR] Filtered to %d new paths at +%.3fms",
+                len(new_paths),
+                (time.time() - t0) * 1000,
+                extra={"dev_only": True},
+            )
             if not new_paths:
                 return None
         else:
             new_paths = dropped_paths
 
         event.acceptProposedAction()
-        logger.debug("[DROP-BEHAVIOR] Returning %d paths at +%.3fms", len(new_paths), (time.time()-t0)*1000, extra={"dev_only": True})
+        logger.debug(
+            "[DROP-BEHAVIOR] Returning %d paths at +%.3fms",
+            len(new_paths),
+            (time.time() - t0) * 1000,
+            extra={"dev_only": True},
+        )
         return (new_paths, modifiers)
 
     # =====================================
@@ -502,7 +518,7 @@ class DragDropBehavior:
                     logger.debug(
                         "[DragDropBehavior] Emitted selection_changed for %d items after metadata drop",
                         len(current_selection),
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
 
             return True

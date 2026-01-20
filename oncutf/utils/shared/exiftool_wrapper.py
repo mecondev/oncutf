@@ -57,7 +57,7 @@ class ExifToolWrapper:
                 "Please install it or place it in bin/ directory."
             ) from e
 
-        self.process = subprocess.Popen(
+        self.process: subprocess.Popen[str] | None = subprocess.Popen(
             [exiftool_path, "-stay_open", "True", "-@", "-"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -582,7 +582,7 @@ class ExifToolWrapper:
             except Exception:
                 pass
         finally:
-            self.process = None  # type: ignore[assignment]
+            self.process = None
             logger.debug("[ExifToolWrapper] ExifTool wrapper closed", extra={"dev_only": True})
 
     @staticmethod

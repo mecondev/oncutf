@@ -3,9 +3,11 @@
 Author: Michael Economou
 Date: 2025-06-10
 
-hash_manager.py
-Manages file hashing operations, duplicate detection, and file integrity checking.
-Provides CRC32 hash calculations optimized for speed and efficiency.
+Primary hash manager for the application. Manages file hashing operations,
+duplicate detection, and file integrity checking with persistent caching.
+
+NOTE: This is the main hash implementation used throughout the application.
+For DI-compatible interface, see HashServiceProtocol in services/interfaces.py.
 """
 
 import zlib
@@ -147,7 +149,9 @@ class HashManager:
                 while True:
                     # Check for cancellation
                     if cancellation_check and cancellation_check():
-                        logger.debug("[HashManager] Hash calculation cancelled for: %s", file_path.name)
+                        logger.debug(
+                            "[HashManager] Hash calculation cancelled for: %s", file_path.name
+                        )
                         return None
 
                     bytes_read = f.readinto(buffer)
@@ -383,8 +387,7 @@ class HashManager:
             }
 
     def clear_cache(self) -> None:
-        """Clear hash cache (memory and/or persistent).
-        """
+        """Clear hash cache (memory and/or persistent)."""
         if self._use_persistent_cache:
             self._persistent_cache.clear_memory_cache()
             logger.info("[HashManager] Persistent cache memory cleared")

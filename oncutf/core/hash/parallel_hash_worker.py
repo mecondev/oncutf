@@ -2,24 +2,16 @@
 
 Author: Michael Economou
 Date: 2025-11-24
+Updated: 2026-01-19 (Refactored to use BaseHashWorker)
 
 Parallel hash worker using ThreadPoolExecutor for concurrent hash calculation.
-Replaces single-threaded HashWorker with multi-threaded approach for better performance.
 
 Key Features:
     - Concurrent hash calculation using ThreadPoolExecutor
     - Thread-safe progress tracking with QMutex
     - Smart worker count based on CPU cores and I/O considerations
     - Cache-aware to avoid redundant calculations
-    - Graceful cancellation support
-    - Real-time progress updates via Qt signals
-    - Compatible with existing HashOperationsManager interface
-
-Architecture:
-    - Main QThread manages ThreadPoolExecutor workers
-    - Each worker thread calculates hash for one file
-    - Progress aggregation happens in main thread
-    - Signals emitted to Qt event loop for UI updates
+    - Inherits common infrastructure from BaseHashWorker
 """
 
 import os
@@ -27,38 +19,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-from oncutf.core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
+from oncutf.core.hash.base_hash_worker import BaseHashWorker
+from oncutf.core.pyqt_imports import QMutexLocker
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-class ParallelHashWorker(QThread):
+class ParallelHashWorker(BaseHashWorker):
     """Parallel hash worker using ThreadPoolExecutor for concurrent processing.
 
     Provides significant speedup for multiple files by utilizing all CPU cores
     while respecting I/O constraints.
-
-    Compatibility:
-        Drop-in replacement for HashWorker with same signal interface.
     """
-
-    # Progress signals (same as HashWorker)
-    progress_updated = pyqtSignal(int, int, str)  # current_file, total_files, current_filename
-    size_progress = pyqtSignal("qint64", "qint64")  # bytes_processed, total_bytes
-    status_updated = pyqtSignal(str)  # status message
-
-    # Result signals (same as HashWorker)
-    duplicates_found = pyqtSignal(dict)  # {hash: [file_paths]}
-    comparison_result = pyqtSignal(dict)  # comparison results
-    checksums_calculated = pyqtSignal(dict)  # {file_path: hash}
-
-    # Control signals (same as HashWorker)
-    finished_processing = pyqtSignal(bool)  # success flag
-    error_occurred = pyqtSignal(str)  # error message
-
-    # Real-time UI update signals (enhanced with hash value)
-    file_hash_calculated = pyqtSignal(str, str)  # file_path, hash_value
 
     def __init__(self, parent=None, max_workers: int | None = None):
         """Initialize parallel hash worker.
@@ -66,12 +39,8 @@ class ParallelHashWorker(QThread):
         Args:
             parent: Parent QObject (usually main window)
             max_workers: Maximum worker threads (None = auto-detect optimal count)
-
         """
         super().__init__(parent)
-        self._mutex = QMutex()
-        self._cancelled = False
-        self.main_window = parent
 
         # Determine optimal worker count
         if max_workers is None:
@@ -86,23 +55,15 @@ class ParallelHashWorker(QThread):
 
         logger.info("[ParallelHashWorker] Initialized with %d worker threads", self._max_workers)
 
-        # Shared hash manager for cache access
+        # Initialize hash manager
         from oncutf.core.hash.hash_manager import HashManager
 
         self._hash_manager = HashManager()
 
-        # Operation configuration
-        self._operation_type: str | None = None
-        self._file_paths: list[str] = []
-        self._external_folder: str | None = None
-
-        # Thread-safe progress tracking
+        # Parallel-specific state
         self._total_files = 0
         self._completed_files = 0
-        self._total_bytes = 0
         self._cumulative_processed_bytes = 0
-
-        # Thread-safe result storage
         self._results: dict[str, Any] = {}
         self._errors: list[tuple[str, str]] = []  # (file_path, error_msg)
 
@@ -110,108 +71,17 @@ class ParallelHashWorker(QThread):
         self._cache_hits = 0
         self._cache_misses = 0
 
-        # Batch operations support
-        self._batch_manager: Any = None
-        self._enable_batching = True
-        self._batch_operations: list[dict[str, Any]] = []
-
-    def enable_batch_operations(self, enabled: bool = True) -> None:
-        """Enable or disable batch operations optimization."""
-        self._enable_batching = enabled
-        batch_state = "enabled" if enabled else "disabled"
-        logger.debug(
-            "[ParallelHashWorker] Batch operations %s",
-            batch_state,
-        )
-
-    def setup_duplicate_scan(self, file_paths: list[str]) -> None:
-        """Configure worker for duplicate detection."""
-        with QMutexLocker(self._mutex):
-            self._operation_type = "duplicates"
-            self._file_paths = list(file_paths)
-            self._external_folder = None
-            self._reset_state()
-
-    def setup_external_comparison(self, file_paths: list[str], external_folder: str) -> None:
-        """Configure worker for external folder comparison."""
-        with QMutexLocker(self._mutex):
-            self._operation_type = "compare"
-            self._file_paths = list(file_paths)
-            self._external_folder = external_folder
-            self._reset_state()
-
-    def setup_checksum_calculation(self, file_paths: list[str]) -> None:
-        """Configure worker for checksum calculation."""
-        with QMutexLocker(self._mutex):
-            self._operation_type = "checksums"
-            self._file_paths = list(file_paths)
-            self._external_folder = None
-            self._reset_state()
-
-    def set_total_size(self, total_size: int) -> None:
-        """Set total size from external calculation."""
-        with QMutexLocker(self._mutex):
-            self._total_bytes = total_size
-            logger.debug("[ParallelHashWorker] Total size set to: %d bytes", total_size)
-
-    def cancel(self) -> None:
-        """Cancel the current operation."""
-        with QMutexLocker(self._mutex):
-            self._cancelled = True
-            logger.debug("[ParallelHashWorker] Cancellation requested")
-
-    def is_cancelled(self) -> bool:
-        """Check if operation is cancelled."""
-        with QMutexLocker(self._mutex):
-            return self._cancelled
-
     def _reset_state(self) -> None:
-        """Reset internal state for new operation (must be called with mutex locked)."""
+        """Reset parallel-specific state (must be called with mutex locked)."""
         self._cancelled = False
         self._total_files = len(self._file_paths)
         self._completed_files = 0
-        self._total_bytes = 0
         self._cumulative_processed_bytes = 0
         self._results = {}
         self._errors = []
         self._cache_hits = 0
         self._cache_misses = 0
         self._batch_operations = []
-
-    def _calculate_total_size(self, file_paths: list[str]) -> int:
-        """Calculate total size of all files for progress tracking."""
-        total_size = 0
-        files_counted = 0
-
-        self.status_updated.emit("Calculating total file size...")
-
-        for i, file_path in enumerate(file_paths):
-            if self.is_cancelled():
-                logger.debug("[ParallelHashWorker] Size calculation cancelled")
-                return 0
-
-            try:
-                if os.path.exists(file_path) and os.path.isfile(file_path):
-                    size = os.path.getsize(file_path)
-                    total_size += size
-                    files_counted += 1
-
-                    if i % 50 == 0:  # Update every 50 files
-                        progress = int((i / len(file_paths)) * 100)
-                        self.status_updated.emit(
-                            f"Calculating total size... {progress}% ({i}/{len(file_paths)})"
-                        )
-
-            except (OSError, PermissionError) as e:
-                logger.debug("[ParallelHashWorker] Could not get size for %s: %s", file_path, e)
-                continue
-
-        logger.info(
-            "[ParallelHashWorker] Total size: %s bytes for %d files",
-            format(total_size, ","),
-            files_counted,
-        )
-        return total_size
 
     def _process_single_file(self, file_path: str) -> tuple[str, str | None, int]:
         """Process a single file in worker thread (called concurrently).
@@ -252,8 +122,7 @@ class ParallelHashWorker(QThread):
 
         try:
             hash_value = self._hash_manager.calculate_hash(
-                file_path,
-                cancellation_check=self.is_cancelled
+                file_path, cancellation_check=self.is_cancelled
             )
 
             if hash_value is not None:
@@ -268,32 +137,7 @@ class ParallelHashWorker(QThread):
                 self._errors.append((file_path, str(e)))
             return (file_path, None, file_size)
 
-    def _store_hash_optimized(
-        self, file_path: str, hash_value: str, algorithm: str = "crc32"
-    ) -> None:
-        """Store hash using batch operations if available (thread-safe)."""
-        # NOTE: We do NOT store directly to DB here because this runs in a worker thread
-        # and the HashManager/DB connection belongs to the main thread.
-        # Instead, we rely on the file_hash_calculated signal to pass the hash
-        # back to the main thread for storage.
-
-        # We still queue for batch operations because batch manager might handle
-        # thread safety or we might flush later from main thread.
-        with QMutexLocker(self._mutex):
-            if self._enable_batching and self._batch_manager:
-                logger.debug(
-                    "[ParallelHashWorker] Queuing hash for batch: %s",
-                    os.path.basename(file_path),
-                )
-                self._batch_manager.queue_hash_store(
-                    file_path=file_path,
-                    hash_value=hash_value,
-                    algorithm=algorithm,
-                    priority=10,
-                )
-                self._batch_operations.append(
-                    {"path": file_path, "hash": hash_value, "algorithm": algorithm}
-                )
+    # Note: _store_hash_optimized is inherited from BaseHashWorker
 
     def _update_progress(self, file_path: str, file_size: int) -> None:
         """Update progress counters and emit signals (thread-safe)."""

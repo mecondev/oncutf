@@ -41,8 +41,8 @@ from oncutf.core.pyqt_imports import (
     pyqtSignal,
 )
 from oncutf.ui.behaviors.metadata_cache_behavior import MetadataCacheBehavior
-from oncutf.ui.behaviors.metadata_context_menu_behavior import MetadataContextMenuBehavior
-from oncutf.ui.behaviors.metadata_edit_behavior import MetadataEditBehavior
+from oncutf.ui.behaviors.metadata_context_menu import MetadataContextMenuBehavior
+from oncutf.ui.behaviors.metadata_edit import MetadataEditBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
@@ -397,8 +397,7 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def setModel(self, model: Any) -> None:
-        """Override the setModel method to set minimum column widths after the model is set.
-        """
+        """Override the setModel method to set minimum column widths after the model is set."""
         # Cancel any pending restore operation (delegated to scroll behavior)
         if self._scroll_behavior._pending_restore_timer_id is not None:
             self._scroll_behavior._pending_restore_timer_id = None
@@ -613,9 +612,7 @@ class MetadataTreeView(QTreeView):
         )
 
         if not self._current_file_path:
-            logger.warning(
-                "[MetadataTree] No current file path, skipping tree refresh"
-            )
+            logger.warning("[MetadataTree] No current file path, skipping tree refresh")
             return
 
         # Get current file's metadata from the persistent cache (preferred).
@@ -627,7 +624,9 @@ class MetadataTreeView(QTreeView):
                 cache_entry = parent_window.metadata_cache.get_entry(self._current_file_path)
                 logger.info(
                     "[MetadataTree] Got cache entry: %s",
-                    "has data" if (cache_entry and hasattr(cache_entry, "data") and cache_entry.data) else "no data",
+                    "has data"
+                    if (cache_entry and hasattr(cache_entry, "data") and cache_entry.data)
+                    else "no data",
                 )
             except Exception as e:
                 logger.warning(
@@ -659,7 +658,7 @@ class MetadataTreeView(QTreeView):
             "[MetadataTree] Refreshed tree after edit: %s = %s",
             key_path,
             new_value,
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def _remove_metadata_from_cache(self, metadata: dict[str, Any], key_path: str) -> None:
@@ -837,8 +836,7 @@ class MetadataTreeView(QTreeView):
         self._selection_handler.refresh_metadata_from_selection()
 
     def _on_refresh_shortcut(self) -> None:
-        """Handle F5 shortcut press - refresh metadata with status message.
-        """
+        """Handle F5 shortcut press - refresh metadata with status message."""
         from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[MetadataTree] F5 pressed - refreshing metadata")

@@ -41,8 +41,8 @@ if TYPE_CHECKING:
     from oncutf.models.file_table_model import FileTableModel
     from oncutf.ui.services.utility_manager import UtilityManager
     from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-    from oncutf.ui.widgets.file_table_view import FileTableView
-    from oncutf.ui.widgets.file_tree_view import FileTreeView
+    from oncutf.ui.widgets.file_table import FileTableView
+    from oncutf.ui.widgets.file_tree import FileTreeView
     from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
     from oncutf.ui.widgets.interactive_header import InteractiveHeader
     from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel, MetadataTreeView

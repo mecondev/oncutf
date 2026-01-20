@@ -222,9 +222,9 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
         registry = get_service_registry()
 
     # Import protocols and implementations
+    from oncutf.services.cached_hash_service import CachedHashService
     from oncutf.services.exiftool_service import ExifToolService
     from oncutf.services.filesystem_service import FilesystemService
-    from oncutf.services.hash_service import HashService
     from oncutf.services.interfaces import (
         FilesystemServiceProtocol,
         HashServiceProtocol,
@@ -233,7 +233,7 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
 
     # Register default implementations using factories for lazy init
     registry.register_factory(MetadataServiceProtocol, ExifToolService)
-    registry.register_factory(HashServiceProtocol, HashService)
+    registry.register_factory(HashServiceProtocol, CachedHashService)
     registry.register_factory(FilesystemServiceProtocol, FilesystemService)
 
     logger.debug("Default services configured")

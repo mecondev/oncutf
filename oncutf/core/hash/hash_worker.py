@@ -2,30 +2,32 @@
 
 Author: Michael Economou
 Date: 2025-06-10
+Updated: 2026-01-19 (Refactored to use BaseHashWorker)
 
-hash_worker.py
-QThread worker for background hash calculation operations.
+Sequential hash worker for background hash calculation operations.
+
 This module provides thread-safe, cancellable hash operations with accurate progress updates.
+
 Key Features:
-- Thread-safe with QMutex protection
-- Support for multiple hash operations (duplicates, comparison, checksums)
-- Accurate CRC32 progress tracking with total size calculation
-- Graceful cancellation support
-- Optimized for large file operations
+- Inherits common infrastructure from BaseHashWorker
+- Sequential file processing (legacy, simpler than parallel)
 - Smart cache checking to avoid redundant hash calculations
 - Batch operations optimization for better performance
+- Real-time progress tracking with size-based updates
+
 Usage:
-worker = HashWorker()
-worker.setup_duplicate_scan(file_paths)
-worker.duplicates_found.connect(handle_duplicates)
-worker.start()
+    worker = HashWorker()
+    worker.setup_duplicate_scan(file_paths)
+    worker.duplicates_found.connect(handle_duplicates)
+    worker.start()
 """
 
 import os
 from pathlib import Path
 from typing import Any, Protocol
 
-from oncutf.core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
+from oncutf.core.hash.base_hash_worker import BaseHashWorker
+from oncutf.core.pyqt_imports import QMutexLocker
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -47,8 +49,11 @@ class HashStore(Protocol):
         ...
 
 
-class HashWorker(QThread):
-    """Background worker for hash calculation operations with batch optimization.
+class HashWorker(BaseHashWorker):
+    """Sequential background worker for hash calculation operations.
+
+    Inherits signals, state management, and common methods from BaseHashWorker.
+    Provides sequential processing (one file at a time) with real-time progress.
 
     Supports three main operations:
     1. Find duplicates in file list
@@ -56,126 +61,55 @@ class HashWorker(QThread):
     3. Calculate checksums for files
     """
 
-    # Progress signals
-    progress_updated = pyqtSignal(int, int, str)  # current_file, total_files, current_filename
-    size_progress = pyqtSignal(
-        "qint64", "qint64"
-    )  # total_bytes_processed, total_bytes_size (64-bit integers)
-    status_updated = pyqtSignal(str)  # status message
-
-    # Result signals
-    duplicates_found = pyqtSignal(dict)  # {hash: [file_paths]}
-    comparison_result = pyqtSignal(dict)  # comparison results
-    checksums_calculated = pyqtSignal(dict)  # {file_path: hash}
-
-    # Control signals
-    finished_processing = pyqtSignal(bool)  # success flag
-    error_occurred = pyqtSignal(str)  # error message
-
-    # Real-time UI update signals
-    file_hash_calculated = pyqtSignal(
-        str
-    )  # file_path - emitted when individual file hash is calculated
-
     def __init__(self, parent=None):
-        """Initialize hash worker with mutex, hash manager, and operation state."""
+        """Initialize hash worker with hash manager and operation state."""
         super().__init__(parent)
-        self._mutex = QMutex()
-        self._cancelled = False
-        self.main_window = parent
 
-        # Shared hash manager instance for better cache utilization
+        # Initialize hash manager
         from typing import cast
 
         from oncutf.core.hash.hash_manager import HashManager
 
         self._hash_manager: HashStore = cast("HashStore", HashManager())
 
-        # Operation configuration
-        self._operation_type = None  # "duplicates", "compare", "checksums"
-        self._file_paths = []
-        self._external_folder = None
-
-        # Progress tracking
+        # Sequential-specific progress tracking
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 5  # Check every 5 operations
 
-        # Size tracking
-        self._total_bytes = 0
-        self._cumulative_processed_bytes = 0  # Continuously increases, never resets per file
+        # Size tracking for progress
+        self._cumulative_processed_bytes = 0
 
         # Cache statistics
         self._cache_hits = 0
         self._cache_misses = 0
 
-        # Batch operations optimization
-        self._batch_manager = None
-        self._enable_batching = True
-        self._batch_operations = []  # Store operations for final batch
-
-    def enable_batch_operations(self, enabled: bool = True) -> None:
-        """Enable or disable batch operations optimization."""
-        self._enable_batching = enabled
-        logger.debug("[HashWorker] Batch operations %s", "enabled" if enabled else "disabled")
+    def _reset_sequential_state(self) -> None:
+        """Reset sequential-specific state (must be called with mutex locked)."""
+        self._cancelled = False
+        self._cancel_check_counter = 0
+        self._total_bytes = 0
+        self._cumulative_processed_bytes = 0
+        self._cache_hits = 0
+        self._cache_misses = 0
+        self._batch_operations = []
 
     def setup_duplicate_scan(self, file_paths: list[str]) -> None:
         """Configure worker for duplicate detection."""
+        super().setup_duplicate_scan(file_paths)
         with QMutexLocker(self._mutex):
-            self._operation_type = "duplicates"
-            self._file_paths = list(file_paths)
-            self._external_folder = None
-            self._cancelled = False
-            self._cancel_check_counter = 0
-            self._total_bytes = 0
-            self._cumulative_processed_bytes = 0
-            self._cache_hits = 0
-            self._cache_misses = 0
-            self._batch_operations = []
+            self._reset_sequential_state()
 
     def setup_external_comparison(self, file_paths: list[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
+        super().setup_external_comparison(file_paths, external_folder)
         with QMutexLocker(self._mutex):
-            self._operation_type = "compare"
-            self._file_paths = list(file_paths)
-            self._external_folder = external_folder
-            self._cancelled = False
-            self._cancel_check_counter = 0
-            self._total_bytes = 0
-            self._cumulative_processed_bytes = 0
-            self._cache_hits = 0
-            self._cache_misses = 0
-            self._batch_operations = []
+            self._reset_sequential_state()
 
     def setup_checksum_calculation(self, file_paths: list[str]) -> None:
         """Configure worker for checksum calculation."""
+        super().setup_checksum_calculation(file_paths)
         with QMutexLocker(self._mutex):
-            self._operation_type = "checksums"
-            self._file_paths = list(file_paths)
-            self._external_folder = None
-            self._cancelled = False
-            self._cancel_check_counter = 0
-            self._total_bytes = 0
-            self._cumulative_processed_bytes = 0
-            self._cache_hits = 0
-            self._cache_misses = 0
-            self._batch_operations = []
-
-    def set_total_size(self, total_size: int) -> None:
-        """Set the total size from external calculation to avoid duplicate work."""
-        with QMutexLocker(self._mutex):
-            self._total_bytes = total_size
-            logger.debug("[HashWorker] Total size set to: %d bytes", total_size)
-
-    def cancel(self) -> None:
-        """Cancel the current operation."""
-        with QMutexLocker(self._mutex):
-            self._cancelled = True
-            logger.debug("[HashWorker] Cancellation requested")
-
-    def is_cancelled(self) -> bool:
-        """Check if operation is cancelled."""
-        with QMutexLocker(self._mutex):
-            return self._cancelled
+            self._reset_sequential_state()
 
     def _check_cancellation(self) -> bool:
         """Check for cancellation periodically."""
@@ -184,43 +118,6 @@ class HashWorker(QThread):
             self._cancel_check_counter = 0
             return self.is_cancelled()
         return False
-
-    def _calculate_total_size(self, file_paths: list[str]) -> int:
-        """Calculate total size of all files for accurate progress tracking."""
-        total_size = 0
-        files_counted = 0
-
-        self.status_updated.emit("Calculating total file size...")
-
-        for i, file_path in enumerate(file_paths):
-            # Check for cancellation more frequently during size calculation
-            if i % 10 == 0 and self.is_cancelled():
-                logger.debug("[HashWorker] Size calculation cancelled")
-                return 0
-
-            try:
-                if os.path.exists(file_path) and os.path.isfile(file_path):
-                    size = os.path.getsize(file_path)
-                    total_size += size
-                    files_counted += 1
-
-                    # Update progress during size calculation
-                    if i % 50 == 0:  # Update every 50 files
-                        progress = int((i / len(file_paths)) * 100)
-                        self.status_updated.emit(
-                            f"Calculating total size... {progress}% ({i}/{len(file_paths)})"
-                        )
-
-            except (OSError, PermissionError) as e:
-                logger.debug("[HashWorker] Could not get size for %s: %s", file_path, e)
-                continue
-
-        logger.info(
-            "[HashWorker] Total size calculated: %s bytes for %d files",
-            format(total_size, ","),
-            files_counted,
-        )
-        return total_size
 
     def run(self) -> None:
         """Main thread execution."""
@@ -313,34 +210,11 @@ class HashWorker(QThread):
             self._cache_misses += 1
             return None
 
-    def _store_hash_optimized(
-        self, file_path: str, hash_value: str, algorithm: str = "crc32"
-    ) -> None:
-        """Store hash using batch operations if available."""
-        if self._enable_batching and self._batch_manager:
-            logger.debug("[HashWorker] Queuing hash for batching: %s", os.path.basename(file_path))
-
-            # Queue for batch processing
-            self._batch_manager.queue_hash_store(
-                file_path=file_path,
-                hash_value=hash_value,
-                algorithm=algorithm,
-                priority=10,  # High priority for worker operations
-            )
-
-            # Store operation info for tracking
-            self._batch_operations.append(
-                {"path": file_path, "hash": hash_value, "algorithm": algorithm}
-            )
-        else:
-            # Fallback to direct storage
-            logger.debug("[HashWorker] Storing hash directly: %s", os.path.basename(file_path))
-            self._hash_manager.store_hash(file_path, hash_value, algorithm)
-
     def _process_file_with_progress(
         self, file_path: str, i: int, total_files: int
     ) -> tuple[str | None, int]:
         """Helper method to process a single file with progress tracking.
+
         Checks cache first before calculating hash.
 
         Returns:
@@ -422,7 +296,7 @@ class HashWorker(QThread):
 
         # Emit signal for real-time UI update only when hash is newly calculated (not from cache)
         if file_hash is not None:
-            self.file_hash_calculated.emit(file_path)
+            self.file_hash_calculated.emit(file_path, file_hash)
             logger.debug("[HashWorker] Emitted file_hash_calculated signal for: %s", filename)
 
         return file_hash, file_size

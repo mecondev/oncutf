@@ -36,7 +36,7 @@ class HeaderKeyboardBehavior(QObject):
         # Install event filter on table view to catch keyboard events
         self._table_view.installEventFilter(self)
 
-    def eventFilter(self, obj, event: QEvent) -> bool:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Filter keyboard events from table view for column reordering shortcuts.
 
         Args:
@@ -46,15 +46,14 @@ class HeaderKeyboardBehavior(QObject):
         Returns:
             True if event was handled, False otherwise
         """
-        if event.type() == QEvent.KeyPress:
-            key_event = event  # type: ignore[assignment]
+        if event.type() == QEvent.KeyPress and isinstance(event, QKeyEvent):
             # Check for Ctrl+Left or Ctrl+Right
-            if key_event.modifiers() == Qt.ControlModifier:  # type: ignore[attr-defined]
-                if key_event.key() in (Qt.Key_Left, Qt.Key_Right):  # type: ignore[attr-defined]
+            if event.modifiers() == Qt.ControlModifier:
+                if event.key() in (Qt.Key_Left, Qt.Key_Right):
                     # Handle the shortcut
-                    handled = self._handle_column_move_shortcut(key_event)  # type: ignore[arg-type]
+                    handled = self._handle_column_move_shortcut(event)
                     if handled:
-                        key_event.accept()  # type: ignore[attr-defined]
+                        event.accept()
                         return True
 
         # Pass event to parent's event filter
@@ -109,8 +108,10 @@ class HeaderKeyboardBehavior(QObject):
         cursor_pos = self._table_view.mapFromGlobal(self._table_view.cursor().pos())
 
         # Check if cursor is within table viewport
-        if self._table_view.viewport().rect().contains(
-            self._table_view.viewport().mapFromParent(cursor_pos)
+        if (
+            self._table_view.viewport()
+            .rect()
+            .contains(self._table_view.viewport().mapFromParent(cursor_pos))
         ):
             # Get column at cursor position in table view
             logical = self._table_view.columnAt(cursor_pos.x())

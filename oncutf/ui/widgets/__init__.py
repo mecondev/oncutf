@@ -13,8 +13,8 @@ Import dialogs directly from oncutf.ui.dialogs instead.
 from .base_validated_input import BaseValidatedInput
 from .custom_file_system_model import CustomFileSystemModel
 from .custom_splash_screen import CustomSplashScreen
-from .file_table_view import FileTableView
-from .file_tree_view import FileTreeView
+from .file_table import FileTableView
+from .file_tree import FileTreeView
 from .final_transform_container import FinalTransformContainer
 from .interactive_header import InteractiveHeader
 from .metadata_tree.view import MetadataTreeView

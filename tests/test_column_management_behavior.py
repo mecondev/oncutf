@@ -20,7 +20,7 @@ from unittest.mock import Mock
 import pytest
 
 from oncutf.core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
-from oncutf.ui.behaviors.column_management_behavior import ColumnManagementBehavior
+from oncutf.ui.behaviors.column_management import ColumnManagementBehavior
 
 
 class MockTableModel(QAbstractTableModel):

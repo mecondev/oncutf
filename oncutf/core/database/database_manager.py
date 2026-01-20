@@ -9,7 +9,6 @@ This is the main entry point for database operations. It delegates to:
 - PathStore: file_paths table operations
 - MetadataStore: file_metadata, categories, fields, color tags
 - HashStore: file_hashes table operations
-- BackupStore: file_rename_history operations (TBD)
 - migrations: Schema creation and migration functions
 
 All public methods are preserved for backward compatibility.
@@ -22,7 +21,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from oncutf.core.database.backup_store import BackupStore
 from oncutf.core.database.hash_store import HashStore
 from oncutf.core.database.metadata_store import MetadataStore
 from oncutf.core.database.migrations import create_indexes, create_schema, migrate_schema
@@ -41,7 +39,6 @@ class DatabaseManager:
     - PathStore: file_paths table
     - MetadataStore: metadata, categories, fields, color tags
     - HashStore: file hashes
-    - BackupStore: rename history (future)
 
     Benefits:
     - Single responsibility per store
@@ -72,7 +69,9 @@ class DatabaseManager:
 
         if DEBUG_FRESH_START:
             if self.db_path.exists():
-                logger.info("[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s", self.db_path)
+                logger.info(
+                    "[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s", self.db_path
+                )
                 try:
                     self.db_path.unlink()
                     # Also remove WAL and SHM files if they exist
@@ -89,6 +88,7 @@ class DatabaseManager:
             # Also reset JSON config to avoid stale references
             try:
                 from oncutf.utils.paths import AppPaths
+
                 config_path = AppPaths.get_config_path()
                 if config_path.exists():
                     config_path.unlink()
@@ -114,9 +114,7 @@ class DatabaseManager:
         self._write_lock = threading.RLock()
 
         # Create connection first (stores need it)
-        self._conn = sqlite3.connect(
-            str(self.db_path), timeout=30.0, check_same_thread=False
-        )
+        self._conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.execute("PRAGMA journal_mode = WAL")
@@ -183,16 +181,13 @@ class DatabaseManager:
                 )
                 migrate_schema(cursor, current_version, self.SCHEMA_VERSION)
                 create_indexes(cursor)
-                cursor.execute(
-                    f"UPDATE schema_version SET version = {self.SCHEMA_VERSION}"
-                )
+                cursor.execute(f"UPDATE schema_version SET version = {self.SCHEMA_VERSION}")
                 self._conn.commit()
 
         # Initialize specialized stores (composition pattern)
         self.path_store = PathStore(self._conn)
         self.hash_store = HashStore(self._conn, self.path_store, self._write_lock)
         self.metadata_store = MetadataStore(self._conn, self.path_store, self._write_lock)
-        self.backup_store = BackupStore(self._conn, self.path_store)
         self.session_state_store = SessionStateStore(self._conn, self._write_lock)
         self.thumbnail_store = ThumbnailStore(self._conn)
 
@@ -256,9 +251,7 @@ class DatabaseManager:
     ) -> bool:
         """Store metadata for a file (thread-safe)."""
         with self._write_lock:
-            return self.metadata_store.store_metadata(
-                file_path, metadata, is_extended, is_modified
-            )
+            return self.metadata_store.store_metadata(file_path, metadata, is_extended, is_modified)
 
     def batch_store_metadata(
         self,
@@ -329,9 +322,7 @@ class DatabaseManager:
         """Get metadata field by its unique key."""
         return self.metadata_store.get_metadata_field_by_key(field_key)
 
-    def store_structured_metadata(
-        self, file_path: str, field_key: str, field_value: str
-    ) -> bool:
+    def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
         """Store structured metadata value for a file field (thread-safe)."""
         with self._write_lock:
             return self.metadata_store.store_structured_metadata(file_path, field_key, field_value)
@@ -456,6 +447,7 @@ class DatabaseManager:
                 logger.debug("[DatabaseManager] Connection closed", extra={"dev_only": True})
             except Exception as e:
                 logger.error("[DatabaseManager] Error closing connection: %s", e)
+
     # ====================================================================
     # ThumbnailStore delegation (6 methods)
     # ====================================================================
@@ -545,6 +537,7 @@ class DatabaseManager:
 
         """
         return self.thumbnail_store.get_cache_stats()
+
 
 # ====================================================================
 # Module-level functions for global instance
