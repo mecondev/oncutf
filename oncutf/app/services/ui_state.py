@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
-    from oncutf.core.pyqt_imports import QWidget
+    from oncutf.ui.widgets.file_table.view import FileTableView
 
 
 class UIState(NamedTuple):
@@ -31,7 +31,7 @@ class UIState(NamedTuple):
     scroll_position: int
 
 
-def save_ui_state(file_table_view: QWidget, context: ApplicationContext) -> Any:
+def save_ui_state(file_table_view: "FileTableView", context: "ApplicationContext") -> Any:
     """Save current UI state (selection, checked, scroll position).
 
     Args:
@@ -48,7 +48,7 @@ def save_ui_state(file_table_view: QWidget, context: ApplicationContext) -> Any:
 
 
 def restore_ui_state(
-    file_table_view: QWidget, context: ApplicationContext, state: Any, delay_ms: int = 0
+    file_table_view: "FileTableView", context: "ApplicationContext", state: Any, delay_ms: int = 0
 ) -> None:
     """Restore previously saved UI state.
 
@@ -65,7 +65,7 @@ def restore_ui_state(
 
 
 def restore_ui_state_sync(
-    file_table_view: QWidget, context: ApplicationContext, state: Any
+    file_table_view: "FileTableView", context: "ApplicationContext", state: Any
 ) -> None:
     """Restore UI state synchronously (no delay).
 
@@ -93,7 +93,7 @@ def restore_ui_state_sync(
 
 
 def clear_ui_state(
-    file_table_view: QWidget, context: ApplicationContext, metadata_tree_view: QWidget | None = None
+    file_table_view: "FileTableView", context: "ApplicationContext", metadata_tree_view: Any = None
 ) -> None:
     """Clear all UI state (selection, checked, scroll position).
 

@@ -36,6 +36,8 @@ def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, 
     """
     from oncutf.utils.ui.icon_cache import load_preview_status_icons as _load
     
+    if size is None:
+        return _load()
     return _load(size)
 
 
@@ -52,6 +54,8 @@ def prepare_status_icons(base_dir: str | None = None) -> dict[str, str]:
     """
     from oncutf.utils.ui.icon_cache import prepare_status_icons as _prepare
     
+    if base_dir is None:
+        return _prepare()
     return _prepare(base_dir)
 
 
@@ -80,6 +84,8 @@ def create_colored_icon(
     """
     from oncutf.utils.ui.icon_utilities import create_colored_icon as _create
     
+    if border_color is None:
+        return _create(fill_color, shape, size_x, size_y, border_thickness=border_thickness)
     return _create(fill_color, shape, size_x, size_y, border_color, border_thickness)
 
 

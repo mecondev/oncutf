@@ -49,6 +49,8 @@ class SelectionManager:
                 )
             return
 
+        from oncutf.app.services.cursor import wait_cursor
+
         with wait_cursor():
             # Clear cache to force update
             self.clear_preview_cache()
@@ -116,7 +118,7 @@ class SelectionManager:
             return
 
         from oncutf.core.application_context import get_app_context
-        from oncutf.app.services import wait_cursor
+        from oncutf.app.services.cursor import wait_cursor
         from oncutf.app.services.ui_state import clear_ui_state
 
         with wait_cursor():
@@ -152,6 +154,8 @@ class SelectionManager:
                     "No files to invert selection", selected_count=0, total_count=0, auto_reset=True
                 )
             return
+
+        from oncutf.app.services.cursor import wait_cursor
 
         with wait_cursor():
             # Clear cache to force update

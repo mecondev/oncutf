@@ -24,6 +24,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.models.file_item import FileItem
+    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 

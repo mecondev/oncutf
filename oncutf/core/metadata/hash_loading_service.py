@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
     from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
+    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 

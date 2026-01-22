@@ -343,6 +343,8 @@ class UnifiedMetadataManager(QObject):
                 _loading_dialog.show()
                 QApplication.processEvents()
 
+            from oncutf.app.services.cursor import wait_cursor
+
             cursor_context = (
                 wait_cursor()
                 if save_mode == "single_file_wait_cursor"

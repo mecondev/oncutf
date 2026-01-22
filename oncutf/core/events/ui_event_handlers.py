@@ -43,6 +43,8 @@ class UIEventHandlers:
         all_selected = all(file.checked for file in self.parent_window.file_model.files)
         selection_model = self.parent_window.file_table_view.selectionModel()
 
+        from oncutf.app.services.cursor import wait_cursor
+
         with wait_cursor():
             if all_selected:
                 # Unselect all

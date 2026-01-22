@@ -14,7 +14,7 @@ from typing import Any, Protocol
 
 class MetadataProvider(Protocol):
     """Protocol for metadata extraction services.
-    
+
     Implementations:
     - ExifToolClient (infra/external/exiftool_client.py)
     - FFmpegClient (future: infra/external/ffmpeg_client.py)
@@ -22,7 +22,7 @@ class MetadataProvider(Protocol):
 
     def is_available(self) -> bool:
         """Check if the metadata provider is available.
-        
+
         Returns:
             True if the provider is installed and accessible
         """
@@ -30,10 +30,10 @@ class MetadataProvider(Protocol):
 
     def extract_metadata(self, path: Path) -> dict[str, Any]:
         """Extract metadata from a single file.
-        
+
         Args:
             path: Path to file
-            
+
         Returns:
             Dictionary with metadata. Empty dict on error.
         """
@@ -41,10 +41,10 @@ class MetadataProvider(Protocol):
 
     def extract_batch(self, paths: list[Path]) -> dict[str, dict[str, Any]]:
         """Extract metadata from multiple files.
-        
+
         Args:
             paths: List of file paths
-            
+
         Returns:
             Dict mapping path -> metadata dict
         """
