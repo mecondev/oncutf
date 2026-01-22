@@ -13,6 +13,7 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -59,7 +60,7 @@ def create_progress_dialog(
 def create_metadata_dialog(
     parent: QWidget | None = None,
     is_extended: bool = False,
-    cancel_callback: object | None = None,
+    cancel_callback: Callable[[], None] | None = None,
     show_enhanced_info: bool = True,
     use_size_based_progress: bool = True,
 ) -> ProgressDialogPort:
@@ -97,7 +98,7 @@ def create_metadata_dialog(
 
 def create_hash_dialog(
     parent: QWidget | None = None,
-    cancel_callback: object | None = None,
+    cancel_callback: Callable[[], None] | None = None,
     show_enhanced_info: bool = True,
     use_size_based_progress: bool = True,
 ) -> ProgressDialogPort:

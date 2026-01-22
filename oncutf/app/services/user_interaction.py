@@ -42,7 +42,14 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     else:
         # Fallback: direct Qt import (legacy behavior)
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-        CustomMessageDialog.information(parent, title, message)
+        if parent is not None:
+            CustomMessageDialog.information(parent, title, message)
+        else:
+            # If no parent, use QApplication.activeWindow() or create temporary parent
+            from oncutf.core.pyqt_imports import QApplication
+            active_parent = QApplication.activeWindow()
+            if active_parent:
+                CustomMessageDialog.information(active_parent, title, message)
 
 
 def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
@@ -62,7 +69,13 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
     else:
         # Fallback: direct Qt import (legacy behavior)
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-        CustomMessageDialog.information(parent, title, message)
+        if parent is not None:
+            CustomMessageDialog.information(parent, title, message)
+        else:
+            from oncutf.core.pyqt_imports import QApplication
+            active_parent = QApplication.activeWindow()
+            if active_parent:
+                CustomMessageDialog.information(active_parent, title, message)
 
 
 def show_warning_message(parent: QWidget | None, title: str, message: str) -> None:
@@ -82,7 +95,13 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
     else:
         # Fallback: direct Qt import (legacy behavior)
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-        CustomMessageDialog.information(parent, title, message)
+        if parent is not None:
+            CustomMessageDialog.information(parent, title, message)
+        else:
+            from oncutf.core.pyqt_imports import QApplication
+            active_parent = QApplication.activeWindow()
+            if active_parent:
+                CustomMessageDialog.information(active_parent, title, message)
 
 
 def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
@@ -105,7 +124,15 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
     
     # Fallback: direct Qt import (legacy behavior)
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-    return CustomMessageDialog.question(parent, title, message)
+    if parent is not None:
+        return CustomMessageDialog.question(parent, title, message)
+    
+    # If no parent, use active window or default to False
+    from oncutf.core.pyqt_imports import QApplication
+    active_parent = QApplication.activeWindow()
+    if active_parent:
+        return CustomMessageDialog.question(active_parent, title, message)
+    return False  # Default response when no parent available
 
 
 def get_dialog_adapter():

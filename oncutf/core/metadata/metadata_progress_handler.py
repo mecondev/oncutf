@@ -50,8 +50,8 @@ class MetadataProgressHandler:
         self._parent_window = parent_window
 
         # Progress dialogs (kept as instance variables to prevent garbage collection)
-        self._metadata_progress_dialog: ProgressDialog | None = None
-        self._hash_progress_dialog: ProgressDialog | None = None
+        self._metadata_progress_dialog: ProgressDialogPort | None = None
+        self._hash_progress_dialog: ProgressDialogPort | None = None
 
     @property
     def parent_window(self) -> Any:
