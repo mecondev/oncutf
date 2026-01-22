@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.models.file_item import FileItem
-    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -70,7 +70,7 @@ class MetadataProgressHandler:
         self,
         is_extended: bool,
         cancel_callback: Callable[[], None] | None = None,
-    ) -> ProgressDialog:
+    ) -> ProgressDialogPort:
         """Create a progress dialog for metadata loading.
 
         Args:
@@ -81,9 +81,9 @@ class MetadataProgressHandler:
             ProgressDialog instance
 
         """
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.app.services import create_metadata_dialog
 
-        self._metadata_progress_dialog = ProgressDialog.create_metadata_dialog(
+        self._metadata_progress_dialog = create_metadata_dialog(
             self._parent_window,
             is_extended=is_extended,
             cancel_callback=cancel_callback,
@@ -95,7 +95,7 @@ class MetadataProgressHandler:
         files: list[FileItem],
         is_extended: bool,
         cancel_callback: Callable[[], None] | None = None,
-    ) -> ProgressDialog | None:
+    ) -> ProgressDialogPort | None:
         """Create and show a progress dialog for metadata loading.
 
         Args:
@@ -153,7 +153,7 @@ class MetadataProgressHandler:
     def create_hash_progress_dialog(
         self,
         cancel_callback: Callable[[], None] | None = None,
-    ) -> ProgressDialog:
+    ) -> ProgressDialogPort:
         """Create a progress dialog for hash calculation.
 
         Args:
@@ -163,9 +163,9 @@ class MetadataProgressHandler:
             ProgressDialog instance
 
         """
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.app.services import create_hash_dialog
 
-        self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
+        self._hash_progress_dialog = create_hash_dialog(
             self._parent_window,
             cancel_callback=cancel_callback,
         )
@@ -175,7 +175,7 @@ class MetadataProgressHandler:
         self,
         files: list[FileItem],
         cancel_callback: Callable[[], None] | None = None,
-    ) -> ProgressDialog | None:
+    ) -> ProgressDialogPort | None:
         """Create and show a progress dialog for hash calculation.
 
         Args:

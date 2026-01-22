@@ -13,7 +13,6 @@ import time
 from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_metadata_load
-from oncutf.utils.ui.cursor_helper import wait_cursor
 
 logger = get_cached_logger(__name__)
 
@@ -117,7 +116,7 @@ class SelectionManager:
             return
 
         from oncutf.core.application_context import get_app_context
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.app.services import wait_cursor
         from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 
         with wait_cursor():

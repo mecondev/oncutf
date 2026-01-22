@@ -251,7 +251,7 @@ class MetadataWriter(QObject):
         import contextlib
 
         from oncutf.core.pyqt_imports import QApplication
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.app.services import wait_cursor
 
         if not files_to_save:
             return
@@ -299,10 +299,10 @@ class MetadataWriter(QObject):
 
         try:
             if save_mode == "multiple_files_dialog":
-                from oncutf.utils.ui.progress_dialog import ProgressDialog
+                from oncutf.app.services import create_progress_dialog
 
                 cancel_callback = self.request_save_cancel if not is_exit_save else None
-                _loading_dialog = ProgressDialog(
+                _loading_dialog = create_progress_dialog(
                     parent=self.parent_window,
                     operation_type="metadata_save",
                     cancel_callback=cancel_callback,

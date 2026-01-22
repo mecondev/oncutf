@@ -3,19 +3,29 @@
 Author: Michael Economou
 Date: December 18, 2025
 
+DEPRECATED: This module will be removed in a future version.
+Use oncutf.infra.external.exiftool_client.ExifToolClient instead.
+
 This module provides a concrete implementation of MetadataServiceProtocol
 using ExifTool for metadata extraction. It wraps the existing ExifToolWrapper
 and provides a clean service interface.
 
-Usage:
+Usage (DEPRECATED):
     from oncutf.services.exiftool_service import ExifToolService
 
     service = ExifToolService()
     metadata = service.load_metadata(Path("/path/to/image.jpg"))
+
+New usage (RECOMMENDED):
+    from oncutf.infra.external.exiftool_client import get_exiftool_client
+
+    client = get_exiftool_client()
+    metadata = client.extract_metadata(Path("/path/to/image.jpg"))
 """
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +33,14 @@ from oncutf.services.interfaces import MetadataServiceProtocol
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+# Issue deprecation warning on import
+warnings.warn(
+    "oncutf.services.exiftool_service is deprecated. "
+    "Use oncutf.infra.external.exiftool_client instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class ExifToolService:

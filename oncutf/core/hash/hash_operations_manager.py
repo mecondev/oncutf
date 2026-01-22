@@ -268,7 +268,7 @@ class HashOperationsManager:
 
         """
         from oncutf.core.hash.hash_manager import HashManager
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.app.services import wait_cursor
 
         try:
             hash_results = {}
@@ -402,7 +402,7 @@ class HashOperationsManager:
 
         """
         # Force restore cursor before showing results dialog
-        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+        from oncutf.app.services import force_restore_cursor
 
         force_restore_cursor()
 

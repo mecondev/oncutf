@@ -29,9 +29,9 @@ from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
     from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
-    from oncutf.utils.ui.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -151,9 +151,9 @@ class HashLoadingService:
             def cancel_hash_loading():
                 self.cancel_loading()
 
-            from oncutf.utils.ui.progress_dialog import ProgressDialog
+            from oncutf.app.services import create_hash_dialog
 
-            self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
+            self._hash_progress_dialog = create_hash_dialog(
                 self.parent_window, cancel_callback=cancel_hash_loading
             )
             dialog = self._hash_progress_dialog  # Local ref for type narrowing
@@ -520,9 +520,9 @@ class HashLoadingService:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
         """
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.app.services import create_hash_dialog
 
-        self._hash_progress_dialog = ProgressDialog.create_hash_dialog(
+        self._hash_progress_dialog = create_hash_dialog(
             self.parent_window,
             cancel_callback=self._cancel_operation,
             use_size_based_progress=True,
@@ -686,7 +686,7 @@ class HashLoadingService:
             checksums: Dictionary with file paths and hash values
         """
         # Force restore cursor before showing results dialog
-        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+        from oncutf.app.services import force_restore_cursor
 
         force_restore_cursor()
 

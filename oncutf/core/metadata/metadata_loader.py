@@ -403,7 +403,7 @@ class MetadataLoader:
             metadata_tree_view: Reference to metadata tree view for display
 
         """
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.app.services import wait_cursor
 
         with wait_cursor():
             try:
@@ -487,9 +487,9 @@ class MetadataLoader:
         # Create progress dialog
         from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
         from oncutf.utils.ui.dialog_utils import show_dialog_smooth
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.app.services import create_metadata_dialog
 
-        loading_dialog = ProgressDialog.create_metadata_dialog(
+        loading_dialog = create_metadata_dialog(
             self._parent_window,
             is_extended=use_extended,
             cancel_callback=cancel_callback,

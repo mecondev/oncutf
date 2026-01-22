@@ -152,7 +152,7 @@ class MetadataShortcutHandler:
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             message = (
                 f"All {len(selected_files)} selected file(s) already have "
@@ -196,7 +196,7 @@ class MetadataShortcutHandler:
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             message = f"All {len(selected_files)} selected file(s) already have extended metadata."
             if metadata_analysis.get("extended_tooltip"):
@@ -214,7 +214,7 @@ class MetadataShortcutHandler:
         fast_count = stats.get("fast_metadata", 0)
 
         if fast_count > 0:
-            from oncutf.utils.ui.dialog_utils import show_question_message
+            from oncutf.app.services import show_question_message
 
             message = (
                 f"Found {fast_count} file(s) with fast metadata.\n\n"
@@ -269,7 +269,7 @@ class MetadataShortcutHandler:
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             message = f"All {len(all_files)} file(s) already have fast metadata or better."
             if metadata_analysis.get("fast_tooltip"):
@@ -312,7 +312,7 @@ class MetadataShortcutHandler:
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             message = f"All {len(all_files)} file(s) already have extended metadata."
             if metadata_analysis.get("extended_tooltip"):

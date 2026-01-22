@@ -296,7 +296,7 @@ class MetadataOperationsManager:
 
         except ImportError as e:
             logger.error("[MetadataEdit] Failed to import MetadataEditDialog: %s", e)
-            from oncutf.utils.ui.dialog_utils import show_error_message
+            from oncutf.app.services import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -305,7 +305,7 @@ class MetadataOperationsManager:
             )
         except Exception as e:
             logger.exception("[MetadataEdit] Unexpected error during %s editing: %s", field_name, e)
-            from oncutf.utils.ui.dialog_utils import show_error_message
+            from oncutf.app.services import show_error_message
 
             show_error_message(
                 self.parent_window,

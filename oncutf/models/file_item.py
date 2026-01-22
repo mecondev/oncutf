@@ -50,23 +50,10 @@ class FileItem:
         self.checked = False  # Selection state for UI
         self.hash_value: str | None = None  # SHA256 hash for file integrity
 
-        # Load saved color tag from database (hex color or "none")
-        # Import here to avoid circular imports and initialization issues
-        try:
-            from oncutf.core.database.database_manager import get_database_manager
-
-            db_manager = get_database_manager()
-            self.color = db_manager.get_color_tag(path)
-            if self.color != "none":
-                logger.debug(
-                    "[FileItem] Loaded color %s for %s",
-                    self.color,
-                    self.filename,
-                    extra={"dev_only": True},
-                )
-        except Exception as e:
-            logger.warning("[FileItem] Could not load color tag: %s", e)
-            self.color = "none"
+        # Color tag (hex color or "none")
+        # NOTE: Color loading moved to external repository to break models→core cycle
+        # Use FileRepository.get_color_tag() to load colors after initialization
+        self.color = "none"
 
     def __str__(self) -> str:
         """Return simple string representation with filename only."""

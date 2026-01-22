@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from oncutf.app.services.color import ColorGenerator
 from oncutf.core.metadata.commands import MetadataCommand
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.color_generator import ColorGenerator
 
 if TYPE_CHECKING:
     from oncutf.core.database.database_manager import DatabaseManager

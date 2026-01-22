@@ -116,7 +116,7 @@ class ApplicationService:
 
         if not hash_analysis["enable_selected"]:
             # All files already have hashes
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             # Combine message with details
             message = (
@@ -150,7 +150,7 @@ class ApplicationService:
 
         if not hash_analysis["enable_selected"]:
             # All files already have hashes
-            from oncutf.utils.ui.dialog_utils import show_info_message
+            from oncutf.app.services import show_info_message
 
             show_info_message(
                 self.main_window,

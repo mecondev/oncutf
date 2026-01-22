@@ -20,15 +20,15 @@ class TestProgressDialogCreation:
     """Tests for progress dialog creation methods."""
 
     def test_create_metadata_dialog_calls_factory(self) -> None:
-        """create_metadata_progress_dialog should call ProgressDialog factory."""
+        """create_metadata_progress_dialog should return a progress dialog port."""
+        from oncutf.app.ports.user_interaction import ProgressDialogPort
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 
         result = handler.create_metadata_progress_dialog(is_extended=False, cancel_callback=None)
 
-        assert isinstance(result, ProgressDialog)
+        assert isinstance(result, ProgressDialogPort)
 
     def test_create_metadata_dialog_stores_reference(self) -> None:
         """Should store reference to created dialog."""
@@ -42,15 +42,15 @@ class TestProgressDialogCreation:
         assert handler._metadata_progress_dialog is result
 
     def test_create_hash_dialog_calls_factory(self) -> None:
-        """create_hash_progress_dialog should call ProgressDialog factory."""
+        """create_hash_progress_dialog should return a progress dialog port."""
+        from oncutf.app.ports.user_interaction import ProgressDialogPort
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
 
         result = handler.create_hash_progress_dialog(cancel_callback=None)
 
-        assert isinstance(result, ProgressDialog)
+        assert isinstance(result, ProgressDialogPort)
 
     def test_create_hash_dialog_stores_reference(self) -> None:
         """Should store reference to created hash dialog."""

@@ -26,7 +26,6 @@ from oncutf.core.ui_managers.file_load_ui_service import FileLoadUIService
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.cursor_helper import force_restore_cursor, wait_cursor
 
 logger = get_cached_logger(__name__)
 
@@ -89,6 +88,8 @@ class FileLoadManager:
             force_cleanup_drag()
 
         # Clear any existing cursors immediately and stop all drag visuals
+        from oncutf.app.services import force_restore_cursor
+
         force_restore_cursor()
 
         # Force stop any drag visual feedback
@@ -126,6 +127,8 @@ class FileLoadManager:
 
         # Process all paths with fast wait cursor approach (same as drag operations)
         all_file_paths = []
+
+        from oncutf.app.services import wait_cursor
 
         with wait_cursor():
             for path in paths:
@@ -232,6 +235,8 @@ class FileLoadManager:
             recursive,
             extra={"dev_only": True},
         )
+
+        from oncutf.app.services import wait_cursor
 
         with wait_cursor():
             file_paths = self._get_files_from_folder(folder_path, recursive)
@@ -365,6 +370,9 @@ class FileLoadManager:
         if use_cache and file_store:
             file_store.set_cached_files(folder_path, file_items)
 
+        # Load color tags from database for all files
+        self._load_color_tags(file_items)
+
         logger.info(
             "[FileLoadManager] Scanned %s: %d files", folder_path, len(file_items)
         )
@@ -439,6 +447,9 @@ class FileLoadManager:
         if not file_items:
             logger.warning("[FileLoadManager] No valid FileItem objects created")
             return
+
+        # Load color tags from database
+        self._load_color_tags(file_items)
 
         # Delegate to service for model + UI updates
         self._ui_service.update_model_and_ui(file_items, clear=clear)
@@ -548,3 +559,43 @@ class FileLoadManager:
 
         logger.info("[FileLoadManager] Refreshed %d files", len(refreshed_files))
         return True
+
+    def _load_color_tags(self, file_items: list[FileItem]) -> None:
+        """Load color tags from database for a list of files.
+
+        This method breaks the models→core cycle by loading colors
+        after FileItem initialization using the repository pattern.
+
+        Args:
+            file_items: List of FileItems to load colors for
+        """
+        if not file_items:
+            return
+
+        try:
+            from oncutf.infra.db import get_file_repository
+
+            repo = get_file_repository()
+
+            # Load colors for all files
+            for item in file_items:
+                try:
+                    color = repo.get_color_tag(item.full_path)
+                    item.color = color
+                    if color != "none":
+                        logger.debug(
+                            "[FileLoadManager] Loaded color %s for %s",
+                            color,
+                            item.filename,
+                            extra={"dev_only": True},
+                        )
+                except Exception as e:
+                    logger.warning(
+                        "[FileLoadManager] Could not load color for %s: %s",
+                        item.filename,
+                        e,
+                    )
+                    item.color = "none"
+
+        except Exception as e:
+            logger.warning("[FileLoadManager] Could not initialize file repository: %s", e)

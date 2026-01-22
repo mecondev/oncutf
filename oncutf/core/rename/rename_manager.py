@@ -56,7 +56,7 @@ class RenameManager:
         This method handles the complete rename workflow including validation,
         execution, folder reload, and state restoration.
         """
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.app.services import wait_cursor
 
         # Start wait cursor IMMEDIATELY for user feedback
         # It will be restored when post-rename workflow completes

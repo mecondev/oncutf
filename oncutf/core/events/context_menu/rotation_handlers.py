@@ -107,7 +107,7 @@ class RotationHandlers:
 
         except ImportError as e:
             logger.error("[BulkRotation] Failed to import BulkRotationDialog: %s", e)
-            from oncutf.utils.ui.dialog_utils import show_error_message
+            from oncutf.app.services import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -116,7 +116,7 @@ class RotationHandlers:
             )
         except Exception as e:
             logger.exception("[BulkRotation] Unexpected error: %s", e)
-            from oncutf.utils.ui.dialog_utils import show_error_message
+            from oncutf.app.services import show_error_message
 
             show_error_message(
                 self.parent_window,
@@ -332,7 +332,7 @@ class RotationHandlers:
 
         except Exception as e:
             logger.exception("[BulkRotation] Error applying rotation: %s", e)
-            from oncutf.utils.ui.dialog_utils import show_error_message
+            from oncutf.app.services import show_error_message
 
             show_error_message(
                 self.parent_window, "Error", f"Failed to apply rotation changes: {str(e)}"
