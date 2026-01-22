@@ -96,9 +96,9 @@ class InitializationManager:
             files: List of FileItem objects (not strings)
 
         """
-        from oncutf.core.application_context import get_app_context
         from oncutf.app.services import wait_cursor
-        from oncutf.app.services.ui_state import save_ui_state, restore_ui_state
+        from oncutf.app.services.ui_state import restore_ui_state, save_ui_state
+        from oncutf.core.application_context import get_app_context
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)

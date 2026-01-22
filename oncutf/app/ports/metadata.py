@@ -61,12 +61,12 @@ class MetadataWriter(Protocol):
         backup: bool = True,
     ) -> bool:
         """Write metadata to a file.
-        
+
         Args:
             path: Path to file
             metadata: Metadata dict to write
             backup: Create backup before writing
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -78,10 +78,10 @@ class CacheStore(Protocol):
 
     def get(self, key: str) -> dict[str, Any] | None:
         """Get cached metadata.
-        
+
         Args:
             key: Cache key (usually file path)
-            
+
         Returns:
             Cached metadata or None if not found
         """
@@ -89,7 +89,7 @@ class CacheStore(Protocol):
 
     def set(self, key: str, value: dict[str, Any]) -> None:
         """Store metadata in cache.
-        
+
         Args:
             key: Cache key
             value: Metadata to cache
@@ -98,7 +98,7 @@ class CacheStore(Protocol):
 
     def invalidate(self, key: str) -> None:
         """Invalidate cached entry.
-        
+
         Args:
             key: Cache key to invalidate
         """

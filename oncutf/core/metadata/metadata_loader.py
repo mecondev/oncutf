@@ -485,8 +485,8 @@ class MetadataLoader:
             logger.info("[MetadataLoader] Metadata loading cancelled by user")
 
         # Create progress dialog
-        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
         from oncutf.app.services import create_metadata_dialog
+        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
 
         loading_dialog = create_metadata_dialog(
             self._parent_window,

@@ -20,17 +20,17 @@ logger = get_cached_logger(__name__)
 
 class FileRepository:
     """Repository for file-related database operations.
-    
+
     This repository breaks the models→core cycle by moving database
     operations out of FileItem and into the infrastructure layer.
-    
+
     FileItem becomes a pure data model, while this repository handles
     persistence concerns.
     """
 
     def __init__(self, db_manager: Any) -> None:
         """Initialize repository with database manager.
-        
+
         Args:
             db_manager: Database manager instance (typed as Any to avoid import)
         """
@@ -38,10 +38,10 @@ class FileRepository:
 
     def get_folder_id(self, folder_path: str | Path) -> int | None:
         """Get folder ID for a given path.
-        
+
         Args:
             folder_path: Path to folder
-            
+
         Returns:
             Folder ID or None if not found
         """
@@ -53,10 +53,10 @@ class FileRepository:
 
     def ensure_folder_exists(self, folder_path: str | Path) -> int | None:
         """Ensure folder exists in database, creating if needed.
-        
+
         Args:
             folder_path: Path to folder
-            
+
         Returns:
             Folder ID or None on error
         """
@@ -73,10 +73,10 @@ class FileRepository:
 
     def get_file_hash(self, file_path: str | Path) -> str | None:
         """Get stored hash for a file.
-        
+
         Args:
             file_path: Path to file
-            
+
         Returns:
             File hash or None if not found
         """
@@ -88,11 +88,11 @@ class FileRepository:
 
     def store_file_hash(self, file_path: str | Path, hash_value: str) -> bool:
         """Store file hash in database.
-        
+
         Args:
             file_path: Path to file
             hash_value: Hash value to store
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -142,9 +142,9 @@ _file_repository: FileRepository | None = None
 
 def get_file_repository() -> FileRepository:
     """Get the global file repository instance.
-    
+
     Lazy initialization - creates repository when first accessed.
-    
+
     Returns:
         Singleton FileRepository instance
     """
@@ -159,7 +159,7 @@ def get_file_repository() -> FileRepository:
 
 def set_file_repository(repository: FileRepository) -> None:
     """Set a custom file repository (useful for testing).
-    
+
     Args:
         repository: Custom FileRepository instance
     """

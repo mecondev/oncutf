@@ -29,7 +29,6 @@ from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
     from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
     from oncutf.utils.ui.progress_dialog import ProgressDialog

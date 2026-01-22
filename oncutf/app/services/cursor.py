@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 
 def get_cursor_adapter() -> CursorPort | None:
     """Get the registered CursorPort adapter.
-    
+
     Returns:
         The registered adapter or None if not registered yet.
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     try:
         ctx = ApplicationContext.get_instance()
         return ctx.get_manager("cursor") if ctx.has_manager("cursor") else None
@@ -39,18 +39,18 @@ def get_cursor_adapter() -> CursorPort | None:
 @contextlib.contextmanager
 def wait_cursor(restore_after: bool = True):
     """Context manager for wait cursor without Qt dependencies.
-    
+
     Args:
         restore_after: If True, restore cursor after context (default).
                       If False, leave cursor as wait cursor.
-                      
+
     Example:
         with wait_cursor():
             # Long operation
             process_files()
     """
     adapter = get_cursor_adapter()
-    
+
     if adapter:
         adapter.set_wait_cursor()
         try:
@@ -61,23 +61,23 @@ def wait_cursor(restore_after: bool = True):
     else:
         # Fallback: direct Qt import (legacy behavior)
         from oncutf.utils.ui.cursor_helper import wait_cursor as legacy_wait_cursor
-        
+
         with legacy_wait_cursor(restore_after=restore_after):
             yield
 
 
 def force_restore_cursor() -> None:
     """Force restore cursor to normal state (emergency cleanup).
-    
+
     This is used in error handlers and cleanup code to ensure cursor
     doesn't get stuck in wait state.
     """
     adapter = get_cursor_adapter()
-    
+
     if adapter:
         adapter.force_restore_cursor()
     else:
         # Fallback: direct Qt import (legacy behavior)
         from oncutf.utils.ui.cursor_helper import force_restore_cursor as legacy_force_restore
-        
+
         legacy_force_restore()

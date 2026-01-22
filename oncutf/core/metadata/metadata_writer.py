@@ -250,8 +250,8 @@ class MetadataWriter(QObject):
         """
         import contextlib
 
-        from oncutf.core.pyqt_imports import QApplication
         from oncutf.app.services import wait_cursor
+        from oncutf.core.pyqt_imports import QApplication
 
         if not files_to_save:
             return

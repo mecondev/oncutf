@@ -179,7 +179,6 @@ class HashOperationsManager:
 
         try:
             # Import Qt components
-            from oncutf.core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
             from oncutf.app.services.folder_selection import select_folder
@@ -264,8 +263,8 @@ class HashOperationsManager:
             file_item: FileItem object to calculate hash for
 
         """
-        from oncutf.core.hash.hash_manager import HashManager
         from oncutf.app.services import wait_cursor
+        from oncutf.core.hash.hash_manager import HashManager
 
         try:
             hash_results = {}

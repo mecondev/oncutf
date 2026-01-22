@@ -22,19 +22,19 @@ if TYPE_CHECKING:
 
 def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show information dialog using registered adapter.
-    
+
     Args:
         parent: Parent widget (may be None)
         title: Dialog title
         message: Message to display
-        
+
     Note:
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is shown by the adapter
         registered in ApplicationContext.
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     ctx = ApplicationContext.get_instance()
     if ctx.has_manager("user_dialog"):
         adapter = ctx.get_manager("user_dialog")
@@ -54,14 +54,14 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
 
 def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show error dialog using registered adapter.
-    
+
     Args:
         parent: Parent widget (may be None)
         title: Dialog title
         message: Error message to display
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     ctx = ApplicationContext.get_instance()
     if ctx.has_manager("user_dialog"):
         adapter = ctx.get_manager("user_dialog")
@@ -80,14 +80,14 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
 
 def show_warning_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show warning dialog using registered adapter.
-    
+
     Args:
         parent: Parent widget (may be None)
         title: Dialog title
         message: Warning message to display
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     ctx = ApplicationContext.get_instance()
     if ctx.has_manager("user_dialog"):
         adapter = ctx.get_manager("user_dialog")
@@ -106,27 +106,27 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
 
 def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
     """Show yes/no question dialog using registered adapter.
-    
+
     Args:
         parent: Parent widget (may be None)
         title: Dialog title
         message: Question to ask
-        
+
     Returns:
         True if user clicked Yes, False otherwise
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     ctx = ApplicationContext.get_instance()
     if ctx.has_manager("user_dialog"):
         adapter = ctx.get_manager("user_dialog")
         return adapter.ask_yes_no(title, message)
-    
+
     # Fallback: direct Qt import (legacy behavior)
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
     if parent is not None:
         return CustomMessageDialog.question(parent, title, message)
-    
+
     # If no parent, use active window or default to False
     from oncutf.core.pyqt_imports import QApplication
     active_parent = QApplication.activeWindow()
@@ -137,16 +137,16 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
 
 def get_dialog_adapter():
     """Get the registered UserDialogPort adapter.
-    
+
     Returns:
         The registered adapter or None if not registered yet.
-        
+
     Note:
         This is for advanced use cases where you need the adapter directly.
         Most code should use show_info_message(), show_error_message(), etc.
     """
     from oncutf.core.application_context import ApplicationContext
-    
+
     try:
         ctx = ApplicationContext.get_instance()
         return ctx.get_manager("user_dialog") if ctx.has_manager("user_dialog") else None

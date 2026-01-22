@@ -19,6 +19,7 @@ Date: 2025-05-31
 import os
 from enum import Enum
 
+from oncutf.app.services.icons import get_menu_icon
 from oncutf.config import ICON_SIZES
 from oncutf.core.pyqt_imports import (
     QApplication,
@@ -33,7 +34,6 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.app.services.icons import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

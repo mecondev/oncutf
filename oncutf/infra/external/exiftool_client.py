@@ -26,17 +26,17 @@ logger = get_cached_logger(__name__)
 
 class ExifToolClient:
     """Canonical ExifTool client for metadata operations.
-    
+
     This is the SINGLE SOURCE OF TRUTH for ExifTool interactions.
     All metadata extraction/writing should go through this class.
-    
+
     Features:
     - Persistent process via ExifToolWrapper
     - Thread-safe operations
     - Batch metadata extraction
     - Metadata writing
     - Health monitoring
-    
+
     Usage:
         client = ExifToolClient()
         if client.is_available():
@@ -45,7 +45,7 @@ class ExifToolClient:
 
     def __init__(self, use_extended: bool = False) -> None:
         """Initialize ExifTool client.
-        
+
         Args:
             use_extended: Use extended metadata extraction (-ee flag).
                          Slower but extracts embedded metadata.
@@ -69,7 +69,7 @@ class ExifToolClient:
 
     def is_available(self) -> bool:
         """Check if ExifTool is available on the system.
-        
+
         Returns:
             True if ExifTool is installed and accessible
         """
@@ -100,10 +100,10 @@ class ExifToolClient:
 
     def extract_metadata(self, path: Path) -> dict[str, Any]:
         """Extract metadata from a single file.
-        
+
         Args:
             path: Path to file
-            
+
         Returns:
             Dictionary with metadata. Empty dict on error.
         """
@@ -121,10 +121,10 @@ class ExifToolClient:
 
     def extract_batch(self, paths: list[Path]) -> dict[str, dict[str, Any]]:
         """Extract metadata from multiple files (batch operation).
-        
+
         Args:
             paths: List of file paths
-            
+
         Returns:
             Dict mapping path -> metadata dict
         """
@@ -158,12 +158,12 @@ class ExifToolClient:
         backup: bool = True,
     ) -> bool:
         """Write metadata to a file.
-        
+
         Args:
             path: Path to file
             metadata: Metadata dict to write
             backup: Create backup before writing
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -209,7 +209,7 @@ _exiftool_client: ExifToolClient | None = None
 
 def get_exiftool_client() -> ExifToolClient:
     """Get the global ExifTool client instance.
-    
+
     Returns:
         Singleton ExifToolClient instance
     """
@@ -221,7 +221,7 @@ def get_exiftool_client() -> ExifToolClient:
 
 def set_exiftool_client(client: ExifToolClient) -> None:
     """Set a custom ExifTool client (useful for testing).
-    
+
     Args:
         client: Custom ExifToolClient instance
     """

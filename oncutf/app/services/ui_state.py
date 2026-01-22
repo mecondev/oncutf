@@ -31,7 +31,7 @@ class UIState(NamedTuple):
     scroll_position: int
 
 
-def save_ui_state(file_table_view: "FileTableView", context: "ApplicationContext") -> Any:
+def save_ui_state(file_table_view: FileTableView, context: ApplicationContext) -> Any:
     """Save current UI state (selection, checked, scroll position).
 
     Args:
@@ -48,7 +48,7 @@ def save_ui_state(file_table_view: "FileTableView", context: "ApplicationContext
 
 
 def restore_ui_state(
-    file_table_view: "FileTableView", context: "ApplicationContext", state: Any, delay_ms: int = 0
+    file_table_view: FileTableView, context: ApplicationContext, state: Any, delay_ms: int = 0
 ) -> None:
     """Restore previously saved UI state.
 
@@ -65,7 +65,7 @@ def restore_ui_state(
 
 
 def restore_ui_state_sync(
-    file_table_view: "FileTableView", context: "ApplicationContext", state: Any
+    file_table_view: FileTableView, context: ApplicationContext, state: Any
 ) -> None:
     """Restore UI state synchronously (no delay).
 
@@ -93,7 +93,7 @@ def restore_ui_state_sync(
 
 
 def clear_ui_state(
-    file_table_view: "FileTableView", context: "ApplicationContext", metadata_tree_view: Any = None
+    file_table_view: FileTableView, context: ApplicationContext, metadata_tree_view: Any = None
 ) -> None:
     """Clear all UI state (selection, checked, scroll position).
 

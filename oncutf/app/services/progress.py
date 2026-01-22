@@ -30,17 +30,17 @@ def create_progress_dialog(
     is_exit_save: bool = False,
 ) -> ProgressDialogPort:
     """Create a progress dialog using registered adapter or fallback to legacy.
-    
+
     Args:
         parent: Parent widget (may be None)
         operation_type: Type of operation (metadata_basic, metadata_extended, etc.)
         cancel_callback: Callback function for user cancellation
         show_enhanced_info: Whether to show enhanced information
         is_exit_save: Whether this is an exit save operation
-        
+
     Returns:
         ProgressDialogPort implementation
-        
+
     Note:
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is created by the adapter.

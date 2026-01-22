@@ -20,10 +20,10 @@ logger = get_cached_logger(__name__)
 
 class MetadataCache:
     """In-memory metadata cache with TTL support.
-    
+
     This is a canonical implementation that consolidates various caching
     approaches used throughout the application.
-    
+
     Features:
     - TTL-based expiration
     - File modification time tracking
@@ -33,7 +33,7 @@ class MetadataCache:
 
     def __init__(self, ttl_seconds: float = 300.0) -> None:
         """Initialize metadata cache.
-        
+
         Args:
             ttl_seconds: Time-to-live for cache entries (default 5 minutes)
         """
@@ -43,10 +43,10 @@ class MetadataCache:
 
     def get(self, path: Path) -> dict[str, Any] | None:
         """Get cached metadata for a file.
-        
+
         Args:
             path: File path
-            
+
         Returns:
             Cached metadata or None if not found/expired/stale
         """
@@ -80,7 +80,7 @@ class MetadataCache:
 
     def set(self, path: Path, metadata: dict[str, Any]) -> None:
         """Store metadata in cache.
-        
+
         Args:
             path: File path
             metadata: Metadata to cache
@@ -98,7 +98,7 @@ class MetadataCache:
 
     def invalidate(self, path: Path) -> None:
         """Invalidate cache entry for a file.
-        
+
         Args:
             path: File path to invalidate
         """
@@ -115,7 +115,7 @@ class MetadataCache:
 
     def size(self) -> int:
         """Get number of cached entries.
-        
+
         Returns:
             Number of entries in cache
         """
@@ -123,7 +123,7 @@ class MetadataCache:
 
     def cleanup_expired(self) -> int:
         """Remove expired entries from cache.
-        
+
         Returns:
             Number of entries removed
         """
@@ -148,7 +148,7 @@ _metadata_cache: MetadataCache | None = None
 
 def get_metadata_cache() -> MetadataCache:
     """Get the global metadata cache instance.
-    
+
     Returns:
         Singleton MetadataCache instance
     """
@@ -160,7 +160,7 @@ def get_metadata_cache() -> MetadataCache:
 
 def set_metadata_cache(cache: MetadataCache) -> None:
     """Set a custom metadata cache (useful for testing).
-    
+
     Args:
         cache: Custom MetadataCache instance
     """

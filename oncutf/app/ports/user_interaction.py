@@ -12,7 +12,7 @@ from typing import Literal, Protocol, runtime_checkable
 
 OperationType = Literal[
     "metadata_basic",
-    "metadata_extended", 
+    "metadata_extended",
     "metadata_save",
     "file_loading",
     "hash_calculation",
@@ -41,7 +41,7 @@ class ProgressReporter(Protocol):
 
     def report_progress(self, current: int, total: int, message: str = "") -> None:
         """Report progress update.
-        
+
         Args:
             current: Current item number
             total: Total items
@@ -57,7 +57,7 @@ class ProgressReporter(Protocol):
 @runtime_checkable
 class ProgressDialogPort(Protocol):
     """Protocol for showing progress dialogs without Qt dependencies.
-    
+
     This is a more complex protocol than ProgressReporter - it represents
     a full-featured progress dialog with visual feedback, cancellation,
     and status updates.
@@ -77,7 +77,7 @@ class ProgressDialogPort(Protocol):
 
     def set_progress(self, current: int, total: int) -> None:
         """Update progress indicator.
-        
+
         Args:
             current: Current item number
             total: Total items
@@ -86,7 +86,7 @@ class ProgressDialogPort(Protocol):
 
     def set_count(self, current: int, total: int) -> None:
         """Set the current/total count display.
-        
+
         Args:
             current: Current item number
             total: Total items
@@ -95,7 +95,7 @@ class ProgressDialogPort(Protocol):
 
     def set_filename(self, filename: str) -> None:
         """Set the filename being processed.
-        
+
         Args:
             filename: Name of file currently being processed
         """
@@ -135,7 +135,7 @@ class StatusReporter(Protocol):
 
     def show_status(self, message: str, timeout: int = 0) -> None:
         """Show status message.
-        
+
         Args:
             message: Status message
             timeout: Timeout in milliseconds (0 = permanent)

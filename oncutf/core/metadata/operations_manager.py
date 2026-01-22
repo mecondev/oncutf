@@ -176,7 +176,6 @@ class MetadataOperationsManager:
 
     def _execute_export(self, dialog, format_combo, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
-        from PyQt5.QtWidgets import QFileDialog
 
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 

@@ -16,14 +16,14 @@ if TYPE_CHECKING:
 
 class QtUserDialogAdapter:
     """Qt implementation of UserDialogPort.
-    
+
     This adapter breaks the core→ui cycle by implementing the port interface
     defined in app/ports/user_interaction.py.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize adapter with optional parent widget.
-        
+
         Args:
             parent: Parent QWidget for dialogs
         """
@@ -62,13 +62,13 @@ class QtUserDialogAdapter:
 
 class QtStatusReporter:
     """Qt implementation of StatusReporter.
-    
+
     Reports status messages to a QStatusBar.
     """
 
     def __init__(self, status_bar: object | None = None) -> None:
         """Initialize reporter with optional status bar.
-        
+
         Args:
             status_bar: QStatusBar instance (typed as object to avoid Qt import)
         """
@@ -76,7 +76,7 @@ class QtStatusReporter:
 
     def show_status(self, message: str, timeout: int = 0) -> None:
         """Show status message.
-        
+
         Args:
             message: Status message
             timeout: Timeout in milliseconds (0 = permanent)
@@ -87,7 +87,7 @@ class QtStatusReporter:
 
 class QtCursorAdapter:
     """Qt implementation of CursorPort.
-    
+
     Delegates to utils/ui/cursor_helper.py for actual cursor management.
     This adapter provides a protocol-based interface without Qt dependencies
     in the calling code.
@@ -115,7 +115,7 @@ class QtCursorAdapter:
 
 class QtProgressDialogAdapter:
     """Qt implementation of ProgressDialogPort.
-    
+
     Wraps ProgressDialog from utils/ui/progress_dialog.py to provide
     a protocol-based interface without Qt dependencies in core code.
     """
@@ -129,7 +129,7 @@ class QtProgressDialogAdapter:
         is_exit_save: bool = False,
     ) -> None:
         """Initialize adapter with ProgressDialog parameters.
-        
+
         Args:
             parent: Parent QWidget (typed as object to avoid Qt import)
             operation_type: Type of operation (metadata_basic, file_loading, etc.)

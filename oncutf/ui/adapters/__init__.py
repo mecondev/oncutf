@@ -9,7 +9,7 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
@@ -51,7 +51,7 @@ class DialogAdapterProtocol(Protocol):
 
 class DialogAdapter:
     """Concrete implementation of dialog adapter using Qt dialogs.
-    
+
     This breaks the core→ui cycle by providing a single point of dialog creation.
     Core modules can depend on the Protocol, while UI provides the implementation.
     """
