@@ -171,7 +171,7 @@ def create_item(text: str, alignment: Any = None, icon_name: str | None = None) 
     # Set icon if provided
     if icon_name:
         try:
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+            from oncutf.app.services.icons import get_menu_icon
 
             icon = get_menu_icon(icon_name)
             if icon:

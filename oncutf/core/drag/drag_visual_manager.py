@@ -33,7 +33,7 @@ from oncutf.core.pyqt_imports import (
     QWidget,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import get_menu_icon
+from oncutf.app.services.icons import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

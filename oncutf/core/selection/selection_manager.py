@@ -117,20 +117,18 @@ class SelectionManager:
 
         from oncutf.core.application_context import get_app_context
         from oncutf.app.services import wait_cursor
-        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
+        from oncutf.app.services.ui_state import clear_ui_state
 
         with wait_cursor():
             # Clear cache to force update
             self.clear_preview_cache()
 
-            # Use FileTableStateHelper for consistent state clearing
+            # Clear UI state (selection, checked, scroll, metadata tree)
             context = get_app_context()
             metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
 
             if context:
-                FileTableStateHelper.clear_all_state(
-                    file_table_view, context, metadata_tree_view
-                )
+                clear_ui_state(file_table_view, context, metadata_tree_view)
 
             # Update labels
             if hasattr(self.parent_window, "update_files_label"):

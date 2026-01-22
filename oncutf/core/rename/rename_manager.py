@@ -231,14 +231,11 @@ class RenameManager:
                         )
                         return
 
-                    # Use FileTableStateHelper for consistent restoration
+                    # Use ui_state facade for consistent restoration
                     from oncutf.core.application_context import get_app_context
-                    from oncutf.utils.ui.file_table_state_helper import (
-                        FileTableState,
-                        FileTableStateHelper,
-                    )
+                    from oncutf.app.services.ui_state import UIState, restore_ui_state_sync
 
-                    state = FileTableState(
+                    state = UIState(
                         selected_paths=list(selected_paths) if selected_paths else [],
                         checked_paths=checked_paths,
                         anchor_row=None,
@@ -247,7 +244,7 @@ class RenameManager:
 
                     context = get_app_context()
                     # Call restore SYNCHRONOUSLY - we already debounced via files_loaded signal
-                    FileTableStateHelper.restore_state_sync(
+                    restore_ui_state_sync(
                         self.main_window.file_table_view,
                         context,
                         state,

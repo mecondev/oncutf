@@ -98,7 +98,7 @@ class InitializationManager:
         """
         from oncutf.core.application_context import get_app_context
         from oncutf.app.services import wait_cursor
-        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
+        from oncutf.app.services.ui_state import save_ui_state, restore_ui_state
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)
@@ -149,7 +149,7 @@ class InitializationManager:
                 logger.warning("[MainWindow] No application context available")
                 return
 
-            state = FileTableStateHelper.save_state(self.main_window.file_table_view, context)
+            state = save_ui_state(self.main_window.file_table_view, context)
 
             # 1. Clear stale selections (files may no longer exist)
             try:
@@ -201,7 +201,7 @@ class InitializationManager:
             self.main_window.file_table_view.prepare_table(filtered_files)
 
             # 5. Restore file table state (selection, checked, scroll position)
-            FileTableStateHelper.restore_state(
+            restore_ui_state(
                 self.main_window.file_table_view, context, state, delay_ms=100
             )
 

@@ -11,9 +11,13 @@ from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icon_cache import load_preview_status_icons, prepare_status_icons
-from oncutf.utils.ui.icon_utilities import create_colored_icon
-from oncutf.utils.ui.icons_loader import icons_loader, load_metadata_icons
+from oncutf.app.services.icons import (
+    create_colored_icon,
+    get_icons_loader,
+    load_metadata_icons,
+    load_preview_status_icons,
+    prepare_status_icons,
+)
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
@@ -153,6 +157,7 @@ class InitializationOrchestrator:
         self.window.selection_manager = SelectionManager(parent_window=self.window)
 
         # Theme setup
+        icons_loader = get_icons_loader()
         icons_loader.set_theme("dark")
 
         # UI state attributes

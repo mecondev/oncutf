@@ -49,10 +49,10 @@ class ContextMenuHandlers:
         self.metadata_ops = MetadataOperationsManager(parent_window)
 
         # Composition pattern - create handler instances
-        from oncutf.core.events.context_menu.file_status import FileStatusHelpers
-        from oncutf.core.events.context_menu.hash_handlers import HashHandlers
-        from oncutf.core.events.context_menu.metadata_handlers import MetadataHandlers
-        from oncutf.core.events.context_menu.rotation_handlers import RotationHandlers
+        from oncutf.ui.events.context_menu.file_status import FileStatusHelpers
+        from oncutf.ui.events.context_menu.hash_handlers import HashHandlers
+        from oncutf.ui.events.context_menu.metadata_handlers import MetadataHandlers
+        from oncutf.ui.events.context_menu.rotation_handlers import RotationHandlers
 
         self.file_status = FileStatusHelpers(parent_window)
         self.hash_handlers = HashHandlers(parent_window)
@@ -82,7 +82,7 @@ class ContextMenuHandlers:
                     )
                     return
 
-        from oncutf.utils.ui.icons_loader import get_menu_icon
+        from oncutf.app.services.icons import get_menu_icon
 
         # Helper function to create actions with shortcuts
         def create_action_with_shortcut(
