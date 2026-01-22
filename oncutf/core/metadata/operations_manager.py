@@ -185,13 +185,12 @@ class MetadataOperationsManager:
         format_type = format_map.get(format_combo.currentIndex(), "json")
 
         # Get output directory
-        from oncutf.utils.ui.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.app.services.folder_selection import select_folder
 
-        output_dir = get_existing_directory_on_parent_screen(
+        output_dir = select_folder(
             dialog,
             f"Select Export Directory - {scope.title()} Files",
             "",
-            QFileDialog.Options(QFileDialog.ShowDirsOnly),
         )
 
         if not output_dir:

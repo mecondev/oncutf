@@ -41,9 +41,9 @@ class FileEventHandlers:
         - Shift: Merge + shallow (skip metadata)
         - Ctrl+Shift: Merge + recursive (skip metadata)
         """
-        from oncutf.utils.ui.multiscreen_helper import get_existing_directory_on_parent_screen
+        from oncutf.app.services.folder_selection import select_folder
 
-        folder_path = get_existing_directory_on_parent_screen(
+        folder_path = select_folder(
             self.parent_window,
             "Select Folder",
             self.parent_window.current_folder_path or os.path.expanduser("~"),

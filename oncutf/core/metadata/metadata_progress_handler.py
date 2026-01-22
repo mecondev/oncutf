@@ -110,7 +110,6 @@ class MetadataProgressHandler:
         try:
             from oncutf.core.pyqt_imports import QApplication
             from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
-            from oncutf.utils.ui.dialog_utils import show_dialog_smooth
 
             # Create dialog
             dialog = self.create_metadata_progress_dialog(is_extended, cancel_callback)
@@ -119,8 +118,8 @@ class MetadataProgressHandler:
             status_text = "Loading extended metadata..." if is_extended else "Loading metadata..."
             dialog.set_status(status_text)
 
-            # Show dialog smoothly
-            show_dialog_smooth(dialog)
+            # Show dialog (adapter handles smooth appearance)
+            dialog.show()
             dialog.activateWindow()
             dialog.setFocus()
             dialog.raise_()

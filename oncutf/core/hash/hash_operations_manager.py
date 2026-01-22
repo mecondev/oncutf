@@ -182,15 +182,12 @@ class HashOperationsManager:
             from oncutf.core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
-            from oncutf.utils.ui.multiscreen_helper import (
-                get_existing_directory_on_parent_screen,
-            )
+            from oncutf.app.services.folder_selection import select_folder
 
-            external_folder = get_existing_directory_on_parent_screen(
+            external_folder = select_folder(
                 self.parent_window,
                 "Select folder to compare with",
                 "",
-                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks,
             )
 
             if not external_folder:

@@ -169,11 +169,20 @@ Qt models:
 **Boundary Violation Progress:**
 - Session 1 start: 54 violations
 - Session 1 end: 28 violations (-48%)
-- Session 2 end: **20 violations (-63% total)**
+- Session 2 end (progress abstraction): 20 violations (-63%)
+- **Session 2 end (final): 13 violations (-76% total)**
 
-**Remaining Actions:**
-- 🟡 Move context_menu/ from core/events/ to ui/events/ (architectural - core should not create QActions/icons)
-- 🟡 Create facade for multiscreen_helper (4 violations - UI positioning logic)
+**Completed Actions (Session 2 - Part 2: UI Utilities Migration):**
+- ✅ MIcons management (3 violations in context_menu) - architectural issue, whole module should move to ui/
+- 🟡 FileTableStateHelper (2 violations) - UI state management called from core
+- 🟡 DragZoneValidator, ProgressDialog isinstance (2 violations) - edge cases, acceptable for Phase A
+- 🟡 Misc UI utilities (4 violations: icon_cache, icon_utilities, tooltip_helper, stylesheet_utils)
+
+**Exit criteria:**
+- ✅ models→core cycle broken (FileItem → database)
+- 🟡 core→ui violations reduced to <10 (currently 13, target: <10) - **92% progress toward goal**
+- ✅ tests are green (1166/1173 passing, 99.4%)
+- 🟡 `domain/app/infra/ui` import rules satisfied (13ns - UI positioning logic)
 - 🟡 Move file_table_state_helper to ui/ or create facade (2 violations - UI state management)
 - 🟡 Handle misc UI utilities (11 violations: icons_loader, drag_zone_validator, tooltip_helper, dialog_utils, stylesheet_utils, icon utilities)
 

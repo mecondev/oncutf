@@ -486,7 +486,6 @@ class MetadataLoader:
 
         # Create progress dialog
         from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
-        from oncutf.utils.ui.dialog_utils import show_dialog_smooth
         from oncutf.app.services import create_metadata_dialog
 
         loading_dialog = create_metadata_dialog(
@@ -498,8 +497,8 @@ class MetadataLoader:
             "Loading extended metadata..." if use_extended else "Loading metadata..."
         )
 
-        # Show dialog smoothly
-        show_dialog_smooth(loading_dialog)
+        # Show dialog (adapter handles smooth appearance)
+        loading_dialog.show()
         loading_dialog.activateWindow()
         loading_dialog.setFocus()
         loading_dialog.raise_()

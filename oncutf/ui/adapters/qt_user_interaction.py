@@ -152,8 +152,10 @@ class QtProgressDialogAdapter:
         self._dialog.set_status(message)
 
     def show(self) -> None:
-        """Show the progress dialog."""
-        self._dialog.show()
+        """Show the progress dialog with smooth appearance."""
+        from oncutf.utils.ui.dialog_utils import show_dialog_smooth
+
+        show_dialog_smooth(self._dialog)
 
     def close(self) -> None:
         """Close the progress dialog."""
