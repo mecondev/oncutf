@@ -266,15 +266,9 @@ class DragManager(QObject):
                     )
 
                     # Check if ProgressDialog is active
-                    from oncutf.utils.ui.progress_dialog import ProgressDialog
+                    from oncutf.app.services.active_dialogs import has_active_progress_dialogs
 
-                    active_dialogs = [
-                        w
-                        for w in QApplication.topLevelWidgets()
-                        if isinstance(w, ProgressDialog) and w.isVisible()
-                    ]
-
-                    if active_dialogs:
+                    if has_active_progress_dialogs():
                         logger.debug(
                             "[DragManager] ProgressDialog is active, allowing it to handle ESC",
                             extra={"dev_only": True},

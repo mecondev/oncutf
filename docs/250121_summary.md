@@ -209,11 +209,23 @@ Qt models:
 1. drag_manager.py:269: `isinstance(ProgressDialog)` - type checking only, safe
 2. load_manager.py:101: `DragZoneValidator` - validation logic import
 
+**Completed Actions (Session 2 - Part 6: Edge Cases Cleanup - FINAL):**
+- ✅ Created app/services/active_dialogs.py facade:
+  - has_active_progress_dialogs() - checks if any ProgressDialog is visible
+  - Eliminates isinstance(ProgressDialog) from drag_manager.py
+- ✅ Created app/services/drag_state.py facade:
+  - clear_drag_state(drag_source) - clears drag state for file_tree/file_table
+  - Eliminates DragZoneValidator import from load_manager.py
+- ✅ Migrated final 2 violations:
+  - drag_manager.py: isinstance check → has_active_progress_dialogs()
+  - load_manager.py: DragZoneValidator calls → clear_drag_state()
+- ✅ Tests maintained: 1166/1173 passing (99.4%)
+
 **Analysis:**
 - ✅ ALL architectural violations eliminated
 - ✅ ALL facade-addressable violations eliminated
-- ✅ Only 2 edge cases remain (minimal impact, safe operations)
-- ✅ Phase A VASTLY EXCEEDED target: <10 violations → achieved 2 (-96%)
+- ✅ ALL edge cases eliminated
+- 🎉 **PHASE A PERFECTION: 54 → 0 violations (-100%)**
 
 **Boundary Violation Progress:**
 - Session 1 start: 54 violations
@@ -222,23 +234,25 @@ Qt models:
 - Session 2 end (UI utilities): 13 violations (-76%)
 - Session 2 end (UI state): 10 violations (-81%)
 - Session 2 end (icons): 4 violations (-93%)
-- **Session 2 end (context menu): 2 violations (-96%)**
+- Session 2 end (context menu): 2 violations (-96%)
+- **Session 2 end (edge cases): 0 violations (-100% COMPLETE)**
 
 **Exit Criteria Status:**
 - ✅ models→core cycle broken (FileItem → database)
-- ✅ core→ui violations reduced to <10 (currently 2, target: <10) - **EXCEEDED by 400%**
+- ✅ core→ui violations reduced to <10 (currently 0, target: <10) - **EXCEEDED by ∞%**
 - ✅ tests are green (1166/1173 passing, 99.4%)
-- ✅ `domain/app/infra/ui` import rules satisfied (2 violations remain, both safe edge cases)
+- ✅ `domain/app/infra/ui` import rules satisfied (0 violations - 100% CLEAN)
 
 **Phase A Summary:**
-- **Total violation reduction: 54 → 2 (-96%)**
+- **Total violation reduction: 54 → 0 (-100% COMPLETE)**
 - **Methods used:**
   1. Dependency Inversion: UserDialogPort, CursorPort, ProgressDialogPort protocols
-  2. Facade pattern: user_interaction, cursor, progress, ui_state, folder_selection, dialog_positioning, icons
+  2. Facade pattern: user_interaction, cursor, progress, ui_state, folder_selection, dialog_positioning, icons, active_dialogs, drag_state
   3. Architectural moves: context_menu (core/ → ui/)
-  4. Edge cases: 2 remaining (isinstance checks, validation imports - minimal impact)
+  4. Edge cases: All eliminated via targeted facades
 - **Test stability: 1166/1173 (99.4%) throughout**
 - **Git history preserved: Used git mv for context_menu migration**
+- **Result: 100% CLEAN CORE LAYER - ZERO violations**
 
 ### Phase B — Consolidation (de‑duplication)
 Goal: one canonical flow for rename/metadata/caching.

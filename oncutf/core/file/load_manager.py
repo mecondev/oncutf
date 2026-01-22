@@ -98,10 +98,10 @@ class FileLoadManager:
         end_drag_visual()
 
         # Clear drag zone validator for all possible sources
-        from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
+        from oncutf.app.services.drag_state import clear_drag_state
 
-        DragZoneValidator.clear_initial_drag_widget("file_tree")
-        DragZoneValidator.clear_initial_drag_widget("file_table")
+        clear_drag_state("file_tree")
+        clear_drag_state("file_table")
 
         # Always use fast wait cursor approach (same as external drops)
         # This makes internal and external drag behavior consistent
