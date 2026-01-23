@@ -324,7 +324,7 @@ class HashWorker(BaseHashWorker):
                 self.finished_processing.emit(False)
                 return
 
-            file_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
+            file_hash, _file_size = self._process_file_with_progress(file_path, i, total_files)
             if file_hash:
                 hash_results[file_path] = file_hash
 
@@ -385,7 +385,7 @@ class HashWorker(BaseHashWorker):
                 self.finished_processing.emit(False)
                 return
 
-            file_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
+            file_hash, _file_size = self._process_file_with_progress(file_path, i, total_files)
             if file_hash:
                 if file_hash in hash_to_files:
                     hash_to_files[file_hash].append(file_path)
@@ -452,7 +452,7 @@ class HashWorker(BaseHashWorker):
                 return
 
             filename = os.path.basename(file_path)
-            current_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
+            current_hash, _file_size = self._process_file_with_progress(file_path, i, total_files)
 
             if current_hash is None:
                 continue

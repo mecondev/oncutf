@@ -196,7 +196,7 @@ def apply_rename_modules(
 
     global _cache_timestamp
 
-    original_base_name, ext = os.path.splitext(file_item.filename)
+    original_base_name, _ext = os.path.splitext(file_item.filename)
 
     # Performance optimization: Check cache first
     cache_key = _generate_module_cache_key(modules_data, index, file_item.filename)

@@ -215,7 +215,7 @@ class BaseValidatedInput:
                 self._has_had_content = True
 
             # Validate text content
-            is_valid, error_message = self.validate_text_content(text)
+            is_valid, _error_message = self.validate_text_content(text)
 
             # Update state if changed
             if self._is_valid != is_valid:

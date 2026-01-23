@@ -298,7 +298,7 @@ class RenameHistoryDialog(QDialog):
                 return
 
             # Perform undo
-            success, message, files_processed = self.history_manager.undo_operation(
+            success, message, _files_processed = self.history_manager.undo_operation(
                 self.current_operation_id
             )
 

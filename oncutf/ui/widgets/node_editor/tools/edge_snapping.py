@@ -66,7 +66,7 @@ class EdgeSnapping:
 
         """
         scenepos = self.graphics_view.mapToScene(event.pos())
-        graphics_socket, pos = self.getSnappedToSocketPosition(scenepos)
+        graphics_socket, _pos = self.getSnappedToSocketPosition(scenepos)
         return graphics_socket
 
     def getSnappedToSocketPosition(

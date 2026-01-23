@@ -365,7 +365,7 @@ class TestConvenienceFunctions:
                 result = compare_folders(temp_dir1, temp_dir2)
 
                 assert "test.txt" in result
-                is_same, hash1, hash2 = result["test.txt"]
+                is_same, _hash1, _hash2 = result["test.txt"]
                 assert is_same is True
 
 

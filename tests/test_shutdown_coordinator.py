@@ -139,7 +139,7 @@ class TestShutdownCoordinator:
         coordinator.register_database_manager(mock_db_mgr)
 
         with patch("platform.system", return_value="Windows"):
-            success, error = coordinator._shutdown_database()
+            success, _error = coordinator._shutdown_database()
 
         assert success is True
         # Even if commit doesn't exist, should not fail

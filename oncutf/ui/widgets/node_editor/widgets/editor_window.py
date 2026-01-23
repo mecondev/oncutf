@@ -267,7 +267,7 @@ class NodeEditorWindow(QMainWindow):
             return
 
         if self.maybe_save():
-            fname, filter = QFileDialog.getOpenFileName(
+            fname, _filter = QFileDialog.getOpenFileName(
                 self, 'Open graph from file',
                 self.get_file_dialog_directory(),
                 self.get_file_dialog_filter()
@@ -311,7 +311,7 @@ class NodeEditorWindow(QMainWindow):
         """
         current_nodeeditor = self.get_current_node_editor_widget()
         if current_nodeeditor is not None:
-            fname, filter = QFileDialog.getSaveFileName(
+            fname, _filter = QFileDialog.getSaveFileName(
                 self, 'Save graph to file',
                 self.get_file_dialog_directory(),
                 self.get_file_dialog_filter()

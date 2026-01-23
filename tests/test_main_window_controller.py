@@ -192,7 +192,7 @@ class TestRestoreLastSessionWorkflow:
     ):
         """Test that metadata loading failure doesn't fail the whole workflow."""
         mock_exists.return_value = True
-        file_load, metadata, _ = mock_controllers
+        _file_load, metadata, _ = mock_controllers
 
         # Mock loaded files
         mock_app_context.file_store.get_loaded_files.return_value = [MagicMock()]

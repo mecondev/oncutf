@@ -150,7 +150,7 @@ class UnifiedPreviewManager:
 
         for idx, file in enumerate(files):
             try:
-                basename, extension = os.path.splitext(file.filename)
+                _basename, extension = os.path.splitext(file.filename)
 
                 # Apply modules with availability context
                 new_fullname = self._apply_modules_with_context(

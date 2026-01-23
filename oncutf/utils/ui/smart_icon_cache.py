@@ -288,7 +288,7 @@ class SmartIconCache(QObject):
     def _evict_oldest(self) -> None:
         """Evict the least recently used entry."""
         if self._cache:
-            cache_key, entry = self._cache.popitem(last=False)
+            cache_key, _entry = self._cache.popitem(last=False)
             self._evictions += 1
             self.cache_evicted.emit(cache_key)
             logger.debug("[SmartIconCache] Evicted: %s", cache_key)

@@ -132,7 +132,7 @@ def profile_table_rendering(file_count):
 
     render_time = time.time() - start_time
 
-    current, peak = tracemalloc.get_traced_memory()
+    current, _peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     print(f"Rows rendered: {file_count}")
@@ -161,7 +161,7 @@ def profile_preview_generation(file_count):
 
     preview_time = time.time() - start_time
 
-    current, peak = tracemalloc.get_traced_memory()
+    current, _peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     print(f"Previews generated: {len(previews)}")

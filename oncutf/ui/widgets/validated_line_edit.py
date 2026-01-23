@@ -76,7 +76,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
             return False, "Invalid filename"
 
         # Use filename validation
-        is_valid, result = validate_filename_part(text)
+        is_valid, _result = validate_filename_part(text)
         if not is_valid:
             return False, get_validation_error_message(text)
 

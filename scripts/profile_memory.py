@@ -205,7 +205,7 @@ def main() -> int:
     print("oncutf Memory Profiler")
     print("=" * 50)
 
-    current, peak, report_lines = profile_startup_memory(args.detailed)
+    _current, _peak, report_lines = profile_startup_memory(args.detailed)
 
     # Print report
     for line in report_lines:
