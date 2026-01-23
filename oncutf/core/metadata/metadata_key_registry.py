@@ -13,7 +13,7 @@ Date: 2026-01-15
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -79,7 +79,7 @@ class MetadataKeyRegistry:
     """
 
     # Default semantic aliases (Lightroom-style unified field names)
-    DEFAULT_SEMANTIC_ALIASES = {
+    DEFAULT_SEMANTIC_ALIASES: ClassVar[dict[str, list[str]]] = {
         "Creation Date": [
             "EXIF:DateTimeOriginal",
             "XMP:CreateDate",

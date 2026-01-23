@@ -8,6 +8,7 @@ Manages loading and providing access to the Inter font family
 """
 
 import logging
+from typing import ClassVar
 
 from oncutf.core.pyqt_imports import QFont, QFontDatabase
 
@@ -18,7 +19,7 @@ class InterFonts:
     """Manager for Inter font family with predefined use cases."""
 
     # Font file mappings
-    FONT_FILES = {
+    FONT_FILES: ClassVar[dict[str, str]] = {
         "regular": "Inter-Regular.ttf",
         "medium": "Inter-Medium.ttf",
         "semibold": "InterDisplay-SemiBold.ttf",
@@ -27,7 +28,7 @@ class InterFonts:
     }
 
     # CSS weight mappings for styling
-    CSS_WEIGHTS = {
+    CSS_WEIGHTS: ClassVar[dict[str, int]] = {
         "regular": 400,
         "medium": 500,
         "semibold": 600,
@@ -204,7 +205,7 @@ class JetBrainsFonts:
     """Manager for JetBrains Mono font family."""
 
     # Font file mappings
-    FONT_FILES = {
+    FONT_FILES: ClassVar[dict[str, str]] = {
         "regular": "JetBrainsMono-Regular.ttf",
         "bold": "JetBrainsMono-Bold.ttf",
         "italic": "JetBrainsMono-Italic.ttf",

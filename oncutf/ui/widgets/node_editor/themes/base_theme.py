@@ -17,6 +17,8 @@ Date:
     2025-12-11
 """
 
+from typing import ClassVar
+
 from PyQt5.QtGui import QColor
 
 
@@ -78,7 +80,7 @@ class BaseTheme:
     edge_width_selected = 5.0
 
     # Socket colors by type
-    socket_colors = [
+    socket_colors: ClassVar[list[QColor]] = [
         QColor("#FFFF7700"),  # Type 0 - Orange
         QColor("#FF52e220"),  # Type 1 - Green
         QColor("#FF0056a6"),  # Type 2 - Blue

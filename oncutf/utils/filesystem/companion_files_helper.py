@@ -10,7 +10,7 @@ Date: 2025-11-25
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -29,7 +29,7 @@ class CompanionFilesHelper:
 
     # Companion file patterns (extension -> companion patterns)
     # Based on real-world professional workflows, not theoretical patterns
-    COMPANION_PATTERNS = {
+    COMPANION_PATTERNS: ClassVar[dict[str, list[str]]] = {
         # ========================================
         # VIDEO FILES - Sony metadata + subtitles
         # ========================================
@@ -217,7 +217,7 @@ class CompanionFilesHelper:
     }
 
     # File extensions that are commonly companion files
-    COMPANION_EXTENSIONS = {
+    COMPANION_EXTENSIONS: ClassVar[set[str]] = {
         # Metadata formats
         "xmp",
         "xml",

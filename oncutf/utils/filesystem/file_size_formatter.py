@@ -15,6 +15,7 @@ Features:
 
 import locale
 import platform
+from typing import ClassVar
 
 from oncutf.config import USE_BINARY_UNITS, USE_LOCALE_DECIMAL_SEPARATOR
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -62,11 +63,11 @@ class FileSizeFormatter:
     """Cross-platform file size formatter with configurable units and locale support."""
 
     # Unit definitions
-    BINARY_UNITS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
-    DECIMAL_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
+    BINARY_UNITS: ClassVar[list[str]] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
+    DECIMAL_UNITS: ClassVar[list[str]] = ["B", "KB", "MB", "GB", "TB", "PB"]
 
     # Legacy units (for compatibility with existing systems)
-    LEGACY_BINARY_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]  # Using KB instead of KiB
+    LEGACY_BINARY_UNITS: ClassVar[list[str]] = ["B", "KB", "MB", "GB", "TB", "PB"]  # Using KB instead of KiB
 
     def __init__(
         self,

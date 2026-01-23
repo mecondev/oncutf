@@ -8,13 +8,14 @@ Handles common metadata prefixes, underscore-separated names, and camelCase.
 """
 
 import re
+from typing import ClassVar
 
 
 class FieldFormatter:
     """Formatter for metadata field names to improve readability."""
 
     # Common replacements for better readability
-    FIELD_REPLACEMENTS = {
+    FIELD_REPLACEMENTS: ClassVar[dict[str, str]] = {
         "Exif": "EXIF",
         "Gps": "GPS",
         "Iso": "ISO",

@@ -13,6 +13,8 @@ Date:
     2025-12-11
 """
 
+from typing import ClassVar
+
 from PyQt5.QtGui import QColor, QFont
 
 from oncutf.ui.widgets.node_editor.themes.base_theme import BaseTheme
@@ -55,7 +57,7 @@ class DarkTheme(BaseTheme):
     edge_color_dragging = QColor("#FFFFFF")
 
     # Socket colors
-    socket_colors = [
+    socket_colors: ClassVar[list[QColor]] = [
         QColor("#FFFF7700"),  # Type 0 - Orange
         QColor("#FF52e220"),  # Type 1 - Green
         QColor("#FF0056a6"),  # Type 2 - Blue

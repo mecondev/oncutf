@@ -20,6 +20,7 @@ Note: VideoThumbnailProvider requires FFmpeg installed on system.
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import ClassVar
 
 from oncutf.core.pyqt_imports import QImage, QPixmap, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -91,7 +92,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
 
     """
 
-    SUPPORTED_EXTENSIONS = {
+    SUPPORTED_EXTENSIONS: ClassVar[set[str]] = {
         ".jpg",
         ".jpeg",
         ".png",
@@ -105,7 +106,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
     }
 
     # RAW formats supported via rawpy
-    RAW_EXTENSIONS = {
+    RAW_EXTENSIONS: ClassVar[set[str]] = {
         ".cr2",
         ".cr3",
         ".nef",
@@ -316,7 +317,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
     """
 
-    SUPPORTED_EXTENSIONS = {
+    SUPPORTED_EXTENSIONS: ClassVar[set[str]] = {
         ".mp4",
         ".mkv",
         ".avi",

@@ -7,6 +7,8 @@ Author: Michael Economou
 Date: 2026-01-01
 """
 
+from typing import ClassVar
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -22,7 +24,7 @@ class FieldDetector:
     """
 
     # Date/time keywords for field detection
-    DATE_KEYWORDS = frozenset([
+    DATE_KEYWORDS: ClassVar[frozenset[str]] = frozenset([
         "date",
         "time",
         "datetime",
@@ -62,7 +64,7 @@ class FieldDetector:
     ])
 
     # Mapping of field variants to canonical names
-    FIELD_MAPPING = {
+    FIELD_MAPPING: ClassVar[dict[str, str]] = {
         # Rotation variants
         "rotation": "Rotation",
         "orientation": "Rotation",

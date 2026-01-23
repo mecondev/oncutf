@@ -25,7 +25,7 @@ Date:
 
 import contextlib
 from enum import IntEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from oncutf.ui.widgets.node_editor.core.serializable import Serializable
 from oncutf.ui.widgets.node_editor.utils.helpers import dump_exception
@@ -83,8 +83,8 @@ class Edge(Serializable):
 
     """
 
-    edge_validators: list = []
-    _graphics_edge_class: type["QDMGraphicsEdge"] | None = None
+    edge_validators: ClassVar[list] = []
+    _graphics_edge_class: ClassVar[type["QDMGraphicsEdge"] | None] = None
 
     def __init__(
         self,

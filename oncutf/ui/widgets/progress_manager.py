@@ -33,6 +33,8 @@ Usage Examples:
     manager.update_progress(processed_bytes=250000000)
 """
 
+from typing import ClassVar
+
 from oncutf.core.pyqt_imports import QWidget
 from oncutf.ui.widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -49,7 +51,7 @@ class ProgressManager:
     - copy: Size-based progress for file operations (future)
     """
 
-    SUPPORTED_OPERATIONS = ["hash", "metadata", "copy"]
+    SUPPORTED_OPERATIONS: ClassVar[list[str]] = ["hash", "metadata", "copy"]
 
     def __init__(self, operation_type: str, parent: QWidget | None = None):
         """Initialize ProgressManager for specific operation type.

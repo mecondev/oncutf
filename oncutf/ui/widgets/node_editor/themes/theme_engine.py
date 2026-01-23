@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from PyQt5.QtCore import QFile
 from PyQt5.QtWidgets import QApplication
@@ -47,8 +47,8 @@ class ThemeEngine:
 
     """
 
-    _current_theme: BaseTheme | None = None
-    _themes: dict[str, type[BaseTheme]] = {}
+    _current_theme: ClassVar[BaseTheme | None] = None
+    _themes: ClassVar[dict[str, type[BaseTheme]]] = {}
 
     @classmethod
     def register_theme(cls, theme_class: type[BaseTheme]) -> None:

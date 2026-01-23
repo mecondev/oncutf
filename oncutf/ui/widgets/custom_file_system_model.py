@@ -10,7 +10,7 @@ for folders, files, and expand/collapse indicators.
 """
 
 import os
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.pyqt_imports import QFileSystemModel, QIcon, QModelIndex, Qt
@@ -31,7 +31,7 @@ class CustomFileSystemModel(QFileSystemModel):
     """
 
     # File type to icon mapping
-    FILE_TYPE_ICONS = {
+    FILE_TYPE_ICONS: ClassVar[dict[str, str]] = {
         # Images
         "jpg": "image",
         "jpeg": "image",

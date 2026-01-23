@@ -8,6 +8,8 @@ This module provides shared logic for validating drop zones during drag operatio
 eliminating code duplication between FileTreeView and FileTableView.
 """
 
+from typing import ClassVar
+
 from oncutf.core.drag.drag_visual_manager import DropZoneState, update_drop_zone_state
 from oncutf.core.pyqt_imports import QApplication, QCursor
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -23,14 +25,14 @@ class DragZoneValidator:
     """
 
     # Define valid/invalid drop zones for each source type
-    ZONE_RULES: dict[str, dict[str, list[str]]] = {
+    ZONE_RULES: ClassVar[dict[str, dict[str, list[str]]]] = {
         "file_tree": {"valid": ["FileTableView"], "invalid": ["FileTreeView", "MetadataTreeView"]},
         "file_table": {"valid": ["MetadataTreeView"], "invalid": ["FileTreeView", "FileTableView"]},
     }
 
     # Track initial drag positions and "left and returned" state
-    _initial_drag_widgets: dict[str, str] = {}
-    _has_left_initial: dict[str, bool] = {}  # Track if drag has left initial widget
+    _initial_drag_widgets: ClassVar[dict[str, str]] = {}
+    _has_left_initial: ClassVar[dict[str, bool]] = {}  # Track if drag has left initial widget
 
     @classmethod
     def set_initial_drag_widget(cls, drag_source: str, widget_class_name: str) -> None:

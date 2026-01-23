@@ -14,7 +14,7 @@ Features:
 """
 
 from collections.abc import Callable
-from typing import Literal
+from typing import ClassVar, Literal
 
 from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -58,7 +58,7 @@ class ProgressDialog(QDialog):
     """
 
     # Predefined color schemes for different operations
-    COLOR_SCHEMES: dict[OperationType, dict[str, str]] = {
+    COLOR_SCHEMES: ClassVar[dict[OperationType, dict[str, str]]] = {
         "metadata_basic": {
             "bar_color": FAST_METADATA_COLOR,
             "bar_bg_color": FAST_METADATA_BG_COLOR,

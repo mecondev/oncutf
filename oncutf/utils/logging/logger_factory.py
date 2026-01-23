@@ -10,6 +10,7 @@ Provides centralized logger management with thread-safe operations.
 
 import logging
 import threading
+from typing import ClassVar
 
 from oncutf.utils.logging.logger_helper import get_cached_logger as original_get_logger
 
@@ -21,8 +22,8 @@ class LoggerFactory:
     and improving performance compared to creating new loggers repeatedly.
     """
 
-    _loggers: dict[str, logging.Logger] = {}
-    _lock = threading.Lock()
+    _loggers: ClassVar[dict[str, logging.Logger]] = {}
+    _lock: ClassVar[threading.Lock] = threading.Lock()
     _global_level: int | None = None
 
     @classmethod

@@ -30,6 +30,7 @@ Date:
 
 import logging
 from collections.abc import Callable
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class NodeRegistry:
 
     """
 
-    _nodes: dict[int, type] = {}
+    _nodes: ClassVar[dict[int, type]] = {}
 
     @classmethod
     def register(cls, op_code: int) -> Callable:

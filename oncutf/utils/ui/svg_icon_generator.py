@@ -13,6 +13,8 @@ from oncutf.utils.ui.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
 
+from typing import ClassVar
+
 from oncutf.config import METADATA_ICON_COLORS
 from oncutf.core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
 from oncutf.utils.filesystem.path_utils import get_icons_dir
@@ -28,7 +30,7 @@ class SVGIconGenerator:
     """
 
     # Icon mappings - feather icon name for each status
-    ICON_MAPPINGS = {
+    ICON_MAPPINGS: ClassVar[dict[str, str]] = {
         "basic": "info",
         "extended": "info",
         "invalid": "alert-circle",

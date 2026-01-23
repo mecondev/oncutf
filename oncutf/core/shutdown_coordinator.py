@@ -22,7 +22,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
 
@@ -72,7 +72,7 @@ class ShutdownCoordinator(QObject):
     # Default timeouts per phase (seconds)
     # Keep these reasonably short to avoid Windows "Not Responding" dialog,
     # but not so short that shutdown skips meaningful work during diagnostics.
-    DEFAULT_TIMEOUTS = {
+    DEFAULT_TIMEOUTS: ClassVar[dict["ShutdownPhase", float]] = {
         ShutdownPhase.TIMERS: 0.5,
         ShutdownPhase.THREAD_POOL: 2.0,
         ShutdownPhase.THUMBNAILS: 1.0,

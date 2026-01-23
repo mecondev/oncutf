@@ -17,6 +17,8 @@ Classes:
 - Convenience functions for easy tooltip display
 """
 
+from typing import ClassVar
+
 from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QLabel, QListWidget, QMenu, QTableWidget, QWidget
 
@@ -355,8 +357,8 @@ class TooltipHelper:
     """Central tooltip management utility."""
 
     # Active tooltips tracking
-    _active_tooltips: list = []
-    _persistent_tooltips: dict = {}  # widget -> tooltip mapping for persistent tooltips
+    _active_tooltips: ClassVar[list[object]] = []
+    _persistent_tooltips: ClassVar[dict[object, object]] = {}
 
     @classmethod
     def _get_cursor_position(cls, widget: QWidget) -> QPoint:

@@ -9,7 +9,7 @@ Extracts column visibility menu logic from InteractiveHeader.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 from oncutf.core.pyqt_imports import QAction, QMenu
@@ -30,7 +30,7 @@ class ColumnVisibilityMenuBuilder:
     """
 
     # Column categories for grouping
-    COLUMN_CATEGORIES = {
+    COLUMN_CATEGORIES: ClassVar[dict[str, list[str]]] = {
         "File": ["color", "type", "file_size", "modified", "file_hash", "duration"],
         "Image": [
             "image_size",
