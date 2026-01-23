@@ -241,7 +241,6 @@ class InitializationOrchestrator:
 
         self.window.rename_controller = RenameController(
             unified_rename_engine=self.window.unified_rename_engine,
-            preview_manager=self.window.preview_manager,
             rename_manager=self.window.rename_manager,
             file_store=self.window.file_model,  # FileTableModel acts as FileStore
             context=self.window.context,
