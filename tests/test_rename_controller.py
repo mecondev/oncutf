@@ -123,12 +123,6 @@ def mock_unified_rename_engine():
 
 
 @pytest.fixture
-def mock_preview_manager():
-    """Create mock PreviewManager."""
-    return MagicMock()
-
-
-@pytest.fixture
 def mock_rename_manager():
     """Create mock RenameManager."""
     return MagicMock()
@@ -149,7 +143,6 @@ def mock_context():
 @pytest.fixture
 def rename_controller(
     mock_unified_rename_engine,
-    mock_preview_manager,
     mock_rename_manager,
     mock_file_store,
     mock_context,
@@ -157,7 +150,6 @@ def rename_controller(
     """Create RenameController with mocked dependencies."""
     return RenameController(
         unified_rename_engine=mock_unified_rename_engine,
-        preview_manager=mock_preview_manager,
         rename_manager=mock_rename_manager,
         file_store=mock_file_store,
         context=mock_context,
@@ -195,7 +187,6 @@ class TestRenameControllerInitialization:
     def test_initialization_with_all_dependencies(self, rename_controller):
         """Test controller initializes with all dependencies."""
         assert rename_controller._unified_rename_engine is not None
-        assert rename_controller._preview_manager is not None
         assert rename_controller._rename_manager is not None
         assert rename_controller._file_store is not None
         assert rename_controller._context is not None
@@ -204,7 +195,6 @@ class TestRenameControllerInitialization:
         """Test controller initializes with no dependencies."""
         controller = RenameController()
         assert controller._unified_rename_engine is None
-        assert controller._preview_manager is None
         assert controller._rename_manager is None
         assert controller._file_store is None
         assert controller._context is None

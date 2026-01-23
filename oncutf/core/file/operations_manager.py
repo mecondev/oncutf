@@ -7,14 +7,16 @@ file_operations_manager.py
 Manages file operations like rename, validation, and conflict resolution.
 """
 
+from __future__ import annotations
+
 import os
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
+    from oncutf.models.file_item import FileItem
 
 from oncutf.core.pyqt_imports import QDesktopServices, QUrl
-from oncutf.models.file_item import FileItem
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -148,7 +150,7 @@ class FileOperationsManager:
                 )
             return 0
 
-        engine: "UnifiedRenameEngine" = self.parent_window.unified_rename_engine
+        engine: UnifiedRenameEngine = self.parent_window.unified_rename_engine
 
         # Step 1: Generate preview using unified engine
         try:
