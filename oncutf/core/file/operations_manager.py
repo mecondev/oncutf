@@ -8,14 +8,16 @@ Manages file operations like rename, validation, and conflict resolution.
 """
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
 
 from oncutf.core.pyqt_imports import QDesktopServices, QUrl
 from oncutf.models.file_item import FileItem
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.naming.renamer import Renamer
 
 logger = get_cached_logger(__name__)
 
@@ -137,34 +139,71 @@ class FileOperationsManager:
                 logger.error("[Rename] Error in conflict callback: %s", e)
                 return "skip"
 
-        renamer = Renamer(
-            files=selected_files,
-            modules_data=modules_data,
-            metadata_cache=metadata_cache,
-            post_transform=post_transform,
-            parent=self.parent_window,
-            conflict_callback=conflict_callback,
-            validator=validate_filename_part,
-        )
-
-        results = renamer.rename()
-        renamed_count = 0
-
-        for result in results:
-            if result.success:
-                renamed_count += 1
-                item = find_file_by_path(selected_files, result.old_path, "full_path")
-                if item:
-                    item.filename = os.path.basename(result.new_path)
-                    item.full_path = result.new_path
-            elif result.skip_reason:
-                logger.info(
-                    "[Rename] Skipped: %s — Reason: %s", result.old_path, result.skip_reason
+        # Get UnifiedRenameEngine from parent window
+        if not self.parent_window or not hasattr(self.parent_window, "unified_rename_engine"):
+            logger.error("[Rename] UnifiedRenameEngine not available in parent window")
+            if self.parent_window and hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.finish_operation(
+                    operation_id, success=False, final_message="Rename engine not initialized"
                 )
-            elif result.error:
-                logger.error("[Rename] Error: %s — %s", result.old_path, result.error)
+            return 0
 
-        # Use specialized rename status method
+        engine: "UnifiedRenameEngine" = self.parent_window.unified_rename_engine
+
+        # Step 1: Generate preview using unified engine
+        try:
+            preview_result = engine.generate_preview(
+                files=selected_files,
+                modules_data=modules_data,
+                post_transform=post_transform,
+                metadata_cache=metadata_cache,
+            )
+            new_names = [new_name for _, new_name in preview_result.name_pairs]
+        except Exception as e:
+            logger.exception("[Rename] Error generating preview: %s", e)
+            if self.parent_window and hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.finish_operation(
+                    operation_id, success=False, final_message=f"Preview generation failed: {e}"
+                )
+            return 0
+
+        # Step 2: Execute rename using unified engine
+        try:
+            execution_result = engine.execute_rename(
+                files=selected_files,
+                new_names=new_names,
+                conflict_callback=conflict_callback,
+                validator=validate_filename_part,
+            )
+        except Exception as e:
+            logger.exception("[Rename] Error executing rename: %s", e)
+            if self.parent_window and hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.finish_operation(
+                    operation_id, success=False, final_message=f"Rename execution failed: {e}"
+                )
+            return 0
+
+        # Step 3: Update FileItem objects from execution results
+        renamed_count = 0
+        for exec_item in execution_result.items:
+            if exec_item.success:
+                renamed_count += 1
+                item = find_file_by_path(selected_files, exec_item.old_path, "full_path")
+                if item:
+                    item.filename = os.path.basename(exec_item.new_path)
+                    item.full_path = exec_item.new_path
+            elif exec_item.skip_reason:
+                logger.info(
+                    "[Rename] Skipped: %s — Reason: %s", exec_item.old_path, exec_item.skip_reason
+                )
+            elif exec_item.error_message:
+                logger.error("[Rename] Error: %s — %s", exec_item.old_path, exec_item.error_message)
+
+        logger.info(
+            "[Rename] Completed: %d renamed out of %d total",
+            renamed_count,
+            len(execution_result.items),
+        )
         if self.parent_window and hasattr(self.parent_window, "status_manager"):
             self.parent_window.status_manager.set_rename_status(
                 f"Renamed {renamed_count} file(s)",
@@ -179,8 +218,6 @@ class FileOperationsManager:
                 success=renamed_count > 0,
                 final_message=f"Rename operation completed: {renamed_count}/{len(selected_files)} files renamed",
             )
-
-        logger.info("[Rename] Completed: %d renamed out of %d total", renamed_count, len(results))
 
         # Store the completion dialog information to be shown after the post-rename workflow
         if renamed_count > 0 and self.parent_window:
