@@ -9,7 +9,7 @@ Maps column keys to metadata keys and formats values for compact display.
 Based on comprehensive analysis of fast vs extended metadata across multiple file types.
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -27,7 +27,7 @@ class MetadataFieldMapper:
 
     # Mapping from file table column keys to metadata keys (with fallback options)
     # Based on analysis of real metadata from various file types (images, videos, audio)
-    FIELD_KEY_MAPPING = {
+    FIELD_KEY_MAPPING: ClassVar[dict[str, list[str]]] = {
         # Rotation/Orientation (images use "Orientation", videos use "Rotation")
         "rotation": ["Orientation", "Rotation", "CameraOrientation", "AutoRotate"],
         # Duration (videos and audio files)

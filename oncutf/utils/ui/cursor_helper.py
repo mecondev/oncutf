@@ -68,11 +68,11 @@ def set_wait_cursor_suppressed_until(deadline_monotonic: float) -> None:
 @contextlib.contextmanager
 def wait_cursor(restore_after: bool = True):
     """Context manager that sets the cursor to wait and restores it after.
+
     Logs the file, line number, and function from where it was called.
     The logged path is shortened to start from 'oncutf/' for clarity.
 
-    Parameters
-    ----------
+    Args:
         restore_after: If True, the cursor will be restored after the context block.
                        If False, the cursor will remain as wait cursor.
 

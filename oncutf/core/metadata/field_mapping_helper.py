@@ -8,6 +8,7 @@ Date: 2025-11-25
 """
 
 import os
+from typing import ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -24,13 +25,13 @@ class MetadataFieldMappingHelper:
     """
 
     # Define supported file extensions by category
-    IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".gif"}
-    RAW_EXTENSIONS = {".cr2", ".nef", ".arw", ".orf", ".rw2", ".dng"}
-    VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".3gp", ".avi", ".mkv", ".wmv"}
-    AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg"}
+    IMAGE_EXTENSIONS: ClassVar[set[str]] = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".gif"}
+    RAW_EXTENSIONS: ClassVar[set[str]] = {".cr2", ".nef", ".arw", ".orf", ".rw2", ".dng"}
+    VIDEO_EXTENSIONS: ClassVar[set[str]] = {".mp4", ".mov", ".m4v", ".3gp", ".avi", ".mkv", ".wmv"}
+    AUDIO_EXTENSIONS: ClassVar[set[str]] = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg"}
 
     # Field mapping for write operations (maps generic field -> file-specific field)
-    WRITE_FIELD_MAPPING: dict[str, dict[str, str | None]] = {
+    WRITE_FIELD_MAPPING: ClassVar[dict[str, dict[str, str | None]]] = {
         # Rotation/Orientation handling
         "Rotation": {
             "image": "EXIF:Orientation",  # JPEG, TIFF use EXIF:Orientation
@@ -79,7 +80,7 @@ class MetadataFieldMappingHelper:
     }
 
     # Value conversion rules for special cases
-    VALUE_CONVERSIONS = {
+    VALUE_CONVERSIONS: ClassVar[dict[str, dict[str, dict[str, str]]]] = {
         "Rotation": {
             "image": {
                 # Convert degrees to EXIF orientation text values

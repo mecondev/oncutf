@@ -9,7 +9,7 @@ Date: 2026-01-15
 
 import re
 import unicodedata
-from typing import Any
+from typing import Any, ClassVar
 from urllib.parse import unquote
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -46,10 +46,10 @@ class SmartKeySimplifier:
     """
 
     # Stop words that can be optionally removed (currently disabled by default)
-    STOP_WORDS = {'of', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for'}
+    STOP_WORDS: ClassVar[set[str]] = {'of', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for'}
 
     # Words to preserve (boolean/negation/important)
-    PRESERVE_WORDS = {'not', 'is', 'has', 'can', 'no', 'yes'}
+    PRESERVE_WORDS: ClassVar[set[str]] = {'not', 'is', 'has', 'can', 'no', 'yes'}
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize simplifier with configuration.

@@ -18,12 +18,11 @@ def elide_text(text: str, max_len: int) -> str:
         elide_text("example_filename_that_is_too_long.txt", 25)
         → "example_filename_that_i…"
 
-    Parameters
-    ----------
-        text (str): The original text to truncate.
-        max_len (int): Maximum allowed length, including ellipsis.
+    Args:
+        text: The original text to truncate.
+        max_len: Maximum allowed length, including ellipsis.
 
-    Returns
+    Returns:
     -------
         str: Elided version of the text.
 
@@ -128,8 +127,7 @@ def format_file_size_stable(size_bytes: int) -> str:
 
     # Format with consistent 10-character width
     unit_str = units[unit_index]
-
-    content = f"{size:.1f} {unit_str}" if size >= 100 else f"{size:.1f} {unit_str}"
+    content = f"{size:.1f} {unit_str}"
 
     # Ensure exactly 10 characters
     return content.rjust(10)[:10]

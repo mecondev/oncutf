@@ -67,6 +67,7 @@ def show_info_message(
         parent: Parent widget for the dialog
         title: Dialog title
         message: Message to display
+        details: Optional detailed message
 
     """
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog

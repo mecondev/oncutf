@@ -56,6 +56,7 @@ class BackupManager(QObject):
         """Initialize the backup manager.
 
         Args:
+            database_path: Path to the database file to backup
             backup_count: Number of backup files to keep (default from config)
             backup_interval: Interval between periodic backups in seconds
             periodic_enabled: Whether periodic backups are enabled
@@ -291,7 +292,13 @@ def get_backup_manager(
 
     Args:
         database_path: Path to the database file
-        **kwargs: Additional arguments for BackupManager constructor
+        backup_count: Number of backup files to keep
+        backup_interval: Interval between periodic backups in seconds
+        periodic_enabled: Whether periodic backups are enabled
+        grouping_timeout: Time window for grouping operations
+
+    Returns:
+        BackupManager: The global backup manager instance
 
     Returns:
         The global BackupManager instance

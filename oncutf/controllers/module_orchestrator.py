@@ -18,7 +18,7 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -55,7 +55,7 @@ class ModuleOrchestrator:
     """
 
     # Legacy module name mappings (old_name -> new_name)
-    LEGACY_NAME_MAP = {
+    LEGACY_NAME_MAP: ClassVar[dict[str, str]] = {
         "remove_text_from_original_name": "text_removal",
     }
 
