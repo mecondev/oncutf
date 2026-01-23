@@ -24,18 +24,15 @@ from oncutf.app.services.user_interaction import (
 )
 
 __all__ = [
-    # Dialog services
-    "show_info_message",
-    "show_error_message",
-    "show_warning_message",
-    "show_question_message",
-    "get_dialog_adapter",
-    # Cursor services
-    "wait_cursor",
-    "force_restore_cursor",
-    # Progress services
-    "create_progress_dialog",
-    "create_metadata_dialog",
-    "create_hash_dialog",
     "create_file_loading_dialog",
+    "create_hash_dialog",
+    "create_metadata_dialog",
+    "create_progress_dialog",
+    "force_restore_cursor",
+    "get_dialog_adapter",
+    "show_error_message",
+    "show_info_message",
+    "show_question_message",
+    "show_warning_message",
+    "wait_cursor",
 ]

@@ -33,6 +33,7 @@ class FileRepository:
 
         Args:
             db_manager: Database manager instance (typed as Any to avoid import)
+
         """
         self._db = db_manager
 
@@ -44,9 +45,11 @@ class FileRepository:
 
         Returns:
             Folder ID or None if not found
+
         """
         try:
-            return self._db.get_folder_id(str(folder_path))
+            result = self._db.get_folder_id(str(folder_path))
+            return int(result) if result is not None else None
         except Exception as e:
             logger.warning("Error getting folder ID for %s: %s", folder_path, e)
             return None
@@ -59,6 +62,7 @@ class FileRepository:
 
         Returns:
             Folder ID or None on error
+
         """
         try:
             folder_id = self.get_folder_id(folder_path)
@@ -66,7 +70,8 @@ class FileRepository:
                 return folder_id
 
             # Create folder in database
-            return self._db.add_folder(str(folder_path))
+            result = self._db.add_folder(str(folder_path))
+            return int(result) if result is not None else None
         except Exception as e:
             logger.error("Error ensuring folder exists for %s: %s", folder_path, e)
             return None
@@ -79,9 +84,11 @@ class FileRepository:
 
         Returns:
             File hash or None if not found
+
         """
         try:
-            return self._db.get_file_hash(str(file_path))
+            result = self._db.get_file_hash(str(file_path))
+            return str(result) if result is not None else None
         except Exception as e:
             logger.warning("Error getting file hash for %s: %s", file_path, e)
             return None
@@ -95,6 +102,7 @@ class FileRepository:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             self._db.store_file_hash(str(file_path), hash_value)
@@ -111,9 +119,11 @@ class FileRepository:
 
         Returns:
             Color tag (hex color) or "none" if not found
+
         """
         try:
-            return self._db.get_color_tag(str(file_path))
+            result = self._db.get_color_tag(str(file_path))
+            return str(result) if result is not None else "none"
         except Exception as e:
             logger.warning("Error getting color tag for %s: %s", file_path, e)
             return "none"
@@ -127,6 +137,7 @@ class FileRepository:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             self._db.set_color_tag(str(file_path), color)
@@ -147,6 +158,7 @@ def get_file_repository() -> FileRepository:
 
     Returns:
         Singleton FileRepository instance
+
     """
     global _file_repository
     if _file_repository is None:
@@ -162,6 +174,7 @@ def set_file_repository(repository: FileRepository) -> None:
 
     Args:
         repository: Custom FileRepository instance
+
     """
     global _file_repository
     _file_repository = repository

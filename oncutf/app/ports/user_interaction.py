@@ -46,6 +46,7 @@ class ProgressReporter(Protocol):
             current: Current item number
             total: Total items
             message: Optional status message
+
         """
         ...
 
@@ -81,6 +82,7 @@ class ProgressDialogPort(Protocol):
         Args:
             current: Current item number
             total: Total items
+
         """
         ...
 
@@ -90,6 +92,7 @@ class ProgressDialogPort(Protocol):
         Args:
             current: Current item number
             total: Total items
+
         """
         ...
 
@@ -98,6 +101,7 @@ class ProgressDialogPort(Protocol):
 
         Args:
             filename: Name of file currently being processed
+
         """
         ...
 
@@ -139,5 +143,6 @@ class StatusReporter(Protocol):
         Args:
             message: Status message
             timeout: Timeout in milliseconds (0 = permanent)
+
         """
         ...

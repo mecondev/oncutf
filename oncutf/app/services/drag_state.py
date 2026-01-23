@@ -24,6 +24,7 @@ def clear_drag_state(drag_source: str) -> None:
 
     Args:
         drag_source: Source of the drag operation ("file_tree" or "file_table")
+
     """
     from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 

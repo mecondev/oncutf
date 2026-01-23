@@ -25,6 +25,7 @@ def get_cursor_adapter() -> CursorPort | None:
 
     Returns:
         The registered adapter or None if not registered yet.
+
     """
     from oncutf.core.application_context import ApplicationContext
 
@@ -37,7 +38,7 @@ def get_cursor_adapter() -> CursorPort | None:
 
 
 @contextlib.contextmanager
-def wait_cursor(restore_after: bool = True):
+def wait_cursor(restore_after: bool = True):  # type: ignore[no-untyped-def]
     """Context manager for wait cursor without Qt dependencies.
 
     Args:
@@ -48,6 +49,7 @@ def wait_cursor(restore_after: bool = True):
         with wait_cursor():
             # Long operation
             process_files()
+
     """
     adapter = get_cursor_adapter()
 

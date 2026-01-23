@@ -1,4 +1,4 @@
-"""Module: color_generator.py
+"""Module: color_generator.py.
 
 Author: Michael Economou
 Date: 2025-12-22

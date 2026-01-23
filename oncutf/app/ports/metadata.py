@@ -8,8 +8,10 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class MetadataProvider(Protocol):
@@ -25,6 +27,7 @@ class MetadataProvider(Protocol):
 
         Returns:
             True if the provider is installed and accessible
+
         """
         ...
 
@@ -36,6 +39,7 @@ class MetadataProvider(Protocol):
 
         Returns:
             Dictionary with metadata. Empty dict on error.
+
         """
         ...
 
@@ -47,6 +51,7 @@ class MetadataProvider(Protocol):
 
         Returns:
             Dict mapping path -> metadata dict
+
         """
         ...
 
@@ -69,6 +74,7 @@ class MetadataWriter(Protocol):
 
         Returns:
             True if successful, False otherwise
+
         """
         ...
 
@@ -84,6 +90,7 @@ class CacheStore(Protocol):
 
         Returns:
             Cached metadata or None if not found
+
         """
         ...
 
@@ -93,6 +100,7 @@ class CacheStore(Protocol):
         Args:
             key: Cache key
             value: Metadata to cache
+
         """
         ...
 
@@ -101,6 +109,7 @@ class CacheStore(Protocol):
 
         Args:
             key: Cache key to invalidate
+
         """
         ...
 

@@ -13,10 +13,11 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from PyQt5.QtWidgets import QWidget
 
     from oncutf.app.ports.user_interaction import OperationType, ProgressDialogPort
@@ -44,6 +45,7 @@ def create_progress_dialog(
     Note:
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is created by the adapter.
+
     """
     # For now, always use Qt adapter directly (registration can be added later)
     from oncutf.ui.adapters.qt_user_interaction import QtProgressDialogAdapter

@@ -32,6 +32,7 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is shown by the adapter
         registered in ApplicationContext.
+
     """
     from oncutf.core.application_context import ApplicationContext
 
@@ -59,6 +60,7 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
         parent: Parent widget (may be None)
         title: Dialog title
         message: Error message to display
+
     """
     from oncutf.core.application_context import ApplicationContext
 
@@ -85,6 +87,7 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
         parent: Parent widget (may be None)
         title: Dialog title
         message: Warning message to display
+
     """
     from oncutf.core.application_context import ApplicationContext
 
@@ -114,13 +117,14 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
 
     Returns:
         True if user clicked Yes, False otherwise
+
     """
     from oncutf.core.application_context import ApplicationContext
 
     ctx = ApplicationContext.get_instance()
     if ctx.has_manager("user_dialog"):
         adapter = ctx.get_manager("user_dialog")
-        return adapter.ask_yes_no(title, message)
+        return bool(adapter.ask_yes_no(title, message))
 
     # Fallback: direct Qt import (legacy behavior)
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
@@ -135,7 +139,7 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
     return False  # Default response when no parent available
 
 
-def get_dialog_adapter():
+def get_dialog_adapter():  # type: ignore[no-untyped-def]
     """Get the registered UserDialogPort adapter.
 
     Returns:
@@ -144,6 +148,7 @@ def get_dialog_adapter():
     Note:
         This is for advanced use cases where you need the adapter directly.
         Most code should use show_info_message(), show_error_message(), etc.
+
     """
     from oncutf.core.application_context import ApplicationContext
 

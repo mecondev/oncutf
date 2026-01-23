@@ -16,8 +16,10 @@ Date: 2026-01-22
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -49,6 +51,7 @@ class ExifToolClient:
         Args:
             use_extended: Use extended metadata extraction (-ee flag).
                          Slower but extracts embedded metadata.
+
         """
         self._use_extended = use_extended
         self._wrapper: Any = None  # Lazy init
@@ -72,6 +75,7 @@ class ExifToolClient:
 
         Returns:
             True if ExifTool is installed and accessible
+
         """
         if self._available is not None:
             return self._available
@@ -106,6 +110,7 @@ class ExifToolClient:
 
         Returns:
             Dictionary with metadata. Empty dict on error.
+
         """
         if not self.is_available():
             logger.warning("ExifTool not available, cannot extract metadata")
@@ -127,6 +132,7 @@ class ExifToolClient:
 
         Returns:
             Dict mapping path -> metadata dict
+
         """
         if not self.is_available():
             logger.warning("ExifTool not available, cannot extract batch metadata")
@@ -166,6 +172,7 @@ class ExifToolClient:
 
         Returns:
             True if successful, False otherwise
+
         """
         if not self.is_available():
             logger.warning("ExifTool not available, cannot write metadata")
@@ -185,7 +192,7 @@ class ExifToolClient:
             else:
                 logger.warning("Failed to write metadata to %s", path)
 
-            return result
+            return bool(result)
 
         except Exception as e:
             logger.error("Error writing metadata to %s: %s", path, e)
@@ -212,6 +219,7 @@ def get_exiftool_client() -> ExifToolClient:
 
     Returns:
         Singleton ExifToolClient instance
+
     """
     global _exiftool_client
     if _exiftool_client is None:
@@ -224,6 +232,7 @@ def set_exiftool_client(client: ExifToolClient) -> None:
 
     Args:
         client: Custom ExifToolClient instance
+
     """
     global _exiftool_client
     _exiftool_client = client

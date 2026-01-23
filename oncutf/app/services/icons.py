@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, "QIcon"]:
-    """Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
+    """Load and scale preview status icons (valid, invalid, etc.) for use in the UI.
 
     Facade for utils.ui.icon_cache.load_preview_status_icons().
 
@@ -33,6 +33,7 @@ def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, 
 
     Returns:
         Mapping from status to QIcon.
+
     """
     from oncutf.utils.ui.icon_cache import load_preview_status_icons as _load
 
@@ -42,7 +43,7 @@ def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, 
 
 
 def prepare_status_icons(base_dir: str | None = None) -> dict[str, str]:
-    """Prepares and caches status icons by creating colored icons if they do not exist.
+    """Prepare and cache status icons by creating colored icons if they do not exist.
 
     Facade for utils.ui.icon_cache.prepare_status_icons().
 
@@ -51,6 +52,7 @@ def prepare_status_icons(base_dir: str | None = None) -> dict[str, str]:
 
     Returns:
         A dictionary mapping icon names to their file paths.
+
     """
     from oncutf.utils.ui.icon_cache import prepare_status_icons as _prepare
 
@@ -67,7 +69,7 @@ def create_colored_icon(
     border_color: str | None = None,
     border_thickness: int = 0,
 ) -> "QPixmap":
-    """Creates a small colored shape (circle or rectangle) as a QPixmap icon.
+    """Create a small colored shape (circle or rectangle) as a QPixmap icon.
 
     Facade for utils.ui.icon_utilities.create_colored_icon().
 
@@ -81,6 +83,7 @@ def create_colored_icon(
 
     Returns:
         A QPixmap with the desired shape and color.
+
     """
     from oncutf.utils.ui.icon_utilities import create_colored_icon as _create
 
@@ -90,7 +93,7 @@ def create_colored_icon(
 
 
 def load_metadata_icons(base_dir: str | None = None) -> dict[str, "QPixmap"]:
-    """Loads metadata status icons for the file table's first column.
+    """Load metadata status icons for the file table's first column.
 
     Facade for utils.ui.icons_loader.load_metadata_icons().
 
@@ -99,19 +102,21 @@ def load_metadata_icons(base_dir: str | None = None) -> dict[str, "QPixmap"]:
 
     Returns:
         Dictionary mapping status names to QPixmap objects
+
     """
     from oncutf.utils.ui.icons_loader import load_metadata_icons as _load
 
     return _load(base_dir)
 
 
-def get_icons_loader():
-    """Returns the global icons_loader instance.
+def get_icons_loader():  # type: ignore[no-untyped-def]
+    """Return the global icons_loader instance.
 
     Facade for utils.ui.icons_loader.icons_loader singleton.
 
     Returns:
         ThemeIconLoader instance
+
     """
     from oncutf.utils.ui.icons_loader import icons_loader
 
@@ -128,6 +133,7 @@ def get_menu_icon(name: str) -> "QIcon":
 
     Returns:
         QIcon object for the requested icon
+
     """
     from oncutf.utils.ui.icons_loader import icons_loader
 

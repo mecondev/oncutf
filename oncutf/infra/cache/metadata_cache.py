@@ -10,8 +10,10 @@ Date: 2026-01-22
 from __future__ import annotations
 
 import time
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -36,6 +38,7 @@ class MetadataCache:
 
         Args:
             ttl_seconds: Time-to-live for cache entries (default 5 minutes)
+
         """
         self._cache: dict[str, tuple[dict[str, Any], float, float]] = {}
         # Key -> (metadata, timestamp, mtime)
@@ -49,6 +52,7 @@ class MetadataCache:
 
         Returns:
             Cached metadata or None if not found/expired/stale
+
         """
         key = str(path)
 
@@ -84,6 +88,7 @@ class MetadataCache:
         Args:
             path: File path
             metadata: Metadata to cache
+
         """
         key = str(path)
 
@@ -101,6 +106,7 @@ class MetadataCache:
 
         Args:
             path: File path to invalidate
+
         """
         key = str(path)
         if key in self._cache:
@@ -118,6 +124,7 @@ class MetadataCache:
 
         Returns:
             Number of entries in cache
+
         """
         return len(self._cache)
 
@@ -126,6 +133,7 @@ class MetadataCache:
 
         Returns:
             Number of entries removed
+
         """
         current_time = time.time()
         expired_keys = [
@@ -151,6 +159,7 @@ def get_metadata_cache() -> MetadataCache:
 
     Returns:
         Singleton MetadataCache instance
+
     """
     global _metadata_cache
     if _metadata_cache is None:
@@ -163,6 +172,7 @@ def set_metadata_cache(cache: MetadataCache) -> None:
 
     Args:
         cache: Custom MetadataCache instance
+
     """
     global _metadata_cache
     _metadata_cache = cache
