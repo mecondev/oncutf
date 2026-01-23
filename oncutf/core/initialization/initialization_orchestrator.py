@@ -86,7 +86,6 @@ class InitializationOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
-        from oncutf.core.preview_manager import PreviewManager
         from oncutf.core.rename.rename_history_manager import get_rename_history_manager
         from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
 
@@ -101,7 +100,6 @@ class InitializationOrchestrator:
 
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()
-        self.window.preview_manager = PreviewManager(parent_window=self.window)
         self.window.unified_rename_engine = UnifiedRenameEngine()
         self.window.file_operations_manager = FileOperationsManager(parent_window=self.window)
         self.window.metadata_staging_manager = MetadataStagingManager(parent=self.window)
