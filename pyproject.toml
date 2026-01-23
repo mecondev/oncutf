@@ -319,11 +319,13 @@ ignore = [
 
 # Per-file ignores for scripts and utilities
 [tool.ruff.lint.per-file-ignores]
-"scripts/*.py" = ["T201", "D"]  # Allow print statements + skip docstrings in scripts
+"scripts/*.py" = ["T201", "D", "RUF001", "RUF003"]  # Allow print statements + skip docstrings + Unicode
 "tests/*.py" = ["T201", "D", "ARG001", "PLR2004", "SIM117"]  # Test-specific ignores
-"oncutf/utils/debug_*.py" = ["T201", "D"]  # Allow print in debug helpers
+"oncutf/utils/logging/logger_*.py" = ["RUF003", "D417"]  # EN-dash in comments (intentional) + *args/**kwargs
+"oncutf/utils/naming/transform_utils.py" = ["RUF001", "RUF003", "D417"]  # Greek char transformations (intentional)
 "oncutf/ui/resources_rc.py" = ["ALL"]  # Generated file
 "oncutf/ui/fonts_rc*.py" = ["ALL"]  # Generated files
+"oncutf/ui/widgets/node_editor/**/*.py" = ["D417", "RUF001"]  # Node editor *args/**kwargs patterns + Unicode symbols
 # New architecture layers - STRICT (minimal ignores)
 "oncutf/app/**/*.py" = []  # No ignores for app/ layer
 "oncutf/domain/**/*.py" = []  # No ignores for domain/ layer
