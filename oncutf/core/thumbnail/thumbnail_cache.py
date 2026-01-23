@@ -1,4 +1,4 @@
-"""Module: thumbnail_cache.py
+"""Module: thumbnail_cache.py.
 
 Author: Michael Economou
 Date: 2026-01-16
@@ -60,7 +60,6 @@ class ThumbnailCacheConfig:
             ThumbnailCacheConfig with default settings
 
         """
-
         cache_dir = AppPaths.get_thumbnails_dir()
         return cls(cache_dir=cache_dir)
 

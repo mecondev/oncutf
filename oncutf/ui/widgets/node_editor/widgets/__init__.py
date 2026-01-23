@@ -24,8 +24,8 @@ from oncutf.ui.widgets.node_editor.widgets.editor_widget import NodeEditorWidget
 from oncutf.ui.widgets.node_editor.widgets.editor_window import NodeEditorWindow
 
 __all__ = [
-    "QDMNodeContentWidget",
-    "QDMTextEdit",
     "NodeEditorWidget",
     "NodeEditorWindow",
+    "QDMNodeContentWidget",
+    "QDMTextEdit",
 ]

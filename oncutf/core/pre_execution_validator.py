@@ -1,4 +1,4 @@
-"""Module: pre_execution_validator.py
+"""Module: pre_execution_validator.py.
 
 Author: Michael Economou
 Date: 2025-12-16

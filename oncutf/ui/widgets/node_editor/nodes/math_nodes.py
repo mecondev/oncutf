@@ -69,6 +69,7 @@ class MathNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -96,6 +97,7 @@ class MathNode(Node):
 
         Returns:
             Result of the operation.
+
         """
         _ = input1, input2  # Unused in base class
         return 0
@@ -108,6 +110,7 @@ class MathNode(Node):
 
         Returns:
             Computed result, or None if inputs are invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -140,7 +143,7 @@ class MathNode(Node):
 
         except (ValueError, TypeError, ZeroDivisionError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -168,6 +171,7 @@ class AddNode(MathNode):
 
         Returns:
             Sum of input1 and input2.
+
         """
         return input1 + input2
 
@@ -196,6 +200,7 @@ class SubtractNode(MathNode):
 
         Returns:
             Difference of input1 - input2.
+
         """
         return input1 - input2
 
@@ -224,6 +229,7 @@ class MultiplyNode(MathNode):
 
         Returns:
             Product of input1 * input2.
+
         """
         return input1 * input2
 
@@ -255,6 +261,7 @@ class DivideNode(MathNode):
 
         Raises:
             ZeroDivisionError: If input2 is zero.
+
         """
         if input2 == 0:
             raise ZeroDivisionError("Division by zero")
@@ -294,6 +301,7 @@ class PowerNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -315,6 +323,7 @@ class PowerNode(Node):
 
         Returns:
             float: Base raised to exponent, or None if inputs are invalid.
+
         """
         base_node = self.get_input(0)
         exp_node = self.get_input(1)
@@ -342,7 +351,7 @@ class PowerNode(Node):
 
         except (ValueError, TypeError, OverflowError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -374,6 +383,7 @@ class SqrtNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1]
@@ -395,6 +405,7 @@ class SqrtNode(Node):
 
         Returns:
             float: Square root of input, or None if invalid.
+
         """
         input_node = self.get_input(0)
 
@@ -425,7 +436,7 @@ class SqrtNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -457,6 +468,7 @@ class AbsNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1]
@@ -478,6 +490,7 @@ class AbsNode(Node):
 
         Returns:
             float: Absolute value of input, or None if invalid.
+
         """
         input_node = self.get_input(0)
 
@@ -502,7 +515,7 @@ class AbsNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -534,6 +547,7 @@ class MinNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -555,6 +569,7 @@ class MinNode(Node):
 
         Returns:
             float: Minimum of two inputs, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -582,7 +597,7 @@ class MinNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -614,6 +629,7 @@ class MaxNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -635,6 +651,7 @@ class MaxNode(Node):
 
         Returns:
             float: Maximum of two inputs, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -662,7 +679,7 @@ class MaxNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -694,6 +711,7 @@ class RoundNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]  # number, decimal places
@@ -715,6 +733,7 @@ class RoundNode(Node):
 
         Returns:
             float: Rounded number, or None if invalid.
+
         """
         number_node = self.get_input(0)
         places_node = self.get_input(1)
@@ -742,7 +761,7 @@ class RoundNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -774,6 +793,7 @@ class ModuloNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -795,6 +815,7 @@ class ModuloNode(Node):
 
         Returns:
             float: Remainder of division, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -825,5 +846,5 @@ class ModuloNode(Node):
 
         except (ValueError, TypeError, ZeroDivisionError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None

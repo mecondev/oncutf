@@ -29,6 +29,7 @@ def initialize_database(db_path: str | None = None) -> DatabaseManager:
 
     Returns:
         DatabaseManager instance
+
     """
     global _db_manager_instance
     _db_manager_instance = DatabaseManager(db_path)

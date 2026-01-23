@@ -1,4 +1,4 @@
-"""Module: metadata_history_dialog.py
+"""Module: metadata_history_dialog.py.
 
 Author: Michael Economou
 Date: 2025-05-01

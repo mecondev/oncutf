@@ -28,6 +28,7 @@ class LightTheme(BaseTheme):
     Attributes:
         name: Theme identifier ("light").
         display_name: Human-readable name ("Light Theme").
+
     """
 
     # Theme metadata

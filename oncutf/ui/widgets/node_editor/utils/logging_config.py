@@ -41,6 +41,7 @@ def setup_logging(log_dir: str = "logs", log_level: int = logging.INFO) -> None:
     Args:
         log_dir: Directory for log files, created if missing.
         log_level: Minimum level for console output.
+
     """
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -92,5 +93,6 @@ def get_logger(name: str) -> logging.Logger:
 
     Returns:
         Logger instance for the specified name.
+
     """
     return logging.getLogger(name)

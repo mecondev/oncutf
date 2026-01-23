@@ -1,4 +1,4 @@
-"""path_normalizer.py
+"""path_normalizer.py.
 
 Central path normalization function for the entire application.
 This module provides a single, consistent way to normalize file paths
@@ -14,7 +14,7 @@ logger = get_cached_logger(__name__)
 
 
 def normalize_path(file_path: str | Path) -> str:
-    """Return normalized absolute path as string (cross-platform safe).
+    r"""Return normalized absolute path as string (cross-platform safe).
 
     This is the central path normalization function for the entire application.
     It resolves symlinks, relative paths, and normalizes separators for consistent

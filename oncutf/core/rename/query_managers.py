@@ -1,4 +1,4 @@
-"""oncutf.core.rename.query_managers
+"""oncutf.core.rename.query_managers.
 
 Batch query and cache management utilities for the rename engine.
 

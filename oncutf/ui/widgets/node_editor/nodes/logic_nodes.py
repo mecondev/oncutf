@@ -68,6 +68,7 @@ class CompareNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -95,6 +96,7 @@ class CompareNode(Node):
 
         Returns:
             bool: Result of the comparison.
+
         """
         _ = input1, input2  # Unused in base class
         return False
@@ -107,6 +109,7 @@ class CompareNode(Node):
 
         Returns:
             bool: Comparison result, or None if inputs are invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -133,7 +136,7 @@ class CompareNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -161,6 +164,7 @@ class EqualNode(CompareNode):
 
         Returns:
             bool: True if values are equal.
+
         """
         return input1 == input2
 
@@ -189,6 +193,7 @@ class NotEqualNode(CompareNode):
 
         Returns:
             bool: True if values are not equal.
+
         """
         return input1 != input2
 
@@ -217,6 +222,7 @@ class LessThanNode(CompareNode):
 
         Returns:
             bool: True if input1 < input2.
+
         """
         return input1 < input2
 
@@ -245,6 +251,7 @@ class LessEqualNode(CompareNode):
 
         Returns:
             bool: True if input1 <= input2.
+
         """
         return input1 <= input2
 
@@ -273,6 +280,7 @@ class GreaterThanNode(CompareNode):
 
         Returns:
             bool: True if input1 > input2.
+
         """
         return input1 > input2
 
@@ -301,6 +309,7 @@ class GreaterEqualNode(CompareNode):
 
         Returns:
             bool: True if input1 >= input2.
+
         """
         return input1 >= input2
 
@@ -335,6 +344,7 @@ class IfNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1, 1]  # condition, true_value, false_value
@@ -358,6 +368,7 @@ class IfNode(Node):
             Value from true_value input if condition is True,
             value from false_value input if condition is False,
             or None if inputs are invalid.
+
         """
         condition_node = self.get_input(0)
         true_node = self.get_input(1)
@@ -388,7 +399,7 @@ class IfNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -425,6 +436,7 @@ class AndNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -446,6 +458,7 @@ class AndNode(Node):
 
         Returns:
             bool: True if both inputs are truthy, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -473,7 +486,7 @@ class AndNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -505,6 +518,7 @@ class OrNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -526,6 +540,7 @@ class OrNode(Node):
 
         Returns:
             bool: True if any input is truthy, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -553,7 +568,7 @@ class OrNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -585,6 +600,7 @@ class NotNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1]
@@ -606,6 +622,7 @@ class NotNode(Node):
 
         Returns:
             bool: Negation of input, or None if invalid.
+
         """
         input_node = self.get_input(0)
 
@@ -630,7 +647,7 @@ class NotNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -662,6 +679,7 @@ class XorNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -683,6 +701,7 @@ class XorNode(Node):
 
         Returns:
             bool: True if exactly one input is truthy, or None if invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -711,5 +730,5 @@ class XorNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None

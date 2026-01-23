@@ -44,6 +44,7 @@ class EdgeDragging:
         graphics_view: QDMGraphicsView for coordinate mapping.
         drag_edge: Temporary Edge shown during drag.
         drag_start_socket: Socket where drag originated.
+
     """
 
     def __init__(self, graphics_view: QDMGraphicsView) -> None:
@@ -51,6 +52,7 @@ class EdgeDragging:
 
         Args:
             graphics_view: QDMGraphicsView to operate on.
+
         """
         self.graphics_view = graphics_view
         self.drag_edge: Edge | None = None
@@ -61,6 +63,7 @@ class EdgeDragging:
 
         Returns:
             Edge class type for creating new edges.
+
         """
         return self.graphics_view.graphics_scene.scene.get_edge_class()
 
@@ -70,6 +73,7 @@ class EdgeDragging:
         Args:
             x: Scene X coordinate.
             y: Scene Y coordinate.
+
         """
         if self.drag_edge is not None and self.drag_edge.graphics_edge is not None:
             self.drag_edge.graphics_edge.set_destination(x, y)
@@ -82,6 +86,7 @@ class EdgeDragging:
 
         Args:
             item: QDMGraphicsSocket where drag started.
+
         """
         try:
             self.drag_start_socket = item.socket
@@ -109,6 +114,7 @@ class EdgeDragging:
 
         Returns:
             True if edge was created, False otherwise.
+
         """
         from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
 

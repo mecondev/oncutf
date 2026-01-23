@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.sort_manager
+"""oncutf.models.file_table.sort_manager.
 
 Sorting logic for file table model.
 

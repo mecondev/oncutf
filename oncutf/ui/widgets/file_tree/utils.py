@@ -1,4 +1,4 @@
-"""Module: utils.py
+"""Module: utils.py.
 
 Author: Michael Economou
 Date: 2026-01-02

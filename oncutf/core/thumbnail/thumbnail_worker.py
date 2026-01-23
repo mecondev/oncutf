@@ -1,4 +1,4 @@
-"""Module: thumbnail_worker.py
+"""Module: thumbnail_worker.py.
 
 Author: Michael Economou
 Date: 2026-01-16

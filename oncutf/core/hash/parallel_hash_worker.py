@@ -1,4 +1,4 @@
-"""Module: parallel_hash_worker.py
+"""Module: parallel_hash_worker.py.
 
 Author: Michael Economou
 Date: 2025-11-24
@@ -39,6 +39,7 @@ class ParallelHashWorker(BaseHashWorker):
         Args:
             parent: Parent QObject (usually main window)
             max_workers: Maximum worker threads (None = auto-detect optimal count)
+
         """
         super().__init__(parent)
 

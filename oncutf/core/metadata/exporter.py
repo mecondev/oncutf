@@ -1,4 +1,4 @@
-"""Module: metadata_exporter.py
+"""Module: metadata_exporter.py.
 
 Author: Michael Economou
 Date: 2025-06-10

@@ -1,4 +1,4 @@
-"""Module: file_load_manager.py
+"""Module: file_load_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-13
@@ -34,7 +34,7 @@ class FileLoadManager:
     """Unified file loading manager with fully optimized policy:
     - All operations: wait_cursor only (fast, synchronous like external drops)
     - Same behavior for drag, import, and external operations
-    - No complex progress dialogs, just simple and fast loading
+    - No complex progress dialogs, just simple and fast loading.
     """
 
     def __init__(self, parent_window=None):
@@ -568,6 +568,7 @@ class FileLoadManager:
 
         Args:
             file_items: List of FileItems to load colors for
+
         """
         if not file_items:
             return

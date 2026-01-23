@@ -18,6 +18,6 @@ warnings.warn(
 )
 
 # Re-export for compatibility
-from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper  # noqa: F401
+from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
 __all__ = ["ExifToolWrapper"]

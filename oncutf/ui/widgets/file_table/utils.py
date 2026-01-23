@@ -30,6 +30,7 @@ def force_cursor_cleanup(view: FileTableView) -> None:
 
     Args:
         view: The FileTableView to clean up
+
     """
     try:
         # Remove any override cursors that might be stuck
@@ -52,6 +53,7 @@ def emergency_cursor_cleanup(view: FileTableView) -> None:
 
     Args:
         view: The FileTableView to clean up
+
     """
     try:
         # More aggressive cleanup - remove up to 10 override cursors
@@ -82,6 +84,7 @@ def get_metadata_tree(view: FileTableView):
 
     Returns:
         The metadata tree widget or None if not found
+
     """
     parent = view.parent()
     while parent:
@@ -101,6 +104,7 @@ def get_main_window(view: FileTableView):
 
     Returns:
         The main window or None if not found
+
     """
     parent = view.parent()
     while parent:
@@ -115,6 +119,7 @@ def clear_preview_and_metadata(view: FileTableView) -> None:
 
     Args:
         view: The FileTableView to use for finding parent window
+
     """
     try:
         parent_window = view.parent()

@@ -1,4 +1,4 @@
-"""Module: shutdown_coordinator.py
+"""Module: shutdown_coordinator.py.
 
 Author: Michael Economou
 Date: 2025-11-21

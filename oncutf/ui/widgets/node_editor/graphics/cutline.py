@@ -30,6 +30,7 @@ class QDMCutLine(QGraphicsItem):
 
     Attributes:
         line_points: Sequential QPointF positions forming the line.
+
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -37,6 +38,7 @@ class QDMCutLine(QGraphicsItem):
 
         Args:
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
 
@@ -53,6 +55,7 @@ class QDMCutLine(QGraphicsItem):
 
         Returns:
             QRectF containing all line points.
+
         """
         return self.shape().boundingRect()
 
@@ -61,6 +64,7 @@ class QDMCutLine(QGraphicsItem):
 
         Returns:
             QPainterPath connecting all points in sequence.
+
         """
         QPolygonF(self.line_points)
 
@@ -81,6 +85,7 @@ class QDMCutLine(QGraphicsItem):
             painter: QPainter for rendering.
             _option: Style options (unused).
             _widget: Target widget (unused).
+
         """
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(Qt.NoBrush)

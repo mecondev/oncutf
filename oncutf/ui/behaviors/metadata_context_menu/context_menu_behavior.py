@@ -29,6 +29,7 @@ class MetadataContextMenuBehavior:
 
         Args:
             widget: The host widget that provides menu operations
+
         """
         self._widget = widget
         self._menu_builder = MenuBuilder(widget)
@@ -42,6 +43,7 @@ class MetadataContextMenuBehavior:
 
         Args:
             position: Position where the context menu should appear
+
         """
         self._menu_builder.show_context_menu(position)
 
@@ -61,6 +63,7 @@ class MetadataContextMenuBehavior:
 
         Returns:
             QIcon or None if icon loading fails
+
         """
         return self._menu_builder._get_menu_icon(icon_name)
 

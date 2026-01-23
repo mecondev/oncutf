@@ -1,4 +1,4 @@
-"""companion_files_widget.py
+"""companion_files_widget.py.
 
 Widget for managing companion files settings and preferences.
 Allows users to control how companion/sidecar files are handled.

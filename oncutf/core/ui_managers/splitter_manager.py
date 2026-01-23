@@ -1,4 +1,4 @@
-"""Module: splitter_manager.py
+"""Module: splitter_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-10

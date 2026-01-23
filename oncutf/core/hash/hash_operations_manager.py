@@ -21,9 +21,10 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
+    from oncutf.models.file_item import FileItem
+
 from oncutf.config import STATUS_COLORS
 from oncutf.core.hash.hash_results_presenter import HashResultsPresenter
-from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.file_status_helpers import has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -223,7 +224,7 @@ class HashOperationsManager:
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
-                f"Failed to start external comparison: {str(e)}",
+                f"Failed to start external comparison: {e!s}",
             )
 
     def _handle_calculate_hashes(self, selected_files: list[FileItem]) -> None:
@@ -287,7 +288,7 @@ class HashOperationsManager:
             from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
             CustomMessageDialog.information(
-                self.parent_window, "Error", f"Failed to calculate checksum: {str(e)}"
+                self.parent_window, "Error", f"Failed to calculate checksum: {e!s}"
             )
 
     # ===== Worker Callbacks =====

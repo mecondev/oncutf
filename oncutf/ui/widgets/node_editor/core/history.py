@@ -20,11 +20,12 @@ Date:
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from oncutf.ui.widgets.node_editor.core.scene import Scene
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class HistoryStamp:
         desc: Human-readable description of this snapshot.
         snapshot: Serialized scene data (nodes, edges, etc.).
         selection: Dict with 'nodes' and 'edges' lists of selected IDs.
+
     """
 
     desc: str
@@ -62,6 +64,7 @@ class SceneHistory:
         history_stack: List of history stamp dictionaries.
         history_current_step: Index of current position in stack.
         undo_selection_has_changed: True if last undo/redo changed selection.
+
     """
 
     def __init__(self, scene: Scene) -> None:
@@ -69,6 +72,7 @@ class SceneHistory:
 
         Args:
             scene: Scene instance to track.
+
         """
         self.scene = scene
 
@@ -104,6 +108,7 @@ class SceneHistory:
 
         Args:
             callback: Function to call on history modification.
+
         """
         self._history_modified_listeners.append(callback)
 
@@ -112,6 +117,7 @@ class SceneHistory:
 
         Args:
             callback: Function to call when history is stored.
+
         """
         self._history_stored_listeners.append(callback)
 
@@ -120,6 +126,7 @@ class SceneHistory:
 
         Args:
             callback: Function to call when history is restored.
+
         """
         self._history_restored_listeners.append(callback)
 
@@ -128,6 +135,7 @@ class SceneHistory:
 
         Args:
             callback: Previously registered function to remove.
+
         """
         if callback in self._history_stored_listeners:
             self._history_stored_listeners.remove(callback)
@@ -137,6 +145,7 @@ class SceneHistory:
 
         Args:
             callback: Previously registered function to remove.
+
         """
         if callback in self._history_restored_listeners:
             self._history_restored_listeners.remove(callback)
@@ -148,6 +157,7 @@ class SceneHistory:
 
         Returns:
             True if there is history to undo.
+
         """
         return self.history_current_step > 0
 
@@ -156,6 +166,7 @@ class SceneHistory:
 
         Returns:
             True if there is forward history to restore.
+
         """
         return self.history_current_step + 1 < len(self.history_stack)
 
@@ -196,6 +207,7 @@ class SceneHistory:
         Args:
             desc: Human-readable description of this history entry.
             set_modified: If True, mark scene as having unsaved changes.
+
         """
         if set_modified:
             self.scene.has_been_modified = True
@@ -237,6 +249,7 @@ class SceneHistory:
 
         Returns:
             Dict with 'nodes' and 'edges' lists containing object IDs.
+
         """
         sel_obj = {
             "nodes": [],
@@ -262,6 +275,7 @@ class SceneHistory:
 
         Returns:
             HistoryStamp containing description, scene snapshot, and selection.
+
         """
         return HistoryStamp(
             desc=desc,
@@ -278,6 +292,7 @@ class SceneHistory:
 
         Args:
             history_stamp: Previously created history snapshot.
+
         """
         try:
             self.undo_selection_has_changed = False

@@ -1,4 +1,4 @@
-"""Module: timer_manager.py
+"""Module: timer_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -9,13 +9,15 @@ Provides optimized timer operations with automatic cleanup and debugging capabil
 """
 
 import threading
-import weakref
 from collections.abc import Callable
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    import weakref
 
 logger = get_cached_logger(__name__)
 

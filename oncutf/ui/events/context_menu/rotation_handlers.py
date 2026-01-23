@@ -1,4 +1,4 @@
-"""Module: rotation_handlers.py
+"""Module: rotation_handlers.py.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -121,7 +121,7 @@ class RotationHandlers:
             show_error_message(
                 self.parent_window,
                 "Error",
-                f"An error occurred during bulk rotation: {str(e)}",
+                f"An error occurred during bulk rotation: {e!s}",
             )
 
     def _has_metadata_loaded(self, file_item: FileItem) -> bool:
@@ -335,7 +335,7 @@ class RotationHandlers:
             from oncutf.app.services import show_error_message
 
             show_error_message(
-                self.parent_window, "Error", f"Failed to apply rotation changes: {str(e)}"
+                self.parent_window, "Error", f"Failed to apply rotation changes: {e!s}"
             )
 
     def _get_current_rotation_for_file(self, file_item: FileItem) -> str:

@@ -1,4 +1,4 @@
-"""Module: filesystem_handler.py
+"""Module: filesystem_handler.py.
 
 Author: Michael Economou
 Date: 2026-01-02

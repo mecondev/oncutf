@@ -1,4 +1,4 @@
-"""Module: session_state_store.py
+"""Module: session_state_store.py.
 
 Author: Michael Economou
 Date: 2026-01-15

@@ -42,18 +42,18 @@ from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
 from oncutf.ui.widgets.node_editor.graphics.view import QDMGraphicsView
 
 __all__ = [
-    # Core items
-    "QDMGraphicsSocket",
-    "QDMGraphicsNode",
-    "QDMGraphicsEdge",
-    "QDMGraphicsScene",
-    "QDMGraphicsView",
-    "QDMCutLine",
     # Path calculators
     "GraphicsEdgePathBase",
-    "GraphicsEdgePathDirect",
     "GraphicsEdgePathBezier",
-    "GraphicsEdgePathSquare",
-    "GraphicsEdgePathImprovedSharp",
+    "GraphicsEdgePathDirect",
     "GraphicsEdgePathImprovedBezier",
+    "GraphicsEdgePathImprovedSharp",
+    "GraphicsEdgePathSquare",
+    "QDMCutLine",
+    "QDMGraphicsEdge",
+    "QDMGraphicsNode",
+    "QDMGraphicsScene",
+    # Core items
+    "QDMGraphicsSocket",
+    "QDMGraphicsView",
 ]

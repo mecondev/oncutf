@@ -129,6 +129,7 @@ class NumberInputNode(Node):
             scene: Parent scene containing this node.
             inputs: Unused, number input has no inputs.
             outputs: Output socket configuration (default: [1]).
+
         """
         _ = inputs  # Unused
         if outputs is None:
@@ -148,6 +149,7 @@ class NumberInputNode(Node):
 
         Returns:
             float: Parsed numeric value, or 0.0 if invalid.
+
         """
         try:
             text = self.content.edit.text()
@@ -195,6 +197,7 @@ class TextInputNode(Node):
             scene: Parent scene containing this node.
             inputs: Unused, text input has no inputs.
             outputs: Output socket configuration (default: [1]).
+
         """
         _ = inputs  # Unused
         if outputs is None:
@@ -214,6 +217,7 @@ class TextInputNode(Node):
 
         Returns:
             str: Text value from the input field.
+
         """
         self.value = self.content.edit.text()
         self.mark_dirty(False)

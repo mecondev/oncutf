@@ -1,4 +1,4 @@
-"""Module: file_size_formatter.py
+"""Module: file_size_formatter.py.
 
 Author: Michael Economou
 Date: 2025-06-10

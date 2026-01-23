@@ -1,4 +1,4 @@
-"""Module: name_transform_widget.py
+"""Module: name_transform_widget.py.
 
 Author: Michael Economou
 Date: 2025-05-27
@@ -105,8 +105,7 @@ class NameTransformWidget(BaseRenameModule):
         self.emit_if_changed(current_data)
 
     def get_data(self) -> dict:
-        """Returns the current name transformation configuration.
-        """
+        """Returns the current name transformation configuration."""
         return {
             "greeklish": self.greeklish_checkbox.isChecked(),
             "case": self.case_combo.currentText(),

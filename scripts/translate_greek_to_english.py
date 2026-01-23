@@ -339,7 +339,7 @@ Estimated cost:
 
 
 def should_process_file(
-    filepath: Path, root: Path, include_archives: bool = False, custom_excludes: list[str] = None
+    filepath: Path, root: Path, include_archives: bool = False, custom_excludes: list[str] | None = None
 ) -> bool:
     """Check if file should be processed based on exclusions."""
     # Check extension
@@ -590,7 +590,7 @@ def scan_repository(
     translator: TranslationClient,
     dry_run: bool,
     include_archives: bool = False,
-    custom_excludes: list[str] = None,
+    custom_excludes: list[str] | None = None,
 ):
     """Scan repository for Greek text and translate to English."""
     print(f"Scanning repository: {root}")

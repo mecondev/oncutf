@@ -1,4 +1,4 @@
-"""Module: file_load_ui_service.py
+"""Module: file_load_ui_service.py.
 
 Author: Michael Economou
 Date: 2026-01-03
@@ -49,6 +49,7 @@ class FileLoadUIService:
         Args:
             items: List of FileItem objects to load
             clear: Whether to clear existing files (True) or merge (False)
+
         """
         if not hasattr(self.parent_window, "file_model"):
             logger.error("[FileLoadUIService] Parent window has no file_model attribute")
@@ -102,6 +103,7 @@ class FileLoadUIService:
         Args:
             items: List of FileItem objects
             clear: Whether to replace (True) or merge (False)
+
         """
         if clear:
             # Replace existing files
@@ -151,13 +153,14 @@ class FileLoadUIService:
         if total_files == 0:
             self.update_metadata_search_state(False)
 
-    def refresh_ui_after_load(self, total_files: int = None) -> None:
+    def refresh_ui_after_load(self, total_files: int | None = None) -> None:
         """Refresh all UI elements after files are loaded.
 
         This ensures placeholders are hidden, labels are updated, and selection works.
 
         Args:
             total_files: Number of files loaded (optional, will query model if not provided)
+
         """
         try:
             if total_files is None:
@@ -304,6 +307,7 @@ class FileLoadUIService:
 
         Args:
             enabled: Whether to enable the search field
+
         """
         if hasattr(self.parent_window, "metadata_tree_view"):
             if hasattr(self.parent_window.metadata_tree_view, "_update_search_field_state"):

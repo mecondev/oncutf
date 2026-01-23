@@ -1,4 +1,4 @@
-"""Module: text_helpers.py
+"""Module: text_helpers.py.
 
 Author: Michael Economou
 Date: 2025-05-19

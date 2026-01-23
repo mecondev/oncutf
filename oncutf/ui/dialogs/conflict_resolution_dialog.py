@@ -1,4 +1,4 @@
-"""Module: conflict_resolution_dialog.py
+"""Module: conflict_resolution_dialog.py.
 
 Author: Michael Economou
 Date: 2026-01-15

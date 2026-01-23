@@ -1,4 +1,4 @@
-"""Module: metadata_loader.py
+"""Module: metadata_loader.py.
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -17,7 +17,6 @@ Responsibilities:
 from __future__ import annotations
 
 import os
-from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any
 
@@ -27,6 +26,8 @@ from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
     from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
@@ -291,8 +292,8 @@ class MetadataLoader:
             if has_valid_cache and cache_entry is not None:
                 # Already has extended - never downgrade
                 if (
-                    cache_entry.is_extended
-                    and not use_extended
+                    (cache_entry.is_extended
+                    and not use_extended)
                     or cache_entry.is_extended == use_extended
                 ):
                     skipped_count += 1
@@ -662,8 +663,8 @@ class MetadataLoader:
 
             if has_valid_cache and cache_entry is not None:
                 if (
-                    cache_entry.is_extended
-                    and not use_extended
+                    (cache_entry.is_extended
+                    and not use_extended)
                     or cache_entry.is_extended == use_extended
                 ):
                     yield item, cache_entry.data

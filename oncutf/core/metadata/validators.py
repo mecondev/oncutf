@@ -1,4 +1,4 @@
-"""Module: metadata_validators.py
+"""Module: metadata_validators.py.
 
 Author: Michael Economou
 Date: 2025-06-07

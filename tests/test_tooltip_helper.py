@@ -26,7 +26,7 @@ class TestTooltipHelper:
     """Test suite for tooltip helper system"""
 
     @pytest.fixture(autouse=True)
-    def setup_widget(self, qtbot):  # noqa: ARG002
+    def setup_widget(self, qtbot):
         """Setup test widget for tooltips"""
         self.test_widget = QLabel("Test Widget")
         qtbot.addWidget(self.test_widget)
@@ -45,7 +45,7 @@ class TestTooltipHelper:
         assert TooltipType.INFO == "info"
         assert TooltipType.SUCCESS == "success"
 
-    def test_custom_tooltip_creation(self, qtbot):  # noqa: ARG002
+    def test_custom_tooltip_creation(self, qtbot):
         """Test custom tooltip widget creation"""
         tooltip = CustomTooltip(self.test_widget, "Test message", TooltipType.ERROR)
 
@@ -53,7 +53,7 @@ class TestTooltipHelper:
         assert tooltip.tooltip_type == TooltipType.ERROR
         assert not tooltip.isVisible()  # Should not be visible initially
 
-    def test_tooltip_helper_show_tooltip(self, qtbot):  # noqa: ARG002
+    def test_tooltip_helper_show_tooltip(self, qtbot):
         """Test TooltipHelper.show_tooltip method"""
         # Should not raise any exceptions
         TooltipHelper.show_tooltip(
@@ -66,7 +66,7 @@ class TestTooltipHelper:
         # Check that tooltip was tracked
         assert len(TooltipHelper._active_tooltips) > 0
 
-    def test_tooltip_helper_convenience_methods(self, qtbot):  # noqa: ARG002
+    def test_tooltip_helper_convenience_methods(self, qtbot):
         """Test convenience methods for different tooltip types"""
         # Error tooltip
         TooltipHelper.show_tooltip(
@@ -89,7 +89,7 @@ class TestTooltipHelper:
         # Should have multiple tooltips tracked (they replace each other for same widget)
         assert len(TooltipHelper._active_tooltips) >= 1
 
-    def test_tooltip_clearing(self, qtbot):  # noqa: ARG002
+    def test_tooltip_clearing(self, qtbot):
         """Test tooltip clearing functionality"""
         # Show a tooltip
         TooltipHelper.show_tooltip(self.test_widget, "Test message", duration=100)
@@ -102,7 +102,7 @@ class TestTooltipHelper:
         widget_tooltips = [t for w, t in TooltipHelper._active_tooltips if w == self.test_widget]
         assert len(widget_tooltips) == 0
 
-    def test_clear_all_tooltips(self, qtbot):  # noqa: ARG002
+    def test_clear_all_tooltips(self, qtbot):
         """Test clearing all active tooltips"""
         # Show multiple tooltips
         TooltipHelper.show_tooltip(self.test_widget, "Test 1", duration=100)
@@ -120,7 +120,7 @@ class TestTooltipHelper:
         # Should have no active tooltips (or tolerate deletion)
         assert True
 
-    def test_tooltip_helper_class_methods(self, qtbot):  # noqa: ARG002
+    def test_tooltip_helper_class_methods(self, qtbot):
         """Test TooltipHelper class methods"""
         # Test class methods work without errors
         TooltipHelper.show_tooltip(self.test_widget, "Class test", TooltipType.DEFAULT)
@@ -132,7 +132,7 @@ class TestTooltipHelper:
         # Should not raise exceptions
         assert True
 
-    def test_tooltip_position_adjustment(self, qtbot):  # noqa: ARG002
+    def test_tooltip_position_adjustment(self, qtbot):
         """Test that tooltip position is calculated correctly"""
         # This is more of a smoke test - just verify tooltip shows without errors
         # Position calculation is handled internally by _calculate_tooltip_position
@@ -145,7 +145,7 @@ class TestTooltipHelper:
         except Exception as e:
             pytest.fail(f"Tooltip display failed: {e}")
 
-    def test_tooltip_multiple_for_same_widget(self, qtbot):  # noqa: ARG002
+    def test_tooltip_multiple_for_same_widget(self, qtbot):
         """Test that multiple tooltips for same widget are handled correctly"""
         # Show first tooltip
         TooltipHelper.show_tooltip(self.test_widget, "First message", duration=100)
@@ -157,7 +157,7 @@ class TestTooltipHelper:
         widget_tooltips = [t for w, t in TooltipHelper._active_tooltips if w == self.test_widget]
         assert len(widget_tooltips) <= 1
 
-    def test_tooltip_with_invalid_duration(self, qtbot):  # noqa: ARG002
+    def test_tooltip_with_invalid_duration(self, qtbot):
         """Test tooltip behavior with edge case durations"""
         # None duration should use config default
         TooltipHelper.show_tooltip(self.test_widget, "Default duration")

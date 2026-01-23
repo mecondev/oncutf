@@ -1,4 +1,4 @@
-"""Module: dpi_helper.py
+"""Module: dpi_helper.py.
 
 Author: Michael Economou
 Date: 2025-06-10

@@ -1,4 +1,4 @@
-"""Module: thread_pool_manager.py
+"""Module: thread_pool_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-25
@@ -101,7 +101,6 @@ class PriorityQueue:
 
     def __init__(self):
         """Initialize priority queue."""
-
         self._queues: dict[TaskPriority, deque[WorkerTask]] = {
             priority: deque() for priority in TaskPriority
         }

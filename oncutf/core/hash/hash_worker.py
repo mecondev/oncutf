@@ -1,4 +1,4 @@
-"""Module: hash_worker.py
+"""Module: hash_worker.py.
 
 Author: Michael Economou
 Date: 2025-06-10

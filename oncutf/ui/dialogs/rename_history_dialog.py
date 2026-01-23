@@ -1,4 +1,4 @@
-"""Module: rename_history_dialog.py
+"""Module: rename_history_dialog.py.
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -204,7 +204,7 @@ class RenameHistoryDialog(QDialog):
 
         except Exception as e:
             logger.error("[RenameHistoryDialog] Error loading history: %s", e)
-            CustomMessageDialog.critical(self, "Error", f"Failed to load rename history: {str(e)}")
+            CustomMessageDialog.critical(self, "Error", f"Failed to load rename history: {e!s}")
 
     def _on_selection_changed(self):
         """Handle selection change in operations table."""
@@ -273,7 +273,7 @@ class RenameHistoryDialog(QDialog):
 
         except Exception as e:
             logger.error("[RenameHistoryDialog] Error loading operation details: %s", e)
-            self.details_text.setPlainText(f"Error loading details: {str(e)}")
+            self.details_text.setPlainText(f"Error loading details: {e!s}")
 
     def _undo_operation(self):
         """Undo the selected operation."""
@@ -321,7 +321,7 @@ class RenameHistoryDialog(QDialog):
 
         except Exception as e:
             logger.error("[RenameHistoryDialog] Error during undo: %s", e)
-            CustomMessageDialog.critical(self, "Error", f"Failed to undo operation: {str(e)}")
+            CustomMessageDialog.critical(self, "Error", f"Failed to undo operation: {e!s}")
 
     def _cleanup_history(self):
         """Clean up old history records."""
@@ -349,7 +349,7 @@ class RenameHistoryDialog(QDialog):
 
         except Exception as e:
             logger.error("[RenameHistoryDialog] Error during cleanup: %s", e)
-            CustomMessageDialog.critical(self, "Error", f"Failed to cleanup history: {str(e)}")
+            CustomMessageDialog.critical(self, "Error", f"Failed to cleanup history: {e!s}")
 
 
 def show_rename_history_dialog(parent: QWidget | None = None) -> None:

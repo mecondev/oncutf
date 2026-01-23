@@ -284,17 +284,17 @@ class TestMetadataValidatedWidgets:
             yield QApplication.instance()
 
     @pytest.fixture
-    def title_widget(self, qapp):  # noqa: ARG002
+    def title_widget(self, qapp):
         """Create a Title field widget for testing."""
         return MetadataValidatedLineEdit(field_name="Title")
 
     @pytest.fixture
-    def artist_widget(self, qapp):  # noqa: ARG002
+    def artist_widget(self, qapp):
         """Create an Artist field widget for testing."""
         return MetadataValidatedLineEdit(field_name="Artist")
 
     @pytest.fixture
-    def description_widget(self, qapp):  # noqa: ARG002
+    def description_widget(self, qapp):
         """Create a Description field widget for testing."""
         return MetadataValidatedTextEdit(field_name="Description")
 
@@ -373,7 +373,7 @@ class TestMetadataValidatedWidgets:
         assert title_widget.is_valid() is True
         assert title_widget.has_had_content() is False
 
-    def test_field_name_change(self, qapp):  # noqa: ARG002
+    def test_field_name_change(self, qapp):
         """Test changing field name updates validation rules."""
         widget = MetadataValidatedLineEdit(field_name="Title")
 
@@ -386,7 +386,7 @@ class TestMetadataValidatedWidgets:
         # Should no longer block characters
         assert len(widget.get_blocked_characters()) == 0
 
-    def test_create_widget_factory(self, qapp):  # noqa: ARG002
+    def test_create_widget_factory(self, qapp):
         """Test the widget factory function."""
         # Test single-line widget creation
         single_line = create_metadata_input_widget("Title", is_multiline=False)

@@ -1,4 +1,4 @@
-"""Module: rename_modules_area.py
+"""Module: rename_modules_area.py.
 
 Author: Michael Economou
 Date: 2025-05-27

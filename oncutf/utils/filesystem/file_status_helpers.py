@@ -1,4 +1,4 @@
-"""file_status_helpers.py
+"""file_status_helpers.py.
 
 Central helpers for file metadata and hash status.
 All lookups use path normalization for cross-platform compatibility.
@@ -239,7 +239,7 @@ def has_hash(file_path: str | Path, hash_type: str = "CRC32") -> bool:
 
 # --- Batch helpers ---
 def batch_metadata_status(file_paths: list[str | Path]) -> dict[str, bool]:
-    """Return dict: normalized path -> has_metadata (bool)"""
+    """Return dict: normalized path -> has_metadata (bool)."""
     result = {}
     for p in file_paths:
         norm_path = normalize_path(p)
@@ -254,5 +254,5 @@ def batch_metadata_status(file_paths: list[str | Path]) -> dict[str, bool]:
 
 
 def batch_hash_status(file_paths: list[str | Path], hash_type: str = "CRC32") -> dict[str, bool]:
-    """Return dict: normalized path -> has_hash (bool)"""
+    """Return dict: normalized path -> has_hash (bool)."""
     return {normalize_path(p): has_hash(p, hash_type) for p in file_paths}

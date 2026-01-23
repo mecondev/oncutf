@@ -60,6 +60,6 @@ def load_scene_from_file(scene: Any, filename: str) -> None:
         scene.filename = filename
         scene.deserialize_snapshot(data)
         scene.has_been_modified = False
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         dump_exception(e)
         raise

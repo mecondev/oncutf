@@ -86,6 +86,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Args:
             parent: Parent widget
+
         """
         super().__init__(parent)
         self._thumbnail_size = 128  # Default size, will be set from viewport
@@ -95,6 +96,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Args:
             size: Thumbnail size in pixels (applies to both width and height)
+
         """
         self._thumbnail_size = size
         logger.debug("[ThumbnailDelegate] Thumbnail size set to: %d", size)
@@ -110,6 +112,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             Size hint for the item
+
         """
         # Total width: border + padding + thumbnail + padding + border
         width = (
@@ -141,6 +144,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter for rendering
             option: Style options (includes hover/selection state)
             index: Model index
+
         """
         logger.debug("[ThumbnailDelegate] paint() called for index row=%d", index.row())
         painter.save()
@@ -204,6 +208,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             Frame rectangle (excludes filename area)
+
         """
         frame_size = (
             self.FRAME_BORDER_WIDTH * 2
@@ -225,6 +230,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             Thumbnail rectangle (centered in frame with padding)
+
         """
         x = frame_rect.left() + self.FRAME_BORDER_WIDTH + self.FRAME_PADDING
         y = frame_rect.top() + self.FRAME_BORDER_WIDTH + self.FRAME_PADDING
@@ -240,6 +246,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             Filename rectangle (below frame)
+
         """
         y = frame_rect.bottom() + self.FILENAME_MARGIN
         height = self.FILENAME_HEIGHT
@@ -265,6 +272,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             file_item: File item (for color flag)
             is_selected: Whether item is selected
             is_hover: Whether item is hovered
+
         """
         # Check if file has a color flag
         has_color = file_item.color and file_item.color.lower() != "none"
@@ -322,6 +330,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter
             thumbnail_rect: Target rectangle for thumbnail
             pixmap: Thumbnail pixmap
+
         """
         # Scale pixmap to fit rectangle while preserving aspect ratio
         scaled_pixmap = pixmap.scaled(
@@ -348,6 +357,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter
             thumbnail_rect: Target rectangle
             file_item: File item (for extension/type info)
+
         """
         # Draw background
         painter.fillRect(thumbnail_rect, self.PLACEHOLDER_BACKGROUND)
@@ -379,6 +389,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter
             frame_rect: Frame rectangle (flag drawn at top-left)
             color_name: Color name (e.g., "red", "blue", "#FF0000")
+
         """
         # Calculate position (top-left corner with margin)
         center_x = frame_rect.left() + self.COLOR_FLAG_MARGIN + self.COLOR_FLAG_SIZE // 2
@@ -421,6 +432,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter
             frame_rect: Frame rectangle
             file_item: File item with metadata/hash status
+
         """
         # Determine metadata status color and style
         metadata_status = getattr(file_item, "metadata_status", "none")
@@ -477,6 +489,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             corner: Corner position ("top-left" or "top-right")
             color_hex: Hex color for the circle
             filled: True for filled circle, False for outline only
+
         """
         # Calculate center position based on corner
         if corner == "top-left":
@@ -530,6 +543,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter: QPainter
             frame_rect: Frame rectangle (badge drawn at bottom-right)
             duration: Video duration in seconds
+
         """
         # Format duration as HH:MM:SS or MM:SS
         hours = int(duration // 3600)
@@ -581,6 +595,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             filename_rect: Target rectangle for filename
             filename: Filename to display
             is_selected: Whether item is selected
+
         """
         # Set text color (black normally, white if selected)
         text_color = Qt.white if is_selected else Qt.black
@@ -613,6 +628,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             None (editing disabled)
+
         """
         # Inline editing disabled - use rename dialog or context menu
         return None
@@ -634,6 +650,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             True if tooltip handled
+
         """
         from PyQt5.QtWidgets import QToolTip
 

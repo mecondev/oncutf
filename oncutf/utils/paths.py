@@ -1,4 +1,4 @@
-"""Module: paths.py
+"""Module: paths.py.
 
 Author: Michael Economou
 Date: 2026-01-01

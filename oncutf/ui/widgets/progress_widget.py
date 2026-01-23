@@ -1,4 +1,4 @@
-"""Module: progress_widget.py
+"""Module: progress_widget.py.
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -860,6 +860,7 @@ class ProgressWidget(QWidget):
         Args:
             elapsed: Elapsed time in seconds
             estimated_total: Estimated total time in seconds (optional)
+
         """
         if not self.show_time_info:
             return

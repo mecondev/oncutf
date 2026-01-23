@@ -1,4 +1,4 @@
-"""Module: batch_operations_manager.py
+"""Module: batch_operations_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-20

@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 
 
-def test_preview_debounce_simulation() -> None:  # noqa: PLR0915
+def test_preview_debounce_simulation() -> None:
     """Simulate rapid parameter changes and measure preview call reduction.
 
     This is a simulation test - in real usage, the debounce timer would

@@ -1,4 +1,4 @@
-"""Module: counter_scope.py
+"""Module: counter_scope.py.
 
 Author: Michael Economou
 Date: 2025-12-16

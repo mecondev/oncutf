@@ -43,6 +43,7 @@ class EdgeRerouting:
         rerouting_edges: Temporary preview edges during rerouting.
         is_rerouting: Whether rerouting operation is active.
         first_mb_release: Flag for first mouse button release detection.
+
     """
 
     def __init__(self, graphics_view: QDMGraphicsView) -> None:
@@ -50,6 +51,7 @@ class EdgeRerouting:
 
         Args:
             graphics_view: QDMGraphicsView to operate on.
+
         """
         self.graphics_view = graphics_view
         self.start_socket: Socket | None = None
@@ -62,6 +64,7 @@ class EdgeRerouting:
 
         Returns:
             Edge class from the scene.
+
         """
         return self.graphics_view.graphics_scene.scene.get_edge_class()
 
@@ -70,6 +73,7 @@ class EdgeRerouting:
 
         Returns:
             List of edges that will be affected by rerouting.
+
         """
         if self.start_socket is None:
             return []
@@ -80,6 +84,7 @@ class EdgeRerouting:
 
         Args:
             visibility: True to show edges, False to hide them.
+
         """
         for edge in self.get_affected_edges():
             if visibility:
@@ -107,6 +112,7 @@ class EdgeRerouting:
         Args:
             x: Current X position in scene coordinates.
             y: Current Y position in scene coordinates.
+
         """
         if self.is_rerouting:
             for edge in self.rerouting_edges:
@@ -121,6 +127,7 @@ class EdgeRerouting:
 
         Args:
             socket: Socket to start rerouting from.
+
         """
         self.is_rerouting = True
         self.start_socket = socket
@@ -148,6 +155,7 @@ class EdgeRerouting:
 
         Args:
             target: Socket to connect to, or None to cancel rerouting.
+
         """
         if self.start_socket is not None:
             # Reset start socket highlight

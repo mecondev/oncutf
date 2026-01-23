@@ -29,7 +29,7 @@ from oncutf.ui.widgets.node_editor.nodes.registry import NodeRegistry
 
 @NodeRegistry.register(110)
 class RegexMatchNode(Node):
-    """Pattern matching using regular expressions.
+    r"""Pattern matching using regular expressions.
 
     Inputs:
         - text (str): Input text to search
@@ -41,6 +41,7 @@ class RegexMatchNode(Node):
     Examples:
         text="hello123", pattern=r"\\d+" -> True
         text="abc", pattern=r"\\d+" -> False
+
     """
 
     op_code = 110

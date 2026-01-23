@@ -1,4 +1,4 @@
-"""companion_files_helper.py
+"""companion_files_helper.py.
 
 Utility for detecting and managing companion/sidecar files that are associated with main media files.
 Handles patterns like Sony camera XML files, XMP sidecar files, etc.

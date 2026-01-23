@@ -15,7 +15,6 @@ The Protocols define the minimum interface each controller needs.
 from typing import TYPE_CHECKING, Protocol
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QStringListModel
@@ -32,6 +31,7 @@ if TYPE_CHECKING:
         QStackedWidget,
         QToolButton,
         QVBoxLayout,
+        QWidget,
     )
 
     from oncutf.core.application_context import ApplicationContext

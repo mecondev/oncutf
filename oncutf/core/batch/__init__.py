@@ -25,8 +25,8 @@ from oncutf.core.batch.processor import (
 __all__ = [
     "BatchOperation",
     "BatchOperationsManager",
-    "BatchStats",
-    "get_batch_manager",
     "BatchProcessor",
     "BatchProcessorFactory",
+    "BatchStats",
+    "get_batch_manager",
 ]

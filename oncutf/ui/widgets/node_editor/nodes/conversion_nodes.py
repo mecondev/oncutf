@@ -57,6 +57,7 @@ class ToStringNode(Node):
 
         Returns:
             str: String representation of input value, or None if no input.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -132,6 +133,7 @@ class ToNumberNode(Node):
 
         Returns:
             float: Converted number, or None if conversion fails.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -228,6 +230,7 @@ class ToBoolNode(Node):
 
         Returns:
             bool: Converted boolean, or None if no input.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -311,6 +314,7 @@ class ToIntNode(Node):
 
         Returns:
             int: Converted integer, or None if conversion fails.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value

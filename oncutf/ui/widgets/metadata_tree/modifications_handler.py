@@ -50,8 +50,7 @@ class MetadataTreeModificationsHandler:
         return staging_manager.get_all_staged_changes()
 
     def clear_modifications(self) -> None:
-        """Clear all modified metadata items for the current file.
-        """
+        """Clear all modified metadata items for the current file."""
         from oncutf.core.metadata import get_metadata_staging_manager
 
         staging_manager = get_metadata_staging_manager()

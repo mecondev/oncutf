@@ -1,4 +1,4 @@
-"""Module: metadata_writer.py
+"""Module: metadata_writer.py.
 
 Author: Michael Economou
 Date: 2025-12-20

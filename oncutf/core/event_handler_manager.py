@@ -1,4 +1,4 @@
-"""Module: event_handler_manager.py
+"""Module: event_handler_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -16,12 +16,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.pyqt_imports import QModelIndex
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.events.file_event_handlers import FileEventHandlers
     from oncutf.core.events.ui_event_handlers import UIEventHandlers
+    from oncutf.core.pyqt_imports import QModelIndex
     from oncutf.ui.events.context_menu import ContextMenuHandlers
 
 logger = get_cached_logger(__name__)

@@ -36,6 +36,7 @@ class WindowSetupController:
 
         Args:
             parent_window: The main application window
+
         """
         self.parent_window = parent_window
         logger.debug("WindowSetupController initialized", extra={"dev_only": True})
@@ -72,6 +73,7 @@ class WindowSetupController:
 
         Returns:
             QSize with optimal width and height
+
         """
         # Get primary screen geometry
         screen = QApplication.desktop().screenGeometry()

@@ -35,6 +35,7 @@ class QDMNodeContentWidget(QWidget, Serializable):
     Attributes:
         node: Parent Node containing this content.
         layout: QVBoxLayout for arranging child widgets.
+
     """
 
     def __init__(self, node: "Node", parent: QWidget | None = None):
@@ -43,6 +44,7 @@ class QDMNodeContentWidget(QWidget, Serializable):
         Args:
             node: Parent Node this content belongs to.
             parent: Optional parent widget.
+
         """
         self.node = node
         super().__init__(parent)
@@ -71,6 +73,7 @@ class QDMNodeContentWidget(QWidget, Serializable):
 
         Args:
             value: True when editing starts, False when done.
+
         """
         self.node.scene._get_graphics_view().editing_flag = value
 
@@ -81,6 +84,7 @@ class QDMNodeContentWidget(QWidget, Serializable):
 
         Returns:
             Dictionary with serialized state.
+
         """
         return {}
 
@@ -98,6 +102,7 @@ class QDMNodeContentWidget(QWidget, Serializable):
 
         Returns:
             True if deserialization succeeded.
+
         """
         return True
 
@@ -114,6 +119,7 @@ class QDMTextEdit(QTextEdit):
 
         Args:
             event: Qt focus event.
+
         """
         self.parentWidget().set_editing_flag(True)
         super().focusInEvent(event)
@@ -123,6 +129,7 @@ class QDMTextEdit(QTextEdit):
 
         Args:
             event: Qt focus event.
+
         """
         self.parentWidget().set_editing_flag(False)
         super().focusOutEvent(event)

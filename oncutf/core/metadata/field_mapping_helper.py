@@ -1,4 +1,4 @@
-"""metadata_field_mapping_helper.py
+"""metadata_field_mapping_helper.py.
 
 Centralized metadata field mapping and conversion helper.
 Handles file-type-specific field mapping for read/write operations.

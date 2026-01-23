@@ -22,10 +22,10 @@ from oncutf.models.file_table.model_file_operations import FileOperationsManager
 from oncutf.models.file_table.sort_manager import SortManager
 
 __all__ = [
-    "FileTableModel",
-    "IconManager",
-    "SortManager",
     "ColumnManager",
     "DataProvider",
     "FileOperationsManager",
+    "FileTableModel",
+    "IconManager",
+    "SortManager",
 ]

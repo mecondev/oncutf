@@ -1,4 +1,4 @@
-"""Module: metadata_worker.py
+"""Module: metadata_worker.py.
 
 Author: Michael Economou
 Date: 2025-05-09
@@ -344,8 +344,7 @@ class MetadataWorker(QObject):
             self.finished.emit()
 
     def cancel(self) -> None:
-        """Cancels the batch processing. Safe flag that is checked per file.
-        """
+        """Cancels the batch processing. Safe flag that is checked per file."""
         logger.info("[Worker] cancel() requested — will cancel after current file")
         self._cancelled = True
         self.cancelled = True  # Also set the old attribute for compatibility

@@ -1,4 +1,4 @@
-"""Module: module_orchestrator.py
+"""Module: module_orchestrator.py.
 
 Author: Michael Economou
 Date: 2025-12-27
@@ -153,6 +153,7 @@ class ModuleOrchestrator:
 
         Args:
             descriptor: Module metadata
+
         """
         self._module_registry[descriptor.name] = descriptor
         logger.debug("[ModuleOrchestrator] Registered module: %s", descriptor.name)
@@ -165,6 +166,7 @@ class ModuleOrchestrator:
 
         Returns:
             ModuleDescriptor or None if not found
+
         """
         return self._module_registry.get(name)
 
@@ -173,6 +175,7 @@ class ModuleOrchestrator:
 
         Returns:
             List of module descriptors
+
         """
         return list(self._module_registry.values())
 
@@ -181,6 +184,7 @@ class ModuleOrchestrator:
 
         Returns:
             List of display names
+
         """
         return [desc.display_name for desc in self._module_registry.values()]
 
@@ -195,6 +199,7 @@ class ModuleOrchestrator:
 
         Returns:
             Module instance data
+
         """
         # Handle legacy module names
         original_name = name
@@ -228,6 +233,7 @@ class ModuleOrchestrator:
 
         Returns:
             Index of added module, or -1 if module creation failed
+
         """
         instance = self.create_module_instance(name, config)
         if not instance:
@@ -249,6 +255,7 @@ class ModuleOrchestrator:
 
         Returns:
             True if removed successfully
+
         """
         if 0 <= index < len(self._module_instances):
             removed = self._module_instances.pop(index)
@@ -269,6 +276,7 @@ class ModuleOrchestrator:
 
         Returns:
             True if reordered successfully
+
         """
         if from_index == to_index:
             return False
@@ -291,6 +299,7 @@ class ModuleOrchestrator:
 
         Returns:
             Module count
+
         """
         return len(self._module_instances)
 
@@ -302,6 +311,7 @@ class ModuleOrchestrator:
 
         Returns:
             Module instance or None
+
         """
         if 0 <= index < len(self._module_instances):
             return self._module_instances[index]
@@ -312,6 +322,7 @@ class ModuleOrchestrator:
 
         Returns:
             Dict with 'modules' list
+
         """
         modules_data = []
         for instance in self._module_instances:
@@ -333,6 +344,7 @@ class ModuleOrchestrator:
 
         Returns:
             (is_valid, error_message)
+
         """
         module = self.get_module_at(index)
         if not module:

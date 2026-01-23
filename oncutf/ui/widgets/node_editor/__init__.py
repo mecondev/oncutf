@@ -40,6 +40,7 @@ Author:
 
 Date:
     2025-12-11
+
 """
 
 __version__ = "1.0.0"
@@ -67,19 +68,19 @@ from oncutf.ui.widgets.node_editor.themes.light import LightTheme
 from oncutf.ui.widgets.node_editor.widgets import NodeEditorWidget, NodeEditorWindow
 
 __all__ = [
-    "__version__",
+    "DarkTheme",
+    "Edge",
+    "LightTheme",
     # Core
     "Node",
-    "Edge",
-    "Socket",
-    "Scene",
     # Widgets
     "NodeEditorWidget",
     "NodeEditorWindow",
     # Nodes
     "NodeRegistry",
+    "Scene",
+    "Socket",
     # Themes
     "ThemeEngine",
-    "DarkTheme",
-    "LightTheme",
+    "__version__",
 ]

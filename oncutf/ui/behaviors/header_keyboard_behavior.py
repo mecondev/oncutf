@@ -1,4 +1,4 @@
-"""Module: header_keyboard_behavior.py
+"""Module: header_keyboard_behavior.py.
 
 Author: Michael Economou
 Date: 2026-01-08
@@ -28,6 +28,7 @@ class HeaderKeyboardBehavior(QObject):
         Args:
             table_view: The QTableView widget
             header: The QHeaderView widget (InteractiveHeader)
+
         """
         super().__init__(table_view)
         self._table_view = table_view
@@ -45,6 +46,7 @@ class HeaderKeyboardBehavior(QObject):
 
         Returns:
             True if event was handled, False otherwise
+
         """
         if event.type() == QEvent.KeyPress and isinstance(event, QKeyEvent):
             # Check for Ctrl+Left or Ctrl+Right
@@ -67,6 +69,7 @@ class HeaderKeyboardBehavior(QObject):
 
         Returns:
             True if event was handled, False otherwise
+
         """
         # Only handle shortcuts if sections are movable (not locked)
         if not self._header.sectionsMovable():
@@ -103,6 +106,7 @@ class HeaderKeyboardBehavior(QObject):
 
         Returns:
             Visual index of focused section, or -1 if none found.
+
         """
         # Get mouse position relative to table view
         cursor_pos = self._table_view.mapFromGlobal(self._table_view.cursor().pos())

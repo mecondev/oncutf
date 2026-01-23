@@ -1,4 +1,4 @@
-"""Structured Metadata Manager
+"""Structured Metadata Manager.
 
 This module handles the conversion of raw metadata from ExifTool to structured metadata
 that can be stored in the database with proper categorization and field definitions.

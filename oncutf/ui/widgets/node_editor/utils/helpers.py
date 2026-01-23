@@ -26,6 +26,7 @@ def dump_exception(_e: Exception | None = None) -> None:
 
     Args:
         _e: Exception instance (unused, current traceback is printed).
+
     """
     traceback.print_exc()
 

@@ -1,4 +1,4 @@
-"""Module: oncutf.config.shortcuts
+"""Module: oncutf.config.shortcuts.
 
 Author: Michael Economou
 Date: 2026-01-01

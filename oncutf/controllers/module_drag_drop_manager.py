@@ -1,4 +1,4 @@
-"""Module: module_drag_drop_manager.py
+"""Module: module_drag_drop_manager.py.
 
 Author: Michael Economou
 Date: 2025-12-27
@@ -33,6 +33,7 @@ class ModuleDragDropManager:
         Args:
             widget: Widget being dragged
             global_pos: Initial mouse position (x, y)
+
         """
         self._dragged_widget = widget
         self._drag_start_position = global_pos
@@ -47,6 +48,7 @@ class ModuleDragDropManager:
 
         Returns:
             True if drag started (crossed threshold)
+
         """
         if not self._drag_start_position:
             return False
@@ -72,6 +74,7 @@ class ModuleDragDropManager:
 
         Returns:
             Widget that was being dragged, or None
+
         """
         widget = self._dragged_widget
         self._dragged_widget = None
@@ -95,6 +98,7 @@ class ModuleDragDropManager:
 
         Returns:
             True if drag in progress
+
         """
         return self._is_dragging
 
@@ -104,6 +108,7 @@ class ModuleDragDropManager:
 
         Returns:
             Dragged widget or None
+
         """
         return self._dragged_widget
 

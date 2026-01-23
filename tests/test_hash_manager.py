@@ -130,7 +130,6 @@ class TestHashManager:
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.is_file", return_value=True),
         ):
-            # noqa: SIM117
             result = manager.calculate_hash("/mock/path/file.txt")
             assert result is None
 
@@ -197,7 +196,7 @@ class TestHashManager:
         """Test successful folder comparison."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
+        with tempfile.TemporaryDirectory() as temp_dir1:
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create test files
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -217,7 +216,7 @@ class TestHashManager:
         """Test folder comparison with different file content."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
+        with tempfile.TemporaryDirectory() as temp_dir1:
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create test files with different content
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -237,7 +236,7 @@ class TestHashManager:
         """Test folder comparison with missing file in second folder."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
+        with tempfile.TemporaryDirectory() as temp_dir1:
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create file only in first folder
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -354,7 +353,7 @@ class TestConvenienceFunctions:
 
     def test_compare_folders_function(self):
         """Test standalone compare_folders function."""
-        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
+        with tempfile.TemporaryDirectory() as temp_dir1:
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create identical test files
                 file1_path = Path(temp_dir1) / "test.txt"

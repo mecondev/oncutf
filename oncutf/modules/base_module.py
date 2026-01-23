@@ -1,4 +1,4 @@
-"""Module: base_module.py
+"""Module: base_module.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -9,10 +9,12 @@ Base module for all rename modules.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from oncutf.core.pyqt_imports import QWidget, pyqtSignal
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 

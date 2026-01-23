@@ -1,4 +1,4 @@
-"""Module: progress_dialog.py
+"""Module: progress_dialog.py.
 
 Author: Michael Economou
 Date: 2025-06-01

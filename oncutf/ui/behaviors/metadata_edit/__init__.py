@@ -34,19 +34,19 @@ from oncutf.ui.behaviors.metadata_edit.tree_navigator import TreeNavigator
 from oncutf.ui.behaviors.metadata_edit.undo_redo_handler import UndoRedoHandler
 
 __all__ = [
-    # Main classes
-    "MetadataEditBehavior",
-    "EditableWidget",
     # Handlers
     "EditOperations",
-    "RotationHandler",
-    "ResetHandler",
-    "UndoRedoHandler",
-    "TreeNavigator",
+    "EditableWidget",
     "FieldDetector",
+    # Main classes
+    "MetadataEditBehavior",
+    "ResetHandler",
+    "RotationHandler",
+    "TreeNavigator",
+    "UndoRedoHandler",
+    "get_date_type_from_field",
     # Utility functions
     "is_date_time_field",
-    "get_date_type_from_field",
     "is_editable_metadata_field",
     "normalize_metadata_field_name",
 ]

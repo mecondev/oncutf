@@ -1,4 +1,4 @@
-"""Module: logger_factory.py
+"""Module: logger_factory.py.
 
 Author: Michael Economou
 Date: 2025-05-31

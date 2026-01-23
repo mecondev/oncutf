@@ -1,4 +1,4 @@
-"""Module: shortcut_manager.py
+"""Module: shortcut_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-01

@@ -1,4 +1,4 @@
-"""Module: window_event_handler.py
+"""Module: window_event_handler.py.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -29,6 +29,7 @@ class WindowEventHandler:
 
         Args:
             main_window: Reference to the main window instance
+
         """
         self.main_window = main_window
         logger.debug("[WindowEventHandler] Initialized")

@@ -1,4 +1,4 @@
-"""oncutf.core.rename.state_manager
+"""oncutf.core.rename.state_manager.
 
 State management for the unified rename engine.
 

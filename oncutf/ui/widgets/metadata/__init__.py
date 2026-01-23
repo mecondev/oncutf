@@ -1,4 +1,4 @@
-"""Module: metadata package
+"""Module: metadata package.
 
 Author: Michael Economou
 Date: 2025-12-24

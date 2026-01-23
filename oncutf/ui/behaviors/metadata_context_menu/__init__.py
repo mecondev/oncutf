@@ -10,4 +10,4 @@ from oncutf.ui.behaviors.metadata_context_menu.context_menu_behavior import (
 )
 from oncutf.ui.behaviors.metadata_context_menu.protocols import ContextMenuWidget
 
-__all__ = ["MetadataContextMenuBehavior", "ContextMenuWidget"]
+__all__ = ["ContextMenuWidget", "MetadataContextMenuBehavior"]

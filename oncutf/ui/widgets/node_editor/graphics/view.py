@@ -79,6 +79,7 @@ class QDMGraphicsView(QGraphicsView):
 
     Signals:
         scene_pos_changed: Emitted with (x, y) when cursor moves.
+
     """
 
     scene_pos_changed = pyqtSignal(int, int)
@@ -89,6 +90,7 @@ class QDMGraphicsView(QGraphicsView):
         Args:
             graphics_scene: QDMGraphicsScene to display.
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
         self.graphics_scene = graphics_scene
@@ -157,6 +159,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Returns:
             True if snapping enabled and Ctrl pressed.
+
         """
         return EDGE_SNAPPING and is_ctrl_pressed(event) if event else True
 
@@ -169,6 +172,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             callback: Function called on drag enter.
+
         """
         self._drag_enter_listeners.append(callback)
 
@@ -177,6 +181,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             callback: Function called on drop.
+
         """
         self._drop_listeners.append(callback)
 
@@ -185,6 +190,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt drag enter event.
+
         """
         for callback in self._drag_enter_listeners:
             callback(event)
@@ -194,6 +200,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt drag move event.
+
         """
         for callback in self._drag_enter_listeners:
             callback(event)
@@ -203,6 +210,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt drag leave event.
+
         """
 
     def dropEvent(self, event: QDropEvent) -> None:
@@ -210,6 +218,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt drop event.
+
         """
         for callback in self._drop_listeners:
             callback(event)
@@ -219,6 +228,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse press event.
+
         """
         if event.button() == Qt.MiddleButton:
             self.middleMouseButtonPress(event)
@@ -234,6 +244,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse release event.
+
         """
         if event.button() == Qt.MiddleButton:
             self.middleMouseButtonRelease(event)
@@ -251,6 +262,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse press event.
+
         """
         _ = self.getItemAtClick(event)
 
@@ -280,6 +292,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse release event.
+
         """
         fake_event = QMouseEvent(
             event.type(),
@@ -303,6 +316,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse press event.
+
         """
         from oncutf.ui.widgets.node_editor.graphics.edge import QDMGraphicsEdge
         from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
@@ -378,6 +392,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse release event.
+
         """
         from oncutf.ui.widgets.node_editor.graphics.edge import QDMGraphicsEdge
         from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
@@ -463,6 +478,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse press event.
+
         """
         super().mousePressEvent(event)
 
@@ -471,6 +487,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse release event.
+
         """
         super().mouseReleaseEvent(event)
 
@@ -482,6 +499,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt mouse move event.
+
         """
         if event is None:
             return
@@ -528,6 +546,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt key press event.
+
         """
         super().keyPressEvent(event)
 
@@ -559,6 +578,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Returns:
             List of affected QDMGraphicsSocket items.
+
         """
         from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
 
@@ -594,6 +614,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Returns:
             QGraphicsItem at position, or None.
+
         """
         pos = event.pos()
         obj = self.itemAt(pos)
@@ -609,6 +630,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Returns:
             True if distance exceeds EDGE_DRAG_START_THRESHOLD.
+
         """
         new_lmb_release_scene_pos = self.mapToScene(event.pos())
         dist_scene = new_lmb_release_scene_pos - self.last_lmb_click_scene_pos
@@ -622,6 +644,7 @@ class QDMGraphicsView(QGraphicsView):
 
         Args:
             event: Qt wheel event.
+
         """
         # Determine zoom direction from wheel delta
         zoom_in = event.angleDelta().y() > 0

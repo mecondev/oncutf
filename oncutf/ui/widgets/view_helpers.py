@@ -1,4 +1,4 @@
-"""Module: view_helpers.py
+"""Module: view_helpers.py.
 
 Author: Michael Economou
 Date: 2025-05-24

@@ -1,4 +1,4 @@
-"""Module: unified_metadata_manager.py
+"""Module: unified_metadata_manager.py.
 
 Author: Michael Economou
 Date: 2025-07-06

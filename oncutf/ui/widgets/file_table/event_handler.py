@@ -39,6 +39,7 @@ def _format_modifiers(modifiers: Qt.KeyboardModifiers) -> str:
 
     Returns:
         Human-readable string like "Ctrl+Shift", "Ctrl", "Shift", or "None"
+
     """
     if modifiers == Qt.NoModifier:
         return "None"
@@ -64,6 +65,7 @@ class EventHandler:
 
     Attributes:
         _view: Reference to the parent FileTableView
+
     """
 
     def __init__(self, view: FileTableView) -> None:
@@ -71,6 +73,7 @@ class EventHandler:
 
         Args:
             view: The parent FileTableView widget
+
         """
         self._view = view
         self._ctrl_drag_initial_selection: set[int] = set()
@@ -85,6 +88,7 @@ class EventHandler:
 
         Returns:
             True if event was fully handled (skip super call)
+
         """
         index = self._view.indexAt(event.pos())
         modifiers = event.modifiers()
@@ -186,6 +190,7 @@ class EventHandler:
 
         Returns:
             True if event was fully handled
+
         """
         if self._view.is_empty():
             return True
@@ -207,6 +212,7 @@ class EventHandler:
 
         Returns:
             True if super call should be skipped
+
         """
         was_dragging = False
         if event.button() == Qt.LeftButton:
@@ -333,6 +339,7 @@ class EventHandler:
 
         Returns:
             True if event was fully handled
+
         """
         if self._view.is_empty():
             return True
@@ -431,6 +438,7 @@ class EventHandler:
 
         Returns:
             True if event was handled and should be accepted
+
         """
         # Handle F5 refresh
         if event.key() == Qt.Key_F5:
@@ -459,6 +467,7 @@ class EventHandler:
 
         Returns:
             True if super call should be skipped
+
         """
         if self._view._drag_drop_behavior.is_dragging:
             self._view._drag_drop_behavior._update_drag_feedback()
@@ -531,6 +540,7 @@ class EventHandler:
 
         Returns:
             True if event was fully handled
+
         """
         # Standard wheel handling - can be extended
         return False
@@ -543,6 +553,7 @@ class EventHandler:
 
         Returns:
             True if selection sync is needed
+
         """
         return event.matches(QKeySequence.SelectAll) or event.key() in (
             Qt.Key_Space,

@@ -35,6 +35,7 @@ class SceneClipboard:
 
     Attributes:
         scene: Parent Scene for clipboard operations.
+
     """
 
     def __init__(self, scene: Scene) -> None:
@@ -42,6 +43,7 @@ class SceneClipboard:
 
         Args:
             scene: Scene instance to operate on.
+
         """
         self.scene = scene
 
@@ -57,6 +59,7 @@ class SceneClipboard:
 
         Returns:
             Dictionary with 'nodes' and 'edges' lists of serialized data.
+
         """
         sel_nodes = []
         sel_edges = []
@@ -109,6 +112,7 @@ class SceneClipboard:
             data: Dictionary with 'nodes' and 'edges' from serialize_selected.
             *args: Additional arguments passed to deserialize methods.
             **kwargs: Additional keyword arguments.
+
         """
         hashmap = {}
 

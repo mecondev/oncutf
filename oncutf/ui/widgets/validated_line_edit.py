@@ -1,4 +1,4 @@
-"""Module: validated_line_edit.py
+"""Module: validated_line_edit.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -42,7 +42,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
         BaseValidatedInput.__init__(self)
 
     def _setup_validation_signals(self) -> None:
-        """Setup internal signal connections"""
+        """Setup internal signal connections."""
         self.textChanged.connect(self._on_text_changed)
 
     def emit_validation_changed(self, is_valid: bool) -> None:

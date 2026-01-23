@@ -1,4 +1,4 @@
-"""Module: metadata_commands.py
+"""Module: metadata_commands.py.
 
 Author: Michael Economou
 Date: 2025-07-08
@@ -100,8 +100,7 @@ class MetadataCommand(ABC):
 
 
 class EditMetadataFieldCommand(MetadataCommand):
-    """Command for editing a single metadata field.
-    """
+    """Command for editing a single metadata field."""
 
     def __init__(
         self,
@@ -252,8 +251,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
 
 class ResetMetadataFieldCommand(MetadataCommand):
-    """Command for resetting a metadata field to its original value.
-    """
+    """Command for resetting a metadata field to its original value."""
 
     def __init__(
         self,
@@ -380,8 +378,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
 
 class SaveMetadataCommand(MetadataCommand):
-    """Command for saving metadata changes to files.
-    """
+    """Command for saving metadata changes to files."""
 
     def __init__(self, file_paths: list[str], saved_metadata: dict[str, dict[str, Any]]):
         """Initialize save metadata command.
@@ -447,8 +444,7 @@ class SaveMetadataCommand(MetadataCommand):
 
 
 class BatchMetadataCommand(MetadataCommand):
-    """Command for grouping multiple metadata commands together.
-    """
+    """Command for grouping multiple metadata commands together."""
 
     def __init__(self, commands: list[MetadataCommand], description: str = ""):
         """Initialize batch metadata command.

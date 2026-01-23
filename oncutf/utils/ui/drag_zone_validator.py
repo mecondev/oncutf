@@ -1,4 +1,4 @@
-"""Module: drag_zone_validator.py
+"""Module: drag_zone_validator.py.
 
 Author: Michael Economou
 Date: 2025-06-10

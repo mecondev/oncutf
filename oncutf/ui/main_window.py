@@ -1,4 +1,4 @@
-"""Module: main_window.py
+"""Module: main_window.py.
 
 Author: Michael Economou
 Date: 2025-05-01

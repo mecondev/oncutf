@@ -1,4 +1,4 @@
-"""Module: file_validation_manager.py
+"""Module: file_validation_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -32,7 +32,7 @@ logger = get_cached_logger(__name__)
 
 
 class ValidationAccuracy(Enum):
-    """Validation accuracy levels"""
+    """Validation accuracy levels."""
 
     LOW = "low"  # Only existence check
     MEDIUM = "medium"  # mtime + size check
@@ -40,7 +40,7 @@ class ValidationAccuracy(Enum):
 
 
 class OperationType(Enum):
-    """Types of operations for adaptive thresholds"""
+    """Types of operations for adaptive thresholds."""
 
     METADATA_FAST = "metadata_fast"
     METADATA_EXTENDED = "metadata_extended"
@@ -51,7 +51,7 @@ class OperationType(Enum):
 
 @dataclass
 class FileSignature:
-    """File signature for content-based identification"""
+    """File signature for content-based identification."""
 
     content_hash: str
     file_size: int
@@ -60,7 +60,7 @@ class FileSignature:
 
     @classmethod
     def create(cls, file_path: str, content_hash: str | None = None) -> "FileSignature":
-        """Create file signature from path"""
+        """Create file signature from path."""
         path = Path(file_path)
         size = path.stat().st_size if path.exists() else 0
         filename = path.name
@@ -75,7 +75,7 @@ class FileSignature:
 
 @dataclass
 class ValidationResult:
-    """Result of file validation"""
+    """Result of file validation."""
 
     is_valid: bool
     file_exists: bool
@@ -87,7 +87,7 @@ class ValidationResult:
 
 @dataclass
 class ValidationThresholds:
-    """Validation thresholds for different operations"""
+    """Validation thresholds for different operations."""
 
     max_files: int
     max_size_mb: int

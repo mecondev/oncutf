@@ -1,4 +1,4 @@
-"""Module: hash_manager.py
+"""Module: hash_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-10

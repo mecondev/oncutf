@@ -68,6 +68,7 @@ class Node(Serializable):
         _content_widget_class: Content widget class injected via node_editor.core._init_graphics_classes;
             override in subclasses for custom UI widgets.
         Socket_class: Socket class for creating connections.
+
     """
 
     _graphics_node_class: type["QDMGraphicsNode"] | None = None
@@ -92,6 +93,7 @@ class Node(Serializable):
             title: Display text shown in the node header.
             inputs: Socket type identifiers for input sockets.
             outputs: Socket type identifiers for output sockets.
+
         """
         super().__init__()
         self._title = title
@@ -120,6 +122,7 @@ class Node(Serializable):
 
         Returns:
             Format: <title:ClassName ID> showing title and class.
+
         """
         return (
             f"<{self.title}:{self.__class__.__name__} {hex(id(self))[2:5]}..{hex(id(self))[-3:]}>"
@@ -131,6 +134,7 @@ class Node(Serializable):
 
         Returns:
             Current title string.
+
         """
         return self._title
 
@@ -140,6 +144,7 @@ class Node(Serializable):
 
         Args:
             value: New title to display.
+
         """
         self._title = value
         self.graphics_node.title = self._title
@@ -150,6 +155,7 @@ class Node(Serializable):
 
         Returns:
             QPointF with x, y position.
+
         """
         return self.graphics_node.pos()
 
@@ -162,6 +168,7 @@ class Node(Serializable):
         Args:
             x: Horizontal scene coordinate.
             y: Vertical scene coordinate.
+
         """
         self.graphics_node.setPos(x, y)
         for socket in self.inputs:
@@ -193,6 +200,7 @@ class Node(Serializable):
 
         Returns:
             Content widget class or None for no content.
+
         """
         return self.__class__._content_widget_class
 
@@ -203,6 +211,7 @@ class Node(Serializable):
 
         Returns:
             Graphics node class or None.
+
         """
         return self.__class__._graphics_node_class
 
@@ -237,6 +246,7 @@ class Node(Serializable):
             inputs: Socket type IDs for inputs.
             outputs: Socket type IDs for outputs.
             reset: If True, remove existing sockets before creating new.
+
         """
         if reset:
             # Clear old sockets
@@ -281,6 +291,7 @@ class Node(Serializable):
 
         Args:
             new_edge: Edge that was connected or disconnected.
+
         """
 
     def on_input_changed(self, _socket: Socket) -> None:
@@ -291,6 +302,7 @@ class Node(Serializable):
 
         Args:
             _socket: Input socket that received new data.
+
         """
         self.mark_dirty()
         self.mark_descendants_dirty()
@@ -303,6 +315,7 @@ class Node(Serializable):
 
         Args:
             data: Dictionary containing the deserialized data.
+
         """
 
     def on_double_clicked(self, event) -> None:
@@ -313,6 +326,7 @@ class Node(Serializable):
 
         Args:
             event: Qt mouse event with click details.
+
         """
 
     def do_select(self, new_state: bool = True) -> None:
@@ -320,6 +334,7 @@ class Node(Serializable):
 
         Args:
             new_state: True to select, False to deselect.
+
         """
         self.graphics_node.do_select(new_state)
 
@@ -328,6 +343,7 @@ class Node(Serializable):
 
         Returns:
             True if node is in selected state.
+
         """
         return self.graphics_node.isSelected()
 
@@ -339,6 +355,7 @@ class Node(Serializable):
 
         Returns:
             True if edge is connected to any socket on this node.
+
         """
         return any(socket.is_connected(edge) for socket in self.inputs + self.outputs)
 
@@ -357,6 +374,7 @@ class Node(Serializable):
 
         Returns:
             Tuple of (x, y) in node-local coordinates.
+
         """
         x = (
             self.socket_offsets[position]
@@ -406,6 +424,7 @@ class Node(Serializable):
 
         Returns:
             Tuple of (x, y) in scene coordinates.
+
         """
         nodepos = self.graphics_node.pos()
         socketpos = self.get_socket_position(
@@ -443,6 +462,7 @@ class Node(Serializable):
 
         Returns:
             True if node data is stale and needs recalculation.
+
         """
         return self._is_dirty
 
@@ -453,6 +473,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark dirty, False to clear dirty state.
+
         """
         self._is_dirty = new_value
         if self._is_dirty:
@@ -472,6 +493,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark dirty, False to clear.
+
         """
         for other_node in self.get_children_nodes():
             other_node.mark_dirty(new_value)
@@ -484,6 +506,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark dirty, False to clear.
+
         """
         from collections import deque
 
@@ -503,6 +526,7 @@ class Node(Serializable):
 
         Returns:
             True if node has invalid configuration or data.
+
         """
         return self._is_invalid
 
@@ -513,6 +537,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark invalid, False to clear.
+
         """
         self._is_invalid = new_value
         if self._is_invalid:
@@ -532,6 +557,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark invalid, False to clear.
+
         """
         for other_node in self.get_children_nodes():
             other_node.mark_invalid(new_value)
@@ -544,6 +570,7 @@ class Node(Serializable):
 
         Args:
             new_value: True to mark invalid, False to clear.
+
         """
         from collections import deque
 
@@ -569,6 +596,7 @@ class Node(Serializable):
 
         Returns:
             Computed value (type depends on node implementation).
+
         """
         self.mark_dirty(False)
         self.mark_invalid(False)
@@ -589,6 +617,7 @@ class Node(Serializable):
 
         Returns:
             List of downstream nodes (immediate children only).
+
         """
         if not self.outputs:
             return []
@@ -609,6 +638,7 @@ class Node(Serializable):
 
         Returns:
             Connected node or None if unconnected.
+
         """
         try:
             input_socket = self.inputs[index]
@@ -631,6 +661,7 @@ class Node(Serializable):
 
         Returns:
             Tuple of (node, socket) or (None, None) if unconnected.
+
         """
         try:
             input_socket = self.inputs[index]
@@ -651,6 +682,7 @@ class Node(Serializable):
 
         Returns:
             Tuple of (node, socket_index) or (None, None) if unconnected.
+
         """
         try:
             edge = self.inputs[index].edges[0]
@@ -672,6 +704,7 @@ class Node(Serializable):
 
         Returns:
             List of all connected upstream nodes.
+
         """
         ins = []
         for edge in self.inputs[index].edges:
@@ -687,6 +720,7 @@ class Node(Serializable):
 
         Returns:
             List of all connected downstream nodes.
+
         """
         outs = []
         for edge in self.outputs[index].edges:
@@ -703,6 +737,7 @@ class Node(Serializable):
 
         Returns:
             Dictionary containing complete node configuration.
+
         """
         inputs, outputs = [], []
         for socket in self.inputs:
@@ -740,6 +775,7 @@ class Node(Serializable):
 
         Returns:
             True on successful deserialization.
+
         """
         if hashmap is None:
             hashmap = {}

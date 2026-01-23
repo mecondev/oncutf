@@ -1,4 +1,4 @@
-"""Module: base_hash_worker.py
+"""Module: base_hash_worker.py.
 
 Author: Michael Economou
 Date: 2026-01-19
@@ -70,6 +70,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
 
         Args:
             parent: Parent QObject (usually main window)
+
         """
         super().__init__(parent)
 
@@ -164,6 +165,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
 
         Returns:
             Total size in bytes
+
         """
         import os
 

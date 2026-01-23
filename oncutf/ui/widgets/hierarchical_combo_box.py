@@ -103,7 +103,7 @@ class HierarchicalComboBox(QComboBox):
         # Ensure proper expansion after showing
         if hasattr(self, "_categories") and self._categories:
             # Expand first category by default
-            first_category = list(self._categories.keys())[0]
+            first_category = next(iter(self._categories.keys()))
             self.expand_category(first_category)
 
         logger.debug(

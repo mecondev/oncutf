@@ -1,4 +1,4 @@
-"""Module: metadata_shortcut_handler.py
+"""Module: metadata_shortcut_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-21

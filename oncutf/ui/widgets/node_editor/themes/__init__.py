@@ -40,8 +40,8 @@ ThemeEngine.register_theme(LightTheme)
 ThemeEngine.set_theme("dark")
 
 __all__ = [
-    "ThemeEngine",
     "BaseTheme",
     "DarkTheme",
     "LightTheme",
+    "ThemeEngine",
 ]

@@ -1,4 +1,4 @@
-"""Module: rename_controller.py
+"""Module: rename_controller.py.
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -175,7 +175,7 @@ class RenameController:
                 "success": False,
                 "name_pairs": [],
                 "has_changes": False,
-                "errors": [f"Preview generation failed: {str(e)}"],
+                "errors": [f"Preview generation failed: {e!s}"],
             }
 
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> dict[str, Any]:
@@ -257,7 +257,7 @@ class RenameController:
                 "duplicate_count": 0,
                 "unchanged_count": 0,
                 "validation_items": [],
-                "errors": [f"Validation failed: {str(e)}"],
+                "errors": [f"Validation failed: {e!s}"],
             }
 
     # -------------------------------------------------------------------------
@@ -471,7 +471,7 @@ class RenameController:
                 "renamed_count": 0,
                 "failed_count": len(file_items),
                 "skipped_count": 0,
-                "errors": [f"Rename execution failed: {str(e)}"],
+                "errors": [f"Rename execution failed: {e!s}"],
             }
 
     # -------------------------------------------------------------------------

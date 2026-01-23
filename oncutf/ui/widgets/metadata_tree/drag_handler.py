@@ -1,4 +1,4 @@
-"""Module: drag_handler.py
+"""Module: drag_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-23

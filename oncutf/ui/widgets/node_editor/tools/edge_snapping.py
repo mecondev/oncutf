@@ -40,6 +40,7 @@ class EdgeSnapping:
         graphics_view: QDMGraphicsView being used.
         graphics_scene: QDMGraphicsScene for item queries.
         edge_snapping_radius: Distance within which to snap to sockets.
+
     """
 
     def __init__(self, graphics_view: QDMGraphicsView, snapping_radius: float = 24) -> None:
@@ -48,6 +49,7 @@ class EdgeSnapping:
         Args:
             graphics_view: QDMGraphicsView to operate on.
             snapping_radius: Pixel radius for socket detection.
+
         """
         self.graphics_view = graphics_view
         self.graphics_scene = self.graphics_view.graphics_scene
@@ -61,6 +63,7 @@ class EdgeSnapping:
 
         Returns:
             QDMGraphicsSocket to snap to, or None if no socket nearby.
+
         """
         scenepos = self.graphics_view.mapToScene(event.pos())
         graphics_socket, pos = self.getSnappedToSocketPosition(scenepos)
@@ -79,6 +82,7 @@ class EdgeSnapping:
 
         Returns:
             Tuple of (socket to snap to or None, snapped position).
+
         """
         from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
 

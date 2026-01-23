@@ -39,7 +39,7 @@ logger = get_cached_logger(__name__)
 
 
 class DragType(Enum):
-    """Types of items being dragged"""
+    """Types of items being dragged."""
 
     FILE = "file"
     FOLDER = "folder"
@@ -47,7 +47,7 @@ class DragType(Enum):
 
 
 class DropZoneState(Enum):
-    """States of drop zones"""
+    """States of drop zones."""
 
     VALID = "valid"
     INVALID = "invalid"
@@ -55,7 +55,7 @@ class DropZoneState(Enum):
 
 
 class ModifierState(Enum):
-    """Keyboard modifier states for drag operations"""
+    """Keyboard modifier states for drag operations."""
 
     NORMAL = "normal"  # No modifiers - Replace + Shallow
     SHIFT = "shift"  # Shift only - Merge + Shallow
@@ -118,7 +118,7 @@ class DragVisualManager:
     # =====================================
 
     def start_drag_visual(
-        self, drag_type: DragType, source_info: str, drag_source: str = None
+        self, drag_type: DragType, source_info: str, drag_source: str | None = None
     ) -> None:
         """Start visual feedback for a drag operation.
 
@@ -598,7 +598,7 @@ class DragVisualManager:
 
 
 # Global convenience functions
-def start_drag_visual(drag_type: DragType, source_info: str, drag_source: str = None) -> None:
+def start_drag_visual(drag_type: DragType, source_info: str, drag_source: str | None = None) -> None:
     """Start visual feedback for drag operation."""
     DragVisualManager.get_instance().start_drag_visual(drag_type, source_info, drag_source)
 

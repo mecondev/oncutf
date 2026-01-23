@@ -25,6 +25,7 @@ Author:
 
 Date:
     2025-12-11
+
 """
 
 from __future__ import annotations
@@ -49,6 +50,7 @@ def edge_cannot_connect_two_outputs_or_two_inputs(
 
     Returns:
         True if valid (output-to-input), False if invalid.
+
     """
     return not (
         (input_socket.is_output and output_socket.is_output)
@@ -70,6 +72,7 @@ def edge_cannot_connect_input_and_output_of_same_node(
 
     Returns:
         True if valid (different nodes), False if same node.
+
     """
     return input_socket.node != output_socket.node
 
@@ -88,5 +91,6 @@ def edge_cannot_connect_input_and_output_of_different_type(
 
     Returns:
         True if types match, False if different types.
+
     """
     return input_socket.socket_type == output_socket.socket_type

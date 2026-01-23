@@ -35,10 +35,10 @@ from oncutf.ui.widgets.node_editor.tools.edge_validators import (
 
 __all__ = [
     'EdgeDragging',
-    'EdgeRerouting',
     'EdgeIntersect',
+    'EdgeRerouting',
     'EdgeSnapping',
-    'edge_cannot_connect_two_outputs_or_two_inputs',
-    'edge_cannot_connect_input_and_output_of_same_node',
     'edge_cannot_connect_input_and_output_of_different_type',
+    'edge_cannot_connect_input_and_output_of_same_node',
+    'edge_cannot_connect_two_outputs_or_two_inputs',
 ]

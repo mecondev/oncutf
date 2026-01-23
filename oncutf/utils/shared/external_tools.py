@@ -1,4 +1,4 @@
-"""Module: external_tools.py
+"""Module: external_tools.py.
 
 Author: Michael Economou
 Date: 2025-12-23

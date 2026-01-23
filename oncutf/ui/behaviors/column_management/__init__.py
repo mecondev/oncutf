@@ -10,4 +10,4 @@ from oncutf.ui.behaviors.column_management.column_behavior import (
 )
 from oncutf.ui.behaviors.column_management.protocols import ColumnManageableWidget
 
-__all__ = ["ColumnManagementBehavior", "ColumnManageableWidget"]
+__all__ = ["ColumnManageableWidget", "ColumnManagementBehavior"]

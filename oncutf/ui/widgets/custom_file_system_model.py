@@ -1,4 +1,4 @@
-"""Module: custom_file_system_model.py
+"""Module: custom_file_system_model.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -114,7 +114,7 @@ class CustomFileSystemModel(QFileSystemModel):
         )
 
     def _preload_icons(self):
-        """Preload commonly used icons into cache for better performance"""
+        """Preload commonly used icons into cache for better performance."""
         common_icons = ["folder", "file", "image", "video", "music", "file-text", "archive", "code"]
 
         for icon_name in common_icons:
@@ -140,7 +140,7 @@ class CustomFileSystemModel(QFileSystemModel):
                 )
 
     def _get_cached_icon(self, icon_name: str) -> QIcon:
-        """Get icon from cache or load it if not cached"""
+        """Get icon from cache or load it if not cached."""
         if icon_name not in self._icon_cache:
             try:
                 icon = get_menu_icon(icon_name)
@@ -163,7 +163,7 @@ class CustomFileSystemModel(QFileSystemModel):
         return self._icon_cache[icon_name]
 
     def _get_file_type_icon(self, file_path: str) -> str:
-        """Determine the appropriate icon name based on file extension"""
+        """Determine the appropriate icon name based on file extension."""
         if self.isDir(self.index(file_path)):
             return "folder"
 
@@ -180,7 +180,7 @@ class CustomFileSystemModel(QFileSystemModel):
         return self.FILE_TYPE_ICONS.get(ext, "file")
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # type: ignore
-        """Override data method to provide custom icons"""
+        """Override data method to provide custom icons."""
         # Handle decoration role (icons)
         if role == Qt.DecorationRole:  # type: ignore
             if index.isValid():
@@ -193,7 +193,7 @@ class CustomFileSystemModel(QFileSystemModel):
         return super().data(index, role)
 
     def hasChildren(self, parent: QModelIndex = QModelIndex()) -> bool:
-        """Override to ensure proper expand/collapse behavior with optimized checking"""
+        """Override to ensure proper expand/collapse behavior with optimized checking."""
         if not parent.isValid():
             return True
 

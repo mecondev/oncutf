@@ -1,4 +1,4 @@
-"""Package: file_tree
+"""Package: file_tree.
 
 Author: Michael Economou
 Date: 2026-01-02
@@ -18,7 +18,7 @@ from oncutf.ui.widgets.file_tree.utils import DragCancelFilter, get_drag_cancel_
 from oncutf.ui.widgets.file_tree.view import FileTreeView
 
 __all__ = [
-    "FileTreeView",
     "DragCancelFilter",
+    "FileTreeView",
     "get_drag_cancel_filter",
 ]

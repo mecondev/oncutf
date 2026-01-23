@@ -31,6 +31,7 @@ class Serializable:
 
     Attributes:
         sid: Stable string identifier for this instance.
+
     """
 
     def __init__(self, sid: str | None = None):
@@ -38,13 +39,13 @@ class Serializable:
 
         Args:
             sid: Optional explicit stable ID. If not provided, a new ULID is generated.
+
         """
         self.sid: str = sid if sid is not None else new_ulid()
 
     @property
     def id(self) -> str:
         """Backward-compatible alias for ``sid``."""
-
         return self.sid
 
     @id.setter
@@ -54,6 +55,7 @@ class Serializable:
         Notes:
             Legacy snapshots used integer IDs. We do not treat those as stable IDs.
             Only ULID-shaped strings are accepted as a direct sid assignment.
+
         """
         if isinstance(value, str) and is_ulid(value):
             self.sid = value
@@ -75,6 +77,7 @@ class Serializable:
 
         Raises:
             NotImplementedError: Always raised if not overridden in subclass.
+
         """
         raise NotImplementedError(f"{self.__class__.__name__} must implement serialize()")
 
@@ -99,5 +102,6 @@ class Serializable:
 
         Raises:
             NotImplementedError: Always raised if not overridden in subclass.
+
         """
         raise NotImplementedError(f"{self.__class__.__name__} must implement deserialize()")

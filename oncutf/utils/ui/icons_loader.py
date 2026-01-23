@@ -1,4 +1,4 @@
-"""Module: icons_loader.py
+"""Module: icons_loader.py.
 
 Author: Michael Economou
 Date: 2025-05-31

@@ -1,4 +1,4 @@
-"""Module: text_removal_module.py
+"""Module: text_removal_module.py.
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -166,7 +166,7 @@ class TextRemovalModule(BaseRenameModule):
             highlighted_html = self._create_highlighted_html(self._sample_text, matches)
             self.preview_label.setText(highlighted_html)
         except re.error as e:
-            error_msg = f'<span style="color: #d32f2f;">Invalid pattern: {str(e)}</span>'
+            error_msg = f'<span style="color: #d32f2f;">Invalid pattern: {e!s}</span>'
             self.preview_label.setText(error_msg)
 
     def _create_highlighted_html(self, text: str, matches: list[TextRemovalMatch]) -> str:
@@ -269,7 +269,7 @@ class TextRemovalModule(BaseRenameModule):
         position: str = "End of name",
         case_sensitive: bool = False,
     ) -> list[TextRemovalMatch]:
-        """Find all matches of pattern in text based on position and case sensitivity.
+        r"""Find all matches of pattern in text based on position and case sensitivity.
 
         Args:
             text: Text to search in

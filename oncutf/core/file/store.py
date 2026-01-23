@@ -1,4 +1,4 @@
-"""Module: file_store.py
+"""Module: file_store.py.
 
 Author: Michael Economou
 Date: 2025-05-31

@@ -1,4 +1,4 @@
-"""Module: file_grouper.py
+"""Module: file_grouper.py.
 
 Author: Michael Economou
 Date: 2025-12-17

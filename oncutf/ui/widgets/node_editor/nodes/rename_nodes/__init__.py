@@ -1,4 +1,4 @@
-"""Package: rename_nodes
+"""Package: rename_nodes.
 
 Author: Michael Economou
 Date: 2026-01-03

@@ -44,6 +44,7 @@ class ThemeEngine:
     Attributes:
         _current_theme: Currently active theme instance.
         _themes: Dictionary mapping theme names to theme classes.
+
     """
 
     _current_theme: BaseTheme | None = None
@@ -55,6 +56,7 @@ class ThemeEngine:
 
         Args:
             theme_class: Theme class inheriting from BaseTheme.
+
         """
         cls._themes[theme_class.name] = theme_class
 
@@ -66,6 +68,7 @@ class ThemeEngine:
 
         Returns:
             Currently active theme instance.
+
         """
         if cls._current_theme is None:
             from oncutf.ui.widgets.node_editor.themes.dark import DarkTheme
@@ -85,6 +88,7 @@ class ThemeEngine:
 
         Returns:
             Theme instance, or None if named theme not found.
+
         """
         if name:
             theme_class = cls._themes.get(name)
@@ -100,6 +104,7 @@ class ThemeEngine:
 
         Raises:
             ValueError: If theme name is not registered.
+
         """
         if name not in cls._themes:
             available = ", ".join(cls._themes.keys())
@@ -115,6 +120,7 @@ class ThemeEngine:
 
         Args:
             theme_name: Name of theme whose stylesheet to apply.
+
         """
         theme_dir = os.path.dirname(__file__)
         qss_path = os.path.join(theme_dir, theme_name, "style.qss")
@@ -134,6 +140,7 @@ class ThemeEngine:
 
         Returns:
             List of available theme name strings.
+
         """
         return list(cls._themes.keys())
 
@@ -154,6 +161,7 @@ class ThemeEngine:
 
         Args:
             scene: Scene instance whose graphics items should refresh.
+
         """
         # Refresh scene
         if hasattr(scene, 'graphics_scene') and hasattr(scene.graphics_scene, 'init_assets'):

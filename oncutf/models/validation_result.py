@@ -1,4 +1,4 @@
-"""Module: validation_result.py
+"""Module: validation_result.py.
 
 Author: Michael Economou
 Date: 2025-12-16

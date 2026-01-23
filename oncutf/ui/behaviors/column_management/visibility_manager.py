@@ -32,6 +32,7 @@ class ColumnVisibilityManager:
             widget: The table widget to manage
             service: Column service for configuration
             width_manager: Width manager for width operations
+
         """
         self._widget = widget
         self._service = service
@@ -43,6 +44,7 @@ class ColumnVisibilityManager:
 
         Returns:
             Column visibility state (column_key -> visible)
+
         """
         try:
             # Try main config system first
@@ -116,6 +118,7 @@ class ColumnVisibilityManager:
 
         Returns:
             List of visible column keys in display order
+
         """
         if not self._visible_columns:
             self._visible_columns = self.load_visibility_config()
@@ -135,6 +138,7 @@ class ColumnVisibilityManager:
 
         Args:
             column_key: Column identifier to show
+
         """
         if not self._visible_columns:
             self._visible_columns = self.load_visibility_config()
@@ -158,6 +162,7 @@ class ColumnVisibilityManager:
 
         Args:
             column_key: Column identifier to hide
+
         """
         if not self._visible_columns:
             self._visible_columns = self.load_visibility_config()
@@ -181,6 +186,7 @@ class ColumnVisibilityManager:
 
         Args:
             column_key: Column key to toggle
+
         """
         if not self._visible_columns:
             self._visible_columns = self.load_visibility_config()

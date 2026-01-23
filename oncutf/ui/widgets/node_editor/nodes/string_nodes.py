@@ -71,6 +71,7 @@ class ConcatenateNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -92,6 +93,7 @@ class ConcatenateNode(Node):
 
         Returns:
             str: Concatenated string, or None if inputs are invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -118,7 +120,7 @@ class ConcatenateNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -151,6 +153,7 @@ class FormatNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]
@@ -172,6 +175,7 @@ class FormatNode(Node):
 
         Returns:
             str: Formatted string, or None if inputs are invalid.
+
         """
         i1 = self.get_input(0)
         i2 = self.get_input(1)
@@ -203,7 +207,7 @@ class FormatNode(Node):
 
         except (ValueError, TypeError, KeyError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Format error: {str(e)}")
+            self.graphics_node.setToolTip(f"Format error: {e!s}")
             return None
 
 
@@ -235,6 +239,7 @@ class LengthNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1]
@@ -256,6 +261,7 @@ class LengthNode(Node):
 
         Returns:
             int: Length of input, or None if input is invalid.
+
         """
         i1 = self.get_input(0)
 
@@ -282,7 +288,7 @@ class LengthNode(Node):
 
         except (TypeError, AttributeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Cannot get length: {str(e)}")
+            self.graphics_node.setToolTip(f"Cannot get length: {e!s}")
             return None
 
 
@@ -314,6 +320,7 @@ class SubstringNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1, 1]  # string, start, end
@@ -335,6 +342,7 @@ class SubstringNode(Node):
 
         Returns:
             str: Extracted substring, or None if inputs are invalid.
+
         """
         string_node = self.get_input(0)
         start_node = self.get_input(1)
@@ -364,7 +372,7 @@ class SubstringNode(Node):
 
         except (ValueError, TypeError, IndexError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Substring error: {str(e)}")
+            self.graphics_node.setToolTip(f"Substring error: {e!s}")
             return None
 
 
@@ -396,6 +404,7 @@ class SplitNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]  # string, delimiter
@@ -417,6 +426,7 @@ class SplitNode(Node):
 
         Returns:
             list: List of string parts, or None if inputs are invalid.
+
         """
         string_node = self.get_input(0)
         delimiter_node = self.get_input(1)
@@ -448,5 +458,5 @@ class SplitNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Split error: {str(e)}")
+            self.graphics_node.setToolTip(f"Split error: {e!s}")
             return None

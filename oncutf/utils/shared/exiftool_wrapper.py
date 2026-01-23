@@ -1,4 +1,4 @@
-"""Module: exiftool_wrapper.py
+"""Module: exiftool_wrapper.py.
 
 Author: Michael Economou
 Date: 2025-05-23
@@ -41,6 +41,7 @@ class ExifToolWrapper:
         process: Subprocess running exiftool
         lock: Thread lock for safe concurrent access
         counter: Unique tag counter for commands
+
     """
 
     def __init__(self) -> None:

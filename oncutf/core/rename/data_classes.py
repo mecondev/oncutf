@@ -1,4 +1,4 @@
-"""oncutf.core.rename.data_classes
+"""oncutf.core.rename.data_classes.
 
 Data classes for the unified rename engine.
 

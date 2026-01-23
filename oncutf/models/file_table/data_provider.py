@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.data_provider
+"""oncutf.models.file_table.data_provider.
 
 Qt model data interface for file table model.
 

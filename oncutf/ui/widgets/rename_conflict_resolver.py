@@ -1,4 +1,4 @@
-"""Module: rename_conflict_resolver.py
+"""Module: rename_conflict_resolver.py.
 
 Author: Michael Economou
 Date: 2025-06-15

@@ -1,5 +1,4 @@
-"""
-Viewport button specifications for the FileTable header.
+"""Viewport button specifications for the FileTable header.
 
 Author: Michael Economou
 Date: 2026-01-10

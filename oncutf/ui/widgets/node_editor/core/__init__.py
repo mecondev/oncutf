@@ -1,5 +1,4 @@
-"""
-Core module - Contains fundamental classes for the node editor.
+"""Core module - Contains fundamental classes for the node editor.
 
 Classes:
     - Serializable: Base class for serialization
@@ -59,22 +58,22 @@ def _init_graphics_classes():
 # _init_graphics_classes()
 
 __all__ = [
+    "EDGE_TYPE_BEZIER",
+    "EDGE_TYPE_DEFAULT",
+    "EDGE_TYPE_DIRECT",
+    "EDGE_TYPE_IMPROVED_BEZIER",
+    "EDGE_TYPE_IMPROVED_SHARP",
+    "EDGE_TYPE_SQUARE",
+    "LEFT_BOTTOM",
+    "LEFT_CENTER",
+    "LEFT_TOP",
+    "RIGHT_BOTTOM",
+    "RIGHT_CENTER",
+    "RIGHT_TOP",
+    "Edge",
+    "EdgeType",
+    "Node",
     "Serializable",
     "Socket",
-    "Node",
-    "Edge",
     "SocketPosition",
-    "EdgeType",
-    "LEFT_TOP",
-    "LEFT_CENTER",
-    "LEFT_BOTTOM",
-    "RIGHT_TOP",
-    "RIGHT_CENTER",
-    "RIGHT_BOTTOM",
-    "EDGE_TYPE_DIRECT",
-    "EDGE_TYPE_BEZIER",
-    "EDGE_TYPE_SQUARE",
-    "EDGE_TYPE_IMPROVED_SHARP",
-    "EDGE_TYPE_IMPROVED_BEZIER",
-    "EDGE_TYPE_DEFAULT",
 ]

@@ -1,4 +1,4 @@
-"""Module: original_name_module.py
+"""Module: original_name_module.py.
 
 Author: Michael Economou
 Date: 2025-05-19

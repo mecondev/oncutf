@@ -28,6 +28,7 @@ class DarkTheme(BaseTheme):
     Attributes:
         name: Theme identifier ("dark").
         display_name: Human-readable name ("Dark Theme").
+
     """
 
     # Theme metadata

@@ -1,4 +1,4 @@
-"""Module: oncutf.config
+"""Module: oncutf.config.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -18,9 +18,9 @@ All settings are re-exported from this module for backward compatibility:
 """
 
 # Re-export everything for backward compatibility
-from oncutf.config.app import *  # noqa: F401, F403
-from oncutf.config.columns import *  # noqa: F401, F403
-from oncutf.config.features import *  # noqa: F401, F403
-from oncutf.config.paths import *  # noqa: F401, F403
-from oncutf.config.shortcuts import *  # noqa: F401, F403
-from oncutf.config.ui import *  # noqa: F401, F403
+from oncutf.config.app import *
+from oncutf.config.columns import *
+from oncutf.config.features import *
+from oncutf.config.paths import *
+from oncutf.config.shortcuts import *
+from oncutf.config.ui import *

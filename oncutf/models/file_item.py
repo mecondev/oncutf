@@ -1,4 +1,4 @@
-"""file_item.py
+"""file_item.py.
 
 Author: Michael Economou
 Date: 2025-05-01

@@ -34,6 +34,7 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             QModelIndex: Model index at position
+
         """
         ...
 
@@ -45,6 +46,7 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             QPoint: Global screen position
+
         """
         ...
 
@@ -56,6 +58,7 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             Any: Property value
+
         """
         ...
 
@@ -64,6 +67,7 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             QWidget | None: Parent widget
+
         """
         ...
 
@@ -72,6 +76,7 @@ class ContextMenuWidget(Protocol):
 
         Returns:
             list[Any]: List of selected FileItem objects
+
         """
         ...
 

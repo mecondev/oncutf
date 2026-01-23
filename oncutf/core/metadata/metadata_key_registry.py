@@ -30,6 +30,7 @@ class KeyMapping:
         semantic: Optional semantic alias (e.g., "Audio Codec" unified across formats)
         priority: Priority for conflict resolution (higher = preferred)
         source: Source of mapping ("user", "semantic", "algorithmic")
+
     """
 
     original: str
@@ -47,6 +48,7 @@ class RegistrySnapshot:
         mappings: List of KeyMapping objects
         timestamp: Snapshot creation timestamp
         description: Human-readable description of change
+
     """
 
     mappings: list[KeyMapping]
@@ -73,6 +75,7 @@ class MetadataKeyRegistry:
         _history: List of registry snapshots for undo
         _future: List of registry snapshots for redo
         _max_history: Maximum number of snapshots to keep
+
     """
 
     # Default semantic aliases (Lightroom-style unified field names)
@@ -190,6 +193,7 @@ class MetadataKeyRegistry:
 
         Args:
             max_history: Maximum number of undo snapshots to keep
+
         """
         self._mappings: dict[str, KeyMapping] = {}
         self._semantic_index: dict[str, list[str]] = {}
@@ -215,6 +219,7 @@ class MetadataKeyRegistry:
             priority: Priority for conflict resolution
             source: Source of mapping ("user", "semantic", "algorithmic")
             create_snapshot: Whether to create undo snapshot
+
         """
         if create_snapshot:
             self._create_snapshot(f"Add mapping: {original} -> {simplified}")
@@ -254,6 +259,7 @@ class MetadataKeyRegistry:
 
         Returns:
             True if mapping was removed, False if not found
+
         """
         if original not in self._mappings:
             return False
@@ -285,6 +291,7 @@ class MetadataKeyRegistry:
 
         Returns:
             KeyMapping or None if not found
+
         """
         return self._mappings.get(original)
 
@@ -304,6 +311,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Resolved original key or None
+
         """
         # If no available keys provided, can't resolve
         if available_keys is None:
@@ -342,6 +350,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Semantic name or None if key has no semantic alias
+
         """
         # Check if this key has a mapping with semantic name
         mapping = self._mappings.get(original_key)
@@ -358,6 +367,7 @@ class MetadataKeyRegistry:
 
         Args:
             custom_aliases: Optional custom semantic aliases to merge
+
         """
         aliases = self.DEFAULT_SEMANTIC_ALIASES.copy()
         if custom_aliases:
@@ -400,6 +410,7 @@ class MetadataKeyRegistry:
 
         Args:
             description: Description of the change
+
         """
         import time
 
@@ -424,6 +435,7 @@ class MetadataKeyRegistry:
 
         Returns:
             True if undo was successful, False if no history
+
         """
         if not self._history:
             logger.warning("No history to undo")
@@ -449,6 +461,7 @@ class MetadataKeyRegistry:
 
         Returns:
             True if redo was successful, False if no future
+
         """
         if not self._future:
             logger.warning("No future to redo")
@@ -474,6 +487,7 @@ class MetadataKeyRegistry:
 
         Args:
             snapshot: Snapshot to restore
+
         """
         self._mappings.clear()
         self._semantic_index.clear()
@@ -493,6 +507,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Dictionary with mappings and metadata
+
         """
         return {
             "version": "1.0",
@@ -516,6 +531,7 @@ class MetadataKeyRegistry:
         Args:
             data: Dictionary with mappings
             merge: If True, merge with existing; if False, replace
+
         """
         if not merge:
             self._mappings.clear()
@@ -541,6 +557,7 @@ class MetadataKeyRegistry:
 
         Args:
             filepath: Path to output JSON file
+
         """
         filepath = Path(filepath)
         data = self.export_to_dict()
@@ -559,6 +576,7 @@ class MetadataKeyRegistry:
         Args:
             filepath: Path to input JSON file
             merge: If True, merge with existing; if False, replace
+
         """
         filepath = Path(filepath)
         if not filepath.exists():
@@ -576,6 +594,7 @@ class MetadataKeyRegistry:
 
         Returns:
             True if there is history to undo
+
         """
         return len(self._history) > 0
 
@@ -584,6 +603,7 @@ class MetadataKeyRegistry:
 
         Returns:
             True if there is future to redo
+
         """
         return len(self._future) > 0
 
@@ -592,6 +612,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Number of snapshots in history
+
         """
         return len(self._history)
 
@@ -600,6 +621,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Number of key mappings
+
         """
         return len(self._mappings)
 
@@ -608,6 +630,7 @@ class MetadataKeyRegistry:
 
         Returns:
             Number of unique semantic aliases
+
         """
         return len(self._semantic_index)
 
@@ -616,6 +639,7 @@ class MetadataKeyRegistry:
 
         Returns:
             String representation with stats
+
         """
         return (
             f"MetadataKeyRegistry("

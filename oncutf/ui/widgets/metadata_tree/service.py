@@ -1,4 +1,4 @@
-"""Module: service.py
+"""Module: service.py.
 
 Author: Michael Economou
 Date: 2025-12-23

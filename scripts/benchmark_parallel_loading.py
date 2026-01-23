@@ -18,7 +18,7 @@ from utils.exiftool_wrapper import ExifToolWrapper
 
 
 def create_file_items(
-    directory: str, extensions: list[str] = None, max_files: int = 50
+    directory: str, extensions: list[str] | None = None, max_files: int = 50
 ) -> list[FileItem]:
     """Create FileItem objects from files in directory."""
     if extensions is None:

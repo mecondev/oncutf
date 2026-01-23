@@ -20,11 +20,14 @@ from __future__ import annotations
 
 import shutil
 from datetime import datetime
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from oncutf.services.interfaces import FilesystemServiceProtocol
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from oncutf.services.interfaces import FilesystemServiceProtocol
 
 logger = get_cached_logger(__name__)
 

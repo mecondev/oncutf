@@ -8,10 +8,13 @@ Tests the filesystem operations service implementation.
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from oncutf.services.filesystem_service import FilesystemService
 from oncutf.services.interfaces import FilesystemServiceProtocol
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestFilesystemServiceProtocolCompliance:

@@ -55,6 +55,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         pos_source: [x, y] source position in scene coordinates.
         pos_destination: [x, y] destination position in scene coordinates.
         hovered: True while mouse hovers over this edge.
+
     """
 
     def __init__(self, edge: Edge, parent: QWidget | None = None):
@@ -63,6 +64,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         Args:
             edge: Logical Edge this graphics item represents.
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
 
@@ -109,6 +111,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             GraphicsEdgePathBase subclass instance.
+
         """
         self.path_calculator = self.determine_edge_path_class()(self)
         return self.path_calculator
@@ -118,6 +121,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             Class type for computing edge path.
+
         """
         from oncutf.ui.widgets.node_editor.core.edge import (
             EDGE_TYPE_BEZIER,
@@ -153,6 +157,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Args:
             color: QColor instance or hex string like '#00ff00'.
+
         """
         from PyQt5.QtGui import QColor
 
@@ -167,6 +172,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             True if color was set, False if socket types differ.
+
         """
         socket_type_start = self.edge.start_socket.socket_type
         socket_type_end = self.edge.end_socket.socket_type
@@ -184,6 +190,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Args:
             new_state: True to select, False to deselect.
+
         """
         self.setSelected(new_state)
         self._last_selected_state = new_state
@@ -195,6 +202,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Args:
             event: Qt mouse release event.
+
         """
         super().mouseReleaseEvent(event)
         if self._last_selected_state != self.isSelected():
@@ -207,6 +215,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Args:
             _event: Qt hover event (unused).
+
         """
         self.hovered = True
         self.update()
@@ -216,6 +225,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Args:
             _event: Qt hover event (unused).
+
         """
         self.hovered = False
         self.update()
@@ -226,6 +236,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         Args:
             x: Horizontal position in scene coordinates.
             y: Vertical position in scene coordinates.
+
         """
         self.pos_source = [x, y]
 
@@ -235,6 +246,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         Args:
             x: Horizontal position in scene coordinates.
             y: Vertical position in scene coordinates.
+
         """
         self.pos_destination = [x, y]
 
@@ -243,6 +255,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             QRectF enclosing the edge path.
+
         """
         return self.shape().boundingRect()
 
@@ -251,6 +264,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             QPainterPath used for hit detection.
+
         """
         return self.calc_path()
 
@@ -268,6 +282,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
             painter: QPainter for rendering.
             _option: Style options (unused).
             _widget: Target widget (unused).
+
         """
         self.setPath(self.calc_path())
 
@@ -297,6 +312,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             True if intersection exists, False otherwise.
+
         """
         cutpath = QPainterPath(p1)
         cutpath.lineTo(p2)
@@ -308,5 +324,6 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         Returns:
             QPainterPath from source to destination.
+
         """
         return self.path_calculator.calc_path()

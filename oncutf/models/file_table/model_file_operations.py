@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.file_operations
+"""oncutf.models.file_table.file_operations.
 
 File operations management for file table model.
 

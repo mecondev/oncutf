@@ -29,6 +29,7 @@ class HoverHandler:
 
     Attributes:
         _view: Reference to the parent FileTableView
+
     """
 
     def __init__(self, view: FileTableView) -> None:
@@ -36,6 +37,7 @@ class HoverHandler:
 
         Args:
             view: The parent FileTableView widget
+
         """
         self._view = view
 
@@ -44,6 +46,7 @@ class HoverHandler:
 
         Args:
             row: The row index to hover, or -1 to clear hover
+
         """
         if not hasattr(self._view, "hover_delegate"):
             return
@@ -65,6 +68,7 @@ class HoverHandler:
 
         Returns:
             The hovered row index, or -1 if no row is hovered
+
         """
         if hasattr(self._view, "hover_delegate"):
             return self._view.hover_delegate.hovered_row
@@ -75,6 +79,7 @@ class HoverHandler:
 
         Args:
             row: The row index to invalidate
+
         """
         if row < 0:
             return
@@ -93,6 +98,7 @@ class HoverHandler:
 
         Args:
             index_row: The row under the mouse, or -1 if outside
+
         """
         self.update_hover_row(index_row)
 

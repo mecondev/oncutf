@@ -1,4 +1,4 @@
-"""Module: metadata_scroll_behavior.py
+"""Module: metadata_scroll_behavior.py.
 
 Author: Michael Economou
 Date: 2025-12-28
@@ -72,6 +72,7 @@ class MetadataScrollBehavior:
 
         Args:
             widget: Widget implementing ScrollableTreeWidget protocol
+
         """
         self._widget = widget
 
@@ -95,6 +96,7 @@ class MetadataScrollBehavior:
 
         Returns:
             bool: True if path exists in dictionary
+
         """
         if not path or not path_dict:
             return False
@@ -115,6 +117,7 @@ class MetadataScrollBehavior:
 
         Returns:
             Any: Value if found, None otherwise
+
         """
         if not path or not path_dict:
             return None
@@ -137,6 +140,7 @@ class MetadataScrollBehavior:
             path: Path key to set
             value: Value to set
             path_dict: Dictionary with path keys
+
         """
         if not path:
             return
@@ -162,6 +166,7 @@ class MetadataScrollBehavior:
 
         Returns:
             bool: True if something was removed
+
         """
         if not path or not path_dict:
             return False
@@ -283,6 +288,7 @@ class MetadataScrollBehavior:
 
         Args:
             position: Target scroll position
+
         """
         scrollbar = self._widget.verticalScrollBar()
         max_scroll = scrollbar.maximum()
@@ -318,6 +324,7 @@ class MetadataScrollBehavior:
 
         Args:
             enabled: True to enable placeholder mode, False to disable
+
         """
         self._is_placeholder_mode = enabled
 

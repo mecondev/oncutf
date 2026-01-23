@@ -1,4 +1,4 @@
-"""Module: advanced_cache_manager.py
+"""Module: advanced_cache_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-01

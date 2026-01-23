@@ -96,6 +96,7 @@ class ConstantNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: []).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = []
@@ -111,11 +112,12 @@ class ConstantNode(Node):
         super().init_settings()
         self.output_socket_position = RIGHT_CENTER
 
-    def on_input_changed(self, text):  # noqa: ARG002
+    def on_input_changed(self, text):
         """Handle text input change.
 
         Args:
             text: New text value from input field.
+
         """
         self.mark_dirty()
         self.eval()
@@ -125,6 +127,7 @@ class ConstantNode(Node):
 
         Returns:
             Parsed value from input field (number or string).
+
         """
         try:
             text = self.content.edit.text()
@@ -148,7 +151,7 @@ class ConstantNode(Node):
 
         except Exception as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
     def serialize(self):
@@ -156,18 +159,20 @@ class ConstantNode(Node):
 
         Returns:
             dict: Serialized node data with constant value.
+
         """
         res = super().serialize()
         res["value"] = self.content.edit.text()
         return res
 
-    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):  # noqa: ARG002
+    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):
         """Deserialize node state.
 
         Args:
             data: Serialized node data.
             hashmap: ID mapping for node reconstruction.
             restore_id: Whether to restore original node ID.
+
         """
         if hashmap is None:
             hashmap = {}
@@ -209,6 +214,7 @@ class PrintNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1]
@@ -232,6 +238,7 @@ class PrintNode(Node):
 
         Returns:
             Input value (pass-through).
+
         """
         input_node = self.get_input(0)
 
@@ -258,7 +265,7 @@ class PrintNode(Node):
 
         except Exception as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -291,6 +298,7 @@ class CommentNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: []).
             outputs: Output socket configuration (default: []).
+
         """
         if inputs is None:
             inputs = []
@@ -303,6 +311,7 @@ class CommentNode(Node):
 
         Returns:
             None: Comments are not evaluated.
+
         """
         return None
 
@@ -311,18 +320,20 @@ class CommentNode(Node):
 
         Returns:
             dict: Serialized node data with comment text.
+
         """
         res = super().serialize()
         res["comment"] = self.content.edit.toPlainText()
         return res
 
-    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):  # noqa: ARG002
+    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):
         """Deserialize node state.
 
         Args:
             data: Serialized node data.
             hashmap: ID mapping for node reconstruction.
             restore_id: Whether to restore original node ID.
+
         """
         if hashmap is None:
             hashmap = {}
@@ -363,6 +374,7 @@ class ClampNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1, 1]  # value, min, max
@@ -384,6 +396,7 @@ class ClampNode(Node):
 
         Returns:
             float: Value clamped to [min, max] range.
+
         """
         value_node = self.get_input(0)
         min_node = self.get_input(1)
@@ -418,7 +431,7 @@ class ClampNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
 
 
@@ -450,6 +463,7 @@ class RandomNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1, 1]).
             outputs: Output socket configuration (default: [1]).
+
         """
         if inputs is None:
             inputs = [1, 1]  # min, max
@@ -471,6 +485,7 @@ class RandomNode(Node):
 
         Returns:
             float: Random number between min and max.
+
         """
         min_node = self.get_input(0)
         max_node = self.get_input(1)
@@ -503,5 +518,5 @@ class RandomNode(Node):
 
         except (ValueError, TypeError) as e:
             self.mark_invalid()
-            self.graphics_node.setToolTip(f"Error: {str(e)}")
+            self.graphics_node.setToolTip(f"Error: {e!s}")
             return None

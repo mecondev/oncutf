@@ -42,6 +42,7 @@ class NodeRegistry:
 
     Attributes:
         _nodes: Dictionary mapping op_codes to node classes.
+
     """
 
     _nodes: dict[int, type] = {}
@@ -66,6 +67,7 @@ class NodeRegistry:
                 class MyNode(Node):
                     op_code = 100
                     op_title = "My Node"
+
         """
         def decorator(node_class: type) -> type:
             """Register the node class and set its op_code attribute.
@@ -78,6 +80,7 @@ class NodeRegistry:
 
             Raises:
                 ValueError: If op_code already registered.
+
             """
             if op_code in cls._nodes:
                 existing = cls._nodes[op_code].__name__
@@ -104,6 +107,7 @@ class NodeRegistry:
 
         Raises:
             ValueError: If op_code is already registered.
+
         """
         if op_code in cls._nodes:
             existing = cls._nodes[op_code].__name__
@@ -127,6 +131,7 @@ class NodeRegistry:
 
         Returns:
             Node class, or None if not registered.
+
         """
         return cls._nodes.get(op_code)
 
@@ -136,6 +141,7 @@ class NodeRegistry:
 
         Returns:
             Copy of dictionary mapping op_codes to node classes.
+
         """
         return cls._nodes.copy()
 
@@ -148,6 +154,7 @@ class NodeRegistry:
 
         Returns:
             Dictionary of matching nodes (op_code -> class).
+
         """
         return {
             op_code: node_class
@@ -172,6 +179,7 @@ class NodeRegistry:
 
         Returns:
             True if node was unregistered, False if not found
+
         """
         if op_code in cls._nodes:
             del cls._nodes[op_code]

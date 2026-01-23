@@ -1,4 +1,4 @@
-"""Module: field_compatibility.py
+"""Module: field_compatibility.py.
 
 Author: Michael Economou
 Date: 2026-01-03

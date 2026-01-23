@@ -1,4 +1,4 @@
-"""Module: file_drop_helper.py
+"""Module: file_drop_helper.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -45,8 +45,7 @@ def analyze_drop(paths: list[str]) -> dict:
 
 
 def filter_allowed_files(files: list[str]) -> tuple[list[str], list[str]]:
-    """Returns two lists: allowed files (by ALLOWED_EXTENSIONS) and rejected files.
-    """
+    """Returns two lists: allowed files (by ALLOWED_EXTENSIONS) and rejected files."""
     allowed = []
     rejected = []
     for f in files:
@@ -76,8 +75,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
 
 
 def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=None) -> None:
-    """Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
-    """
+    """Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area."""
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
     skipped_count = len(rejected)

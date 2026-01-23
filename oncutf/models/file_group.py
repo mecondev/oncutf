@@ -1,4 +1,4 @@
-"""Module: file_group.py
+"""Module: file_group.py.
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -10,9 +10,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from oncutf.models.file_item import FileItem
+if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
 
 
 @dataclass

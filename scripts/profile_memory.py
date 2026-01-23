@@ -120,14 +120,14 @@ def profile_startup_memory(detailed: bool = False) -> tuple[int, int, list[str]]
 
     # Import core modules
     print("  Importing PyQt5...")
-    from PyQt5.QtWidgets import QApplication  # noqa: F401
+    from PyQt5.QtWidgets import QApplication
 
     current1, _ = tracemalloc.get_traced_memory()
     report_lines.append(f"After PyQt5 import: {format_size(current1)}")
 
     # Import oncutf
     print("  Importing oncutf...")
-    from oncutf.ui.main_window import MainWindow  # noqa: F401
+    from oncutf.ui.main_window import MainWindow
 
     current2, _ = tracemalloc.get_traced_memory()
     report_lines.append(f"After oncutf import: {format_size(current2)}")

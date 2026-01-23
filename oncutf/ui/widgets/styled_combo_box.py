@@ -1,4 +1,4 @@
-"""Module: styled_combo_box.py
+"""Module: styled_combo_box.py.
 
 Author: Michael Economou
 Date: December 18, 2025

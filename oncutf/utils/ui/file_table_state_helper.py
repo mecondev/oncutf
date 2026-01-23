@@ -1,4 +1,4 @@
-"""Module: file_table_state_helper.py
+"""Module: file_table_state_helper.py.
 
 Author: Michael Economou
 Date: 2025-12-30

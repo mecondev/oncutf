@@ -1,4 +1,4 @@
-"""Module: providers.py
+"""Module: providers.py.
 
 Author: Michael Economou
 Date: 2026-01-16

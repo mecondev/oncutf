@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.file_table_model
+"""oncutf.models.file_table.file_table_model.
 
 Main file table model for displaying file data in a table view.
 
@@ -124,11 +124,11 @@ class FileTableModel(QAbstractTableModel):
 
     # ==================== Qt Model Interface (delegated) ====================
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """Return the number of columns."""
         return self._data_provider.column_count()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """Return the number of rows (files) in the model."""
         return self._data_provider.row_count()
 

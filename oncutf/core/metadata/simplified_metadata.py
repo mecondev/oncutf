@@ -38,6 +38,7 @@ class SimplifiedMetadata:
         _simplified_to_original: Mapping from simplified keys to original keys
         _original_to_simplified: Mapping from original keys to simplified keys
         _user_overrides: User-defined simplified key overrides
+
     """
 
     def __init__(
@@ -50,6 +51,7 @@ class SimplifiedMetadata:
         Args:
             original_metadata: Original metadata dictionary with long keys
             simplifier: Optional SmartKeySimplifier instance (creates default if None)
+
         """
         self._original_metadata = original_metadata
         self._simplifier = simplifier or SmartKeySimplifier()
@@ -89,6 +91,7 @@ class SimplifiedMetadata:
 
         Raises:
             KeyError: If key not found in either mapping
+
         """
         # Try direct access first (original key)
         if key in self._original_metadata:
@@ -110,6 +113,7 @@ class SimplifiedMetadata:
 
         Returns:
             Metadata value or default
+
         """
         try:
             return self[key]
@@ -124,6 +128,7 @@ class SimplifiedMetadata:
 
         Returns:
             True if key exists in either mapping
+
         """
         return (
             key in self._original_metadata or key in self._simplified_to_original
@@ -134,6 +139,7 @@ class SimplifiedMetadata:
 
         Yields:
             Tuple of (simplified_key, value)
+
         """
         for original_key, value in self._original_metadata.items():
             simplified_key = self._original_to_simplified.get(
@@ -146,6 +152,7 @@ class SimplifiedMetadata:
 
         Yields:
             Tuple of (original_key, value)
+
         """
         return iter(self._original_metadata.items())
 
@@ -154,6 +161,7 @@ class SimplifiedMetadata:
 
         Yields:
             Simplified key strings
+
         """
         for simplified_key, _ in self.items_simplified():
             yield simplified_key
@@ -163,6 +171,7 @@ class SimplifiedMetadata:
 
         Yields:
             Original key strings
+
         """
         return iter(self._original_metadata.keys())
 
@@ -174,6 +183,7 @@ class SimplifiedMetadata:
 
         Returns:
             Original key or None if not found
+
         """
         return self._simplified_to_original.get(simplified_key)
 
@@ -185,6 +195,7 @@ class SimplifiedMetadata:
 
         Returns:
             Simplified key or None if not found
+
         """
         return self._original_to_simplified.get(original_key)
 
@@ -199,6 +210,7 @@ class SimplifiedMetadata:
 
         Returns:
             True if this key was involved in a collision
+
         """
         # Check if simplifier reported this as a collision
         original_key = self.get_original_key(simplified_key)
@@ -223,6 +235,7 @@ class SimplifiedMetadata:
 
         Raises:
             ValueError: If original_key not in metadata
+
         """
         if original_key not in self._original_metadata:
             raise ValueError(f"Original key not found: {original_key}")
@@ -249,6 +262,7 @@ class SimplifiedMetadata:
 
         Returns:
             Dictionary mapping original keys to user-defined simplified keys
+
         """
         return self._user_overrides.copy()
 
@@ -257,6 +271,7 @@ class SimplifiedMetadata:
 
         Returns:
             Number of metadata key-value pairs
+
         """
         return len(self._original_metadata)
 
@@ -265,6 +280,7 @@ class SimplifiedMetadata:
 
         Returns:
             String representation showing entry count
+
         """
         return (
             f"SimplifiedMetadata({len(self)} entries, "

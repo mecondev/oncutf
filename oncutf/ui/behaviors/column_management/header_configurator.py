@@ -39,6 +39,7 @@ class HeaderConfigurator:
             service: Column service for configuration
             width_manager: Width manager for width operations
             visibility_manager: Visibility manager for column tracking
+
         """
         self._widget = widget
         self._service = service
@@ -54,6 +55,7 @@ class HeaderConfigurator:
 
         Args:
             callback: Function to call on resize (logical_index, old_size, new_size)
+
         """
         self._on_resize_callback = callback
 
@@ -62,6 +64,7 @@ class HeaderConfigurator:
 
         Returns:
             True if columns are locked (not movable), False otherwise
+
         """
         try:
             main_window = self._widget._get_main_window()
@@ -80,6 +83,7 @@ class HeaderConfigurator:
 
         Returns:
             List of column keys in visual order, or None if no saved order
+
         """
         try:
             main_window = self._widget._get_main_window()
@@ -159,6 +163,7 @@ class HeaderConfigurator:
             logical_index: The logical index of the moved section
             old_visual: Previous visual index
             new_visual: New visual index
+
         """
         # Don't save during configuration
         if self._configuring_columns:
@@ -321,6 +326,7 @@ class HeaderConfigurator:
 
         Returns:
             Column key or empty string for status column
+
         """
         if logical_index == 0:
             return ""  # Status column has no key

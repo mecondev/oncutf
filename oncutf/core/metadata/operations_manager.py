@@ -1,4 +1,4 @@
-"""Module: metadata_operations_manager.py
+"""Module: metadata_operations_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-15
@@ -21,12 +21,13 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from oncutf.core.metadata.field_compatibility import get_field_compatibility_checker
-from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.file_status_helpers import has_metadata
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
+
+    from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 
@@ -124,7 +125,7 @@ class MetadataOperationsManager:
     def _handle_export_metadata(
         self,
         file_items: list[FileItem],
-        scope: str,  # noqa: ARG002
+        scope: str,
     ) -> None:
         """Handle metadata export dialog and process."""
         from PyQt5.QtWidgets import (
@@ -176,7 +177,6 @@ class MetadataOperationsManager:
 
     def _execute_export(self, dialog, format_combo, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
-
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         # Get format
@@ -226,7 +226,7 @@ class MetadataOperationsManager:
         except Exception as e:
             logger.exception("[EventHandler] Export error: %s", e)
             CustomMessageDialog.show_error(
-                self.parent_window, "Export Error", f"An error occurred during export:\n{str(e)}"
+                self.parent_window, "Export Error", f"An error occurred during export:\n{e!s}"
             )
 
     # ===== Metadata Field Editing =====
@@ -308,7 +308,7 @@ class MetadataOperationsManager:
             show_error_message(
                 self.parent_window,
                 "Error",
-                f"An error occurred during {field_name} editing: {str(e)}",
+                f"An error occurred during {field_name} editing: {e!s}",
             )
 
     def _get_current_field_value(self, file_item: FileItem, field_name: str) -> str:

@@ -41,6 +41,7 @@ class NodeEditorWindow(QMainWindow):
         nodeeditor: Active NodeEditorWidget instance.
         name_company: Company name for QSettings storage.
         name_product: Product name for QSettings storage.
+
     """
 
     node_editor_widget_class = NodeEditorWidget
@@ -73,6 +74,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             QSize with default dimensions.
+
         """
         return QSize(800, 600)
 
@@ -172,6 +174,7 @@ class NodeEditorWindow(QMainWindow):
 
         Args:
             event: Qt close event.
+
         """
         if self.maybe_save():
             event.accept()
@@ -183,6 +186,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             True if scene is modified.
+
         """
         nodeeditor = self.get_current_node_editor_widget()
         if nodeeditor is None:
@@ -194,6 +198,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             NodeEditorWidget instance.
+
         """
         return self.centralWidget()
 
@@ -202,6 +207,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             True to continue, False to cancel operation.
+
         """
         if not self.is_modified():
             return True
@@ -225,6 +231,7 @@ class NodeEditorWindow(QMainWindow):
         Args:
             x: Scene X coordinate.
             y: Scene Y coordinate.
+
         """
         self.status_mouse_pos.setText(f"Scene Pos: [{x}, {y}]")
 
@@ -233,6 +240,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             Directory path string.
+
         """
         return ''
 
@@ -241,6 +249,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             Filter string for QFileDialog.
+
         """
         return 'Graph (*.json);;All files (*)'
 
@@ -272,6 +281,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             True if save succeeded.
+
         """
         current_nodeeditor = self.get_current_node_editor_widget()
         if current_nodeeditor is not None:
@@ -297,6 +307,7 @@ class NodeEditorWindow(QMainWindow):
 
         Returns:
             True if save succeeded.
+
         """
         current_nodeeditor = self.get_current_node_editor_widget()
         if current_nodeeditor is not None:
@@ -331,6 +342,7 @@ class NodeEditorWindow(QMainWindow):
         Args:
             current_nodeeditor: Widget being saved.
             filename: New filename path.
+
         """
 
     def on_edit_undo(self) -> None:

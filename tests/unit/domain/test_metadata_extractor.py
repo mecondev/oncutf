@@ -441,17 +441,17 @@ class TestMetadataExtractorDependencyInjection:
 
         # Create mock services
         class MockMetadataService:
-            def load_metadata(self, path):  # noqa: ARG002
+            def load_metadata(self, path):
                 return {"test": "value"}
 
-            def load_metadata_batch(self, paths):  # noqa: ARG002
+            def load_metadata_batch(self, paths):
                 return {}
 
         class MockHashService:
-            def compute_hash(self, path, algorithm="crc32"):  # noqa: ARG002
+            def compute_hash(self, path, algorithm="crc32"):
                 return "abc12345"
 
-            def compute_hashes_batch(self, paths, algorithm="crc32"):  # noqa: ARG002
+            def compute_hashes_batch(self, paths, algorithm="crc32"):
                 return {}
 
         metadata_svc = MockMetadataService()
@@ -471,11 +471,11 @@ class TestMetadataExtractorDependencyInjection:
         class MockHashService:
             call_count = 0
 
-            def compute_hash(self, path, algorithm="crc32"):  # noqa: ARG002
+            def compute_hash(self, path, algorithm="crc32"):
                 self.call_count += 1
                 return "injected_hash"
 
-            def compute_hashes_batch(self, paths, algorithm="crc32"):  # noqa: ARG002
+            def compute_hashes_batch(self, paths, algorithm="crc32"):
                 return {}
 
         mock_service = MockHashService()

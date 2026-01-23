@@ -1,4 +1,4 @@
-"""Module: file_operations_manager.py
+"""Module: file_operations_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-13

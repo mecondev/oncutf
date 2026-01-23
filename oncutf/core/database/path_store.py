@@ -1,4 +1,4 @@
-"""Module: path_store.py
+"""Module: path_store.py.
 
 Author: Michael Economou
 Date: 2026-01-01

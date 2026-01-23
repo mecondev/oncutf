@@ -1,4 +1,4 @@
-"""Module: base_worker.py
+"""Module: base_worker.py.
 
 Author: Michael Economou
 Date: 2026-01-03

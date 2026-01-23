@@ -1,4 +1,4 @@
-"""Module: logger_file_helper.py
+"""Module: logger_file_helper.py.
 
 Author: Michael Economou
 Date: 2025-05-12

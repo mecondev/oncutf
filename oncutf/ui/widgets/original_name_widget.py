@@ -1,4 +1,4 @@
-"""Module: original_name_widget.py
+"""Module: original_name_widget.py.
 
 Author: Michael Economou
 Date: 2025-05-19

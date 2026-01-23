@@ -1,4 +1,4 @@
-"""Module: folder_color_command.py
+"""Module: folder_color_command.py.
 
 Author: Michael Economou
 Date: 2025-12-22
@@ -8,7 +8,6 @@ Command for auto-coloring files by folder with undo/redo support.
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +16,8 @@ from oncutf.core.metadata.commands import MetadataCommand
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from oncutf.core.database.database_manager import DatabaseManager
     from oncutf.models.file_item import FileItem
 

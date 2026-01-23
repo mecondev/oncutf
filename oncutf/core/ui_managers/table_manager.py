@@ -1,4 +1,4 @@
-"""Module: table_manager.py
+"""Module: table_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -63,8 +63,7 @@ class TableManager:
         header.setSortIndicator(column, new_order)
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
-        """Clears the file table and shows a placeholder message.
-        """
+        """Clears the file table and shows a placeholder message."""
         # Only clear metadata modifications if we're actually changing folders
         # This preserves modifications when reloading the same folder
         should_clear_modifications = (
@@ -231,8 +230,7 @@ class TableManager:
         self.parent_window.request_preview_update()
 
     def get_common_metadata_fields(self) -> list[str]:
-        """Returns the intersection of metadata keys from all selected files.
-        """
+        """Returns the intersection of metadata keys from all selected files."""
         selected_files = self.get_selected_files()
         if not selected_files:
             return []
@@ -253,8 +251,7 @@ class TableManager:
         return sorted(common_keys) if common_keys else []
 
     def set_fields_from_list(self, field_names: list[str]) -> None:
-        """Replaces the combo box entries with the given field names.
-        """
+        """Replaces the combo box entries with the given field names."""
         self.parent_window.combo.clear()
         for name in field_names:
             self.parent_window.combo.addItem(name, userData=name)

@@ -52,7 +52,7 @@ class TestMetadataTreeView:
         return get_theme_manager()
 
     @pytest.fixture
-    def tree_view(self, qapp, theme_manager, qtbot):  # noqa: ARG002
+    def tree_view(self, qapp, theme_manager, qtbot):
         """Create a MetadataTreeView for testing."""
         tree = MetadataTreeView()
         tree.setStyleSheet(

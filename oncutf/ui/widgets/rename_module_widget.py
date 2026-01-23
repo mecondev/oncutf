@@ -1,4 +1,4 @@
-"""Module: rename_module_widget.py
+"""Module: rename_module_widget.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -76,6 +76,7 @@ class RenameModuleWidget(QWidget):
 
         Returns:
             Dict mapping display names to module classes
+
         """
         # Special UI widgets that wrap logic modules
         from oncutf.ui.widgets.metadata_widget import MetadataWidget
@@ -109,6 +110,7 @@ class RenameModuleWidget(QWidget):
 
         Returns:
             Dict mapping display names to UI heights in pixels
+
         """
         # Height calculation: base_height + (ui_rows * row_height) + padding
         base_height = 28  # Label + combo

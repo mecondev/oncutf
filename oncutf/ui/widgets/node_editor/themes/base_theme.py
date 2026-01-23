@@ -33,6 +33,7 @@ class BaseTheme:
         node_background: Node body background color.
         edge_color: Default edge connection color.
         socket_colors: List of colors for socket types.
+
     """
 
     # Theme metadata
@@ -111,6 +112,7 @@ class BaseTheme:
 
         Returns:
             QColor for the socket type, defaults to type 0 if invalid.
+
         """
         if 0 <= socket_type < len(cls.socket_colors):
             return cls.socket_colors[socket_type]

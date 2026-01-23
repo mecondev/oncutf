@@ -1,4 +1,4 @@
-"""Module: preview_tables_view.py
+"""Module: preview_tables_view.py.
 
 Author: Michael Economou
 Date: 2025-06-11
@@ -62,7 +62,7 @@ class PreviewTableWidget(QTableWidget):
         schedule_ui_update(self.resized.emit, 10)
 
     def mouseMoveEvent(self, event):
-        """Handle mouse move events to show enhanced tooltips"""
+        """Handle mouse move events to show enhanced tooltips."""
         try:
             # Get item under mouse
             item = self.itemAt(event.pos())
@@ -268,8 +268,7 @@ class PreviewTablesView(QWidget):
         self.refresh_requested.emit()
 
     def _on_refresh_shortcut_pressed(self) -> None:
-        """Handle F5 shortcut press - refresh preview with status message.
-        """
+        """Handle F5 shortcut press - refresh preview with status message."""
         from oncutf.utils.ui.cursor_helper import wait_cursor
 
         logger.info("[PreviewTables] F5 pressed - refreshing preview")

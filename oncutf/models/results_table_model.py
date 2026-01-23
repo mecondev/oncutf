@@ -1,4 +1,4 @@
-"""Module: results_table_model.py
+"""Module: results_table_model.py.
 
 Author: Michael Economou
 Date: 2025-11-23

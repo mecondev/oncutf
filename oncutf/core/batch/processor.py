@@ -1,4 +1,4 @@
-"""Module: batch_processor.py
+"""Module: batch_processor.py.
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -134,7 +134,7 @@ class SmartBatchProcessor(BatchProcessor):
 
     def __init__(
         self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs: object
-    ) -> None:  # noqa: ARG002
+    ) -> None:
         """Initialize smart processor with dynamic batch size optimization."""
         super().__init__(initial_batch_size, max_workers)
         self.initial_batch_size = initial_batch_size
@@ -217,7 +217,7 @@ class BatchProcessorFactory:
     @staticmethod
     def get_optimal_config(
         item_count: int, item_type: str = "file"
-    ) -> dict[str, Any]:  # noqa: ARG004
+    ) -> dict[str, Any]:
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}

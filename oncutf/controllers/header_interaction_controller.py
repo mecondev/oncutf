@@ -1,4 +1,4 @@
-"""Module: header_interaction_controller.py
+"""Module: header_interaction_controller.py.
 
 Author: Michael Economou
 Date: 2026-01-12
@@ -44,6 +44,7 @@ class HeaderInteractionController:
 
         Args:
             main_window: Main window implementing the required protocol.
+
         """
         self._main_window = main_window
 
@@ -64,6 +65,7 @@ class HeaderInteractionController:
             column: Logical column index to sort by.
             force_order: Optional forced sort order (from context menu).
                         If None, toggles between ascending/descending.
+
         """
         logger.info("[CONTROLLER] Sort by column %d (force_order=%s)", column, force_order)
         self._main_window.sort_by_column(column, force_order=force_order)
@@ -77,6 +79,7 @@ class HeaderInteractionController:
 
         Returns:
             True if drag is allowed, False if blocked.
+
         """
         # Block any move that would involve status column (visual 0)
         if from_visual == 0 or to_visual == 0:
@@ -102,6 +105,7 @@ class HeaderInteractionController:
 
         Returns:
             True if this is the status column.
+
         """
         return logical_index == 0
 
@@ -125,6 +129,7 @@ class HeaderInteractionController:
             - "toggle" for status column click
             - "sort" for other column clicks
             - "" if click should not be handled
+
         """
         # Check if actions are disabled
         if not click_actions_enabled:

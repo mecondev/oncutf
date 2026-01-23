@@ -1,4 +1,4 @@
-"""Module: oncutf.config.paths
+"""Module: oncutf.config.paths.
 
 Author: Michael Economou
 Date: 2026-01-01

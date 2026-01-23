@@ -1,4 +1,4 @@
-"""Module: color_column_delegate.py
+"""Module: color_column_delegate.py.
 
 Author: Michael Economou
 Date: 2025-12-21

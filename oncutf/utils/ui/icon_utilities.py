@@ -1,4 +1,4 @@
-"""Module: icons.py
+"""Module: icons.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -26,7 +26,7 @@ def create_colored_icon(
     shape: str = "circle",
     size_x: int = 10,
     size_y: int = 10,
-    border_color: str = None,
+    border_color: str | None = None,
     border_thickness: int = 0,
 ) -> QPixmap:
     """Creates a small colored shape (circle or rectangle) as a QPixmap icon.

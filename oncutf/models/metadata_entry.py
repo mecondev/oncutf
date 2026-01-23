@@ -1,4 +1,4 @@
-"""metadata_entry.py
+"""metadata_entry.py.
 
 Author: Michael Economou
 Date: 2025-12-03

@@ -1,4 +1,4 @@
-"""Module: selection_store.py
+"""Module: selection_store.py.
 
 Author: Michael Economou
 Date: 2025-05-31

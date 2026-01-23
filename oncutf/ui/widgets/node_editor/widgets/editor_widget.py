@@ -52,6 +52,7 @@ class NodeEditorWidget(QWidget):
         scene: Active Scene instance.
         view: Active QDMGraphicsView instance.
         filename: Current file path, or None for unsaved.
+
     """
 
     scene_class = Scene
@@ -62,6 +63,7 @@ class NodeEditorWidget(QWidget):
 
         Args:
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
 
@@ -90,6 +92,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if scene has been modified.
+
         """
         return self.scene.has_been_modified
 
@@ -98,6 +101,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if filename is set, False for new graphs.
+
         """
         return self.filename is not None
 
@@ -106,6 +110,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             Filename with asterisk if modified, or 'New Graph'.
+
         """
         name = os.path.basename(self.filename) if self.is_filename_set() else "New Graph"
         return name + ("*" if self.is_modified() else "")
@@ -115,6 +120,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             List of selected QGraphicsItem instances.
+
         """
         return self.scene.get_selected_items()
 
@@ -123,6 +129,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if selection is non-empty.
+
         """
         return self.get_selected_items() != []
 
@@ -131,6 +138,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if undo stack has entries.
+
         """
         return self.scene.history.can_undo()
 
@@ -139,6 +147,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if redo stack has entries.
+
         """
         return self.scene.history.can_redo()
 
@@ -160,6 +169,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if load succeeded, False on error.
+
         """
         from oncutf.utils.cursor_helper import wait_cursor
 
@@ -191,6 +201,7 @@ class NodeEditorWidget(QWidget):
 
         Returns:
             True if save succeeded.
+
         """
         if filename is not None:
             self.filename = filename

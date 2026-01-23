@@ -1,4 +1,4 @@
-"""oncutf.core.rename.preview_manager
+"""oncutf.core.rename.preview_manager.
 
 Preview generation management for the unified rename engine.
 

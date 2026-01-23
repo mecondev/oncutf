@@ -34,6 +34,7 @@ class TreeRenderHandler:
 
         Args:
             view: The MetadataTreeView instance
+
         """
         self.view = view
         self._rebuild_in_progress = False
@@ -172,6 +173,7 @@ class TreeRenderHandler:
         Args:
             tree_model: The built QStandardItemModel
             filename: Filename for logging
+
         """
         parent_window = self.view._get_parent_with_file_table()
         use_proxy = (
@@ -249,6 +251,7 @@ class TreeRenderHandler:
 
         Returns:
             Full file path if found and exists, None otherwise
+
         """
         try:
             # Try to get file path from metadata

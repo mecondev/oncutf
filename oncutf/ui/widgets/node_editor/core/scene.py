@@ -26,7 +26,6 @@ Date:
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from oncutf.ui.widgets.node_editor.core.host_bridge import NodeHostBridge, NullNodeHostBridge
@@ -34,6 +33,8 @@ from oncutf.ui.widgets.node_editor.core.serializable import Serializable
 from oncutf.ui.widgets.node_editor.utils.helpers import dump_exception
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from oncutf.ui.widgets.node_editor.core.edge import Edge
     from oncutf.ui.widgets.node_editor.core.node import Node
     from oncutf.ui.widgets.node_editor.graphics.scene import QDMGraphicsScene
@@ -66,6 +67,7 @@ class Scene(Serializable):
     Class Attributes:
         history_class: Factory class for history (set at runtime).
         clipboard_class: Factory class for clipboard (set at runtime).
+
     """
 
     history_class = None
@@ -120,6 +122,7 @@ class Scene(Serializable):
 
         Returns:
             True if modified since last save.
+
         """
         return self._has_been_modified
 
@@ -131,6 +134,7 @@ class Scene(Serializable):
 
         Args:
             value: New modification state.
+
         """
         if not self._has_been_modified and value:
             self._has_been_modified = value
@@ -145,8 +149,8 @@ class Scene(Serializable):
 
         Returns:
             True if modified since last save.
-        """
 
+        """
         return self.has_been_modified
 
     def init_ui(self) -> None:
@@ -168,6 +172,7 @@ class Scene(Serializable):
 
         Args:
             node: Node instance to add.
+
         """
         self.nodes.append(node)
 
@@ -178,6 +183,7 @@ class Scene(Serializable):
 
         Args:
             edge: Edge instance to add.
+
         """
         self.edges.append(edge)
 
@@ -189,6 +195,7 @@ class Scene(Serializable):
 
         Args:
             node: Node instance to remove from registry.
+
         """
         if node in self.nodes:
             self.nodes.remove(node)
@@ -200,6 +207,7 @@ class Scene(Serializable):
 
         Args:
             edge: Edge instance to remove from registry.
+
         """
         if edge in self.edges:
             self.edges.remove(edge)
@@ -223,6 +231,7 @@ class Scene(Serializable):
 
         Returns:
             Matching Node instance or None if not found.
+
         """
         for node in self.nodes:
             if node.sid == node_id:
@@ -239,6 +248,7 @@ class Scene(Serializable):
 
         Args:
             value: True to suppress events, False to enable.
+
         """
         self._silent_selection_events = value
 
@@ -247,6 +257,7 @@ class Scene(Serializable):
 
         Returns:
             List of selected Node instances.
+
         """
         return [node for node in self.nodes if node.is_selected()]
 
@@ -255,6 +266,7 @@ class Scene(Serializable):
 
         Returns:
             List of selected Edge instances.
+
         """
         return [edge for edge in self.edges if edge.is_selected()]
 
@@ -263,6 +275,7 @@ class Scene(Serializable):
 
         Returns:
             List of selected QGraphicsItem instances (nodes and edges).
+
         """
         return self.graphics_scene.selectedItems()
 
@@ -271,6 +284,7 @@ class Scene(Serializable):
 
         Args:
             silent: If True, skip onItemsDeselected callback.
+
         """
         for node in self.nodes:
             node.do_select(False)
@@ -287,6 +301,7 @@ class Scene(Serializable):
 
         Args:
             silent: If True, skip callbacks and history storage.
+
         """
         if self._silent_selection_events:
             return
@@ -307,6 +322,7 @@ class Scene(Serializable):
 
         Args:
             silent: If True, skip callbacks and history storage.
+
         """
         current_selected_items = self.get_selected_items()
         if current_selected_items == self._last_selected_items:
@@ -331,6 +347,7 @@ class Scene(Serializable):
 
         Args:
             callback: Function to call when scene becomes modified.
+
         """
         self._has_been_modified_listeners.append(callback)
 
@@ -341,6 +358,7 @@ class Scene(Serializable):
 
         Args:
             callback: Function to call on item selection.
+
         """
         self._item_selected_listeners.append(callback)
 
@@ -351,6 +369,7 @@ class Scene(Serializable):
 
         Args:
             callback: Function to call on complete deselection.
+
         """
         self._items_deselected_listeners.append(callback)
 
@@ -363,6 +382,7 @@ class Scene(Serializable):
         Note:
             This is a transitional helper for components that need view access.
             Prefer using scene-level APIs where possible.
+
         """
         return self.graphics_scene.views()[0]
 
@@ -375,6 +395,7 @@ class Scene(Serializable):
 
         Returns:
             Edge class type to instantiate.
+
         """
         from oncutf.ui.widgets.node_editor.core.edge import Edge
 
@@ -391,6 +412,7 @@ class Scene(Serializable):
 
         Args:
             class_selecting_function: Receives dict, returns Node class type.
+
         """
         self.node_class_selector = class_selecting_function
 
@@ -405,6 +427,7 @@ class Scene(Serializable):
 
         Returns:
             Node class type to instantiate.
+
         """
         from oncutf.ui.widgets.node_editor.core.node import Node
 
@@ -419,6 +442,7 @@ class Scene(Serializable):
 
         Returns:
             Dictionary containing complete scene state.
+
         """
         nodes: list[dict] = []
         edges: list[dict] = []
@@ -444,7 +468,6 @@ class Scene(Serializable):
 
     def serialize(self) -> dict:
         """Backward-compatible alias for :meth:`serialize_snapshot`."""
-
         return self.serialize_snapshot()
 
     def deserialize_snapshot(
@@ -465,6 +488,7 @@ class Scene(Serializable):
 
         Returns:
             True on successful deserialization.
+
         """
         if hashmap is None:
             hashmap = {}
@@ -538,12 +562,11 @@ class Scene(Serializable):
         self, data: dict, hashmap: dict | None = None, restore_id: bool = True, *args, **kwargs
     ) -> bool:
         """Backward-compatible alias for :meth:`deserialize_snapshot`."""
-
         return self.deserialize_snapshot(
             data, *args, hashmap=hashmap, restore_id=restore_id, **kwargs
         )
 
-    def _migrate_to_current_version(self, data: dict, from_version: str) -> dict:  # noqa: ARG002
+    def _migrate_to_current_version(self, data: dict, from_version: str) -> dict:
         """Migrate serialized data from old version to current format.
 
         Override this method in subclasses to handle version-specific migrations.
@@ -554,6 +577,7 @@ class Scene(Serializable):
 
         Returns:
             Migrated data dictionary.
+
         """
         # Placeholder for future migrations
         # Example:

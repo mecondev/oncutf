@@ -83,6 +83,7 @@ class ThumbnailViewportWidget(QWidget):
         Args:
             model: Shared FileTableModel instance
             parent: Parent widget
+
         """
         super().__init__(parent)
         self._model = model
@@ -195,6 +196,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Args:
             mode: "manual" for drag reorder, "sorted" for Qt sort
+
         """
         # Delegate to model
         if mode == "manual":
@@ -216,6 +218,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Args:
             size: Thumbnail size in pixels (clamped to MIN/MAX)
+
         """
         size = max(self.MIN_THUMBNAIL_SIZE, min(size, self.MAX_THUMBNAIL_SIZE))
 
@@ -251,6 +254,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Returns:
             True if event handled, False otherwise
+
         """
         if obj != self._list_view.viewport():
             return super().eventFilter(obj, event)
@@ -372,6 +376,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Args:
             index: Clicked model index
+
         """
         file_item = index.data(Qt.UserRole)
         if file_item:
@@ -386,6 +391,7 @@ class ThumbnailViewportWidget(QWidget):
         Args:
             selected: Newly selected items
             deselected: Newly deselected items
+
         """
         # Get all selected rows
         selection_model = self._list_view.selectionModel()
@@ -408,6 +414,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Args:
             position: Click position in widget coordinates
+
         """
         menu = QMenu(self)
 
@@ -441,6 +448,7 @@ class ThumbnailViewportWidget(QWidget):
         Args:
             key: Sort key ("filename", "color", etc.)
             reverse: Reverse order
+
         """
         logger.info("[ThumbnailViewport] Sorting by %s (reverse=%s)", key, reverse)
 
@@ -475,6 +483,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Returns:
             List of selected file paths
+
         """
         selection_model = self._list_view.selectionModel()
         if not selection_model:
@@ -495,6 +504,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Args:
             file_paths: List of file paths to select
+
         """
         selection_model = self._list_view.selectionModel()
         if not selection_model:
@@ -527,6 +537,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Returns:
             QItemSelectionModel or None if not available
+
         """
         return self._list_view.selectionModel()
 
@@ -535,6 +546,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Returns:
             Current thumbnail size in pixels
+
         """
         return self._thumbnail_size
 
@@ -543,6 +555,7 @@ class ThumbnailViewportWidget(QWidget):
 
         Returns:
             Current order mode
+
         """
         return self._model.order_mode
 
@@ -606,6 +619,7 @@ class ThumbnailViewportWidget(QWidget):
         Args:
             file_path: Absolute path to file
             pixmap: Loaded thumbnail pixmap
+
         """
         # Check if model still has files (may have been cleared)
         if not self._model or not self._model.files:

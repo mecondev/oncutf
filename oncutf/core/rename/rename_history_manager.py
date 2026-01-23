@@ -1,4 +1,4 @@
-"""Module: rename_history_manager.py
+"""Module: rename_history_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -281,7 +281,7 @@ class RenameHistoryManager:
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error checking undo capability: %s", e)
-            return False, f"Error checking operation: {str(e)}"
+            return False, f"Error checking operation: {e!s}"
 
     def undo_operation(self, operation_id: str) -> tuple[bool, str, int]:
         """Undo a rename operation by reverting all files to their original names.
@@ -371,7 +371,7 @@ class RenameHistoryManager:
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error during undo operation: %s", e)
-            return False, f"Undo failed: {str(e)}", 0
+            return False, f"Undo failed: {e!s}", 0
 
     def cleanup_old_history(self, _days_to_keep: int = 30) -> int:
         """Clean up old rename history records.

@@ -1,4 +1,4 @@
-"""Module: unified_column_service.py
+"""Module: unified_column_service.py.
 
 Author: Michael Economou
 Date: 2025-08-24

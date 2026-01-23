@@ -1,4 +1,4 @@
-"""Module: parallel_metadata_loader.py
+"""Module: parallel_metadata_loader.py.
 
 Author: Michael Economou
 Date: 2025-11-22

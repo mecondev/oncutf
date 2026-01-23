@@ -1,4 +1,4 @@
-"""Module: icon_cache.py
+"""Module: icon_cache.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -29,7 +29,7 @@ ICON_NAMES = ["valid", "unchanged", "invalid", "duplicate"]
 ICON_PATHS = {}
 
 
-def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
+def prepare_status_icons(base_dir: str | None = None) -> dict[str, str]:
     """Prepares and caches status icons by creating colored icons if they do not exist.
 
     Args:
@@ -64,7 +64,7 @@ def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
     return ICON_PATHS
 
 
-def load_preview_status_icons(size: tuple[int, int] = None) -> dict[str, QIcon]:
+def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, QIcon]:
     """Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
 
     Args:

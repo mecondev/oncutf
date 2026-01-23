@@ -1,4 +1,4 @@
-"""Module: drag_drop_behavior.py
+"""Module: drag_drop_behavior.py.
 
 Author: Michael Economou
 Date: 2025-12-28
@@ -119,6 +119,7 @@ class DragDropBehavior:
 
         Args:
             widget: Widget implementing DraggableWidget protocol
+
         """
         self._widget = widget
 
@@ -298,6 +299,7 @@ class DragDropBehavior:
 
         Returns:
             True if event was handled, False to delegate to parent
+
         """
         if event.mimeData().hasUrls() or event.mimeData().hasFormat(
             "application/x-oncutf-internal"
@@ -311,6 +313,7 @@ class DragDropBehavior:
 
         Returns:
             True if event was handled, False to delegate to parent
+
         """
         if event.mimeData().hasUrls() or event.mimeData().hasFormat(
             "application/x-oncutf-internal"
@@ -324,6 +327,7 @@ class DragDropBehavior:
 
         Returns:
             Tuple of (dropped_paths, modifiers) if successful, None otherwise
+
         """
         import time
 
@@ -458,6 +462,7 @@ class DragDropBehavior:
 
         Returns:
             True if drop was successful
+
         """
         if not self._drag_data:
             logger.debug(

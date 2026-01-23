@@ -1,4 +1,4 @@
-"""Module: modifier_handler.py
+"""Module: modifier_handler.py.
 
 Author: Michael Economou
 Date: 2025-05-31

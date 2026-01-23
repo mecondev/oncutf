@@ -1,4 +1,4 @@
-"""Module: metadata_staging_manager.py
+"""Module: metadata_staging_manager.py.
 
 Author: Michael Economou
 Date: 2025-11-25

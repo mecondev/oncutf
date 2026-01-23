@@ -40,6 +40,7 @@ class QDMGraphicsSocket(QGraphicsItem):
         isHighlighted: True when highlighted during connection drag.
         radius: Socket circle radius in pixels.
         outline_width: Width of socket outline stroke.
+
     """
 
     def __init__(self, socket: "Socket"):
@@ -47,6 +48,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
         Args:
             socket: Logical Socket this graphics item represents.
+
         """
         super().__init__(socket.node.graphics_node)
 
@@ -64,6 +66,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
         Returns:
             Socket type identifier integer.
+
         """
         return self.socket.socket_type
 
@@ -78,6 +81,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
         Returns:
             QColor for the specified socket type.
+
         """
         theme = ThemeEngine.current_theme()
         if isinstance(key, int):
@@ -123,6 +127,7 @@ class QDMGraphicsSocket(QGraphicsItem):
             painter: QPainter for rendering.
             _option: Style options (unused).
             _widget: Target widget (unused).
+
         """
         painter.setBrush(self._brush)
         painter.setPen(self._pen if not self.isHighlighted else self._pen_highlight)
@@ -135,6 +140,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
         Returns:
             QRectF enclosing the socket circle with outline.
+
         """
         return QRectF(
             -self.radius - self.outline_width,

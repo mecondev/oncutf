@@ -45,6 +45,7 @@ class GraphicsEdgePathBase:
 
     Attributes:
         owner: QDMGraphicsEdge this calculator belongs to.
+
     """
 
     def __init__(self, owner: QDMGraphicsEdge):
@@ -52,6 +53,7 @@ class GraphicsEdgePathBase:
 
         Args:
             owner: QDMGraphicsEdge that owns this calculator.
+
         """
         self.owner = owner
 
@@ -62,6 +64,7 @@ class GraphicsEdgePathBase:
 
         Returns:
             QPainterPath for rendering, or None if not implemented.
+
         """
         return None
 
@@ -74,6 +77,7 @@ class GraphicsEdgePathDirect(GraphicsEdgePathBase):
 
         Returns:
             QPainterPath with single line segment.
+
         """
         path = QPainterPath(
             QPointF(self.owner.pos_source[0], self.owner.pos_source[1])
@@ -93,6 +97,7 @@ class GraphicsEdgePathBezier(GraphicsEdgePathBase):
 
         Returns:
             QPainterPath with smooth Bezier curve.
+
         """
         s = self.owner.pos_source
         d = self.owner.pos_destination
@@ -145,6 +150,7 @@ class GraphicsEdgePathSquare(GraphicsEdgePathBase):
             *args: Passed to base class.
             handle_weight: Position of vertical segment (0.0 to 1.0).
             **kwargs: Passed to base class.
+
         """
         super().__init__(*args, **kwargs)
         self.rand = None
@@ -157,6 +163,7 @@ class GraphicsEdgePathSquare(GraphicsEdgePathBase):
 
         Returns:
             QPainterPath with three connected line segments.
+
         """
         s = self.owner.pos_source
         d = self.owner.pos_destination
@@ -182,6 +189,7 @@ class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
 
         Returns:
             QPainterPath with horizontal segments and diagonal.
+
         """
         sx, sy = self.owner.pos_source
         dx, dy = self.owner.pos_destination
@@ -222,6 +230,7 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
 
         Returns:
             QPainterPath with horizontal ends and curved middle.
+
         """
         sx, sy = self.owner.pos_source
         dx, dy = self.owner.pos_destination

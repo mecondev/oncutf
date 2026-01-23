@@ -88,7 +88,7 @@ class DragManager(QObject):
 
         logger.debug("[DragManager] Drag started from: %s", source, extra={"dev_only": True})
 
-    def end_drag(self, source: str = None) -> None:
+    def end_drag(self, source: str | None = None) -> None:
         """Register the end of a drag operation.
 
         Args:
@@ -320,7 +320,7 @@ def start_drag(source: str) -> None:
     DragManager.get_instance().start_drag(source)
 
 
-def end_drag(source: str = None) -> None:
+def end_drag(source: str | None = None) -> None:
     """End a drag operation."""
     DragManager.get_instance().end_drag(source)
 

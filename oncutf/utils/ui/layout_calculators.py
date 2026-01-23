@@ -1,4 +1,4 @@
-"""Module: layout_calculators.py
+"""Module: layout_calculators.py.
 
 Author: Michael Economou
 Date: 2026-01-13
@@ -23,6 +23,7 @@ def calculate_splitter_sizes_from_ratios(
 
     Returns:
         List of panel sizes in pixels
+
     """
     if not ratios:
         return []
@@ -68,6 +69,7 @@ def calculate_column_width_from_ratio(
 
     Returns:
         Column width in pixels
+
     """
     width = int(panel_width * ratio)
     width = max(width, min_width)
@@ -94,6 +96,7 @@ def calculate_dynamic_filename_width(
 
     Returns:
         Filename column width in pixels
+
     """
     fixed_total = sum(fixed_column_widths.values())
     available = panel_width - fixed_total - reserved_space
@@ -118,6 +121,7 @@ def get_metadata_tree_widths_from_ratios(
 
     Returns:
         Dictionary with calculated widths
+
     """
     widths = {}
 

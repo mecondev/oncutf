@@ -28,6 +28,7 @@ class StylingHandler:
 
         Args:
             widget: The parent MetadataWidget instance.
+
         """
         self.widget = widget
         logger.debug("StylingHandler initialized")

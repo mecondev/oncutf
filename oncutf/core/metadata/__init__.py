@@ -56,30 +56,30 @@ from oncutf.core.metadata.unified_manager import (
 )
 
 __all__ = [
-    # Cache and handlers
-    "MetadataCacheService",
+    "BatchMetadataCommand",
     "CompanionMetadataHandler",
-    "HashLoadingService",
-    "MetadataWriter",
-    "MetadataShortcutHandler",
-    "MetadataProgressHandler",
-    "MetadataLoader",
-    # Managers
-    "MetadataCommandManager",
-    "get_metadata_command_manager",
-    "MetadataOperationsManager",
-    "MetadataStagingManager",
-    "get_metadata_staging_manager",
-    "set_metadata_staging_manager",
-    "UnifiedMetadataManager",
-    "get_unified_metadata_manager",
+    "EditMetadataFieldCommand",
     # Field compatibility
     "FieldCompatibilityChecker",
-    "get_field_compatibility_checker",
+    "HashLoadingService",
+    # Cache and handlers
+    "MetadataCacheService",
     # Command pattern
     "MetadataCommand",
-    "EditMetadataFieldCommand",
+    # Managers
+    "MetadataCommandManager",
+    "MetadataLoader",
+    "MetadataOperationsManager",
+    "MetadataProgressHandler",
+    "MetadataShortcutHandler",
+    "MetadataStagingManager",
+    "MetadataWriter",
     "ResetMetadataFieldCommand",
     "SaveMetadataCommand",
-    "BatchMetadataCommand",
+    "UnifiedMetadataManager",
+    "get_field_compatibility_checker",
+    "get_metadata_command_manager",
+    "get_metadata_staging_manager",
+    "get_unified_metadata_manager",
+    "set_metadata_staging_manager",
 ]

@@ -1,4 +1,4 @@
-"""Module: rename_manager.py
+"""Module: rename_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31

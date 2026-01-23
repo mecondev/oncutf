@@ -1,4 +1,4 @@
-"""Module: model.py
+"""Module: model.py.
 
 Author: Michael Economou
 Date: 2025-12-23

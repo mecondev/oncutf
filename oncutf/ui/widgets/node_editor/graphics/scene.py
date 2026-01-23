@@ -43,6 +43,7 @@ class QDMGraphicsScene(QGraphicsScene):
         scene: Reference to logical Scene model.
         gridSize: Pixel size of grid cells.
         gridSquares: Number of cells between major (dark) grid lines.
+
     """
 
     item_selected = Signal()
@@ -54,6 +55,7 @@ class QDMGraphicsScene(QGraphicsScene):
         Args:
             scene: Logical Scene this graphics scene represents.
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
 
@@ -85,6 +87,7 @@ class QDMGraphicsScene(QGraphicsScene):
 
         Args:
             event: Qt drag move event.
+
         """
 
     def set_graphics_scene_rect(self, width: int, height: int) -> None:
@@ -93,6 +96,7 @@ class QDMGraphicsScene(QGraphicsScene):
         Args:
             width: Total scene width in pixels.
             height: Total scene height in pixels.
+
         """
         self.setSceneRect(-width // 2, -height // 2, width, height)
 
@@ -105,13 +109,14 @@ class QDMGraphicsScene(QGraphicsScene):
         Args:
             painter: QPainter for drawing operations.
             rect: Visible rectangle area to draw.
+
         """
         super().drawBackground(painter, rect)
 
-        left = int(math.floor(rect.left()))
-        right = int(math.ceil(rect.right()))
-        top = int(math.floor(rect.top()))
-        bottom = int(math.ceil(rect.bottom()))
+        left = math.floor(rect.left())
+        right = math.ceil(rect.right())
+        top = math.floor(rect.top())
+        bottom = math.ceil(rect.bottom())
 
         first_left = left - (left % self.gridSize)
         first_top = top - (top % self.gridSize)

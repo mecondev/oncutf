@@ -35,6 +35,7 @@ class ViewportHandler:
 
     Attributes:
         _view: Reference to the parent FileTableView
+
     """
 
     def __init__(self, view: FileTableView) -> None:
@@ -42,6 +43,7 @@ class ViewportHandler:
 
         Args:
             view: The parent FileTableView widget
+
         """
         self._view = view
 

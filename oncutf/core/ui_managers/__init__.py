@@ -28,14 +28,14 @@ from .table_manager import TableManager
 from .window_config_manager import WindowConfigManager
 
 __all__ = [
-    "ColumnManager",
     "ColumnAlignment",
     "ColumnConfig",
-    "UnifiedColumnService",
-    "get_column_service",
+    "ColumnManager",
     "ShortcutManager",
     "SplitterManager",
     "StatusManager",
     "TableManager",
+    "UnifiedColumnService",
     "WindowConfigManager",
+    "get_column_service",
 ]

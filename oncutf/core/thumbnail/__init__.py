@@ -26,8 +26,8 @@ __all__ = [
     "ThumbnailCache",
     "ThumbnailCacheConfig",
     "ThumbnailDiskCache",
-    "ThumbnailMemoryCache",
     "ThumbnailManager",
+    "ThumbnailMemoryCache",
     "ThumbnailRequest",
     "ThumbnailWorker",
 ]

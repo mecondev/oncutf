@@ -40,6 +40,7 @@ class EdgeIntersect:
         graphics_view: QDMGraphicsView for coordinate mapping.
         draggedNode: Node currently being dragged.
         hoveredList: Graphics items under the dragged node.
+
     """
 
     def __init__(self, graphics_view: QDMGraphicsView) -> None:
@@ -47,6 +48,7 @@ class EdgeIntersect:
 
         Args:
             graphics_view: QDMGraphicsView to operate on.
+
         """
         self.graphics_scene = graphics_view.graphics_scene
         self.graphics_view = graphics_view
@@ -58,6 +60,7 @@ class EdgeIntersect:
 
         Args:
             node: Node being dragged.
+
         """
         self.hoveredList = []
         self.draggedNode = node
@@ -68,6 +71,7 @@ class EdgeIntersect:
         Args:
             scene_pos_x: Final X position in scene coordinates.
             scene_pos_y: Final Y position in scene coordinates.
+
         """
         self.drop_node(self.draggedNode, scene_pos_x, scene_pos_y)
         self.draggedNode = None
@@ -83,6 +87,7 @@ class EdgeIntersect:
             node: Node being dropped.
             _scene_pos_x: Drop X position (unused).
             _scene_pos_y: Drop Y position (unused).
+
         """
         from oncutf.ui.widgets.node_editor.core.edge import Edge
 
@@ -124,6 +129,7 @@ class EdgeIntersect:
 
         Returns:
             QRectF covering the node's area.
+
         """
         node_pos = node.graphics_node.scenePos()
         x = node_pos.x()
@@ -138,6 +144,7 @@ class EdgeIntersect:
         Args:
             _scene_pos_x: Current X position (unused).
             _scene_pos_y: Current Y position (unused).
+
         """
         rect = self.hot_zone_rect(self.draggedNode)
         graphics_items = self.graphics_scene.items(rect)
@@ -159,6 +166,7 @@ class EdgeIntersect:
 
         Returns:
             First intersecting Edge, or None.
+
         """
         graphics_items = self.graphics_scene.items(node_box)
         for graphics_item in graphics_items:
@@ -177,6 +185,7 @@ class EdgeIntersect:
 
         Returns:
             True if node has connections or lacks input/output.
+
         """
         if node.inputs == [] or node.outputs == []:
             return True

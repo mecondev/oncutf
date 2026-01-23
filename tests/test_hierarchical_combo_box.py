@@ -75,7 +75,7 @@ class TestHierarchicalComboBox:
         }
 
     @pytest.fixture
-    def combo_box(self, qapp, theme_manager):  # noqa: ARG002
+    def combo_box(self, qapp, theme_manager):
         """Create a HierarchicalComboBox for testing."""
         combo = HierarchicalComboBox()
         # Apply theme to get consistent styling

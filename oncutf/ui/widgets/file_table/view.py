@@ -164,6 +164,7 @@ class FileTableView(QTableView):
 
         class ScrollbarHoverFilter(QObject):
             """Event filter that clears table hover when mouse enters scrollbar."""
+
             def __init__(self, table_view, parent=None):
                 super().__init__(parent)
                 self.table_view = table_view

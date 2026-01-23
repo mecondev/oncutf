@@ -29,6 +29,7 @@ class MenuBuilder:
 
         Args:
             widget: The host widget
+
         """
         self._widget = widget
 
@@ -37,6 +38,7 @@ class MenuBuilder:
 
         Args:
             position: Position where the context menu should appear
+
         """
         if self._widget._is_placeholder_mode or self._widget.property("placeholder"):
             return
@@ -115,6 +117,7 @@ class MenuBuilder:
 
         Returns:
             Tuple of (has_modifications, current_field_value)
+
         """
         has_modifications = False
         current_field_value = None
@@ -175,6 +178,7 @@ class MenuBuilder:
             has_multiple_selection: Whether multiple files are selected
             is_editable_field: Whether field is editable
             has_modifications: Whether field has modifications
+
         """
         # Edit action
         edit_action = QAction("Edit Value", menu)
@@ -219,6 +223,7 @@ class MenuBuilder:
             key_path: Metadata key path
             has_multiple_selection: Whether multiple files are selected
             current_field_value: Current field value
+
         """
         is_rotation_field = "rotation" in key_path.lower()
         if not is_rotation_field:
@@ -256,6 +261,7 @@ class MenuBuilder:
 
         Args:
             menu: Target menu
+
         """
         history_menu = QMenu("History", menu)
         history_menu.setIcon(self._get_menu_icon("clock"))
@@ -311,6 +317,7 @@ class MenuBuilder:
         Args:
             menu: Target menu
             value: Value to copy
+
         """
         copy_action = QAction("Copy", menu)
         copy_action.setIcon(self._get_menu_icon("copy"))
@@ -328,6 +335,7 @@ class MenuBuilder:
 
         Returns:
             QIcon or None if icon loading fails
+
         """
         try:
             from oncutf.utils.ui.icons_loader import get_menu_icon

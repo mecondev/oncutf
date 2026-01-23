@@ -219,16 +219,16 @@ def main() -> int:
     print("📈 PROFILING SUMMARY")
     print("=" * 80)
 
-    if "exiftool" in results and results["exiftool"]:
+    if results.get("exiftool"):
         print(f"\n✅ ExifTool overhead: {sum(results['exiftool'].values()):.1f} ms")
 
-    if "sequential" in results and results["sequential"]:
+    if results.get("sequential"):
         seq = results["sequential"]
         print(
             f"\n✅ Sequential: {seq['avg_per_file']:.1f} ms/file ({seq['total_time']:.1f} ms for {int(seq['num_files'])} files)"
         )
 
-    if "batch" in results and results["batch"]:
+    if results.get("batch"):
         batch = results["batch"]
         print(
             f"\n✅ Batch: {batch['avg_per_file']:.1f} ms/file ({batch['total_time']:.1f} ms for {int(batch['num_files'])} files)"

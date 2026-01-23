@@ -155,20 +155,20 @@ from oncutf.ui.behaviors.metadata_scroll_behavior import (
 from oncutf.ui.behaviors.selection import SelectableWidget, SelectionBehavior
 
 __all__ = [
-    # Protocols
-    "SelectableWidget",
-    "DraggableWidget",
-    "ColumnManageableWidget",
-    "ScrollableTreeWidget",
     "CacheableWidget",
-    "ContextMenuWidget",
-    "EditableWidget",
-    # Concrete behaviors
-    "SelectionBehavior",
-    "DragDropBehavior",
+    "ColumnManageableWidget",
     "ColumnManagementBehavior",
-    "MetadataScrollBehavior",
+    "ContextMenuWidget",
+    "DragDropBehavior",
+    "DraggableWidget",
+    "EditableWidget",
     "MetadataCacheBehavior",
     "MetadataContextMenuBehavior",
     "MetadataEditBehavior",
+    "MetadataScrollBehavior",
+    "ScrollableTreeWidget",
+    # Protocols
+    "SelectableWidget",
+    # Concrete behaviors
+    "SelectionBehavior",
 ]

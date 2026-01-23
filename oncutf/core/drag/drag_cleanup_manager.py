@@ -1,4 +1,4 @@
-"""Module: drag_cleanup_manager.py
+"""Module: drag_cleanup_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31

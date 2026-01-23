@@ -215,7 +215,7 @@ def _has_allowed_extension(filename: str) -> bool:
 
 
 def is_mount_point_or_root(path: str) -> bool:
-    """Check if path is a mount point or root drive.
+    r"""Check if path is a mount point or root drive.
 
     Returns True for:
     - Root directories: /, C:\\, D:\\

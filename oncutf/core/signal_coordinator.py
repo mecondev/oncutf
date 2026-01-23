@@ -1,4 +1,4 @@
-"""Module: signal_coordinator.py
+"""Module: signal_coordinator.py.
 
 Author: Michael Economou
 Date: 2025-11-21

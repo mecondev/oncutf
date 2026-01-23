@@ -51,6 +51,7 @@ def get_ui_font_family(widget_type: str | None = None) -> str:
 
     Returns:
         CSS font-family string with appropriate fallbacks
+
     """
     if widget_type and widget_type in WIDGET_FONTS:
         font_key = WIDGET_FONTS[widget_type]

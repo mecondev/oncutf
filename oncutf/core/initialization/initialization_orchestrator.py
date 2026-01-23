@@ -1,4 +1,4 @@
-"""Module: initialization_orchestrator.py
+"""Module: initialization_orchestrator.py.
 
 Author: Michael Economou
 Date: 2025-11-21

@@ -1,4 +1,4 @@
-"""Module: events/__init__.py
+"""Module: events/__init__.py.
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -12,7 +12,7 @@ from oncutf.core.events.ui_event_handlers import UIEventHandlers
 from oncutf.ui.events.context_menu import ContextMenuHandlers
 
 __all__ = [
+    "ContextMenuHandlers",
     "FileEventHandlers",
     "UIEventHandlers",
-    "ContextMenuHandlers",
 ]

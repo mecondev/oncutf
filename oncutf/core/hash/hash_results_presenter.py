@@ -14,8 +14,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
+    from oncutf.models.file_item import FileItem
+
 from oncutf.config import STATUS_COLORS
-from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

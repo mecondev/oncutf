@@ -1,4 +1,4 @@
-"""Module: time_formatter.py
+"""Module: time_formatter.py.
 
 Author: Michael Economou
 Date: 2025-06-10

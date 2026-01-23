@@ -1,4 +1,4 @@
-"""Module: progress_protocol.py
+"""Module: progress_protocol.py.
 
 Author: Michael Economou
 Date: 2025-11-21

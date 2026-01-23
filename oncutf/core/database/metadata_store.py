@@ -1,4 +1,4 @@
-"""Module: metadata_store.py
+"""Module: metadata_store.py.
 
 Author: Michael Economou
 Date: 2026-01-01

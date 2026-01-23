@@ -1,4 +1,4 @@
-"""Module: filename_validator.py
+"""Module: filename_validator.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_valid_filename_char(char: str) -> bool:
-    """Check if a character is valid for filenames
+    """Check if a character is valid for filenames.
 
     Args:
         char: Single character to check
@@ -32,7 +32,7 @@ def is_valid_filename_char(char: str) -> bool:
 
 
 def clean_filename_text(text: str) -> str:
-    """Clean text by removing invalid filename characters
+    """Clean text by removing invalid filename characters.
 
     Args:
         text: Input text to clean
@@ -49,7 +49,7 @@ def clean_filename_text(text: str) -> str:
 
 
 def clean_trailing_chars(filename_part: str) -> str:
-    """Remove trailing characters that are not allowed at the end of filenames
+    """Remove trailing characters that are not allowed at the end of filenames.
 
     Args:
         filename_part: The filename part (without extension) to clean
@@ -68,7 +68,7 @@ def clean_trailing_chars(filename_part: str) -> str:
 
 
 def validate_filename_part(filename_part: str) -> tuple[bool, str]:
-    """Validate a filename part and return validation status and clean version
+    """Validate a filename part and return validation status and clean version.
 
     Args:
         filename_part: The filename part to validate
@@ -129,7 +129,7 @@ def validate_filename_part(filename_part: str) -> tuple[bool, str]:
 
 
 def should_allow_character_input(char: str) -> bool:
-    """Determine if a character input should be allowed in filename text fields
+    """Determine if a character input should be allowed in filename text fields.
 
     Args:
         char: Character being typed
@@ -142,7 +142,7 @@ def should_allow_character_input(char: str) -> bool:
 
 
 def get_validation_error_message(filename_part: str) -> str:
-    """Get a user-friendly error message for invalid filename
+    """Get a user-friendly error message for invalid filename.
 
     Args:
         filename_part: The invalid filename part
@@ -203,7 +203,7 @@ def get_validation_error_message(filename_part: str) -> str:
 
 
 def is_validation_error_marker(text: str) -> bool:
-    """Check if text is a validation error marker
+    """Check if text is a validation error marker.
 
     Args:
         text: Text to check
@@ -217,7 +217,7 @@ def is_validation_error_marker(text: str) -> bool:
 
 # Convenience functions for common operations
 def clean_and_validate(text: str) -> tuple[bool, str, str]:
-    """Clean and validate text in one operation
+    """Clean and validate text in one operation.
 
     Args:
         text: Input text
@@ -237,7 +237,7 @@ def clean_and_validate(text: str) -> tuple[bool, str, str]:
 
 
 def prepare_final_filename(filename_part: str, extension: str = "") -> str:
-    """Prepare final filename by cleaning and combining with extension
+    """Prepare final filename by cleaning and combining with extension.
 
     Args:
         filename_part: The main filename part

@@ -1,4 +1,4 @@
-"""Module: interactive_header.py
+"""Module: interactive_header.py.
 
 Author: Michael Economou
 Date: 2025-05-22
@@ -56,6 +56,7 @@ class DropIndicatorWidget(QWidget):
             parent: Parent header widget.
             indicator_x: X position of the drop indicator.
             height: Height of the indicator.
+
         """
         super().__init__(parent)
         self.indicator_x = indicator_x
@@ -252,6 +253,7 @@ class InteractiveHeader(QHeaderView):
 
         Args:
             mouse_x: Current mouse X position in viewport coordinates.
+
         """
         # Don't show indicator if not dragging a valid column
         if self._pressed_index < 0 or self._pressed_index == 0:
@@ -336,6 +338,7 @@ class InteractiveHeader(QHeaderView):
 
         Args:
             mouse_x: Current mouse X position in widget coordinates.
+
         """
         # Define edge zone width (pixels from edge to trigger scroll)
         edge_zone = 50

@@ -13,8 +13,8 @@ from oncutf.controllers.ui.signal_controller import SignalController
 from oncutf.controllers.ui.window_setup_controller import WindowSetupController
 
 __all__ = [
-    "WindowSetupController",
     "LayoutController",
-    "SignalController",
     "ShortcutController",
+    "SignalController",
+    "WindowSetupController",
 ]

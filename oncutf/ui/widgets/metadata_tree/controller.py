@@ -1,4 +1,4 @@
-"""Module: controller.py
+"""Module: controller.py.
 
 Author: Michael Economou
 Date: 2025-12-23
@@ -26,11 +26,11 @@ from oncutf.ui.widgets.metadata_tree.model import (
     MetadataDisplayState,
     TreeNodeData,
 )
-from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.metadata import MetadataStagingManager
+    from oncutf.ui.widgets.metadata_tree.service import MetadataTreeService
 
 logger = get_cached_logger(__name__)
 

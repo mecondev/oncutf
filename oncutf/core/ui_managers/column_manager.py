@@ -1,4 +1,4 @@
-"""Module: column_manager.py
+"""Module: column_manager.py.
 
 Author: Michael Economou
 Date: 2026-01-02 (Refactored)

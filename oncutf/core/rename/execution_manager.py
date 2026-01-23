@@ -1,4 +1,4 @@
-"""oncutf.core.rename.execution_manager
+"""oncutf.core.rename.execution_manager.
 
 Execution management for the unified rename engine.
 

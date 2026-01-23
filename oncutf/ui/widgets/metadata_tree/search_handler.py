@@ -1,4 +1,4 @@
-"""Module: search_handler.py
+"""Module: search_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-23

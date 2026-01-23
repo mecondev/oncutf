@@ -63,7 +63,7 @@ from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="Fails on CI due to GUI")
-def test_esc_key_triggers_cancel(qtbot) -> None:  # noqa: ARG001
+def test_esc_key_triggers_cancel(qtbot) -> None:
     parent = QWidget()
     dlg = CustomMessageDialog.show_waiting(parent, "Reading metadata…")
     qtbot.addWidget(dlg)
@@ -76,7 +76,7 @@ def test_esc_key_triggers_cancel(qtbot) -> None:  # noqa: ARG001
     assert dlg.label.text() == "Canceling metadata scan..."
 
 
-def test_progress_updates_correctly(qtbot) -> None:  # noqa: ARG001
+def test_progress_updates_correctly(qtbot) -> None:
     parent = QWidget()
     dlg = CustomMessageDialog.show_waiting(parent, "Loading...")
     qtbot.addWidget(dlg)
@@ -88,19 +88,19 @@ def test_progress_updates_correctly(qtbot) -> None:  # noqa: ARG001
     assert dlg.progress_bar.maximum() == 10
 
 
-def test_dialog_question_response_yes(qtbot, monkeypatch) -> None:  # noqa: ARG001
+def test_dialog_question_response_yes(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Yes"))
     result = CustomMessageDialog.question(QWidget(), "Test", "Do you confirm?", "Yes", "No")
     assert result is True
 
 
-def test_dialog_question_response_no(qtbot, monkeypatch) -> None:  # noqa: ARG001
+def test_dialog_question_response_no(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "No"))
     result = CustomMessageDialog.question(QWidget(), "Test", "Do you confirm?", "Yes", "No")
     assert result is False
 
 
-def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:  # noqa: ARG001
+def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:
     captured = {}
 
     def fake_exec(self):
@@ -112,7 +112,7 @@ def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:  # noqa: A
     assert captured["message"] == "Everything is OK."
 
 
-def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:  # noqa: ARG001
+def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(
         CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Skip")
     )
@@ -120,7 +120,7 @@ def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:  # noqa: AR
     assert result == "skip"
 
 
-def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:  # noqa: ARG001
+def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(
         CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Overwrite")
     )
@@ -128,7 +128,7 @@ def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:  # noq
     assert result == "overwrite"
 
 
-def test_waiting_dialog_is_application_modal(qtbot) -> None:  # noqa: ARG001
+def test_waiting_dialog_is_application_modal(qtbot) -> None:
     parent = QWidget()
     dlg = CustomMessageDialog.show_waiting(parent, "Working...")
     qtbot.addWidget(dlg)
@@ -137,7 +137,7 @@ def test_waiting_dialog_is_application_modal(qtbot) -> None:  # noqa: ARG001
     assert dlg.windowModality() == Qt.ApplicationModal
 
 
-def test_escape_triggers_callback_and_close(qtbot) -> None:  # noqa: ARG001
+def test_escape_triggers_callback_and_close(qtbot) -> None:
     # Create the dialog
     parent = QWidget()
     dlg = CustomMessageDialog.show_waiting(parent, "Reading...")

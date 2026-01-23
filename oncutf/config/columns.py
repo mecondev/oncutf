@@ -1,4 +1,4 @@
-"""Module: oncutf.config.columns
+"""Module: oncutf.config.columns.
 
 Author: Michael Economou
 Date: 2026-01-01

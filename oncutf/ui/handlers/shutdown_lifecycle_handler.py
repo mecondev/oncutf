@@ -1,4 +1,4 @@
-"""Module: shutdown_lifecycle_handler.py
+"""Module: shutdown_lifecycle_handler.py.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QApplication
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from PyQt5.QtGui import QCloseEvent
 
     from oncutf.ui.main_window import MainWindow
@@ -133,7 +135,6 @@ class ShutdownLifecycleHandler:
             from oncutf.utils.ui.cursor_helper import wait_cursor
         except Exception:
             # Shutdown must never crash due to helper import issues.
-            from collections.abc import Generator
             from contextlib import contextmanager
 
             @contextmanager

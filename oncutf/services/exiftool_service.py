@@ -26,11 +26,14 @@ New usage (RECOMMENDED):
 from __future__ import annotations
 
 import warnings
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from oncutf.services.interfaces import MetadataServiceProtocol
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from oncutf.services.interfaces import MetadataServiceProtocol
 
 logger = get_cached_logger(__name__)
 

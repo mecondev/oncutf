@@ -1,4 +1,4 @@
-"""oncutf.core.rename.validation_manager
+"""oncutf.core.rename.validation_manager.
 
 Validation management for the unified rename engine.
 

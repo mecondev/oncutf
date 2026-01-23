@@ -1,4 +1,4 @@
-"""Module: metadata_edit_dialog.py
+"""Module: metadata_edit_dialog.py.
 
 Author: Michael Economou
 Date: 2025-06-01
@@ -162,7 +162,7 @@ class MetadataEditDialog(QDialog):
         self.input_field.setFocus()
 
     def _setup_tab_order(self):
-        """Setup proper tab order: text_field -> OK -> Cancel -> checkboxes -> back to text_field"""
+        """Setup proper tab order: text_field -> OK -> Cancel -> checkboxes -> back to text_field."""
         tab_widgets = []
 
         # Start with input field
@@ -440,7 +440,7 @@ class MetadataEditDialog(QDialog):
             values.add(value or "")  # Convert None to empty string
 
         # Return common value only if all files have the same value
-        return list(values)[0] if len(values) == 1 else None
+        return next(iter(values)) if len(values) == 1 else None
 
     def _get_current_field_value(self, file_item) -> str:
         """Get current value of the field for a file."""

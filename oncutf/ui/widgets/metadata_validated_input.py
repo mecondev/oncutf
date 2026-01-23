@@ -1,4 +1,4 @@
-"""Module: metadata_validated_input.py
+"""Module: metadata_validated_input.py.
 
 Author: Michael Economou
 Date: 2025-06-01

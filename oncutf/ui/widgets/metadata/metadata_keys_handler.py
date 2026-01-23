@@ -1,4 +1,4 @@
-"""Module: metadata_keys_handler.py
+"""Module: metadata_keys_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-24
@@ -30,6 +30,7 @@ class MetadataKeysHandler:
 
         Args:
             widget: The MetadataWidget instance
+
         """
         self._widget = widget
         self._simplification_service = get_metadata_simplification_service()
@@ -105,6 +106,7 @@ class MetadataKeysHandler:
 
         Returns:
             Dictionary mapping category names to lists of keys
+
         """
         grouped = {}
 
@@ -142,6 +144,7 @@ class MetadataKeysHandler:
 
         Returns:
             Category name (File Info, Camera Settings, etc.)
+
         """
         key_lower = key.lower()
 
@@ -233,6 +236,7 @@ class MetadataKeysHandler:
 
         Returns:
             List of (display_text, original_key) tuples for common fields
+
         """
         common_fields = []
 
@@ -256,6 +260,7 @@ class MetadataKeysHandler:
 
         Returns:
             Set of metadata key names found in selected files
+
         """
         selected_files = self._widget._get_selected_files()
 

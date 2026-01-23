@@ -1,4 +1,4 @@
-"""Module: metadata_command_manager.py
+"""Module: metadata_command_manager.py.
 
 Author: Michael Economou
 Date: 2025-07-08

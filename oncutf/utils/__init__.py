@@ -1,4 +1,4 @@
-"""Module: __init__.py
+"""Module: __init__.py.
 
 Author: Michael Economou
 Date: 2025-05-09
@@ -15,6 +15,6 @@ from .ui.svg_icon_generator import (
 # Add to __all__ if it exists
 __all__ = [
     "SVGIconGenerator",
-    "generate_metadata_icons",
     "generate_hash_icon",
+    "generate_metadata_icons",
 ]

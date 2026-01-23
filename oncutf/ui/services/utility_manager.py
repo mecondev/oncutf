@@ -1,4 +1,4 @@
-"""Module: utility_manager.py
+"""Module: utility_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -52,8 +52,7 @@ class UtilityManager:
         logger.debug("[UtilityManager] Initialized", extra={"dev_only": True})
 
     def event_filter(self, obj, event):
-        """Captures global keyboard modifier state (Ctrl, Shift).
-        """
+        """Captures global keyboard modifier state (Ctrl, Shift)."""
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.main_window.modifier_state = QApplication.keyboardModifiers()
             logger.debug(
@@ -130,7 +129,7 @@ class UtilityManager:
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
-        Example: [1,2,3,7,8,10] -> [(1,3), (7,8), (10,10)]
+        Example: [1,2,3,7,8,10] -> [(1,3), (7,8), (10,10)].
         """
         if not indices:
             return []
@@ -217,8 +216,7 @@ class UtilityManager:
         )
 
     def get_selected_rows_files(self) -> list:
-        """Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
-        """
+        """Returns a list of FileItem objects currently selected (blue-highlighted) in the table view."""
         selected_indexes = self.main_window.file_table_view.selectionModel().selectedRows()
         return [
             self.main_window.file_model.files[i.row()]

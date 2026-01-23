@@ -29,6 +29,7 @@ def loadStylesheet(filename: str) -> None:
 
     Args:
         filename: Path to the QSS stylesheet file.
+
     """
     file = QFile(filename)
     if not file.open(QFile.ReadOnly | QFile.Text):
@@ -48,6 +49,7 @@ def loadStylesheets(*filenames: str) -> None:
 
     Args:
         *filenames: Paths to QSS stylesheet files.
+
     """
     combined = ""
     for filename in filenames:
@@ -70,6 +72,7 @@ def is_ctrl_pressed(event) -> bool:
 
     Returns:
         True if Control modifier is active.
+
     """
     return bool(event.modifiers() & Qt.ControlModifier)
 
@@ -82,6 +85,7 @@ def is_shift_pressed(event) -> bool:
 
     Returns:
         True if Shift modifier is active.
+
     """
     return bool(event.modifiers() & Qt.ShiftModifier)
 
@@ -94,6 +98,7 @@ def is_alt_pressed(event) -> bool:
 
     Returns:
         True if Alt modifier is active.
+
     """
     return bool(event.modifiers() & Qt.AltModifier)
 

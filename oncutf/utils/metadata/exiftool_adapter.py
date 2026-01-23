@@ -1,4 +1,4 @@
-"""Module: exiftool_adapter.py
+"""Module: exiftool_adapter.py.
 
 Author: Michael Economou
 Date: 2025-05-22
@@ -19,13 +19,16 @@ Note: This is a low-level ExifTool adapter. For high-level orchestration,
 use core.metadata.metadata_loader.MetadataLoader instead.
 """
 
-import subprocess
 import threading
+from typing import TYPE_CHECKING
 
 from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+
+if TYPE_CHECKING:
+    import subprocess
 
 logger = get_cached_logger(__name__)
 

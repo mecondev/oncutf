@@ -1,4 +1,4 @@
-"""Module: logger_setup.py
+"""Module: logger_setup.py.
 
 Author: Michael Economou
 Date: 2025-05-06

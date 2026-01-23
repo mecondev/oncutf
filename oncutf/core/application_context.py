@@ -1,4 +1,4 @@
-"""Module: application_context.py
+"""Module: application_context.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -20,13 +20,13 @@ from typing import TYPE_CHECKING, Any
 from typing_extensions import deprecated
 
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
-from oncutf.core.type_aliases import MetadataCache
-from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.file.store import FileStore
     from oncutf.core.selection.selection_store import SelectionStore
+    from oncutf.core.type_aliases import MetadataCache
+    from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

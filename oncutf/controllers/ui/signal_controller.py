@@ -32,6 +32,7 @@ class SignalController:
 
         Args:
             parent_window: The main application window
+
         """
         self.parent_window = parent_window
         logger.debug("SignalController initialized", extra={"dev_only": True})

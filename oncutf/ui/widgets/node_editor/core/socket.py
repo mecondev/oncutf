@@ -79,6 +79,7 @@ class Socket(Serializable):
 
     Class Attributes:
         _graphics_socket_class: Graphics class for socket visualization (set at init).
+
     """
 
     _graphics_socket_class: type["QDMGraphicsSocket"] | None = None
@@ -103,6 +104,7 @@ class Socket(Serializable):
             multi_edges: Allow multiple simultaneous edge connections.
             count_on_this_node_side: Total sockets on this side for layout calc.
             is_input: True for input socket, False for output socket.
+
         """
         super().__init__()
 
@@ -125,6 +127,7 @@ class Socket(Serializable):
 
         Returns:
             Format: <Socket #index ME|SE ID> where ME=multi-edge, SE=single-edge.
+
         """
         edge_type = "ME" if self.is_multi_edges else "SE"
         return f"<Socket #{self.index} {edge_type} {hex(id(self))[2:5]}..{hex(id(self))[-3:]}>"
@@ -147,6 +150,7 @@ class Socket(Serializable):
 
         Returns:
             True if type changed, False if already set to this type.
+
         """
         if self.socket_type != new_socket_type:
             self.socket_type = new_socket_type
@@ -168,6 +172,7 @@ class Socket(Serializable):
 
         Returns:
             Tuple of (x, y) position relative to parent node.
+
         """
         result = self.node.get_socket_position(
             self.index, self.position, self.count_on_this_node_side
@@ -179,6 +184,7 @@ class Socket(Serializable):
 
         Returns:
             True if at least one edge is connected to this socket.
+
         """
         return len(self.edges) > 0
 
@@ -190,6 +196,7 @@ class Socket(Serializable):
 
         Returns:
             True if the edge is in this socket's edge list.
+
         """
         return edge in self.edges
 
@@ -198,6 +205,7 @@ class Socket(Serializable):
 
         Args:
             edge: Edge to add to the connection list.
+
         """
         self.edges.append(edge)
 
@@ -209,6 +217,7 @@ class Socket(Serializable):
 
         Note:
             Silently ignores if edge is not connected.
+
         """
         if edge in self.edges:
             self.edges.remove(edge)
@@ -221,6 +230,7 @@ class Socket(Serializable):
 
         Args:
             silent: If True, suppress removal notifications to this socket.
+
         """
         while self.edges:
             edge = self.edges.pop(0)
@@ -234,6 +244,7 @@ class Socket(Serializable):
 
         Returns:
             Dictionary containing socket configuration and ID.
+
         """
         return {
             "sid": self.sid,
@@ -253,6 +264,7 @@ class Socket(Serializable):
 
         Returns:
             True on successful deserialization.
+
         """
         if hashmap is None:
             hashmap = {}

@@ -26,6 +26,7 @@ class QtUserDialogAdapter:
 
         Args:
             parent: Parent QWidget for dialogs
+
         """
         self._parent = parent
 
@@ -71,6 +72,7 @@ class QtStatusReporter:
 
         Args:
             status_bar: QStatusBar instance (typed as object to avoid Qt import)
+
         """
         self._status_bar = status_bar
 
@@ -80,6 +82,7 @@ class QtStatusReporter:
         Args:
             message: Status message
             timeout: Timeout in milliseconds (0 = permanent)
+
         """
         if self._status_bar and hasattr(self._status_bar, "showMessage"):
             self._status_bar.showMessage(message, timeout)
@@ -136,6 +139,7 @@ class QtProgressDialogAdapter:
             cancel_callback: Callback function for cancellation
             show_enhanced_info: Whether to show enhanced information
             is_exit_save: Whether this is an exit save operation
+
         """
         from oncutf.utils.ui.progress_dialog import ProgressDialog
 

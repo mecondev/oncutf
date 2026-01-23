@@ -1,4 +1,4 @@
-"""Module: backup_manager.py
+"""Module: backup_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -122,7 +122,7 @@ class BackupManager(QObject):
             return str(backup_path)
 
         except Exception as e:
-            error_msg = f"[BackupManager] Failed to create backup: {str(e)}"
+            error_msg = f"[BackupManager] Failed to create backup: {e!s}"
             logger.error(error_msg)
             self.backup_failed.emit(error_msg)
             return None

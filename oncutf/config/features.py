@@ -1,4 +1,4 @@
-"""Module: oncutf.config.features
+"""Module: oncutf.config.features.
 
 Author: Michael Economou
 Date: 2026-01-01

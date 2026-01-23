@@ -1,4 +1,4 @@
-"""Module: filesystem_monitor.py
+"""Module: filesystem_monitor.py.
 
 Author: Michael Economou
 Date: 2025-12-16
@@ -16,7 +16,6 @@ from __future__ import annotations
 import logging
 import os
 import platform
-from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -24,6 +23,8 @@ from oncutf.core.pyqt_imports import QFileSystemWatcher, QObject, QTimer, pyqtSi
 from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from oncutf.core.file.load_manager import FileLoadManager
     from oncutf.core.file.store import FileStore
 

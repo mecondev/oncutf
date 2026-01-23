@@ -1,4 +1,4 @@
-"""Module: init_logging.py
+"""Module: init_logging.py.
 
 Author: Michael Economou
 Date: 2025-05-12

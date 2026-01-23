@@ -1,4 +1,4 @@
-"""Module: metadata_widget.py
+"""Module: metadata_widget.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -64,6 +64,7 @@ class MetadataWidget(QWidget):
         category_combo: Combo box for selecting the category
         options_combo: Hierarchical combo box for selecting specific options
         parent_window: Reference to parent window for file selection
+
     """
 
     updated = pyqtSignal(object)
@@ -75,6 +76,7 @@ class MetadataWidget(QWidget):
         Args:
             parent: Optional parent widget.
             parent_window: Reference to main window for file selection access.
+
         """
         super().__init__(parent)
         self.parent_window = parent_window
@@ -257,6 +259,7 @@ class MetadataWidget(QWidget):
 
         Returns:
             Set of metadata key names found in selected files
+
         """
         return self._metadata_keys_handler.get_available_metadata_keys()
 

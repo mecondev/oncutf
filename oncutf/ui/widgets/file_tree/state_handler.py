@@ -1,4 +1,4 @@
-"""Module: state_handler.py
+"""Module: state_handler.py.
 
 Author: Michael Economou
 Date: 2026-01-02
@@ -15,10 +15,10 @@ import os
 import platform
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QModelIndex
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.core.pyqt_imports import QModelIndex
     from oncutf.ui.widgets.file_tree.view import FileTreeView
 
 logger = get_cached_logger(__name__)

@@ -1,4 +1,4 @@
-"""selection_provider.py
+"""selection_provider.py.
 
 Author: Michael Economou
 Date: 2025-12-03
@@ -367,6 +367,7 @@ def get_selected_row_set(selection_model: Any) -> set[int]:
         >>> selected_rows = get_selected_row_set(sm)
         >>> if 5 in selected_rows:
         >>>     print("Row 5 is selected")
+
     """
     if not selection_model:
         return set()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Module: main.py
+"""Module: main.py.
 
 Author: Michael Economou
 Date: 2025-05-01

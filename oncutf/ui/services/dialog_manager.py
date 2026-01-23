@@ -1,4 +1,4 @@
-"""Module: dialog_manager.py
+"""Module: dialog_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -44,7 +44,7 @@ class DialogManager:
         logger.debug("[DialogManager] Initialized", extra={"dev_only": True})
 
     def confirm_large_folder(self, folder_path: str, file_count: int) -> bool:
-        """Show confirmation dialog for large folders"""
+        """Show confirmation dialog for large folders."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.question(
@@ -56,7 +56,7 @@ class DialogManager:
         )
 
     def check_large_files(self, files: list[str], max_size_mb: int = 100) -> tuple[bool, list[str]]:
-        """Check for large files and return list of oversized files"""
+        """Check for large files and return list of oversized files."""
         oversized = []
         for file in files:
             try:
@@ -69,7 +69,7 @@ class DialogManager:
         return len(oversized) > 0, oversized
 
     def confirm_large_files(self, files, max_size_mb: int = 100) -> bool:
-        """Show confirmation dialog for large files"""
+        """Show confirmation dialog for large files."""
         if not files:
             return True
 
@@ -117,8 +117,8 @@ class DialogManager:
             None, "Large Files Detected", message, yes_text="Continue", no_text="Cancel"
         )
 
-    def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:  # noqa: ARG002
-        """Show confirmation dialog for file rename conflicts"""
+    def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:
+        """Show confirmation dialog for file rename conflicts."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.question(
@@ -141,7 +141,7 @@ class DialogManager:
         return CustomMessageDialog.unsaved_changes(parent)
 
     def center_window(self, window: QWidget):
-        """Center a window on the screen using multiscreen-aware positioning"""
+        """Center a window on the screen using multiscreen-aware positioning."""
         if not window:
             return
 
@@ -150,7 +150,7 @@ class DialogManager:
         center_dialog_on_screen(window)
 
     def should_skip_folder_reload(self, folder_path: str) -> bool:
-        """Check if folder reload should be skipped"""
+        """Check if folder reload should be skipped."""
         if not folder_path or not os.path.exists(folder_path):
             return True
 

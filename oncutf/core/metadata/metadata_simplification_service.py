@@ -47,6 +47,7 @@ class MetadataSimplificationService:
         _registry: MetadataKeyRegistry instance
         _aliases_manager: SemanticAliasesManager instance
         _initialized: Whether semantic aliases have been loaded
+
     """
 
     def __init__(self):
@@ -77,6 +78,7 @@ class MetadataSimplificationService:
 
         Returns:
             SimplifiedMetadata wrapper or None if no metadata
+
         """
         if not file_item.has_metadata:
             return None
@@ -109,6 +111,7 @@ class MetadataSimplificationService:
 
         Returns:
             Metadata value or None if not found
+
         """
         if not file_item.has_metadata:
             return None
@@ -149,6 +152,7 @@ class MetadataSimplificationService:
 
         Returns:
             List of (simplified, original) key pairs
+
         """
         if not file_item.has_metadata:
             return []
@@ -189,6 +193,7 @@ class MetadataSimplificationService:
             "Creation Date"  # semantic alias
             >>> service.simplify_single_key("Audio Format Audio Rec Port Audio Codec")
             "Audio Codec"  # algorithmic simplification
+
         """
         self._ensure_initialized()
 
@@ -229,6 +234,7 @@ class MetadataSimplificationService:
 
         Returns:
             Dictionary with "common" and "specific" lists of (display_key, original_key, value)
+
         """
         self._ensure_initialized()
 
@@ -294,6 +300,7 @@ class MetadataSimplificationService:
         Note:
             This creates a registry mapping, not a persistent alias.
             For persistent aliases, edit semantic_metadata_aliases.json manually.
+
         """
         self._ensure_initialized()
         self._registry.add_mapping(
@@ -311,6 +318,7 @@ class MetadataSimplificationService:
 
         Returns:
             True if undo was successful
+
         """
         return self._registry.undo()
 
@@ -319,6 +327,7 @@ class MetadataSimplificationService:
 
         Returns:
             True if redo was successful
+
         """
         return self._registry.redo()
 
@@ -327,6 +336,7 @@ class MetadataSimplificationService:
 
         Args:
             filepath: Path to export file
+
         """
         self._ensure_initialized()
         self._registry.export_to_file(filepath)
@@ -340,6 +350,7 @@ class MetadataSimplificationService:
         Args:
             filepath: Path to import file
             merge: If True, merge with existing; if False, replace
+
         """
         self._registry.import_from_file(filepath, merge=merge)
         logger.info(
@@ -351,6 +362,7 @@ class MetadataSimplificationService:
 
         Returns:
             Path to semantic_metadata_aliases.json
+
         """
         return str(self._aliases_manager.get_aliases_file_path())
 
@@ -359,6 +371,7 @@ class MetadataSimplificationService:
 
         Returns:
             String with initialization status
+
         """
         status = "initialized" if self._initialized else "not initialized"
         return f"MetadataSimplificationService({status})"
@@ -373,6 +386,7 @@ def get_metadata_simplification_service() -> MetadataSimplificationService:
 
     Returns:
         Singleton service instance
+
     """
     global _simplification_service
     if _simplification_service is None:

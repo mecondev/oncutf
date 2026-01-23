@@ -1,4 +1,4 @@
-"""Module: metadata_cache_service.py
+"""Module: metadata_cache_service.py.
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -15,9 +15,8 @@ Responsibilities:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.file_status_helpers import (
     get_hash_for_file,
     get_metadata_cache_entry,
@@ -29,6 +28,9 @@ from oncutf.utils.filesystem.file_status_helpers import (
     set_metadata_for_file,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

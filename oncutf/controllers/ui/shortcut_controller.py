@@ -31,6 +31,7 @@ class ShortcutController:
 
         Args:
             parent_window: The main application window
+
         """
         self.parent_window = parent_window
         logger.debug("ShortcutController initialized", extra={"dev_only": True})

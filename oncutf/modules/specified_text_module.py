@@ -1,4 +1,4 @@
-"""Module: specified_text_module.py
+"""Module: specified_text_module.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -47,6 +47,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         Args:
             parent: Optional parent widget
+
         """
         super().__init__(parent)
 
@@ -279,7 +280,7 @@ class SpecifiedTextModule(BaseRenameModule):
         self.updated.emit(self)
 
     def _on_validation_changed(self, is_valid: bool) -> None:
-        """Handle validation state changes from the ValidatedLineEdit
+        """Handle validation state changes from the ValidatedLineEdit.
 
         Args:
             is_valid: True if input is valid, False otherwise
@@ -327,6 +328,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         Returns:
             The custom text from input field
+
         """
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
@@ -347,6 +349,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         Returns:
             The custom text string, or INVALID_FILENAME_MARKER if invalid
+
         """
         logger.debug(
             "[SpecifiedTextModule] apply_from_data called with data: %s",
@@ -382,5 +385,6 @@ class SpecifiedTextModule(BaseRenameModule):
 
         Returns:
             True if text is non-empty, False otherwise
+
         """
         return bool(data.get("text", ""))

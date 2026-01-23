@@ -1,4 +1,4 @@
-"""Module: placeholder_helper.py
+"""Module: placeholder_helper.py.
 
 Author: Michael Economou
 Date: 2025-05-01

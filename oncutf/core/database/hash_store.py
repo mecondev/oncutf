@@ -1,4 +1,4 @@
-"""Module: hash_store.py
+"""Module: hash_store.py.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -183,7 +183,7 @@ class HashStore:
             JOIN file_hashes h ON h.path_id = p.id
             WHERE p.file_path IN ({placeholders}) AND h.algorithm = ?
         """,
-            norm_paths + [algorithm],
+            [*norm_paths, algorithm],
         )
 
         # Get all file paths that have hashes

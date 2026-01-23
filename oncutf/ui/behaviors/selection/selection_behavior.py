@@ -20,12 +20,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.ui.behaviors.selection.protocols import SelectableWidget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.pyqt_imports import QItemSelection, QModelIndex, Qt
     from oncutf.core.selection.selection_store import SelectionStore
+    from oncutf.ui.behaviors.selection.protocols import SelectableWidget
 
 logger = get_cached_logger(__name__)
 
@@ -55,6 +55,7 @@ class SelectionBehavior:
             widget: The widget to manage selection for (must implement SelectableWidget)
             selection_store: Optional SelectionStore instance. If None, will attempt
                 to get from ApplicationContext during operation.
+
         """
         self._widget = widget
         self._selection_store = selection_store
@@ -99,6 +100,7 @@ class SelectionBehavior:
         Args:
             selected: Newly selected items
             deselected: Newly deselected items
+
         """
         if self._processing_selection_change:
             return
@@ -124,6 +126,7 @@ class SelectionBehavior:
         Args:
             selected_rows: Set of row indices to select
             emit_signal: Whether to emit selection changed signal
+
         """
         if self.selection_store:
             self.selection_store.set_selected_rows(selected_rows, emit_signal=emit_signal)
@@ -135,6 +138,7 @@ class SelectionBehavior:
 
         Args:
             selected_rows: Set of row indices to select in Qt model
+
         """
         from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
@@ -174,6 +178,7 @@ class SelectionBehavior:
         Args:
             row: Row index to use as anchor, or None to clear
             emit_signal: Whether to emit the anchor_changed signal (default: True)
+
         """
         self._anchor_row = row
         logger.debug(
@@ -185,6 +190,7 @@ class SelectionBehavior:
 
         Returns:
             Anchor row index or None if not set
+
         """
         return self._anchor_row
 
@@ -193,6 +199,7 @@ class SelectionBehavior:
 
         Returns:
             Set of selected row indices
+
         """
         if self.selection_store:
             return self.selection_store.get_selected_rows()
@@ -203,6 +210,7 @@ class SelectionBehavior:
 
         Returns:
             Set of selected row indices
+
         """
         if self.selection_store:
             return self.selection_store.get_selected_rows()
@@ -256,6 +264,7 @@ class SelectionBehavior:
         Args:
             index: QModelIndex of clicked item
             modifiers: Qt keyboard modifiers (Shift, Ctrl, etc.)
+
         """
         from oncutf.core.pyqt_imports import Qt
 
@@ -289,6 +298,7 @@ class SelectionBehavior:
             sm: Selection model
             model: Data model
             index: Clicked index
+
         """
         from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
@@ -331,6 +341,7 @@ class SelectionBehavior:
             sm: Selection model
             model: Data model
             index: Clicked index
+
         """
         from oncutf.core.pyqt_imports import QItemSelectionModel
 
@@ -360,6 +371,7 @@ class SelectionBehavior:
             sm: Selection model
             model: Data model
             index: Clicked index
+
         """
         from oncutf.core.pyqt_imports import QItemSelectionModel
 
@@ -380,6 +392,7 @@ class SelectionBehavior:
         Args:
             model: Data model
             row: Row index to update
+
         """
         left = model.index(row, 0)
         right = model.index(row, model.columnCount() - 1)
@@ -393,6 +406,7 @@ class SelectionBehavior:
         Args:
             start_row: Starting row index
             end_row: Ending row index (inclusive)
+
         """
         from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
@@ -430,6 +444,7 @@ class SelectionBehavior:
 
         Args:
             file_paths: List of file paths to select (None = select all)
+
         """
         from oncutf.core.pyqt_imports import QItemSelection, Qt
 
@@ -519,6 +534,7 @@ class SelectionBehavior:
         Args:
             selected: Newly selected items
             deselected: Newly deselected items
+
         """
         if self._processing_selection_change:
             return

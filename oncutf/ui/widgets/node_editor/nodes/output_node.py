@@ -54,6 +54,7 @@ class OutputContent(QDMNodeContentWidget):
 
         Args:
             value: Value to display (will be converted to string).
+
         """
         if value is None:
             self.label.setText("---")
@@ -90,6 +91,7 @@ class OutputNode(Node):
             scene: Parent scene containing this node.
             inputs: Input socket configuration (default: [1]).
             outputs: Unused, output node has no outputs.
+
         """
         _ = outputs  # Unused
         if inputs is None:
@@ -109,6 +111,7 @@ class OutputNode(Node):
 
         Returns:
             The input value, or None if not connected.
+
         """
         input_node = self.get_input(0)
 

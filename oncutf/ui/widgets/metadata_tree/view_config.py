@@ -1,4 +1,4 @@
-"""Module: view_config.py
+"""Module: view_config.py.
 
 Author: Michael Economou
 Date: 2025-12-23

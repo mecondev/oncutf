@@ -8,4 +8,4 @@ Metadata extraction and processing logic.
 
 from oncutf.domain.metadata.extractor import ExtractionResult, MetadataExtractor
 
-__all__ = ["MetadataExtractor", "ExtractionResult"]
+__all__ = ["ExtractionResult", "MetadataExtractor"]

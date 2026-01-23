@@ -52,6 +52,7 @@ class QDMGraphicsNode(QGraphicsItem):
         height: Node height in pixels.
         title_item: QGraphicsTextItem displaying the title.
         graphics_content: QGraphicsProxyWidget containing content widget.
+
     """
 
     def __init__(self, node: Node, parent: QWidget | None = None):
@@ -60,6 +61,7 @@ class QDMGraphicsNode(QGraphicsItem):
         Args:
             node: Logical Node this graphics item represents.
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
         self.node = node
@@ -80,6 +82,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Returns:
             QDMNodeContentWidget instance or None.
+
         """
         return self.node.content if self.node else None
 
@@ -89,6 +92,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Returns:
             Current title string.
+
         """
         return self._title
 
@@ -98,6 +102,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             value: New title string.
+
         """
         self._title = value
         self.title_item.setPlainText(self._title)
@@ -163,6 +168,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             new_state: True to select, False to deselect.
+
         """
         self.setSelected(new_state)
         self._last_selected_state = new_state
@@ -178,6 +184,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             event: Qt mouse move event.
+
         """
         super().mouseMoveEvent(event)
 
@@ -226,6 +233,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             event: Qt mouse release event.
+
         """
         super().mouseReleaseEvent(event)
 
@@ -252,6 +260,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             event: Qt mouse double-click event.
+
         """
         self.node.on_double_clicked(event)
 
@@ -260,6 +269,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             _event: Qt hover enter event (unused).
+
         """
         self.hovered = True
         self.update()
@@ -269,6 +279,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Args:
             _event: Qt hover leave event (unused).
+
         """
         self.hovered = False
         self.update()
@@ -278,6 +289,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         Returns:
             QRectF defining item bounds.
+
         """
         return QRectF(0, 0, self.width, self.height).normalized()
 
@@ -314,6 +326,7 @@ class QDMGraphicsNode(QGraphicsItem):
             painter: QPainter for drawing operations.
             _option: Style options (unused).
             _widget: Target widget (unused).
+
         """
         path_title = QPainterPath()
         path_title.setFillRule(Qt.FillRule.WindingFill)

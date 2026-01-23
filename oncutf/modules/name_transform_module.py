@@ -1,4 +1,4 @@
-"""Module: name_transform_module.py
+"""Module: name_transform_module.py.
 
 Author: Michael Economou
 Date: 2025-05-27

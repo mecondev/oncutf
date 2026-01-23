@@ -30,6 +30,7 @@ def prepare_combo_popup(combo: QComboBox) -> None:
 
     Args:
         combo: QComboBox instance to prepare
+
     """
     view = combo.view()
     if not view:
@@ -63,6 +64,7 @@ def apply_combo_popup_metrics(combo: QComboBox, *, pre_show: bool = False) -> No
     Args:
         combo: QComboBox instance to size
         pre_show: Whether this is called before or after popup is shown
+
     """
     try:
         count = combo.count()

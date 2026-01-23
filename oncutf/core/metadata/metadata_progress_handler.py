@@ -1,4 +1,4 @@
-"""Module: metadata_progress_handler.py
+"""Module: metadata_progress_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-21
@@ -16,12 +16,13 @@ Responsibilities:
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from oncutf.app.ports.user_interaction import ProgressDialogPort
     from oncutf.models.file_item import FileItem
 

@@ -34,6 +34,7 @@ class CategoryManager:
 
         Args:
             widget: The parent MetadataWidget instance.
+
         """
         self.widget = widget
         logger.debug("CategoryManager initialized")

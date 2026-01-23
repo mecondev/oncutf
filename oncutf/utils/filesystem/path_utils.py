@@ -1,4 +1,4 @@
-"""Module: path_utils.py
+"""Module: path_utils.py.
 
 Author: Michael Economou
 Date: 2025-06-10
@@ -219,7 +219,7 @@ def resource_exists(relative_path: str) -> bool:
 
 
 def paths_equal(path1: str, path2: str) -> bool:
-    """Compare two file paths for equality after normalizing both.
+    r"""Compare two file paths for equality after normalizing both.
 
     This ensures that paths with different separator styles are compared correctly
     across different operating systems. Works correctly even when comparing Windows
@@ -262,7 +262,7 @@ def paths_equal(path1: str, path2: str) -> bool:
 def find_file_by_path[T](
     files: list[T], target_path: str, path_attr: str = "full_path"
 ) -> T | None:
-    """Find a file object in a list by comparing paths with normalization.
+    r"""Find a file object in a list by comparing paths with normalization.
 
     Args:
         files (list): List of file objects to search through
@@ -323,6 +323,7 @@ def get_user_data_dir(app_name: str = "oncutf") -> Path:
 
     Returns:
         Path to the user data directory.
+
     """
     if sys.platform.startswith("win"):
         base = Path.home() / "AppData" / "Local"

@@ -35,6 +35,7 @@ class MetadataTreeEventHandler:
 
         Args:
             view: The MetadataTreeView instance to handle events for
+
         """
         self._view = view
 
@@ -52,6 +53,7 @@ class MetadataTreeEventHandler:
 
         Returns:
             True if event was handled, False otherwise
+
         """
         # Handle F5 refresh
         if event.key() == Qt.Key_F5:
@@ -66,6 +68,7 @@ class MetadataTreeEventHandler:
 
         Args:
             event: The QWheelEvent to handle
+
         """
         # Update hover after scroll to reflect current cursor position
         delegate = self._view.itemDelegate()
@@ -88,6 +91,7 @@ class MetadataTreeEventHandler:
 
         Args:
             event: The QResizeEvent to handle
+
         """
         if hasattr(self._view, "placeholder_helper"):
             self._view.placeholder_helper.update_position()
@@ -97,6 +101,7 @@ class MetadataTreeEventHandler:
 
         Args:
             event: The QFocusEvent to handle
+
         """
         # Currently no special handling needed
         # This method exists for symmetry and future extensibility
@@ -109,6 +114,7 @@ class MetadataTreeEventHandler:
 
         Returns:
             True if event was handled, False to allow default processing
+
         """
         # Close any open context menu on left click
         if event.button() == Qt.LeftButton and self._view._current_menu:
@@ -125,6 +131,7 @@ class MetadataTreeEventHandler:
         Args:
             dx: Horizontal scroll delta
             dy: Vertical scroll delta
+
         """
         # Currently no special handling needed
         # This method exists for symmetry and future extensibility

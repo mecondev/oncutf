@@ -71,6 +71,7 @@ class LayoutController:
 
         Args:
             parent_window: The main application window
+
         """
         self.parent_window = parent_window
         logger.debug("LayoutController initialized", extra={"dev_only": True})
@@ -101,6 +102,7 @@ class LayoutController:
 
         Returns:
             List of sizes [left, center, right]
+
         """
         # Delegate to SplitterManager if available
         if hasattr(self.parent_window, "splitter_manager"):
@@ -119,6 +121,7 @@ class LayoutController:
 
         Returns:
             List of sizes [left, center, right]
+
         """
         # Smart percentage calculation based on screen width
         if window_width >= 2560:  # 4K/Ultrawide screens
@@ -432,6 +435,7 @@ class LayoutController:
 
         Args:
             button: The clicked button from viewport_button_group
+
         """
         try:
             # Get button ID from viewport_buttons dict
@@ -495,6 +499,7 @@ class LayoutController:
 
         Args:
             selected_rows: List of selected row indices
+
         """
         # Only sync if thumbnail view is active
         if self.parent_window.viewport_stack.currentIndex() == 1:
@@ -508,6 +513,7 @@ class LayoutController:
 
         Args:
             selected_rows: List of selected row indices
+
         """
         # Only process if thumbnail view is active
         if self.parent_window.viewport_stack.currentIndex() != 1:
@@ -673,6 +679,7 @@ class LayoutController:
 
         Args:
             parent_layout: Parent layout to add search components to
+
         """
         from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel
         from oncutf.utils.filesystem.path_utils import get_icons_dir

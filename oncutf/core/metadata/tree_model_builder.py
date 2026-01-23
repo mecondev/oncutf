@@ -1,4 +1,4 @@
-"""Module: build_metadata_tree_model.py
+"""Module: build_metadata_tree_model.py.
 
 Author: Michael Economou
 Date: 2025-05-10

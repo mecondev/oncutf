@@ -1,4 +1,4 @@
-"""Module: persistent_hash_cache.py
+"""Module: persistent_hash_cache.py.
 
 Author: Michael Economou
 Date: 2025-06-15

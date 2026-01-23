@@ -9,13 +9,14 @@ Used by rename modules to avoid expensive hash computations during preview.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+
     from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
 
 logger = get_cached_logger(__name__)
@@ -47,7 +48,7 @@ class CachedHashService:
         self,
         path: Path,
         algorithm: str = "crc32",
-        progress_callback: Callable[[int, int], None] | None = None,  # noqa: ARG002
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> str:
         """Get cached hash (never computes).
 
@@ -84,7 +85,7 @@ class CachedHashService:
         self,
         paths: list[Path],
         algorithm: str = "crc32",
-        progress_callback: Callable[[int, int], None] | None = None,  # noqa: ARG002
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> dict[Path, str]:
         """Get cached hashes for multiple files (never computes).
 

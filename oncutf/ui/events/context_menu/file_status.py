@@ -1,4 +1,4 @@
-"""Module: file_status.py
+"""Module: file_status.py.
 
 Author: Michael Economou
 Date: 2026-01-01

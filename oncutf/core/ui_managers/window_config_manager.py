@@ -1,4 +1,4 @@
-"""Module: window_config_manager.py
+"""Module: window_config_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-10

@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.column_manager
+"""oncutf.models.file_table.column_manager.
 
 Column visibility and mapping management for file table model.
 
@@ -158,14 +158,14 @@ class ColumnManager:
                         "[ColumnManager] Single column addition - using insertColumns",
                         extra={"dev_only": True},
                     )
-                    self._handle_single_column_addition(visible_columns, list(added_columns)[0])
+                    self._handle_single_column_addition(visible_columns, next(iter(added_columns)))
                 elif len(added_columns) == 0 and len(removed_columns) == 1:
                     # Single column removal
                     logger.debug(
                         "[ColumnManager] Single column removal - using removeColumns",
                         extra={"dev_only": True},
                     )
-                    self._handle_single_column_removal(visible_columns, list(removed_columns)[0])
+                    self._handle_single_column_removal(visible_columns, next(iter(removed_columns)))
                 else:
                     # Should not happen in normal use, but handle gracefully
                     logger.warning(

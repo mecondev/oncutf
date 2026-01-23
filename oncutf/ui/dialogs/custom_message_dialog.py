@@ -1,4 +1,4 @@
-"""Module: custom_msgdialog.py
+"""Module: custom_msgdialog.py.
 
 Author: Michael Economou
 Date: 2025-05-07
@@ -327,7 +327,7 @@ class CustomMessageDialog(QDialog):
 
         return button_map.get(dlg.selected or "cancel", "cancel")
 
-    def set_progress(self, value: int, total: int = None):
+    def set_progress(self, value: int, total: int | None = None):
         """Updates the progress bar with the current progress value.
 
         Parameters
@@ -457,7 +457,7 @@ class CustomMessageDialog(QDialog):
         parent: QWidget, title: str, message: str, buttons: dict[str, str]
     ) -> tuple[str, bool]:
         """Show a custom dialog using CustomMessageDialog with a checkbox.
-        Returns (selected_key, apply_to_all)
+        Returns (selected_key, apply_to_all).
         """
         dlg = CustomMessageDialog(
             title=title,

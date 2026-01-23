@@ -1,4 +1,4 @@
-"""Module: preview_engine.py
+"""Module: preview_engine.py.
 
 Author: Michael Economou
 Date: 2025-05-12

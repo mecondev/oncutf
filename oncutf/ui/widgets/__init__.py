@@ -1,4 +1,4 @@
-"""Module: __init__.py
+"""Module: __init__.py.
 
 Author: Michael Economou
 Date: 2025-05-09
@@ -31,25 +31,25 @@ from .styled_combo_box import StyledComboBox
 from .validated_line_edit import ValidatedLineEdit
 
 __all__ = [
-    "ProgressManager",
-    "ProgressWidget",
-    "ValidatedLineEdit",
     "BaseValidatedInput",
+    "ComboBoxItemDelegate",
+    "CustomFileSystemModel",
     "CustomSplashScreen",
+    "FileTableHoverDelegate",
     "FileTableView",
     "FileTreeView",
+    "FinalTransformContainer",
+    "InteractiveHeader",
     "MetadataTreeView",
+    "MetadataWidget",
+    "MetadataWorker",
+    "NameTransformWidget",
+    "OriginalNameWidget",
     "PreviewTablesView",
+    "ProgressManager",
+    "ProgressWidget",
     "RenameModuleWidget",
     "RenameModulesArea",
     "StyledComboBox",
-    "MetadataWidget",
-    "CustomFileSystemModel",
-    "FinalTransformContainer",
-    "NameTransformWidget",
-    "OriginalNameWidget",
-    "InteractiveHeader",
-    "ComboBoxItemDelegate",
-    "FileTableHoverDelegate",
-    "MetadataWorker",
+    "ValidatedLineEdit",
 ]

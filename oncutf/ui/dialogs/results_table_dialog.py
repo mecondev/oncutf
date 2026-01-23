@@ -1,4 +1,4 @@
-"""Module: results_table_dialog.py
+"""Module: results_table_dialog.py.
 
 Author: Michael Economou
 Date: 2025-11-23

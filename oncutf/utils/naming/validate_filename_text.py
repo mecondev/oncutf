@@ -1,4 +1,4 @@
-"""Module: validate_filename_text.py
+"""Module: validate_filename_text.py.
 
 Author: Michael Economou
 Date: 2025-05-12

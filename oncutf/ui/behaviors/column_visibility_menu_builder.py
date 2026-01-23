@@ -1,4 +1,4 @@
-"""Module: column_visibility_menu_builder.py
+"""Module: column_visibility_menu_builder.py.
 
 Author: Michael Economou
 Date: 2026-01-12
@@ -9,12 +9,15 @@ Extracts column visibility menu logic from InteractiveHeader.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 from oncutf.core.pyqt_imports import QAction, QMenu
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_menu_icon
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = get_cached_logger(__name__)
 
@@ -50,6 +53,7 @@ class ColumnVisibilityMenuBuilder:
 
         Args:
             file_table_view: File table view with _column_mgmt_behavior attribute.
+
         """
         self._file_table_view = file_table_view
 
@@ -64,6 +68,7 @@ class ColumnVisibilityMenuBuilder:
             parent_menu: Parent menu to add submenu to.
             toggle_callback: Callback function for toggling column visibility.
                             Receives column_key as argument.
+
         """
         try:
             # Check if file table view has required behavior
@@ -95,6 +100,7 @@ class ColumnVisibilityMenuBuilder:
 
         Returns:
             Dictionary mapping category name to list of (column_key, column_config) tuples.
+
         """
         # Initialize groups
         column_groups: dict[str, list[tuple[str, dict]]] = {
@@ -137,6 +143,7 @@ class ColumnVisibilityMenuBuilder:
             column_groups: Dictionary of column groups.
             visible_columns_list: List of currently visible column keys.
             toggle_callback: Callback for toggling column visibility.
+
         """
         first_group = True
         for group_name in ["File", "Image", "Video", "Audio", "Metadata", "Device", "Other"]:

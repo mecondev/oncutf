@@ -1,4 +1,4 @@
-"""Module: streaming_loader.py
+"""Module: streaming_loader.py.
 
 Author: Michael Economou
 Date: 2026-01-03
@@ -29,6 +29,7 @@ class StreamingFileLoader:
             parent_window: Parent window for accessing models
             ui_service: UI service for refresh operations
             batch_size: Number of files to load per batch
+
         """
         self.parent_window = parent_window
         self.ui_service = ui_service
@@ -45,6 +46,7 @@ class StreamingFileLoader:
         Args:
             items: List of FileItem objects to load
             clear: Whether to clear existing files first
+
         """
         logger.info(
             "[StreamingFileLoader] Starting streaming load for %d files (batch_size=%d)",

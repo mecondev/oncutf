@@ -37,7 +37,7 @@ def mock_parent(_qtbot):
 class TestSaveCancelBehavior:
     """Test save operation cancel behavior with ESC key."""
 
-    def test_normal_save_esc_blocked_by_default(self, _qt_app, qtbot):  # noqa: ARG002
+    def test_normal_save_esc_blocked_by_default(self, _qt_app, qtbot):
         """Test that normal save blocks ESC by default (config = False)."""
         with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": False}):
             dialog = ProgressDialog(
@@ -60,7 +60,7 @@ class TestSaveCancelBehavior:
 
             dialog.close()
 
-    def test_normal_save_esc_allowed_when_config_enabled(self, _qt_app, qtbot):  # noqa: ARG002
+    def test_normal_save_esc_allowed_when_config_enabled(self, _qt_app, qtbot):
         """Test that normal save allows ESC when config is True."""
         with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
             cancel_callback = Mock()
@@ -82,7 +82,7 @@ class TestSaveCancelBehavior:
             # Cancel callback should be called
             cancel_callback.assert_called_once()
 
-    def test_exit_save_esc_always_blocked(self, _qt_app, qtbot):  # noqa: ARG002
+    def test_exit_save_esc_always_blocked(self, _qt_app, qtbot):
         """Test that exit save always blocks ESC regardless of config."""
         # Test with config = True (should still block)
         with patch("oncutf.config.SAVE_OPERATION_SETTINGS", {"ALLOW_CANCEL_NORMAL_SAVE": True}):
@@ -106,7 +106,7 @@ class TestSaveCancelBehavior:
 
             dialog.close()
 
-    def test_non_save_operations_allow_esc(self, _qt_app, qtbot):  # noqa: ARG002
+    def test_non_save_operations_allow_esc(self, _qt_app, qtbot):
         """Test that non-save operations (metadata load, hash) allow ESC."""
         for operation_type in [
             "metadata_basic",
@@ -137,7 +137,7 @@ class TestSaveCancelBehavior:
 
             dialog.close()
 
-    def test_exit_save_flag_propagation(self, _qt_app):  # noqa: ARG002
+    def test_exit_save_flag_propagation(self, _qt_app):
         """Test that is_exit_save flag is properly stored."""
         dialog = ProgressDialog(
             parent=None,
@@ -148,7 +148,7 @@ class TestSaveCancelBehavior:
         assert dialog.is_exit_save is True
         dialog.close()
 
-    def test_normal_save_flag_default(self, _qt_app):  # noqa: ARG002
+    def test_normal_save_flag_default(self, _qt_app):
         """Test that is_exit_save defaults to False."""
         dialog = ProgressDialog(
             parent=None,
@@ -158,7 +158,7 @@ class TestSaveCancelBehavior:
         assert dialog.is_exit_save is False
         dialog.close()
 
-    def test_should_block_esc_logic(self, _qt_app):  # noqa: ARG002
+    def test_should_block_esc_logic(self, _qt_app):
         """Test _should_block_esc logic comprehensively."""
         # Case 1: Exit save always blocks
         dialog = ProgressDialog(

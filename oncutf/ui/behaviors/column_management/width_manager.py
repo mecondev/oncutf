@@ -30,6 +30,7 @@ class ColumnWidthManager:
         Args:
             widget: The table widget to manage
             service: Column service for configuration
+
         """
         self._widget = widget
         self._service = service
@@ -44,6 +45,7 @@ class ColumnWidthManager:
 
         Returns:
             Saved or default width
+
         """
         try:
             column_cfg = self._service.get_column_config(column_key)
@@ -86,6 +88,7 @@ class ColumnWidthManager:
 
         Returns:
             Calculated filename width in pixels
+
         """
         try:
             from oncutf.utils.shared.json_config_manager import get_app_config_manager
@@ -138,6 +141,7 @@ class ColumnWidthManager:
 
         Returns:
             Recommended width for the column
+
         """
         cfg = self._service.get_column_config(column_key)
         if not cfg:
@@ -159,6 +163,7 @@ class ColumnWidthManager:
         Args:
             column_key: Column identifier
             width: New width to save
+
         """
         from oncutf.config import COLUMN_RESIZE_BEHAVIOR
 

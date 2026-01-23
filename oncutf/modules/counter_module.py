@@ -1,4 +1,4 @@
-"""Module: counter_module.py
+"""Module: counter_module.py.
 
 Author: Michael Economou
 Date: 2025-05-06
@@ -38,7 +38,7 @@ logger = get_cached_logger(__name__)
 
 class CounterModule(BaseRenameModule):
     """A widget for inserting an incrementing counter in filenames.
-    Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus]
+    Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus].
     """
 
     # Phase 3.1: Module metadata for auto-discovery
@@ -56,6 +56,7 @@ class CounterModule(BaseRenameModule):
 
         Args:
             parent: Optional parent widget
+
         """
         super().__init__(parent)
         self.setProperty("module", True)
@@ -233,6 +234,7 @@ class CounterModule(BaseRenameModule):
 
         Returns:
             Formatted counter string (zero-padded)
+
         """
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
@@ -302,5 +304,6 @@ class CounterModule(BaseRenameModule):
 
         Returns:
             Always True
+
         """
         return True

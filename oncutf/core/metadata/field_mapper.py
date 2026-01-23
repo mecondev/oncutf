@@ -1,4 +1,4 @@
-"""Module: metadata_field_mapper.py
+"""Module: metadata_field_mapper.py.
 
 Author: Michael Economou
 Date: 2025-05-01
@@ -167,7 +167,7 @@ class MetadataFieldMapper:
 
         # Find width
         for key in width_keys:
-            if key in metadata_dict and metadata_dict[key]:
+            if metadata_dict.get(key):
                 try:
                     width = int(metadata_dict[key])
                     break
@@ -176,7 +176,7 @@ class MetadataFieldMapper:
 
         # Find height
         for key in height_keys:
-            if key in metadata_dict and metadata_dict[key]:
+            if metadata_dict.get(key):
                 try:
                     height = int(metadata_dict[key])
                     break

@@ -1,4 +1,4 @@
-"""Module: shortcut_command_handler.py
+"""Module: shortcut_command_handler.py.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -27,6 +27,7 @@ class ShortcutCommandHandler:
 
         Args:
             main_window: Reference to the main application window.
+
         """
         self.main_window = main_window
         logger.debug("[ShortcutCommandHandler] Initialized")

@@ -41,6 +41,7 @@ class ColumnManagementBehavior:
 
         Args:
             widget: Table widget that implements ColumnManageableWidget protocol
+
         """
         self._widget = widget
         self._service = self._get_column_service()
@@ -171,6 +172,7 @@ class ColumnManagementBehavior:
 
         Args:
             column_key: Column identifier to show
+
         """
         self._visibility_manager.add_column(column_key)
         # Reconfigure columns to refresh header and apply proper width
@@ -181,6 +183,7 @@ class ColumnManagementBehavior:
 
         Args:
             column_key: Column identifier to hide
+
         """
         self._visibility_manager.remove_column(column_key)
         # Reconfigure columns to refresh header
@@ -191,6 +194,7 @@ class ColumnManagementBehavior:
 
         Returns:
             List of visible column keys in display order
+
         """
         return self._visibility_manager.get_visible_columns_list()
 
@@ -203,6 +207,7 @@ class ColumnManagementBehavior:
 
         Args:
             column_key: Column key to toggle
+
         """
         self._visibility_manager.toggle_column_visibility(column_key)
 
@@ -215,6 +220,7 @@ class ColumnManagementBehavior:
 
         Returns:
             Column visibility state (column_key -> visible)
+
         """
         return self._visibility_manager.load_visibility_config()
 
@@ -248,6 +254,7 @@ class ColumnManagementBehavior:
             logical_index: Column logical index
             old_size: Previous column width
             new_size: New column width
+
         """
         if self._programmatic_resize:
             return
@@ -285,6 +292,7 @@ class ColumnManagementBehavior:
             logical_index: Column logical index
             old_visual_index: Previous visual position
             new_visual_index: New visual position
+
         """
         logger.debug(
             "Column %d moved from visual %d to %d",
@@ -302,6 +310,7 @@ class ColumnManagementBehavior:
 
         Returns:
             True if shortcut was handled, False otherwise
+
         """
         # Check for Ctrl+T (auto-fit) or Ctrl+Shift+T (reset)
         if key == Qt.Key_T:
@@ -362,6 +371,7 @@ class ColumnManagementBehavior:
         Args:
             column_index: Column index
             alignment: Alignment string ('left', 'right', 'center')
+
         """
         if not self._widget.model():
             return
@@ -387,6 +397,7 @@ class ColumnManagementBehavior:
 
         Args:
             force_emit_signal: Whether to force emit selection change signal
+
         """
         # This method can be overridden or connected to widget's selection clearing
 

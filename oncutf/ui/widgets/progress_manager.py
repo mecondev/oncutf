@@ -1,4 +1,4 @@
-"""Module: progress_manager.py
+"""Module: progress_manager.py.
 
 Author: Michael Economou
 Date: 2025-06-25

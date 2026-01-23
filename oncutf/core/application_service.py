@@ -66,7 +66,7 @@ class ApplicationService:
     # File Operations
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, force: bool = False):  # noqa: ARG002
+    def load_files_from_folder(self, folder_path: str, force: bool = False):
         """Load files from folder via FileLoadController."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)
@@ -227,12 +227,12 @@ class ApplicationService:
         except Exception as e:
             logger.exception("[ApplicationService] Error in RenameController rename: %s", e)
             self.main_window.status_manager.set_validation_status(
-                f"Rename error: {str(e)}", validation_type="error", auto_reset=True
+                f"Rename error: {e!s}", validation_type="error", auto_reset=True
             )
 
     def _update_file_items_after_rename(
         self, files: list[FileItem], new_names: list[str], execution_result
-    ) -> None:  # noqa: ARG002
+    ) -> None:
         """Update FileItem objects with new paths after successful rename.
 
         This prevents the issue where files are renamed but FileItem objects still
@@ -325,6 +325,7 @@ class ApplicationService:
 
         Returns:
             True if all files have hashes, False otherwise.
+
         """
         files_to_check = files if files is not None else self.main_window.file_model.files
 

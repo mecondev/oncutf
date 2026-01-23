@@ -1,4 +1,4 @@
-"""Module: stylesheet_utils.py
+"""Module: stylesheet_utils.py.
 
 Author: Michael Economou
 Date: 2026-01-11
@@ -24,6 +24,7 @@ def get_font_family_css(widget_type: str | None = None) -> str:
         '"Inter", "Segoe UI", Arial, sans-serif'
         >>> get_font_family_css('table')  # Uses monospace for tables
         '"JetBrains Mono", "Courier New", monospace'
+
     """
     from oncutf.config.ui import get_ui_font_family
 
@@ -49,6 +50,7 @@ def inject_font_family(qss_string: str, widget_type: str | None = None) -> str:
         'QWidget { font-family: "Inter", "Segoe UI", Arial, sans-serif; }'
         >>> inject_font_family(qss, 'table')  # Uses monospace for tables
         'QWidget { font-family: "JetBrains Mono", "Courier New", monospace; }'
+
     """
     # Replace common Inter font chain
     result = qss_string.replace(

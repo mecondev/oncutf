@@ -57,6 +57,7 @@ class CreateListNode(Node):
 
         Returns:
             list: List of all input values, or empty list if no inputs.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -126,6 +127,7 @@ class GetItemNode(Node):
 
         Returns:
             any: Item at index, or None if error.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -235,6 +237,7 @@ class ListLengthNode(Node):
 
         Returns:
             int: Length of the input, or None if error.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -316,6 +319,7 @@ class AppendNode(Node):
 
         Returns:
             list: New list with item appended, or None if error.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value
@@ -410,6 +414,7 @@ class JoinNode(Node):
 
         Returns:
             str: Joined string, or None if error.
+
         """
         if not self.is_dirty() and not self.is_invalid():
             return self.value

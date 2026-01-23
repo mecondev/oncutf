@@ -1,4 +1,4 @@
-"""Module: status_manager.py
+"""Module: status_manager.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -98,7 +98,7 @@ class StatusManager:
         text: str,
         color: str = "",
         auto_reset: bool = False,
-        reset_delay: int = None,
+        reset_delay: int | None = None,
         category: StatusCategory = StatusCategory.GENERAL,
         priority: StatusPriority = StatusPriority.NORMAL,
         operation_id: str | None = None,

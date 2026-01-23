@@ -33,6 +33,7 @@ class SemanticAliasesManager:
 
     Attributes:
         _aliases_file: Path to semantic aliases JSON file
+
     """
 
     ALIASES_FILENAME = "semantic_metadata_aliases.json"
@@ -46,6 +47,7 @@ class SemanticAliasesManager:
 
         Returns:
             Path to semantic_metadata_aliases.json in user data directory
+
         """
         return AppPaths.get_user_data_dir() / self.ALIASES_FILENAME
 
@@ -59,6 +61,7 @@ class SemanticAliasesManager:
 
         Returns:
             Dictionary mapping semantic names to lists of original keys
+
         """
         if not self._aliases_file.exists():
             if auto_create:
@@ -84,6 +87,7 @@ class SemanticAliasesManager:
 
         Raises:
             ValueError: If file is corrupted or invalid JSON
+
         """
         try:
             with open(self._aliases_file, encoding="utf-8") as f:
@@ -140,6 +144,7 @@ class SemanticAliasesManager:
 
         Returns:
             True if saved successfully, False otherwise
+
         """
         try:
             # Ensure directory exists
@@ -169,6 +174,7 @@ class SemanticAliasesManager:
 
         Returns:
             Reloaded semantic aliases dictionary
+
         """
         logger.info("Reloading semantic aliases from file")
         return self.load_aliases(auto_create=False)
@@ -199,6 +205,7 @@ class SemanticAliasesManager:
 
         Returns:
             Path to semantic_metadata_aliases.json
+
         """
         return self._aliases_file
 
@@ -207,6 +214,7 @@ class SemanticAliasesManager:
 
         Returns:
             True if file exists
+
         """
         return self._aliases_file.exists()
 
@@ -215,6 +223,7 @@ class SemanticAliasesManager:
 
         Returns:
             True if reset successful
+
         """
         logger.warning("Resetting semantic aliases to defaults")
         defaults = MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
@@ -231,6 +240,7 @@ class SemanticAliasesManager:
 
         Returns:
             True if saved successfully
+
         """
         aliases = self.load_aliases(auto_create=True)
         aliases[semantic_name] = original_keys
@@ -244,6 +254,7 @@ class SemanticAliasesManager:
 
         Returns:
             True if removed and saved successfully
+
         """
         aliases = self.load_aliases(auto_create=True)
         if semantic_name in aliases:
@@ -256,6 +267,7 @@ class SemanticAliasesManager:
 
         Returns:
             String with file path and status
+
         """
         exists_str = "exists" if self.file_exists() else "not created"
         return f"SemanticAliasesManager({self._aliases_file}, {exists_str})"

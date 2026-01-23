@@ -1,4 +1,4 @@
-"""Module: theme_manager.py
+"""Module: theme_manager.py.
 
 Author: Michael Economou
 Date: 2025-12-01

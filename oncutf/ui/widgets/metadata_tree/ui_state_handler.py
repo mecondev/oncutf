@@ -36,6 +36,7 @@ class TreeUiStateHandler:
 
         Args:
             view: The MetadataTreeView instance
+
         """
         self.view = view
 
@@ -217,6 +218,7 @@ class TreeUiStateHandler:
         Args:
             file_item: FileItem object with metadata
             context: Context string for logging
+
         """
         if not file_item:
             self.clear_tree()

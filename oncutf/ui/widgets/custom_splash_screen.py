@@ -1,4 +1,4 @@
-"""Module: custom_splash_screen.py
+"""Module: custom_splash_screen.py.
 
 Author: Michael Economou
 Date: 2025-06-23

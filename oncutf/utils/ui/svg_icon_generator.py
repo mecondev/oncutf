@@ -1,4 +1,4 @@
-"""Module: svg_icon_generator.py
+"""Module: svg_icon_generator.py.
 
 Author: Michael Economou
 Date: 2025-06-20

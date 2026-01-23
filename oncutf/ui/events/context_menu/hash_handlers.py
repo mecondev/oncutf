@@ -1,4 +1,4 @@
-"""Module: hash_handlers.py
+"""Module: hash_handlers.py.
 
 Author: Michael Economou
 Date: 2026-01-01

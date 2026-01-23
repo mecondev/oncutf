@@ -36,6 +36,7 @@ class TooltipHandler:
         _view: Reference to the parent FileTableView
         _timer: Timer for tooltip hover delay
         _current_index: Currently tracked cell index
+
     """
 
     def __init__(self, view: FileTableView) -> None:
@@ -43,6 +44,7 @@ class TooltipHandler:
 
         Args:
             view: The parent FileTableView widget
+
         """
         self._view = view
         self._timer_id: str | None = None
@@ -57,6 +59,7 @@ class TooltipHandler:
 
         Returns:
             True if the event was handled and should be suppressed
+
         """
         if event_type == QEvent.ToolTip:
             # Suppress default Qt tooltips
@@ -141,6 +144,7 @@ class TooltipHandler:
 
         Returns:
             The appropriate TooltipType string constant
+
         """
         text_lower = text.lower()
         if "no metadata" in text_lower or "no hash" in text_lower:
@@ -154,5 +158,6 @@ class TooltipHandler:
 
         Returns:
             The QModelIndex being tracked for tooltip
+
         """
         return self._current_index

@@ -1,4 +1,4 @@
-"""Module: file_event_handlers.py
+"""Module: file_event_handlers.py.
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -39,7 +39,7 @@ class FileEventHandlers:
         - Normal: Replace + shallow (skip metadata)
         - Ctrl: Replace + recursive (skip metadata)
         - Shift: Merge + shallow (skip metadata)
-        - Ctrl+Shift: Merge + recursive (skip metadata)
+        - Ctrl+Shift: Merge + recursive (skip metadata).
         """
         from oncutf.app.services.folder_selection import select_folder
 

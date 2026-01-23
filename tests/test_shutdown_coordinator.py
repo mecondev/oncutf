@@ -6,7 +6,7 @@ attention to Windows-specific behavior and edge cases.
 Created: 2025-12-08
 """
 
-import time  # noqa: F401
+import time
 from unittest.mock import Mock, patch
 
 import pytest

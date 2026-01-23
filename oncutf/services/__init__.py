@@ -46,15 +46,15 @@ from oncutf.services.registry import (
 )
 
 __all__ = [
-    # Protocols
-    "MetadataServiceProtocol",
-    "HashServiceProtocol",
-    "FilesystemServiceProtocol",
     # Implementations
     "ExifToolService",
     "FilesystemService",
+    "FilesystemServiceProtocol",
+    "HashServiceProtocol",
+    # Protocols
+    "MetadataServiceProtocol",
     # Registry
     "ServiceRegistry",
-    "get_service_registry",
     "configure_default_services",
+    "get_service_registry",
 ]

@@ -1,4 +1,4 @@
-"""Module: hash_handler.py
+"""Module: hash_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-24
@@ -31,6 +31,7 @@ class HashHandler:
 
         Args:
             widget: The MetadataWidget instance
+
         """
         self._widget = widget
 
@@ -39,6 +40,7 @@ class HashHandler:
 
         Returns:
             True if successful, False otherwise
+
         """
         self._widget.options_combo.clear()
 
@@ -109,6 +111,7 @@ class HashHandler:
 
         Args:
             files_needing_hash: List of file paths that need hash calculation
+
         """
         try:
             # Convert file paths back to FileItem objects for hash calculation
@@ -158,6 +161,7 @@ class HashHandler:
 
         Args:
             selected_files: List of FileItem objects to check
+
         """
         file_paths = [file_item.full_path for file_item in selected_files]
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
@@ -188,6 +192,7 @@ class HashHandler:
 
         Returns:
             True if any files have hash data, False otherwise
+
         """
         try:
             file_paths = [file_item.full_path for file_item in selected_files]
@@ -201,6 +206,7 @@ class HashHandler:
 
         Returns:
             Set of supported hash algorithm names
+
         """
         # Only CRC32 is supported and implemented
         return {"CRC32"}
@@ -211,6 +217,7 @@ class HashHandler:
         Args:
             files_needing_calculation: List of file paths needing calculation
             calculation_type: Type of calculation ("hash" or "metadata")
+
         """
         try:
             from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog

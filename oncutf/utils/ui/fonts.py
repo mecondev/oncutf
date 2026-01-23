@@ -1,4 +1,4 @@
-"""Module: fonts.py
+"""Module: fonts.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class InterFonts:
-    """Manager for Inter font family with predefined use cases"""
+    """Manager for Inter font family with predefined use cases."""
 
     # Font file mappings
     FONT_FILES = {
@@ -73,7 +73,7 @@ class InterFonts:
             logger.error("Failed to load Inter fonts from resources: %s", e)
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
-        """Get a QFont for specific use case with DPI scaling
+        """Get a QFont for specific use case with DPI scaling.
 
         Args:
             use_case: One of 'base', 'buttons', 'headers', 'titles', 'emphasis', 'medium'
@@ -118,7 +118,7 @@ class InterFonts:
             return QFont("Arial", scaled_size)
 
     def get_css_weight(self, use_case: str) -> int:
-        """Get CSS font-weight value for use case"""
+        """Get CSS font-weight value for use case."""
         font_mapping = {
             "base": "regular",
             "buttons": "medium",
@@ -133,7 +133,7 @@ class InterFonts:
         return self.CSS_WEIGHTS.get(font_key, 400)
 
     def get_font_family(self, use_case: str) -> str:
-        """Get font family name for use case"""
+        """Get font family name for use case."""
         font_mapping = {
             "base": "regular",
             "buttons": "medium",
@@ -152,7 +152,7 @@ class InterFonts:
             return "Arial"  # Fallback
 
     def create_stylesheet_fonts(self) -> str:
-        """Create CSS stylesheet with font definitions"""
+        """Create CSS stylesheet with font definitions."""
         styles = []
 
         for use_case in ["base", "buttons", "medium", "headers", "emphasis", "titles"]:
@@ -177,7 +177,7 @@ inter_fonts = None
 
 
 def _get_inter_fonts() -> InterFonts:
-    """Get or create the global Inter fonts instance"""
+    """Get or create the global Inter fonts instance."""
     global inter_fonts
     if inter_fonts is None:
         inter_fonts = InterFonts()
@@ -186,17 +186,17 @@ def _get_inter_fonts() -> InterFonts:
 
 # Convenience functions
 def get_inter_font(use_case: str, size: int = 10) -> QFont:
-    """Get Inter font for specific use case"""
+    """Get Inter font for specific use case."""
     return _get_inter_fonts().get_font(use_case, size)
 
 
 def get_inter_css_weight(use_case: str) -> int:
-    """Get CSS weight for Inter font use case"""
+    """Get CSS weight for Inter font use case."""
     return _get_inter_fonts().get_css_weight(use_case)
 
 
 def get_inter_family(use_case: str) -> str:
-    """Get Inter font family name for use case"""
+    """Get Inter font family name for use case."""
     return _get_inter_fonts().get_font_family(use_case)
 
 

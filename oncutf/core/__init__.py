@@ -1,4 +1,4 @@
-"""Module: __init__.py
+"""Module: __init__.py.
 
 Author: Michael Economou
 Date: 2025-05-31
@@ -29,6 +29,8 @@ from oncutf.core.type_aliases import (
 )
 
 __all__ = [
+    # Worker base classes
+    "CancellableMixin",
     # Type aliases
     "ExifMetadata",
     "FilePath",
@@ -42,8 +44,6 @@ __all__ = [
     "ModulesDataList",
     "NamePair",
     "NamePairsList",
-    # Worker base classes
-    "CancellableMixin",
     "WorkerProtocol",
     "WorkerResult",
 ]

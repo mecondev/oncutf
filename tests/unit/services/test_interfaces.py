@@ -9,14 +9,16 @@ isinstance() works with runtime_checkable protocols.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from oncutf.services.interfaces import (
     FilesystemServiceProtocol,
     HashServiceProtocol,
     MetadataServiceProtocol,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestMetadataServiceProtocol:

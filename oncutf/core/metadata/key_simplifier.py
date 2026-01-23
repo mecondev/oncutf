@@ -42,6 +42,7 @@ class SmartKeySimplifier:
         >>> result = simplifier.simplify_keys(keys)
         >>> result["Audio Format Audio Rec Port Audio Codec"]
         'Rec Port Codec'
+
     """
 
     # Stop words that can be optionally removed (currently disabled by default)
@@ -60,6 +61,7 @@ class SmartKeySimplifier:
                 - preserve_numbers: Keep numeric tokens (default: True)
                 - preserve_domain: Keep first token as domain prefix (default: True)
                 - remove_stop_words: Remove filler words (default: False)
+
         """
         config = config or {}
         self.max_segments = config.get("max_segments", 3)
@@ -76,6 +78,7 @@ class SmartKeySimplifier:
 
         Returns:
             Dict mapping original key -> simplified key
+
         """
         # Filter invalid keys
         valid_keys = [k for k in keys if k and k.strip()]
@@ -116,6 +119,7 @@ class SmartKeySimplifier:
 
         Returns:
             Cleaned key
+
         """
         # URL decode
         key = unquote(key)
@@ -148,6 +152,7 @@ class SmartKeySimplifier:
 
         Returns:
             List of tokens
+
         """
         # Remove zero-width chars if still present
         text = re.sub(r'[\u200B-\u200D\uFEFF]', '', text)
@@ -183,6 +188,7 @@ class SmartKeySimplifier:
 
         Returns:
             Simplified key
+
         """
         tokens = self._tokenize(key)
 
@@ -210,7 +216,7 @@ class SmartKeySimplifier:
             if domain and domain in cleaned_tokens:
                 # Keep domain + last (N-1)
                 cleaned_tokens.remove(domain)
-                cleaned_tokens = [domain] + cleaned_tokens[-(max_seg - 1):]
+                cleaned_tokens = [domain, *cleaned_tokens[-(max_seg - 1):]]
             else:
                 cleaned_tokens = cleaned_tokens[-max_seg:]
 
@@ -225,6 +231,7 @@ class SmartKeySimplifier:
 
         Returns:
             Deduplicated tokens
+
         """
         prev_len = len(tokens)
         max_iterations = 10
@@ -245,6 +252,7 @@ class SmartKeySimplifier:
 
         Returns:
             Deduplicated list
+
         """
         result = []
         prev_lower = None
@@ -266,6 +274,7 @@ class SmartKeySimplifier:
 
         Returns:
             Cleaned list with numbers restored
+
         """
         # Find numeric/version tokens in original
         numeric = [t for t in original if self._is_numeric_or_version(t)]
@@ -293,6 +302,7 @@ class SmartKeySimplifier:
 
         Returns:
             True if numeric or version
+
         """
         # Version number (X.Y or X.Y.Z)
         if re.match(r'^\d+\.\d+(\.\d+)?$', token):
@@ -309,6 +319,7 @@ class SmartKeySimplifier:
 
         Returns:
             Filtered list
+
         """
         result = []
         for i, token in enumerate(tokens):
@@ -328,6 +339,7 @@ class SmartKeySimplifier:
 
         Returns:
             Max segments
+
         """
         if original_length > 60:
             return min(4, self.max_segments + 1)
@@ -344,6 +356,7 @@ class SmartKeySimplifier:
 
         Returns:
             Dict with collisions resolved
+
         """
         from collections import defaultdict
 

@@ -1,4 +1,4 @@
-"""Module: file_load_controller.py
+"""Module: file_load_controller.py.
 
 Author: Michael Economou
 Date: 2025-12-15
@@ -195,7 +195,7 @@ class FileLoadController:
 
         except Exception as e:
             logger.exception("[FileLoadController] Error during file loading: %s", str(e))
-            errors.append(f"Loading error: {str(e)}")
+            errors.append(f"Loading error: {e!s}")
             return {"success": False, "loaded_count": 0, "errors": errors, "skipped": skipped}
 
     def load_folder(

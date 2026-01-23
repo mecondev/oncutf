@@ -180,7 +180,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         """Update the row that should be highlighted on hover."""
         self.hovered_row = row
 
-    def leaveEvent(self, event) -> None:  # noqa: ARG002
+    def leaveEvent(self, event) -> None:
         """Handle mouse leave events to hide tooltips."""
         # Hide any active tooltips when mouse leaves the delegate
         from oncutf.utils.ui.tooltip_helper import TooltipHelper
@@ -191,7 +191,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 
         # Note: QStyledItemDelegate doesn't have leaveEvent, this is for compatibility
 
-    def enterEvent(self, event) -> None:  # noqa: ARG002
+    def enterEvent(self, event) -> None:
         """Handle mouse enter events to restore hover state."""
         # Update hover state when mouse enters the delegate
         table = self.parent()
@@ -205,7 +205,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 
         # Note: QStyledItemDelegate doesn't have enterEvent, this is for compatibility
 
-    def focusOutEvent(self, event) -> None:  # noqa: ARG002
+    def focusOutEvent(self, event) -> None:
         """Handle focus loss events to hide tooltips."""
         # Hide any active tooltips when focus is lost
         from oncutf.utils.ui.tooltip_helper import TooltipHelper

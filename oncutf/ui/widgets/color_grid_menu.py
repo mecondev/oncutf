@@ -1,4 +1,4 @@
-"""Module: color_grid_menu.py
+"""Module: color_grid_menu.py.
 
 Author: Michael Economou
 Date: 2025-12-21

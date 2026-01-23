@@ -35,6 +35,7 @@ class CurrentTimeNode(Node):
 
     Example:
         Output: 1702376400.123456 (represents 2024-12-12 12:00:00.123456 UTC)
+
     """
 
     op_code = 100
@@ -200,6 +201,7 @@ class TimeDeltaNode(Node):
     Examples:
         timestamp=1702376400, offset=3600 -> 1702380000 (1 hour later)
         timestamp=1702376400, offset=-86400 -> 1702290000 (1 day earlier)
+
     """
 
     op_code = 103
@@ -265,6 +267,7 @@ class CompareTimeNode(Node):
     Examples:
         timestamp1=1702380000, timestamp2=1702376400 -> 3600.0 (1 hour difference)
         timestamp1=1702376400, timestamp2=1702380000 -> -3600.0 (negative = earlier)
+
     """
 
     op_code = 104

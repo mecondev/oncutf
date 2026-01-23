@@ -1,4 +1,4 @@
-"""Module: field_formatter.py
+"""Module: field_formatter.py.
 
 Author: Michael Economou
 Date: 2025-12-24
@@ -137,6 +137,7 @@ class FieldFormatter:
 
         Returns:
             Formatted key name for display (e.g., "EXIF: Device Name", "File Name")
+
         """
         # Handle common metadata prefixes and formats
         if ":" in key:
@@ -167,6 +168,7 @@ class FieldFormatter:
 
         Returns:
             Formatted field name (e.g., "Device Name", "ISO Speed")
+
         """
         # Replace underscores with spaces and title case
         formatted = field.replace("_", " ").title()
@@ -186,6 +188,7 @@ class FieldFormatter:
 
         Returns:
             Formatted text with spaces (e.g., "Device Name")
+
         """
         # Add space before capital letters, but not at the beginning
         formatted = re.sub(r"(?<!^)(?=[A-Z])", " ", text)

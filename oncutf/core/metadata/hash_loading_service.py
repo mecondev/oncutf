@@ -1,4 +1,4 @@
-"""Module: hash_loading_service.py
+"""Module: hash_loading_service.py.
 
 Author: Michael Economou
 Date: 2026-01-02 (Updated: 2026-01-15)
@@ -57,6 +57,7 @@ class HashLoadingService:
         Args:
             parent_window: Parent window reference for UI operations
             cache_service: Cache service for checking cached hashes (optional)
+
         """
         self.parent_window = parent_window
         self._cache_service = cache_service
@@ -99,6 +100,7 @@ class HashLoadingService:
             on_finished_callback: Optional callback when loading finishes
             on_file_hash_callback: Optional callback(path, hash, size) for each file
             on_progress_callback: Optional callback(current, total, message) for progress updates
+
         """
         if not files:
             return
@@ -145,6 +147,7 @@ class HashLoadingService:
         Args:
             files: Files being processed
             source: Source of the request
+
         """
         try:
 
@@ -207,6 +210,7 @@ class HashLoadingService:
             current: Current file index
             total: Total files
             filename: Current filename being processed
+
         """
         # Update progress with named arguments (like metadata does)
         dialog.update_progress(file_count=current, total_files=total)
@@ -226,6 +230,7 @@ class HashLoadingService:
         Args:
             files: Files to process
             _source: Source of request (unused, for logging)
+
         """
         if not files:
             return
@@ -256,6 +261,7 @@ class HashLoadingService:
         Args:
             file_path: Path to file
             hash_value: Calculated hash value
+
         """
         self._currently_loading.discard(file_path)
 
@@ -355,6 +361,7 @@ class HashLoadingService:
             on_file_hash: Callback(path, hash, size) for each file
             on_finished: Callback(success) when operation completes
             on_error: Callback(error_message) on error
+
         """
         self._operation_type = "duplicates"
         self._operation_scope = scope
@@ -387,6 +394,7 @@ class HashLoadingService:
             on_file_hash: Callback(path, hash, size) for each file
             on_finished: Callback(success) when operation completes
             on_error: Callback(error_message) on error
+
         """
         self._operation_type = "compare"
         self._external_folder = external_folder
@@ -417,6 +425,7 @@ class HashLoadingService:
             on_file_hash: Callback(path, hash, size) for each file
             on_finished: Callback(success) when operation completes
             on_error: Callback(error_message) on error
+
         """
         self._operation_type = "checksums"
         self._operation_cancelled = False
@@ -440,6 +449,7 @@ class HashLoadingService:
             file_paths: List of file paths to process
             operation: Operation type ("duplicates", "compare", "checksums")
             external_folder: External folder path (for compare operation only)
+
         """
         import time
 
@@ -519,6 +529,7 @@ class HashLoadingService:
         Args:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
+
         """
         from oncutf.app.services import create_hash_dialog
 
@@ -569,6 +580,7 @@ class HashLoadingService:
             current: Current progress value
             total: Total progress value
             filename: Current filename being processed
+
         """
         if self._hash_progress_dialog:
             self._hash_progress_dialog.set_count(current, total)
@@ -590,6 +602,7 @@ class HashLoadingService:
         Args:
             current_bytes: Current bytes processed
             total_bytes: Total bytes to process
+
         """
         if self._hash_progress_dialog:
             self._hash_progress_dialog.update_progress(
@@ -623,6 +636,7 @@ class HashLoadingService:
         Args:
             file_path: Path to file
             hash_value: Calculated hash value
+
         """
         # Update file table view to show new hash
         if hasattr(self.parent_window, "file_table_view") and self.parent_window.file_table_view:
@@ -665,6 +679,7 @@ class HashLoadingService:
 
         Args:
             duplicates: Dictionary with hash as key and list of file paths as value
+
         """
         if self._on_duplicates_callback:
             self._on_duplicates_callback(duplicates, self._operation_scope)
@@ -674,6 +689,7 @@ class HashLoadingService:
 
         Args:
             results: Dictionary with comparison results
+
         """
         if self._on_comparison_callback:
             external_folder = getattr(self, "_external_folder", "")
@@ -684,6 +700,7 @@ class HashLoadingService:
 
         Args:
             checksums: Dictionary with file paths and hash values
+
         """
         # Force restore cursor before showing results dialog
         from oncutf.app.services import force_restore_cursor
@@ -698,6 +715,7 @@ class HashLoadingService:
 
         Args:
             success: Whether the operation completed successfully
+
         """
         # Refresh file table icons
         if hasattr(self.parent_window, "file_model") and self.parent_window.file_model:
@@ -722,6 +740,7 @@ class HashLoadingService:
 
         Args:
             error_message: Error message from the worker
+
         """
         logger.error("[HashLoadingService] Operation error: %s", error_message)
 
@@ -760,6 +779,7 @@ class HashLoadingService:
 
         Returns:
             bool: True if operation was cancelled
+
         """
         return self._operation_cancelled
 

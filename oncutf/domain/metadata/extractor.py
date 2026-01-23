@@ -1,4 +1,4 @@
-"""Module: extractor.py
+"""Module: extractor.py.
 
 Author: Michael Economou
 Date: December 17, 2025

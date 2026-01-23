@@ -1,4 +1,4 @@
-"""Module: __init__.py
+"""Module: __init__.py.
 
 Author: Michael Economou
 Date: 2026-01-01

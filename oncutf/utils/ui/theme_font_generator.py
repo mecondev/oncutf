@@ -1,4 +1,4 @@
-"""Module: theme_font_generator.py
+"""Module: theme_font_generator.py.
 
 Author: Michael Economou
 Date: 2025-06-20

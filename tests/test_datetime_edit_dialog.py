@@ -174,7 +174,7 @@ class TestDateTimeEditDialog:
 
         assert len(dialog.checkboxes) == 1
         # Normalize paths for cross-platform comparison
-        checkbox_key = list(dialog.checkboxes.keys())[0]
+        checkbox_key = next(iter(dialog.checkboxes.keys()))
         assert Path(checkbox_key) == Path(single_file[0])
 
     def test_datetime_format(self, qapp, sample_files):

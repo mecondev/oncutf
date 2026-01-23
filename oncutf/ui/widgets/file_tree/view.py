@@ -1,4 +1,4 @@
-"""Module: view.py
+"""Module: view.py.
 
 Author: Michael Economou
 Date: 2025-05-31 (Refactored: 2026-01-02)

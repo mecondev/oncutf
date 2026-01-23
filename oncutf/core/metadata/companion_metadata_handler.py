@@ -1,4 +1,4 @@
-"""Module: companion_metadata_handler.py
+"""Module: companion_metadata_handler.py.
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -19,10 +19,10 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
-from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.models.file_item import FileItem
     from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 
 logger = get_cached_logger(__name__)

@@ -1,4 +1,4 @@
-"""Module: main_window_controller.py
+"""Module: main_window_controller.py.
 
 Author: Michael Economou
 Date: 2025-12-16

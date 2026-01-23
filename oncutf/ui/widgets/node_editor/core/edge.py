@@ -80,6 +80,7 @@ class Edge(Serializable):
     Class Attributes:
         edge_validators: List of validation callback functions.
         _graphics_edge_class: Graphics class for edge visualization (set at init).
+
     """
 
     edge_validators: list = []
@@ -103,6 +104,7 @@ class Edge(Serializable):
             start_socket: Source socket to connect from (typically output).
             end_socket: Target socket to connect to (typically input).
             edge_type: Visual path style constant.
+
         """
         super().__init__()
         self.scene = scene
@@ -123,6 +125,7 @@ class Edge(Serializable):
 
         Returns:
             Format: <Edge ID -- S:socket E:socket> showing both endpoints.
+
         """
         return (
             f"<Edge {hex(id(self))[2:5]}..{hex(id(self))[-3:]} -- "
@@ -135,6 +138,7 @@ class Edge(Serializable):
 
         Returns:
             Socket instance or None if not connected.
+
         """
         return self._start_socket
 
@@ -147,6 +151,7 @@ class Edge(Serializable):
 
         Args:
             value: New source socket, or None to disconnect.
+
         """
         if self._start_socket is not None:
             self._start_socket.remove_edge(self)
@@ -161,6 +166,7 @@ class Edge(Serializable):
 
         Returns:
             Socket instance or None if edge is being dragged.
+
         """
         return self._end_socket
 
@@ -173,6 +179,7 @@ class Edge(Serializable):
 
         Args:
             value: New target socket, or None to disconnect.
+
         """
         if self._end_socket is not None:
             self._end_socket.remove_edge(self)
@@ -187,6 +194,7 @@ class Edge(Serializable):
 
         Returns:
             One of EDGE_TYPE_* constants.
+
         """
         return self._edge_type
 
@@ -198,6 +206,7 @@ class Edge(Serializable):
 
         Args:
             value: New path style constant.
+
         """
         self._edge_type = value
 
@@ -212,6 +221,7 @@ class Edge(Serializable):
 
         Returns:
             List of validator functions.
+
         """
         return cls.edge_validators
 
@@ -224,6 +234,7 @@ class Edge(Serializable):
 
         Args:
             validator_callback: Function(start_socket, end_socket) -> bool.
+
         """
         cls.edge_validators.append(validator_callback)
 
@@ -237,6 +248,7 @@ class Edge(Serializable):
 
         Returns:
             True if all validators approve the connection.
+
         """
         return all(validator(start_socket, end_socket) for validator in cls.get_edge_validators())
 
@@ -246,6 +258,7 @@ class Edge(Serializable):
         Args:
             from_socket: Current socket to disconnect from.
             to_socket: New socket to connect to.
+
         """
         if self.start_socket == from_socket:
             self.start_socket = to_socket
@@ -257,6 +270,7 @@ class Edge(Serializable):
 
         Returns:
             QDMGraphicsEdge class or subclass.
+
         """
         return self.__class__._graphics_edge_class
 
@@ -268,6 +282,7 @@ class Edge(Serializable):
 
         Returns:
             Configured QDMGraphicsEdge instance.
+
         """
         self.graphics_edge = self.get_graphics_edge_class()(self)
         self.scene.graphics_scene.addItem(self.graphics_edge)
@@ -286,6 +301,7 @@ class Edge(Serializable):
 
         Returns:
             The other socket, or None if known_socket is not connected.
+
         """
         return self.start_socket if known_socket == self.end_socket else self.end_socket
 
@@ -294,6 +310,7 @@ class Edge(Serializable):
 
         Args:
             new_state: True to select, False to deselect.
+
         """
         self.graphics_edge.do_select(new_state)
 
@@ -336,6 +353,7 @@ class Edge(Serializable):
         Args:
             silent_for_socket: Skip notification to this socket node.
             silent: If True, suppress all node notifications.
+
         """
         old_sockets = [self.start_socket, self.end_socket]
 
@@ -370,6 +388,7 @@ class Edge(Serializable):
 
         Returns:
             Dictionary with edge ID, type, and socket references.
+
         """
         return {
             "sid": self.sid,
@@ -397,6 +416,7 @@ class Edge(Serializable):
 
         Returns:
             True on successful deserialization.
+
         """
         if hashmap is None:
             hashmap = {}
