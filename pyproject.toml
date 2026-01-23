@@ -68,7 +68,8 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 # mypy configuration
 # --------------------------
-# NOTE: Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
+# UPDATED 2026-01-23: Stricter checking for new architecture (app/domain/infra)
+# Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
 # Tier 1-2 modules are fully strict. See overrides below for module categorization.
 [tool.mypy]
 python_version = "3.12"
@@ -82,6 +83,14 @@ show_error_codes = true
 pretty = true
 exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)|oncutf/ui/resources_rc\.py'
 check_untyped_defs = true
+
+# NEW: Stricter defaults for all modules (2026-01-23)
+disallow_untyped_defs = false  # Enable gradually per tier
+disallow_any_unimported = false
+disallow_any_expr = false
+disallow_any_decorated = false
+disallow_any_explicit = false
+warn_return_any = false  # Enable in Tier 1 only
 
 [[tool.mypy.overrides]]
 module = "oncutf.*"
@@ -97,31 +106,42 @@ module = [
 ignore_errors = true
 
 # ============================================================
-# Tier 1 — Interface-critical (controllers / services)
-# STRICT checking enabled
+# Tier 1 — New Architecture (app/domain/infra) — STRICT
+# HIGHEST quality bar - these are the foundation layers
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
-    "oncutf.controllers.*",
-    "oncutf.services.*"
+    "oncutf.app.ports.*",
+    "oncutf.app.services.*",
+    "oncutf.domain.*",
+    "oncutf.infra.cache.*",
+    "oncutf.infra.db.*",
+    "oncutf.infra.external.*"
 ]
 ignore_errors = false
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_optional = true
 
 # ============================================================
-# Tier 2 — Core domain / logic (gradual clean)
+# Tier 2 — Controllers / Services (legacy) — GRADUAL STRICT
 # Focus areas for reducing error count
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
+    "oncutf.controllers.*",
+    "oncutf.services.*",
     "oncutf.modules.*",
     "oncutf.metadata.*",
     "oncutf.models.*",
-    "oncutf.domain.*",
     "oncutf.core.*"
 ]
 ignore_errors = false
 disallow_any_generics = true
 disallow_subclassing_any = true
+warn_return_any = false  # Too noisy for now, enable later
 
 # ============================================================
 # Tier 3 — Qt / UI / glue code (targeted error suppression)
@@ -261,35 +281,53 @@ select = [
     "PYI", # flake8-pyi
     "G",   # flake8-logging-format (enforce lazy logging)
     "PLR", # pylint refactors (complexity, design patterns)
+    "RUF", # ruff-specific rules
+    "D",   # pydocstyle (docstring conventions)
 ]
+# UPDATED 2026-01-23: Reduced ignores - only keep truly necessary ones
 ignore = [
-    "E501",   # line too long - mostly comments/docstrings that black can't fix
-    "N802",   # function name should be lowercase
-    "F403",   # wildcard import
-    "F405",   # name may be undefined
-    "E402",   # module level import not at top
-    "B008",   # do not perform function calls in argument defaults
-    "C901",   # too complex
-    "SIM102", # nested if statements
-    "TC001", # typing imports should be in TYPE_CHECKING block
-    "TC002", # typing imports should be in TYPE_CHECKING block
-    "TC003", # typing imports should be in TYPE_CHECKING block
-    "ARG002", # unused method argument (intentional in polymorphic/override methods)
-    "ARG004", # unused static method argument (intentional for API consistency)
-    # PLR ignores - keep useful rules, ignore overly strict ones
-    "PLR2004", # magic-value-comparison (too noisy for constants like 0, 1, 2)
-    "PLR0911", # too-many-return-statements (common pattern in switch-like logic)
-    "PLR0912", # too-many-branches (legacy code, will refactor gradually)
-    "PLR0913", # too-many-arguments (common in PyQt signals/slots)
-    "PLR0915", # too-many-statements (legacy __init__ methods)
-    "PLR1704", # redefining-argument-from-local (intentional shadowing in loops)
+    "E501",   # line too long - handled by formatter
+    "N802",   # function name should be lowercase (Qt methods)
+    "F403",   # wildcard import (legacy __init__.py files)
+    "F405",   # name may be undefined (from wildcard imports)
+    "E402",   # module level import not at top (legacy)
+    "B008",   # do not perform function calls in argument defaults (Qt default args)
+    "C901",   # too complex (refactor gradually)
+    "SIM102", # nested if statements (common pattern)
+    "ARG002", # unused method argument (polymorphic methods)
+    "ARG004", # unused static method argument (API consistency)
+    "PLR2004", # magic-value-comparison (0, 1, 2 constants)
+    "PLR0911", # too-many-return-statements (switch-like logic)
+    "PLR0912", # too-many-branches (legacy, gradual refactor)
+    "PLR0913", # too-many-arguments (Qt signals/slots)
+    "PLR0915", # too-many-statements (legacy __init__)
+    "PLR1704", # redefining-argument-from-local (intentional)
+    
+    # Docstring rules (D-series) - enforce only for new code
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in __init__
+    "D203",   # 1 blank line required before class (conflicts with D211)
+    "D213",   # Multi-line docstring summary on second line (conflicts with D212)
 ]
 
 # Per-file ignores for scripts and utilities
 [tool.ruff.lint.per-file-ignores]
-"scripts/*.py" = ["T201"]  # Allow print statements in scripts
-"tests/*.py" = ["T201"]     # Allow print statements in tests
-"oncutf/utils/debug_*.py" = ["T201"] # Allow print in debug helpers
+"scripts/*.py" = ["T201", "D"]  # Allow print statements + skip docstrings in scripts
+"tests/*.py" = ["T201", "D", "ARG001", "PLR2004", "SIM117"]  # Test-specific ignores
+"oncutf/utils/debug_*.py" = ["T201", "D"]  # Allow print in debug helpers
+"oncutf/ui/resources_rc.py" = ["ALL"]  # Generated file
+"oncutf/ui/fonts_rc*.py" = ["ALL"]  # Generated files
+# New architecture layers - STRICT (minimal ignores)
+"oncutf/app/**/*.py" = []  # No ignores for app/ layer
+"oncutf/domain/**/*.py" = []  # No ignores for domain/ layer
+"oncutf/infra/**/*.py" = []  # No ignores for infra/ layer
+# UI layer - allow Qt patterns
+"oncutf/ui/**/*.py" = ["D100", "D101", "D102", "D103"]  # Qt widgets may skip docstrings
 
 [tool.ruff.lint.isort]
 force-single-line = false
