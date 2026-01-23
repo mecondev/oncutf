@@ -271,7 +271,7 @@ class MainWindowController:
         }
 
         def update_progress(message: str, progress: float) -> None:
-            """Internal progress updater."""
+            """Update progress with message and percentage."""
             if progress_callback:
                 progress_callback(message, progress)
 

@@ -312,7 +312,9 @@ ignore = [
     "D105",   # Missing docstring in magic method
     "D107",   # Missing docstring in __init__
     "D203",   # 1 blank line required before class (conflicts with D211)
+    "D205",   # 1 blank line required between summary and body (legacy formatting)
     "D213",   # Multi-line docstring summary on second line (conflicts with D212)
+    "D401",   # First line should be imperative (style preference, legacy code)
 ]
 
 # Per-file ignores for scripts and utilities
