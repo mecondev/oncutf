@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
     from oncutf.core.file.store import FileStore
-    from oncutf.core.preview_manager import PreviewManager
     from oncutf.core.rename.rename_manager import RenameManager
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
@@ -46,7 +45,6 @@ class RenameController:
 
     Attributes:
         _unified_rename_engine: Engine for preview/validation/execution
-        _preview_manager: Manager for preview generation and UI updates
         _rename_manager: Manager for rename execution and post-rename workflow
         _file_store: Store maintaining loaded file state
         _context: Application context for global state
@@ -56,7 +54,6 @@ class RenameController:
     def __init__(
         self,
         unified_rename_engine: Optional["UnifiedRenameEngine"] = None,
-        preview_manager: Optional["PreviewManager"] = None,
         rename_manager: Optional["RenameManager"] = None,
         file_store: Optional["FileStore"] = None,
         context: Optional["ApplicationContext"] = None,
@@ -65,7 +62,6 @@ class RenameController:
 
         Args:
             unified_rename_engine: Engine for rename operations (injected)
-            preview_manager: Manager for preview generation (injected)
             rename_manager: Manager for rename execution (injected)
             file_store: Store for maintaining file state (injected)
             context: Application context for global state (injected)
@@ -73,17 +69,15 @@ class RenameController:
         """
         logger.info("[RenameController] Initializing controller")
         self._unified_rename_engine = unified_rename_engine
-        self._preview_manager = preview_manager
         self._rename_manager = rename_manager
         self._file_store = file_store
         self._context = context
 
         logger.debug(
             "[RenameController] Initialized with managers: "
-            "unified_rename_engine=%s, preview_manager=%s, rename_manager=%s, "
+            "unified_rename_engine=%s, rename_manager=%s, "
             "file_store=%s, context=%s",
             unified_rename_engine is not None,
-            preview_manager is not None,
             rename_manager is not None,
             file_store is not None,
             context is not None,
