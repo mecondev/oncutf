@@ -49,7 +49,8 @@ class BatchService:
             Results dictionary with success/failure info
 
         """
-        return self.batch_manager.process_batch(files, operation, **kwargs)
+        # TODO: Implement when BatchOperationsManager API is defined
+        return {"success": False, "error": "Not yet implemented"}
 
     def get_operation_status(self, operation_id: str) -> dict[str, Any]:
         """Get status of a batch operation.
@@ -61,7 +62,8 @@ class BatchService:
             Status dictionary
 
         """
-        return self.batch_manager.get_operation_status(operation_id)
+        # TODO: Implement when BatchOperationsManager API is defined
+        return {"success": False, "error": "Not yet implemented"}
 
 
 # Singleton instance

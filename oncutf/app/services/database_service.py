@@ -13,7 +13,10 @@ Architecture:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from oncutf.core.database.database_manager import DatabaseManager
 
 
 class DatabaseService:
@@ -29,11 +32,11 @@ class DatabaseService:
         color = service.get_file_color(file_path)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize database service."""
-        self._db_manager = None
+        self._db_manager: DatabaseManager | None = None
 
-    def _get_db_manager(self):
+    def _get_db_manager(self) -> DatabaseManager | None:
         """Get database manager instance (lazy loading)."""
         if self._db_manager is None:
             from oncutf.core.database.database_manager import get_database_manager
@@ -58,7 +61,7 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "set_file_color"):
-                return db_manager.set_file_color(file_path, color_hex)
+                return cast("bool", db_manager.set_file_color(file_path, color_hex))
             return False
         except Exception:
             return False
@@ -79,7 +82,7 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "get_file_color"):
-                return db_manager.get_file_color(file_path)
+                return cast("str | None", db_manager.get_file_color(file_path))
             return None
         except Exception:
             return None
@@ -100,7 +103,7 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "get_files_by_color"):
-                return db_manager.get_files_by_color(color_hex)
+                return cast("list[str]", db_manager.get_files_by_color(color_hex))
             return []
         except Exception:
             return []

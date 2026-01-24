@@ -54,10 +54,10 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         """Setup field-specific properties like max length."""
         if self._field_name:
             max_length = self._get_field_max_length()
-            if max_length > 0:
+            if max_length is not None and max_length > 0:
                 self.setMaxLength(max_length)
 
-    def _get_field_max_length(self) -> int:
+    def _get_field_max_length(self) -> int | None:
         """Get maximum length for the current field."""
         return get_validation_service().get_max_length(self._field_name)
 
@@ -159,10 +159,10 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         """Setup field-specific properties like max length."""
         if self._field_name:
             max_length = self._get_field_max_length()
-            if max_length > 0:
+            if max_length is not None and max_length > 0:
                 self._max_length_override = max_length
 
-    def _get_field_max_length(self) -> int:
+    def _get_field_max_length(self) -> int | None:
         """Get maximum length for the current field."""
         return get_validation_service().get_max_length(self._field_name)
 

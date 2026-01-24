@@ -37,7 +37,10 @@ class MetadataService:
         if self._staging_manager is None:
             from oncutf.core.metadata import get_metadata_staging_manager
 
-            self._staging_manager = get_metadata_staging_manager()
+            manager = get_metadata_staging_manager()
+            if manager is None:
+                raise RuntimeError("MetadataStagingManager not initialized")
+            self._staging_manager = manager
         return self._staging_manager
 
     @property
@@ -61,7 +64,8 @@ class MetadataService:
             Staged value or None if not staged
 
         """
-        return self.staging_manager.get_staged_value(file_path, key)
+        staged_changes = self.staging_manager.get_staged_changes(file_path)
+        return staged_changes.get(key) if staged_changes else None
 
     def has_staged_changes(self, file_path: str) -> bool:
         """Check if file has staged metadata changes.
@@ -83,9 +87,9 @@ class MetadataService:
 
         """
         if file_path is None:
-            self.staging_manager.clear()
+            self.staging_manager.clear_all()
         else:
-            self.staging_manager.clear_file(file_path)
+            self.staging_manager.clear_staged_changes(file_path)
 
     # Unified Manager Operations
     def get_metadata(self, file_path: str) -> dict[str, Any]:
@@ -98,7 +102,9 @@ class MetadataService:
             Dictionary of metadata key-value pairs
 
         """
-        return self.unified_manager.get_metadata(file_path)
+        # TODO: Implement when UnifiedMetadataManager API is finalized
+        # return self.unified_manager.get_metadata(file_path)
+        return {}
 
     def get_field(self, file_path: str, key: str) -> Any:
         """Get specific metadata field value.
@@ -111,7 +117,9 @@ class MetadataService:
             Field value or None if not found
 
         """
-        return self.unified_manager.get_field(file_path, key)
+        # TODO: Implement when UnifiedMetadataManager API is finalized
+        # return self.unified_manager.get_field(file_path, key)
+        return None
 
     # Command Creation (factory methods)
     def create_edit_command(
@@ -134,7 +142,7 @@ class MetadataService:
         return EditMetadataFieldCommand(file_path, key, new_value, old_value)
 
     def create_reset_command(
-        self, file_path: str, key: str, staged_value: Any
+        self, file_path: str, key: str, staged_value: Any, original_value: Any | None = None
     ) -> ResetMetadataFieldCommand:
         """Create reset metadata field command.
 
@@ -142,6 +150,7 @@ class MetadataService:
             file_path: Path to file
             key: Metadata key to reset
             staged_value: Staged value to reset
+            original_value: Original value before staging
 
         Returns:
             ResetMetadataFieldCommand instance
@@ -149,7 +158,7 @@ class MetadataService:
         """
         from oncutf.core.metadata.commands import ResetMetadataFieldCommand
 
-        return ResetMetadataFieldCommand(file_path, key, staged_value)
+        return ResetMetadataFieldCommand(file_path, key, staged_value, original_value)
 
 
 # Singleton instance

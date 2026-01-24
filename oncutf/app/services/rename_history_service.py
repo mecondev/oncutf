@@ -56,7 +56,7 @@ class RenameOperation:
         self.old_filename = old_filename
         self.new_filename = new_filename
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return string representation of rename operation."""
         return f"<RenameOperation({self.old_filename} -> {self.new_filename})>"
 
@@ -84,7 +84,7 @@ class RenameBatch:
         """Return the number of files in this batch."""
         return len(self.operations)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return string representation of rename batch."""
         return f"<RenameBatch(id={self.operation_id[:8]}..., files={self.file_count})>"
 
@@ -95,7 +95,7 @@ class RenameHistoryManager:
     Provides persistent storage of rename operations and rollback capabilities.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize rename history manager with database backend."""
         from typing import cast
 

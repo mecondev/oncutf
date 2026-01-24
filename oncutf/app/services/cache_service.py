@@ -13,7 +13,17 @@ Architecture:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union, cast
+
+if TYPE_CHECKING:
+    from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
+    from oncutf.core.cache.persistent_metadata_cache import (
+        DummyMetadataCache,
+        PersistentMetadataCache,
+    )
+
+# Type alias for metadata cache (can be either real or dummy)
+MetadataCache = Union["PersistentMetadataCache", "DummyMetadataCache"]
 
 
 class CacheService:
@@ -29,12 +39,12 @@ class CacheService:
         has_hash = service.has_hash(file_path, "CRC32")
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize cache service."""
-        self._metadata_cache = None
-        self._hash_cache = None
+        self._metadata_cache: MetadataCache | None = None
+        self._hash_cache: PersistentHashCache | None = None
 
-    def _get_metadata_cache(self):
+    def _get_metadata_cache(self) -> MetadataCache | None:
         """Get metadata cache instance (lazy loading)."""
         if self._metadata_cache is None:
             from oncutf.core.cache.persistent_metadata_cache import (
@@ -44,7 +54,7 @@ class CacheService:
             self._metadata_cache = get_persistent_metadata_cache()
         return self._metadata_cache
 
-    def _get_hash_cache(self):
+    def _get_hash_cache(self) -> PersistentHashCache:
         """Get hash cache instance (lazy loading)."""
         if self._hash_cache is None:
             from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
@@ -69,9 +79,9 @@ class CacheService:
         try:
             # Support both persistent cache (get_entry) and dict-like access
             if hasattr(cache, "get_entry"):
-                return cache.get_entry(file_path)
+                return cast("dict[str, Any] | None", cache.get_entry(file_path))
             else:
-                return cache.get(file_path)
+                return cast("dict[str, Any] | None", cache.get(file_path))
         except Exception:
             return None
 
@@ -129,7 +139,7 @@ class CacheService:
         if not cache:
             return set()
 
-        return cache.get_files_with_hash_batch(file_paths, hash_type)
+        return cast("set[str]", cache.get_files_with_hash_batch(file_paths, hash_type))
 
 
 # Singleton instance

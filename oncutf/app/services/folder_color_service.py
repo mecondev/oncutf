@@ -47,7 +47,7 @@ class FolderColorService:
 
     def get_files_with_existing_colors(
         self, file_items: list[FileItem], db_manager: Any
-    ) -> list[FileItem]:
+    ) -> list[str]:
         """Get list of files that already have colors assigned.
 
         Args:
@@ -55,30 +55,27 @@ class FolderColorService:
             db_manager: Database manager instance
 
         Returns:
-            List of file items with existing colors
+            List of file paths with existing colors
 
         """
         command = self.create_auto_color_command(file_items, db_manager)
         return command.get_files_with_existing_colors()
 
     def execute_auto_color(
-        self, file_items: list[FileItem], db_manager: Any, overwrite: bool = False
-    ) -> dict[str, Any]:
+        self, file_items: list[FileItem], db_manager: Any, skip_existing: bool = True
+    ) -> bool:
         """Execute automatic coloring by folder.
 
         Args:
             file_items: List of file items to color
             db_manager: Database manager instance
-            overwrite: Whether to overwrite existing colors
+            skip_existing: If True, skip files with existing colors; if False, recolor all
 
         Returns:
-            Result dictionary with success status and message
+            True if successful, False otherwise
 
         """
-        command = self.create_auto_color_command(file_items, db_manager)
-        if overwrite:
-            # Clear existing colors first if overwrite is True
-            command.clear_existing_colors()
+        command = self.create_auto_color_command(file_items, db_manager, skip_existing=skip_existing)
         return command.execute()
 
 

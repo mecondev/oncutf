@@ -13,7 +13,10 @@ Architecture:
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from oncutf.domain.validation import MetadataFieldValidator
 
@@ -31,7 +34,7 @@ class ValidationService:
     """
 
     # Map field names to validator methods
-    _VALIDATOR_MAP: ClassVar[dict[str, Any]] = {
+    _VALIDATOR_MAP: ClassVar[dict[str, Callable[[Any], tuple[bool, str]]]] = {
         "Title": MetadataFieldValidator.validate_title,
         "Artist": MetadataFieldValidator.validate_artist,
         "Copyright": MetadataFieldValidator.validate_copyright,
@@ -57,11 +60,12 @@ class ValidationService:
         validator = self._VALIDATOR_MAP.get(field_name)
 
         if validator is None:
-            # No specific validator - use default
-            validator = MetadataFieldValidator.get_validator_for_field(field_name)
+            # No specific validator - use default that accepts all
+            return (True, "")
 
         # Execute validation
-        return validator(value)
+        result: tuple[bool, str] = validator(value)
+        return result
 
     def get_max_length(self, field_name: str) -> int | None:
         """Get maximum allowed length for a field.

@@ -50,7 +50,7 @@ class MetadataSimplificationService:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize metadata simplification service."""
         self._simplifier = SmartKeySimplifier()
         self._registry = MetadataKeyRegistry()
