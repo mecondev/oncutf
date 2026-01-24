@@ -15,7 +15,6 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -81,21 +80,9 @@ class ExifToolClient:
             return self._available
 
         try:
-            result = subprocess.run(
-                ["exiftool", "-ver"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
-            self._available = result.returncode == 0
-            if self._available:
-                logger.debug("ExifTool version: %s", result.stdout.strip())
-            else:
-                logger.warning("ExifTool not available (returncode=%d)", result.returncode)
-        except FileNotFoundError:
-            logger.warning("ExifTool not found in PATH")
-            self._available = False
+            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+
+            self._available = ExifToolWrapper.is_available()
         except Exception as e:
             logger.warning("Error checking ExifTool availability: %s", e)
             self._available = False

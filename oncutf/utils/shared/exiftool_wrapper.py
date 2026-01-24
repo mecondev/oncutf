@@ -87,6 +87,38 @@ class ExifToolWrapper:
         with contextlib.suppress(Exception):
             self.close(try_graceful=False)
 
+    @staticmethod
+    def is_available() -> bool:
+        """Check if ExifTool is available on the system.
+
+        Returns:
+            True if ExifTool is installed and accessible
+
+        """
+        try:
+            from oncutf.utils.shared.external_tools import ToolName, get_tool_path
+
+            exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
+            result = subprocess.run(
+                [exiftool_path, "-ver"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            available = result.returncode == 0
+            if available:
+                logger.debug("ExifTool version: %s", result.stdout.strip())
+            else:
+                logger.warning("ExifTool not available (returncode=%d)", result.returncode)
+            return available
+        except FileNotFoundError:
+            logger.warning("ExifTool not found")
+            return False
+        except Exception as e:
+            logger.warning("Error checking ExifTool availability: %s", e)
+            return False
+
     def get_metadata(self, file_path: str, use_extended: bool = False) -> dict[str, Any]:
         """Get metadata for a single file using exiftool.
 
