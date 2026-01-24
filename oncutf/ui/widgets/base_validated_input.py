@@ -154,7 +154,7 @@ class BaseValidatedInput:
                 # Show error tooltip for blocked character
                 error_msg = f"Character '{event.text()}' is not allowed in this field"
                 # Cast self to QWidget for tooltip (safe since concrete classes inherit from QWidget)
-                TooltipHelper.show_error_tooltip(self, error_msg)  # type: ignore
+                TooltipHelper.show_error_tooltip(self, error_msg)  # type: ignore[arg-type]  # TooltipHelper argument
 
                 # Apply temporary error styling
                 self._apply_temporary_error_style()
@@ -189,7 +189,7 @@ class BaseValidatedInput:
                 char_list = ", ".join(f"'{char}'" for char in sorted(removed_chars))
                 error_msg = f"Removed invalid characters: {char_list}"
                 # Cast self to QWidget for tooltip (safe since concrete classes inherit from QWidget)
-                TooltipHelper.show_error_tooltip(self, error_msg)  # type: ignore
+                TooltipHelper.show_error_tooltip(self, error_msg)  # type: ignore[arg-type]  # TooltipHelper argument
 
                 logger.debug(
                     "[BaseValidatedInput] Cleaned paste content. Removed: %s",

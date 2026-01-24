@@ -142,21 +142,21 @@ class CategoryManager:
 
             # Add items to model
             item1 = QStandardItem("File Date/Time")
-            item1.setData("file_dates", Qt.UserRole)  # type: ignore
+            item1.setData("file_dates", Qt.UserRole)  # type: ignore[attr-defined]  # Qt item role
             self.widget.category_model.appendRow(item1)
 
             item2 = QStandardItem("Hash")
-            item2.setData("hash", Qt.UserRole)  # type: ignore
+            item2.setData("hash", Qt.UserRole)  # type: ignore[attr-defined]  # Qt item role
             self.widget.category_model.appendRow(item2)
 
             item3 = QStandardItem("EXIF/Metadata")
-            item3.setData("metadata_keys", Qt.UserRole)  # type: ignore
+            item3.setData("metadata_keys", Qt.UserRole)  # type: ignore[attr-defined]  # Qt item role
             self.widget.category_model.appendRow(item3)
 
         # File Dates category is ALWAYS enabled
         file_dates_item = self.widget.category_model.item(0)
-        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-        file_dates_item.setForeground(QColor())  # type: ignore # Reset to default color
+        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+        file_dates_item.setForeground(QColor())  # type: ignore[arg-type]  # Reset to default color
 
         if not selected_files:
             # Disable Hash and EXIF when no files are selected
@@ -164,11 +164,11 @@ class CategoryManager:
             hash_item = self.widget.category_model.item(1)
             metadata_item = self.widget.category_model.item(2)
 
-            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
+            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+            hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore[arg-type]  # QColor argument
 
-            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
+            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+            metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore[arg-type]  # QColor argument
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
             self.widget._styling_handler.apply_category_styling()
@@ -191,11 +191,11 @@ class CategoryManager:
             hash_item = self.widget.category_model.item(1)
 
             if has_hash_data:
-                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor())  # type: ignore # Reset to default color
+                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+                hash_item.setForeground(QColor())  # type: ignore[arg-type]  # Reset to default color
             else:
-                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
+                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+                hash_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore[arg-type]  # QColor argument
 
                 # If current category is hash and is disabled, apply disabled styling
                 if self.widget.category_combo.currentData() == "hash":
@@ -210,11 +210,11 @@ class CategoryManager:
             metadata_item = self.widget.category_model.item(2)
 
             if has_metadata_data:
-                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
+                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+                metadata_item.setForeground(QColor())  # type: ignore[arg-type]  # Reset to default color
             else:
-                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore
+                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore[attr-defined]  # Qt item flags
+                metadata_item.setForeground(QColor(theme.get_color("text_muted")))  # type: ignore[arg-type]  # QColor argument
 
             # Apply styling to category combo based on state
             self.widget._styling_handler.apply_category_styling()

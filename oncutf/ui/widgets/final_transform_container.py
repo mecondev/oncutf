@@ -47,7 +47,7 @@ class FinalTransformContainer(QWidget):
         self.setObjectName("FinalTransformContainer")
 
         # Set transparent background to avoid white borders around rounded corners
-        self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
+        self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore[attr-defined]  # Qt widget attribute
 
         # Initialize UnifiedRenameEngine
         self.rename_engine = None
@@ -95,7 +95,7 @@ class FinalTransformContainer(QWidget):
         self.add_button.setFixedSize(30, 30)
         self.add_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.add_button.clicked.connect(self.add_module_requested.emit)
-        self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore
+        self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore[attr-defined]  # Qt cursor
         TooltipHelper.setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
 
         # Remove button
@@ -104,7 +104,7 @@ class FinalTransformContainer(QWidget):
         self.remove_button.setFixedSize(30, 30)
         self.remove_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
-        self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore
+        self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore[attr-defined]  # Qt cursor
         TooltipHelper.setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
 
         # Case row - HBoxLayout: [Label][Combo] --- STRETCH --- [Add Button]
@@ -114,7 +114,7 @@ class FinalTransformContainer(QWidget):
 
         self.case_label = QLabel("Case")
         self.case_label.setFixedWidth(65)  # Increased by 20px
-        self.case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        self.case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
 
         self.case_combo = StyledComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
@@ -125,11 +125,11 @@ class FinalTransformContainer(QWidget):
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to case row: Label + Combo (left), Stretch (middle), Add Button (right)
-        case_row_layout.addWidget(self.case_label, 0, Qt.AlignVCenter)  # type: ignore
+        case_row_layout.addWidget(self.case_label, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
         case_row_layout.addSpacing(8)  # Space between label and combo
-        case_row_layout.addWidget(self.case_combo, 0, Qt.AlignVCenter)  # type: ignore
+        case_row_layout.addWidget(self.case_combo, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
         case_row_layout.addStretch()  # This pushes add button to the right
-        case_row_layout.addWidget(self.add_button, 0, Qt.AlignVCenter)  # type: ignore
+        case_row_layout.addWidget(self.add_button, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
 
         # Separator row - HBoxLayout: [Label][Combo] --- STRETCH --- [Remove Button]
         separator_row_layout = QHBoxLayout()
@@ -138,7 +138,7 @@ class FinalTransformContainer(QWidget):
 
         self.separator_label = QLabel("Separator")
         self.separator_label.setFixedWidth(65)
-        self.separator_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        self.separator_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
 
         self.separator_combo = StyledComboBox()
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
@@ -149,11 +149,11 @@ class FinalTransformContainer(QWidget):
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to separator row: Label + Combo (left), Stretch (middle), Remove Button (right)
-        separator_row_layout.addWidget(self.separator_label, 0, Qt.AlignVCenter)  # type: ignore
+        separator_row_layout.addWidget(self.separator_label, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
         separator_row_layout.addSpacing(8)  # Space between label and combo
-        separator_row_layout.addWidget(self.separator_combo, 0, Qt.AlignVCenter)  # type: ignore
+        separator_row_layout.addWidget(self.separator_combo, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
         separator_row_layout.addStretch()  # This pushes remove button to the right
-        separator_row_layout.addWidget(self.remove_button, 0, Qt.AlignVCenter)  # type: ignore
+        separator_row_layout.addWidget(self.remove_button, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
 
         # Add all to main layout
         main_layout.addLayout(greeklish_layout)
@@ -241,7 +241,7 @@ class FinalTransformContainer(QWidget):
 
             # Create a new pixmap with reduced opacity
             disabled_pixmap = QPixmap(original_pixmap.size())
-            disabled_pixmap.fill(Qt.transparent)  # type: ignore
+            disabled_pixmap.fill(Qt.transparent)  # type: ignore[attr-defined]  # Qt color
 
             painter = QPainter(disabled_pixmap)
             painter.setOpacity(0.3)  # 30% opacity for disabled state

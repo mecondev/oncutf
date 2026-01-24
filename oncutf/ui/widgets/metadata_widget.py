@@ -204,13 +204,13 @@ class MetadataWidget(QWidget):
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                selected_files = context._file_store.get_selected_files()  # type: ignore
+                selected_files = context._file_store.get_selected_files()  # type: ignore[attr-defined]  # Private context attribute
                 if selected_files:
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                selected_files = context._selection_store.get_selected_files()  # type: ignore
+                selected_files = context._selection_store.get_selected_files()  # type: ignore[attr-defined]  # Private context attribute
                 if selected_files:
                     return selected_files
 

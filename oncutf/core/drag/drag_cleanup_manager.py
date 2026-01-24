@@ -130,7 +130,7 @@ class DragCleanupManager:
             return
 
         # Check if cursor looks stuck in drag mode
-        current_cursor = app.overrideCursor()  # type: ignore
+        current_cursor = app.overrideCursor()  # type: ignore[attr-defined]  # QApplication method
         if current_cursor:
             cursor_shape = current_cursor.shape()
             # Common drag cursor shapes that might be stuck
@@ -139,7 +139,7 @@ class DragCleanupManager:
                 Qt.DragCopyCursor,
                 Qt.DragLinkCursor,
                 Qt.ClosedHandCursor,
-            ]  # type: ignore
+            ]  # type: ignore[list-item]  # QCursor list
 
             if cursor_shape in drag_cursors:
                 self._handle_stuck_cursor()

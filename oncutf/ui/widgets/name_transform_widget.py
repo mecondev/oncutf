@@ -85,7 +85,7 @@ class NameTransformWidget(BaseRenameModule):
 
         sep_label = QLabel("Separator:")
         sep_label.setFixedWidth(self.LABEL_WIDTH)
-        sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
         self.sep_combo = StyledComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)

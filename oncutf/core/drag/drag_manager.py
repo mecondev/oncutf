@@ -280,12 +280,12 @@ class DragManager(QObject):
                     return True  # Event handled
 
         # Mouse release - check after a delay
-        if event_type == QEvent.MouseButtonRelease:  # type: ignore
+        if event_type == QEvent.MouseButtonRelease:  # type: ignore[attr-defined]  # QEvent type
             # Give more time for normal drag completion
             schedule_drag_cleanup(self._check_and_cleanup, 200)
 
         # Window focus events - only after significant time
-        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):  # type: ignore
+        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):  # type: ignore[attr-defined]  # QEvent type
             if self._drag_start_time:
                 import time
 

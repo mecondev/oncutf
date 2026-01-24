@@ -118,10 +118,10 @@ class ProgressDialog(QDialog):
     def _setup_dialog(self) -> None:
         """Setup the dialog UI and properties."""
         # Frameless dialog
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore
-        self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore[attr-defined]  # Qt window flags
+        self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore[attr-defined]  # Qt widget attribute
         self.setModal(True)
-        self.setFocusPolicy(Qt.StrongFocus)  # type: ignore
+        self.setFocusPolicy(Qt.StrongFocus)  # type: ignore[attr-defined]  # Qt focus policy
 
         # Layout
         layout = QVBoxLayout(self)
@@ -152,10 +152,10 @@ class ProgressDialog(QDialog):
         """Setup wait cursor for both parent window and dialog."""
         # Set wait cursor on parent if available (main window)
         if self.parent():
-            self.parent().setCursor(Qt.WaitCursor)  # type: ignore
+            self.parent().setCursor(Qt.WaitCursor)  # type: ignore[attr-defined]  # Qt cursor
 
         # Set wait cursor on the dialog as well
-        self.setCursor(Qt.WaitCursor)  # type: ignore
+        self.setCursor(Qt.WaitCursor)  # type: ignore[attr-defined]  # Qt cursor
 
         logger.debug("[ProgressDialog] Wait cursor set on parent and dialog")
 
@@ -166,8 +166,8 @@ class ProgressDialog(QDialog):
 
         # Set normal cursor on parent (main window) and dialog
         if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)  # type: ignore
-        self.setCursor(Qt.ArrowCursor)  # type: ignore
+            self.parent().setCursor(Qt.ArrowCursor)  # type: ignore[attr-defined]  # Qt cursor
+        self.setCursor(Qt.ArrowCursor)  # type: ignore[attr-defined]  # Qt cursor
 
         logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
@@ -318,7 +318,7 @@ class ProgressDialog(QDialog):
     def set_time_info(self, elapsed: float, estimated_total: float | None = None) -> None:
         """Set time information manually."""
         if hasattr(self.waiting_widget, "set_time_info"):
-            self.waiting_widget.set_time_info(elapsed, estimated_total)  # type: ignore
+            self.waiting_widget.set_time_info(elapsed, estimated_total)  # type: ignore[attr-defined]  # WaitingWidget method
 
     def update_progress(
         self,

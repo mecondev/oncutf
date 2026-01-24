@@ -137,7 +137,7 @@ class HashHandler:
             else:
                 context = self._widget._get_app_context()
                 if context and hasattr(context, "main_window"):
-                    main_window = context.main_window  # type: ignore
+                    main_window = context.main_window  # type: ignore[attr-defined]  # Context main_window attribute
 
             if main_window and hasattr(main_window, "event_handler_manager"):
                 # Use the existing hash calculation method
