@@ -157,13 +157,12 @@ class ShortcutCommandHandler:
                 return
 
             # Check for files with existing colors
-            from oncutf.core.folder_color_command import AutoColorByFolderCommand
+            from oncutf.app.services import get_folder_color_service
 
-            command = AutoColorByFolderCommand(
-                file_items=self.main_window.file_model.files, db_manager=self.main_window.db_manager
+            folder_color_service = get_folder_color_service()
+            files_with_colors = folder_color_service.get_files_with_existing_colors(
+                self.main_window.file_model.files, self.main_window.db_manager
             )
-
-            files_with_colors = command.get_files_with_existing_colors()
 
             # Show warning dialog if files already have colors
             if files_with_colors:
@@ -217,10 +216,15 @@ class ShortcutCommandHandler:
                 )
 
                 # Recreate command with skip_existing based on user choice
-                command = AutoColorByFolderCommand(
-                    file_items=self.main_window.file_model.files,
-                    db_manager=self.main_window.db_manager,
+                command = folder_color_service.create_auto_color_command(
+                    self.main_window.file_model.files,
+                    self.main_window.db_manager,
                     skip_existing=skip_existing,
+                )
+            else:
+                # No existing colors, create command with default skip_existing=True
+                command = folder_color_service.create_auto_color_command(
+                    self.main_window.file_model.files, self.main_window.db_manager
                 )
 
             # Execute command with wait cursor
