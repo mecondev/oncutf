@@ -22,14 +22,17 @@ from oncutf.app.services.user_interaction import (
     show_question_message,
     show_warning_message,
 )
+from oncutf.app.services.validation_service import ValidationService, get_validation_service
 
 __all__ = [
+    "ValidationService",
     "create_file_loading_dialog",
     "create_hash_dialog",
     "create_metadata_dialog",
     "create_progress_dialog",
     "force_restore_cursor",
     "get_dialog_adapter",
+    "get_validation_service",
     "show_error_message",
     "show_info_message",
     "show_question_message",

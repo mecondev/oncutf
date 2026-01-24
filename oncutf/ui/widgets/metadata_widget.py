@@ -315,7 +315,7 @@ class MetadataWidget(QWidget):
                     extra={"dev_only": True},
                 )
 
-        # Validate the field using MetadataFieldValidator if applicable
+        # Validate the field using ValidationService if applicable
         if category == "metadata_keys" and field:
             # For metadata keys, we can't use the standard validators since these are field names
             # But we can check if the field exists in available keys

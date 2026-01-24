@@ -13,7 +13,7 @@ Contains:
 
 import logging
 
-from oncutf.core.metadata.field_validators import MetadataFieldValidator
+from oncutf.app.services import get_validation_service
 from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
@@ -59,14 +59,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
 
     def _get_field_max_length(self) -> int:
         """Get maximum length for the current field."""
-        field_limits = {
-            "Title": MetadataFieldValidator.MAX_TITLE_LENGTH,
-            "Artist": MetadataFieldValidator.MAX_ARTIST_LENGTH,
-            "Author": MetadataFieldValidator.MAX_ARTIST_LENGTH,
-            "Copyright": MetadataFieldValidator.MAX_COPYRIGHT_LENGTH,
-            "Keywords": 1000,  # Reasonable limit for keywords field
-        }
-        return field_limits.get(self._field_name, 0)
+        return get_validation_service().get_max_length(self._field_name)
 
     def get_blocked_characters(self) -> set[str]:
         """Get set of characters that should be blocked for this field.
@@ -75,12 +68,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
             Set of characters to block
 
         """
-        # Only Title field blocks filename-unsafe characters
-        if self._field_name == "Title":
-            return set(MetadataFieldValidator.INVALID_FILENAME_CHARS)
-
-        # Other fields allow all characters
-        return set()
+        return get_validation_service().get_blocked_characters(self._field_name)
 
     def validate_text_content(self, text: str) -> tuple[bool, str]:
         """Validate text content using metadata field validators.
@@ -95,8 +83,8 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         if not self._field_name:
             return super().validate_text_content(text)
 
-        # Use MetadataFieldValidator for validation
-        return MetadataFieldValidator.validate_field(self._field_name, text)
+        # Use ValidationService for validation
+        return get_validation_service().validate_field(self._field_name, text)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle key press events with validation."""
@@ -176,10 +164,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
 
     def _get_field_max_length(self) -> int:
         """Get maximum length for the current field."""
-        field_limits = {
-            "Description": MetadataFieldValidator.MAX_DESCRIPTION_LENGTH,
-        }
-        return field_limits.get(self._field_name, 0)
+        return get_validation_service().get_max_length(self._field_name)
 
     def text(self) -> str:
         """Get current text content."""
@@ -216,8 +201,8 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         if not self._field_name:
             return super().validate_text_content(text)
 
-        # Use MetadataFieldValidator for validation
-        return MetadataFieldValidator.validate_field(self._field_name, text)
+        # Use ValidationService for validation
+        return get_validation_service().validate_field(self._field_name, text)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle key press events with validation."""

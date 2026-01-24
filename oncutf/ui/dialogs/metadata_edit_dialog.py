@@ -8,7 +8,7 @@ Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
-from oncutf.core.metadata.field_validators import MetadataFieldValidator
+from oncutf.app.services import get_validation_service
 from oncutf.core.pyqt_imports import (
     QCheckBox,
     QDialog,
@@ -31,7 +31,7 @@ class MetadataEditDialog(QDialog):
     Supports:
     - Single field editing (Title, Artist, Copyright, etc.)
     - Multi-file operations with file type grouping
-    - Field validation using MetadataFieldValidator
+    - Field validation using ValidationService
     - Dynamic UI based on field type (single-line vs multi-line)
     """
 
@@ -389,9 +389,7 @@ class MetadataEditDialog(QDialog):
         elif self.field_name == "Rotation":
             self.info_label.setText("Select from standard rotation angles: 0°, 90°, 180°, 270°.")
         else:
-            max_length = getattr(
-                MetadataFieldValidator, f"MAX_{self.field_name.upper()}_LENGTH", None
-            )
+            max_length = get_validation_service().get_max_length(self.field_name)
             if max_length:
                 self.info_label.setText(f"Maximum {max_length} characters.")
 
@@ -411,8 +409,8 @@ class MetadataEditDialog(QDialog):
                     self._apply_info_label_style(theme.get_color("error"))
                     return
 
-        # Additional validation using MetadataFieldValidator
-        is_valid, error_message = MetadataFieldValidator.validate_field(self.field_name, value)
+        # Additional validation using ValidationService
+        is_valid, error_message = get_validation_service().validate_field(self.field_name, value)
 
         if not is_valid:
             # Show error in info label

@@ -18,10 +18,7 @@ Features:
 import os
 import threading
 import time
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from oncutf.infra.external.exiftool_client import ExifToolClient
+from typing import Any
 
 from oncutf.core.batch import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
