@@ -222,8 +222,8 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
         registry = get_service_registry()
 
     # Import protocols and implementations
-    from oncutf.services.cached_hash_service import CachedHashService
     from oncutf.infra.external.exiftool_client import ExifToolClient
+    from oncutf.services.cached_hash_service import CachedHashService
     from oncutf.services.filesystem_service import FilesystemService
     from oncutf.services.interfaces import (
         FilesystemServiceProtocol,

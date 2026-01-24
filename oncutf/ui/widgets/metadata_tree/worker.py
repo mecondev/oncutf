@@ -21,10 +21,10 @@ import time
 
 from oncutf.core.batch import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
+from oncutf.infra.external.exiftool_client import ExifToolClient
 
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.infra.external.exiftool_client import ExifToolClient
 
 logger = get_cached_logger(__name__)
 
