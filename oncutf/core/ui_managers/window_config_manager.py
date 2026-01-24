@@ -281,7 +281,7 @@ class WindowConfigManager:
                 raise RuntimeError("No QApplication instance found")
 
             # Get the primary screen using modern API
-            primary_screen = app.primaryScreen()  # type: ignore[attr-defined]
+            primary_screen = app.primaryScreen()
             if not primary_screen:
                 raise RuntimeError("No primary screen found")
 
@@ -514,7 +514,7 @@ class WindowConfigManager:
             if not app:
                 return
 
-            primary_screen = app.primaryScreen()  # type: ignore[attr-defined]
+            primary_screen = app.primaryScreen()
             if not primary_screen:
                 return
 

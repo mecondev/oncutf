@@ -655,8 +655,8 @@ class ShutdownLifecycleHandler:
                 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
-                if ExifToolWrapper._instances:  # type: ignore[attr-defined]
-                    exiftool = next(iter(ExifToolWrapper._instances))  # type: ignore[attr-defined]
+                if ExifToolWrapper._instances:
+                    exiftool = next(iter(ExifToolWrapper._instances))
                     self.main_window.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
                 logger.debug("[MainWindow] ExifTool wrapper not available: %s", e)

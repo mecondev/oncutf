@@ -161,7 +161,7 @@ class InitializationOrchestrator:
         # UI state attributes
         self.window.loading_dialog = None
         self.window.results_dialog = None
-        self.window.modifier_state = Qt.NoModifier  # type: ignore[attr-defined]  # Qt enum
+        self.window.modifier_state = Qt.NoModifier
         self.window.create_colored_icon = create_colored_icon
         self.window.icon_paths = prepare_status_icons()
 
@@ -169,7 +169,7 @@ class InitializationOrchestrator:
         self.window.last_action = None
         # Initialize sort state from config (will be loaded from saved preferences)
         self.window.current_sort_column = 2  # Default, will be overridden from config
-        self.window.current_sort_order = Qt.AscendingOrder  # type: ignore[attr-defined]  # Qt enum
+        self.window.current_sort_order = Qt.AscendingOrder
         self.window.preview_map = {}
         self.window._selection_sync_mode = "normal"
         self.window.pending_completion_dialog = None

@@ -85,7 +85,7 @@ class CustomSplashScreen(QSplashScreen):
 
             painter = QPainter(fallback_pixmap)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(Qt.white))  # type: ignore[attr-defined]  # Qt color
+            painter.setPen(QPen(Qt.white))
 
             # Use our custom InterDisplay-SemiBold for title
             from oncutf.utils.ui.fonts import get_default_ui_font, get_inter_font
@@ -259,7 +259,7 @@ class CustomSplashScreen(QSplashScreen):
         try:
             app = QApplication.instance()
             if app and hasattr(app, "primaryScreen"):
-                primary_screen = app.primaryScreen()  # type: ignore[attr-defined]
+                primary_screen = app.primaryScreen()
                 if primary_screen:
                     screen_geometry = primary_screen.availableGeometry()
 

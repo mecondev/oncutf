@@ -15,9 +15,6 @@ Provides the primary UI including:
 - Folder tree navigation
 """
 
-# type: ignore[attr-defined]
-
-
 # Import all config constants from centralized module
 # Core application modules
 from oncutf.core.config_imports import *

@@ -108,7 +108,7 @@ class MetadataWidget(QWidget):
         category_row.setSpacing(8)
         category_label = QLabel("Category")
         category_label.setFixedWidth(70)
-        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.category_combo = StyledComboBox()
         self.category_combo.setFixedWidth(150)
@@ -126,7 +126,7 @@ class MetadataWidget(QWidget):
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
         self.options_label = QLabel("Field")  # Will be updated based on category
         self.options_label.setFixedWidth(70)  # Increased width by 10px
-        self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # Use HierarchicalComboBox for better organization
         self.options_combo = HierarchicalComboBox()
@@ -204,13 +204,13 @@ class MetadataWidget(QWidget):
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                selected_files = context._file_store.get_selected_files()  # type: ignore[attr-defined]  # Private context attribute
+                selected_files = context._file_store.get_selected_files()
                 if selected_files:
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                selected_files = context._selection_store.get_selected_files()  # type: ignore[attr-defined]  # Private context attribute
+                selected_files = context._selection_store.get_selected_files()
                 if selected_files:
                     return selected_files
 

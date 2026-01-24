@@ -152,13 +152,13 @@ class ProgressWidget(QWidget):
 
         self.status_label = QLabel("Please wait...")
         self.status_label.setObjectName("status_label")
-        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.status_label.setWordWrap(True)
         self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("count_label")
-        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.count_label.setMinimumWidth(70)
 
         status_row.addWidget(self.status_label)
@@ -187,11 +187,11 @@ class ProgressWidget(QWidget):
         self.percentage_label = QLabel("0%")
         self.percentage_label.setObjectName("percentage_label")
         self.percentage_label.setFixedWidth(40)
-        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.filename_label = QLabel("")
         self.filename_label.setObjectName("filename_label")
-        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.filename_label.setWordWrap(True)
         self.filename_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
@@ -219,7 +219,7 @@ class ProgressWidget(QWidget):
 
             self.size_current_label = QLabel("")
             self.size_current_label.setObjectName("size_current_label")
-            self.size_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.size_current_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             # Fixed width + AlignRight for stability (text flows towards 'of')
             # Width will be adjusted via QFontMetrics when total size is known.
             self.size_current_label.setFixedWidth(70)
@@ -227,14 +227,14 @@ class ProgressWidget(QWidget):
 
             self.size_of_label = QLabel("of")
             self.size_of_label.setObjectName("size_of_label")
-            self.size_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.size_of_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             # Fixed small width to act as stable anchor
             self.size_of_label.setFixedWidth(18)
             self.size_of_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
             self.size_total_label = QLabel("")
             self.size_total_label.setObjectName("size_total_label")
-            self.size_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.size_total_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             # Minimum width + AlignLeft (text sticks to 'of', grows as needed)
             # Width will be adjusted via QFontMetrics when total size is known.
             self.size_total_label.setMinimumWidth(70)
@@ -253,7 +253,7 @@ class ProgressWidget(QWidget):
         if self.show_time_info:
             self.time_label = QLabel("Ready...")
             self.time_label.setObjectName("time_info_label")
-            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
+            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.time_label)
 

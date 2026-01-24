@@ -327,12 +327,12 @@ class MetadataEditDialog(QDialog):
         """Handle keyboard events for input field."""
         if obj == self.input_field and event.type() == event.KeyPress:
             # Handle Enter/Return key
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):  # type: ignore[attr-defined]  # Qt key constants
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 modifiers = event.modifiers()
 
                 # For multiline fields (QTextEdit)
                 if self.is_multiline:
-                    if modifiers & Qt.ShiftModifier:  # type: ignore[attr-defined]  # Qt modifier flag
+                    if modifiers & Qt.ShiftModifier:
                         # Shift+Enter: Insert new line (default behavior)
                         return False  # Let QTextEdit handle it
                     else:
@@ -345,7 +345,7 @@ class MetadataEditDialog(QDialog):
                     return True  # Event handled
 
             # Handle Escape key
-            elif event.key() == Qt.Key_Escape:  # type: ignore[attr-defined]  # Qt key constants
+            elif event.key() == Qt.Key_Escape:
                 self.reject()
                 return True  # Event handled
 

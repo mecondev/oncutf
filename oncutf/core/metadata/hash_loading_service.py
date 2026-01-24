@@ -731,7 +731,7 @@ class HashLoadingService:
 
         # Call finished callback
         if self._on_finished_callback:
-            self._on_finished_callback(success)  # type: ignore[call-arg]
+            self._on_finished_callback(success)
 
         logger.info("[HashLoadingService] Operation completed (success=%s)", success)
 

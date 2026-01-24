@@ -205,8 +205,8 @@ module = [
     "oncutf.utils.metadata.exiftool_adapter"
 ]
 ignore_errors = false
-# NOTE: Only Qt-stub-specific errors remain disabled (2026-01-20)
-# Removed from original: index (now enforced - 0 errors)
+# NOTE: Only Qt-stub-specific errors remain disabled (2026-01-25)
+# Removed: index (now enforced - 0 errors), unused-ignore (type:ignore cleanup complete)
 disable_error_code = [
     "attr-defined",       # Qt dynamic attributes (e.g. Qt.AlignCenter)
     "call-arg",           # Qt signal/slot argument mismatches
@@ -218,7 +218,6 @@ disable_error_code = [
     "assignment",         # Qt property type assignments
     "union-attr",         # Qt Optional patterns (many in widgets)
     "unreachable",        # False positives from Qt control flow
-    "unused-ignore",      # Keep until type:ignore cleanup is done
     "has-type",           # Qt forward references
     "var-annotated",      # Qt widget attributes
     "comparison-overlap", # Qt enum comparisons

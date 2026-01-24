@@ -95,7 +95,7 @@ class UndoRedoHandler:
         try:
             from oncutf.ui.dialogs.metadata_history_dialog import MetadataHistoryDialog
 
-            dialog = MetadataHistoryDialog(self._widget)  # type: ignore[arg-type]
+            dialog = MetadataHistoryDialog(self._widget)
             dialog.exec_()
         except ImportError:
             logger.warning("MetadataHistoryDialog not available")

@@ -179,10 +179,10 @@ class CustomFileSystemModel(QFileSystemModel):
         # Return specific icon based on file type
         return self.FILE_TYPE_ICONS.get(ext, "file")
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # type: ignore[attr-defined]  # Qt item role
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
         """Override data method to provide custom icons."""
         # Handle decoration role (icons)
-        if role == Qt.DecorationRole:  # type: ignore[attr-defined]  # Qt item role
+        if role == Qt.DecorationRole:
             if index.isValid():
                 file_path = self.filePath(index)
                 if file_path:

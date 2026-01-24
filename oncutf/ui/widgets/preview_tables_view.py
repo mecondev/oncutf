@@ -172,23 +172,23 @@ class PreviewTablesView(QWidget):
             table.setAlternatingRowColors(True)
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.setSelectionMode(QAbstractItemView.NoSelection)  # No selection allowed
-            table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[attr-defined]
-            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore[attr-defined]
+            table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             table.setWordWrap(False)
             table.setShowGrid(False)
-            table.verticalHeader().setVisible(False)  # type: ignore[attr-defined]  # QTableWidget header method
-            table.horizontalHeader().setVisible(False)  # type: ignore[attr-defined]  # QTableWidget header method
+            table.verticalHeader().setVisible(False)
+            table.horizontalHeader().setVisible(False)
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set row height from theme manager
             from oncutf.core.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
-            table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore[attr-defined]  # QTableWidget header method
+            table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
             # Set minimum height for proper placeholder centering
             table.setMinimumHeight(200)
             # Reduce flickering during updates
             table.setUpdatesEnabled(True)
-            table.viewport().setUpdatesEnabled(True)  # type: ignore[attr-defined]  # QTableWidget viewport method
+            table.viewport().setUpdatesEnabled(True)
             # Disable hover highlighting
             table.setStyleSheet("QTableWidget::item:hover { background-color: transparent; }")
 

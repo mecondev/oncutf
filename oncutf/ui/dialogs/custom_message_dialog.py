@@ -129,11 +129,11 @@ class CustomMessageDialog(QDialog):
         position_dialog_relative_to_parent(self)
 
         # Force normal cursor on the dialog and all its children
-        self.setCursor(Qt.ArrowCursor)  # type: ignore[arg-type]
+        self.setCursor(Qt.ArrowCursor)
 
         # Apply normal cursor to all child widgets recursively
         for child in self.findChildren(QWidget):
-            child.setCursor(Qt.ArrowCursor)  # type: ignore[arg-type]
+            child.setCursor(Qt.ArrowCursor)
 
         # Process events to ensure cursor change takes effect
         from oncutf.core.pyqt_imports import QApplication

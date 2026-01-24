@@ -145,7 +145,7 @@ class QtProgressDialogAdapter:
 
         self._dialog = ProgressDialog(
             parent=parent,
-            operation_type=operation_type,  # type: ignore[arg-type]
+            operation_type=operation_type,
             cancel_callback=cancel_callback,
             show_enhanced_info=show_enhanced_info,
             is_exit_save=is_exit_save,

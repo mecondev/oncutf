@@ -728,7 +728,7 @@ class MetadataTreeView(QTreeView):
         """
         if self._is_placeholder_mode:
             # In placeholder mode, use normal scrolling
-            super().scrollTo(index, hint)  # type: ignore[arg-type]
+            super().scrollTo(index, hint)
             return
 
         # In normal mode, do nothing - scroll position is managed manually

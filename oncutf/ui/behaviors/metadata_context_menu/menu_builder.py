@@ -74,7 +74,7 @@ class MenuBuilder:
         )
 
         # Create menu
-        menu = QMenu(self._widget)  # type: ignore[arg-type]
+        menu = QMenu(self._widget)
         self._widget._current_menu = menu
 
         # Apply theme styling

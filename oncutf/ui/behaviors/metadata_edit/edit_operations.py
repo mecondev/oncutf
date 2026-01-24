@@ -101,7 +101,7 @@ class EditOperations:
         from oncutf.ui.dialogs.metadata_edit_dialog import MetadataEditDialog
 
         dialog = MetadataEditDialog(
-            parent=self._widget,  # type: ignore[arg-type]
+            parent=self._widget,
             selected_files=selected_files,
             metadata_cache=self._widget._cache_behavior.get_metadata_cache(),
             field_name=clean_field_name,  # For dialog display
@@ -298,7 +298,7 @@ class EditOperations:
 
         # Open DateTimeEditDialog
         result_files, new_datetime = DateTimeEditDialog.get_datetime_edit_choice(
-            parent=self._widget,  # type: ignore[arg-type]
+            parent=self._widget,
             selected_files=file_paths,
             date_type=date_type,
         )

@@ -85,7 +85,7 @@ class BaseRenameModule(QWidget):
             - @staticmethod is_effective_data(data: dict[str, Any]) -> bool
         """
         # We use a Protocol cast-ish pattern so mypy knows get_data exists.
-        self_typed: _HasGetData = self  # type: ignore[assignment]
+        self_typed: _HasGetData = self
         return self.__class__.is_effective_data(self_typed.get_data())
 
     @staticmethod

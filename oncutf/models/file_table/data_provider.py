@@ -100,7 +100,7 @@ class DataProvider:
                 if isinstance(file.modified, datetime):
                     return file.modified.strftime("%Y-%m-%d %H:%M:%S")
                 # file.modified may be str in edge cases
-                return str(file.modified)  # type: ignore[unreachable]
+                return str(file.modified)
             elif column_key == "file_hash":
                 return self.icon_manager.get_hash_value(file.full_path)
             # For metadata columns, try to get from metadata cache

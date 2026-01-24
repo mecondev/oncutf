@@ -145,7 +145,7 @@ class RenameModuleWidget(QWidget):
         self.setProperty("module", True)
 
         # Set transparent background to avoid white borders around rounded corners
-        self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore[attr-defined]  # Qt widget attribute
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
 
         # Phase 3: Get module instances from orchestrator (replacing hardcoded dict)
         self.module_instances = self._build_module_instances_dict()
@@ -188,7 +188,7 @@ class RenameModuleWidget(QWidget):
 
         self.drag_handle = QLabel()
         self.drag_handle.setFixedWidth(30)
-        self.drag_handle.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]  # Qt alignment flag
+        self.drag_handle.setAlignment(Qt.AlignCenter)
         # Subtle background for handle area
         self.drag_handle.setStyleSheet(
             f"""
@@ -233,15 +233,15 @@ class RenameModuleWidget(QWidget):
 
         type_label = QLabel("Type:")
         type_label.setFixedWidth(self.LABEL_WIDTH)
-        type_label.setAlignment(Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
+        type_label.setAlignment(Qt.AlignVCenter)
         self.type_combo = StyledComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
         # Theme styling is handled by StyledComboBox
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
-        type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
-        type_row.addWidget(self.type_combo, 0, Qt.AlignVCenter)  # type: ignore[arg-type]  # Qt alignment flag
+        type_row.addWidget(type_label, 0, Qt.AlignVCenter)
+        type_row.addWidget(self.type_combo, 0, Qt.AlignVCenter)
         type_row.addStretch()
         content_layout.addLayout(type_row)
 
@@ -385,7 +385,7 @@ class RenameModuleWidget(QWidget):
         # Try to access the class method `is_effective_data(data)` safely
         module_class = type(self.current_module_widget)
         if hasattr(module_class, "is_effective_data"):
-            return module_class.is_effective_data(data)  # type: ignore[attr-defined]
+            return module_class.is_effective_data(data)
         return False
 
     # Drag & Drop functionality (Phase 2: Using ModuleDragDropManager)
@@ -401,7 +401,7 @@ class RenameModuleWidget(QWidget):
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
-        if event.button() == Qt.LeftButton:  # type: ignore[comparison-overlap]  # Qt mouse button
+        if event.button() == Qt.LeftButton:
             global_pos = (event.globalPos().x(), event.globalPos().y())
             self._drag_manager.start_drag(self, global_pos)
             self._drag_manager.set_drag_cursor()
@@ -409,7 +409,7 @@ class RenameModuleWidget(QWidget):
 
     def drag_handle_mouse_move(self, event):
         """Handle mouse move on drag handle - start dragging if moved enough."""
-        if not (event.buttons() & Qt.LeftButton):  # type: ignore[comparison-overlap]  # Qt mouse button
+        if not (event.buttons() & Qt.LeftButton):
             return
 
         global_pos = (event.globalPos().x(), event.globalPos().y())

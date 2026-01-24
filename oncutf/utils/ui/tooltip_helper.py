@@ -110,10 +110,10 @@ class CustomTooltip(QLabel):
         # Set window flags for tooltip behavior
         if self.persistent:
             # Persistent tooltips behave like Qt standard tooltips
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)  # type: ignore[attr-defined]
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
         else:
             # Temporary tooltips with auto-hide
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)  # type: ignore[attr-defined]
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
 
         # Apply styling based on tooltip type
         style_classes = {
@@ -655,14 +655,14 @@ class TooltipHelper:
 
             # Find the screen containing the tooltip position
             target_screen = None
-            for screen in app.screens():  # type: ignore[attr-defined]
+            for screen in app.screens():
                 if screen.geometry().contains(position):
                     target_screen = screen
                     break
 
             # If not found on any screen, use primary screen
             if not target_screen:
-                target_screen = app.primaryScreen()  # type: ignore[attr-defined]
+                target_screen = app.primaryScreen()
                 if not target_screen:
                     return position
 

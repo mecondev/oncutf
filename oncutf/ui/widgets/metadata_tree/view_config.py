@@ -157,7 +157,7 @@ class MetadataTreeViewConfig:
                 logger.warning("[MetadataTree] Could not show placeholder - missing helper")
 
             # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-            view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
+            view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
             header.setSectionResizeMode(0, QHeaderView.Fixed)
             header.setSectionResizeMode(1, QHeaderView.Fixed)
@@ -202,7 +202,7 @@ class MetadataTreeViewConfig:
             # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
             self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
             # Also ensure vertical scrollbar is set properly
-            view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore[arg-type]
+            view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
             header = view.header()
 

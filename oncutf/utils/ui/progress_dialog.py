@@ -118,10 +118,10 @@ class ProgressDialog(QDialog):
     def _setup_dialog(self) -> None:
         """Setup the dialog UI and properties."""
         # Frameless dialog
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore[attr-defined]  # Qt window flags
-        self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore[attr-defined]  # Qt widget attribute
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setModal(True)
-        self.setFocusPolicy(Qt.StrongFocus)  # type: ignore[attr-defined]  # Qt focus policy
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # Layout
         layout = QVBoxLayout(self)
@@ -152,10 +152,10 @@ class ProgressDialog(QDialog):
         """Setup wait cursor for both parent window and dialog."""
         # Set wait cursor on parent if available (main window)
         if self.parent():
-            self.parent().setCursor(Qt.WaitCursor)  # type: ignore[attr-defined]  # Qt cursor
+            self.parent().setCursor(Qt.WaitCursor)
 
         # Set wait cursor on the dialog as well
-        self.setCursor(Qt.WaitCursor)  # type: ignore[attr-defined]  # Qt cursor
+        self.setCursor(Qt.WaitCursor)
 
         logger.debug("[ProgressDialog] Wait cursor set on parent and dialog")
 
@@ -166,8 +166,8 @@ class ProgressDialog(QDialog):
 
         # Set normal cursor on parent (main window) and dialog
         if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)  # type: ignore[attr-defined]  # Qt cursor
-        self.setCursor(Qt.ArrowCursor)  # type: ignore[attr-defined]  # Qt cursor
+            self.parent().setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.ArrowCursor)
 
         logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
@@ -318,7 +318,7 @@ class ProgressDialog(QDialog):
     def set_time_info(self, elapsed: float, estimated_total: float | None = None) -> None:
         """Set time information manually."""
         if hasattr(self.waiting_widget, "set_time_info"):
-            self.waiting_widget.set_time_info(elapsed, estimated_total)  # type: ignore[attr-defined]  # WaitingWidget method
+            self.waiting_widget.set_time_info(elapsed, estimated_total)
 
     def update_progress(
         self,
@@ -350,7 +350,7 @@ class ProgressDialog(QDialog):
     def get_progress_summary(self) -> dict[str, object]:
         """Get comprehensive progress summary (enhanced widget only)."""
         if hasattr(self.waiting_widget, "get_progress_summary"):
-            return self.waiting_widget.get_progress_summary()  # type: ignore[no-any-return]
+            return self.waiting_widget.get_progress_summary()
         return {}
 
     @classmethod
