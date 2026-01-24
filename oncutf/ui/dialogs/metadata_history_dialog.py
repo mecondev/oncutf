@@ -33,9 +33,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from oncutf.app.services import get_metadata_command_manager, get_rename_history_manager
 from oncutf.config import UNDO_REDO_SETTINGS
-from oncutf.core.metadata import get_metadata_command_manager
-from oncutf.core.rename.rename_history_manager import get_rename_history_manager
 from oncutf.core.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType

@@ -433,7 +433,7 @@ class ContextMenuHandlers:
 
         # Enable/disable undo/redo based on command manager state
         try:
-            from oncutf.core.metadata import get_metadata_command_manager
+            from oncutf.app.services import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             action_undo.setEnabled(command_manager.can_undo())

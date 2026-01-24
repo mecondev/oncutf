@@ -151,7 +151,7 @@ class EditOperations:
 
         """
         try:
-            from oncutf.core.metadata import get_metadata_command_manager
+            from oncutf.app.services import get_metadata_command_manager
             from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
             command_manager = get_metadata_command_manager()
@@ -317,7 +317,7 @@ class EditOperations:
 
             # Use command system for undo/redo support
             try:
-                from oncutf.core.metadata import get_metadata_command_manager
+                from oncutf.app.services import get_metadata_command_manager
                 from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
                 command_manager = get_metadata_command_manager()

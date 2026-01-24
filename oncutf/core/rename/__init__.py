@@ -19,6 +19,7 @@ Date: 2025-12-20
 
 from __future__ import annotations
 
+from oncutf.app.services import RenameHistoryManager
 from oncutf.core.rename.data_classes import (
     ExecutionItem,
     ExecutionResult,
@@ -30,7 +31,6 @@ from oncutf.core.rename.data_classes import (
 from oncutf.core.rename.execution_manager import UnifiedExecutionManager
 from oncutf.core.rename.preview_manager import UnifiedPreviewManager
 from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
-from oncutf.core.rename.rename_history_manager import RenameHistoryManager
 from oncutf.core.rename.rename_manager import RenameManager
 from oncutf.core.rename.state_manager import RenameStateManager
 from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine

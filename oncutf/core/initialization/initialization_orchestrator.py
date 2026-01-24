@@ -75,6 +75,7 @@ class InitializationOrchestrator:
         - Database system
         - Core managers
         """
+        from oncutf.app.services import get_rename_history_manager
         from oncutf.core.application_context import ApplicationContext
         from oncutf.core.backup_manager import get_backup_manager
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
@@ -86,7 +87,6 @@ class InitializationOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
-        from oncutf.core.rename.rename_history_manager import get_rename_history_manager
         from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
 
         # Core Application Context

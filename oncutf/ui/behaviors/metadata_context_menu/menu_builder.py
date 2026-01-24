@@ -268,7 +268,7 @@ class MenuBuilder:
 
         # Check if undo/redo are available and get descriptions
         try:
-            from oncutf.core.metadata import get_metadata_command_manager
+            from oncutf.app.services import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             can_undo = command_manager.can_undo()

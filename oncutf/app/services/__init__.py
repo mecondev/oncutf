@@ -19,6 +19,12 @@ from oncutf.app.services.progress import (
     create_metadata_dialog,
     create_progress_dialog,
 )
+from oncutf.app.services.rename_history_service import (
+    RenameBatch,
+    RenameHistoryManager,
+    RenameOperation,
+    get_rename_history_manager,
+)
 from oncutf.app.services.user_interaction import (
     get_dialog_adapter,
     show_error_message,
@@ -28,8 +34,15 @@ from oncutf.app.services.user_interaction import (
 )
 from oncutf.app.services.validation_service import ValidationService, get_validation_service
 
+# Re-export metadata command manager (has Qt dependencies, kept in core)
+from oncutf.core.metadata import MetadataCommandManager, get_metadata_command_manager
+
 __all__ = [
+    "MetadataCommandManager",
     "MetadataSimplificationService",
+    "RenameBatch",
+    "RenameHistoryManager",
+    "RenameOperation",
     "ValidationService",
     "create_file_loading_dialog",
     "create_hash_dialog",
@@ -37,7 +50,9 @@ __all__ = [
     "create_progress_dialog",
     "force_restore_cursor",
     "get_dialog_adapter",
+    "get_metadata_command_manager",
     "get_metadata_simplification_service",
+    "get_rename_history_manager",
     "get_validation_service",
     "show_error_message",
     "show_info_message",

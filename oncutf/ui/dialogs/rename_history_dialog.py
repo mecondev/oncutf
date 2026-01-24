@@ -13,6 +13,7 @@ Features:
 - Operation status and file counts
 """
 
+from oncutf.app.services import get_rename_history_manager
 from oncutf.core.pyqt_imports import (
     QAbstractItemView,
     QDialog,
@@ -29,7 +30,6 @@ from oncutf.core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from oncutf.core.rename.rename_history_manager import get_rename_history_manager
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType

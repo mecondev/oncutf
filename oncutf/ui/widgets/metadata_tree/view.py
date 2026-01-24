@@ -67,7 +67,7 @@ except ImportError:
 
 # Command system integration
 try:
-    from oncutf.core.metadata import get_metadata_command_manager
+    from oncutf.app.services import get_metadata_command_manager
     from oncutf.core.metadata.commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
 except ImportError:
     get_metadata_command_manager = None
