@@ -18,10 +18,13 @@ Features:
 import os
 import threading
 import time
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from oncutf.infra.external.exiftool_client import ExifToolClient
 
 from oncutf.core.batch import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
-from oncutf.infra.external.exiftool_client import ExifToolClient
 
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -33,8 +36,12 @@ class MetadataWorker(QObject):
     """Worker class for threaded metadata extraction with batch optimization.
     Emits progress and result signals and supports graceful cancellation.
 
+    NOTE: This worker requires an ExifToolClient to be injected via set_reader().
+    The UI layer should NOT instantiate ExifToolClient directly - this should be
+    done by the MetadataController.
+
     Attributes:
-        reader (ExifToolClient): The ExifTool client instance.
+        reader: The ExifTool client instance (injected).
         metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
@@ -51,16 +58,30 @@ class MetadataWorker(QObject):
     )  # file_path - emitted when individual file metadata is loaded
 
     def __init__(
-        self, reader=None, metadata_cache=None, files=None, use_extended: bool = False, parent=None
+        self,
+        reader: Any | None = None,
+        metadata_cache: Any | None = None,
+        files: Any | None = None,
+        use_extended: bool = False,
+        parent: Any | None = None,
     ):
-        """Initialize the metadata worker with files and extended metadata flag."""
+        """Initialize the metadata worker with files and extended metadata flag.
+
+        Args:
+            reader: ExifTool client (should be injected by controller)
+            metadata_cache: Metadata cache
+            files: List of FileItem objects (new style)
+            use_extended: Whether to use extended metadata extraction
+            parent: Parent QObject
+
+        """
         super().__init__(parent)
         # Handle both old-style (reader, metadata_cache) and new-style (files) initialization
         if files is not None:
             # New style initialization
             self.files = files
             self.file_path = [f.full_path for f in files]
-            self.reader = None  # Will be created as needed
+            self.reader = reader  # Must be injected by controller
             self.metadata_cache = None  # Will use cache helper
         else:
             # Old style initialization for backward compatibility
@@ -82,6 +103,18 @@ class MetadataWorker(QObject):
         self._processed_size = 0
 
         logger.debug("[Worker] __init__ called", extra={"dev_only": True})
+
+    def set_reader(self, reader: Any) -> None:
+        """Set the ExifTool client (dependency injection).
+
+        This should be called by the controller before running the worker.
+
+        Args:
+            reader: ExifToolClient instance
+
+        """
+        self.reader = reader
+        logger.debug("[Worker] ExifTool client injected", extra={"dev_only": True})
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size of all files to process."""
@@ -118,12 +151,13 @@ class MetadataWorker(QObject):
             threading.current_thread().name,
         )
 
-        # Ensure we have a reader if not provided
+        # Ensure we have a reader (must be injected by controller)
         if not self.reader:
-            logger.debug(
-                "[Worker] Creating ExifToolClient for worker", extra={"dev_only": True}
+            logger.error(
+                "[Worker] No ExifTool client provided! Worker cannot run without injected client."
             )
-            self.reader = ExifToolClient(use_extended=self.use_extended)
+            self.finished.emit()
+            return
 
         start_total = time.time()
 
