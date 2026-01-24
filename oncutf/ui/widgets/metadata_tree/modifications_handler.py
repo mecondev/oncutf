@@ -39,24 +39,19 @@ class MetadataTreeModificationsHandler:
             Dictionary mapping file paths to their modified metadata
 
         """
-        # Get staging manager
-        from oncutf.core.metadata import get_metadata_staging_manager
+        # Get metadata service
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return {}
-
-        return staging_manager.get_all_staged_changes()
+        metadata_service = get_metadata_service()
+        return metadata_service.staging_manager.get_all_staged_changes()
 
     def clear_modifications(self) -> None:
         """Clear all modified metadata items for the current file."""
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if staging_manager and self._view._current_file_path:
-            staging_manager.clear_staged_changes(self._view._current_file_path)
+        metadata_service = get_metadata_service()
+        if self._view._current_file_path:
+            metadata_service.clear_staged_changes(self._view._current_file_path)
 
         # Update the information label with current display data
         if hasattr(self._view, "_current_display_data") and self._view._current_display_data:
@@ -72,12 +67,10 @@ class MetadataTreeModificationsHandler:
             file_path: Full path of the file to clear modifications for
 
         """
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if staging_manager:
-            staging_manager.clear_staged_changes(file_path)
+        metadata_service = get_metadata_service()
+        metadata_service.clear_staged_changes(file_path)
 
         # If this is the current file, also clear current modifications and update UI
         if paths_equal(file_path, self._view._current_file_path):
@@ -106,13 +99,10 @@ class MetadataTreeModificationsHandler:
             bool: True if any selected file has modifications
 
         """
-        # Get staging manager
-        from oncutf.core.metadata import get_metadata_staging_manager
+        # Get metadata service
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return False
+        metadata_service = get_metadata_service()
 
         # Get selected files
         selected_files = self._view._get_current_selection()
@@ -121,7 +111,7 @@ class MetadataTreeModificationsHandler:
 
         # Check if any selected file has modifications
         for file_item in selected_files:
-            if staging_manager.has_staged_changes(file_item.full_path):
+            if metadata_service.has_staged_changes(file_item.full_path):
                 return True
 
         return False
@@ -133,12 +123,8 @@ class MetadataTreeModificationsHandler:
             bool: True if any file has modifications
 
         """
-        # Get staging manager
-        from oncutf.core.metadata import get_metadata_staging_manager
+        # Get metadata service
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return False
-
-        return staging_manager.has_any_staged_changes()
+        metadata_service = get_metadata_service()
+        return metadata_service.staging_manager.has_any_staged_changes()

@@ -151,17 +151,17 @@ class EditOperations:
 
         """
         try:
-            from oncutf.app.services import get_metadata_command_manager
-            from oncutf.core.metadata.commands import EditMetadataFieldCommand
+            from oncutf.app.services import get_metadata_command_manager, get_metadata_service
 
             command_manager = get_metadata_command_manager()
+            metadata_service = get_metadata_service()
 
             # For single file selection (metadata tree context), use command system
             if len(selected_files) == 1:
                 file_item = selected_files[0]
 
                 # Create and execute command
-                command = EditMetadataFieldCommand(
+                command = metadata_service.create_edit_command(
                     file_path=file_item.full_path,
                     field_path=normalized_field_path,
                     new_value=new_value,
@@ -180,6 +180,8 @@ class EditOperations:
             else:
                 # Multi-file editing: execute command for each file
                 for file_item in selected_files:
+                    from oncutf.core.metadata.commands import EditMetadataFieldCommand
+
                     command = EditMetadataFieldCommand(
                         file_path=file_item.full_path,
                         field_path=normalized_field_path,
@@ -233,18 +235,13 @@ class EditOperations:
             files_to_modify: List of file items to modify
 
         """
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
+        metadata_service = get_metadata_service()
 
         logger.info(
-            "Fallback edit: staging_manager=%s",
-            staging_manager,
+            "Fallback edit: using MetadataService",
         )
-
-        if not staging_manager:
-            logger.error("Staging manager not available")
-            return
 
         success_count = 0
 
@@ -255,7 +252,9 @@ class EditOperations:
                 key_path,
                 new_value,
             )
-            staging_manager.stage_change(file_item.full_path, key_path, new_value)
+            metadata_service.staging_manager.stage_change(
+                file_item.full_path, key_path, new_value
+            )
             success_count += 1
             file_item.metadata_status = "modified"
 
@@ -317,10 +316,13 @@ class EditOperations:
 
             # Use command system for undo/redo support
             try:
-                from oncutf.app.services import get_metadata_command_manager
-                from oncutf.core.metadata.commands import EditMetadataFieldCommand
+                from oncutf.app.services import (
+                    get_metadata_command_manager,
+                    get_metadata_service,
+                )
 
                 command_manager = get_metadata_command_manager()
+                metadata_service = get_metadata_service()
                 metadata_cache = self._widget._cache_behavior.get_metadata_cache()
 
                 # Filter selected files to only those in result_files
@@ -331,7 +333,7 @@ class EditOperations:
                     return
 
                 # Create and execute command
-                command = EditMetadataFieldCommand(
+                command = metadata_service.create_edit_command(
                     files=files_to_modify,
                     key_path=key_path,
                     new_value=datetime_str,

@@ -243,13 +243,10 @@ class MetadataTreeSelectionHandler:
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
 
         """
-        # Get staging manager
-        from oncutf.core.metadata import get_metadata_staging_manager
+        # Get metadata service
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return {}
+        metadata_service = get_metadata_service()
 
         # Get current file
         selected_files = self.get_current_selection()
@@ -257,4 +254,4 @@ class MetadataTreeSelectionHandler:
             return {}
 
         file_path = selected_files[0].full_path
-        return staging_manager.get_staged_changes(file_path)
+        return metadata_service.staging_manager.get_staged_changes(file_path)

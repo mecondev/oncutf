@@ -72,11 +72,11 @@ class ResetHandler:
                 self._update_tree_item_value(key_path, str(original_value))
 
                 # Remove from staging
-                from oncutf.core.metadata import get_metadata_staging_manager
+                from oncutf.app.services import get_metadata_service
 
-                staging_manager = get_metadata_staging_manager()
-                if staging_manager and self._widget._current_file_path:
-                    staging_manager.clear_staged_change(
+                metadata_service = get_metadata_service()
+                if self._widget._current_file_path:
+                    metadata_service.staging_manager.clear_staged_change(
                         self._widget._current_file_path, key_path
                     )
 
@@ -114,16 +114,15 @@ class ResetHandler:
             original_value: Original value to restore
 
         """
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return
+        metadata_service = get_metadata_service()
 
         # Clear staged change
         if self._widget._current_file_path:
-            staging_manager.clear_staged_change(self._widget._current_file_path, key_path)
+            metadata_service.staging_manager.clear_staged_change(
+                self._widget._current_file_path, key_path
+            )
 
         # Remove from modified items
         if key_path in self._widget.modified_items:

@@ -595,14 +595,13 @@ def create_metadata_tree_service() -> MetadataTreeService:
 
     # Try to inject staging manager if available
     try:
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-        if staging_manager:
-            service.set_staging_manager(staging_manager)
+        metadata_service = get_metadata_service()
+        service.set_staging_manager(metadata_service.staging_manager)
     except ImportError:
         logger.debug(
-            "[MetadataTreeService] Staging manager not available",
+            "[MetadataTreeService] Metadata service not available",
             extra={"dev_only": True},
         )
 

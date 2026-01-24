@@ -127,14 +127,13 @@ class MenuBuilder:
             normalized_key_path = normalize_metadata_field_name(key_path)
 
             # Check staging manager
-            from oncutf.core.metadata import get_metadata_staging_manager
+            from oncutf.app.services import get_metadata_service
 
-            staging_manager = get_metadata_staging_manager()
-            if staging_manager:
-                staged_changes = staging_manager.get_staged_changes(
-                    self._widget._current_file_path
-                )
-                has_modifications = normalized_key_path in staged_changes
+            metadata_service = get_metadata_service()
+            staged_changes = metadata_service.staging_manager.get_staged_changes(
+                self._widget._current_file_path
+            )
+            has_modifications = normalized_key_path in staged_changes
 
             # Get current field value
             if selected_files:

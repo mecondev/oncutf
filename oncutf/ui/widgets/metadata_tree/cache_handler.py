@@ -16,12 +16,6 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
-# Unified metadata manager integration
-try:
-    from oncutf.core.metadata import UnifiedMetadataManager
-except ImportError:
-    UnifiedMetadataManager = None
-
 logger = get_cached_logger(__name__)
 
 
@@ -40,18 +34,14 @@ class MetadataTreeCacheHandler:
     def initialize_direct_loader(self) -> None:
         """Initialize the direct metadata loader."""
         try:
-            if UnifiedMetadataManager is not None:
-                self._view._direct_loader = UnifiedMetadataManager()
-                logger.debug(
-                    "[MetadataTreeView] UnifiedMetadataManager initialized",
-                    extra={"dev_only": True},
-                )
-            else:
-                logger.debug(
-                    "[MetadataTreeView] UnifiedMetadataManager not available",
-                    extra={"dev_only": True},
-                )
-                self._view._direct_loader = None
+            from oncutf.app.services import get_metadata_service
+
+            metadata_service = get_metadata_service()
+            self._view._direct_loader = metadata_service.unified_manager
+            logger.debug(
+                "[MetadataTreeView] UnifiedMetadataManager initialized via MetadataService",
+                extra={"dev_only": True},
+            )
         except Exception as e:
             logger.exception(
                 "[MetadataTreeView] Failed to initialize UnifiedMetadataManager: %s", e

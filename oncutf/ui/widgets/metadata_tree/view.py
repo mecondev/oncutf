@@ -65,20 +65,12 @@ try:
 except ImportError:
     get_app_context = None
 
-# Command system integration
+# Metadata service integration (command system + unified manager)
 try:
-    from oncutf.app.services import get_metadata_command_manager
-    from oncutf.core.metadata.commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
+    from oncutf.app.services import get_metadata_command_manager, get_metadata_service
 except ImportError:
     get_metadata_command_manager = None
-    EditMetadataFieldCommand = None
-    ResetMetadataFieldCommand = None
-
-# Unified metadata manager integration
-try:
-    from oncutf.core.metadata import UnifiedMetadataManager
-except ImportError:
-    UnifiedMetadataManager = None
+    get_metadata_service = None
 
 logger = get_cached_logger(__name__)
 
@@ -288,11 +280,13 @@ class MetadataTreeView(QTreeView):
     def _lazy_init_controller(self) -> None:
         """Lazy initialization of controller layer."""
         try:
-            from oncutf.core.metadata import get_metadata_staging_manager
+            from oncutf.app.services import get_metadata_service
             from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
 
-            staging_manager = get_metadata_staging_manager()
-            self._controller = create_metadata_tree_controller(staging_manager=staging_manager)
+            metadata_service = get_metadata_service()
+            self._controller = create_metadata_tree_controller(
+                staging_manager=metadata_service.staging_manager
+            )
 
             logger.debug(
                 "[MetadataTree] Controller initialized (layered architecture)",

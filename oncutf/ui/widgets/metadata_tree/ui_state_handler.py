@@ -150,10 +150,10 @@ class TreeUiStateHandler:
             if not parent_window or not hasattr(parent_window, "information_label"):
                 return
 
-            # Get staging manager for modified count
-            from oncutf.core.metadata import get_metadata_staging_manager
+            # Get metadata service for modified count
+            from oncutf.app.services import get_metadata_service
 
-            staging_manager = get_metadata_staging_manager()
+            metadata_service = get_metadata_service()
 
             # Count total fields
             total_fields = 0
@@ -170,8 +170,10 @@ class TreeUiStateHandler:
 
             # Count modified fields from staging manager
             modified_fields = 0
-            if staging_manager and self.view._current_file_path:
-                staged_changes = staging_manager.get_staged_changes(self.view._current_file_path)
+            if self.view._current_file_path:
+                staged_changes = metadata_service.staging_manager.get_staged_changes(
+                    self.view._current_file_path
+                )
                 modified_fields = len(staged_changes)
 
             # Build information label text with styling
@@ -274,11 +276,10 @@ class TreeUiStateHandler:
         self.view._scroll_behavior.clear_scroll_memory()
 
         # Clear all staged changes
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-        if staging_manager:
-            staging_manager.clear_all()
+        metadata_service = get_metadata_service()
+        metadata_service.clear_staged_changes()
 
         self.clear_tree()
         # Update header visibility for placeholder mode

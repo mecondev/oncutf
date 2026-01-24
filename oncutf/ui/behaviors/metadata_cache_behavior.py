@@ -376,10 +376,10 @@ class MetadataCacheBehavior:
         if not file_model:
             return
 
-        # Get staging manager
-        from oncutf.core.metadata import get_metadata_staging_manager
+        # Get metadata service
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
+        metadata_service = get_metadata_service()
 
         # For each selected file, update its icon
         updated_rows = []
@@ -388,10 +388,7 @@ class MetadataCacheBehavior:
             file_path = file_item.full_path
 
             # Check if this file has modifications
-            has_modifications = False
-
-            if staging_manager:
-                has_modifications = staging_manager.has_staged_changes(file_path)
+            has_modifications = metadata_service.has_staged_changes(file_path)
 
             # Update icon based on whether we have modified items
             if has_modifications:

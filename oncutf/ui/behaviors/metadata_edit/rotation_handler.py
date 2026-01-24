@@ -113,17 +113,16 @@ class RotationHandler:
             _current_value: Current value (unused in fallback)
 
         """
-        from oncutf.core.metadata import get_metadata_staging_manager
+        from oncutf.app.services import get_metadata_service
 
-        staging_manager = get_metadata_staging_manager()
-
-        if not staging_manager:
-            return
+        metadata_service = get_metadata_service()
 
         # Update metadata in staging
         selected_files = self._widget._get_current_selection()
         for file_item in selected_files:
-            staging_manager.stage_change(file_item.full_path, key_path, new_value)
+            metadata_service.staging_manager.stage_change(
+                file_item.full_path, key_path, new_value
+            )
             file_item.metadata_status = "modified"
 
         # Update the file icon status immediately

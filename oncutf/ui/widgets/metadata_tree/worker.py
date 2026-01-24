@@ -20,7 +20,6 @@ import threading
 import time
 from typing import Any
 
-from oncutf.core.batch import BatchOperationsManager
 from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
@@ -158,10 +157,12 @@ class MetadataWorker(QObject):
 
         start_total = time.time()
 
-        # Initialize batch operations manager if enabled
+        # Initialize batch service if enabled
         if self.batch_operations_enabled:
-            logger.debug("[Worker] Batch operations manager initialized", extra={"dev_only": True})
-            self._batch_manager = BatchOperationsManager()
+            logger.debug("[Worker] Batch operations enabled", extra={"dev_only": True})
+            from oncutf.app.services import get_batch_service
+
+            self._batch_manager = get_batch_service().batch_manager
             self._enable_batching = True
 
         try:
