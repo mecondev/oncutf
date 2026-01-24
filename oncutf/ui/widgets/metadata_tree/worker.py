@@ -34,7 +34,7 @@ class MetadataWorker(QObject):
     Emits progress and result signals and supports graceful cancellation.
 
     Attributes:
-        reader (ExifToolMetadataAdapter): The low-level ExifTool adapter instance.
+        reader (ExifToolClient): The ExifTool client instance.
         metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
