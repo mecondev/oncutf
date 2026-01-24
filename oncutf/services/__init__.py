@@ -15,20 +15,21 @@ The services layer sits between the domain layer and external systems:
 Usage:
     from oncutf.services import MetadataServiceProtocol, HashServiceProtocol
     from oncutf.services import ServiceRegistry, get_service_registry
-    from oncutf.services import ExifToolService, FilesystemService
+    from oncutf.infra.external.exiftool_client import ExifToolClient
+    from oncutf.services import FilesystemService
 
 Modules:
     interfaces: Protocol definitions for all services
     registry: Service locator for dependency injection
-    exiftool_service: ExifTool-based metadata extraction
     cached_hash_service: Cached-only hash service for rename operations
     filesystem_service: Filesystem operations abstraction
+
+Note: ExifToolService is deprecated. Use ExifToolClient from infra.external instead.
 """
 
 from __future__ import annotations
 
 # Import concrete implementations
-from oncutf.services.exiftool_service import ExifToolService
 from oncutf.services.filesystem_service import FilesystemService
 
 # Import protocols for convenient access
@@ -47,7 +48,6 @@ from oncutf.services.registry import (
 
 __all__ = [
     # Implementations
-    "ExifToolService",
     "FilesystemService",
     "FilesystemServiceProtocol",
     "HashServiceProtocol",
