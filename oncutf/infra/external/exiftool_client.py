@@ -144,6 +144,39 @@ class ExifToolClient:
             logger.error("Error in batch metadata extraction: %s", e)
             return {}
 
+    def load_metadata(self, path: Path) -> dict[str, Any]:
+        """Load metadata from a single file (MetadataServiceProtocol adapter).
+
+        Adapter method for MetadataServiceProtocol compatibility.
+        Delegates to extract_metadata().
+
+        Args:
+            path: Path to file
+
+        Returns:
+            Dictionary with metadata. Empty dict on error.
+
+        """
+        return self.extract_metadata(path)
+
+    def load_metadata_batch(self, paths: list[Path]) -> dict[Path, dict[str, Any]]:
+        """Load metadata from multiple files (MetadataServiceProtocol adapter).
+
+        Adapter method for MetadataServiceProtocol compatibility.
+        Delegates to extract_batch() and converts string keys back to Path keys.
+
+        Args:
+            paths: List of file paths
+
+        Returns:
+            Dict mapping Path -> metadata dict
+
+        """
+        results = self.extract_batch(paths)
+        # Convert string keys back to Path objects
+        from pathlib import Path as PathlibPath
+        return {PathlibPath(k): v for k, v in results.items()}
+
     def write_metadata(
         self,
         path: Path,
