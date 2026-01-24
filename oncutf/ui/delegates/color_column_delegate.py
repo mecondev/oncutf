@@ -236,10 +236,10 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             QApplication.restoreOverrideCursor()
             return
 
-        # Get database manager for persistence
-        from oncutf.core.database.database_manager import get_database_manager
+        # Get database service for persistence
+        from oncutf.app.services import get_database_service
 
-        db_manager = get_database_manager()
+        db_service = get_database_service()
 
         colored_count = 0
         first_index = None
@@ -251,8 +251,8 @@ class ColorColumnDelegate(FileTableHoverDelegate):
                 file_item = model.files[row]
                 file_item.color = color
 
-                # Save to database
-                db_manager.set_color_tag(file_item.path, color)
+                # Save to database via service
+                db_service.set_file_color(file_item.path, color)
 
                 colored_count += 1
 

@@ -8,7 +8,9 @@ Author: Michael Economou
 Date: 2026-01-22
 """
 
+from oncutf.app.services.cache_service import CacheService, get_cache_service
 from oncutf.app.services.cursor import force_restore_cursor, wait_cursor
+from oncutf.app.services.database_service import DatabaseService, get_database_service
 from oncutf.app.services.metadata_simplification_service import (
     MetadataSimplificationService,
     get_metadata_simplification_service,
@@ -38,6 +40,8 @@ from oncutf.app.services.validation_service import ValidationService, get_valida
 from oncutf.core.metadata import MetadataCommandManager, get_metadata_command_manager
 
 __all__ = [
+    "CacheService",
+    "DatabaseService",
     "MetadataCommandManager",
     "MetadataSimplificationService",
     "RenameBatch",
@@ -49,6 +53,8 @@ __all__ = [
     "create_metadata_dialog",
     "create_progress_dialog",
     "force_restore_cursor",
+    "get_cache_service",
+    "get_database_service",
     "get_dialog_adapter",
     "get_metadata_command_manager",
     "get_metadata_simplification_service",

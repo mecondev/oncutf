@@ -262,13 +262,10 @@ class MetadataKeysHandler:
         """
         selected_files = self._widget._get_selected_files()
 
-        # Use the same persistent cache as batch_metadata_status
-        from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+        # Use cache service for metadata access
+        from oncutf.app.services import get_cache_service
 
-        metadata_cache = get_persistent_metadata_cache()
-
-        if not metadata_cache:
-            return set()
+        cache_service = get_cache_service()
 
         keys = set()
         for file_item in selected_files:
@@ -276,32 +273,8 @@ class MetadataKeysHandler:
             from oncutf.utils.filesystem.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
-            # Support multiple cache types: persistent cache (get_entry) or dict-like
-            try:
-                if hasattr(metadata_cache, "get_entry"):
-                    entry = metadata_cache.get_entry(normalized_path)
-                    meta = getattr(entry, "data", {}) or {}
-                elif isinstance(metadata_cache, dict):
-                    meta = metadata_cache.get(normalized_path, {})
-                elif hasattr(metadata_cache, "get"):
-                    try:
-                        meta = metadata_cache.get(normalized_path)  # type: ignore
-                        if meta is None:
-                            meta = {}
-                    except TypeError:
-                        meta = {}
-                else:
-                    meta = {}
-            except Exception as e:
-                logger.debug(
-                    "[MetadataKeysHandler] Error reading metadata cache for %s: %s",
-                    normalized_path,
-                    e,
-                    extra={"dev_only": True},
-                )
-                meta = {}
-
-            if meta and isinstance(meta, dict):
-                keys.update(meta.keys())
+            # Get metadata keys from cache service
+            file_keys = cache_service.get_metadata_keys(normalized_path)
+            keys.update(file_keys)
 
         return keys

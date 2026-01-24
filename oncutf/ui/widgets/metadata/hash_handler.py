@@ -63,16 +63,16 @@ class HashHandler:
                 self._widget._styling_handler.apply_disabled_combo_styling()
                 return False
 
-            # Use efficient batch checking via database
+            # Use efficient batch checking via cache service
             file_paths = [file_item.full_path for file_item in selected_files]
 
             # Get files that have hashes using batch query
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.app.services import get_cache_service
 
-            hash_cache = get_persistent_hash_cache()
+            cache_service = get_cache_service()
 
             # Use batch method for efficiency
-            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
+            files_with_hash = cache_service.get_files_with_hash_batch(file_paths, "CRC32")
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
             logger.debug(
@@ -164,10 +164,10 @@ class HashHandler:
 
         """
         file_paths = [file_item.full_path for file_item in selected_files]
-        from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+        from oncutf.app.services import get_cache_service
 
-        hash_cache = get_persistent_hash_cache()
-        files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
+        cache_service = get_cache_service()
+        files_with_hash = cache_service.get_files_with_hash_batch(file_paths, "CRC32")
         files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
         if files_needing_hash:
