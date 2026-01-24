@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 @pytest.fixture
 def fake_reader(mocker):
     reader = mocker.Mock()
-    reader.read_metadata.side_effect = lambda _filepath, _use_extended=False: (
+    reader.extract_metadata.side_effect = lambda _path: (
         time.sleep(0.05),
         {"fake": "data"},
     )[1]
@@ -79,4 +79,4 @@ def test_metadata_worker_runs_to_completion(qtbot, fake_reader, fake_cache, mock
 
     # With batch operations, cache.set might not be called directly
     # Instead, check that the reader was called for each file
-    assert fake_reader.read_metadata.call_count == 3, "Reader should be called for each file"
+    assert fake_reader.extract_metadata.call_count == 3, "Reader should be called for each file"

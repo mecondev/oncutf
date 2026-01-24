@@ -24,7 +24,7 @@ from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.metadata.exiftool_adapter import ExifToolMetadataAdapter
+from oncutf.infra.external.exiftool_client import ExifToolClient
 
 logger = get_cached_logger(__name__)
 
@@ -121,9 +121,9 @@ class MetadataWorker(QObject):
         # Ensure we have a reader if not provided
         if not self.reader:
             logger.debug(
-                "[Worker] Creating ExifToolMetadataAdapter for worker", extra={"dev_only": True}
+                "[Worker] Creating ExifToolClient for worker", extra={"dev_only": True}
             )
-            self.reader = ExifToolMetadataAdapter()
+            self.reader = ExifToolClient(use_extended=self.use_extended)
 
         start_total = time.time()
 
@@ -159,9 +159,8 @@ class MetadataWorker(QObject):
                 )
 
                 try:
-                    metadata = self.reader.read_metadata(
-                        filepath=path, use_extended=self.use_extended
-                    )
+                    from pathlib import Path
+                    metadata = self.reader.extract_metadata(Path(path))
 
                     # Get previous entry using file_status_helpers
                     from oncutf.utils.filesystem.file_status_helpers import (
