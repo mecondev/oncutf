@@ -12,9 +12,7 @@ Date: 2026-01-15
 
 from datetime import datetime
 
-from oncutf.core.metadata.metadata_simplification_service import (
-    get_metadata_simplification_service,
-)
+from oncutf.app.services import get_metadata_simplification_service
 from oncutf.models.file_item import FileItem
 
 
@@ -184,9 +182,8 @@ class TestMetadataSimplificationWorkflow:
         assert export_file.exists()
 
         # Create new service instance (simulate restart)
-        from oncutf.core.metadata.metadata_simplification_service import (
-            MetadataSimplificationService,
-        )
+        from oncutf.app.services import MetadataSimplificationService
+
         new_service = MetadataSimplificationService()
 
         # Import overrides

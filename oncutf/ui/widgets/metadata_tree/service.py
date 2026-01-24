@@ -20,9 +20,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.metadata.metadata_simplification_service import (
-    get_metadata_simplification_service,
-)
+from oncutf.app.services import get_metadata_simplification_service
 from oncutf.ui.widgets.metadata_tree.model import (
     EXTENDED_ONLY_PATTERNS,
     FieldStatus,

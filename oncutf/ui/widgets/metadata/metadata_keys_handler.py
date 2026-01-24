@@ -11,9 +11,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from oncutf.core.metadata.metadata_simplification_service import (
-    get_metadata_simplification_service,
-)
+from oncutf.app.services import get_metadata_simplification_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

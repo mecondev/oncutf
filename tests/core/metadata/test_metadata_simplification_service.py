@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from oncutf.core.metadata.metadata_simplification_service import (
+from oncutf.app.services import (
     MetadataSimplificationService,
     get_metadata_simplification_service,
 )
@@ -70,7 +70,7 @@ class TestMetadataSimplificationService:
     def test_get_metadata_value_semantic_alias(self, tmp_path):
         """Test getting value using semantic alias."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             # Mock aliases manager
             mock_manager = MagicMock()
@@ -137,7 +137,7 @@ class TestMetadataSimplificationService:
     def test_get_semantic_groups(self, tmp_path):
         """Test grouping metadata by semantic categories."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             # Mock aliases manager
             mock_manager = MagicMock()
@@ -168,7 +168,7 @@ class TestMetadataSimplificationService:
     def test_add_user_override(self, tmp_path):
         """Test adding user override for key."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager.load_aliases.return_value = {}
@@ -186,7 +186,7 @@ class TestMetadataSimplificationService:
     def test_undo_redo_override(self, tmp_path):
         """Test undo/redo functionality."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager.load_aliases.return_value = {}
@@ -210,7 +210,7 @@ class TestMetadataSimplificationService:
     def test_export_import_user_overrides(self, tmp_path):
         """Test export/import of user overrides."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager.load_aliases.return_value = {}
@@ -234,7 +234,7 @@ class TestMetadataSimplificationService:
     def test_reload_semantic_aliases(self, tmp_path):
         """Test reloading semantic aliases."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager.load_aliases.return_value = {"Field1": ["Key1"]}
@@ -254,7 +254,7 @@ class TestMetadataSimplificationService:
     def test_get_aliases_file_path(self, tmp_path):
         """Test getting aliases file path."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             expected_path = Path("/test/aliases.json")
@@ -289,7 +289,7 @@ class TestGlobalSingleton:
     def test_singleton_persistence(self):
         """Test that singleton persists state."""
         with patch(
-            "oncutf.core.metadata.metadata_simplification_service.SemanticAliasesManager"
+            "oncutf.app.services.metadata_simplification_service.SemanticAliasesManager"
         ) as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager.load_aliases.return_value = {}
