@@ -874,6 +874,20 @@ Required tests per phase:
 - History Managers → app/services
 - Result: Clean architecture separation, all UI → core violations fixed
 
+**Phase D — Ports & Infra Consolidation** ✅ COMPLETE
+- Part 1: CacheService, DatabaseService created (4 violations eliminated)
+- Part 2: MetadataService, BatchService created (21 violations eliminated)
+- Part 3: FolderColorService created (2 violations eliminated)
+- Result: 27 total UI → core violations eliminated, 5 services created
+
+**Phase E — Typing Tightening** [IN PROGRESS]
+- Part 1: Fixed all mypy errors in app/services layer ✅ COMPLETE (2026-01-24)
+  - Fixed 34 mypy errors → 0 errors in 548 source files
+  - Domain and app layers have strict typing enabled
+  - All services properly typed with TYPE_CHECKING imports
+- Part 2: Reduce existing `# type: ignore` comments [FUTURE]
+- Part 3: Enable gradual strict typing for controllers/core [FUTURE]
+
 **Code Quality Sprint** ✅ COMPLETE
 - Fixed 2062 total ruff violations (2041 initial + 21 post-merge)
 - Achieved 100% GitHub CI compliance
@@ -885,17 +899,18 @@ Required tests per phase:
 |----------|-------------|
 | **Architecture** | 54 boundary violations eliminated |
 | **Code reduction** | 647 lines of duplicate code deleted |
-| **Type safety** | 21 mypy errors → 0 (no suppressions) |
+| **Type safety** | Mypy 100% clean - 0 errors in 548 files |
 | **Code quality** | 2062 ruff violations → 0 (100% clean) |
-| **Test stability** | 1166/1173 passing (99.4%) maintained |
+| **Test stability** | 1154/1161 passing (99.4%) maintained |
+| **Commits** | 19 total (all passing quality gates) |
 | **Commits** | 13 total (all passing quality gates) |
 | **Git history** | Preserved with git mv for architectural moves |
 
 ### Production Readiness Checklist
 
 - ✅ **Ruff:** All checks passed (0 violations)
-- ✅ **Mypy:** Success: no issues found in 544 source files
-- ✅ **Pytest:** 1166 passed, 7 skipped (99.4%)
+- ✅ **Mypy:** Success: no issues found in 548 source files (100% clean!)
+- ✅ **Pytest:** 1154 passed, 7 skipped (99.4%)
 - ✅ **GitHub CI:** Clean, no errors
 - ✅ **Architecture:** Boundaries enforced, cycles broken
 - ✅ **Code quality:** No technical debt introduced
