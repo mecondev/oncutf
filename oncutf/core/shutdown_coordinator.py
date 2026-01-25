@@ -438,15 +438,15 @@ class ShutdownCoordinator(QObject):
         """
         try:
             if phase == ShutdownPhase.TIMERS and self._timer_manager:
-                if hasattr(self._timer_manager, "health_check"):
+                if hasattr(self._timer_manager, "health_check"):  # type: ignore[unreachable]
                     return self._timer_manager.health_check()
 
             elif phase == ShutdownPhase.THREAD_POOL and self._thread_pool_manager:
-                if hasattr(self._thread_pool_manager, "health_check"):
+                if hasattr(self._thread_pool_manager, "health_check"):  # type: ignore[unreachable]
                     return self._thread_pool_manager.health_check()
 
             elif phase == ShutdownPhase.EXIFTOOL and self._exiftool_wrapper:
-                if hasattr(self._exiftool_wrapper, "health_check"):
+                if hasattr(self._exiftool_wrapper, "health_check"):  # type: ignore[unreachable]
                     return self._exiftool_wrapper.health_check()
 
         except Exception as e:
@@ -458,14 +458,14 @@ class ShutdownCoordinator(QObject):
         """Shutdown timer manager."""
         if not self._timer_manager:
             return True, None
-
-        try:
-            if hasattr(self._timer_manager, "cleanup_all"):
-                cancelled = self._timer_manager.cleanup_all()
-                logger.debug("[ShutdownCoordinator] Cleaned up %d timers", cancelled)
-            return True, None
-        except Exception as e:
-            return False, f"Timer shutdown failed: {e}"
+        else:
+            try:  # type: ignore[unreachable]
+                if hasattr(self._timer_manager, "cleanup_all"):
+                    cancelled = self._timer_manager.cleanup_all()
+                    logger.debug("[ShutdownCoordinator] Cleaned up %d timers", cancelled)
+                return True, None
+            except Exception as e:
+                return False, f"Timer shutdown failed: {e}"
 
     def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
         """Shutdown thread pool manager with defensive cleanup."""
@@ -473,27 +473,27 @@ class ShutdownCoordinator(QObject):
 
         if not self._thread_pool_manager:
             return True, None
+        else:
+            try:  # type: ignore[unreachable]
+                # Disconnect any signals to prevent crashes during cleanup
+                with contextlib.suppress(RuntimeError, TypeError, AttributeError):
+                    if hasattr(self._thread_pool_manager, "disconnect"):
+                        self._thread_pool_manager.disconnect()
 
-        try:
-            # Disconnect any signals to prevent crashes during cleanup
-            with contextlib.suppress(RuntimeError, TypeError, AttributeError):
-                if hasattr(self._thread_pool_manager, "disconnect"):
-                    self._thread_pool_manager.disconnect()
+                # Shutdown thread pool
+                if hasattr(self._thread_pool_manager, "shutdown"):
+                    # Keep this very short to avoid freezing the UI thread during app close.
+                    # The ThreadPoolManager supports bounded shutdown parameters.
+                    try:
+                        self._thread_pool_manager.shutdown(worker_wait_ms=200, terminate_wait_ms=50)
+                    except TypeError:
+                        # Backward compatibility if signature doesn't accept kwargs
+                        self._thread_pool_manager.shutdown()
 
-            # Shutdown thread pool
-            if hasattr(self._thread_pool_manager, "shutdown"):
-                # Keep this very short to avoid freezing the UI thread during app close.
-                # The ThreadPoolManager supports bounded shutdown parameters.
-                try:
-                    self._thread_pool_manager.shutdown(worker_wait_ms=200, terminate_wait_ms=50)
-                except TypeError:
-                    # Backward compatibility if signature doesn't accept kwargs
-                    self._thread_pool_manager.shutdown()
-
-            return True, None
-        except Exception as e:
-            logger.exception("Thread pool shutdown failed: %s", e)
-            return False, f"Thread pool shutdown failed: {e}"
+                return True, None
+            except Exception as e:
+                logger.exception("Thread pool shutdown failed: %s", e)
+                return False, f"Thread pool shutdown failed: {e}"
 
     def _shutdown_thumbnails(self) -> tuple[bool, str | None]:
         """Shutdown thumbnail manager (must run before database)."""
@@ -513,39 +513,39 @@ class ShutdownCoordinator(QObject):
             except Exception:
                 pass
             return True, None
+        else:
+            try:  # type: ignore[unreachable]
+                if hasattr(self._thumbnail_manager, "shutdown"):
+                    self._thumbnail_manager.shutdown()
 
-        try:
-            if hasattr(self._thumbnail_manager, "shutdown"):
-                self._thumbnail_manager.shutdown()
-
-            # Force cleanup all FFmpeg processes (like ExifTool)
-            # This is critical to prevent zombie ffmpeg processes
-            from oncutf.core.thumbnail.providers import VideoThumbnailProvider
-
-            # Run in background thread to avoid UI freezes
-            threading.Thread(
-                target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
-                kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
-                daemon=True,
-                name="FFmpegForceCleanup",
-            ).start()
-
-            return True, None
-        except Exception as e:
-            logger.exception("Thumbnail manager shutdown failed: %s", e)
-            # Even on error, try force cleanup
-            try:
+                # Force cleanup all FFmpeg processes (like ExifTool)
+                # This is critical to prevent zombie ffmpeg processes
                 from oncutf.core.thumbnail.providers import VideoThumbnailProvider
 
+                # Run in background thread to avoid UI freezes
                 threading.Thread(
                     target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
                     name="FFmpegForceCleanup",
                 ).start()
-            except Exception:
-                pass
-            return False, f"Thumbnail manager shutdown failed: {e}"
+
+                return True, None
+            except Exception as e:
+                logger.exception("Thumbnail manager shutdown failed: %s", e)
+                # Even on error, try force cleanup
+                try:
+                    from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+
+                    threading.Thread(
+                        target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                        kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                        daemon=True,
+                        name="FFmpegForceCleanup",
+                    ).start()
+                except Exception:
+                    pass
+                return False, f"Thumbnail manager shutdown failed: {e}"
 
     def _shutdown_database(self) -> tuple[bool, str | None]:
         """Shutdown database manager with proper connection closure."""
@@ -553,25 +553,25 @@ class ShutdownCoordinator(QObject):
 
         if not self._database_manager:
             return True, None
+        else:
+            try:  # type: ignore[unreachable]
+                # Close database connection
+                if hasattr(self._database_manager, "close"):
+                    self._database_manager.close()
 
-        try:
-            # Close database connection
-            if hasattr(self._database_manager, "close"):
-                self._database_manager.close()
+                # Additional cleanup for SQLite on Windows
+                import platform
 
-            # Additional cleanup for SQLite on Windows
-            import platform
+                if platform.system() == "Windows":
+                    # Force commit any pending transactions
+                    with contextlib.suppress(Exception):
+                        if hasattr(self._database_manager, "commit"):
+                            self._database_manager.commit()
 
-            if platform.system() == "Windows":
-                # Force commit any pending transactions
-                with contextlib.suppress(Exception):
-                    if hasattr(self._database_manager, "commit"):
-                        self._database_manager.commit()
-
-            return True, None
-        except Exception as e:
-            logger.exception("Database shutdown failed: %s", e)
-            return False, f"Database shutdown failed: {e}"
+                return True, None
+            except Exception as e:
+                logger.exception("Database shutdown failed: %s", e)
+                return False, f"Database shutdown failed: {e}"
 
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
         """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
@@ -592,55 +592,55 @@ class ShutdownCoordinator(QObject):
             except Exception:
                 pass
             return True, None
+        else:
+            try:  # type: ignore[unreachable]
+                # Stop/close the wrapper first (close is the common API).
+                if hasattr(self._exiftool_wrapper, "stop"):
+                    with contextlib.suppress(Exception):
+                        self._exiftool_wrapper.stop()
+                if hasattr(self._exiftool_wrapper, "close"):
+                    # Keep this bounded to avoid UI freezes during app close.
+                    with contextlib.suppress(Exception):
+                        try:
+                            self._exiftool_wrapper.close(
+                                try_graceful=False,
+                                graceful_wait_s=0.0,
+                                terminate_wait_s=0.2,
+                                kill_wait_s=0.1,
+                            )
+                        except TypeError:
+                            # Backward compatibility if signature doesn't accept kwargs
+                            self._exiftool_wrapper.close()
 
-        try:
-            # Stop/close the wrapper first (close is the common API).
-            if hasattr(self._exiftool_wrapper, "stop"):
-                with contextlib.suppress(Exception):
-                    self._exiftool_wrapper.stop()
-            if hasattr(self._exiftool_wrapper, "close"):
-                # Keep this bounded to avoid UI freezes during app close.
-                with contextlib.suppress(Exception):
-                    try:
-                        self._exiftool_wrapper.close(
-                            try_graceful=False,
-                            graceful_wait_s=0.0,
-                            terminate_wait_s=0.2,
-                            kill_wait_s=0.1,
-                        )
-                    except TypeError:
-                        # Backward compatibility if signature doesn't accept kwargs
-                        self._exiftool_wrapper.close()
-
-            # Force cleanup all ExifTool processes
-            # This is critical on Windows to prevent zombie processes
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
-
-            # IMPORTANT: Do this in background; psutil.process_iter() can occasionally
-            # block on Windows and would freeze the UI thread during close.
-            threading.Thread(
-                target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
-                kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
-                daemon=True,
-                name="ExifToolForceCleanup",
-            ).start()
-
-            return True, None
-        except Exception as e:
-            logger.exception("ExifTool shutdown failed: %s", e)
-            # Even on error, try force cleanup one more time
-            try:
+                # Force cleanup all ExifTool processes
+                # This is critical on Windows to prevent zombie processes
                 from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
+                # IMPORTANT: Do this in background; psutil.process_iter() can occasionally
+                # block on Windows and would freeze the UI thread during close.
                 threading.Thread(
                     target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
                     name="ExifToolForceCleanup",
                 ).start()
-            except Exception:
-                pass
-            return False, f"ExifTool shutdown failed: {e}"
+
+                return True, None
+            except Exception as e:
+                logger.exception("ExifTool shutdown failed: %s", e)
+                # Even on error, try force cleanup one more time
+                try:
+                    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+
+                    threading.Thread(
+                        target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                        kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
+                        daemon=True,
+                        name="ExifToolForceCleanup",
+                    ).start()
+                except Exception:
+                    pass
+                return False, f"ExifTool shutdown failed: {e}"
 
     def _shutdown_finalize(self) -> tuple[bool, str | None]:
         """Finalize shutdown - cleanup any remaining resources."""
