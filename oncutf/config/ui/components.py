@@ -67,7 +67,9 @@ FILE_TAG_COLOR_ARRAY = [
     "#7e2a0c", "#733e0a", "#0d542b", "#0b4f4a", "#024a70", "#312c85", "#59168b", "#861043", "#000000",
 ]
 
+from pathlib import Path
+
 COLOR_GRID_ROWS = 4
 COLOR_GRID_COLS = 9
 COLOR_SWATCH_SIZE = 16
-COLOR_PICKER_IMAGE = "resources/images/color_range.jpg"
+COLOR_PICKER_IMAGE = str(Path("oncutf") / "resources" / "images" / "color_range.jpg")

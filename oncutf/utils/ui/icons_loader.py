@@ -231,17 +231,19 @@ def get_menu_icon_path(icon_name: str) -> str:
 
     """
     try:
+        from pathlib import Path
+
         from oncutf.utils.filesystem.path_utils import get_resource_path
 
-        # Try PNG first
-        relative_path_png = f"resources/icons/feather_icons/{icon_name}.png"
+        # Try PNG first (use Path joining for cross-platform compatibility)
+        relative_path_png = str(Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.png")
         icon_path_png = get_resource_path(relative_path_png)
 
         if icon_path_png.exists():
             return str(icon_path_png)
 
         # Try SVG
-        relative_path_svg = f"resources/icons/feather_icons/{icon_name}.svg"
+        relative_path_svg = str(Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.svg")
         icon_path_svg = get_resource_path(relative_path_svg)
 
         if icon_path_svg.exists():

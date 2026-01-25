@@ -91,7 +91,7 @@ class StylingHandler:
                 }}
 
                 QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
+                    image: url(oncutf/resources/icons/feather_icons/chevrons-down.svg);
                     width: 12px;
                     height: 12px;
                 }}

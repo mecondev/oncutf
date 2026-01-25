@@ -88,10 +88,10 @@ def get_resources_dir() -> Path:
     """Get the resources directory path.
 
     Returns:
-        Path: The resources directory path
+        Path: The resources directory path (oncutf/resources)
 
     """
-    return get_project_root() / "resources"
+    return get_project_root() / "oncutf" / "resources"
 
 
 def get_assets_dir() -> Path:

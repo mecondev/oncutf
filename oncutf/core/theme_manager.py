@@ -155,18 +155,18 @@ class ThemeManager(QObject):
     def _render_qss_template(self) -> str:
         """Render QSS template with current theme colors.
 
-        Reads resources/styles/main.qss.template and replaces
+        Reads oncutf/resources/styles/main.qss.template and replaces
         {{token}} placeholders with actual color values.
 
         Returns:
             Rendered QSS string
 
         """
-        import os
+        from oncutf.utils.filesystem.path_utils import get_resources_dir
 
-        template_path = os.path.join("resources", "styles", "main.qss.template")
+        template_path = get_resources_dir() / "styles" / "main.qss.template"
 
-        if not os.path.exists(template_path):
+        if not template_path.exists():
             logger.warning("[ThemeManager] QSS template not found: %s", template_path)
             return ""
 
@@ -191,11 +191,10 @@ class ThemeManager(QObject):
             template = template.replace("{{tree_font}}", get_ui_font_family("tree"))
             template = template.replace("{{menu_font}}", get_ui_font_family("context_menu"))
 
-            # Resolve chevron icon paths to absolute file URLs to avoid CWD issues
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            icons_dir = os.path.join(project_root, "resources", "icons")
-            chevron_right = os.path.join(icons_dir, "chevron-right.png").replace("\\", "/")
-            chevron_down = os.path.join(icons_dir, "chevron-down.png").replace("\\", "/")
+            # Resolve chevron icon paths using path utils
+            icons_dir = get_resources_dir() / "icons"
+            chevron_right = str(icons_dir / "chevron-right.png").replace("\\", "/")
+            chevron_down = str(icons_dir / "chevron-down.png").replace("\\", "/")
 
             template = template.replace(
                 "url(resources/icons/chevron-right.png)", f"url({chevron_right})"

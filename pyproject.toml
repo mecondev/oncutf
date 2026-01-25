@@ -62,13 +62,13 @@ exclude = ["tests*", "docs*", "examples*", "scripts*", "temp*", "backups*", "rep
 
 [tool.setuptools.package-data]
 # Runtime assets loaded via get_project_root() / get_icons_dir() helpers
-# Located in resources/ at project root (not in oncutf/ package)
+# Now located inside oncutf/resources/ package directory
 oncutf = [
-    "../resources/fonts/**/*.ttf",
-    "../resources/icons/**/*.svg",
-    "../resources/icons/**/*.png",
-    "../resources/images/**/*.png",
-    "../resources/styles/**/*.qss",
+    "resources/fonts/**/*.ttf",
+    "resources/icons/**/*.svg",
+    "resources/icons/**/*.png",
+    "resources/images/**/*.png",
+    "resources/styles/**/*.qss",
     "ui/widgets/node_editor/themes/**/*.qss"
 ]
 
