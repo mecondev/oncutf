@@ -189,3 +189,26 @@ class QtProgressDialogAdapter:
 
         """
         self._dialog.start_progress_tracking(total_size)
+
+    def update_progress(
+        self,
+        file_count: int = 0,
+        total_files: int = 0,
+        processed_bytes: int = 0,
+        total_bytes: int = 0,
+    ) -> None:
+        """Update progress with file count and bytes.
+
+        Args:
+            file_count: Current number of files processed
+            total_files: Total number of files to process
+            processed_bytes: Current bytes processed
+            total_bytes: Total bytes to process
+
+        """
+        self._dialog.update_progress(file_count, total_files, processed_bytes, total_bytes)
+
+    def activateWindow(self) -> None:
+        """Activate the dialog window (bring to front)."""
+        if hasattr(self._dialog, "activateWindow"):
+            self._dialog.activateWindow()
