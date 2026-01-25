@@ -38,7 +38,7 @@ class SemanticAliasesManager:
 
     ALIASES_FILENAME = "semantic_metadata_aliases.json"
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize semantic aliases manager."""
         self._aliases_file = self._get_aliases_path()
 

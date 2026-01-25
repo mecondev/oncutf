@@ -26,7 +26,7 @@ logger = get_cached_logger(__name__)
 class ResultsTableModel(QAbstractTableModel):
     """Custom model for results table with two columns."""
 
-    def __init__(self, data: dict[str, Any] | None = None, parent=None):
+    def __init__(self, data: dict[str, Any] | None = None, parent: Any = None) -> None:
         """Initialize the results table model."""
         super().__init__(parent)
         self._model_data: list[tuple[str, Any]] = list(
@@ -35,15 +35,15 @@ class ResultsTableModel(QAbstractTableModel):
         self.left_header = "Item"
         self.right_header = "Value"
 
-    def rowCount(self, _parent=None) -> int:
+    def rowCount(self, _parent: Any = None) -> int:
         """Return number of rows."""
         return len(self._model_data)
 
-    def columnCount(self, _parent=None) -> int:
+    def columnCount(self, _parent: Any = None) -> int:
         """Return number of columns (always 2)."""
         return 2
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index: Any, role: int = Qt.DisplayRole) -> Any:
         """Return data for given index and role."""
         if not index.isValid():
             return None
@@ -64,7 +64,7 @@ class ResultsTableModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
+    def headerData(self, section: int, orientation: Any, role: int = Qt.DisplayRole) -> Any:
         """Return header data."""
         if role == Qt.TextAlignmentRole and orientation == Qt.Horizontal:
             return Qt.AlignLeft | Qt.AlignVCenter
@@ -77,13 +77,13 @@ class ResultsTableModel(QAbstractTableModel):
 
         return str(section + 1)
 
-    def set_headers(self, left_header: str, right_header: str):
+    def set_headers(self, left_header: str, right_header: str) -> None:
         """Set custom header texts."""
         self.left_header = left_header
         self.right_header = right_header
         self.headerDataChanged.emit(Qt.Horizontal, 0, 1)
 
-    def set_data(self, data: dict[str, Any]):
+    def set_data(self, data: dict[str, Any]) -> None:
         """Replace all data and refresh view."""
         self.beginResetModel()
         self._model_data = list(data.items())

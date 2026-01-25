@@ -51,7 +51,7 @@ class HashLoadingService:
     - Checksum calculation and display
     """
 
-    def __init__(self, parent_window, cache_service: Optional["MetadataCacheService"] = None):
+    def __init__(self, parent_window: Any, cache_service: Optional["MetadataCacheService"] = None) -> None:
         """Initialize HashLoadingService.
 
         Args:
@@ -88,9 +88,9 @@ class HashLoadingService:
         self,
         files: list[FileItem],
         source: str = "user_request",
-        on_finished_callback=None,
-        on_file_hash_callback=None,
-        on_progress_callback=None,
+        on_finished_callback: Any = None,
+        on_file_hash_callback: Any = None,
+        on_progress_callback: Any = None,
     ) -> None:
         """Load hashes for files that don't have them cached.
 
@@ -151,7 +151,7 @@ class HashLoadingService:
         """
         try:
 
-            def cancel_hash_loading():
+            def cancel_hash_loading() -> None:
                 self.cancel_loading()
 
             from oncutf.app.services import create_hash_dialog

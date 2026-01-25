@@ -8,6 +8,7 @@ Handles all database schema setup, versioning, and upgrades.
 """
 
 import sqlite3
+from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -338,9 +339,9 @@ def create_indexes(cursor: sqlite3.Cursor) -> None:
 
 
 def initialize_default_metadata_schema(
-    get_metadata_categories,
-    create_metadata_category,
-    create_metadata_field,
+    get_metadata_categories: Any,
+    create_metadata_category: Any,
+    create_metadata_field: Any,
 ) -> bool:
     """Initialize default metadata categories and fields."""
     try:

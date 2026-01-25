@@ -9,6 +9,7 @@ Handles file table selection operations, preview updates, and metadata synchroni
 """
 
 import time
+from typing import Any
 
 from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -27,7 +28,7 @@ class SelectionManager:
     - Efficient range-based selection updates
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize the selection manager with the parent window."""
         self.parent_window = parent_window
         # Cache for avoiding unnecessary preview updates
@@ -75,7 +76,7 @@ class SelectionManager:
                     self.parent_window.request_preview_update()
 
                 # Step 5: Handle metadata display using centralized logic (async)
-                def show_metadata_later():
+                def show_metadata_later() -> None:
                     metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
                     if metadata_tree_view:
                         # Use centralized logic - select_all means multiple files, so show empty state
@@ -228,7 +229,7 @@ class SelectionManager:
 
                     if should_display and checked_rows:
 
-                        def show_metadata_later():
+                        def show_metadata_later() -> None:
                             last_row = checked_rows[-1]
                             file_item = file_model.files[last_row]
                             metadata = get_metadata_for_file(file_item.full_path)

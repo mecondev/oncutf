@@ -9,6 +9,8 @@ Author: Michael Economou
 Date: 2026-01-01
 """
 
+from typing import Any
+
 from oncutf.core.pyqt_imports import QModelIndex
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -25,7 +27,7 @@ class ColumnManager:
         - Provide fallback to model reset for complex changes
     """
 
-    def __init__(self, model):
+    def __init__(self, model: Any) -> None:
         """Initialize the ColumnManager.
 
         Args:

@@ -66,7 +66,7 @@ class StatusEntry:
     reset_delay: int = None  # Will be set from config if None
     operation_id: str | None = None  # For tracking related operations
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize reset_delay from config if not provided."""
         if self.reset_delay is None:
             from oncutf.config import STATUS_AUTO_RESET_DELAY
@@ -77,7 +77,7 @@ class StatusEntry:
 class StatusManager:
     """Enhanced status manager with specialized methods and smart context awareness."""
 
-    def __init__(self, status_label=None) -> None:
+    def __init__(self, status_label: Any = None) -> None:
         """Initialize StatusManager with status label reference."""
         self.status_label = status_label
         self._status_timer_id: str | None = None
@@ -363,7 +363,7 @@ class StatusManager:
 
         logger.debug("[StatusManager] Started operation: %s (%s)", operation_id, operation_type)
 
-    def update_operation(self, operation_id: str, **kwargs) -> None:
+    def update_operation(self, operation_id: str, **kwargs: Any) -> None:
         """Update operation context with additional information."""
         with self._lock:
             if operation_id in self._operation_contexts:
@@ -538,7 +538,7 @@ class StatusManager:
     # Files Label Management (Enhanced)
     # =====================================
 
-    def update_files_label(self, files_label, total_files: int, selected_files: int) -> None:
+    def update_files_label(self, files_label: Any, total_files: int, selected_files: int) -> None:
         """Enhanced files count label update with smart formatting."""
         if not files_label:
             return
@@ -571,7 +571,7 @@ class StatusManager:
             extra={"dev_only": True},
         )
 
-    def clear_file_table_status(self, files_label, message: str = "No folder selected") -> None:
+    def clear_file_table_status(self, files_label: Any, message: str = "No folder selected") -> None:
         """Enhanced file table clear status with context."""
         if files_label:
             files_label.setText("Files (0)")

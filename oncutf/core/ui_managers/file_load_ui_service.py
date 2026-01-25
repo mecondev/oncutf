@@ -16,6 +16,7 @@ This service handles all UI updates after files are loaded:
 """
 
 import os
+from typing import Any
 
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -30,7 +31,7 @@ class FileLoadUIService:
     This service knows about UI widgets and coordinates their updates.
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize with parent window reference for UI access."""
         self.parent_window = parent_window
         logger.debug("[FileLoadUIService] Initialized")

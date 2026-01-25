@@ -45,13 +45,13 @@ class SessionStateManager:
     All operations are transaction-safe and survive application crashes.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize SessionStateManager."""
-        self._db_manager = None
+        self._db_manager: Any = None
         logger.debug("[SessionStateManager] Initialized")
 
     @property
-    def db_manager(self):
+    def db_manager(self) -> Any:
         """Lazy-load database manager to avoid circular imports."""
         if self._db_manager is None:
             from oncutf.core.database.database_manager import get_database_manager

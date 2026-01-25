@@ -31,7 +31,7 @@ class BatchQueryManager:
     the application to avoid expensive per-file operations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the batch query manager with empty cache references."""
         self._hash_cache = None
         self._metadata_cache = None
@@ -111,7 +111,7 @@ class BatchQueryManager:
             logger.exception("[BatchQueryManager] Error getting metadata availability")
             return {}
 
-    def _file_has_metadata(self, file_path: str, metadata_cache) -> bool:
+    def _file_has_metadata(self, file_path: str, metadata_cache: Any) -> bool:
         """Return True if the given file path has non-internal metadata.
 
         The method expects the metadata cache to expose an internal

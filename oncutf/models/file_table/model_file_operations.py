@@ -31,7 +31,7 @@ class FileOperationsManager:
         - Manage tooltip cache invalidation
     """
 
-    def __init__(self, model, icon_manager):
+    def __init__(self, model: Any, icon_manager: Any) -> None:
         """Initialize the FileOperationsManager.
 
         Args:

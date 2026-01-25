@@ -529,7 +529,7 @@ class RenameController:
         except Exception as e:
             logger.warning("[RenameController] Error clearing state: %s", str(e))
 
-    def _handle_validation_issues(self, validation_result) -> str:
+    def _handle_validation_issues(self, validation_result: Any) -> str:
         """Handle validation issues by showing dialog.
 
         Args:

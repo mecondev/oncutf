@@ -99,7 +99,7 @@ class PriorityQueue:
     Tasks are ordered by priority and creation time.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize priority queue."""
         self._queues: dict[TaskPriority, deque[WorkerTask]] = {
             priority: deque() for priority in TaskPriority
@@ -107,7 +107,7 @@ class PriorityQueue:
         self._lock = threading.RLock()
         self._size = 0
 
-    def put(self, task: WorkerTask):
+    def put(self, task: WorkerTask) -> None:
         """Add task to queue."""
         with self._lock:
             self._queues[task.priority].append(task)
@@ -132,7 +132,7 @@ class PriorityQueue:
         """Check if queue is empty."""
         return self.size() == 0
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all tasks from queue."""
         with self._lock:
             for priority_queue in self._queues.values():
@@ -154,7 +154,7 @@ class SmartWorkerThread(QThread):
     task_failed = pyqtSignal(str, str)  # task_id, error_message
     task_progress = pyqtSignal(str, float)  # task_id, progress
 
-    def __init__(self, worker_id: str, task_queue: PriorityQueue, parent=None):
+    def __init__(self, worker_id: str, task_queue: PriorityQueue, parent: Any = None) -> None:
         """Initialize smart worker thread.
 
         Args:
@@ -174,7 +174,7 @@ class SmartWorkerThread(QThread):
 
         logger.debug("[SmartWorkerThread] Created worker: %s", worker_id)
 
-    def run(self):
+    def run(self) -> None:
         """Main thread execution loop."""
         logger.debug("[SmartWorkerThread] Worker %s started", self.worker_id)
 
@@ -196,7 +196,7 @@ class SmartWorkerThread(QThread):
 
         logger.debug("[SmartWorkerThread] Worker %s stopped", self.worker_id)
 
-    def _execute_task(self, task: WorkerTask):
+    def _execute_task(self, task: WorkerTask) -> None:
         """Execute a single task."""
         try:
             self._current_task = task
@@ -241,7 +241,7 @@ class SmartWorkerThread(QThread):
         finally:
             self._current_task = None
 
-    def request_shutdown(self):
+    def request_shutdown(self) -> None:
         """Request thread shutdown."""
         self._shutdown_requested = True
         logger.debug(
@@ -389,7 +389,7 @@ class ThreadPoolManager(QObject):
             logger.exception("[ThreadPoolManager] Error submitting task %s: %s", task_id, e)
             return False
 
-    def _check_pool_resize(self):
+    def _check_pool_resize(self) -> None:
         """Check if thread pool needs resizing."""
         queue_size = self._task_queue.size()
         current_threads = len(self._workers)
@@ -412,7 +412,7 @@ class ThreadPoolManager(QObject):
                 worker_to_remove = idle_workers[0]
                 self._remove_worker(worker_to_remove)
 
-    def _resize_pool(self, new_size: int):
+    def _resize_pool(self, new_size: int) -> None:
         """Resize thread pool to new size."""
         current_size = len(self._workers)
 
@@ -436,7 +436,7 @@ class ThreadPoolManager(QObject):
                 new_size,
             )
 
-    def _add_worker(self, worker_id: str):
+    def _add_worker(self, worker_id: str) -> None:
         """Add a new worker thread."""
         worker = SmartWorkerThread(worker_id, self._task_queue, self)
         worker.task_completed.connect(self._on_task_completed)
@@ -453,7 +453,7 @@ class ThreadPoolManager(QObject):
         *,
         wait_ms: int = 5000,
         terminate_wait_ms: int = 1000,
-    ):
+    ) -> None:
         """Remove a worker thread.
 
         Args:
@@ -482,7 +482,7 @@ class ThreadPoolManager(QObject):
             del self._workers[worker_id]
             logger.debug("[ThreadPoolManager] Removed worker: %s", worker_id)
 
-    def _on_task_completed(self, task_id: str, result: Any):
+    def _on_task_completed(self, task_id: str, result: Any) -> None:
         """Handle task completion."""
         with QMutexLocker(self._mutex):
             if task_id in self._tasks:
@@ -492,7 +492,7 @@ class ThreadPoolManager(QObject):
 
                 self.task_completed.emit(task_id, result)
 
-    def _on_task_failed(self, task_id: str, error_message: str):
+    def _on_task_failed(self, task_id: str, error_message: str) -> None:
         """Handle task failure and update health tracking."""
         with QMutexLocker(self._mutex):
             self._failed_tasks += 1
@@ -510,7 +510,7 @@ class ThreadPoolManager(QObject):
                     self._failed_tasks_count,
                 )
 
-    def _monitor_pool(self):
+    def _monitor_pool(self) -> None:
         """Monitor pool performance and adjust as needed."""
         try:
             stats = self.get_stats()
@@ -563,7 +563,7 @@ class ThreadPoolManager(QObject):
         with QMutexLocker(self._mutex):
             return [worker.get_stats() for worker in self._workers.values()]
 
-    def clear_completed_tasks(self):
+    def clear_completed_tasks(self) -> None:
         """Clear completed tasks from memory."""
         with QMutexLocker(self._mutex):
             completed_tasks = [
@@ -620,7 +620,7 @@ class ThreadPoolManager(QObject):
         *,
         worker_wait_ms: int = 5000,
         terminate_wait_ms: int = 1000,
-    ):
+    ) -> None:
         """Shutdown thread pool manager.
 
         Args:

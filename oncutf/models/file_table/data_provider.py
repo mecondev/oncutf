@@ -37,11 +37,11 @@ class DataProvider:
 
     def __init__(
         self,
-        model,
+        model: Any,
         column_manager: "ColumnManager",
         icon_manager: "IconManager",
         parent_window: Any = None,
-    ):
+    ) -> None:
         """Initialize the DataProvider.
 
         Args:

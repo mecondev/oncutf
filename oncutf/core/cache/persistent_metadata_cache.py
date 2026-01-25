@@ -83,7 +83,7 @@ class PersistentMetadataCache:
     - Easier to extend with new features
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize persistent metadata cache with database backend."""
         logger.debug("[DEBUG] [PersistentMetadataCache] __init__ CALLED", extra={"dev_only": True})
         try:
@@ -310,7 +310,7 @@ class PersistentMetadataCache:
             )
             return False
 
-    def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False):
+    def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False) -> None:
         """Add metadata (alias for set for backward compatibility).
 
         Args:
@@ -321,7 +321,7 @@ class PersistentMetadataCache:
         """
         self.set(file_path, metadata, is_extended=is_extended)
 
-    def update(self, other: dict[str, Any]):
+    def update(self, other: dict[str, Any]) -> None:
         """Update cache with another dictionary.
 
         Args:
@@ -332,7 +332,7 @@ class PersistentMetadataCache:
             if isinstance(metadata, dict):
                 self.set(file_path, metadata)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear memory cache (database remains intact)."""
         self._memory_cache.clear()
 
@@ -453,7 +453,7 @@ class DummyMetadataCache:
         """Return an empty metadata dict (dummy cache)."""
         return {}
 
-    def set(self, _file_path: str, _metadata: dict[str, Any], **kwargs) -> None:
+    def set(self, _file_path: str, _metadata: dict[str, Any], **kwargs: Any) -> None:
         """No-op setter for dummy cache."""
 
     def get_entry(self, path: str) -> MetadataEntry | None:

@@ -149,7 +149,7 @@ class RenameManager:
             get_timer_manager,
         )
 
-        def safe_post_rename_workflow():
+        def safe_post_rename_workflow() -> None:
             """Safe wrapper for post-rename workflow with error handling."""
             try:
                 # Check if main window is still valid

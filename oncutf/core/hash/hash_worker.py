@@ -61,7 +61,7 @@ class HashWorker(BaseHashWorker):
     3. Calculate checksums for files
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         """Initialize hash worker with hash manager and operation state."""
         super().__init__(parent)
 
@@ -260,7 +260,7 @@ class HashWorker(BaseHashWorker):
         progress_callback = None
         if file_size > 100_000_000:  # 100MB threshold
 
-            def update_progress(bytes_processed_in_file):
+            def update_progress(bytes_processed_in_file: int) -> None:
                 """Real-time progress callback for large files."""
                 with QMutexLocker(self._mutex):
                     current_total = self._cumulative_processed_bytes + bytes_processed_in_file

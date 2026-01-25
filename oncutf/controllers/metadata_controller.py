@@ -218,7 +218,7 @@ class MetadataController:
     # Metadata Configuration
     # -------------------------------------------------------------------------
 
-    def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
         """Determine metadata mode based on keyboard modifiers.
 
         Returns (load_metadata, use_extended) based on modifier state:
@@ -241,7 +241,7 @@ class MetadataController:
         )
         return result
 
-    def should_use_extended_metadata(self, modifier_state=None) -> bool:
+    def should_use_extended_metadata(self, modifier_state: Any = None) -> bool:
         """Check if extended metadata should be used (Ctrl+Shift both held).
 
         This is used in contexts where metadata WILL be loaded,

@@ -68,7 +68,7 @@ class InitializationWorker(QObject):
     finished = pyqtSignal(dict)  # results dictionary
     error = pyqtSignal(str)  # error_message
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the worker (runs in main thread before moveToThread)."""
         super().__init__()
         self._results = {

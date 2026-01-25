@@ -19,7 +19,7 @@ class RenameStateManager:
     state object when preview/validation/execution results change.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the state manager with a new empty state."""
         self.current_state = RenameState()
         self._previous_state: RenameState | None = None

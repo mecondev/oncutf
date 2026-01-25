@@ -175,7 +175,7 @@ class MetadataOperationsManager:
         # Show dialog
         dialog.exec_()
 
-    def _execute_export(self, dialog, format_combo, file_items: list[FileItem], scope: str) -> None:
+    def _execute_export(self, dialog: Any, format_combo: Any, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
@@ -499,6 +499,6 @@ class MetadataOperationsManager:
 
     # ===== Helper Methods =====
 
-    def _file_has_metadata(self, file_item) -> bool:
+    def _file_has_metadata(self, file_item: FileItem) -> bool:
         """Check if a file has metadata loaded."""
         return has_metadata(file_item.full_path)

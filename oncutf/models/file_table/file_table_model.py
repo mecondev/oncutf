@@ -104,7 +104,7 @@ class FileTableModel(QAbstractTableModel):
         return self._icon_manager._tooltip_cache
 
     @property
-    def metadata_icons(self):
+    def metadata_icons(self) -> Any:
         """Get metadata icons from icon manager."""
         return self._icon_manager.metadata_icons
 
@@ -167,11 +167,11 @@ class FileTableModel(QAbstractTableModel):
         """Get unified tooltip for all columns showing metadata and hash status."""
         return self._icon_manager.get_unified_tooltip(file)
 
-    def _create_combined_icon(self, metadata_status: str, hash_status: str):
+    def _create_combined_icon(self, metadata_status: str, hash_status: str) -> Any:
         """Create a combined icon showing metadata status and hash status."""
         return self._icon_manager.create_combined_icon(metadata_status, hash_status)
 
-    def _create_color_icon(self, hex_color: str):
+    def _create_color_icon(self, hex_color: str) -> Any:
         """Create a color swatch icon for the color column."""
         return self._icon_manager.create_color_icon(hex_color)
 
@@ -201,7 +201,7 @@ class FileTableModel(QAbstractTableModel):
         """Returns a list of all checked files."""
         return self._file_ops.get_checked_files()
 
-    def setup_custom_tooltips(self, table_view) -> None:
+    def setup_custom_tooltips(self, table_view: Any) -> None:
         """Setup custom tooltips for all cells in the table view."""
         self._file_ops.setup_custom_tooltips(table_view)
 
@@ -252,7 +252,7 @@ class FileTableModel(QAbstractTableModel):
         # Refresh metadata tree
         self._refresh_metadata_tree()
 
-    def _get_selection_model(self):
+    def _get_selection_model(self) -> Any:
         """Get the selection model from parent window."""
         selection_model = None
         try:
@@ -264,7 +264,7 @@ class FileTableModel(QAbstractTableModel):
                 selection_model = self.parent_window.file_table_view.selectionModel()
         return selection_model
 
-    def _restore_selection(self, selection_model, selected_items: list[FileItem]) -> None:
+    def _restore_selection(self, selection_model: Any, selected_items: list[FileItem]) -> None:
         """Restore selection after sorting."""
         selection_model.clearSelection()
         selection = QItemSelection()

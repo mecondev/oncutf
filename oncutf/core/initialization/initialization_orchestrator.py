@@ -7,7 +7,7 @@ Orchestrates MainWindow initialization in a structured, maintainable way.
 Separates initialization logic from MainWindow class to reduce complexity.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from oncutf.app.services.icons import (
     create_colored_icon,
@@ -48,7 +48,7 @@ class InitializationOrchestrator:
         self.window = main_window
         logger.debug("InitializationOrchestrator created", extra={"dev_only": True})
 
-    def orchestrate_initialization(self, theme_callback=None) -> None:
+    def orchestrate_initialization(self, theme_callback: Any = None) -> None:
         """Orchestrate complete initialization in phases.
 
         Args:
@@ -309,7 +309,7 @@ class InitializationOrchestrator:
 
         logger.debug("Phase 3: UI setup complete", extra={"dev_only": True})
 
-    def _phase4_configuration_and_finalization(self, theme_callback=None) -> None:
+    def _phase4_configuration_and_finalization(self, theme_callback: Any = None) -> None:
         """Phase 4: Apply configuration and finalize.
 
         Args:

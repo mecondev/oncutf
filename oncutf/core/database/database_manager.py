@@ -126,12 +126,12 @@ class DatabaseManager:
         logger.info("[DatabaseManager] Initialized with database: %s", self.db_path)
 
     @contextmanager
-    def _get_connection(self):
+    def _get_connection(self) -> Any:
         """Get database connection (yields existing connection)."""
         yield self._conn
 
     @contextlib.contextmanager
-    def transaction(self):
+    def transaction(self) -> Any:
         """Context manager for atomic transactions.
 
         Usage:
@@ -147,7 +147,7 @@ class DatabaseManager:
             self._conn.rollback()
             raise
 
-    def _initialize_database(self):
+    def _initialize_database(self) -> None:
         """Initialize database schema and store instances."""
         cursor = self._conn.cursor()
 
@@ -439,7 +439,7 @@ class DatabaseManager:
     # Lifecycle
     # ====================================================================
 
-    def close(self):
+    def close(self) -> None:
         """Close database connection and cleanup resources."""
         if hasattr(self, "_conn") and self._conn:
             try:

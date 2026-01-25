@@ -94,7 +94,7 @@ class LayoutController:
         self.parent_window.setCentralWidget(self.parent_window.central_widget)
         self.parent_window.main_layout = QVBoxLayout(self.parent_window.central_widget)
 
-    def _calculate_optimal_splitter_sizes(self, window_width: int):
+    def _calculate_optimal_splitter_sizes(self, window_width: int) -> list[int]:
         """Calculate optimal splitter sizes based on window width.
 
         Args:
@@ -113,7 +113,7 @@ class LayoutController:
         # Fallback to legacy calculation
         return self._legacy_calculate_optimal_splitter_sizes(window_width)
 
-    def _legacy_calculate_optimal_splitter_sizes(self, window_width: int):
+    def _legacy_calculate_optimal_splitter_sizes(self, window_width: int) -> list[int]:
         """Legacy splitter size calculation (kept as fallback).
 
         Args:

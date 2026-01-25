@@ -82,7 +82,7 @@ class ShutdownCoordinator(QObject):
     }
     # Total worst-case: 5.0 seconds
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         """Initialize shutdown coordinator.
 
         Args:
@@ -115,33 +115,33 @@ class ShutdownCoordinator(QObject):
 
         logger.info("[ShutdownCoordinator] Initialized")
 
-    def register_timer_manager(self, timer_manager):
+    def register_timer_manager(self, timer_manager: Any) -> None:
         """Register timer manager for shutdown."""
         self._timer_manager = timer_manager
         logger.debug("[ShutdownCoordinator] Timer manager registered")
 
-    def register_thread_pool_manager(self, thread_pool_manager):
+    def register_thread_pool_manager(self, thread_pool_manager: Any) -> None:
         """Register thread pool manager for shutdown."""
         self._thread_pool_manager = thread_pool_manager
         logger.debug("[ShutdownCoordinator] Thread pool manager registered")
 
-    def register_thumbnail_manager(self, thumbnail_manager):
+    def register_thumbnail_manager(self, thumbnail_manager: Any) -> None:
         """Register thumbnail manager for shutdown."""
         self._thumbnail_manager = thumbnail_manager
         logger.debug("[ShutdownCoordinator] Thumbnail manager registered")
 
-    def register_database_manager(self, database_manager):
+    def register_database_manager(self, database_manager: Any) -> None:
         """Register database manager for shutdown."""
         self._database_manager = database_manager
         logger.debug("[ShutdownCoordinator] Database manager registered")
         logger.debug("[ShutdownCoordinator] Database manager registered")
 
-    def register_exiftool_wrapper(self, exiftool_wrapper):
+    def register_exiftool_wrapper(self, exiftool_wrapper: Any) -> None:
         """Register ExifTool wrapper for shutdown."""
         self._exiftool_wrapper = exiftool_wrapper
         logger.debug("[ShutdownCoordinator] ExifTool wrapper registered")
 
-    def set_phase_timeout(self, phase: ShutdownPhase, timeout: float):
+    def set_phase_timeout(self, phase: ShutdownPhase, timeout: float) -> None:
         """Set custom timeout for a specific phase.
 
         Args:

@@ -6,6 +6,8 @@ Date: 2026-01-02
 Handles signal connections between UI components.
 """
 
+from typing import Any
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QLineEdit, QMenu
 
@@ -220,7 +222,7 @@ class SignalController:
                     "File table refreshed", success=True, auto_reset=True
                 )
 
-    def _show_search_context_menu(self, position, line_edit: QLineEdit) -> None:
+    def _show_search_context_menu(self, position: Any, line_edit: QLineEdit) -> None:
         """Show custom context menu for the search field."""
         menu = QMenu(line_edit)
 

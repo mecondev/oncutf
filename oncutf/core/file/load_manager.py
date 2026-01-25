@@ -14,6 +14,7 @@ Responsibilities:
 """
 
 import os
+from typing import Any
 
 from oncutf.config import (
     ALLOWED_EXTENSIONS,
@@ -37,7 +38,7 @@ class FileLoadManager:
     - No complex progress dialogs, just simple and fast loading.
     """
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize FileLoadManager with parent window reference."""
         self.parent_window = parent_window
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
@@ -313,7 +314,7 @@ class FileLoadManager:
         return ext in self.allowed_extensions
 
     def get_file_items_from_folder(
-        self, folder_path: str, *, use_cache: bool = True, file_store=None
+        self, folder_path: str, *, use_cache: bool = True, file_store: Any = None
     ) -> list[FileItem]:
         """Scan folder and return FileItem objects (with caching support).
 
@@ -477,7 +478,7 @@ class FileLoadManager:
         logger.debug("[FileLoadManager] Cleared metadata operation flag", extra={"dev_only": True})
 
     def refresh_loaded_folders(
-        self, changed_folder: str | None = None, file_store=None
+        self, changed_folder: str | None = None, file_store: Any = None
     ) -> bool:
         """Refresh files from loaded folders after filesystem changes.
 

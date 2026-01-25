@@ -27,7 +27,7 @@ logger = get_cached_logger(__name__)
 class FileOperationsManager:
     """Manages file operations like rename, validation, and conflict resolution."""
 
-    def __init__(self, parent_window=None) -> None:
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize FileOperationsManager."""
         self.parent_window = parent_window
         logger.debug("[FileOperationsManager] Initialized", extra={"dev_only": True})
@@ -37,7 +37,7 @@ class FileOperationsManager:
         selected_files: list[FileItem],
         modules_data: list[dict[str, Any]],
         post_transform: dict[str, Any],
-        metadata_cache,
+        metadata_cache: Any,
         current_folder_path: str,
     ) -> int:
         """Execute batch rename process."""
@@ -77,7 +77,7 @@ class FileOperationsManager:
         remembered_action: str | None = None
 
         # Conflict resolution callback with UI dialog
-        def conflict_callback(_parent, filename):
+        def conflict_callback(_parent: Any, filename: str) -> str:
             """Resolve conflicts with user interaction via dialog.
 
             Args:
@@ -224,7 +224,7 @@ class FileOperationsManager:
         # Store the completion dialog information to be shown after the post-rename workflow
         if renamed_count > 0 and self.parent_window:
             # Schedule the completion dialog to show after the post-rename workflow
-            def show_completion_dialog():
+            def show_completion_dialog() -> None:
                 """Show the rename completion dialog after the workflow completes."""
                 try:
                     if CustomMessageDialog.question(

@@ -222,17 +222,17 @@ class TextRemovalModule(BaseRenameModule):
         )
 
     @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_text_changed(self):
+    def on_text_changed(self) -> None:
         """Handle text input changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
     @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_position_changed(self):
+    def on_position_changed(self) -> None:
         """Handle position combo changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
     @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_case_changed(self):
+    def on_case_changed(self) -> None:
         """Handle case sensitivity changes (legacy method for compatibility)."""
         self._on_setting_changed()
 
@@ -249,7 +249,7 @@ class TextRemovalModule(BaseRenameModule):
             "case_sensitive": self.case_sensitive_check.isChecked(),
         }
 
-    def set_data(self, data: dict[str, Any]):
+    def set_data(self, data: dict[str, Any]) -> None:
         """Set the configuration data.
 
         Args:
@@ -370,7 +370,7 @@ class TextRemovalModule(BaseRenameModule):
         return len(text_to_remove) > 0
 
     @staticmethod
-    def apply_from_data(data: dict[str, Any], file_item, _index: int, _metadata_cache=None) -> str:
+    def apply_from_data(data: dict[str, Any], file_item: Any, _index: int, _metadata_cache: Any = None) -> str:
         """Apply text removal to a filename based on configuration data.
 
         Args:
@@ -402,7 +402,7 @@ class TextRemovalModule(BaseRenameModule):
 
         return f"{result_name}{ext}"
 
-    def get_preview_text(self, file_item, index: int, metadata_cache=None) -> str:
+    def get_preview_text(self, file_item: Any, index: int, metadata_cache: Any = None) -> str:
         """Get preview text for this module.
 
         Args:

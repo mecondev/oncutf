@@ -491,7 +491,7 @@ class WindowConfigManager:
                 # Schedule a delayed refresh to allow window state to settle
                 from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
-                def refresh():
+                def refresh() -> None:
                     # Reset manual column preference for auto-sizing - use original FileTableView logic
                     if hasattr(self.main_window.file_table_view, "_manual_column_resize"):
                         self.main_window.file_table_view._manual_column_resize = False

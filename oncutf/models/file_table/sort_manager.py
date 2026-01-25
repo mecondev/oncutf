@@ -29,7 +29,7 @@ class SortManager:
         - Provide sort keys for complex fields
     """
 
-    def __init__(self, parent_window: Any = None, get_hash_value_func=None):
+    def __init__(self, parent_window: Any = None, get_hash_value_func: Any = None) -> None:
         """Initialize the SortManager.
 
         Args:

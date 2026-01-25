@@ -20,7 +20,7 @@ class ModuleDragDropManager:
     (current widget-based vs future node editor).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize drag & drop manager."""
         self._dragged_widget: QWidget | None = None
         self._drag_start_position: tuple[int, int] | None = None

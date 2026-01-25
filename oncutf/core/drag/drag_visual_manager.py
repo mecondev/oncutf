@@ -18,6 +18,7 @@ Date: 2025-05-31
 
 import os
 from enum import Enum
+from typing import Any
 
 from oncutf.app.services.icons import get_menu_icon
 from oncutf.config import ICON_SIZES
@@ -74,7 +75,7 @@ class DragVisualManager:
 
     _instance: "DragVisualManager | None" = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize singleton drag visual manager with state and caches."""
         # Ensure singleton
         if DragVisualManager._instance is not None:
@@ -623,7 +624,7 @@ def is_valid_drop_target(widget: QWidget, drag_source: str) -> bool:
     return DragVisualManager.get_instance().is_valid_drop_target(widget, drag_source)
 
 
-def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
+def update_drag_feedback_for_widget(source_widget: Any, drag_source: str) -> bool:
     """Update drag feedback for a widget - convenience function.
 
     Args:

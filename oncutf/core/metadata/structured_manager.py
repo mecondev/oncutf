@@ -23,14 +23,14 @@ class StructuredMetadataManager:
     - Managing metadata field definitions and categories
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the structured manager with database connection and caches."""
         self.db_manager = get_database_manager()
         self._field_cache = {}
         self._category_cache = {}
         self._load_caches()
 
-    def _load_caches(self):
+    def _load_caches(self) -> None:
         """Load metadata fields and categories into cache for performance."""
         try:
             # Load categories
@@ -50,7 +50,7 @@ class StructuredMetadataManager:
         except Exception as e:
             logger.error("[StructuredMetadataManager] Error loading caches: %s", e)
 
-    def refresh_caches(self):
+    def refresh_caches(self) -> None:
         """Refresh the internal caches."""
         self._load_caches()
 

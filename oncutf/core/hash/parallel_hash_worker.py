@@ -33,7 +33,7 @@ class ParallelHashWorker(BaseHashWorker):
     while respecting I/O constraints.
     """
 
-    def __init__(self, parent=None, max_workers: int | None = None):
+    def __init__(self, parent: Any = None, max_workers: int | None = None) -> None:
         """Initialize parallel hash worker.
 
         Args:

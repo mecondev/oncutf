@@ -310,7 +310,7 @@ class ParallelMetadataLoader:
         else:
             return 20  # Large batches for efficiency
 
-    def cancel(self):
+    def cancel(self) -> None:
         """Cancel ongoing metadata loading."""
         self._cancelled = True
         logger.info("[ParallelMetadataLoader] Cancellation requested")
@@ -350,7 +350,7 @@ class ParallelMetadataLoader:
 
 
 def update_file_item_metadata(
-    item: FileItem, metadata: dict[str, Any], parent_window, metadata_cache, use_extended: bool
+    item: FileItem, metadata: dict[str, Any], parent_window: Any, metadata_cache: Any, use_extended: bool
 ) -> None:
     """Update FileItem with metadata and emit UI signals.
 

@@ -50,7 +50,7 @@ class InitializationManager:
             num_files, self.main_window.force_extended_metadata
         )
 
-    def enable_selection_store_mode(self):
+    def enable_selection_store_mode(self) -> None:
         """Enable SelectionStore mode in FileTableView once ApplicationContext is ready."""
         try:
             self.main_window.file_table_view.enable_selection_store_mode()

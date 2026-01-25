@@ -9,6 +9,8 @@ Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
 
+from typing import Any
+
 from oncutf.core.pyqt_imports import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -27,7 +29,7 @@ class TableManager:
     - File retrieval operations
     """
 
-    def __init__(self, parent_window):
+    def __init__(self, parent_window: Any) -> None:
         """Initialize the TableManager.
 
         Args:

@@ -65,7 +65,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
     # Initialization
     # =========================================================================
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         """Initialize base hash worker.
 
         Args:

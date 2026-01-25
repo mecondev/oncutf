@@ -32,7 +32,7 @@ class UnifiedExecutionManager:
     safe-case rename helper when necessary.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the execution manager with no conflict callback or validator."""
         self.conflict_callback: Callable[[Any, str], str] | None = None
         self.validator: Callable[[str], tuple[bool, str]] | None = None

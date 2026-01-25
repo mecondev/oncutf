@@ -102,7 +102,7 @@ class FileValidationManager:
     at the OS level, requiring robust content-based tracking.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize FileValidationManager with balanced settings."""
         self.db_manager = get_database_manager()
         self.hash_manager = HashManager()
@@ -411,7 +411,7 @@ class FileValidationManager:
         total_size_mb: float,
         choice: str,
         remember_duration: int = 3600,
-    ):
+    ) -> None:
         """Remember user's validation choice for similar scenarios."""
         pref_key = f"{operation.value}_{file_count // 100 * 100}_{int(total_size_mb // 100 * 100)}"
 
@@ -507,7 +507,7 @@ class FileValidationManager:
 
         return estimated_time
 
-    def cleanup_stale_cache_entries(self, _max_age_days: int = 30):
+    def cleanup_stale_cache_entries(self, _max_age_days: int = 30) -> None:
         """Clean up stale cache entries older than specified days."""
         try:
             logger.debug("Cleaning up stale cache entries", extra={"dev_only": True})

@@ -52,7 +52,7 @@ class UnifiedMetadataManager(QObject):
     loading_started = pyqtSignal(str)  # file_path
     loading_finished = pyqtSignal()
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window: Any = None) -> None:
         """Initialize UnifiedMetadataManager with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
@@ -108,7 +108,7 @@ class UnifiedMetadataManager(QObject):
     # =========================================================================
 
     @property
-    def exiftool_wrapper(self):
+    def exiftool_wrapper(self) -> Any:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
             from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
@@ -121,7 +121,7 @@ class UnifiedMetadataManager(QObject):
         return self._exiftool_wrapper
 
     @property
-    def structured(self):
+    def structured(self) -> Any:
         """Lazy-initialized structured metadata manager."""
         if self._structured_manager is None:
             from oncutf.core.metadata.structured_manager import StructuredMetadataManager
@@ -130,7 +130,7 @@ class UnifiedMetadataManager(QObject):
         return self._structured_manager
 
     @property
-    def parallel_loader(self):
+    def parallel_loader(self) -> Any:
         """Lazy-initialized parallel metadata loader."""
         if self._parallel_loader is None:
             from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
@@ -202,11 +202,11 @@ class UnifiedMetadataManager(QObject):
         """Delegate to loader."""
         return self._loader.determine_loading_mode(file_count)
 
-    def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
         """Delegate to shortcut_handler."""
         return self._shortcut_handler.determine_metadata_mode(modifier_state)
 
-    def should_use_extended_metadata(self, modifier_state=None) -> bool:
+    def should_use_extended_metadata(self, modifier_state: Any = None) -> bool:
         """Delegate to shortcut_handler."""
         return self._shortcut_handler.should_use_extended_metadata(modifier_state)
 
@@ -243,7 +243,7 @@ class UnifiedMetadataManager(QObject):
     ) -> None:
         """Delegate to loader with signal emission."""
 
-        def on_finished():
+        def on_finished() -> None:
             self.loading_finished.emit()
 
         self._loader.load_metadata_for_items(items, use_extended, source, on_finished=on_finished)
@@ -257,7 +257,7 @@ class UnifiedMetadataManager(QObject):
 
         Delegates to HashLoadingService with callback for loading_finished signal.
         """
-        def on_finished():
+        def on_finished() -> None:
             self.loading_finished.emit()
 
         self._hash_service.load_hashes_for_files(files, source, on_finished_callback=on_finished)
@@ -424,7 +424,7 @@ class UnifiedMetadataManager(QObject):
 
     def _update_file_after_save(
         self, file_item: FileItem, saved_metadata: dict[str, Any] | None = None
-    ):
+    ) -> None:
         """Update file item after successful metadata save."""
         # Clear staged changes
         try:
@@ -619,7 +619,7 @@ class UnifiedMetadataManager(QObject):
         """Delegate to structured manager."""
         return self.structured.update_field_value(file_path, field_key, field_value)
 
-    def add_custom_field(self, field_key: str, field_name: str, category: str, **kwargs) -> bool:
+    def add_custom_field(self, field_key: str, field_name: str, category: str, **kwargs: Any) -> bool:
         """Delegate to structured manager."""
         return self.structured.add_custom_field(field_key, field_name, category, **kwargs)
 
@@ -691,7 +691,7 @@ class UnifiedMetadataManager(QObject):
 _unified_metadata_manager = None
 
 
-def get_unified_metadata_manager(parent_window=None) -> UnifiedMetadataManager:
+def get_unified_metadata_manager(parent_window: Any = None) -> UnifiedMetadataManager:
     """Get or create the unified metadata manager instance."""
     global _unified_metadata_manager
     if _unified_metadata_manager is None:

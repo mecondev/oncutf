@@ -8,6 +8,8 @@ This module provides validation functions for metadata values.
 Each validator checks if a given value is valid for a specific metadata field.
 """
 
+from typing import Any
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -64,7 +66,7 @@ def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
         )
 
 
-def get_validator_for_key(key_path: str):
+def get_validator_for_key(key_path: str) -> Any:
     """Returns the appropriate validator function for a given key path.
 
     Args:

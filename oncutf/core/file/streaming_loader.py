@@ -9,6 +9,8 @@ Handles batch loading of files to keep UI responsive when loading
 large directories (>200 files). Uses QTimer to process files in chunks.
 """
 
+from typing import Any
+
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -22,7 +24,7 @@ class StreamingFileLoader:
     the UI. This class loads files in batches using QTimer scheduling.
     """
 
-    def __init__(self, parent_window=None, ui_service=None, batch_size: int = 100):
+    def __init__(self, parent_window: Any = None, ui_service: Any = None, batch_size: int = 100) -> None:
         """Initialize streaming loader.
 
         Args:

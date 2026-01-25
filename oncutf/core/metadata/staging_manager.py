@@ -8,6 +8,8 @@ Acts as the single source of truth for pending modifications, decoupling
 the UI from the save logic.
 """
 
+from typing import Any
+
 from oncutf.core.pyqt_imports import QObject, pyqtSignal
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -33,7 +35,7 @@ class MetadataStagingManager(QObject):
     # Emitted when all changes are cleared
     all_cleared = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         """Initialize the staging manager with empty change tracking."""
         super().__init__(parent)
         # Structure: { normalized_file_path: { key: value } }

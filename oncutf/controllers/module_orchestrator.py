@@ -59,7 +59,7 @@ class ModuleOrchestrator:
         "remove_text_from_original_name": "text_removal",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize orchestrator with module registry."""
         self._module_registry: dict[str, ModuleDescriptor] = {}
         self._module_instances: list[dict[str, Any]] = []

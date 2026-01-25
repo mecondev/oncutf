@@ -25,12 +25,12 @@ class ApplicationService:
     MainWindow and individual managers. It groups related operations logically.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
         """Initialize with reference to main window and its managers."""
         self.main_window = main_window
         self._initialized = False
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize the service after all managers are ready."""
         if self._initialized:
             return
@@ -66,7 +66,7 @@ class ApplicationService:
     # File Operations
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, force: bool = False):
+    def load_files_from_folder(self, folder_path: str, force: bool = False) -> None:
         """Load files from folder via FileLoadController."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)
@@ -104,7 +104,7 @@ class ApplicationService:
     # Metadata Operations (with business logic)
     # =====================================
 
-    def calculate_hash_selected(self):
+    def calculate_hash_selected(self) -> Any:
         """Calculate hash for selected files that don't already have hashes."""
         selected_files = self.main_window.get_selected_files_ordered()
         if not selected_files:
@@ -136,7 +136,7 @@ class ApplicationService:
             selected_files
         )
 
-    def calculate_hash_all(self):
+    def calculate_hash_all(self) -> Any:
         """Calculate hash for all files that don't already have hashes."""
         all_files = (
             self.main_window.file_model.files if hasattr(self.main_window, "file_model") else []
@@ -166,7 +166,7 @@ class ApplicationService:
     # Rename Operations (with business logic)
     # =====================================
 
-    def rename_files(self):
+    def rename_files(self) -> None:
         """Execute batch rename using RenameController."""
         try:
             # Get selected files and rename data
@@ -231,7 +231,7 @@ class ApplicationService:
             )
 
     def _update_file_items_after_rename(
-        self, files: list[FileItem], new_names: list[str], execution_result
+        self, files: list[FileItem], new_names: list[str], execution_result: Any
     ) -> None:
         """Update FileItem objects with new paths after successful rename.
 
@@ -436,7 +436,7 @@ class ApplicationService:
 _application_service_instance: ApplicationService | None = None
 
 
-def get_application_service(main_window=None) -> ApplicationService | None:
+def get_application_service(main_window: Any = None) -> ApplicationService | None:
     """Get the global application service instance.
 
     Args:
@@ -471,7 +471,7 @@ def initialize_application_service(main_window: Any) -> ApplicationService | Non
     return service
 
 
-def cleanup_application_service():
+def cleanup_application_service() -> None:
     """Cleanup the global application service."""
     global _application_service_instance
     if _application_service_instance:
