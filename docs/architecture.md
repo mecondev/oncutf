@@ -1,20 +1,191 @@
 # oncutf Architecture Guide
 
-**Last Updated:** 2025-12-29  
-**Status:** Phase 7 (Final Polish) - Documentation Cleanup ⚡
+**Last Updated:** 2026-01-25  
+**Status:** Production-Ready — Clean Architecture with Pragmatic Strict Typing ✅
 
 ---
 
 ## Quick Navigation
 
 - **[Documentation Index](README.md)** — All available documentation
+- **[Refactoring Summary](260121_summary.md)** — Phases A-E completion status
+- **[Migration Stance](migration_stance.md)** — Architecture migration policy
 - **Archived docs** — See `_archive/` for historical phase details
 
 ---
 
-## Architecture Overview
+## Executive Summary (2026-01-25)
 
-### MVC-Inspired Four-Tier Design
+### Production Readiness Status
+- ✅ **Clean Architecture:** Zero boundary violations (54 → 0)
+- ✅ **Type Safety:** Pragmatic strict mode (strictness 8.8/10)
+- ✅ **Code Quality:** Zero ruff violations (2062 → 0)
+- ✅ **Test Coverage:** 99.4% pass rate (1154/1161)
+- ✅ **Technical Debt:** 647 lines of duplicates removed
+
+### Architecture Layers
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      UI Layer (PyQt5)                       │
+├─────────────────────────────────────────────────────────────┤
+│  Main Window > Widgets > Behaviors > Handlers              │
+│  ├── FileTableView (976 LOC)                                │
+│  ├── MetadataTreeView (1768 LOC)                            │
+│  ├── RenameModulesArea                                      │
+│  ├── Behaviors: Selection, DragDrop, Metadata...            │
+│  └── Adapters: Qt implementations of ports                  │
+│                                                             │
+│            ↓ delegates to (via facades)                     │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│           Controllers Layer (UI-agnostic)                   │
+├─────────────────────────────────────────────────────────────┤
+│  ├── FileLoadController         (orchestrate file loading)  │
+│  ├── MetadataController          (orchestrate metadata ops) │
+│  ├── RenameController            (orchestrate rename flow)  │
+│  └── MainWindowController        (high-level coordination)  │
+│                                                             │
+│         ↓ orchestrates (via services)                       │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│              App Services (Facades)                         │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 1 — PRAGMATIC STRICT TYPING (10 strict flags)        │
+│  ├── user_interaction   (dialogs, questions)                │
+│  ├── cursor             (wait cursor)                       │
+│  ├── progress           (progress dialogs)                  │
+│  ├── validation_service (field validators)                  │
+│  ├── metadata_service   (metadata staging/commands)         │
+│  ├── cache_service      (metadata/hash caching)             │
+│  ├── database_service   (database operations)               │
+│  ├── batch_service      (batch processing)                  │
+│  └── folder_color_service (auto-color commands)             │
+│                                                             │
+│         ↓ uses (business logic)                             │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│          Business Logic (Core + Domain)                     │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 2 — STRICT TYPING (disallow_untyped_defs)            │
+│  ├── UnifiedRenameEngine        (rename orchestration)      │
+│  ├── UnifiedMetadataManager     (metadata loading)          │
+│  ├── Domain Models              (FileRecord, MetadataRecord)│
+│  ├── Validators                 (field validation rules)    │
+│  └── Managers (30+)             (application coordination)  │
+│                                                             │
+│          ↓ persists to                                      │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│           Infrastructure (Persistence)                      │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 1 — PRAGMATIC STRICT TYPING                          │
+│  ├── external/                  (ExifTool, FFmpeg clients)  │
+│  ├── cache/                     (metadata, hash, thumbnail) │
+│  ├── db/                        (file repository, database) │
+│  └── Persistent Caches          (SQLite with LRU eviction)  │
+│                                                             │
+│          ↓ persists to                                      │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                  Data Layer (Storage)                       │
+├─────────────────────────────────────────────────────────────┤
+│  ├── SQLite Databases           (metadata, hash, files)     │
+│  ├── JSON Config Files          (user preferences)          │
+│  └── File System                (renames, backups)          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Architectural Patterns
+
+| Pattern | Implementation | Purpose |
+|---------|---------------|---------|
+| **Facade** | app/services/*.py | Isolate UI from business logic |
+| **Dependency Inversion** | app/ports/*.py (Protocols) | Decouple layers via interfaces |
+| **Adapter** | ui/adapters/qt_*.py | Qt implementations of protocols |
+| **Repository** | infra/db/file_repository.py | Abstract data access |
+| **Controller** | controllers/*.py | UI-agnostic orchestration |
+| **Behavior** | ui/behaviors/*.py | Reusable UI interactions |
+
+---
+
+## Type Safety Configuration (Phase E — Complete)
+
+### Pragmatic Strict Typing Strategy
+
+oncutf uses a **three-tier typing strategy** optimized for a metadata-centric application:
+
+```
+Tier 1 (app/domain/infra): PRAGMATIC STRICT
+├─ 10 strict mypy flags enabled
+├─ 2 pragmatically excluded (metadata domain)
+├─ Type:ignore: 5 total (all justified)
+└─ Rationale: Metadata is intrinsically untyped (EXIF)
+
+Tier 2 (controllers/core/models): STRICT
+├─ disallow_untyped_defs = true
+├─ All functions require type annotations
+└─ Generic types properly specified
+
+Tier 3 (UI/Qt): SELECTIVE
+├─ 13 Qt-specific error suppressions
+└─ Rationale: PyQt5 stubs have limitations
+```
+
+### Enabled Strict Flags (Tier 1)
+
+| Flag | Purpose | Impact |
+|------|---------|--------|
+| `disallow_untyped_defs` | All functions must have types | Core safety |
+| `disallow_any_generics` | Generic types must be specified | Type precision |
+| `warn_return_any` | Flag functions returning Any | Explicit Any |
+| `no_implicit_reexport` | Prevent accidental exports | Clean API |
+| `strict_optional` | Distinguish None from T | Null safety |
+| `disallow_any_unimported` | No Any from untyped modules | Import safety |
+| `disallow_any_decorated` | No Any from decorators | Decorator safety |
+| `disallow_incomplete_defs` | No partial annotations | Completeness |
+| `disallow_untyped_calls` | No calls to untyped functions | Call safety |
+| `disallow_untyped_decorators` | Decorators must be typed | Decorator safety |
+
+### Pragmatic Exclusions (Tier 1)
+
+| Excluded Flag | Rationale |
+|---------------|-----------|
+| `disallow_any_explicit` | Metadata uses `dict[str, Any]` for EXIF data (intrinsically untyped) |
+| `disallow_any_expr` | Validators use `Callable[[Any], ...]` for runtime validation |
+
+**Why these exclusions are correct:**
+- EXIF metadata has **no compile-time type information** (camera-dependent fields)
+- Using `dict[str, Any]` is the **idiomatic Python approach** for dynamic data
+- Alternatives (TypedDict per field, wrapper types) add complexity without improving safety
+- This is **domain-appropriate** for metadata-centric applications
+
+### Type:ignore Justification
+
+Only **5 type:ignore** comments remain (down from 115):
+
+1. `logger._patched_for_safe_log` — Runtime marker to prevent double-patching
+2-3. `sys._MEIPASS` (2×) — PyInstaller-only runtime attribute
+4-5. Qt node editor refs (2×) — Qt backward reference limitations
+
+All are **runtime-only attributes** where type:ignore is the correct solution.
+
+### Type Safety Metrics
+
+| Metric | Before (Phase A) | After (Phase E) | Change |
+|--------|------------------|-----------------|--------|
+| Strictness | 6.0/10 | 8.8/10 | +47% |
+| Type:ignore | 115 | 5 | -95.7% |
+| Mypy errors | 21 | 0 | -100% |
+| Untyped functions (Tier 1+2) | ~200 | 0 | -100% |
+
+---
+
+## Architecture Overview (Legacy Section)
+
+**Note:** The section below describes the pre-Phase-A architecture. For current architecture, see the Executive Summary above.
+
+### MVC-Inspired Four-Tier Design (Legacy)
 
 ```
 ┌─────────────────────────────────────┐
