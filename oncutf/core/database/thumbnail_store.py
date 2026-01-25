@@ -15,6 +15,7 @@ Tables:
 Schema managed by migrations.py (v4 -> v5).
 """
 
+import contextlib
 import json
 import sqlite3
 from pathlib import Path
@@ -173,6 +174,10 @@ class ThumbnailStore:
             return True
 
         except sqlite3.Error as e:
+            # Rollback to prevent "cannot commit - no transaction is active" errors
+            with contextlib.suppress(sqlite3.Error):
+                self._connection.rollback()
+
             logger.error(
                 "[ThumbnailStore] Failed to save cache entry for %s: %s",
                 Path(file_path).name,
