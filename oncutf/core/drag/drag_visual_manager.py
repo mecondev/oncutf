@@ -22,17 +22,16 @@ from typing import Any
 
 from oncutf.app.services.icons import get_menu_icon
 from oncutf.config import ICON_SIZES
-from oncutf.core.pyqt_imports import (
-    QApplication,
+from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtGui import (
     QColor,
     QCursor,
     QIcon,
     QPainter,
     QPainterPath,
     QPixmap,
-    QRect,
-    Qt,
-    QWidget,
+)
+from PyQt5.QtWidgets import QApplication, QWidget
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

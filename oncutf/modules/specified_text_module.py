@@ -12,14 +12,14 @@ Used in the oncutf application as one of the modular renaming components.
 import os
 from typing import Any
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QAction,
     QMenu,
-    Qt,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
+
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.validated_line_edit import ValidatedLineEdit
 

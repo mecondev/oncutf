@@ -10,19 +10,18 @@ sequential file names based on configurable start value, step, and padding.
 
 from typing import Any
 
-from oncutf.config import ICON_SIZES
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QHBoxLayout,
     QIntValidator,
     QLabel,
     QLineEdit,
     QPushButton,
-    QSize,
-    Qt,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
+
+from oncutf.config import ICON_SIZES
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.theme_manager import get_theme_manager

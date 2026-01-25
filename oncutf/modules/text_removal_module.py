@@ -14,17 +14,17 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from typing_extensions import deprecated
-
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    Qt,
     QVBoxLayout,
     QWidget,
 )
+from typing_extensions import deprecated
+
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger

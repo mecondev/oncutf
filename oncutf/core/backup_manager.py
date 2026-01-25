@@ -18,6 +18,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+
 from oncutf.config import (
     BACKUP_FILENAME_FORMAT,
     BACKUP_TIMESTAMP_FORMAT,
@@ -25,7 +27,6 @@ from oncutf.config import (
     DEFAULT_BACKUP_INTERVAL,
     DEFAULT_PERIODIC_BACKUP_ENABLED,
 )
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from oncutf.utils.logging.logger_helper import get_logger
 
 logger = get_logger(__name__)

@@ -12,8 +12,10 @@ Enhanced with better metadata grouping and extended metadata indicators.
 import re
 from typing import Any
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
+
 from oncutf.config import METADATA_ICON_COLORS
-from oncutf.core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt
 
 # Initialize Logger
 from oncutf.utils.logging.logger_factory import get_cached_logger

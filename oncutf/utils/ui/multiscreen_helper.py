@@ -7,7 +7,9 @@ Utility functions for handling window positioning in multiscreen desktop environ
 Ensures dialogs and progress bars appear on the correct monitor relative to their parent window.
 """
 
-from oncutf.core.pyqt_imports import QApplication, QFileDialog, QScreen, QWidget
+from PyQt5.QtGui import QScreen
+from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

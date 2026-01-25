@@ -39,6 +39,7 @@ Usage:
 import traceback
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

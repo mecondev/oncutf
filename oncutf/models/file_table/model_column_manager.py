@@ -11,7 +11,8 @@ Date: 2026-01-01
 
 from typing import Any
 
-from oncutf.core.pyqt_imports import QModelIndex
+from PyQt5.QtCore import QModelIndex
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

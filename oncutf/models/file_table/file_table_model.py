@@ -12,8 +12,7 @@ Date: 2026-01-01
 
 from typing import Any, Literal
 
-from oncutf.core.application_context import get_app_context
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
@@ -22,6 +21,8 @@ from oncutf.core.pyqt_imports import (
     Qt,
     pyqtSignal,
 )
+
+from oncutf.core.application_context import get_app_context
 from oncutf.models.file_item import FileItem
 from oncutf.models.file_table.data_provider import DataProvider
 from oncutf.models.file_table.icon_manager import IconManager

@@ -22,7 +22,9 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar
 
-from oncutf.core.pyqt_imports import QImage, QPixmap, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

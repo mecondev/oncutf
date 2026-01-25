@@ -12,6 +12,7 @@ import os
 from typing import Any
 
 from PyQt5.QtCore import Qt
+
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

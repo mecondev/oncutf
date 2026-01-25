@@ -11,6 +11,7 @@ the UI from the save logic.
 from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

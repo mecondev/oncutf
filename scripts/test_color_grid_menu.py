@@ -10,7 +10,8 @@ from pathlib import Path
 # Add oncutf to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from oncutf.core.pyqt_imports import QApplication, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
+
 from oncutf.ui.widgets.color_grid_menu import ColorGridMenu
 
 

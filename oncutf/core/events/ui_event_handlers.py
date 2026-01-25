@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QModelIndex
+    from PyQt5.QtCore import QModelIndex
 
 logger = get_cached_logger(__name__)
 

@@ -10,6 +10,7 @@ Extracted from RenameModuleWidget to separate UI concerns.
 from PyQt5.QtCore import QApplication, Qt
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QWidget
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

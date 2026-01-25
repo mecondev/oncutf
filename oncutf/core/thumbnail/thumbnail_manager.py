@@ -32,7 +32,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QObject, QPixmap, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtGui import QPixmap
+
 from oncutf.core.thumbnail.thumbnail_cache import ThumbnailCache, ThumbnailCacheConfig
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.paths import AppPaths
@@ -372,7 +374,8 @@ class ThumbnailManager(QObject):
 
         """
         # Create simple 128x128 gray pixmap
-        from oncutf.core.pyqt_imports import QColor, QPainter, Qt
+        from PyQt5.QtCore import Qt
+        from PyQt5.QtGui import QColor, QPainter
 
         pixmap = QPixmap(128, 128)
         pixmap.fill(QColor(200, 200, 200))

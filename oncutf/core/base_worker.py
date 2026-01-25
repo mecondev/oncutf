@@ -31,7 +31,7 @@ Usage:
 
 from typing import Any, Protocol, runtime_checkable
 
-from oncutf.core.pyqt_imports import QMutex, QMutexLocker
+from PyQt5.QtCore import QMutex, QMutexLocker
 
 
 @runtime_checkable

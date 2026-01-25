@@ -11,7 +11,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Protocol
 
-from oncutf.core.pyqt_imports import QWidget, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
 
 if TYPE_CHECKING:
     from collections.abc import Callable

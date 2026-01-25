@@ -19,9 +19,10 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from PyQt5.QtCore import QModelIndex
+
     from oncutf.core.events.file_event_handlers import FileEventHandlers
     from oncutf.core.events.ui_event_handlers import UIEventHandlers
-    from oncutf.core.pyqt_imports import QModelIndex
     from oncutf.ui.events.context_menu import ContextMenuHandlers
 
 logger = get_cached_logger(__name__)

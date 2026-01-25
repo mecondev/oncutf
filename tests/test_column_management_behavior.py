@@ -18,8 +18,9 @@ Migrated from test_column_management_mixin.py to test the composition-based beha
 from unittest.mock import Mock
 
 import pytest
+from PyQt5.QtCore import QAbstractTableModel
+from PyQt5.QtWidgets import QHeaderView, QTableView
 
-from oncutf.core.pyqt_imports import QAbstractTableModel, QHeaderView, QTableView
 from oncutf.ui.behaviors.column_management import ColumnManagementBehavior
 
 

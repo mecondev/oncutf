@@ -3,7 +3,6 @@
 
 import subprocess
 import sys
-from pathlib import Path
 
 # Qt module mapping
 QT_MAP = {
@@ -46,7 +45,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QObject, pyqtSignal$/from PyQt5.QtCore import QObject, pyqtSignal/g',
         '{}', ';'
     ])
-    
+
     # QObject, QTimer, pyqtSignal
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -55,7 +54,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QObject, QTimer, pyqtSignal$/from PyQt5.QtCore import QObject, QTimer, pyqtSignal/g',
         '{}', ';'
     ])
-    
+
     # QApplication, Qt
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -64,7 +63,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QApplication, Qt$/from PyQt5.QtWidgets import QApplication\\nfrom PyQt5.QtCore import Qt/g',
         '{}', ';'
     ])
-    
+
     # QWidget
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -73,7 +72,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QWidget$/from PyQt5.QtWidgets import QWidget/g',
         '{}', ';'
     ])
-    
+
     # QPixmap
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -82,7 +81,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QPixmap$/from PyQt5.QtGui import QPixmap/g',
         '{}', ';'
     ])
-    
+
     # QThread
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -91,7 +90,7 @@ def fix_simple_imports():
         's/from oncutf\\.core\\.pyqt_imports import QThread$/from PyQt5.QtCore import QThread/g',
         '{}', ';'
     ])
-    
+
     # QMutexLocker
     subprocess.run([
         'find', 'oncutf', 'tests', 'examples', 'scripts', 'main.py',
@@ -105,23 +104,23 @@ def fix_simple_imports():
 def main():
     print("Fixing simple import patterns...")
     fix_simple_imports()
-    
+
     # Count remaining
     result = subprocess.run(
         ['grep', '-r', 'from oncutf.core.pyqt_imports import', '.', '--include=*.py'],
         capture_output=True,
         text=True
     )
-    
+
     remaining = len([l for l in result.stdout.splitlines() if '.venv' not in l])
     print(f"\nRemaining files with pyqt_imports: {remaining}")
-    
+
     if remaining > 0:
         print("\nRemaining imports (need manual fix):")
         for line in result.stdout.splitlines():
             if '.venv' not in line:
                 print(f"  {line}")
-    
+
     return 0
 
 

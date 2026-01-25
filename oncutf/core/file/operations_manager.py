@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
 
-from oncutf.core.pyqt_imports import QDesktopServices, QUrl
+from PyQt5.QtCore import QUrl
+from PyQt5.QtGui import QDesktopServices
+
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger

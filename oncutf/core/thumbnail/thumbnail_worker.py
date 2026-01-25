@@ -29,7 +29,9 @@ import queue
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QObject, QPixmap, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtGui import QPixmap
+
 from oncutf.core.thumbnail.providers import (
     ImageThumbnailProvider,
     ThumbnailGenerationError,

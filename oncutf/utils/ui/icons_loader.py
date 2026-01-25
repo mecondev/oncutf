@@ -19,7 +19,8 @@ Usage:
 
 import os
 
-from oncutf.core.pyqt_imports import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

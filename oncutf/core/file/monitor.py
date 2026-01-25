@@ -19,7 +19,8 @@ import platform
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QFileSystemWatcher, QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QFileSystemWatcher, QObject, QTimer, pyqtSignal
+
 from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
 if TYPE_CHECKING:

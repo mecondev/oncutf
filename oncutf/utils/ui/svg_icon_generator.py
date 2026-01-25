@@ -15,8 +15,11 @@ icon_map = generate_metadata_icons()
 
 from typing import ClassVar
 
+from PyQt5.QtCore import QByteArray
+from PyQt5.QtGui import QColor, QPainter, QPixmap
+from PyQt5.QtSvg import QSvgRenderer
+
 from oncutf.config import METADATA_ICON_COLORS
-from oncutf.core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
 from oncutf.utils.filesystem.path_utils import get_icons_dir
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

@@ -16,13 +16,14 @@ Responsibilities:
 import os
 from typing import Any
 
+from PyQt5.QtCore import Qt
+
 from oncutf.config import (
     ALLOWED_EXTENSIONS,
     COMPANION_FILES_ENABLED,
     SHOW_COMPANION_FILES_IN_TABLE,
 )
 from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
-from PyQt5.QtCore import Qt
 from oncutf.core.ui_managers.file_load_ui_service import FileLoadUIService
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper

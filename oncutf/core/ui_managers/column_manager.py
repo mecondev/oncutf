@@ -18,7 +18,8 @@ Classes:
 import contextlib
 from typing import Any
 
-from oncutf.core.pyqt_imports import QHeaderView, QTableView, QTreeView, QWidget
+from PyQt5.QtWidgets import QHeaderView, QTableView, QTreeView, QWidget
+
 from oncutf.core.ui_managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

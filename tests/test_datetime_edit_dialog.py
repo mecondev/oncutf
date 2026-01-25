@@ -6,8 +6,8 @@ Created: 2025-12-03
 from pathlib import Path
 
 import pytest
+from PyQt5.QtCore import QDateTime
 
-from oncutf.core.pyqt_imports import QDateTime
 from oncutf.ui.dialogs.datetime_edit_dialog import DateTimeEditDialog
 
 

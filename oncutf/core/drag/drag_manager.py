@@ -7,7 +7,9 @@ Author: Michael Economou
 Date: 2025-05-31
 """
 
-from oncutf.core.pyqt_imports import QApplication, QEvent, QObject, Qt
+from PyQt5.QtCore import QEvent, QObject, Qt
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_drag_cleanup
 

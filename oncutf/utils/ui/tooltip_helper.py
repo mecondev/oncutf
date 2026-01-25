@@ -20,6 +20,7 @@ Classes:
 from typing import ClassVar
 
 from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
+from PyQt5.QtGui import QHelpEvent
 from PyQt5.QtWidgets import QApplication, QLabel, QListWidget, QMenu, QTableWidget, QWidget
 
 from oncutf.config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
@@ -759,7 +760,6 @@ class TreeViewTooltipFilter(QObject):
 
         # Handle ToolTip event
         if event.type() == QEvent.ToolTip:
-            from oncutf.core.pyqt_imports import QHelpEvent
 
             if not isinstance(event, QHelpEvent):
                 return False

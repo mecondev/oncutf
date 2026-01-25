@@ -27,6 +27,7 @@ def has_active_progress_dialogs() -> bool:
 
     """
     from PyQt5.QtWidgets import QApplication
+
     from oncutf.utils.ui.progress_dialog import ProgressDialog
 
     active_dialogs = [

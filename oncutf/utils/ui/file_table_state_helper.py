@@ -20,6 +20,8 @@ Used in two scenarios:
 import logging
 from typing import TYPE_CHECKING, NamedTuple
 
+from PyQt5.QtCore import QItemSelection, QItemSelectionModel
+
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
     from oncutf.ui.widgets.file_table import FileTableView
@@ -205,7 +207,6 @@ class FileTableStateHelper:
                         # This ensures the selection is visible in the table
                         selection_model = file_table_view.selectionModel()
                         if selection_model:
-                            from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
                             model = file_table_view.model()
                             if model:
@@ -328,7 +329,6 @@ class FileTableStateHelper:
                     # CRITICAL: Also update Qt selection model for visual feedback
                     selection_model = file_table_view.selectionModel()
                     if selection_model:
-                        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
 
                         model = file_table_view.model()
                         if model:

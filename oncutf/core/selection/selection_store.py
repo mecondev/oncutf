@@ -17,6 +17,7 @@ import time
 from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 

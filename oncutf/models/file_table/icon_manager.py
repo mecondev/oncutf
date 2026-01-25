@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
-from oncutf.core.pyqt_imports import QColor, QIcon, QPainter, QPixmap
+from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
+
 from oncutf.utils.filesystem.file_status_helpers import get_hash_for_file, has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import load_metadata_icons

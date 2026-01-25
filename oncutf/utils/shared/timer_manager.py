@@ -14,6 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

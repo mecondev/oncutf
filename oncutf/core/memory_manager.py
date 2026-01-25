@@ -24,8 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import psutil
-
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

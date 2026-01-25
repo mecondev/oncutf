@@ -12,7 +12,10 @@ Performance optimizations (2025-12-20):
 - Fast transformation: use Qt.FastTransformation for better performance
 """
 
-from oncutf.core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QLabel, QWidget
+
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.filesystem.path_utils import get_images_dir
 from oncutf.utils.logging.logger_factory import get_cached_logger

@@ -21,11 +21,12 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
+from PyQt5.QtCore import QObject, pyqtSignal
+
 from oncutf.core.batch.processor import BatchProcessorFactory
 from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance
-from PyQt5.QtCore import QObject, pyqtSignal
 from oncutf.core.rename.data_classes import (
     ExecutionItem,
     ExecutionResult,

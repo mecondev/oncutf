@@ -21,8 +21,9 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from oncutf.config import ALLOWED_EXTENSIONS
 from PyQt5.QtCore import Qt
+
+from oncutf.config import ALLOWED_EXTENSIONS
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext

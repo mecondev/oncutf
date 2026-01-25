@@ -26,8 +26,8 @@ from enum import Enum
 from typing import Any
 
 import psutil
+from PyQt5.QtCore import QMutex, QMutexLocker, QObject, QThread, QTimer, pyqtSignal
 
-from oncutf.core.pyqt_imports import QMutex, QMutexLocker, QObject, QThread, QTimer, pyqtSignal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

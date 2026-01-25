@@ -16,6 +16,10 @@ Features:
 from collections.abc import Callable
 from typing import ClassVar, Literal
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCloseEvent, QKeyEvent
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
+
 from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
     EXTENDED_METADATA_COLOR,
@@ -28,7 +32,6 @@ from oncutf.config import (
     SAVE_BG_COLOR,
     SAVE_COLOR,
 )
-from oncutf.core.pyqt_imports import QCloseEvent, QDialog, QKeyEvent, Qt, QVBoxLayout, QWidget
 from oncutf.ui.widgets.progress_widget import ProgressWidget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.cursor_helper import force_restore_cursor

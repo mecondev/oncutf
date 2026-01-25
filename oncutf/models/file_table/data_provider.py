@@ -17,8 +17,9 @@ if TYPE_CHECKING:
     from oncutf.models.file_table.icon_manager import IconManager
     from oncutf.models.file_table.model_column_manager import ColumnManager
 
+from PyQt5.QtCore import QModelIndex, Qt, QVariant
+
 from oncutf.core.application_context import get_app_context
-from oncutf.core.pyqt_imports import QModelIndex, Qt, QVariant
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

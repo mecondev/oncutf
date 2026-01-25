@@ -10,7 +10,7 @@ Manages loading and providing access to the Inter font family
 import logging
 from typing import ClassVar
 
-from oncutf.core.pyqt_imports import QFont, QFontDatabase
+from PyQt5.QtGui import QFont, QFontDatabase
 
 logger = logging.getLogger(__name__)
 

@@ -9,6 +9,8 @@ Separates initialization logic from MainWindow class to reduce complexity.
 
 from typing import TYPE_CHECKING, Any
 
+from PyQt5.QtCore import Qt
+
 from oncutf.app.services.icons import (
     create_colored_icon,
     get_icons_loader,
@@ -16,7 +18,6 @@ from oncutf.app.services.icons import (
     load_preview_status_icons,
     prepare_status_icons,
 )
-from PyQt5.QtCore import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

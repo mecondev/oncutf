@@ -15,8 +15,10 @@ Supports:
 
 import os
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPixmap
+
 from oncutf.config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
-from oncutf.core.pyqt_imports import QIcon, QPixmap, Qt
 
 # Initialize Logger
 from oncutf.utils.logging.logger_factory import get_cached_logger

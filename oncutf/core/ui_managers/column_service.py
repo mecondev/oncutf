@@ -25,6 +25,7 @@ from enum import Enum
 from typing import Any, cast
 
 from PyQt5.QtCore import Qt
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

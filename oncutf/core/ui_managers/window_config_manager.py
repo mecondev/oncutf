@@ -8,7 +8,9 @@ Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
 
-from oncutf.core.pyqt_imports import QApplication, QMainWindow, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow
+
 from oncutf.core.ui_managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.json_config_manager import get_app_config_manager
