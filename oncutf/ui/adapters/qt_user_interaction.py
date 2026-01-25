@@ -222,3 +222,14 @@ class QtProgressDialogAdapter:
         """Raise the dialog to the top of the window stack."""
         if hasattr(self._dialog, "raise_"):
             self._dialog.raise_()
+
+    def set_time_info(self, elapsed: float, estimated_total: float) -> None:
+        """Set time information for the progress dialog.
+
+        Args:
+            elapsed: Elapsed time in seconds
+            estimated_total: Estimated total time in seconds
+
+        """
+        if hasattr(self._dialog, "set_time_info"):
+            self._dialog.set_time_info(elapsed, estimated_total)
