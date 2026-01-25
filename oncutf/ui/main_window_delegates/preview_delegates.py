@@ -65,13 +65,15 @@ class PreviewDelegates:
         """Get icon paths for preview status indicators."""
         import os
 
-        from oncutf.config import ASSETS_ICONS_DIR
+        from oncutf.utils.filesystem.path_utils import get_icons_dir
+
+        icons_dir = str(get_icons_dir())
 
         return {
-            'valid': os.path.join(ASSETS_ICONS_DIR, 'preview_valid.svg'),
-            'invalid': os.path.join(ASSETS_ICONS_DIR, 'preview_invalid.svg'),
-            'unchanged': os.path.join(ASSETS_ICONS_DIR, 'preview_unchanged.svg'),
-            'duplicate': os.path.join(ASSETS_ICONS_DIR, 'preview_duplicate.svg'),
+            'valid': os.path.join(icons_dir, 'valid.png'),
+            'invalid': os.path.join(icons_dir, 'invalid.png'),
+            'unchanged': os.path.join(icons_dir, 'unchanged.png'),
+            'duplicate': os.path.join(icons_dir, 'duplicate.png'),
         }
 
     def compute_max_filename_width(self, file_list: list) -> int:
