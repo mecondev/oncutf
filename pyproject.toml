@@ -22,15 +22,12 @@ classifiers = [
 ]
 dependencies = [
     "PyQt5>=5.15.11",
-    "PyQt5-Qt5>=5.15.2",
-    "PyQt5-sip>=12.15.0",
-    "PyQt5-stubs>=5.15.6.0",
-    "Pillow>=9.0.0",
+    "Pillow>=10.1.0",
     "charset-normalizer>=3.0.0",
     "psutil>=6.1.0",
     "aiofiles>=24.1.0",
     "typing_extensions>=4.0.0",
-    "rawpy>=0.21.0",
+    "rawpy>=0.24.0",  # Python 3.12 wheels available from 0.24.0+
 ]
 
 [project.optional-dependencies]
@@ -41,7 +38,7 @@ dev = [
     "pytest-mock>=3.14.1",
     "ruff>=0.3.0",
     "mypy>=1.8.0",
-    "black>=24.0.0"
+    "PyQt5-stubs>=5.15.6.0"
 ]
 test = [
     "pytest>=8.3.5",
@@ -54,10 +51,26 @@ test = [
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+# Include non-Python files (fonts, icons, qss, images) loaded at runtime
+include-package-data = true
+
 [tool.setuptools.packages.find]
 # IMPORTANT: Must match actual package layout (oncutf/core/, oncutf/ui/, etc.)
 include = ["oncutf*"]
-exclude = ["tests*", "docs*", "examples*", "scripts*", "temp*", "backups*", "reports*", "logs*", "assets*", "resources*"]
+exclude = ["tests*", "docs*", "examples*", "scripts*", "temp*", "backups*", "reports*", "logs*"]
+
+[tool.setuptools.package-data]
+# Runtime assets loaded via get_project_root() / get_icons_dir() helpers
+# Located in resources/ at project root (not in oncutf/ package)
+oncutf = [
+    "../resources/fonts/**/*.ttf",
+    "../resources/icons/**/*.svg",
+    "../resources/icons/**/*.png",
+    "../resources/images/**/*.png",
+    "../resources/styles/**/*.qss",
+    "ui/widgets/node_editor/themes/**/*.qss"
+]
 
 [project.urls]
 Homepage = "https://github.com/mecondev/oncutf"
@@ -412,15 +425,6 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod"
 ]
-
-# ----------------------------------------
-# Black configuration
-# ----------------------------------------
-[tool.black]
-line-length = 100
-target-version = ['py312']
-include = '\.pyi?$'
-extend-exclude = '/(\.eggs|\.git|\.hg|\.mypy_cache|\.tox|\.venv|build|dist|backups|temp|reports)/'
 
 # ----------------------------------------
 # Pre-commit hooks configuration
