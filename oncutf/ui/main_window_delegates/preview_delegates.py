@@ -57,8 +57,22 @@ class PreviewDelegates:
         """Update preview tables from pairs - UI layer operation."""
         # This is a UI operation - update preview tables view directly
         if hasattr(self, "preview_tables_view"):
-            # TODO: Icon paths should be passed from the calling context
-            self.preview_tables_view.update_from_pairs(name_pairs, {}, {})
+            # Get icon paths from assets
+            icon_paths = self._get_preview_icon_paths()
+            self.preview_tables_view.update_from_pairs(name_pairs, {}, icon_paths)
+
+    def _get_preview_icon_paths(self) -> dict[str, str]:
+        """Get icon paths for preview status indicators."""
+        import os
+
+        from oncutf.config import ASSETS_ICONS_DIR
+
+        return {
+            'valid': os.path.join(ASSETS_ICONS_DIR, 'preview_valid.svg'),
+            'invalid': os.path.join(ASSETS_ICONS_DIR, 'preview_invalid.svg'),
+            'unchanged': os.path.join(ASSETS_ICONS_DIR, 'preview_unchanged.svg'),
+            'duplicate': os.path.join(ASSETS_ICONS_DIR, 'preview_duplicate.svg'),
+        }
 
     def compute_max_filename_width(self, file_list: list) -> int:
         """Compute max filename width via PreviewManager."""
