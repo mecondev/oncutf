@@ -10,7 +10,7 @@ Provides consistent logic across all file loading contexts (import, browse, drag
 
 from enum import Enum
 
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
 
 
 class ModifierAction(Enum):

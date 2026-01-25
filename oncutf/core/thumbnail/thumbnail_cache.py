@@ -28,7 +28,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 
-from oncutf.core.pyqt_imports import QPixmap
+from PyQt5.QtGui import QPixmap
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.paths import AppPaths
 

@@ -246,7 +246,7 @@ def main() -> int:
 
             # Start background initialization worker
             from oncutf.core.initialization.initialization_worker import InitializationWorker
-            from oncutf.core.pyqt_imports import QThread
+            from PyQt5.QtCore import QThread
 
             worker = InitializationWorker()
             worker_thread = QThread()

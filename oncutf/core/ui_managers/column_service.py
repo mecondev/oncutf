@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, cast
 
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -94,7 +94,7 @@ class UnifiedColumnService:
 
         # Method 2: Try to find via QApplication
         try:
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
 
             app = QApplication.instance()
             if app and hasattr(app, "allWidgets"):

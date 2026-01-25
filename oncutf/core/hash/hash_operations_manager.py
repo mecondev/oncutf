@@ -329,7 +329,7 @@ class HashOperationsManager:
         ):
             try:
                 from oncutf.core.application_context import get_app_context
-                from oncutf.core.pyqt_imports import Qt
+                from PyQt5.QtCore import Qt
 
                 file_store = get_app_context().file_store
                 model = self.parent_window.file_table_view.model()
@@ -345,7 +345,7 @@ class HashOperationsManager:
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
 
                             # Force immediate repaint
-                            from oncutf.core.pyqt_imports import QApplication
+                            from PyQt5.QtWidgets import QApplication
                             app_instance = QApplication.instance()
                             if app_instance:
                                 app_instance.processEvents()

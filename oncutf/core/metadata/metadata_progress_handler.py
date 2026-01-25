@@ -109,7 +109,7 @@ class MetadataProgressHandler:
 
         """
         try:
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
             from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
 
             # Create dialog
@@ -187,7 +187,7 @@ class MetadataProgressHandler:
 
         """
         try:
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
             from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
 
             # Create dialog

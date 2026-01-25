@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QWidget
+    from PyQt5.QtWidgets import QWidget
 
 
 def select_folder(

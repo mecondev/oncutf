@@ -36,7 +36,7 @@ class TestHeaderInteractionController:
         """Test toggle all action calls main window correctly."""
         controller.handle_toggle_all()
 
-        from oncutf.core.pyqt_imports import Qt
+        from PyQt5.QtCore import Qt
 
         mock_main_window.handle_header_toggle.assert_called_once_with(Qt.Checked)
 
@@ -48,7 +48,7 @@ class TestHeaderInteractionController:
 
     def test_handle_sort_with_force_order(self, controller, mock_main_window):
         """Test sort action with forced order."""
-        from oncutf.core.pyqt_imports import Qt
+        from PyQt5.QtCore import Qt
 
         controller.handle_sort(column=5, force_order=Qt.AscendingOrder)
 

@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from oncutf.config import ALLOWED_EXTENSIONS
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
@@ -310,7 +310,7 @@ class FileLoadController:
             return {"success": False, "errors": [str(e)]}
         finally:
             # Ensure wait cursor is restored
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
             t_restore = time.time()
             logger.debug("[DROP-CONTROLLER] Restoring cursor at +%.3fms", (t_restore-t0)*1000, extra={"dev_only": True})
             QApplication.restoreOverrideCursor()

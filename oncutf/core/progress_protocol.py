@@ -22,7 +22,7 @@ Benefits:
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 @dataclass

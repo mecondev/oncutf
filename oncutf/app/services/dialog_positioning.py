@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QWidget
+    from PyQt5.QtWidgets import QWidget
 
 
 def ensure_dialog_centered(dialog: QWidget, parent: QWidget | None = None) -> None:

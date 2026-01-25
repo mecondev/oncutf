@@ -7,7 +7,7 @@ import pytest
 
 from oncutf.config import METADATA_ICON_COLORS
 from oncutf.core.metadata.tree_model_builder import build_metadata_tree_model
-from oncutf.core.pyqt_imports import QApplication
+from PyQt5.QtWidgets import QApplication
 
 
 @pytest.fixture

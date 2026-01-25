@@ -579,7 +579,7 @@ class WindowConfigManager:
             and result.get("sort_column") is not None
             and hasattr(self.main_window, "sort_by_column")
         ):
-            from oncutf.core.pyqt_imports import Qt
+            from PyQt5.QtCore import Qt
 
             qt_sort_order = Qt.AscendingOrder if result["sort_order"] == 0 else Qt.DescendingOrder
             self.main_window.sort_by_column(result["sort_column"], qt_sort_order)

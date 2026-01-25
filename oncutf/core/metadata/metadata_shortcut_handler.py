@@ -69,7 +69,8 @@ class MetadataShortcutHandler:
             - skip_metadata = False & use_extended = True  -> Extended scan (Ctrl+Shift)
 
         """
-        from oncutf.core.pyqt_imports import QApplication, Qt
+        from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt
 
         modifiers = modifier_state
         if modifiers is None:
@@ -112,7 +113,8 @@ class MetadataShortcutHandler:
             bool: True if extended metadata should be used
 
         """
-        from oncutf.core.pyqt_imports import QApplication, Qt
+        from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt
 
         modifiers = modifier_state
         if modifiers is None:

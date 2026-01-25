@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, ClassVar
 
-from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ from oncutf.app.services.icons import (
     load_preview_status_icons,
     prepare_status_icons,
 )
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -363,7 +363,7 @@ class InitializationOrchestrator:
 
         # Enable updates and finalize layout before show()
         self.window.setUpdatesEnabled(True)
-        from oncutf.core.pyqt_imports import QApplication
+        from PyQt5.QtWidgets import QApplication
 
         QApplication.processEvents()
 

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Protocol
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import Qt
+    from PyQt5.QtCore import Qt
 
 logger = get_cached_logger(__name__)
 
@@ -54,7 +54,7 @@ class HeaderInteractionController:
         This is triggered when user clicks on status column (column 0).
         """
         logger.info("[CONTROLLER] Toggle all files")
-        from oncutf.core.pyqt_imports import Qt
+        from PyQt5.QtCore import Qt
         checked = Qt.Checked
         self._main_window.handle_header_toggle(checked)
 

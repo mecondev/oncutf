@@ -26,7 +26,7 @@ def has_active_progress_dialogs() -> bool:
         True if at least one ProgressDialog is visible, False otherwise.
 
     """
-    from oncutf.core.pyqt_imports import QApplication
+    from PyQt5.QtWidgets import QApplication
     from oncutf.utils.ui.progress_dialog import ProgressDialog
 
     active_dialogs = [

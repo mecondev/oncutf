@@ -13,7 +13,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

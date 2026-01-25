@@ -9,7 +9,14 @@ Handles UI layout setup: panels, splitters, and widget hierarchy.
 import platform
 from typing import cast
 
-from PyQt5.QtCore import QDir, QStringListModel, Qt
+from PyQt5.QtCore import (
+    QDir,
+    QItemSelection,
+    QItemSelectionModel,
+    QItemSelectionRange,
+    QStringListModel,
+    Qt,
+)
 from PyQt5.QtGui import QIcon, QKeySequence, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -594,7 +601,6 @@ class LayoutController:
                 return
 
             # Build selection
-            from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionRange
 
             selection = QItemSelection()
             selected_file_set = set(selected_files)
@@ -611,7 +617,6 @@ class LayoutController:
 
             # Apply selection
             if not selection.isEmpty():
-                from oncutf.core.pyqt_imports import QItemSelectionModel
 
                 selection_model.select(selection, QItemSelectionModel.Select)
                 logger.debug(

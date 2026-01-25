@@ -166,7 +166,7 @@ class ColumnManager:
             viewport_width = table_view.viewport().width()
 
             # Add scrollbar if content wider than viewport
-            from oncutf.core.pyqt_imports import Qt
+            from PyQt5.QtCore import Qt
 
             if total_width_needed > viewport_width:
                 table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)

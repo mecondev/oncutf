@@ -25,7 +25,7 @@ from oncutf.core.batch.processor import BatchProcessorFactory
 from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance
-from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 from oncutf.core.rename.data_classes import (
     ExecutionItem,
     ExecutionResult,

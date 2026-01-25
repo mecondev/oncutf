@@ -377,7 +377,7 @@ def update_file_item_metadata(
     # Emit dataChanged signal for UI update
     if parent_window and hasattr(parent_window, "file_model"):
         try:
-            from oncutf.core.pyqt_imports import Qt
+            from PyQt5.QtCore import Qt
 
             # Find the row and emit dataChanged
             for i, file in enumerate(parent_window.file_model.files):

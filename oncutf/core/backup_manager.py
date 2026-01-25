@@ -25,7 +25,7 @@ from oncutf.config import (
     DEFAULT_BACKUP_INTERVAL,
     DEFAULT_PERIODIC_BACKUP_ENABLED,
 )
-from oncutf.core.pyqt_imports import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from oncutf.utils.logging.logger_helper import get_logger
 
 logger = get_logger(__name__)

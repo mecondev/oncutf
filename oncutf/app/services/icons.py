@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 from oncutf.utils.ui.icons_loader import ThemeIconLoader
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QIcon, QPixmap
+    from PyQt5.QtGui import QIcon, QPixmap
 
 
 def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, "QIcon"]:

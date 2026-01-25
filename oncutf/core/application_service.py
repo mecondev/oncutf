@@ -11,7 +11,7 @@ Date: 2025-06-15
 import os
 from typing import Any
 
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

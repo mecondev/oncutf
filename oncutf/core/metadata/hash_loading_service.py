@@ -292,7 +292,7 @@ class HashLoadingService:
                     pass
 
             # Force immediate UI update to show out-of-order completion
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
 
             QApplication.processEvents()
 
@@ -587,7 +587,7 @@ class HashLoadingService:
             self._hash_progress_dialog.set_filename(filename)
 
             # Force UI update
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
 
             app_instance = QApplication.instance()
             if app_instance:
@@ -624,7 +624,7 @@ class HashLoadingService:
                 self._hash_progress_dialog.set_time_info(elapsed, estimated_total)
 
             # Force UI update
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
 
             app_instance = QApplication.instance()
             if app_instance:
@@ -654,7 +654,7 @@ class HashLoadingService:
                             right_index = model.index(row, model.columnCount() - 1)
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
 
-                            from oncutf.core.pyqt_imports import QApplication
+                            from PyQt5.QtWidgets import QApplication
 
                             app_instance = QApplication.instance()
                             if app_instance:

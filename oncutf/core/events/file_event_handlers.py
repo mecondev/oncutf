@@ -13,7 +13,7 @@ import os
 from typing import Any
 
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
-from oncutf.core.pyqt_imports import QApplication
+from PyQt5.QtWidgets import QApplication
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

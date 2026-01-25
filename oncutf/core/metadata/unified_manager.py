@@ -25,7 +25,7 @@ from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from oncutf.core.pyqt_imports import QApplication
+from PyQt5.QtWidgets import QApplication
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

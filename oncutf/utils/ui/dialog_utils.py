@@ -8,7 +8,7 @@ Utility functions for dialog and widget positioning and management.
 Provides centralized logic for common dialog operations like centering.
 """
 
-from oncutf.core.pyqt_imports import QWidget
+from PyQt5.QtWidgets import QWidget
 
 
 def center_widget_on_parent(widget: QWidget, parent: QWidget | None = None) -> None:
