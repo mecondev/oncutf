@@ -216,9 +216,10 @@ class InitializationManager:
 
     def update_status_from_preview(self, status_html: str) -> None:
         """Updates status from preview widgets.
-        Delegates to PreviewManager for status updates from preview.
+        Delegates to StatusManager for status updates from preview.
         """
-        self.main_window.preview_manager.update_status_from_preview(status_html)
+        if hasattr(self.main_window, "status_manager"):
+            self.main_window.status_manager.update_status_from_preview(status_html)
 
     def setup_application_components(self) -> None:
         """Setup and initialize application components.
