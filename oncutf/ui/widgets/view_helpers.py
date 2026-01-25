@@ -11,7 +11,8 @@ Currently includes:
 - update_info_icon: visually refreshes the icon cell in column 0 for a given file.
 """
 
-from oncutf.core.pyqt_imports import QTableView
+from PyQt5.QtWidgets import QTableView
+
 from oncutf.utils.filesystem.path_utils import paths_equal
 
 

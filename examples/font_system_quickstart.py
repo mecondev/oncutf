@@ -23,7 +23,7 @@ This guide shows how to use the new font system in oncutf.
 # PATTERN 1: Using Dynamic Fonts in Dialogs
 # ============================================================================
 
-from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.ui.stylesheet_utils import inject_font_family
 
 

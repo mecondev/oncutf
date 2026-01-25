@@ -28,7 +28,7 @@ from oncutf.config import (
     SHOW_COMPANION_FILES_IN_TABLE,
     CompanionFileMode,
 )
-from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 

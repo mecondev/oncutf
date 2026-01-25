@@ -8,7 +8,8 @@ Date: 2026-01-05
 """
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import Qt
+from PyQt5.QtCore import Qt
+
 from oncutf.ui.behaviors.column_management.header_configurator import HeaderConfigurator
 from oncutf.ui.behaviors.column_management.protocols import ColumnManageableWidget
 from oncutf.ui.behaviors.column_management.visibility_manager import ColumnVisibilityManager

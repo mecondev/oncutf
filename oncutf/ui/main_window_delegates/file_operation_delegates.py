@@ -64,7 +64,7 @@ class FileOperationDelegates:
         logger.debug("[DROP-SINGLE] load_single_item_from_drop START: %s", path, extra={"dev_only": True})
 
         # Set wait cursor IMMEDIATELY before any processing.
-        from oncutf.core.pyqt_imports import QApplication
+        from PyQt5.QtWidgets import QApplication
 
         t1 = time.time()
         logger.debug(

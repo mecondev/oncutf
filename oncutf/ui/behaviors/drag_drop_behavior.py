@@ -16,6 +16,10 @@ Protocol contract:
 
 from typing import TYPE_CHECKING, Protocol
 
+from PyQt5.QtCore import QEvent, QModelIndex, Qt
+from PyQt5.QtGui import QCursor, QDropEvent, QMouseEvent
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.core.drag.drag_manager import DragManager
 from oncutf.core.drag.drag_visual_manager import (
     DragType,
@@ -24,21 +28,12 @@ from oncutf.core.drag.drag_visual_manager import (
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
-from oncutf.core.pyqt_imports import (
-    QApplication,
-    QCursor,
-    QDropEvent,
-    QEvent,
-    QModelIndex,
-    QMouseEvent,
-    Qt,
-)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 from oncutf.utils.ui.file_drop_helper import extract_file_paths
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QRect
+    from PyQt5.QtCore import QRect
 
 logger = get_cached_logger(__name__)
 

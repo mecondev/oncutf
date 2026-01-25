@@ -17,17 +17,16 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from oncutf.controllers.header_interaction_controller import HeaderInteractionController
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import QEvent, QPoint, Qt
+from PyQt5.QtWidgets import (
     QAction,
-    QEvent,
     QHeaderView,
     QMenu,
-    QPoint,
     QStyle,
-    Qt,
     QWidget,
 )
+
+from oncutf.controllers.header_interaction_controller import HeaderInteractionController
 from oncutf.ui.behaviors.column_visibility_menu_builder import ColumnVisibilityMenuBuilder
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
@@ -73,7 +72,7 @@ class DropIndicatorWidget(QWidget):
         painter.setRenderHint(QPainter.Antialiasing, True)
 
         # Get text color from theme for indicator
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
         theme = get_theme_manager()
         text_color = theme.get_color("table_header_text")
         indicator_color = QColor(text_color) if isinstance(text_color, str) else text_color
@@ -693,7 +692,7 @@ class InteractiveHeader(QHeaderView):
             return
 
         try:
-            from oncutf.core.theme_manager import get_theme_manager
+            from oncutf.ui.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
             header_bg = theme.get_color("table_header_bg")
@@ -735,7 +734,7 @@ class InteractiveHeader(QHeaderView):
         menu = QMenu(self)
 
         # Apply theme styling
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())

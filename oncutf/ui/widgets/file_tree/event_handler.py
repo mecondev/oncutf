@@ -15,12 +15,16 @@ import os
 import platform
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QApplication, QCursor, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QKeyEvent
+    from PyQt5.QtGui import QKeyEvent
+
     from oncutf.ui.widgets.file_tree.view import FileTreeView
 
 logger = get_cached_logger(__name__)

@@ -11,20 +11,19 @@ Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
 
-import oncutf.config
-from oncutf.controllers.module_orchestrator import ModuleOrchestrator
-from oncutf.core.pyqt_imports import (
-    QCursor,
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import (
     QFrame,
     QScrollArea,
-    Qt,
-    QTimer,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+import oncutf.config
+from oncutf.controllers.module_orchestrator import ModuleOrchestrator
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust

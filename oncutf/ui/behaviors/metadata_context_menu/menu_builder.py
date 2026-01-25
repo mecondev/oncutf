@@ -78,7 +78,7 @@ class MenuBuilder:
         self._widget._current_menu = menu
 
         # Apply theme styling
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())

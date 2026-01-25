@@ -108,7 +108,7 @@ class ThumbnailViewportWidget(QWidget):
 
     def _setup_ui(self) -> None:
         """Set up the UI components."""
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

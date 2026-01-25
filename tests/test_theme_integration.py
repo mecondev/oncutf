@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 try:
     from PyQt5.QtWidgets import QApplication
 
-    from oncutf.core.theme_manager import ThemeManager, get_theme_manager
+    from oncutf.ui.theme_manager import ThemeManager, get_theme_manager
 
     PYQT5_AVAILABLE = True
 except ImportError:

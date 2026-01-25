@@ -10,8 +10,11 @@ Contains:
 - ValidatedLineEdit: Enhanced QLineEdit with validation and tooltip support
 """
 
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QLineEdit, QWidget
+
 from oncutf.config import INVALID_FILENAME_CHARS
-from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QWidget, pyqtSignal
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.naming.filename_validator import (

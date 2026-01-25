@@ -11,27 +11,22 @@ Date: 2025-05-22
 
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QEvent, QModelIndex
-
-from oncutf.core.pyqt_imports import (
-    QColor,
-    QCursor,
-    QIcon,
-    QPainter,
-    QPen,
+from PyQt5.QtCore import QEvent, QModelIndex, Qt
+from PyQt5.QtGui import QColor, QCursor, QIcon, QPainter, QPen
+from PyQt5.QtWidgets import (
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
-    Qt,
     QTableView,
     QTreeView,
     QWidget,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.theme_manager import ThemeManager
+    from oncutf.ui.theme_manager import ThemeManager
 
 logger = get_cached_logger(__name__)
 
@@ -441,7 +436,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
             # Root-level group headers only: use dimmed color from theme
             from PyQt5.QtGui import QColor, QPalette
 
-            from oncutf.core.theme_manager import ThemeManager
+            from oncutf.ui.theme_manager import ThemeManager
 
             theme = ThemeManager()
             group_color = theme.get_color("metadata_group_text")

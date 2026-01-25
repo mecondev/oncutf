@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 try:
     from PyQt5.QtWidgets import QApplication, QTreeView
 
-    from oncutf.core.theme_manager import get_theme_manager
+    from oncutf.ui.theme_manager import get_theme_manager
     from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
 
     PYQT5_AVAILABLE = True

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -19,6 +19,7 @@ from oncutf.core.pyqt_imports import (
     QPushButton,
     QVBoxLayout,
 )
+
 from oncutf.models.validation_result import ValidationIssueType
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 

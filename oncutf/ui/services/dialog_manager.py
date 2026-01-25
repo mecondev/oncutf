@@ -10,7 +10,8 @@ Centralizes dialog creation, validation logic, and user confirmations.
 
 import os
 
-from oncutf.core.pyqt_imports import QApplication, QFileDialog, QWidget
+from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

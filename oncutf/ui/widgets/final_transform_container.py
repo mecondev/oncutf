@@ -8,19 +8,17 @@ Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
 
-from oncutf.config import ICON_SIZES
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPainter,
-    QPixmap,
     QPushButton,
-    QSize,
-    Qt,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
+
+from oncutf.config import ICON_SIZES
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update

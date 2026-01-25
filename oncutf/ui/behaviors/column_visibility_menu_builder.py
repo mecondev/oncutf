@@ -11,8 +11,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
+from PyQt5.QtWidgets import QAction, QMenu
+
 from oncutf.config import FILE_TABLE_COLUMN_CONFIG
-from oncutf.core.pyqt_imports import QAction, QMenu
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_menu_icon
 

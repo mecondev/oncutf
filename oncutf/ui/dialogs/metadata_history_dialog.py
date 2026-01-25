@@ -35,7 +35,7 @@ from PyQt5.QtWidgets import (
 
 from oncutf.app.services import get_metadata_command_manager, get_rename_history_manager
 from oncutf.config import UNDO_REDO_SETTINGS
-from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
@@ -145,7 +145,7 @@ class MetadataHistoryDialog(QDialog):
         self.operations_table.verticalHeader().setVisible(False)
 
         # Set row height from theme manager
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         self.operations_table.verticalHeader().setDefaultSectionSize(

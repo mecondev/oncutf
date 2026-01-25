@@ -14,20 +14,20 @@ Features:
 - Custom table widgets with resize signal handling
 """
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
     QHeaderView,
-    QIcon,
     QLabel,
-    Qt,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.naming.filename_validator import (
     get_validation_error_message,
@@ -180,7 +180,7 @@ class PreviewTablesView(QWidget):
             table.horizontalHeader().setVisible(False)
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set row height from theme manager
-            from oncutf.core.theme_manager import get_theme_manager
+            from oncutf.ui.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
             table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
@@ -209,7 +209,7 @@ class PreviewTablesView(QWidget):
         bg_color = get_theme_manager().get_color("button_disabled_bg")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         # Use same row height from theme manager
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         self.icon_table.verticalHeader().setDefaultSectionSize(

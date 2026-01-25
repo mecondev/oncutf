@@ -15,7 +15,8 @@ Provides options:
 Includes "Apply to All" checkbox for batch operations.
 """
 
-from oncutf.core.pyqt_imports import QDialog, QWidget
+from PyQt5.QtWidgets import QDialog, QWidget
+
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

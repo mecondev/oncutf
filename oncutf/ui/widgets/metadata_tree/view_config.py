@@ -19,12 +19,13 @@ from __future__ import annotations
 import contextlib
 from typing import TYPE_CHECKING, Any
 
-from oncutf.config import METADATA_TREE_COLUMN_WIDTHS
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
-    Qt,
 )
+
+from oncutf.config import METADATA_TREE_COLUMN_WIDTHS
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -213,7 +214,7 @@ class MetadataTreeViewConfig:
 
             # Disable hover effect on metadata tree header
             try:
-                from oncutf.core.theme_manager import get_theme_manager
+                from oncutf.ui.theme_manager import get_theme_manager
                 theme = get_theme_manager()
                 header_bg = theme.get_color("table_header_bg")
                 header_text = theme.get_color("table_header_text")

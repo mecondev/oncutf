@@ -23,7 +23,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QModelIndex
+    from PyQt5.QtCore import QModelIndex
 
 logger = get_cached_logger(__name__)
 

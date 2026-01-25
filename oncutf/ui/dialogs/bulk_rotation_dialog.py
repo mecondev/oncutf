@@ -15,21 +15,22 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
-from oncutf.config import QLABEL_MUTED_TEXT
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (
     QCheckBox,
     QDialog,
-    QFont,
     QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    Qt,
     QVBoxLayout,
     QWidget,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.config import QLABEL_MUTED_TEXT
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.stylesheet_utils import inject_font_family
 

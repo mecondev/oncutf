@@ -103,7 +103,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Apply theme-aware consistent styling with Inter fonts
         try:
-            from oncutf.core.theme_manager import get_theme_manager
+            from oncutf.ui.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
             menu_style = f"""

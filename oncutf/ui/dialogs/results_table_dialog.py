@@ -17,6 +17,20 @@ Features:
 
 from pathlib import Path
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QPushButton,
+    QTableView,
+    QVBoxLayout,
+)
+
 from oncutf.config import (
     HASH_LIST_CONTENT_MARGINS,
     HASH_LIST_FONT_SIZE,
@@ -33,21 +47,8 @@ from oncutf.config import (
     RESULTS_TABLE_MIN_HEIGHT,
     RESULTS_TABLE_MIN_WIDTH,
 )
-from oncutf.core.pyqt_imports import (
-    QAction,
-    QApplication,
-    QDialog,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QMenu,
-    QPushButton,
-    Qt,
-    QTableView,
-    QVBoxLayout,
-)
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.results_table_model import ResultsTableModel
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

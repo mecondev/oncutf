@@ -14,21 +14,20 @@ Layout:
 └─────────────────────────┴───────┘
 """
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import (
     QColorDialog,
     QGridLayout,
     QHBoxLayout,
-    QIcon,
-    QPixmap,
     QPushButton,
     QSize,
-    Qt,
     QToolButton,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
@@ -55,7 +54,7 @@ class ColorButton(QToolButton):
         self.color = color
 
         from oncutf.config import COLOR_SWATCH_SIZE
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         self.setFixedSize(COLOR_SWATCH_SIZE + 2, COLOR_SWATCH_SIZE)
         TooltipHelper.setup_tooltip(self, color.upper())

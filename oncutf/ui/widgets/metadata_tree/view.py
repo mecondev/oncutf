@@ -25,21 +25,21 @@ Date: 2025-05-21
 
 from typing import Any
 
-from oncutf.config import METADATA_TREE_USE_PROXY
-from oncutf.core.pyqt_imports import (
-    QAbstractItemView,
-    QDragEnterEvent,
-    QDragMoveEvent,
-    QDropEvent,
+from PyQt5.QtCore import (
     QModelIndex,
     QPoint,
     QSortFilterProxyModel,
-    QStandardItemModel,
     Qt,
-    QTreeView,
-    QWidget,
     pyqtSignal,
 )
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QStandardItemModel
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QTreeView,
+    QWidget,
+)
+
+from oncutf.config import METADATA_TREE_USE_PROXY
 from oncutf.ui.behaviors.metadata_cache_behavior import MetadataCacheBehavior
 from oncutf.ui.behaviors.metadata_context_menu import MetadataContextMenuBehavior
 from oncutf.ui.behaviors.metadata_edit import MetadataEditBehavior
@@ -314,8 +314,8 @@ class MetadataTreeView(QTreeView):
         self._view_config.setup_tree_view_properties()
 
         # Install custom delegate for full-row hover and consistent painting
-        from oncutf.core.theme_manager import get_theme_manager
         from oncutf.ui.delegates.ui_delegates import MetadataTreeItemDelegate
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         delegate = MetadataTreeItemDelegate(self, theme=theme)

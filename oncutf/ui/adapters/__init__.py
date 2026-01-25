@@ -11,8 +11,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
+from oncutf.ui.adapters.qt_app_context import QtAppContext, get_qt_app_context
+
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
+
+__all__ = ["DialogAdapterProtocol", "QtAppContext", "get_qt_app_context"]
 
 
 class DialogAdapterProtocol(Protocol):

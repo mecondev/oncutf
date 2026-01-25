@@ -15,13 +15,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import (
-    QApplication,
-    QCursor,
-    QKeySequence,
-    QMouseEvent,
-    Qt,
-)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QKeySequence, QMouseEvent
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
@@ -153,7 +150,7 @@ class EventHandler:
                     # We want to PREVENT the default QTableView behavior which clears selection on click
                     # So we DON'T call super() at all for this specific case
                     # But we DO need to set the current index for focus purposes
-                    from oncutf.core.pyqt_imports import QItemSelectionModel
+                    from PyQt5.QtCore import QItemSelectionModel
                     selection_model.setCurrentIndex(index, QItemSelectionModel.Current)
 
                     # Ensure anchor is preserved (it might not change, but just in case)
@@ -222,7 +219,7 @@ class EventHandler:
                 # Determine if drag happened
                 actual_drag_happened = self._ctrl_drag_active
                 if not actual_drag_happened:
-                    from oncutf.core.pyqt_imports import QApplication
+                    from PyQt5.QtWidgets import QApplication
                     distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
                     actual_drag_happened = distance >= QApplication.startDragDistance()
 
@@ -263,7 +260,7 @@ class EventHandler:
             # Check if user actually moved the mouse (real drag vs accidental micro-movement)
             actual_drag_happened = self._view._drag_drop_behavior.is_dragging
             if not actual_drag_happened and self._view._drag_start_pos is not None:
-                from oncutf.core.pyqt_imports import QApplication
+                from PyQt5.QtWidgets import QApplication
                 distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
                 # Only consider it a real drag if moved at least the drag distance
                 actual_drag_happened = distance >= QApplication.startDragDistance()
@@ -285,7 +282,7 @@ class EventHandler:
                 self._view._clicked_index.isValid()):
                 # User clicked on selected item but didn't drag - select only that item
                 logger.info("[SINGLE SELECT] Converting multi-selection to single: %d", self._view._clicked_index.row())
-                from oncutf.core.pyqt_imports import QItemSelectionModel
+                from PyQt5.QtCore import QItemSelectionModel
                 sm = self._view.selectionModel()
                 if sm:
                     sm.select(

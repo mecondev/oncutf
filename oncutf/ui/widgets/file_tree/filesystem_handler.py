@@ -332,7 +332,8 @@ class FilesystemHandler:
             self._refresh_in_progress = True
 
             # The only reliable way to refresh drives in Windows is to recreate the model
-            from oncutf.core.pyqt_imports import Qt
+            from PyQt5.QtCore import Qt
+
             from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
             from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
 
@@ -366,7 +367,7 @@ class FilesystemHandler:
             # Windows: Use invalid index to show all drives
             # Linux/macOS: Use root directory
             if platform.system() == "Windows":
-                from oncutf.core.pyqt_imports import QModelIndex
+                from PyQt5.QtCore import QModelIndex
                 self._view.setRootIndex(QModelIndex())
             else:
                 self._view.setRootIndex(proxy_model.index_from_path(root))

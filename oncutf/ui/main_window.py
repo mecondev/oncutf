@@ -17,10 +17,12 @@ Provides the primary UI including:
 
 # Import all config constants from centralized module
 # Core application modules
-from oncutf.core.config_imports import *
+# Import PyQt5 classes directly
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
-# Import all PyQt5 classes from centralized module
-from oncutf.core.pyqt_imports import *
+from oncutf.core.config_imports import *
 
 # Data models and business logic modules
 # Phase 4A UI Handlers

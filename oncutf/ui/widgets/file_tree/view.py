@@ -21,15 +21,14 @@ Features:
 
 import os
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import QEvent, Qt, pyqtSignal
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import (
     QAbstractItemView,
-    QEvent,
     QHeaderView,
-    QKeyEvent,
-    Qt,
     QTreeView,
-    pyqtSignal,
 )
+
 from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
 from oncutf.ui.widgets.file_tree.drag_handler import DragHandler
 from oncutf.ui.widgets.file_tree.event_handler import EventHandler
@@ -105,7 +104,7 @@ class FileTreeView(QTreeView):
         self.collapsed.connect(self._on_item_collapsed)
 
         # Install custom tree view delegate for consistent hover/selection behavior
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         theme = get_theme_manager()
         self._delegate = TreeViewItemDelegate(self, theme=theme)

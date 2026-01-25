@@ -37,6 +37,16 @@ Usage Examples:
 import math
 import time
 
+from PyQt5.QtCore import QSize, Qt, QTimer
+from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 from typing_extensions import deprecated
 
 from oncutf.config import (
@@ -44,18 +54,6 @@ from oncutf.config import (
     QLABEL_PRIMARY_TEXT,
     QLABEL_SECONDARY_TEXT,
     QLABEL_TERTIARY_TEXT,
-)
-from oncutf.core.pyqt_imports import (
-    QFontMetrics,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QSize,
-    QSizePolicy,
-    Qt,
-    QTimer,
-    QVBoxLayout,
-    QWidget,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -100,7 +98,7 @@ class ProgressWidget(QWidget):
 
         # Get default colors from theme if not provided
         if bar_color is None or bar_bg_color is None:
-            from oncutf.core.theme_manager import get_theme_manager
+            from oncutf.ui.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
             bar_color = bar_color or theme.colors.get("accent_color", "#748cab")

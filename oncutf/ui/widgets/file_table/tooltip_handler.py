@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QEvent, QModelIndex, Qt
+from PyQt5.QtCore import QEvent, QModelIndex, Qt
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
 from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType

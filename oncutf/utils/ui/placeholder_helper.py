@@ -13,7 +13,7 @@ Performance optimizations (2025-12-20):
 """
 
 from oncutf.core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
-from oncutf.core.theme_manager import get_theme_manager
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.filesystem.path_utils import get_images_dir
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

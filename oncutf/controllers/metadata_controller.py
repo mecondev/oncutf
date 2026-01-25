@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
@@ -275,7 +275,7 @@ class MetadataController:
 
         try:
             # Get TableManager from ApplicationContext manager registry
-            table_manager = self._app_context.get_manager("table")
+            table_manager = cast("Any", self._app_context.get_manager("table"))
             table_manager.restore_fileitem_metadata_from_cache()
 
             return {"success": True, "errors": []}
@@ -404,7 +404,7 @@ class MetadataController:
         try:
             from oncutf.utils.filesystem.path_normalizer import normalize_path
 
-            metadata_manager = self._app_context.get_manager("metadata")
+            metadata_manager = cast("Any", self._app_context.get_manager("metadata"))
             norm_path = normalize_path(file_item.full_path)
 
             if not hasattr(metadata_manager, "metadata_cache"):
@@ -430,7 +430,7 @@ class MetadataController:
         """
         try:
             # Get selected files from TableManager via manager registry
-            table_manager = self._app_context.get_manager("table")
+            table_manager = cast("Any", self._app_context.get_manager("table"))
             selected_files = table_manager.get_selected_files()
 
             if not selected_files:

@@ -18,7 +18,8 @@ from typing import TYPE_CHECKING
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QModelIndex
+    from PyQt5.QtCore import QModelIndex
+
     from oncutf.ui.widgets.file_tree.view import FileTreeView
 
 logger = get_cached_logger(__name__)

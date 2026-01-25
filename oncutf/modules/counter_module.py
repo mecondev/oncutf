@@ -23,9 +23,9 @@ from oncutf.core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 
 # initialize logger

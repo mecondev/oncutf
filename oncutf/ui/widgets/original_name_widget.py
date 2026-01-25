@@ -6,7 +6,8 @@ Date: 2025-05-19
 Rename module that reuses original filename.
 """
 
-from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
+
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -44,7 +45,7 @@ class OriginalNameWidget(BaseRenameModule):
         self.label = QLabel("Uses the original filename")
         # Apply theme-aware styling instead of hard-coded color
         try:
-            from oncutf.core.theme_manager import get_theme_manager
+            from oncutf.ui.theme_manager import get_theme_manager
 
             theme = get_theme_manager()
             secondary_color = theme.get_color("text_secondary")

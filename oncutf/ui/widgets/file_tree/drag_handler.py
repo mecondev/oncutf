@@ -15,6 +15,10 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtGui import QCursor, QMouseEvent
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.drag.drag_manager import DragManager
 from oncutf.core.drag.drag_visual_manager import (
@@ -24,13 +28,6 @@ from oncutf.core.drag.drag_visual_manager import (
     update_drag_feedback_for_widget,
 )
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
-from oncutf.core.pyqt_imports import (
-    QApplication,
-    QCursor,
-    QEvent,
-    QMouseEvent,
-    Qt,
-)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 

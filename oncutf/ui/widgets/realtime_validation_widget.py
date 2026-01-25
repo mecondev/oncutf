@@ -6,15 +6,15 @@ Date: 2025-05-01
 Real-time Validation Widget for immediate validation feedback.
 """
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import (
     QFrame,
     QLabel,
     QProgressBar,
-    Qt,
-    QTimer,
     QVBoxLayout,
     QWidget,
 )
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

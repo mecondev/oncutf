@@ -50,10 +50,12 @@ class ShortcutCommandHandler:
 
     def shortcut_load_metadata(self) -> None:
         """Load fast metadata via MetadataController."""
+        logger.info("[ShortcutCommandHandler] shortcut_load_metadata CALLED -> extended=False")
         self.main_window.metadata_controller.load_metadata_for_selected(extended=False)
 
     def shortcut_load_extended_metadata(self) -> None:
         """Load extended metadata via MetadataController."""
+        logger.info("[ShortcutCommandHandler] shortcut_load_extended_metadata CALLED -> extended=True")
         self.main_window.metadata_controller.load_metadata_for_selected(extended=True)
 
     def shortcut_save_selected_metadata(self) -> None:

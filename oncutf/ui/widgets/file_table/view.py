@@ -24,26 +24,22 @@ Architecture:
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import QEvent, QModelIndex, QPoint, Qt, pyqtSignal
+from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtWidgets import (
     QAbstractItemView,
-    QEvent,
     QHeaderView,
-    QModelIndex,
-    QMouseEvent,
-    QPoint,
-    Qt,
     QTableView,
-    pyqtSignal,
 )
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.behaviors import (
     ColumnManagementBehavior,
     DragDropBehavior,
     SelectionBehavior,
 )
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.file_table.event_handler import EventHandler
 from oncutf.ui.widgets.file_table.hover_handler import HoverHandler
 from oncutf.ui.widgets.file_table.tooltip_handler import TooltipHandler
@@ -160,7 +156,7 @@ class FileTableView(QTableView):
 
     def _setup_scrollbar_hover_clear(self) -> None:
         """Setup event filters on scrollbars to clear table hover."""
-        from oncutf.core.pyqt_imports import QEvent, QObject
+        from PyQt5.QtCore import QEvent, QObject
 
         class ScrollbarHoverFilter(QObject):
             """Event filter that clears table hover when mouse enters scrollbar."""
@@ -620,7 +616,7 @@ class FileTableView(QTableView):
 
         # Set wait cursor IMMEDIATELY for user feedback.
         # NOTE: Use wait_cursor helper so startup suppression (post-splash delay) is respected.
-        from oncutf.core.pyqt_imports import QApplication
+        from PyQt5.QtWidgets import QApplication
 
         t1 = time.time()
         logger.debug(

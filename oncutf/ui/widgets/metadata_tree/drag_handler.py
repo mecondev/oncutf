@@ -17,17 +17,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.pyqt_imports import (
-    QApplication,
-    QDragEnterEvent,
-    QDragMoveEvent,
-    QDropEvent,
-    Qt,
-)
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_drag_cleanup
 
 if TYPE_CHECKING:
+    from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+
     from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
 logger = get_cached_logger(__name__)

@@ -18,7 +18,9 @@ Date: 2026-01-01
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QCursor, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

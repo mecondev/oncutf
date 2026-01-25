@@ -20,8 +20,8 @@ to these specialized handlers while maintaining backwards compatibility.
 from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from oncutf.core.pyqt_imports import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from oncutf.ui.widgets.hierarchical_combo_box import HierarchicalComboBox
 from oncutf.ui.widgets.metadata.category_manager import CategoryManager
 from oncutf.ui.widgets.metadata.hash_handler import HashHandler

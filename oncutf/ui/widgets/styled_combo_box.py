@@ -10,8 +10,8 @@ Popup sizing logic is delegated to combo_popup_helper for reusability.
 
 from PyQt5.QtWidgets import QComboBox, QWidget
 
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.combo_popup_helper import apply_combo_popup_metrics, prepare_combo_popup
 

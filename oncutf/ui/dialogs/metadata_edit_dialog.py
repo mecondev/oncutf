@@ -8,17 +8,18 @@ Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
-from oncutf.app.services import get_validation_service
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QCheckBox,
     QDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    Qt,
     QVBoxLayout,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.app.services import get_validation_service
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.metadata_validated_input import create_metadata_input_widget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -140,7 +141,7 @@ class MetadataEditDialog(QDialog):
         # Hints label (right under the input field)
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        from oncutf.core.theme_manager import get_theme_manager
+        from oncutf.ui.theme_manager import get_theme_manager
 
         muted_color = get_theme_manager().get_color("text")
         self._apply_info_label_style(muted_color, opacity="0.7")

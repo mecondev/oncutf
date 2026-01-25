@@ -6,7 +6,7 @@ Date: 2026-01-05
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QModelIndex
+    from PyQt5.QtCore import QModelIndex
 
 
 class SelectableWidget(Protocol):

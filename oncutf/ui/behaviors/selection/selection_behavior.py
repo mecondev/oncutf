@@ -23,7 +23,9 @@ from typing import TYPE_CHECKING
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.pyqt_imports import QItemSelection, QModelIndex, Qt
+    from PyQt5.QtCore import QItemSelection, Qt
+    from PyQt5.QtGui import QModelIndex
+
     from oncutf.core.selection.selection_store import SelectionStore
     from oncutf.ui.behaviors.selection.protocols import SelectableWidget
 
@@ -140,7 +142,7 @@ class SelectionBehavior:
             selected_rows: Set of row indices to select in Qt model
 
         """
-        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
+        from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
         selection_model = self._widget.selectionModel()
         if not selection_model:
@@ -266,7 +268,7 @@ class SelectionBehavior:
             modifiers: Qt keyboard modifiers (Shift, Ctrl, etc.)
 
         """
-        from oncutf.core.pyqt_imports import Qt
+        from PyQt5.QtCore import Qt
 
         if self._ensuring_selection:
             logger.debug(
@@ -300,7 +302,7 @@ class SelectionBehavior:
             index: Clicked index
 
         """
-        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
+        from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
         # Determine anchor: use existing anchor or first selected item
         anchor_index = self._manual_anchor_index
@@ -343,7 +345,7 @@ class SelectionBehavior:
             index: Clicked index
 
         """
-        from oncutf.core.pyqt_imports import QItemSelectionModel
+        from PyQt5.QtCore import QItemSelectionModel
 
         self._manual_anchor_index = index
         row = index.row()
@@ -373,7 +375,7 @@ class SelectionBehavior:
             index: Clicked index
 
         """
-        from oncutf.core.pyqt_imports import QItemSelectionModel
+        from PyQt5.QtCore import QItemSelectionModel
 
         self._manual_anchor_index = index
         sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
@@ -408,7 +410,7 @@ class SelectionBehavior:
             end_row: Ending row index (inclusive)
 
         """
-        from oncutf.core.pyqt_imports import QItemSelection, QItemSelectionModel
+        from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
         self._widget.blockSignals(True)
         selection_model = self._widget.selectionModel()
@@ -446,7 +448,7 @@ class SelectionBehavior:
             file_paths: List of file paths to select (None = select all)
 
         """
-        from oncutf.core.pyqt_imports import QItemSelection, Qt
+        from PyQt5.QtCore import QItemSelection, Qt
 
         model = self._widget.model()
         if not model or not hasattr(model, "files"):
@@ -521,7 +523,7 @@ class SelectionBehavior:
 
         parent = getattr(self._widget, "window", lambda: None)()
         if parent and hasattr(parent, "sync_selection_to_checked"):
-            from oncutf.core.pyqt_imports import QItemSelection
+            from PyQt5.QtCore import QItemSelection
 
             selection = self._widget.selectionModel().selection()
             parent.sync_selection_to_checked(selection, QItemSelection())

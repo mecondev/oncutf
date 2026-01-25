@@ -16,20 +16,20 @@ Features:
 - Responsive layout with visual separation between module logic and final formatting
 """
 
-from oncutf.config import ICON_SIZES
-from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
-from oncutf.controllers.module_orchestrator import ModuleOrchestrator
-from oncutf.core.pyqt_imports import (
-    QColor,
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
-    Qt,
     QVBoxLayout,
     QWidget,
-    pyqtSignal,
 )
-from oncutf.core.theme_manager import get_theme_manager
+
+from oncutf.config import ICON_SIZES
+from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
+from oncutf.controllers.module_orchestrator import ModuleOrchestrator
+from oncutf.ui.theme_manager import get_theme_manager
 
 # Lazy import to avoid circular import: from oncutf.modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger

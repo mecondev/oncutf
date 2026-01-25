@@ -13,8 +13,11 @@ Contains:
 
 import logging
 
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QLineEdit, QTextEdit, QWidget
+
 from oncutf.app.services import get_validation_service
-from oncutf.core.pyqt_imports import QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
 from oncutf.ui.widgets.base_validated_input import BaseValidatedInput
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 

@@ -19,8 +19,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from PyQt5.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
+
 from oncutf.config import METADATA_ICON_COLORS
-from oncutf.core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel
 from oncutf.ui.widgets.metadata_tree.model import (
     FieldStatus,
     MetadataDisplayState,

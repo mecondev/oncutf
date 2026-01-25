@@ -11,17 +11,10 @@ Date: 2025-05-01
 
 from typing import Any
 
-from oncutf.core.pyqt_imports import (
-    QComboBox,
-    QEvent,
-    QSize,
-    QStandardItem,
-    QStandardItemModel,
-    Qt,
-    QTreeView,
-    QWidget,
-    pyqtSignal,
-)
+from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QComboBox, QTreeView, QWidget
+
 from oncutf.ui.delegates.ui_delegates import TreeViewItemDelegate
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

@@ -16,7 +16,8 @@ and is used instead of standard QMessageBox to allow greater control over layout
 behavior, and styling.
 """
 
-from oncutf.core.pyqt_imports import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
     QDialog,
@@ -24,7 +25,6 @@ from oncutf.core.pyqt_imports import (
     QLabel,
     QProgressBar,
     QPushButton,
-    Qt,
     QVBoxLayout,
     QWidget,
 )
@@ -136,7 +136,7 @@ class CustomMessageDialog(QDialog):
             child.setCursor(Qt.ArrowCursor)
 
         # Process events to ensure cursor change takes effect
-        from oncutf.core.pyqt_imports import QApplication
+        from PyQt5.QtWidgets import QApplication
 
         QApplication.processEvents()
 

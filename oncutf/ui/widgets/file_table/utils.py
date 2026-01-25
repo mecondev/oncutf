@@ -13,7 +13,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.core.pyqt_imports import QApplication, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

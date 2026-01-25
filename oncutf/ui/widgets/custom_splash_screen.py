@@ -13,18 +13,11 @@ Features:
 - Blocks application interaction until closed
 """
 
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QColor, QFontMetrics, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import QApplication, QSplashScreen
+
 from oncutf.config import APP_VERSION
-from oncutf.core.pyqt_imports import (
-    QApplication,
-    QColor,
-    QFontMetrics,
-    QPainter,
-    QPen,
-    QPixmap,
-    QSplashScreen,
-    Qt,
-    QTimer,
-)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

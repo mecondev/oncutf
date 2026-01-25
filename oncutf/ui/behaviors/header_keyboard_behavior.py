@@ -7,7 +7,9 @@ Behavior for handling keyboard shortcuts for column reordering.
 Provides Ctrl+Left/Right shortcuts to move columns based on hover position.
 """
 
-from oncutf.core.pyqt_imports import QEvent, QKeyEvent, QObject, Qt
+from PyQt5.QtCore import QEvent, QObject, Qt
+from PyQt5.QtGui import QKeyEvent
+
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

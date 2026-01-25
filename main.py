@@ -27,10 +27,12 @@ project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+
 from oncutf.config import SPLASH_SCREEN_DURATION, WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS
-from oncutf.core.pyqt_imports import QApplication, Qt
-from oncutf.core.theme_manager import get_theme_manager
 from oncutf.ui.main_window import MainWindow
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 from oncutf.utils.logging.logger_setup import ConfigureLogger
 from oncutf.utils.paths import AppPaths

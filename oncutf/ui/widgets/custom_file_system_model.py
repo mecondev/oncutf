@@ -12,8 +12,11 @@ for folders, files, and expand/collapse indicators.
 import os
 from typing import Any, ClassVar
 
+from PyQt5.QtCore import QModelIndex, Qt
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileSystemModel
+
 from oncutf.config import ALLOWED_EXTENSIONS
-from oncutf.core.pyqt_imports import QFileSystemModel, QIcon, QModelIndex, Qt
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.icons_loader import get_menu_icon
 

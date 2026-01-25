@@ -20,7 +20,7 @@ import threading
 import time
 from typing import Any
 
-from oncutf.core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from oncutf.utils.logging.logger_factory import get_cached_logger

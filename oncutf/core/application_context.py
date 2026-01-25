@@ -3,415 +3,205 @@
 Author: Michael Economou
 Date: 2025-05-31
 
-Centralized application state management.
+DEPRECATED: Backward compatibility wrapper for ApplicationContext.
 
-Provides single point of access to:
-- FileStore (loaded files state)
-- SelectionStore (file selection state)
-- Metadata cache
-- Manager registry
-- Performance metrics
+This module provides backward compatibility for code using the old
+ApplicationContext location. New code should use:
+- app/state/context.py (AppContext) for Qt-free code
+- ui/adapters/qt_app_context.py (QtAppContext) for Qt-aware code
+
+This wrapper will be removed in v2.0.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from PyQt5.QtCore import QObject, pyqtSignal
 from typing_extensions import deprecated
 
-from oncutf.core.pyqt_imports import QObject, pyqtSignal
+from oncutf.ui.adapters.qt_app_context import QtAppContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.core.file.store import FileStore
     from oncutf.core.selection.selection_store import SelectionStore
-    from oncutf.core.type_aliases import MetadataCache
     from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 
 
+@deprecated(
+    "Use QtAppContext from ui.adapters or AppContext from app.state. Will be removed in v2.0."
+)
 class ApplicationContext(QObject):
-    """Centralized application state and coordination hub.
+    """DEPRECATED: Backward compatibility wrapper for QtAppContext.
 
-    This singleton provides fast access to all application state,
-    eliminating expensive parent widget traversals and improving performance.
+    This class delegates all operations to QtAppContext.
+    Use QtAppContext directly for new code.
 
-    Features:
-    - Centralized file state management
-    - Unified selection handling
-    - Metadata store coordination
-    - Event-driven architecture
+    Migration path:
+    - UI code: Use QtAppContext from oncutf.ui.adapters
+    - Non-UI code: Use AppContext from oncutf.app.state
     """
 
-    # Signals for state changes
-    files_changed = pyqtSignal(list)  # Emitted when file list changes
-    selection_changed = pyqtSignal(list)  # Emitted when selection changes
-    metadata_changed = pyqtSignal(str, dict)  # Emitted when metadata updates (path, metadata)
+    # Signals - delegate to QtAppContext
+    files_changed = pyqtSignal(list)
+    selection_changed = pyqtSignal(list)
+    metadata_changed = pyqtSignal(str, dict)
 
     _instance: ApplicationContext | None = None
 
     def __init__(self, parent: QObject | None = None):
-        """Initialize singleton application context with stores and managers."""
+        """Initialize wrapper around QtAppContext."""
         super().__init__(parent)
 
-        # Ensure singleton
         if ApplicationContext._instance is not None:
             raise RuntimeError("ApplicationContext is a singleton. Use get_instance()")
         ApplicationContext._instance = self
 
-        # Core stores (will be initialized gradually)
-        self._file_store: FileStore | None = None
-        self._selection_store: SelectionStore | None = None
+        # Get or create QtAppContext
+        try:
+            self._qt_context = QtAppContext.get_instance()
+        except RuntimeError:
+            self._qt_context = QtAppContext.create_instance(parent)
 
-        # Manager registry for centralized manager access
-        self._managers: dict[str, Any] = {}
+        # Connect signals
+        self._qt_context.files_changed.connect(self.files_changed.emit)
+        self._qt_context.selection_changed.connect(self.selection_changed.emit)
+        self._qt_context.metadata_changed.connect(self.metadata_changed.emit)
 
-        # Legacy state containers (will be removed gradually)
-        self._files: list[FileItem] = []
-        self._selected_rows: set[int] = set()
-        self._metadata_cache: MetadataCache = {}
-        self._current_folder: str | None = None
-        self._recursive_mode: bool = False  # Track if folder loaded recursively
+        logger.warning(
+            "ApplicationContext is deprecated. Use QtAppContext or AppContext instead.",
+            extra={"dev_only": True},
+        )
 
-        # Performance tracking
-        self._performance_metrics: dict[str, float] = {}
-
-        # Ready flag (will be used to ensure proper initialization)
-        self._is_ready = False
-
-        logger.info("ApplicationContext initialized (skeleton mode)", extra={"dev_only": True})
+        logger.warning(
+            "ApplicationContext is deprecated. Use QtAppContext or AppContext instead.",
+            extra={"dev_only": True},
+        )
 
     def initialize_stores(self) -> None:
-        """Initialize core stores. Called after basic setup is complete.
-        This allows for proper dependency injection and delayed initialization.
-        """
-        if self._file_store is None:
-            # Import here to avoid circular dependencies
-            from oncutf.core.file.store import FileStore
-
-            self._file_store = FileStore(parent=self)
-            # Connect FileStore signals to ApplicationContext signals
-            self._file_store.files_loaded.connect(self._on_files_loaded)
-            self._file_store.folder_changed.connect(self._on_folder_changed)
-
-            logger.info("FileStore initialized in ApplicationContext", extra={"dev_only": True})
-
-        if self._selection_store is None:
-            # Import here to avoid circular dependencies
-            from oncutf.core.selection.selection_store import SelectionStore
-
-            self._selection_store = SelectionStore(parent=self)
-            # Connect SelectionStore signals to ApplicationContext signals
-            self._selection_store.selection_changed.connect(self._on_selection_changed)
-            self._selection_store.checked_changed.connect(self._on_checked_changed)
-
-            logger.info(
-                "SelectionStore initialized in ApplicationContext", extra={"dev_only": True}
-            )
-
-    def _on_files_loaded(self, files: list[Any]) -> None:
-        """Handle files loaded from FileStore."""
-        self._files = files.copy()
-        self.files_changed.emit(self._files)
-        logger.debug(
-            "ApplicationContext: Files loaded signal relayed: %d files",
-            len(files),
-            extra={"dev_only": True},
-        )
-
-    def _on_folder_changed(self, folder_path: str) -> None:
-        """Handle folder change from FileStore."""
-        self._current_folder = folder_path
-        logger.debug(
-            "ApplicationContext: Folder changed to %s",
-            folder_path,
-            extra={"dev_only": True},
-        )
-
-    def _on_selection_changed(self, selected_rows: list[int]) -> None:
-        """Handle selection changed from SelectionStore."""
-        self._selected_rows = set(selected_rows)  # Convert back to set for internal storage
-
-        # Emit with backward compatibility check
-        try:
-            self.selection_changed.emit(selected_rows)
-        except TypeError:
-            # Fallback: convert to set if the signal expects set type
-            logger.debug(
-                "ApplicationContext: Converting list to set for signal compatibility",
-                extra={"dev_only": True},
-            )
-            self.selection_changed.emit(set(selected_rows))
-
-        logger.debug(
-            "ApplicationContext: Selection changed signal relayed: %d rows",
-            len(selected_rows),
-            extra={"dev_only": True},
-        )
-
-    def _on_checked_changed(self, checked_rows: list[int]) -> None:
-        """Handle checked state changed from SelectionStore."""
-        # For now, just log it - will be used by file model updates later
-        logger.debug("ApplicationContext: Checked state changed: %d rows", len(checked_rows))
+        """Initialize core stores - delegates to QtAppContext."""
+        self._qt_context.initialize_stores()
 
     @classmethod
     def get_instance(cls) -> ApplicationContext:
-        """Get the singleton instance of ApplicationContext.
-
-        Returns:
-            ApplicationContext: The singleton instance
-
-        Raises:
-            RuntimeError: If instance has not been created yet
-
-        """
+        """Get the singleton instance."""
         if cls._instance is None:
             raise RuntimeError("ApplicationContext not initialized. Call create_instance() first.")
         return cls._instance
 
     @classmethod
     def create_instance(cls, parent: QObject | None = None) -> ApplicationContext:
-        """Create the singleton instance of ApplicationContext.
-
-        Args:
-            parent: Optional parent QObject
-
-        Returns:
-            ApplicationContext: The newly created instance
-
-        """
+        """Create the singleton instance."""
         if cls._instance is not None:
             logger.warning("ApplicationContext already exists. Returning existing instance.")
             return cls._instance
-
         return cls(parent)
 
     # =====================================
-    # File Management (Delegated to FileStore)
+    # Delegate all methods to QtAppContext
     # =====================================
 
     @property
     def file_store(self) -> FileStore:
-        """Get the FileStore instance, initializing if needed."""
-        if self._file_store is None:
-            self.initialize_stores()
-        assert self._file_store is not None  # For mypy
-        return self._file_store
+        """Get the FileStore instance."""
+        return self._qt_context.file_store
 
     @property
     def selection_store(self) -> SelectionStore:
-        """Get the SelectionStore instance, initializing if needed."""
-        if self._selection_store is None:
-            self.initialize_stores()
-        assert self._selection_store is not None  # For mypy
-        return self._selection_store
+        """Get the SelectionStore instance."""
+        return self._qt_context.selection_store
 
     def get_files(self) -> list[FileItem]:
         """Get current file list."""
-        return self._files.copy()
+        return self._qt_context.get_files()
 
     @deprecated("Use FileStore.set_loaded_files() instead. Will be removed in v2.0.")
     def set_files(self, files: list[FileItem]) -> None:
-        """Set current file list (legacy method)."""
-        self._files = files.copy()
-        self.files_changed.emit(self._files)
-        logger.debug("Files updated (legacy): %d items", len(files))
+        """Set current file list."""
+        self._qt_context.set_files(files)
 
     def get_current_folder(self) -> str | None:
         """Get current folder path."""
-        return self._current_folder
+        return self._qt_context.get_current_folder()
 
     def set_current_folder(self, folder_path: str | None, recursive: bool = False) -> None:
-        """Set current folder path and recursive mode.
-
-        Args:
-            folder_path: Path to the folder, or None to clear
-            recursive: Whether the folder was loaded recursively
-
-        """
-        self._current_folder = folder_path
-        self._recursive_mode = recursive
-
-        # Update FileStore if available
-        if self._file_store is not None and folder_path:
-            self._file_store.set_current_folder(folder_path)
-
-        logger.debug("Current folder: %s, recursive: %s", folder_path, recursive)
+        """Set current folder path and recursive mode."""
+        self._qt_context.set_current_folder(folder_path, recursive)
 
     def is_recursive_mode(self) -> bool:
         """Check if current folder was loaded recursively."""
-        return self._recursive_mode
+        return self._qt_context.is_recursive_mode()
 
     def set_recursive_mode(self, recursive: bool) -> None:
         """Set recursive mode flag."""
-        self._recursive_mode = recursive
-        logger.debug("Recursive mode set to: %s", recursive)
-
-    # =====================================
-    # Selection Management (Delegated to SelectionStore)
-    # =====================================
+        self._qt_context.set_recursive_mode(recursive)
 
     def get_selected_rows(self) -> set[int]:
         """Get currently selected row indices."""
-        return self.selection_store.get_selected_rows()
+        return self._qt_context.get_selected_rows()
 
     def set_selected_rows(self, rows: set[int]) -> None:
         """Set selected row indices."""
-        self.selection_store.set_selected_rows(rows)
+        self._qt_context.set_selected_rows(rows)
 
     def get_checked_rows(self) -> set[int]:
         """Get currently checked row indices."""
-        return self.selection_store.get_checked_rows()
+        return self._qt_context.get_checked_rows()
 
     def set_checked_rows(self, rows: set[int]) -> None:
         """Set checked row indices."""
-        self.selection_store.set_checked_rows(rows)
-
-    # =====================================
-    # Metadata Management (Skeleton)
-    # =====================================
+        self._qt_context.set_checked_rows(rows)
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
-        """Get metadata for a file (placeholder implementation)."""
-        return self._metadata_cache.get(file_path)
+        """Get metadata for a file."""
+        return self._qt_context.get_metadata(file_path)
 
     def set_metadata(self, file_path: str, metadata: dict[str, Any]) -> None:
-        """Set metadata for a file (placeholder implementation)."""
-        self._metadata_cache[file_path] = metadata
-        self.metadata_changed.emit(file_path, metadata)
-        logger.debug("Metadata updated for: %s", file_path)
+        """Set metadata for a file."""
+        self._qt_context.set_metadata(file_path, metadata)
 
-    # =====================================
-    # Performance Tracking
-    # =====================================
+    def register_manager(self, name: str, manager: Any) -> None:
+        """Register a manager in the global registry."""
+        self._qt_context.register_manager(name, manager)
+
+    def get_manager(self, name: str) -> Any | None:
+        """Get a manager from the registry."""
+        return self._qt_context.get_manager(name)
+
+    def has_manager(self, name: str) -> bool:
+        """Check if a manager is registered."""
+        return self._qt_context.has_manager(name)
 
     def track_performance(self, operation: str, duration_ms: float) -> None:
         """Track performance metrics for operations."""
-        self._performance_metrics[operation] = duration_ms
-        logger.debug("Performance: %s took %.1fms", operation, duration_ms)
+        self._qt_context.track_performance(operation, duration_ms)
 
     def get_performance_report(self) -> dict[str, float]:
         """Get performance metrics report."""
-        base_metrics = self._performance_metrics.copy()
-
-        # Note: FileStore is now state-only and doesn't track performance metrics
-        # Performance metrics come from FileLoadManager and other I/O managers
-
-        return base_metrics
-
-    # =====================================
-    # Manager Registry
-    # =====================================
-
-    def register_manager(self, name: str, manager: Any) -> None:
-        """Register a manager in the centralized registry.
-
-        This allows components to access managers through the context instead of
-        traversing the widget hierarchy (parent_window.some_manager).
-
-        Args:
-            name: Unique identifier for the manager (e.g., 'table', 'metadata', 'rename')
-            manager: The manager instance to register
-
-        Example:
-            context.register_manager('table', TableManager(self))
-            context.register_manager('metadata', get_unified_metadata_manager(self))
-
-        """
-        if name in self._managers:
-            logger.warning(
-                "Manager '%s' already registered, overwriting",
-                name,
-                extra={"dev_only": True},
-            )
-        self._managers[name] = manager
-        logger.debug(
-            "Manager '%s' registered: %s",
-            name,
-            type(manager).__name__,
-            extra={"dev_only": True},
-        )
-
-    def get_manager(self, name: str) -> Any:
-        """Get a manager from the registry by name.
-
-        Args:
-            name: Manager identifier (e.g., 'table', 'metadata', 'rename')
-
-        Returns:
-            The registered manager instance
-
-        Raises:
-            KeyError: If manager is not registered
-
-        Example:
-            table_mgr = context.get_manager('table')
-            metadata_mgr = context.get_manager('metadata')
-
-        """
-        if name not in self._managers:
-            available = ", ".join(sorted(self._managers.keys()))
-            raise KeyError(
-                f"Manager '{name}' not registered. Available managers: {available or 'none'}"
-            )
-        return self._managers[name]
-
-    def has_manager(self, name: str) -> bool:
-        """Check if a manager is registered.
-
-        Args:
-            name: Manager identifier to check
-
-        Returns:
-            True if manager is registered, False otherwise
-
-        """
-        return name in self._managers
-
-    def list_managers(self) -> list[str]:
-        """Get list of all registered manager names.
-
-        Returns:
-            List of manager names in alphabetical order
-
-        """
-        return sorted(self._managers.keys())
-
-    # =====================================
-    # Utility Methods
-    # =====================================
+        return self._qt_context.get_performance_report()
 
     def is_ready(self) -> bool:
         """Check if context is fully initialized."""
-        return self._is_ready
+        return self._qt_context.is_ready()
 
     def mark_ready(self) -> None:
         """Mark context as fully initialized."""
-        self._is_ready = True
-        logger.info("ApplicationContext is ready", extra={"dev_only": True})
+        self._qt_context.mark_ready()
 
     def cleanup(self) -> None:
         """Clean up resources before shutdown."""
-        # Clean up FileStore
-        if self._file_store is not None:
-            self._file_store.clear_files()
-            self._file_store.clear_cache()
-
-        # Clean up legacy state
-        self._files.clear()
-        self._selected_rows.clear()
-        self._metadata_cache.clear()
-        self._performance_metrics.clear()
-        logger.info("ApplicationContext cleaned up", extra={"dev_only": True})
+        self._qt_context.cleanup()
 
 
-# Convenience function for getting the singleton
+# Convenience function (deprecated)
+@deprecated("Use get_qt_app_context() or get_app_context(). Will be removed in v2.0.")
 def get_app_context() -> ApplicationContext:
-    """Convenience function to get the ApplicationContext singleton.
+    """Get the singleton ApplicationContext instance.
 
-    Returns:
-        ApplicationContext: The singleton instance
-
+    DEPRECATED: Use get_qt_app_context() from ui.adapters
+    or get_app_context() from app.state instead.
     """
     return ApplicationContext.get_instance()

@@ -22,7 +22,7 @@ try:
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication, QTreeView
 
-    from oncutf.core.theme_manager import get_theme_manager
+    from oncutf.ui.theme_manager import get_theme_manager
     from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 
     PYQT5_AVAILABLE = True

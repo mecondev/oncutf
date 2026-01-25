@@ -10,7 +10,8 @@ Date: 2026-01-02
 import traceback
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.pyqt_imports import QStandardItemModel
+from PyQt5.QtGui import QStandardItemModel
+
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger

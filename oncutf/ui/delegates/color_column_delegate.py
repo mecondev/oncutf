@@ -12,20 +12,17 @@ Handles:
 - Proper hover/selection states (inherits from FileTableHoverDelegate)
 """
 
-from typing_extensions import deprecated
-
-from oncutf.core.pyqt_imports import (
-    QColor,
-    QEvent,
-    QIcon,
-    QPainter,
+from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtGui import QColor, QIcon, QPainter
+from PyQt5.QtWidgets import (
     QStyle,
     QStyleOptionViewItem,
-    Qt,
     QTableView,
 )
-from oncutf.core.theme_manager import get_theme_manager
+from typing_extensions import deprecated
+
 from oncutf.ui.delegates.ui_delegates import FileTableHoverDelegate
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -231,7 +228,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         if not hasattr(model, "files"):
             logger.warning("[ColorColumnDelegate] Model has no files attribute")
-            from oncutf.core.pyqt_imports import QApplication
+            from PyQt5.QtWidgets import QApplication
 
             QApplication.restoreOverrideCursor()
             return
@@ -277,7 +274,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         logger.info("[ColorColumnDelegate] Colored %d files with %s", colored_count, color)
 
         # Restore cursor after all operations complete
-        from oncutf.core.pyqt_imports import QApplication
+        from PyQt5.QtWidgets import QApplication
 
         QApplication.restoreOverrideCursor()
         logger.info("[ColorColumnDelegate] Cursor restored")

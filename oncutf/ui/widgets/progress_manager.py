@@ -35,7 +35,8 @@ Usage Examples:
 
 from typing import ClassVar
 
-from oncutf.core.pyqt_imports import QWidget
+from PyQt5.QtWidgets import QWidget
+
 from oncutf.ui.widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
