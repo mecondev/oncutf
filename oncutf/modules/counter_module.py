@@ -11,9 +11,9 @@ sequential file names based on configurable start value, step, and padding.
 from typing import Any
 
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QHBoxLayout,
-    QIntValidator,
     QLabel,
     QLineEdit,
     QPushButton,

@@ -108,7 +108,7 @@ class TestSaveCancellation:
             patch(
                 "oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"
             ) as mock_custom_dialog,
-            patch("oncutf.core.pyqt_imports.QMessageBox") as mock_msgbox,
+            patch("PyQt5.QtWidgets.QMessageBox") as mock_msgbox,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
 
@@ -219,7 +219,7 @@ class TestSaveCancellation:
         with (
             patch("oncutf.utils.ui.progress_dialog.ProgressDialog") as mock_dialog_class,
             patch("oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"),
-            patch("oncutf.core.pyqt_imports.QMessageBox"),
+            patch("PyQt5.QtWidgets.QMessageBox"),
         ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog

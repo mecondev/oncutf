@@ -20,9 +20,7 @@ import os
 from enum import Enum
 from typing import Any
 
-from oncutf.app.services.icons import get_menu_icon
-from oncutf.config import ICON_SIZES
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import QRect, Qt
 from PyQt5.QtGui import (
     QColor,
     QCursor,
@@ -32,7 +30,9 @@ from PyQt5.QtGui import (
     QPixmap,
 )
 from PyQt5.QtWidgets import QApplication, QWidget
-)
+
+from oncutf.app.services.icons import get_menu_icon
+from oncutf.config import ICON_SIZES
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

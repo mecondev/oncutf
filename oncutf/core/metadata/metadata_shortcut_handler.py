@@ -69,8 +69,8 @@ class MetadataShortcutHandler:
             - skip_metadata = False & use_extended = True  -> Extended scan (Ctrl+Shift)
 
         """
+        from PyQt5.QtCore import Qt
         from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
 
         modifiers = modifier_state
         if modifiers is None:
@@ -113,8 +113,8 @@ from PyQt5.QtCore import Qt
             bool: True if extended metadata should be used
 
         """
+        from PyQt5.QtCore import Qt
         from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
 
         modifiers = modifier_state
         if modifiers is None:

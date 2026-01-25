@@ -7,9 +7,9 @@ Manager for drag & drop operations on rename modules.
 Extracted from RenameModuleWidget to separate UI concerns.
 """
 
-from PyQt5.QtCore import QApplication, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QApplication, QWidget
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
