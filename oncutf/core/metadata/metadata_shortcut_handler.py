@@ -78,9 +78,6 @@ class MetadataShortcutHandler:
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        if modifiers == Qt.NoModifier:
-            modifiers = QApplication.keyboardModifiers()  # fallback to current
-
         ctrl = bool(modifiers & Qt.ControlModifier)
         shift = bool(modifiers & Qt.ShiftModifier)
 

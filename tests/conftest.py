@@ -8,7 +8,6 @@ Includes CI-friendly setup for PyQt5 testing and common fixtures.
 """
 
 import atexit
-import contextlib
 import os
 import platform
 import signal
@@ -19,6 +18,23 @@ from types import ModuleType
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
+
+_SESSION_QAPP = None
+_QT_MESSAGE_HANDLER_INSTALLED = False
+try:
+    from PyQt5.QtCore import qInstallMessageHandler
+    from PyQt5.QtWidgets import QApplication
+
+    _SESSION_QAPP = QApplication.instance() or QApplication([])
+    if not _QT_MESSAGE_HANDLER_INSTALLED:
+        def _qt_message_handler(_msg_type, _context, message):
+            if "Must construct a QGuiApplication" in message:
+                return
+
+        qInstallMessageHandler(_qt_message_handler)
+        _QT_MESSAGE_HANDLER_INSTALLED = True
+except ImportError:
+    _SESSION_QAPP = None
 
 
 @pytest.fixture(autouse=True)
@@ -76,6 +92,18 @@ def pytest_configure(config):
     # Add custom markers if not already added via pyproject.toml
     config.addinivalue_line("markers", "gui: mark test as requiring GUI")
     config.addinivalue_line("markers", "local_only: mark test as local environment only")
+
+
+def pytest_sessionstart(session) -> None:
+    """Ensure a QApplication exists before any test collection side effects."""
+    _ = session
+    try:
+        from PyQt5.QtWidgets import QApplication
+
+        if QApplication.instance() is None:
+            QApplication([])
+    except ImportError:
+        return
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -200,12 +228,5 @@ def pytest_sessionfinish(session, exitstatus):
     actual_os_name = "nt" if platform.system() == "Windows" else "posix"
     os.name = actual_os_name
 
-    try:
-        from PyQt5.QtWidgets import QApplication
-
-        app = QApplication.instance()
-        if app:
-            with contextlib.suppress(RuntimeError):
-                app.quit()
-    except (ImportError, RuntimeError):
-        pass
+    # Do not call app.quit() here to avoid QGuiApplication warnings
+    # during pytest teardown. Let the process exit naturally.

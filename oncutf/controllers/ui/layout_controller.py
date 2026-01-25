@@ -214,6 +214,7 @@ class LayoutController:
         # Lazy import: Only load when setting up left panel
         from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
         from oncutf.ui.widgets.file_tree import FileTreeView
+        from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
 
         self.parent_window.left_frame = QFrame()
         left_layout = QVBoxLayout(self.parent_window.left_frame)
@@ -252,6 +253,8 @@ class LayoutController:
         left_layout.addLayout(btn_layout)
 
         self.parent_window.dir_model = CustomFileSystemModel()
+        self.parent_window.dir_proxy_model = DriveSortProxyModel()
+        self.parent_window.dir_proxy_model.setSourceModel(self.parent_window.dir_model)
 
         # Set root path based on platform
         # Windows: Initialize with C: drive, then use invalid index to show all drives
@@ -271,7 +274,8 @@ class LayoutController:
         self.parent_window.dir_model.setNameFilters(name_filters)
         self.parent_window.dir_model.setNameFilterDisables(False)
 
-        self.parent_window.folder_tree.setModel(self.parent_window.dir_model)
+        self.parent_window.folder_tree.setModel(self.parent_window.dir_proxy_model)
+        self.parent_window.dir_proxy_model.sort(0, Qt.AscendingOrder)
 
         for i in range(1, 4):
             self.parent_window.folder_tree.hideColumn(i)
@@ -285,7 +289,9 @@ class LayoutController:
             # Use invalid/empty index to show all drives at root level
             self.parent_window.folder_tree.setRootIndex(QModelIndex())
         else:
-            self.parent_window.folder_tree.setRootIndex(self.parent_window.dir_model.index(root))
+            self.parent_window.folder_tree.setRootIndex(
+                self.parent_window.dir_proxy_model.index_from_path(root)
+            )
 
         # Set minimum size for left panel and add to splitter
         self.parent_window.left_frame.setMinimumWidth(230)

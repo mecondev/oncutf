@@ -334,7 +334,11 @@ class FileTreeView(QTreeView):
         if not selection_model:
             return
 
-        index = self.model().index(path)
+        model = self.model()
+        if model and hasattr(model, "index_from_path"):
+            index = model.index_from_path(path)
+        else:
+            index = self.model().index(path)
         if index.isValid():
             selection_model.clearSelection()
             selection_model.select(index, selection_model.Select | selection_model.Rows)

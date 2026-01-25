@@ -31,6 +31,8 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+_FRESH_START_DONE = False
+
 
 class DatabaseManager:
     """Enhanced database management with composition-based architecture.
@@ -67,7 +69,8 @@ class DatabaseManager:
         # Debug: Reset database if requested
         from oncutf.config import DEBUG_FRESH_START
 
-        if DEBUG_FRESH_START:
+        global _FRESH_START_DONE
+        if DEBUG_FRESH_START and not _FRESH_START_DONE:
             if self.db_path.exists():
                 logger.info(
                     "[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s", self.db_path
@@ -110,6 +113,7 @@ class DatabaseManager:
             except Exception as e:
                 logger.error("[DatabaseManager] Failed to clear thumbnail cache: %s", e)
 
+            _FRESH_START_DONE = True
         # Thread safety lock for concurrent access from parallel workers
         self._write_lock = threading.RLock()
 

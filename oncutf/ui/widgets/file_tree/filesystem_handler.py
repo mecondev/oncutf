@@ -310,19 +310,36 @@ class FilesystemHandler:
             logger.debug("[FilesystemHandler] No model to refresh", extra={"dev_only": True})
             return
 
+        def _get_source_model(model):
+            if hasattr(model, "sourceModel"):
+                source = model.sourceModel()
+                if source is not None:
+                    return source
+            return model
+
+        old_source_model = _get_source_model(old_model)
+
         # Get the old model's configuration
-        name_filters = old_model.nameFilters() if hasattr(old_model, "nameFilters") else []
-        file_filter = old_model.filter() if hasattr(old_model, "filter") else None
+        name_filters = (
+            old_source_model.nameFilters() if hasattr(old_source_model, "nameFilters") else []
+        )
+        file_filter = (
+            old_source_model.filter() if hasattr(old_source_model, "filter") else None
+        )
 
         try:
             # Set refresh flag to prevent recursive calls
             self._refresh_in_progress = True
 
             # The only reliable way to refresh drives in Windows is to recreate the model
+            from oncutf.core.pyqt_imports import Qt
             from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
+            from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
 
             # Create new model with same configuration
             new_model = CustomFileSystemModel()
+            proxy_model = DriveSortProxyModel()
+            proxy_model.setSourceModel(new_model)
 
             # Set root path based on platform
             # Windows: Set to C: drive
@@ -342,7 +359,8 @@ class FilesystemHandler:
                 new_model.setNameFilterDisables(False)
 
             # Replace the model
-            self._view.setModel(new_model)
+            self._view.setModel(proxy_model)
+            proxy_model.sort(0, Qt.AscendingOrder)
 
             # Set root index based on platform
             # Windows: Use invalid index to show all drives
@@ -351,7 +369,7 @@ class FilesystemHandler:
                 from oncutf.core.pyqt_imports import QModelIndex
                 self._view.setRootIndex(QModelIndex())
             else:
-                self._view.setRootIndex(new_model.index(root))
+                self._view.setRootIndex(proxy_model.index_from_path(root))
 
             # Update parent window reference if available
             parent = self._view.parent()
@@ -359,7 +377,10 @@ class FilesystemHandler:
                 if hasattr(parent, "dir_model"):
                     if old_model is not None:
                         old_model.deleteLater()
+                    if old_source_model is not None and old_source_model is not old_model:
+                        old_source_model.deleteLater()
                     parent.dir_model = new_model
+                    parent.dir_proxy_model = proxy_model
                     logger.debug(
                         "[FilesystemHandler] Parent window dir_model reference updated",
                         extra={"dev_only": True},

@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
     from oncutf.ui.widgets.file_table import FileTableView
     from oncutf.ui.widgets.file_tree import FileTreeView
+    from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
     from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
     from oncutf.ui.widgets.interactive_header import InteractiveHeader
     from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel, MetadataTreeView
@@ -291,6 +292,7 @@ class LayoutContext(Protocol):
     # Left panel
     folder_tree: "FileTreeView"
     dir_model: "CustomFileSystemModel"
+    dir_proxy_model: "DriveSortProxyModel"
     select_folder_button: "QPushButton"
     browse_folder_button: "QPushButton"
 
