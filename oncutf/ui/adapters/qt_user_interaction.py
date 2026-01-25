@@ -217,3 +217,8 @@ class QtProgressDialogAdapter:
         """Set focus to the dialog."""
         if hasattr(self._dialog, "setFocus"):
             self._dialog.setFocus()
+
+    def raise_(self) -> None:
+        """Raise the dialog to the top of the window stack."""
+        if hasattr(self._dialog, "raise_"):
+            self._dialog.raise_()
