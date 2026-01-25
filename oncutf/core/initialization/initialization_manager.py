@@ -125,8 +125,8 @@ class InitializationManager:
                 # Do NOT clear selections - the manager will handle state appropriately
 
                 # 1. Clear preview cache
-                if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
-                    self.main_window.preview_manager.clear_all_caches()
+                if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+                    self.main_window.unified_rename_engine.cache_manager.clear_cache()
                 if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                     self.main_window.update_preview_tables_from_pairs([])
 
@@ -159,8 +159,8 @@ class InitializationManager:
                 pass
 
             # 2. Clear preview cache and tables (stale data)
-            if hasattr(self.main_window, "preview_manager") and self.main_window.preview_manager:
-                self.main_window.preview_manager.clear_all_caches()
+            if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+                self.main_window.unified_rename_engine.cache_manager.clear_cache()
             if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                 self.main_window.update_preview_tables_from_pairs([])
 

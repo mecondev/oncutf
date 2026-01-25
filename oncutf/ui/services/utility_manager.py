@@ -264,8 +264,8 @@ class UtilityManager:
 
     def clear_preview_caches(self) -> None:
         """Clear all preview-related caches when files change."""
-        if hasattr(self.main_window, "preview_manager"):
-            self.main_window.preview_manager.clear_all_caches()
+        if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+            self.main_window.unified_rename_engine.cache_manager.clear_cache()
 
         # Reset cache hashes
         self._last_selected_files_hash = None
@@ -312,14 +312,21 @@ class UtilityManager:
                 self.main_window.preview_tables_view.setUpdatesEnabled(False)
 
             try:
-                # Generate previews using the optimized preview manager
-                all_modules = self.main_window.rename_modules_area.get_all_module_instances()
-                name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
-                    selected_files, rename_data, self.main_window.metadata_cache, all_modules
+                # Generate previews using UnifiedRenameEngine
+                if not hasattr(self.main_window, "unified_rename_engine") or not self.main_window.unified_rename_engine:
+                    return
+
+                preview_result = self.main_window.unified_rename_engine.preview_manager.generate_preview(
+                    selected_files,
+                    rename_data.get("modules", []),
+                    rename_data.get("post_transform", {}),
+                    self.main_window.metadata_cache
                 )
 
+                name_pairs = preview_result.name_pairs
+                has_changes = preview_result.has_changes
+
                 # Update UI components
-                self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
                 self.main_window.update_preview_tables_from_pairs(name_pairs)
 
                 # Handle rename button state

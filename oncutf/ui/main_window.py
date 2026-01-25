@@ -92,21 +92,8 @@ class MainWindow(
     # -------------------------------------------------------------------------
     # Backward Compatibility Properties
     # -------------------------------------------------------------------------
-    
-    @property
-    def preview_manager(self):
-        """Backward compatibility: Access preview_manager through unified_rename_engine.
-        
-        Returns the UnifiedPreviewManager instance from the UnifiedRenameEngine.
-        This property provides access for legacy code that expects preview_manager
-        to be a direct attribute of MainWindow.
-        
-        Returns:
-            UnifiedPreviewManager or None if unified_rename_engine not initialized
-        """
-        if hasattr(self, 'unified_rename_engine') and self.unified_rename_engine:
-            return self.unified_rename_engine.preview_manager
-        return None
+
+
 
     # Note: All other methods are inherited from delegate classes in main_window_delegates/
     # See: selection_delegates, metadata_delegates, file_operation_delegates, etc.

@@ -180,3 +180,12 @@ class QtProgressDialogAdapter:
     def is_cancelled(self) -> bool:
         """Check if user cancelled the operation."""
         return self._dialog.is_cancelled()
+
+    def start_progress_tracking(self, total_size: int = 0) -> None:
+        """Start progress tracking with total size.
+
+        Args:
+            total_size: Total size in bytes for progress tracking
+
+        """
+        self._dialog.start_progress_tracking(total_size)

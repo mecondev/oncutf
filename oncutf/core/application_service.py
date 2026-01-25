@@ -44,7 +44,6 @@ class ApplicationService:
             "selection_manager",
             "utility_manager",
             "rename_manager",
-            "preview_manager",
             "shortcut_manager",
             "drag_cleanup_manager",
             "splitter_manager",

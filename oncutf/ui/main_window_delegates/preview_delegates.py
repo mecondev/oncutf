@@ -54,8 +54,11 @@ class PreviewDelegates:
         return self.preview_manager.get_identity_name_pairs(self.file_model.files)
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """Update preview tables from pairs via PreviewManager."""
-        self.preview_manager.update_preview_tables_from_pairs(name_pairs)
+        """Update preview tables from pairs - UI layer operation."""
+        # This is a UI operation - update preview tables view directly
+        if hasattr(self, "preview_tables_view"):
+            # TODO: Icon paths should be passed from the calling context
+            self.preview_tables_view.update_from_pairs(name_pairs, {}, {})
 
     def compute_max_filename_width(self, file_list: list) -> int:
         """Compute max filename width via PreviewManager."""
