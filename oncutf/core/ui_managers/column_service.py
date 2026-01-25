@@ -62,7 +62,7 @@ class ColumnConfig:
             ColumnAlignment.CENTER: Qt.AlignCenter,
             ColumnAlignment.RIGHT: Qt.AlignRight | Qt.AlignVCenter,
         }
-        return alignment_map[self.alignment]  # type: ignore[return-value]
+        return cast("Qt.AlignmentFlag", alignment_map[self.alignment])
 
 
 class UnifiedColumnService:

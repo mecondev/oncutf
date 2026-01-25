@@ -8,7 +8,7 @@ Batch Processor - Simple but effective batch processing for speed and reliabilit
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any
+from typing import Any, cast
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -209,10 +209,13 @@ class BatchProcessorFactory:
     @staticmethod
     def create_processor(processor_type: str = "simple", **kwargs: object) -> BatchProcessor:
         """Create batch processor based on type."""
+        # Cast kwargs to Any to allow unpacking into typed constructors
+        # The type:ignore was here because object type doesn't match int parameters
+        kwargs_any = cast("dict[str, Any]", kwargs)
         if processor_type == "smart":
-            return SmartBatchProcessor(**kwargs)  # type: ignore[arg-type]
+            return SmartBatchProcessor(**kwargs_any)
         else:
-            return BatchProcessor(**kwargs)  # type: ignore[arg-type]
+            return BatchProcessor(**kwargs_any)
 
     @staticmethod
     def get_optimal_config(

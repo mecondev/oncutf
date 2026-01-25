@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
+    from oncutf.app.ports import UserDialogPort
+
 
 def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show information dialog using registered adapter.
@@ -139,7 +141,7 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
     return False  # Default response when no parent available
 
 
-def get_dialog_adapter():  # type: ignore[no-untyped-def]
+def get_dialog_adapter() -> UserDialogPort | None:
     """Get the registered UserDialogPort adapter.
 
     Returns:

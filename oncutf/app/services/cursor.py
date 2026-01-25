@@ -17,6 +17,8 @@ import contextlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from oncutf.app.ports.user_interaction import CursorPort
 
 
@@ -38,7 +40,7 @@ def get_cursor_adapter() -> CursorPort | None:
 
 
 @contextlib.contextmanager
-def wait_cursor(restore_after: bool = True):  # type: ignore[no-untyped-def]
+def wait_cursor(restore_after: bool = True) -> Generator[None, None, None]:
     """Context manager for wait cursor without Qt dependencies.
 
     Args:

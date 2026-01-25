@@ -19,6 +19,8 @@ Usage:
 
 from typing import TYPE_CHECKING
 
+from oncutf.utils.ui.icons_loader import ThemeIconLoader
+
 if TYPE_CHECKING:
     from oncutf.core.pyqt_imports import QIcon, QPixmap
 
@@ -109,7 +111,7 @@ def load_metadata_icons(base_dir: str | None = None) -> dict[str, "QPixmap"]:
     return _load(base_dir)
 
 
-def get_icons_loader():  # type: ignore[no-untyped-def]
+def get_icons_loader() -> ThemeIconLoader:
     """Return the global icons_loader instance.
 
     Facade for utils.ui.icons_loader.icons_loader singleton.
