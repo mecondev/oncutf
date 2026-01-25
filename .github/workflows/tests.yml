@@ -92,8 +92,49 @@ jobs:
     
     - name: Install system dependencies (Windows)
       if: runner.os == 'Windows'
+      shell: pwsh
       run: |
-        choco install exiftool -y
+        # Try Chocolatey first (with retry)
+        $maxRetries = 3
+        $retryCount = 0
+        $installed = $false
+        
+        while (-not $installed -and $retryCount -lt $maxRetries) {
+          try {
+            Write-Host "Attempt $($retryCount + 1) of $maxRetries..."
+            choco install exiftool -y --timeout=300
+            $installed = $true
+            Write-Host "ExifTool installed via Chocolatey"
+          }
+          catch {
+            $retryCount++
+            if ($retryCount -lt $maxRetries) {
+              Write-Host "Retry in 10 seconds..."
+              Start-Sleep -Seconds 10
+            }
+          }
+        }
+        
+        # Fallback: Direct download from official source
+        if (-not $installed) {
+          Write-Host "Chocolatey failed, downloading from exiftool.org..."
+          $url = "https://exiftool.org/exiftool-13.33.zip"
+          $zipPath = "$env:TEMP\exiftool.zip"
+          $extractPath = "C:\exiftool"
+          
+          Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+          
+          # Rename exiftool(-k).exe to exiftool.exe
+          Rename-Item -Path "$extractPath\exiftool(-k).exe" -NewName "exiftool.exe" -Force
+          
+          # Add to PATH
+          echo "$extractPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "ExifTool installed from official source"
+        }
+        
+        # Verify installation
+        exiftool -ver
     
     - name: Cache pip dependencies
       uses: actions/cache@v3
