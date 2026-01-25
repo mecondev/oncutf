@@ -26,6 +26,10 @@ from typing import Any
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 
+from oncutf.app.services.user_interaction import (
+    show_info_message,
+    show_warning_message,
+)
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -532,8 +536,6 @@ class UnifiedMetadataManager(QObject):
                 self.parent_window.status_bar.showMessage(message, 5000 if success_count else 3000)
 
             if self.parent_window:
-                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
                 msg_parts = ["Save operation cancelled by user."]
                 if success_count > 0:
                     msg_parts.append(f"\nSuccessfully saved: {success_count} files")
@@ -542,7 +544,7 @@ class UnifiedMetadataManager(QObject):
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                CustomMessageDialog.information(
+                show_info_message(
                     self.parent_window, "Save Cancelled", "\n".join(msg_parts)
                 )
             return
@@ -557,9 +559,7 @@ class UnifiedMetadataManager(QObject):
         if failed_files:
             logger.warning("[UnifiedMetadataManager] Failed to save %d files", len(failed_files))
             if self.parent_window:
-                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-                CustomMessageDialog.show_warning(
+                show_warning_message(
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"

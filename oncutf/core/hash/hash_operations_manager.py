@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     from oncutf.models.file_item import FileItem
 
+from oncutf.app.services.user_interaction import show_info_message
 from oncutf.config import STATUS_COLORS
 from oncutf.core.hash.hash_results_presenter import HashResultsPresenter
 from oncutf.utils.filesystem.file_status_helpers import has_hash
@@ -219,9 +220,7 @@ class HashOperationsManager:
 
         except Exception as e:
             logger.error("[HashManager] Error setting up external comparison: %s", e)
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
+            show_info_message(
                 self.parent_window,
                 "Error",
                 f"Failed to start external comparison: {e!s}",
@@ -285,9 +284,7 @@ class HashOperationsManager:
 
         except Exception as e:
             logger.error("[HashManager] Error calculating checksum: %s", e)
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
+            show_info_message(
                 self.parent_window, "Error", f"Failed to calculate checksum: {e!s}"
             )
 
@@ -448,9 +445,7 @@ class HashOperationsManager:
         logger.error("[HashManager] Hash operation error: %s", error_message)
 
         # Show error message
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
+        show_info_message(
             self.parent_window, "Error", f"Hash operation failed: {error_message}"
         )
 

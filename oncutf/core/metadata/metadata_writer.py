@@ -22,6 +22,10 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject
 
+from oncutf.app.services.user_interaction import (
+    show_info_message,
+    show_warning_message,
+)
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -545,8 +549,6 @@ class MetadataWriter(QObject):
                 self.parent_window.status_bar.showMessage(message, 5000 if success_count else 3000)
 
             if self.parent_window:
-                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
                 msg_parts = ["Save operation cancelled by user."]
                 if success_count > 0:
                     msg_parts.append(f"\nSuccessfully saved: {success_count} files")
@@ -555,7 +557,7 @@ class MetadataWriter(QObject):
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                CustomMessageDialog.information(
+                show_info_message(
                     self.parent_window, "Save Cancelled", "\n".join(msg_parts)
                 )
             return
@@ -570,9 +572,7 @@ class MetadataWriter(QObject):
         if failed_files:
             logger.warning("[MetadataWriter] Failed to save %d files", len(failed_files))
             if self.parent_window:
-                from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-                CustomMessageDialog.show_warning(
+                show_warning_message(
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"

@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from oncutf.models.file_item import FileItem
 
+from oncutf.app.services.user_interaction import show_info_message
 from oncutf.config import STATUS_COLORS
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -52,9 +53,7 @@ class HashResultsPresenter:
 
         """
         if not duplicates:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
+            show_info_message(
                 self.parent_window,
                 "Duplicate Detection Results",
                 f"No duplicates found in {scope} files.",
@@ -83,9 +82,7 @@ class HashResultsPresenter:
             message_lines.append("")
 
         # Show results dialog
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
+        show_info_message(
             self.parent_window, "Duplicate Detection Results", "\n".join(message_lines)
         )
 
@@ -114,9 +111,7 @@ class HashResultsPresenter:
 
         """
         if not results:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-            CustomMessageDialog.information(
+            show_info_message(
                 self.parent_window,
                 "External Comparison Results",
                 f"No matching files found in:\n{external_folder}",
@@ -154,9 +149,7 @@ class HashResultsPresenter:
                     message_lines.append(f"  • {filename}")
 
         # Show results dialog
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-        CustomMessageDialog.information(
+        show_info_message(
             self.parent_window, "External Comparison Results", "\n".join(message_lines)
         )
 
@@ -192,16 +185,14 @@ class HashResultsPresenter:
 
         """
         if not hash_results:
-            from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
             if was_cancelled:
-                CustomMessageDialog.information(
+                show_info_message(
                     self.parent_window,
                     "Checksum Results",
                     "Operation was cancelled before any checksums could be calculated.",
                 )
             else:
-                CustomMessageDialog.information(
+                show_info_message(
                     self.parent_window,
                     "Checksum Results",
                     "No checksums could be calculated.",

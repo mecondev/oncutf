@@ -19,7 +19,10 @@ if TYPE_CHECKING:
 from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices
 
-from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
+from oncutf.app.services.user_interaction import (
+    show_question_message,
+    show_warning_message,
+)
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -58,9 +61,9 @@ class FileOperationsManager:
                     total_count=0,
                     auto_reset=True,
                 )
-                CustomMessageDialog.show_warning(
-                    self.parent_window, "Rename Warning", "No files are selected for renaming."
-                )
+            show_warning_message(
+                self.parent_window, "Rename Warning", "No files are selected for renaming."
+            )
             return 0
 
         logger.info("[Rename] Starting rename process for %d files...", len(selected_files))
@@ -229,12 +232,10 @@ class FileOperationsManager:
             def show_completion_dialog() -> None:
                 """Show the rename completion dialog after the workflow completes."""
                 try:
-                    if CustomMessageDialog.question(
+                    if show_question_message(
                         self.parent_window,
                         "Rename Complete",
                         f"{renamed_count} file(s) renamed.\nOpen the folder?",
-                        yes_text="Open Folder",
-                        no_text="Close",
                     ):
                         QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
                 except Exception as e:

@@ -20,6 +20,11 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
+from oncutf.app.services.user_interaction import (
+    show_error_message,
+    show_info_message,
+    show_warning_message,
+)
 from oncutf.core.metadata.field_compatibility import get_field_compatibility_checker
 from oncutf.utils.filesystem.file_status_helpers import has_metadata
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -177,8 +182,6 @@ class MetadataOperationsManager:
 
     def _execute_export(self, dialog: Any, format_combo: Any, file_items: list[FileItem], scope: str) -> None:
         """Execute the actual export process."""
-        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
         # Get format
         format_map = {0: "json", 1: "markdown"}
         format_type = format_map.get(format_combo.currentIndex(), "json")
@@ -211,13 +214,13 @@ class MetadataOperationsManager:
 
             # Show result
             if success:
-                CustomMessageDialog.information(
+                show_info_message(
                     self.parent_window,
                     "Export Successful",
                     f"Metadata exported successfully to:\n{output_dir}",
                 )
             else:
-                CustomMessageDialog.show_warning(
+                show_warning_message(
                     self.parent_window,
                     "Export Failed",
                     "Failed to export metadata. Check the logs for details.",
@@ -225,7 +228,7 @@ class MetadataOperationsManager:
 
         except Exception as e:
             logger.exception("[EventHandler] Export error: %s", e)
-            CustomMessageDialog.show_error(
+            show_error_message(
                 self.parent_window, "Export Error", f"An error occurred during export:\n{e!s}"
             )
 
