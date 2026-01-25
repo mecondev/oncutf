@@ -106,8 +106,14 @@ module = [
 ignore_errors = true
 
 # ============================================================
-# Tier 1 — New Architecture (app/domain/infra) — STRICT
+# Tier 1 — New Architecture (app/domain/infra) — PRAGMATIC STRICT
 # HIGHEST quality bar - these are the foundation layers
+# Phase E Part 6: Enable strict flags (mypy --strict equivalent, minus disallow_any_explicit/expr)
+# NOTE: disallow_any_explicit/expr are intentionally omitted because:
+# - Metadata domain legitimately uses dict[str, Any] for EXIF data (intrinsically untyped)
+# - Validators need Callable[[Any], ...] for runtime validation of arbitrary data
+# - File repository interfaces with untyped database manager
+# This is a pragmatic choice for a metadata-centric application
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
@@ -119,11 +125,18 @@ module = [
     "oncutf.infra.external.*"
 ]
 ignore_errors = false
+# Core strict checks (already enabled)
 disallow_untyped_defs = true
 disallow_any_generics = true
 warn_return_any = true
 no_implicit_reexport = true
 strict_optional = true
+# Phase E Part 6: Additional strict flags (pragmatic subset)
+disallow_any_unimported = true
+disallow_any_decorated = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
 
 # ============================================================
 # Tier 2 — Controllers / Services (legacy) — GRADUAL STRICT
