@@ -168,14 +168,14 @@ class FinalTransformContainer(QWidget):
             self._schedule_central_preview_update()
 
     def _setup_rename_engine(self):
-        """Setup UnifiedRenameEngine."""
+        """Setup QtRenameEngine with signal support."""
         try:
-            from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
+            from oncutf.ui.adapters.qt_rename_engine import QtRenameEngine
 
-            self.rename_engine = UnifiedRenameEngine()
-            logger.debug("[FinalTransformContainer] UnifiedRenameEngine initialized")
+            self.rename_engine = QtRenameEngine()
+            logger.debug("[FinalTransformContainer] QtRenameEngine initialized")
         except Exception as e:
-            logger.error("[FinalTransformContainer] Error initializing UnifiedRenameEngine: %s", e)
+            logger.error("[FinalTransformContainer] Error initializing QtRenameEngine: %s", e)
 
     def _schedule_central_preview_update(self):
         """Schedule central preview update with delay."""

@@ -87,7 +87,7 @@ class BootstrapOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
-        from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
+        from oncutf.ui.adapters.qt_rename_engine import QtRenameEngine
         from oncutf.ui.drag.drag_manager import DragManager
 
         # Core Application Context
@@ -117,7 +117,7 @@ class BootstrapOrchestrator:
 
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()
-        self.window.unified_rename_engine = UnifiedRenameEngine()
+        self.window.unified_rename_engine = QtRenameEngine()
         self.window.file_operations_manager = FileOperationsManager(parent_window=self.window)
         self.window.metadata_staging_manager = MetadataStagingManager(parent=self.window)
 

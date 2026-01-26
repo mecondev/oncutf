@@ -3,12 +3,12 @@
 Central rename engine facade for previewing, validating and executing
 batch rename operations.
 
-This module provides the `UnifiedRenameEngine` Qt-aware facade used by the
-UI layer. The implementation delegates to specialized managers for preview
-generation, validation and execution while providing a unified interface.
+This module provides the `UnifiedRenameEngine` pure Python facade used by
+controllers and business logic. For Qt-aware signals, use QtRenameEngine
+from oncutf.ui.adapters.
 
-The engine respects the preview -> validate -> execute workflow and emits
-Qt signals after each major stage to allow the UI to update.
+The engine respects the preview -> validate -> execute workflow and
+provides callbacks for state change notifications.
 
 Author: Michael Economou
 Date: 2026-01-01
@@ -20,8 +20,6 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
-
-from PyQt5.QtCore import QObject, pyqtSignal
 
 from oncutf.core.batch.processor import BatchProcessorFactory
 from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
@@ -63,27 +61,20 @@ __all__ = [
 ]
 
 
-class UnifiedRenameEngine(QObject):
-    """Facade connecting UI code to the unified rename workflow.
+class UnifiedRenameEngine:
+    """Pure Python facade for the unified rename workflow.
 
-    This Qt-aware object exposes high-level methods used by the UI to:
-        - generate previews (`generate_preview`)
-        - validate previewed names (`validate_preview`)
-        - execute renames with conflict handling (`execute_rename`)
+    This Qt-free object exposes high-level methods for:
+        - generating previews (`generate_preview`)
+        - validating previewed names (`validate_preview`)
+        - executing renames with conflict handling (`execute_rename`)
 
-    Signals are emitted after each major stage to allow the UI to update.
+    For Qt signals, use QtRenameEngine from oncutf.ui.adapters.
+    Callbacks can be registered for state change notifications.
     """
-
-    # Central signal system
-    preview_updated = pyqtSignal()
-    validation_updated = pyqtSignal()
-    execution_completed = pyqtSignal()
-    state_changed = pyqtSignal()
 
     def __init__(self) -> None:
         """Initialize the rename engine with all managers and caches."""
-        super().__init__()
-
         # Initialize managers
         self.batch_query_manager = BatchQueryManager()
         self.cache_manager = SmartCacheManager()
@@ -125,8 +116,6 @@ class UnifiedRenameEngine(QObject):
         )
         self.state_manager.update_state(new_state)
 
-        self.preview_updated.emit()
-        self.state_changed.emit()
         return result
 
     @monitor_performance("validate_preview")
@@ -139,8 +128,6 @@ class UnifiedRenameEngine(QObject):
         current_state.validation_result = result
         self.state_manager.update_state(current_state)
 
-        self.validation_updated.emit()
-        self.state_changed.emit()
         return result
 
     @monitor_performance("execute_rename")
@@ -161,8 +148,6 @@ class UnifiedRenameEngine(QObject):
         current_state.execution_result = result
         self.state_manager.update_state(current_state)
 
-        self.execution_completed.emit()
-        self.state_changed.emit()
         return result
 
     def get_current_state(self) -> RenameState:

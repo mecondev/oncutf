@@ -284,14 +284,14 @@ class RenameModulesArea(QWidget):
         logger.debug("[RenameModulesArea] Theme changed to: %s", theme, extra={"dev_only": True})
 
     def _setup_rename_engine(self):
-        """Setup UnifiedRenameEngine."""
+        """Setup QtRenameEngine with signal support."""
         try:
-            from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
+            from oncutf.ui.adapters.qt_rename_engine import QtRenameEngine
 
-            self.rename_engine = UnifiedRenameEngine()
-            logger.debug("[RenameModulesArea] UnifiedRenameEngine initialized")
+            self.rename_engine = QtRenameEngine()
+            logger.debug("[RenameModulesArea] QtRenameEngine initialized")
         except Exception as e:
-            logger.error("[RenameModulesArea] Error initializing UnifiedRenameEngine: %s", e)
+            logger.error("[RenameModulesArea] Error initializing QtRenameEngine: %s", e)
 
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
