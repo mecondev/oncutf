@@ -67,9 +67,9 @@ def manager(mock_parent_window):
     """Create FileLoadManager instance with mocked dependencies."""
     from oncutf.core.file.load_manager import FileLoadManager
 
-    with patch('oncutf.core.file.load_manager.FileLoadUIService'):
-        mgr = FileLoadManager(mock_parent_window)
-        return mgr
+    # No need to patch anything - FileLoadManager no longer creates UI service
+    mgr = FileLoadManager(mock_parent_window)
+    return mgr
 
 
 class TestFileLoadManagerInit:
