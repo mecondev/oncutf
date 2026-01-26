@@ -72,7 +72,7 @@ def mock_db_manager():
 def file_model(sample_files, mock_db_manager):
     """Create FileTableModel with sample files."""
     # Patch get_app_context before creating model
-    with patch("oncutf.core.application_context.ApplicationContext.get_instance") as mock_instance:
+    with patch("oncutf.ui.adapters.application_context.ApplicationContext.get_instance") as mock_instance:
         mock_app_context = Mock()
         mock_app_context.get_manager.return_value = mock_db_manager
         mock_instance.return_value = mock_app_context
