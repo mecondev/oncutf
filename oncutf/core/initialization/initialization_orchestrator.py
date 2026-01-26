@@ -199,11 +199,11 @@ class InitializationOrchestrator:
         from oncutf.core.file.load_manager import FileLoadManager
         from oncutf.core.initialization.initialization_manager import InitializationManager
         from oncutf.core.rename.rename_manager import RenameManager
-        from oncutf.core.ui_managers.column_manager import ColumnManager
-        from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
-        from oncutf.core.ui_managers.splitter_manager import SplitterManager
-        from oncutf.core.ui_managers.table_manager import TableManager
-        from oncutf.core.ui_managers.window_config_manager import WindowConfigManager
+        from oncutf.ui.managers.column_manager import ColumnManager
+        from oncutf.ui.managers.shortcut_manager import ShortcutManager
+        from oncutf.ui.managers.splitter_manager import SplitterManager
+        from oncutf.ui.managers.table_manager import TableManager
+        from oncutf.ui.managers.window_config_manager import WindowConfigManager
         from oncutf.ui.services.dialog_manager import DialogManager
         from oncutf.ui.services.utility_manager import UtilityManager
         from oncutf.utils.shared.json_config_manager import get_app_config_manager

@@ -11,7 +11,7 @@ Separates window management logic from MainWindow for better code organization.
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from oncutf.core.ui_managers.column_service import get_column_service
+from oncutf.ui.managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
@@ -395,7 +395,7 @@ class WindowConfigManager:
 
             # Load column visibility states from database
             try:
-                from oncutf.core.ui_managers.column_service import get_column_service
+                from oncutf.ui.managers.column_service import get_column_service
 
                 column_service = get_column_service()
                 file_table_columns = session_manager.get_file_table_columns()

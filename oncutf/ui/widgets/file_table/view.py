@@ -453,7 +453,7 @@ class FileTableView(QTableView):
         if not self.model():
             return
 
-        from oncutf.core.ui_managers import get_column_service
+        from oncutf.ui.managers import get_column_service
 
         # Clear all existing delegates (except default delegate)
         for col_idx in range(self.model().columnCount()):

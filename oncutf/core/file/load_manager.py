@@ -24,8 +24,8 @@ from oncutf.config import (
     SHOW_COMPANION_FILES_IN_TABLE,
 )
 from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
-from oncutf.core.ui_managers.file_load_ui_service import FileLoadUIService
 from oncutf.models.file_item import FileItem
+from oncutf.ui.managers.file_load_ui_service import FileLoadUIService
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

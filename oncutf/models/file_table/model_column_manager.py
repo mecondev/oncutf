@@ -41,7 +41,7 @@ class ColumnManager:
 
     def _load_default_visible_columns(self) -> list[str]:
         """Load default visible columns configuration using UnifiedColumnService."""
-        from oncutf.core.ui_managers import get_column_service
+        from oncutf.ui.managers import get_column_service
 
         service = get_column_service()
         return service.get_visible_columns()
@@ -114,7 +114,7 @@ class ColumnManager:
         )
 
         # Invalidate UnifiedColumnService cache when columns change
-        from oncutf.core.ui_managers import get_column_service
+        from oncutf.ui.managers import get_column_service
 
         service = get_column_service()
         service.invalidate_cache()

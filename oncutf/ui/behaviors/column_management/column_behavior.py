@@ -17,7 +17,7 @@ from oncutf.ui.behaviors.column_management.width_manager import ColumnWidthManag
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.ui_managers.column_service import UnifiedColumnService
+    from oncutf.ui.managers.column_service import UnifiedColumnService
 
 logger = get_cached_logger(__name__)
 
@@ -64,7 +64,7 @@ class ColumnManagementBehavior:
 
     def _get_column_service(self) -> "UnifiedColumnService":
         """Get or create column service instance."""
-        from oncutf.core.ui_managers.column_service import get_column_service
+        from oncutf.ui.managers.column_service import get_column_service
 
         return get_column_service()
 

@@ -20,7 +20,7 @@ from typing import Any
 
 from PyQt5.QtWidgets import QHeaderView, QTableView, QTreeView, QWidget
 
-from oncutf.core.ui_managers.column_service import get_column_service
+from oncutf.ui.managers.column_service import get_column_service
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

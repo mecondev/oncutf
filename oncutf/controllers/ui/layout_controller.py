@@ -825,7 +825,7 @@ class LayoutController:
 
     def _setup_bottom_controls(self) -> None:
         """Setup bottom controls (status label and rename button)."""
-        from oncutf.core.ui_managers.status_manager import StatusManager
+        from oncutf.ui.managers.status_manager import StatusManager
 
         self._controls_layout = QHBoxLayout()
         self.parent_window.status_label = QLabel("")

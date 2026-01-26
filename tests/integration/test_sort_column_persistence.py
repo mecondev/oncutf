@@ -13,7 +13,7 @@ import pytest
 from PyQt5.QtCore import Qt
 
 from oncutf.core.session_state_manager import get_session_state_manager
-from oncutf.core.ui_managers.window_config_manager import WindowConfigManager
+from oncutf.ui.managers.window_config_manager import WindowConfigManager
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ class TestSortColumnPersistence:
 
     def test_sort_state_persists_after_clear(self, mock_main_window):
         """Test that sort state is preserved when clearing file table."""
-        from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
+        from oncutf.ui.managers.shortcut_manager import ShortcutManager
 
         # Set custom sort state
         mock_main_window.current_sort_column = 5
