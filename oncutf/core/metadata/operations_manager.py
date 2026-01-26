@@ -13,6 +13,7 @@ Features:
 - Metadata field standard resolution (XMP, EXIF, IPTC)
 
 Refactored: 2026-01-03 - Extracted field compatibility to field_compatibility.py
+Uses MetadataEditPort for UI decoupling (Phase 5).
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
+    from oncutf.app.ports.metadata_editing import MetadataEditPort
     from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
@@ -47,15 +49,33 @@ class MetadataOperationsManager:
     - Determining file types and supported metadata standards
     """
 
-    def __init__(self, parent_window: QWidget) -> None:
+    def __init__(
+        self,
+        parent_window: QWidget,
+        metadata_edit: MetadataEditPort | None = None,
+    ) -> None:
         """Initialize the metadata operations manager.
 
         Args:
             parent_window: Reference to the main window for accessing models, views, and managers
+            metadata_edit: Port for metadata editing dialogs (injected)
 
         """
         self.parent_window: Any = parent_window
+        self._metadata_edit = metadata_edit
         logger.debug("MetadataOperationsManager initialized", extra={"dev_only": True})
+
+    @property
+    def metadata_edit(self) -> MetadataEditPort:
+        """Lazy-load metadata edit adapter from ApplicationContext."""
+        if self._metadata_edit is None:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            self._metadata_edit = context.get_manager("metadata_edit")
+            if self._metadata_edit is None:
+                raise RuntimeError("MetadataEditPort not registered in ApplicationContext")
+        return self._metadata_edit
 
     # ===== Public Interface Methods =====
 
@@ -259,9 +279,7 @@ class MetadataOperationsManager:
                 current_value = self._get_current_field_value(selected_files[0], field_name) or ""
 
             # Import and show the metadata edit dialog
-            from oncutf.ui.dialogs.metadata_edit_dialog import MetadataEditDialog
-
-            success, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
+            success, new_value, files_to_modify = self.metadata_edit.edit_metadata_field(
                 parent=self.parent_window,
                 selected_files=selected_files,
                 metadata_cache=self.parent_window.metadata_cache,

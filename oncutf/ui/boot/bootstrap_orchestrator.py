@@ -94,12 +94,22 @@ class BootstrapOrchestrator:
         self.window.context = ApplicationContext.create_instance(parent=self.window)
 
         # Register UI adapters for dependency inversion
+        from oncutf.ui.adapters.qt_conflict_resolution import QtConflictResolutionAdapter
         from oncutf.ui.adapters.qt_file_load_ui import QtFileLoadUIAdapter
+        from oncutf.ui.adapters.qt_metadata_edit import QtMetadataEditAdapter
+        from oncutf.ui.adapters.qt_results_display import QtResultsDisplayAdapter
+        from oncutf.ui.adapters.qt_ui_update import QtUIUpdateAdapter
         from oncutf.ui.adapters.qt_user_interaction import QtCursorAdapter, QtUserDialogAdapter
 
         self.window.context.register_manager("user_dialog", QtUserDialogAdapter(self.window))
         self.window.context.register_manager("cursor", QtCursorAdapter())
         self.window.context.register_manager("file_load_ui", QtFileLoadUIAdapter(self.window))
+
+        # Phase 5: Specialized dialog ports
+        self.window.context.register_manager("results_display", QtResultsDisplayAdapter())
+        self.window.context.register_manager("conflict_resolution", QtConflictResolutionAdapter())
+        self.window.context.register_manager("metadata_edit", QtMetadataEditAdapter())
+        self.window.context.register_manager("ui_update", QtUIUpdateAdapter())
 
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()

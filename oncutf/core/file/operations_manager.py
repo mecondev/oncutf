@@ -5,6 +5,8 @@ Date: 2025-06-13
 
 file_operations_manager.py
 Manages file operations like rename, validation, and conflict resolution.
+
+Uses ConflictResolutionPort for UI decoupling (Phase 5).
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from oncutf.app.ports.conflict_resolution import ConflictResolutionPort
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
 
@@ -32,10 +35,33 @@ logger = get_cached_logger(__name__)
 class FileOperationsManager:
     """Manages file operations like rename, validation, and conflict resolution."""
 
-    def __init__(self, parent_window: Any = None) -> None:
-        """Initialize FileOperationsManager."""
+    def __init__(
+        self,
+        parent_window: Any = None,
+        conflict_resolution: ConflictResolutionPort | None = None,
+    ) -> None:
+        """Initialize FileOperationsManager.
+
+        Args:
+            parent_window: Reference to main window
+            conflict_resolution: Port for conflict resolution dialogs (injected)
+
+        """
         self.parent_window = parent_window
+        self._conflict_resolution = conflict_resolution
         logger.debug("[FileOperationsManager] Initialized", extra={"dev_only": True})
+
+    @property
+    def conflict_resolution(self) -> ConflictResolutionPort:
+        """Lazy-load conflict resolution adapter from ApplicationContext."""
+        if self._conflict_resolution is None:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            self._conflict_resolution = context.get_manager("conflict_resolution")
+            if self._conflict_resolution is None:
+                raise RuntimeError("ConflictResolutionPort not registered in ApplicationContext")
+        return self._conflict_resolution
 
     def rename_files(
         self,
@@ -115,11 +141,7 @@ class FileOperationsManager:
                 )
 
                 # Show conflict resolution dialog
-                from oncutf.ui.dialogs.conflict_resolution_dialog import (
-                    ConflictResolutionDialog,
-                )
-
-                action, apply_to_all = ConflictResolutionDialog.show_conflict(
+                action, apply_to_all = self.conflict_resolution.show_conflict(
                     old_filename=original_filename,
                     new_filename=filename,
                     parent=self.parent_window,
