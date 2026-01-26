@@ -95,6 +95,7 @@ class BootstrapOrchestrator:
 
         # Register UI adapters for dependency inversion
         from oncutf.ui.adapters.qt_conflict_resolution import QtConflictResolutionAdapter
+        from oncutf.ui.adapters.qt_drag_state import QtDragStateAdapter
         from oncutf.ui.adapters.qt_file_load_ui import QtFileLoadUIAdapter
         from oncutf.ui.adapters.qt_metadata_edit import QtMetadataEditAdapter
         from oncutf.ui.adapters.qt_results_display import QtResultsDisplayAdapter
@@ -110,6 +111,9 @@ class BootstrapOrchestrator:
         self.window.context.register_manager("conflict_resolution", QtConflictResolutionAdapter())
         self.window.context.register_manager("metadata_edit", QtMetadataEditAdapter())
         self.window.context.register_manager("ui_update", QtUIUpdateAdapter())
+
+        # Phase 6.1: Drag state port
+        self.window.context.register_manager("drag_state", QtDragStateAdapter())
 
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()

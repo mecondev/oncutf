@@ -56,6 +56,10 @@ def mock_parent_window():
     window.context.set_current_folder = Mock()
     window.context.get_current_folder = Mock(return_value=None)
     window.context.file_store = Mock()
+    
+    # Mock drag_state port
+    window.context.get_manager = Mock(return_value=None)  # Will use injected drag_state
+    
     window.file_model = Mock()
     window.file_table = Mock()
     window.metadata_tree = Mock()
@@ -63,12 +67,23 @@ def mock_parent_window():
 
 
 @pytest.fixture
-def manager(mock_parent_window):
+def mock_drag_state():
+    """Create a mock drag state adapter."""
+    drag_state = Mock()
+    drag_state.is_dragging = Mock(return_value=False)
+    drag_state.force_cleanup_drag = Mock()
+    drag_state.end_drag_visual = Mock()
+    drag_state.clear_drag_state = Mock()
+    return drag_state
+
+
+@pytest.fixture
+def manager(mock_parent_window, mock_drag_state):
     """Create FileLoadManager instance with mocked dependencies."""
     from oncutf.core.file.load_manager import FileLoadManager
 
-    # No need to patch anything - FileLoadManager no longer creates UI service
-    mgr = FileLoadManager(mock_parent_window)
+    # Inject mock drag_state to avoid ApplicationContext dependency
+    mgr = FileLoadManager(mock_parent_window, drag_state=mock_drag_state)
     return mgr
 
 

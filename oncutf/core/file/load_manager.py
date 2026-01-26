@@ -14,7 +14,7 @@ Responsibilities:
 """
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
 
@@ -25,9 +25,11 @@ from oncutf.config import (
     SHOW_COMPANION_FILES_IN_TABLE,
 )
 from oncutf.models.file_item import FileItem
-from oncutf.ui.drag.drag_manager import force_cleanup_drag, is_dragging
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from oncutf.app.ports.drag_state import DragStatePort
 
 logger = get_cached_logger(__name__)
 
@@ -39,9 +41,18 @@ class FileLoadManager:
     - No complex progress dialogs, just simple and fast loading.
     """
 
-    def __init__(self, parent_window: Any = None) -> None:
-        """Initialize FileLoadManager with parent window reference."""
+    def __init__(
+        self, parent_window: Any = None, drag_state: "DragStatePort | None" = None
+    ) -> None:
+        """Initialize FileLoadManager with parent window reference.
+
+        Args:
+            parent_window: Reference to main window
+            drag_state: Port for drag state management (injected)
+
+        """
         self.parent_window = parent_window
+        self._drag_state = drag_state
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
@@ -49,6 +60,23 @@ class FileLoadManager:
             "[FileLoadManager] Initialized with unified loading policy",
             extra={"dev_only": True},
         )
+
+    @property
+    def drag_state(self) -> "DragStatePort":
+        """Lazy-load drag state adapter from ApplicationContext."""
+        if self._drag_state is None:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            self._drag_state = context.get_manager("drag_state")
+            if self._drag_state is None:
+                raise RuntimeError("DragStatePort not registered in ApplicationContext")
+        return self._drag_state
+    """Unified file loading manager with fully optimized policy:
+    - All operations: wait_cursor only (fast, synchronous like external drops)
+    - Same behavior for drag, import, and external operations
+    - No complex progress dialogs, just simple and fast loading.
+    """
 
     def load_folder(
         self, folder_path: str, merge_mode: bool = False, recursive: bool = False
@@ -80,12 +108,12 @@ class FileLoadManager:
             )
 
         # CRITICAL: Force cleanup any active drag state immediately
-        if is_dragging():
+        if self.drag_state.is_dragging():
             logger.debug(
                 "[FileLoadManager] Active drag detected, forcing cleanup before loading",
                 extra={"dev_only": True},
             )
-            force_cleanup_drag()
+            self.drag_state.force_cleanup_drag()
 
         # Clear any existing cursors immediately and stop all drag visuals
         from oncutf.app.services import force_restore_cursor
@@ -93,15 +121,11 @@ class FileLoadManager:
         force_restore_cursor()
 
         # Force stop any drag visual feedback
-        from oncutf.ui.drag.drag_visual_manager import end_drag_visual
-
-        end_drag_visual()
+        self.drag_state.end_drag_visual()
 
         # Clear drag zone validator for all possible sources
-        from oncutf.app.services.drag_state import clear_drag_state
-
-        clear_drag_state("file_tree")
-        clear_drag_state("file_table")
+        self.drag_state.clear_drag_state("file_tree")
+        self.drag_state.clear_drag_state("file_table")
 
         # Always use fast wait cursor approach (same as external drops)
         # This makes internal and external drag behavior consistent
@@ -118,12 +142,12 @@ class FileLoadManager:
         )
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
-        if is_dragging():
+        if self.drag_state.is_dragging():
             logger.debug(
                 "[FileLoadManager] Active drag detected during import, forcing cleanup",
                 extra={"dev_only": True},
             )
-            force_cleanup_drag()
+            self.drag_state.force_cleanup_drag()
 
         # Process all paths with fast wait cursor approach (same as drag operations)
         all_file_paths = []
@@ -170,23 +194,23 @@ class FileLoadManager:
         )
 
         # CRITICAL: Force cleanup any active drag state immediately
-        if is_dragging():
+        if self.drag_state.is_dragging():
             logger.debug(
                 "[FileLoadManager] Active drag detected during single file drop, forcing cleanup",
                 extra={"dev_only": True},
             )
-            force_cleanup_drag()
+            self.drag_state.force_cleanup_drag()
 
         if os.path.isdir(path):
             # Use unified folder loading (will handle drag cleanup internally)
             self.load_folder(path, merge_mode=merge_mode, recursive=recursive)
         else:
             # Handle single file - cleanup drag state first
-            if is_dragging():
+            if self.drag_state.is_dragging():
                 logger.debug(
                     "[FileLoadManager] Active drag detected during single file drop, forcing cleanup"
                 )
-                force_cleanup_drag()
+                self.drag_state.force_cleanup_drag()
 
             if self._is_allowed_extension(path):
                 self._update_ui_with_files([path], clear=not merge_mode)
