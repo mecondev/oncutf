@@ -316,18 +316,31 @@ Instead of moving these, create protocol-based ports:
   - Violations: 18 → 18 (initialization violations eliminated, same total)
   - Commit: eb2bff24
 
-- [ ] **Day 5:** Phase 3 - Event Coordination
-  - Move event coordinators to ui/events/
-  - Update imports
-  - Test and commit
+- [x] **Day 5:** Phase 3 - Event Coordination ✅ COMPLETED 2026-01-26
+  - Moved: core/event_handler_manager.py → ui/events/
+  - Moved: core/signal_coordinator.py → ui/events/
+  - Updated: 8 files with import path changes
+  - Violations: 18 → 16 (-11%)
+  - Commit: c3bd2c2b
 
 ### Week 3 (Medium Priority)
-- [ ] **Day 6-7:** Phase 5 - Create Ports
-  - Create ResultsDisplayPort
-  - Create ConflictResolutionPort
-  - Create MetadataEditPort
-  - Create UIUpdatePort
-  - Implement adapters in ui/adapters/
+- [x] **Day 6:** Phase 4 - Drag Managers ✅ COMPLETED 2026-01-26
+  - Moved: core/drag/ → ui/drag/ (4 files)
+  - Updated: 9 files with import path changes
+  - Violations: 16 → 11 (-31%)
+  - Commit: efc8994c
+
+- [x] **Day 7:** Phase 5 - Create Ports ✅ COMPLETED 2026-01-26
+  - Created 4 port protocols:
+    - ResultsDisplayPort (hash results presentation)
+    - ConflictResolutionPort (file conflict resolution)
+    - MetadataEditPort (metadata field editing)
+    - UIUpdatePort (UI update operations)
+  - Created 4 Qt adapters (QtResultsDisplayAdapter, etc.)
+  - Updated 4 core files with dependency injection
+  - Registered all adapters in ApplicationContext
+  - Violations: 11 → <10 (target achieved)
+  - Commit: 00c19f10
 
 ### Future (Deferred)
 - [ ] **Phase 4:** Drag Managers Refactoring (requires architecture redesign)
@@ -436,10 +449,20 @@ After all migrations:
 - Phase 2 (Initialization Bootstrap): ✅ Complete (eb2bff24, 3f08c83a, b3b34830)
   - Clean architecture: No backward compatibility layer
   - Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
-- Phase 3 (Event/Signal Coordination): ✅ Complete (c3bd2c2b)
+- Phase 3 (Event/Signal Coordination): ✅ Complete (c3bd2c2b, d73fafd4)
   - EventHandlerManager → EventCoordinator, moved to ui/events/
   - SignalCoordinator moved to ui/events/
   - Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
+- Phase 4 (Drag Managers): ✅ Complete (efc8994c, 6340b254)
+  - Moved: core/drag/ → ui/drag/ (4 files)
+  - Updated: 9 files with import paths
+  - Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
+- Phase 5 (Specialized Dialog Ports): ✅ Complete (00c19f10)
+  - Created 4 port protocols + 4 Qt adapters
+  - Updated 4 core files with dependency injection
+  - All adapters registered in ApplicationContext
+  - Quality gates: ruff ✅ | mypy ✅ (562 files) | pytest ✅ (1154 passed)
+  - **Target achieved:** <10 runtime violations ✅
 - Phase 4 (Drag Managers): ✅ Complete (efc8994c)
   - All drag managers moved to ui/drag/
   - 9 files updated with new imports

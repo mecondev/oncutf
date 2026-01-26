@@ -685,3 +685,118 @@ ruff check . && mypy . && pytest
 
 **Phase 4: COMPLETE ✅**
 - Next: Phase 5 - Specialized Dialogs ports
+
+### Phase 5: Specialized Dialog Ports (2026-01-26)
+
+**Status:** ✅ COMPLETE
+
+**Port-Adapter Pattern Implementation:**
+
+Created 4 port protocols for remaining UI dialog dependencies:
+- `ResultsDisplayPort`: Hash results presentation (hash_results_presenter.py)
+- `ConflictResolutionPort`: File conflict resolution (file/operations_manager.py)
+- `MetadataEditPort`: Metadata field editing (metadata/operations_manager.py)
+- `UIUpdatePort`: UI update operations (metadata_writer.py)
+
+Created 4 Qt adapters wrapping existing dialogs:
+- `QtResultsDisplayAdapter` → ResultsTableDialog.show_hash_results()
+- `QtConflictResolutionAdapter` → ConflictResolutionDialog.show_conflict()
+- `QtMetadataEditAdapter` → MetadataEditDialog.edit_metadata_field()
+- `QtUIUpdateAdapter` → view_helpers.update_info_icon()
+
+**Implementation Pattern:**
+
+```python
+# In core file (example: hash_results_presenter.py):
+def __init__(self, parent_window, results_display: ResultsDisplayPort | None = None):
+    self._results_display = results_display
+
+@property
+def results_display(self) -> ResultsDisplayPort:
+    """Lazy-load results display adapter from ApplicationContext."""
+    if self._results_display is None:
+        from oncutf.core.application_context import get_app_context
+        context = get_app_context()
+        self._results_display = context.get_manager("results_display")
+        if self._results_display is None:
+            raise RuntimeError("ResultsDisplayPort not registered")
+    return self._results_display
+
+# Usage: self.results_display.show_hash_results(...)
+```
+
+**Architectural Benefits:**
+
+1. **Complete Dependency Inversion:** Core files no longer import UI dialogs
+2. **Testability:** Core logic testable without Qt instantiation
+3. **Flexibility:** Adapters can be swapped (e.g., headless mode, CLI, web UI)
+4. **Clean Separation:** Protocol-based contracts enforce interface stability
+
+**Updated Files:**
+
+Core files (dependency injection):
+- core/hash/hash_results_presenter.py
+- core/file/operations_manager.py
+- core/metadata/operations_manager.py
+- core/metadata/metadata_writer.py
+
+New ports (app/ports/):
+- conflict_resolution.py
+- metadata_editing.py
+- results_display.py
+- ui_update.py
+
+New adapters (ui/adapters/):
+- qt_conflict_resolution.py
+- qt_metadata_edit.py
+- qt_results_display.py
+- qt_ui_update.py
+
+Bootstrap registration:
+- ui/boot/bootstrap_orchestrator.py (registered all 4 adapters)
+
+**Quality Gates:**
+
+✅ All tests passing: 1154 passed, 7 skipped  
+✅ Ruff: 0 violations (30 auto-fixed)  
+✅ Mypy: 562 files success, 0 errors  
+✅ Architecture: <10 runtime core→UI violations achieved  
+
+**Commits:**
+
+- `00c19f10`: Refactor: Add specialized dialog ports (Phase 5)
+- Merge: Phase 5 to main with --no-ff
+
+**Next Steps:**
+
+Migration complete! All 5 phases executed successfully:
+- Phase 1: UI Managers → ui/managers/
+- Phase 2: Initialization → ui/boot/
+- Phase 3: Event/Signal → ui/events/
+- Phase 4: Drag Managers → ui/drag/
+- Phase 5: Specialized Dialog Ports (this phase)
+
+**Final Architecture State:**
+
+```
+oncutf/
+├── app/
+│   └── ports/         ← Protocol interfaces (new)
+├── core/              ← Business logic (no UI imports)
+├── ui/
+│   ├── adapters/      ← Qt implementations of ports (new)
+│   ├── boot/          ← Application bootstrap (Phase 2)
+│   ├── drag/          ← Drag & drop handlers (Phase 4)
+│   ├── events/        ← Event coordination (Phase 3)
+│   ├── managers/      ← UI state managers (Phase 1)
+│   └── widgets/       ← UI components
+```
+
+**Violations Reduction:**
+
+- Start: 27 core→UI imports
+- After Phase 1: 18 (-33%)
+- After Phase 3: 16 (-11%)
+- After Phase 4: 11 (-31%)
+- After Phase 5: <10 ✅ TARGET ACHIEVED
+
