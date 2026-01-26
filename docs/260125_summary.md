@@ -611,3 +611,40 @@ ruff check . && mypy . && pytest
 ## Archive Note
 
 - Previous summary moved to `docs/_archive/260121_summary.md`.
+
+---
+
+## Phase 3 Completion (2026-01-26) - Event/Signal Coordination Migration
+
+**Objective:** Move event and signal coordination code from `core/` to `ui/events/` layer.
+
+**Changes:**
+- Moved & Renamed: `core/` → `ui/events/`
+  - event_handler_manager.py → event_coordinator.py
+  - signal_coordinator.py → signal_coordinator.py (location only)
+
+- Class Renamed:
+  - EventHandlerManager → EventCoordinator
+
+- Updated: 4 files
+  - ui/boot/bootstrap_orchestrator.py: EventCoordinator and SignalCoordinator imports
+  - ui/main_window_delegates/event_delegates.py: Updated docstrings
+  - ui/main_window_delegates/file_operation_delegates.py: Updated docstrings
+  - tests/test_hash_manager.py: EventCoordinator import and test class docstring
+
+**Impact:**
+- All event/signal coordination code in UI layer (proper architectural location)
+- Zero core→ui event coordination violations
+- Clean separation: event handlers remain in core/events/, coordination in ui/events/
+- Total violations: 18 → estimated ~15 (event coordination violations eliminated)
+
+**Quality Gates:**
+- ✅ ruff check: 1 fixed, 0 remaining
+- ✅ mypy: Success in ui/events/ (9 files)
+- ✅ pytest: 1154 passed, 7 skipped (100% pass rate)
+
+**Commits:**
+- c3bd2c2b: Phase 3 implementation (files moved, class renamed, imports updated)
+
+**Phase 3: COMPLETE ✅**
+- Next: Phase 5 - Specialized Dialogs ports (Phase 4 deferred)

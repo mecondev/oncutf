@@ -205,6 +205,14 @@ ui/events/event_coordinator.py
 
 **Estimated effort:** 1 hour
 
+**Status:** ✅ **COMPLETE** (2026-01-26)
+- Commit: c3bd2c2b (implementation)
+- Files moved: event_handler_manager.py → event_coordinator.py, signal_coordinator.py
+- Class renamed: EventHandlerManager → EventCoordinator
+- Updated: bootstrap_orchestrator.py, event_delegates.py, file_operation_delegates.py, test_hash_manager.py
+- Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
+- Result: All event/signal coordination violations eliminated
+
 ---
 
 ## Phase 4: Drag Managers Analysis (LOW PRIORITY - DEFER)
@@ -417,7 +425,10 @@ After all migrations:
 - Phase 2 (Initialization Bootstrap): ✅ Complete (eb2bff24, 3f08c83a, b3b34830)
   - Clean architecture: No backward compatibility layer
   - Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
-- Phase 3 (Event/Signal): 📋 Planned
+- Phase 3 (Event/Signal Coordination): ✅ Complete (c3bd2c2b)
+  - EventHandlerManager → EventCoordinator, moved to ui/events/
+  - SignalCoordinator moved to ui/events/
+  - Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
 - Phase 4 (Drag Managers): ⏸️ Deferred
 - Phase 5 (Specialized Dialogs): 📋 Planned
 
