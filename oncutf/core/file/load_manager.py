@@ -18,6 +18,7 @@ from typing import Any
 
 from PyQt5.QtCore import Qt
 
+from oncutf.app.services.file_load import update_file_load_ui
 from oncutf.config import (
     ALLOWED_EXTENSIONS,
     COMPANION_FILES_ENABLED,
@@ -25,7 +26,6 @@ from oncutf.config import (
 )
 from oncutf.core.drag.drag_manager import force_cleanup_drag, is_dragging
 from oncutf.models.file_item import FileItem
-from oncutf.ui.managers.file_load_ui_service import FileLoadUIService
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -45,8 +45,6 @@ class FileLoadManager:
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
-        # UI refresh service (handles all model and UI updates)
-        self._ui_service = FileLoadUIService(parent_window)
         logger.debug(
             "[FileLoadManager] Initialized with unified loading policy",
             extra={"dev_only": True},
@@ -453,8 +451,8 @@ class FileLoadManager:
         # Load color tags from database
         self._load_color_tags(file_items)
 
-        # Delegate to service for model + UI updates
-        self._ui_service.update_model_and_ui(file_items, clear=clear)
+        # Delegate to port service for model + UI updates
+        update_file_load_ui(file_items, clear=clear)
 
     def prepare_folder_load(self, folder_path: str, *, _clear: bool = True) -> list[str]:
         """Prepare folder for loading by getting file list.

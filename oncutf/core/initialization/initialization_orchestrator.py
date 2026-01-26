@@ -94,10 +94,12 @@ class InitializationOrchestrator:
         self.window.context = ApplicationContext.create_instance(parent=self.window)
 
         # Register UI adapters for dependency inversion
+        from oncutf.ui.adapters.qt_file_load_ui import QtFileLoadUIAdapter
         from oncutf.ui.adapters.qt_user_interaction import QtCursorAdapter, QtUserDialogAdapter
 
         self.window.context.register_manager("user_dialog", QtUserDialogAdapter(self.window))
         self.window.context.register_manager("cursor", QtCursorAdapter())
+        self.window.context.register_manager("file_load_ui", QtFileLoadUIAdapter(self.window))
 
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()
