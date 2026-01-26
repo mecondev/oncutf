@@ -271,10 +271,11 @@ Instead of moving these, create protocol-based ports:
 ## Migration Timeline
 
 ### Week 1 (Immediate)
-- [x] **Day 1-2:** Phase 1 - UI Managers Migration
-  - Move core/ui_managers/ → ui/managers/
-  - Update ~15 import statements
-  - Test and commit
+- [x] **Day 1-2:** Phase 1 - UI Managers Migration ✅ COMPLETED 2026-01-26
+  - Moved: core/ui_managers/ → ui/managers/ (9 files)
+  - Updated: 13 files with import path changes
+  - Violations: 27 → 19 (-30%)
+  - Commit: 37a5a216
 
 ### Week 2 (High Priority)
 - [ ] **Day 3-4:** Phase 2 - Initialization Bootstrap
@@ -384,11 +385,11 @@ After each phase:
 After all migrations:
 
 **core→ui violations:**
-- Before: 27
-- After Phase 1: ~22 (-5 from ui_managers)
-- After Phase 2: ~13 (-9 from initialization)
-- After Phase 3: ~10 (-3 from event/signal)
-- After Phase 5: ~5 (-5 from ports)
+- Before Phase 1: 27
+- After Phase 1: 19 (-30%) ✅ ACHIEVED
+- Target Phase 2: ~10 (-9 from initialization)
+- Target Phase 3: ~7 (-3 from event/signal)
+- Target Phase 5: ~2 (-5 from ports)
 
 **Remaining acceptable violations:**
 - TYPE_CHECKING imports (6) - these are fine
