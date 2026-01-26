@@ -1,48 +1,91 @@
-στη διάσπαση του ApplicationContext# Boundary-First Refactor Summary (260125)
-**Last Updated:** 2026-01-25  
-**Status:** PARTIAL — boundaries not yet enforced; core<->ui violations remain.
+# Boundary-First Refactor Summary (260125)
+**Last Updated:** 2026-01-26  
+**Status:** PARTIAL — Migration phases complete, but boundary cleanup incomplete
 
 ---
 
 ## Executive Summary
 
-- Goal: boundary-first cleanup with strict import rules, not "split-first," so cycles are removed without behavior changes.
-- Single sources of truth for rename preview/execute, exiftool invocation, and caching, with an explicit deprecation plan.
-- Domain/app become Qt-free and typed-first; UI keeps Qt signals only in UI/adapter layers.
-- Next steps focus on breaking remaining cycles and removing legacy duplicates before deeper typing work.
+**Migration Complete (Phases 1-5):** ✅
+- All UI-coupled modules moved from core/ to ui/
+- Port-adapter pattern implemented for remaining dialogs
+- ApplicationContext split: Qt-free base + Qt wrapper
+- All 5 migration phases executed successfully
+
+**Boundary Enforcement:** ❌ INCOMPLETE
+- core → ui: **6 violations** remain (not 27 as previously stated)
+- ui → core: **64 violations** remain (not 43 as previously stated)
+- Qt signals still present in core (unified_rename_engine)
+- Duplicates not fully removed (preview_engine, unified_rename_engine)
+
+**Critical Gap:** The migration focused on file relocation, not true boundary enforcement.
 
 ---
 
-## Remaining Violations (Actual Counts)
+## ACTUAL Violation Counts (2026-01-26)
 
-| Violation Type | Before QW-1 | After QW-1 | After QW-2 | After QW-5 | Status |
-|----------------|-------------|------------|------------|------------|--------|
-| core -> ui imports | 39 | 39 | 39 | **27** (-31% total) | **IMPROVED** |
-| ui -> core imports | 159 | 79 (-50%) | **43** (-73% total) | 43 | **STABLE** |
-| `# type: ignore` | 13 | 13 | 13 | 13 | OPEN |
-| Duplicate rename paths | 4+ files | 4+ files | 4+ files | 4+ files | OPEN |
-| Duplicate ExifTool paths | 3+ files | 3+ files | 3+ files | 3+ files | OPEN |
+| Violation Type | Current Count | Files | Status |
+|----------------|---------------|-------|--------|
+| **core → ui imports** | **6** | 3 files | ❌ BLOCKER |
+| **ui → core imports** | **64** | 29 files | ⚠️ HIGH |
+| Qt signals in core | 1+ files | unified_rename_engine.py | ❌ BLOCKER |
+| Duplicate rename paths | 2 files | preview_engine.py, unified_rename_engine.py | ⚠️ MEDIUM |
+| `# type: ignore` | 5 | Various | ✅ ACCEPTABLE |
 
-**Phase Status:**
-- Phase A (Domain isolation): IN PROGRESS
-- Phase B (App layer cleanup): IN PROGRESS
-- Phase C (UI adapter creation): NOT STARTED
-- Phase D (Duplicate removal): NOT STARTED
+### Core → UI Imports (6 occurrences, 3 files)
 
-**Recent Progress (2026-01-25 to 2026-01-26):**
-- ✅ QW-1 completed: Removed all `oncutf.core.pyqt_imports` from UI layer (80+ files)
-- ✅ QW-2 completed: Moved `theme_manager.py` from core to ui (58 imports updated)
-- ✅ ApplicationContext split: Created Qt-free AppContext + Qt wrapper QtAppContext
-- ✅ QW-3 completed: Removed UI re-exports from `core/events/__init__.py`
-- ✅ QW-4 completed: Removed UI fallbacks from `app/services/user_interaction.py`
-- ✅ **QW-5 completed: Replace CustomMessageDialog with UserDialogPort in core/**
-  - core/hash/*: 8 → 1 violations (-87%)
-  - core/file/operations_manager.py: 2 → 1 violations (-50%)
-  - core/metadata/*: 8 → 3 violations (-62%)
-- 📉 ui → core imports reduced by 73% total (159 → 79 → 43)
-- 📉 **core → ui imports reduced by 31% total (39 → 27)**
-- 📉 app → ui violations reduced by 8 (from user_interaction.py)
-- 🔄 Backward compatibility maintained via deprecated wrapper
+**BLOCKERS:**
+1. `core/file/load_manager.py` (2): Imports UI drag helpers
+   - `from oncutf.ui.drag.drag_manager import force_cleanup_drag, is_dragging`
+   - `from oncutf.ui.drag.drag_visual_manager import end_drag_visual`
+
+2. `core/metadata/operations_manager.py` (1): Imports UI widget
+   - `from oncutf.ui.widgets.styled_combo_box import StyledComboBox`
+
+3. `core/application_context.py` (2): Imports Qt wrapper
+   - `from oncutf.ui.adapters.qt_app_context import QtAppContext` (2x)
+
+**ACCEPTABLE:**
+4. `core/events/__init__.py` (1): Deprecation message only
+
+### UI → Core Imports (64 occurrences, 29 files)
+
+Most common patterns:
+- UI widgets importing `core.application_context` (11 files)
+- UI behaviors importing core managers (8 files)
+- UI handlers importing `core.rename.unified_rename_engine` (Qt signals) (6 files)
+- UI drag handlers importing core drag helpers (3 files)
+
+---
+
+## Migration Phases: Completed ✅
+
+**Phase 1: UI Managers (DONE)**
+- Moved: core/ui_managers/ → ui/managers/
+- Impact: 13 files updated
+- Commits: 37a5a216, 8b4d4fed, 3565b762, bb948b33, 1da83558
+
+**Phase 2: Bootstrap (DONE)**
+- Moved: core/initialization/ → ui/boot/
+- Impact: 2 entry points updated
+- Commit: eb2bff24, 3f08c83a, b3b34830
+
+**Phase 3: Event/Signal Coordination (DONE)**
+- Moved: core/event_handler_manager, signal_coordinator → ui/events/
+- Impact: 8 files updated
+- Commit: c3bd2c2b, d73fafd4
+
+**Phase 4: Drag Managers (DONE)**
+- Moved: core/drag/ → ui/drag/
+- Impact: 9 files updated
+- Commit: efc8994c, 6340b254
+
+**Phase 5: Specialized Dialog Ports (DONE)**
+- Created 4 ports + 4 adapters
+- Updated 4 core files with dependency injection
+- Commit: 00c19f10
+
+**Result:** File relocation successful, but boundary violations persist.
 
 ---
 
@@ -57,7 +100,61 @@
 
 ---
 
-## Detailed Fix Plan (Boundary-First)
+## What Remains to Complete Boundary Enforcement
+
+### Phase 6: Final Boundary Cleanup (NOT STARTED)
+
+**6.1. Eliminate Core → UI Imports (6 violations)**
+
+1. **load_manager.py drag helpers** (2 violations)
+   - Problem: Core imports UI drag state
+   - Solution: Create DragStatePort, move helpers to adapter
+   - Files: `core/file/load_manager.py`
+
+2. **operations_manager.py widget** (1 violation)
+   - Problem: Core imports StyledComboBox
+   - Solution: Use standard QComboBox, styling in UI
+   - Files: `core/metadata/operations_manager.py`
+
+3. **application_context.py Qt wrapper** (2 violations)
+   - Problem: Core imports QtAppContext from UI
+   - Solution: Factory pattern or lazy import
+   - Files: `core/application_context.py`
+
+**6.2. Remove Qt from Core** (BLOCKER)
+
+1. **unified_rename_engine.py** (Qt signals in core)
+   - Problem: Core business logic has Qt dependencies
+   - Solution: Create qt_rename_engine.py wrapper in UI
+   - Impact: 6+ UI files import this
+
+2. **preview_engine.py duplicate**
+   - Problem: Both preview_engine.py and preview.py exist
+   - Solution: Consolidate into preview.py
+   - Impact: Remove duplicate paths
+
+**6.3. Reduce UI → Core Imports** (64 violations)
+
+Priority targets:
+- UI widgets importing `core.application_context` → use dependency injection
+- UI behaviors importing core managers directly → use controllers
+- UI drag handlers importing core drag helpers → use adapters
+
+**Estimated Effort:**
+- Phase 6.1: 4-6 hours
+- Phase 6.2: 6-8 hours (Qt signal refactor complex)
+- Phase 6.3: 8-12 hours (many files)
+- **Total: 18-26 hours**
+
+**Target Metrics After Phase 6:**
+- core → ui: **0** (down from 6)
+- ui → core: **<10** (down from 64)
+- Qt signals in core: **0**
+- Duplicates: **0**
+
+---
+
+## Detailed Fix Plan (Legacy - Pre-Migration)
 
 ### 1. Break core -> ui Imports (39 occurrences)
 
