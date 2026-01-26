@@ -26,7 +26,7 @@ Thread Safety:
 - No QWidget, QMainWindow, or other GUI class instantiation
 
 Usage:
-    worker = InitializationWorker()
+    worker = BootstrapWorker()
     thread = QThread()
     worker.moveToThread(thread)
     worker.progress.connect(on_progress)
@@ -45,7 +45,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class InitializationWorker(QObject):
+class BootstrapWorker(QObject):
     """Background worker for application initialization tasks.
 
     This worker performs heavy non-GUI operations in a background thread

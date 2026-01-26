@@ -83,12 +83,10 @@ class MainWindow(
         self._preview_debounce_timer_id: str | None = None
         self._preview_pending = False
 
-        # Use InitializationOrchestrator for structured initialization
-        from oncutf.core.initialization.initialization_orchestrator import (
-            InitializationOrchestrator,
-        )
+        # Use BootstrapOrchestrator for structured initialization
+        from oncutf.ui.boot.bootstrap_orchestrator import BootstrapOrchestrator
 
-        orchestrator = InitializationOrchestrator(self)
+        orchestrator = BootstrapOrchestrator(self)
         orchestrator.orchestrate_initialization(theme_callback)
 
     # -------------------------------------------------------------------------

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-class InitializationOrchestrator:
+class BootstrapOrchestrator:
     """Orchestrates MainWindow initialization in phases.
 
     This class breaks down the complex initialization into logical phases,
@@ -47,7 +47,7 @@ class InitializationOrchestrator:
 
         """
         self.window = main_window
-        logger.debug("InitializationOrchestrator created", extra={"dev_only": True})
+        logger.debug("BootstrapOrchestrator created", extra={"dev_only": True})
 
     def orchestrate_initialization(self, theme_callback: Any = None) -> None:
         """Orchestrate complete initialization in phases.
@@ -199,8 +199,8 @@ class InitializationOrchestrator:
         from oncutf.core.event_handler_manager import EventHandlerManager
         from oncutf.core.file import get_file_validation_manager
         from oncutf.core.file.load_manager import FileLoadManager
-        from oncutf.core.initialization.initialization_manager import InitializationManager
         from oncutf.core.rename.rename_manager import RenameManager
+        from oncutf.ui.boot.bootstrap_manager import BootstrapManager
         from oncutf.ui.managers.column_manager import ColumnManager
         from oncutf.ui.managers.shortcut_manager import ShortcutManager
         from oncutf.ui.managers.splitter_manager import SplitterManager
@@ -265,7 +265,7 @@ class InitializationOrchestrator:
         self.window.drag_cleanup_manager = DragCleanupManager(self.window)
         self.window.shortcut_manager = ShortcutManager(self.window)
         self.window.splitter_manager = SplitterManager(self.window)
-        self.window.initialization_manager = InitializationManager(self.window)
+        self.window.initialization_manager = BootstrapManager(self.window)
         self.window.column_manager = ColumnManager(self.window)
 
         # Phase 4A: Initialize UI Handlers (extracted from MainWindow)
