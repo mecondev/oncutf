@@ -343,7 +343,7 @@ class MetadataShortcutHandler:
 
     def _get_all_files(self) -> list[FileItem]:
         """Get all files from the application context."""
-        from oncutf.core.application_context import ApplicationContext
+        from oncutf.ui.adapters.application_context import ApplicationContext
 
         context = ApplicationContext()
         return context.file_store.get_loaded_files()

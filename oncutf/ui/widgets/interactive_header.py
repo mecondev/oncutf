@@ -40,7 +40,7 @@ logger = get_cached_logger(__name__)
 
 # ApplicationContext integration
 try:
-    from oncutf.core.application_context import get_app_context
+    from oncutf.ui.adapters.application_context import get_app_context
 except ImportError:
     get_app_context = None
 

@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
 if TYPE_CHECKING:
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.ui.widgets.file_table import FileTableView
 
 logger = logging.getLogger(__name__)

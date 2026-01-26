@@ -8,7 +8,7 @@ Adapter service for file loading UI updates using port-adapter pattern.
 
 from typing import TYPE_CHECKING, cast
 
-from oncutf.core.application_context import ApplicationContext
+from oncutf.ui.adapters.application_context import ApplicationContext
 
 if TYPE_CHECKING:
     from oncutf.app.ports.file_load_ui import FileLoadUIPort

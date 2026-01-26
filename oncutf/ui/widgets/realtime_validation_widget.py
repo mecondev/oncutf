@@ -100,7 +100,7 @@ class RealTimeValidationWidget(QWidget):
         """Update the validation display."""
         try:
             # Get current state from main window
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if not context or not hasattr(context, "main_window"):

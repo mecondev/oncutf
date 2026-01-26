@@ -77,7 +77,7 @@ class BatchQueryManager:
 
         try:
             # Get metadata cache
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if not context or not hasattr(context, "_metadata_cache"):

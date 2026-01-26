@@ -10,7 +10,7 @@ Usage:
     class MyTableView(QTableView):
         def __init__(self, parent=None):
             super().__init__(parent)
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
             self.selection_behavior = SelectionBehavior(
                 widget=self,
                 selection_store=get_app_context().selection_store
@@ -79,7 +79,7 @@ class SelectionBehavior:
         """Get SelectionStore with lazy initialization fallback."""
         if self._selection_store is None:
             try:
-                from oncutf.core.application_context import get_app_context
+                from oncutf.ui.adapters.application_context import get_app_context
 
                 context = get_app_context()
                 self._selection_store = context.selection_store

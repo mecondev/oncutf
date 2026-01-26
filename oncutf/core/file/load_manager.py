@@ -65,7 +65,7 @@ class FileLoadManager:
     def drag_state(self) -> "DragStatePort":
         """Lazy-load drag state adapter from ApplicationContext."""
         if self._drag_state is None:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             self._drag_state = context.get_manager("drag_state")

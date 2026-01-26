@@ -39,7 +39,7 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     ctx = ApplicationContext.get_instance()
     if not ctx.has_manager("user_dialog"):
@@ -64,7 +64,7 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     ctx = ApplicationContext.get_instance()
     if not ctx.has_manager("user_dialog"):
@@ -89,7 +89,7 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     ctx = ApplicationContext.get_instance()
     if not ctx.has_manager("user_dialog"):
@@ -117,7 +117,7 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     ctx = ApplicationContext.get_instance()
     if not ctx.has_manager("user_dialog"):
@@ -141,7 +141,7 @@ def get_dialog_adapter() -> UserDialogPort | None:
         Most code should use show_info_message(), show_error_message(), etc.
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     try:
         ctx = ApplicationContext.get_instance()

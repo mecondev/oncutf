@@ -71,7 +71,7 @@ class MetadataWriter(QObject):
     def ui_update(self) -> UIUpdatePort:
         """Lazy-load UI update adapter from ApplicationContext."""
         if self._ui_update is None:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             self._ui_update = context.get_manager("ui_update")

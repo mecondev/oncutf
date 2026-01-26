@@ -120,7 +120,7 @@ class SelectionManager:
 
         from oncutf.app.services.cursor import wait_cursor
         from oncutf.app.services.ui_state import clear_ui_state
-        from oncutf.core.application_context import get_app_context
+        from oncutf.ui.adapters.application_context import get_app_context
 
         with wait_cursor():
             # Clear cache to force update

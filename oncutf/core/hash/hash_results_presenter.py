@@ -55,7 +55,7 @@ class HashResultsPresenter:
     def results_display(self) -> ResultsDisplayPort:
         """Lazy-load results display adapter from ApplicationContext."""
         if self._results_display is None:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             self._results_display = context.get_manager("results_display")

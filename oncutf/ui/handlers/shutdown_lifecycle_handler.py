@@ -488,7 +488,7 @@ class ShutdownLifecycleHandler:
 
             # Additional cleanup
             try:
-                from oncutf.core.application_context import ApplicationContext
+                from oncutf.ui.adapters.application_context import ApplicationContext
 
                 context = ApplicationContext.get_instance()
                 if context is not None:

@@ -260,7 +260,7 @@ class RenameModuleWidget(QWidget):
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
             return get_app_context()
         except (ImportError, RuntimeError):
             # ApplicationContext not available or not ready yet

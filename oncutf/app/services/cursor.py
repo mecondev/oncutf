@@ -29,7 +29,7 @@ def get_cursor_adapter() -> CursorPort | None:
         The registered adapter or None if not registered yet.
 
     """
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
     try:
         ctx = ApplicationContext.get_instance()

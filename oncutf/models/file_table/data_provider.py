@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 from PyQt5.QtCore import QModelIndex, Qt, QVariant
 
-from oncutf.core.application_context import get_app_context
+from oncutf.ui.adapters.application_context import get_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -200,7 +200,7 @@ class DataProvider:
         # Support Qt.UserRole + 1 for thumbnail pixmaps (thumbnail viewport only)
         if role == Qt.UserRole + 1:
             try:
-                from oncutf.core.application_context import ApplicationContext
+                from oncutf.ui.adapters.application_context import ApplicationContext
 
                 context = ApplicationContext.get_instance()
                 if context and context.has_manager("thumbnail"):

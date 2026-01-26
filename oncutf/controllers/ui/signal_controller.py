@@ -200,7 +200,7 @@ class SignalController:
 
     def _refresh_file_table(self) -> None:
         """Refresh file table (F5) - reloads files and clears ALL state."""
-        from oncutf.core.application_context import get_app_context
+        from oncutf.ui.adapters.application_context import get_app_context
         from oncutf.utils.ui.cursor_helper import wait_cursor
         from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
 

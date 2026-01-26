@@ -55,7 +55,7 @@ class FileOperationsManager:
     def conflict_resolution(self) -> ConflictResolutionPort:
         """Lazy-load conflict resolution adapter from ApplicationContext."""
         if self._conflict_resolution is None:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             self._conflict_resolution = context.get_manager("conflict_resolution")

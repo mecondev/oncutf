@@ -69,7 +69,7 @@ class MetadataOperationsManager:
     def metadata_edit(self) -> MetadataEditPort:
         """Lazy-load metadata edit adapter from ApplicationContext."""
         if self._metadata_edit is None:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             self._metadata_edit = context.get_manager("metadata_edit")

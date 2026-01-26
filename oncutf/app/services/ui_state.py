@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 if TYPE_CHECKING:
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.ui.widgets.file_table.view import FileTableView
 
 

@@ -26,7 +26,7 @@ from PyQt5.QtCore import Qt
 from oncutf.config import ALLOWED_EXTENSIONS
 
 if TYPE_CHECKING:
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.core.file.load_manager import FileLoadManager
     from oncutf.core.file.store import FileStore
     from oncutf.ui.managers.table_manager import TableManager

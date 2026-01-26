@@ -100,7 +100,7 @@ class ViewportHandler:
     def _use_column_manager_scrollbar(self) -> None:
         """Use column manager for scrollbar handling with fallback."""
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "column_manager"):

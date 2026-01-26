@@ -22,7 +22,7 @@ from PyQt5.QtCore import (
     pyqtSignal,
 )
 
-from oncutf.core.application_context import get_app_context
+from oncutf.ui.adapters.application_context import get_app_context
 from oncutf.models.file_item import FileItem
 from oncutf.models.file_table.data_provider import DataProvider
 from oncutf.models.file_table.icon_manager import IconManager
@@ -363,7 +363,7 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             db_manager = get_app_context().get_manager("database")
             if not db_manager:
@@ -409,7 +409,7 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             db_manager = get_app_context().get_manager("database")
             if not db_manager:
@@ -435,7 +435,7 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             db_manager = get_app_context().get_manager("database")
             if not db_manager:

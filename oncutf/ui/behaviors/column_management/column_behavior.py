@@ -336,7 +336,7 @@ class ColumnManagementBehavior:
             return
 
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if hasattr(context, "register_shutdown_callback"):
@@ -352,7 +352,7 @@ class ColumnManagementBehavior:
             return
 
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if hasattr(context, "unregister_shutdown_callback"):

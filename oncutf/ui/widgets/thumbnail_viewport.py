@@ -181,7 +181,7 @@ class ThumbnailViewportWidget(QWidget):
 
         # Connect thumbnail_ready signal from ThumbnailManager
         try:
-            from oncutf.core.application_context import ApplicationContext
+            from oncutf.ui.adapters.application_context import ApplicationContext
 
             context = ApplicationContext.get_instance()
             if context and context.has_manager("thumbnail"):
@@ -596,7 +596,7 @@ class ThumbnailViewportWidget(QWidget):
         Called when files are cleared to prevent stale thumbnail updates.
         """
         try:
-            from oncutf.core.application_context import ApplicationContext
+            from oncutf.ui.adapters.application_context import ApplicationContext
 
             context = ApplicationContext.get_instance()
             if context and context.has_manager("thumbnail"):

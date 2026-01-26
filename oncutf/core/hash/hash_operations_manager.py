@@ -327,7 +327,7 @@ class HashOperationsManager:
             try:
                 from PyQt5.QtCore import Qt
 
-                from oncutf.core.application_context import get_app_context
+                from oncutf.ui.adapters.application_context import get_app_context
 
                 file_store = get_app_context().file_store
                 model = self.parent_window.file_table_view.model()

@@ -84,7 +84,7 @@ class UnifiedColumnService:
         """Get main window using multiple fallback methods."""
         # Method 1: Try application context
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             app_context = get_app_context()
             main_window = getattr(app_context, "main_window", None)

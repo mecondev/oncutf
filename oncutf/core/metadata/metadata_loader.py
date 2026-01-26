@@ -343,7 +343,7 @@ class MetadataLoader:
 
         # Try SelectionStore first (most reliable)
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "selection_store"):

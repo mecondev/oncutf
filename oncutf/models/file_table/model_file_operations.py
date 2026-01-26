@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 from PyQt5.QtCore import QModelIndex, Qt
 
-from oncutf.core.application_context import get_app_context
+from oncutf.ui.adapters.application_context import get_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

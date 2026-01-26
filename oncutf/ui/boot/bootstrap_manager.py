@@ -56,7 +56,7 @@ class BootstrapManager:
             self.main_window.file_table_view.enable_selection_store_mode()
 
             # Connect SelectionStore signals to MainWindow handlers
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if context and context.selection_store:
@@ -98,7 +98,7 @@ class BootstrapManager:
         """
         from oncutf.app.services import wait_cursor
         from oncutf.app.services.ui_state import restore_ui_state, save_ui_state
-        from oncutf.core.application_context import get_app_context
+        from oncutf.ui.adapters.application_context import get_app_context
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)

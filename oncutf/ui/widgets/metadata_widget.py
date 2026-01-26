@@ -222,7 +222,7 @@ class MetadataWidget(QWidget):
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
             return get_app_context()
         except (ImportError, RuntimeError):
             # ApplicationContext not available or not ready yet
@@ -231,7 +231,7 @@ class MetadataWidget(QWidget):
     def _get_metadata_cache_via_context(self):
         """Get metadata cache from ApplicationContext if available."""
         try:
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "_metadata_cache"):
@@ -505,7 +505,7 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from oncutf.core.application_context import get_app_context
+                from oncutf.ui.adapters.application_context import get_app_context
 
                 context = get_app_context()
                 if (
@@ -553,7 +553,7 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from oncutf.core.application_context import get_app_context
+                from oncutf.ui.adapters.application_context import get_app_context
 
                 context = get_app_context()
                 if (

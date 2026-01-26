@@ -233,7 +233,7 @@ class RenameManager:
 
                     # Use ui_state facade for consistent restoration
                     from oncutf.app.services.ui_state import UIState, restore_ui_state_sync
-                    from oncutf.core.application_context import get_app_context
+                    from oncutf.ui.adapters.application_context import get_app_context
 
                     state = UIState(
                         selected_paths=list(selected_paths) if selected_paths else [],
@@ -312,7 +312,7 @@ class RenameManager:
             # Debounced restore: wait until FileStore.files_loaded stops firing.
             from contextlib import suppress
 
-            from oncutf.core.application_context import get_app_context
+            from oncutf.ui.adapters.application_context import get_app_context
             from oncutf.utils.shared.timer_manager import (
                 TimerPriority,
                 TimerType,

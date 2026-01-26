@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from oncutf.controllers.file_load_controller import FileLoadController
     from oncutf.controllers.metadata_controller import MetadataController
     from oncutf.controllers.rename_controller import RenameController
-    from oncutf.core.application_context import ApplicationContext
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 
