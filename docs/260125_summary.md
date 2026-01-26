@@ -48,13 +48,85 @@
 **ACCEPTABLE:**
 4. `core/events/__init__.py` (1): Deprecation message only
 
+### Core → UI Imports (6 occurrences, 3 files)
+
+**BLOCKERS:**
+
+1. **`oncutf/core/file/load_manager.py`** (2 violations)
+   ```python
+   from oncutf.ui.drag.drag_manager import force_cleanup_drag, is_dragging
+   from oncutf.ui.drag.drag_visual_manager import end_drag_visual  # line 96
+   ```
+
+2. **`oncutf/core/metadata/operations_manager.py`** (1 violation)
+   ```python
+   from oncutf.ui.widgets.styled_combo_box import StyledComboBox  # line 164
+   ```
+
+3. **`oncutf/core/application_context.py`** (2 violations)
+   ```python
+   from oncutf.ui.adapters.qt_app_context import QtAppContext  # lines 23, 44
+   ```
+
+**ACCEPTABLE (Deprecation only):**
+
+4. **`oncutf/core/events/__init__.py`** (1 violation)
+   ```python
+   # Deprecation warning: "Import directly from oncutf.ui.events.context_menu instead."
+   ```
+
 ### UI → Core Imports (64 occurrences, 29 files)
 
-Most common patterns:
-- UI widgets importing `core.application_context` (11 files)
-- UI behaviors importing core managers (8 files)
-- UI handlers importing `core.rename.unified_rename_engine` (Qt signals) (6 files)
-- UI drag handlers importing core drag helpers (3 files)
+**Complete File List:**
+
+**Behaviors (3 files):**
+- `oncutf/ui/behaviors/column_management/column_behavior.py`
+- `oncutf/ui/behaviors/metadata_edit/edit_operations.py`
+- `oncutf/ui/behaviors/selection/selection_behavior.py`
+
+**Boot/Bootstrap (2 files):**
+- `oncutf/ui/boot/bootstrap_manager.py`
+- `oncutf/ui/boot/bootstrap_orchestrator.py`
+
+**Events (3 files):**
+- `oncutf/ui/events/context_menu/base.py`
+- `oncutf/ui/events/event_coordinator.py`
+- `oncutf/ui/events/signal_coordinator.py`
+
+**Handlers (1 file):**
+- `oncutf/ui/handlers/shutdown_lifecycle_handler.py`
+
+**Main Window (1 file):**
+- `oncutf/ui/main_window.py`
+
+**Managers (5 files):**
+- `oncutf/ui/managers/column_service.py`
+- `oncutf/ui/managers/file_load_ui_service.py`
+- `oncutf/ui/managers/shortcut_manager.py`
+- `oncutf/ui/managers/splitter_manager.py`
+- `oncutf/ui/managers/window_config_manager.py`
+
+**Widgets (14 files):**
+- `oncutf/ui/widgets/file_table/viewport_handler.py`
+- `oncutf/ui/widgets/file_tree/drag_handler.py`
+- `oncutf/ui/widgets/file_tree/filesystem_handler.py`
+- `oncutf/ui/widgets/final_transform_container.py`
+- `oncutf/ui/widgets/interactive_header.py`
+- `oncutf/ui/widgets/metadata_tree/controller.py`
+- `oncutf/ui/widgets/metadata_tree/selection_handler.py`
+- `oncutf/ui/widgets/metadata_tree/service.py`
+- `oncutf/ui/widgets/metadata_tree/view.py`
+- `oncutf/ui/widgets/metadata_widget.py`
+- `oncutf/ui/widgets/realtime_validation_widget.py`
+- `oncutf/ui/widgets/rename_module_widget.py`
+- `oncutf/ui/widgets/rename_modules_area.py`
+- `oncutf/ui/widgets/thumbnail_viewport.py`
+
+**Most common import patterns:**
+- `core.application_context` → 11 files (dependency injection needed)
+- `core.rename.unified_rename_engine` → 6 files (Qt signals in core - blocker)
+- Core managers → 8 files (use controllers instead)
+- Core drag helpers → 3 files (use adapters)
 
 ---
 
