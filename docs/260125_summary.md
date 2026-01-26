@@ -498,7 +498,7 @@ grep -r "from oncutf.ui" oncutf/core/
 
 | Criterion | Current | Target | Status |
 |-----------|---------|--------|--------|
-| core -> ui imports | 41 | 0 | IN PROGRESS (19 remaining) |
+| core -> ui imports | 41 | 0 | IN PROGRESS (18 remaining) |
 | ui -> core imports | 159 | 0 | BLOCKED |
 | type: ignore | 13 | <=5 | OPEN |
 | Duplicate rename paths | 4+ | 0 | OPEN |
@@ -531,7 +531,7 @@ ruff check . && mypy . && pytest
 
 ## Phase 1 Completion (2026-01-26) - UI Managers Migration
 
-**Objective:** Move UI-coupled managers from `core/` to `ui/` layer.
+**Objective:** Move UI-coupled managers from `core/` to `ui/` layer + eliminate all core→ui.managers violations.
 
 **Changes:**
 - Moved: `core/ui_managers/` → `ui/managers/` (9 files)
@@ -539,23 +539,31 @@ ruff check . && mypy . && pytest
   - shortcut_manager.py, splitter_manager.py, status_manager.py
   - table_manager.py, window_config_manager.py
 - Updated: 13 files with import path changes
+- Created: FileLoadUIPort + adapter for FileLoadManager
+  - app/ports/file_load_ui.py (protocol)
+  - app/services/file_load.py (service function)
+  - ui/adapters/qt_file_load_ui.py (Qt adapter)
 
 **Impact:**
-- Boundary violations: 27 → 19 core→ui imports (-30%)
+- Boundary violations: 27 → 18 core→ui imports (-33%)
 - All managers properly located in UI layer
-- No logic changes, only structural reorganization
+- FileLoadManager fully decoupled from UI (port-adapter pattern)
+- All core→ui.managers violations eliminated (except initialization_orchestrator - Phase 2)
 
 **Quality Gates:**
 - ✅ ruff check: All passed
-- ✅ mypy: Success in 9 source files
-- ✅ pytest: Integration tests passing
-- ✅ Import sorting fixed
+- ✅ mypy: Success in all modified files
+- ✅ pytest: 1154 passed, 7 skipped
 
 **Commits:**
-- 37a5a216: Phase 1 implementation
+- 37a5a216: UI Managers move + import updates
+- 8b4d4fed: FileLoadUIService port implementation
+- 3565b762: Test fixture updates
 - bb948b33: Migration plan update
+- 85ca697c: Summary documentation
 
-**Next:** Phase 2 - Initialization Bootstrap (core/initialization → ui/boot)
+**Phase 1: COMPLETE ✅**
+- Next: Phase 2 - Initialization Bootstrap (core/initialization → ui/boot)
 
 ---
 

@@ -274,8 +274,10 @@ Instead of moving these, create protocol-based ports:
 - [x] **Day 1-2:** Phase 1 - UI Managers Migration ✅ COMPLETED 2026-01-26
   - Moved: core/ui_managers/ → ui/managers/ (9 files)
   - Updated: 13 files with import path changes
-  - Violations: 27 → 19 (-30%)
-  - Commit: 37a5a216
+  - Created: FileLoadUIPort + adapter for remaining violation
+  - Violations: 27 → 18 (-33%)
+  - Commits: 37a5a216, 8b4d4fed, 3565b762
+  - All core→ui.managers violations eliminated (except initialization_orchestrator)
 
 ### Week 2 (High Priority)
 - [ ] **Day 3-4:** Phase 2 - Initialization Bootstrap
@@ -386,10 +388,10 @@ After all migrations:
 
 **core→ui violations:**
 - Before Phase 1: 27
-- After Phase 1: 19 (-30%) ✅ ACHIEVED
-- Target Phase 2: ~10 (-9 from initialization)
-- Target Phase 3: ~7 (-3 from event/signal)
-- Target Phase 5: ~2 (-5 from ports)
+- After Phase 1: 18 (-33%) ✅ ACHIEVED
+- Target Phase 2: ~9 (-9 from initialization)
+- Target Phase 3: ~6 (-3 from event/signal)
+- Target Phase 5: ~1 (-5 from ports)
 
 **Remaining acceptable violations:**
 - TYPE_CHECKING imports (6) - these are fine
