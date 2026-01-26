@@ -370,16 +370,16 @@ class TestConvenienceFunctions:
 
 
 class TestEventHandlerIntegration:
-    """Test cases for EventHandlerManager hash integration."""
+    """Test cases for EventCoordinator hash integration."""
 
     def test_event_handler_initialization(self):
-        """Test EventHandlerManager can be initialized with mock parent."""
-        from oncutf.core.event_handler_manager import EventHandlerManager
+        """Test EventCoordinator can be initialized with mock parent."""
+        from oncutf.ui.events.event_coordinator import EventCoordinator
 
         mock_parent = Mock()
         mock_parent.set_status = Mock()
 
-        handler = EventHandlerManager(mock_parent)
+        handler = EventCoordinator(mock_parent)
 
         # Verify basic initialization
         assert handler.parent_window == mock_parent

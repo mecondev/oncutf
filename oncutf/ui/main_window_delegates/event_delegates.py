@@ -12,11 +12,11 @@ class EventDelegates:
     """
 
     def handle_table_context_menu(self, position) -> None:
-        """Handle table context menu via EventHandlerManager."""
+        """Handle table context menu via EventCoordinator."""
         self.event_handler_manager.handle_table_context_menu(position)
 
     def handle_file_double_click(self, index, modifiers=None) -> None:
-        """Handle file double click via EventHandlerManager."""
+        """Handle file double click via EventCoordinator."""
         from PyQt5.QtCore import Qt
 
         if modifiers is None:
@@ -25,11 +25,11 @@ class EventDelegates:
         self.event_handler_manager.handle_file_double_click(index, modifiers)
 
     def on_table_row_clicked(self, index) -> None:
-        """Handle table row click via EventHandlerManager."""
+        """Handle table row click via EventCoordinator."""
         self.event_handler_manager.on_table_row_clicked(index)
 
     def handle_header_toggle(self, _) -> None:
-        """Handle header toggle via EventHandlerManager."""
+        """Handle header toggle via EventCoordinator."""
         self.event_handler_manager.handle_header_toggle(_)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:

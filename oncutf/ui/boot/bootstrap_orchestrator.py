@@ -196,11 +196,11 @@ class BootstrapOrchestrator:
             WindowSetupController,
         )
         from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
-        from oncutf.core.event_handler_manager import EventHandlerManager
         from oncutf.core.file import get_file_validation_manager
         from oncutf.core.file.load_manager import FileLoadManager
         from oncutf.core.rename.rename_manager import RenameManager
         from oncutf.ui.boot.bootstrap_manager import BootstrapManager
+        from oncutf.ui.events.event_coordinator import EventCoordinator
         from oncutf.ui.managers.column_manager import ColumnManager
         from oncutf.ui.managers.shortcut_manager import ShortcutManager
         from oncutf.ui.managers.splitter_manager import SplitterManager
@@ -212,7 +212,7 @@ class BootstrapOrchestrator:
 
         # Initialize all managers
         self.window.dialog_manager = DialogManager()
-        self.window.event_handler_manager = EventHandlerManager(self.window)
+        self.window.event_handler_manager = EventCoordinator(self.window)
         self.window.file_load_manager = FileLoadManager(self.window)
         self.window.file_validation_manager = get_file_validation_manager()
         self.window.table_manager = TableManager(self.window)
@@ -329,7 +329,7 @@ class BootstrapOrchestrator:
         """
         from oncutf.core.application_service import initialize_application_service
         from oncutf.core.shutdown_coordinator import get_shutdown_coordinator
-        from oncutf.core.signal_coordinator import SignalCoordinator
+        from oncutf.ui.events.signal_coordinator import SignalCoordinator
         from oncutf.utils.shared.timer_manager import schedule_resize_adjust
 
         # Load and apply window configuration

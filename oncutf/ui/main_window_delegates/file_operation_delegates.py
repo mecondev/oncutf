@@ -105,11 +105,11 @@ class FileOperationDelegates:
         self.file_load_manager.reload_current_folder()
 
     def handle_browse(self) -> None:
-        """Handle browse via EventHandlerManager."""
+        """Handle browse via EventCoordinator."""
         self.event_handler_manager.handle_browse()
 
     def handle_folder_import(self) -> None:
-        """Handle folder import via EventHandlerManager."""
+        """Handle folder import via EventCoordinator."""
         self.event_handler_manager.handle_folder_import()
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
