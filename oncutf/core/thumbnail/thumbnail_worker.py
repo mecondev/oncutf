@@ -161,6 +161,10 @@ class ThumbnailWorker(QThread):
             request: Thumbnail generation request
 
         """
+        # Check if stop requested before processing
+        if self._stop_requested:
+            return
+
         file_path = request.file_path
         size_px = request.size_px
 
@@ -186,9 +190,19 @@ class ThumbnailWorker(QThread):
             else:
                 raise ThumbnailGenerationError(f"Unsupported file type: {ext} for {file_path}")
 
+            # Check again before expensive operation
+            if self._stop_requested:
+                logger.debug("Skipping thumbnail generation (shutdown): %s", file_path)
+                return
+
             # Generate thumbnail
             logger.debug("Generating thumbnail: %s (size: %d)", file_path, size_px)
             pixmap = provider.generate(file_path)
+
+            # Check if stopped during generation
+            if self._stop_requested:
+                logger.debug("Discarding thumbnail (shutdown): %s", file_path)
+                return
 
             if pixmap.isNull():
                 raise ThumbnailGenerationError(f"Generated null pixmap for {file_path}")

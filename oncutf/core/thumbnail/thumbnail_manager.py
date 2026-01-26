@@ -465,15 +465,14 @@ class ThumbnailManager(QObject):
         for worker in self._workers:
             worker.request_stop()
 
-        # Wait for workers to finish (with timeout)
+        # Wait for workers to finish (with shorter timeout for faster shutdown)
         for worker in self._workers:
             if worker.isRunning():
-                if not worker.wait(3000):  # 3 second timeout
+                if not worker.wait(1000):  # 1 second timeout (reduced from 3s)
                     # Worker didn't finish in time, terminate it
                     logger.warning("ThumbnailWorker did not stop in time, terminating")
                     worker.terminate()
-                    if not worker.wait(1000):  # Wait 1s after terminate
-                        logger.error("ThumbnailWorker failed to terminate properly")
+                    worker.wait(500)  # Wait 500ms after terminate (reduced from 1s)
                 # Disconnect signals to prevent errors during cleanup
                 try:
                     worker.thumbnail_ready.disconnect()
