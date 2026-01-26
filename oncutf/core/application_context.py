@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING, Any
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing_extensions import deprecated
 
-from oncutf.ui.adapters.qt_app_context import QtAppContext
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -41,7 +40,7 @@ class ApplicationContext(QObject):
     Use QtAppContext directly for new code.
 
     Migration path:
-    - UI code: Use QtAppContext from oncutf.ui.adapters
+    - UI code: Use QtAppContext from oncutf.ui.adapters (import at runtime)
     - Non-UI code: Use AppContext from oncutf.app.state
     """
 
@@ -59,6 +58,9 @@ class ApplicationContext(QObject):
         if ApplicationContext._instance is not None:
             raise RuntimeError("ApplicationContext is a singleton. Use get_instance()")
         ApplicationContext._instance = self
+
+        # Lazy import QtAppContext to avoid core→ui dependency
+        from oncutf.ui.adapters.qt_app_context import QtAppContext
 
         # Get or create QtAppContext
         try:

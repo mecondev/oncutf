@@ -56,10 +56,10 @@ def mock_parent_window():
     window.context.set_current_folder = Mock()
     window.context.get_current_folder = Mock(return_value=None)
     window.context.file_store = Mock()
-    
+
     # Mock drag_state port
     window.context.get_manager = Mock(return_value=None)  # Will use injected drag_state
-    
+
     window.file_model = Mock()
     window.file_table = Mock()
     window.metadata_tree = Mock()
