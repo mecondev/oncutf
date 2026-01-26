@@ -210,17 +210,33 @@
 - Mock fixtures for testing
 - TYPE_CHECKING for static analysis only
 
-**6.2. Remove Qt from Core ⏳ PENDING** (BLOCKER)
+**6.2. Remove Qt from Core ✅ COMPLETE**
 
-1. **unified_rename_engine.py** (Qt signals in core)
-   - Problem: Core business logic has Qt dependencies
-   - Solution: Create qt_rename_engine.py wrapper in UI
-   - Impact: 6+ UI files import this
+**Status:** Qt dependencies eliminated from core/rename/ in commit cab05f92
 
-2. **preview_engine.py duplicate**
-   - Problem: Both preview_engine.py and preview.py exist
-   - Solution: Consolidate into preview.py
-   - Impact: Remove duplicate paths
+1. **unified_rename_engine.py** (Qt signals in core) ✅
+   - Solution: Removed QObject inheritance and 4 signals
+   - Created: `ui/adapters/qt_rename_engine.py` (Qt wrapper)
+   - Pattern: Pure Python core + Qt adapter with delegate pattern
+   - Files: `core/rename/unified_rename_engine.py`, `ui/adapters/qt_rename_engine.py`
+   - Updated: 3 UI files to use QtRenameEngine
+
+2. **preview_engine.py analysis** ✅
+   - Investigation: No duplicate found
+   - `utils/naming/preview_engine.py` is helper module used by preview_manager.py
+   - No consolidation needed
+
+**Architecture:**
+- Core: UnifiedRenameEngine (Qt-free business logic)
+- UI Adapter: QtRenameEngine (QObject + 4 signals)
+- Delegate pattern: wrapper calls core methods, emits signals
+- Property delegation for manager access
+
+**Quality Gates:**
+- Ruff: ✅ All checks passed
+- Mypy: ✅ Success on modified files
+- Tests: ✅ 34 rename tests passing
+- Qt in core/rename/: **0** imports
 
 **6.3. Reduce UI → Core Imports ⏳ PENDING** (64 violations)
 
@@ -231,21 +247,21 @@ Priority targets:
 
 **Estimated Effort:**
 - Phase 6.1: ✅ 6 hours (DONE)
-- Phase 6.2: ⏳ 6-8 hours (Qt signal refactor complex)
+- Phase 6.2: ✅ 4 hours (DONE)
 - Phase 6.3: ⏳ 8-12 hours (many files)
-- **Total: 14-20 hours remaining**
+- **Total: 8-12 hours remaining**
 
-**Metrics After Phase 6.1:**
+**Metrics After Phase 6.2:**
 - core → ui: **0** ✅ (down from 6)
 - ui → core: **64** ⏳ (needs Phase 6.3)
-- Qt signals in core: **Yes** ⏳ (needs Phase 6.2)
-- Duplicates: **1** ⏳ (preview_engine.py)
+- Qt signals in core/rename/: **0** ✅ (down from 4)
+- Duplicates: **0** ✅ (none found)
 
 **Target After Phase 6 Complete:**
 - core → ui: **0** ✅
 - ui → core: **<10**
-- Qt signals in core: **0**
-- Duplicates: **0**
+- Qt signals in core: **0** ✅
+- Duplicates: **0** ✅
 
 ---
 
