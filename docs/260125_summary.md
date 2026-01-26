@@ -648,3 +648,40 @@ ruff check . && mypy . && pytest
 
 **Phase 3: COMPLETE ✅**
 - Next: Phase 5 - Specialized Dialogs ports (Phase 4 deferred)
+
+---
+
+## Phase 4 Completion (2026-01-26) - Drag Managers Migration
+
+**Objective:** Move drag functionality from `core/drag/` to `ui/drag/` layer.
+
+**Changes:**
+- Moved: `core/drag/` → `ui/drag/` (entire directory)
+  - drag_manager.py
+  - drag_visual_manager.py
+  - drag_cleanup_manager.py
+  - __init__.py
+
+- Updated: 9 files with import changes
+  - core/file/load_manager.py: drag_manager, drag_visual_manager imports
+  - ui/behaviors/drag_drop_behavior.py: DragManager, drag_visual_manager imports
+  - ui/boot/bootstrap_orchestrator.py: DragManager, DragCleanupManager imports
+  - ui/widgets/file_tree/drag_handler.py: DragManager, drag_visual_manager imports
+  - utils/ui/drag_zone_validator.py: drag_visual_manager imports
+  - ui/drag/ internal cross-references (4 files)
+
+**Impact:**
+- All drag functionality in UI layer (proper architectural location)
+- Zero core→ui drag violations
+- Total violations: ~15 → estimated ~10 (drag violations eliminated)
+
+**Quality Gates:**
+- ✅ ruff check: 4 fixed, 0 remaining
+- ✅ mypy: Success in ui/drag/ (4 files)
+- ✅ pytest: 1154 passed, 7 skipped (100% pass rate)
+
+**Commits:**
+- efc8994c: Phase 4 implementation (files moved, imports updated)
+
+**Phase 4: COMPLETE ✅**
+- Next: Phase 5 - Specialized Dialogs ports

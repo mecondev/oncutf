@@ -230,15 +230,27 @@ core/drag/
 - `ui/behaviors/drag_drop_behavior.py`
 - `ui/widgets/file_tree/drag_handler.py`
 
-### Recommendation
+### Migration Approach
 
-**DEFER** - This requires deeper architectural refactoring:
-1. Split drag business logic from UI logic
-2. Create drag protocols/ports
-3. Extract pure drag state management to core
-4. Move UI visualization to ui/drag/
+Move entire drag directory to ui/drag/ since all components have UI coupling.
 
-**Reason for deferral:** Complex refactoring, low priority compared to other migrations.
+**Migration Steps:**
+1. Move core/drag/ → ui/drag/ (4 files)
+2. Update all imports from oncutf.core.drag to oncutf.ui.drag
+
+**Risk Level:** LOW
+- Impact: 9 files
+- Breaking change: No (import updates only)
+- Test impact: Low
+
+**Estimated effort:** 1 hour
+
+**Status:** ✅ **COMPLETE** (2026-01-26)
+- Commit: efc8994c (implementation)
+- Files moved: All drag managers to ui/drag/
+- Updated: 5 external files + 4 internal cross-references
+- Quality gates: ruff ✅ (4 fixed) | mypy ✅ (4 files) | pytest ✅ (1154 passed)
+- Result: All drag violations eliminated
 
 ---
 
@@ -416,7 +428,6 @@ After all migrations:
 **Remaining acceptable violations:**
 - TYPE_CHECKING imports (6) - these are fine
 - application_context.py backward compat (2) - temporary
-- Drag managers (defer to future)
 
 **Target achieved:** <10 runtime violations ✅
 
@@ -429,7 +440,10 @@ After all migrations:
   - EventHandlerManager → EventCoordinator, moved to ui/events/
   - SignalCoordinator moved to ui/events/
   - Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
-- Phase 4 (Drag Managers): ⏸️ Deferred
+- Phase 4 (Drag Managers): ✅ Complete (efc8994c)
+  - All drag managers moved to ui/drag/
+  - 9 files updated with new imports
+  - Quality gates: ruff ✅ (4 fixed) | mypy ✅ (4 files) | pytest ✅ (1154 passed)
 - Phase 5 (Specialized Dialogs): 📋 Planned
 
 ---
