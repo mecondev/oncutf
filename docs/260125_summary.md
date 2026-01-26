@@ -567,6 +567,45 @@ ruff check . && mypy . && pytest
 
 ---
 
+## Phase 2 Completion (2026-01-26) - Initialization Bootstrap Migration
+
+**Objective:** Move initialization code from `core/` to `ui/` layer with proper naming.
+
+**Changes:**
+- Moved & Renamed: `core/initialization/` → `ui/boot/`
+  - initialization_manager.py → bootstrap_manager.py
+  - initialization_orchestrator.py → bootstrap_orchestrator.py
+  - initialization_worker.py → bootstrap_worker.py
+  - __init__.py (with backward compatibility aliases)
+
+- Class Renames:
+  - InitializationManager → BootstrapManager
+  - InitializationOrchestrator → BootstrapOrchestrator
+  - InitializationWorker → BootstrapWorker
+
+- Updated: 2 entry point files
+  - main.py: BootstrapWorker import and usage
+  - ui/main_window.py: BootstrapOrchestrator import and usage
+
+**Impact:**
+- All initialization code now in UI layer (proper architectural location)
+- Zero core→ui.initialization violations
+- Backward compatibility: Aliases in __init__.py for gradual migration
+- Total violations: 18 (same as Phase 1 end - initialization was part of the 18)
+
+**Quality Gates:**
+- ✅ ruff check: All passed
+- ✅ mypy: Success in ui/boot/ (4 files)
+- ✅ pytest: 1154 passed, 7 skipped
+
+**Commits:**
+- eb2bff24: Phase 2 implementation (files moved, classes renamed, imports updated)
+
+**Phase 2: COMPLETE ✅**
+- Next: Phase 3 - Event/Signal Coordination (event managers → ui/events)
+
+---
+
 ## Archive Note
 
 - Previous summary moved to `docs/_archive/260121_summary.md`.

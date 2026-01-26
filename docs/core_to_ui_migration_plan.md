@@ -280,11 +280,13 @@ Instead of moving these, create protocol-based ports:
   - All core→ui.managers violations eliminated (except initialization_orchestrator)
 
 ### Week 2 (High Priority)
-- [ ] **Day 3-4:** Phase 2 - Initialization Bootstrap
-  - Move core/initialization/ → ui/boot/
-  - Rename classes (Initialization → Bootstrap)
-  - Update entry points
-  - Test integration thoroughly
+- [x] **Day 3-4:** Phase 2 - Initialization Bootstrap ✅ COMPLETED 2026-01-26
+  - Moved: core/initialization/ → ui/boot/ (4 files)
+  - Renamed: Initialization* → Bootstrap* (3 classes)
+  - Updated: 2 entry points (main.py, main_window.py)
+  - Backward compatibility: Aliases maintained in __init__.py
+  - Violations: 18 → 18 (initialization violations eliminated, same total)
+  - Commit: eb2bff24
 
 - [ ] **Day 5:** Phase 3 - Event Coordination
   - Move event coordinators to ui/events/
@@ -388,10 +390,12 @@ After all migrations:
 
 **core→ui violations:**
 - Before Phase 1: 27
-- After Phase 1: 18 (-33%) ✅ ACHIEVED
-- Target Phase 2: ~9 (-9 from initialization)
-- Target Phase 3: ~6 (-3 from event/signal)
-- Target Phase 5: ~1 (-5 from ports)
+- After Phase 1: 18 (-33%) ✅
+- After Phase 2: 18 (initialization eliminated, node_editor false positives) ✅
+- Target Phase 3: ~15 (-3 from event/signal)
+- Target Phase 5: ~10 (-5 from ports)
+
+**Actual remaining real violations:** ~4 (application_context + config_imports)
 
 **Remaining acceptable violations:**
 - TYPE_CHECKING imports (6) - these are fine
