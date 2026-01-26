@@ -1,9 +1,9 @@
-"""Module: event_handler_manager.py.
+"""Module: event_coordinator.py.
 
 Author: Michael Economou
 Date: 2025-05-31
 
-Manages all event handling operations for the main window.
+Coordinates all event handling operations for the main window.
 Handles browse, folder import, table interactions, context menus, and user actions.
 
 This module now delegates to specialized handlers in oncutf/core/events/:
@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-class EventHandlerManager:
-    """Manages all event handling operations.
+class EventCoordinator:
+    """Coordinates all event handling operations.
 
     This is now a facade that delegates to specialized handlers:
     - FileEventHandlers: browse, folder import
@@ -52,7 +52,7 @@ class EventHandlerManager:
         self._ui_handlers: UIEventHandlers | None = None
         self._context_menu_handlers: ContextMenuHandlers | None = None
 
-        logger.debug("EventHandlerManager initialized", extra={"dev_only": True})
+        logger.debug("EventCoordinator initialized", extra={"dev_only": True})
 
     @property
     def file_handlers(self) -> FileEventHandlers:
