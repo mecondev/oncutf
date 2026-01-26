@@ -26,6 +26,7 @@ def update_file_load_ui(items: list["FileItem"], clear: bool = True) -> None:
 
     Raises:
         RuntimeError: If no FileLoadUIPort adapter is registered
+
     """
     ctx = ApplicationContext.get_instance()
     if not ctx.has_manager("file_load_ui"):

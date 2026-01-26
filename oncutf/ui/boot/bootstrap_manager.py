@@ -3,7 +3,7 @@
 Author: Michael Economou
 Date: 2025-05-31
 
-InitializationManager - Handles initialization and setup operations
+BootstrapManager - Handles initialization and setup operations
 This manager centralizes initialization and setup operations including:
 - Metadata status display
 - SelectionStore mode initialization
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-class InitializationManager:
+class BootstrapManager:
     """Manages initialization and setup operations for the main window.
 
     This manager handles:
@@ -32,14 +32,14 @@ class InitializationManager:
     """
 
     def __init__(self, main_window: "MainWindow"):
-        """Initialize the InitializationManager.
+        """Initialize the BootstrapManager.
 
         Args:
             main_window: Reference to the main window instance
 
         """
         self.main_window = main_window
-        logger.debug("[InitializationManager] Initialized", extra={"dev_only": True})
+        logger.debug("[BootstrapManager] Initialized", extra={"dev_only": True})
 
     def show_metadata_status(self) -> None:
         """Shows a status bar message indicating the number of loaded files
@@ -106,7 +106,7 @@ class InitializationManager:
 
         # Skip state management during shutdown (model becomes unavailable)
         if getattr(self.main_window, "_shutdown_in_progress", False):
-            logger.info("[InitializationManager] Skipping state management (shutdown in progress)")
+            logger.info("[BootstrapManager] Skipping state management (shutdown in progress)")
             return
 
         # Show wait cursor during UI update (runs in main thread - visible to user)
@@ -118,7 +118,7 @@ class InitializationManager:
             last_action = getattr(self.main_window, "last_action", None)
             if last_action in ("rename", "metadata_save"):
                 logger.info(
-                    "[InitializationManager] Skipping state management (handled by %s)",
+                    "[BootstrapManager] Skipping state management (handled by %s)",
                     last_action,
                 )
                 # Just update table without interfering with state restoration
@@ -226,7 +226,7 @@ class InitializationManager:
         This can be extended with other initialization logic.
         """
         logger.debug(
-            "[InitializationManager] Setting up application components", extra={"dev_only": True}
+            "[BootstrapManager] Setting up application components", extra={"dev_only": True}
         )
 
         # Enable SelectionStore mode
@@ -234,7 +234,7 @@ class InitializationManager:
 
         # Additional setup can be added here
         logger.debug(
-            "[InitializationManager] Application components setup completed",
+            "[BootstrapManager] Application components setup completed",
             extra={"dev_only": True},
         )
 
@@ -267,11 +267,11 @@ class InitializationManager:
                 not hasattr(self.main_window, component)
                 or getattr(self.main_window, component) is None
             ):
-                logger.warning("[InitializationManager] Missing required component: %s", component)
+                logger.warning("[BootstrapManager] Missing required component: %s", component)
                 return False
 
         logger.debug(
-            "[InitializationManager] All required components are initialized",
+            "[BootstrapManager] All required components are initialized",
             extra={"dev_only": True},
         )
         return True
