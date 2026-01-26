@@ -15,17 +15,8 @@ from oncutf.ui.boot.bootstrap_manager import BootstrapManager
 from oncutf.ui.boot.bootstrap_orchestrator import BootstrapOrchestrator
 from oncutf.ui.boot.bootstrap_worker import BootstrapWorker
 
-# Backward compatibility aliases
-InitializationManager = BootstrapManager
-InitializationOrchestrator = BootstrapOrchestrator
-InitializationWorker = BootstrapWorker
-
 __all__ = [
     "BootstrapManager",
     "BootstrapOrchestrator",
     "BootstrapWorker",
-    # Deprecated aliases
-    "InitializationManager",
-    "InitializationOrchestrator",
-    "InitializationWorker",
 ]
