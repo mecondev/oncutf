@@ -85,6 +85,7 @@ class ResultsTableDialog(QDialog):
 
         self.setWindowTitle(title)
         self.setModal(True)
+        self.setAttribute(Qt.WA_DeleteOnClose, True)
 
         # Setup UI
         self._setup_ui()
@@ -393,22 +394,29 @@ class ResultsTableDialog(QDialog):
 
     def closeEvent(self, event):
         """Save geometry when dialog closes."""
-        from oncutf.utils.shared.json_config_manager import get_app_config_manager
+        try:
+            from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
-        config_manager = get_app_config_manager()
-        dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
-        geometry_key = f"{self.config_key}_geometry"
+            config_manager = get_app_config_manager()
+            dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
+            geometry_key = f"{self.config_key}_geometry"
 
-        geo = self.geometry()
-        geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
-        dialogs_config.set(geometry_key, geometry)
-        config_manager.save_immediate()
+            geo = self.geometry()
+            geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
+            dialogs_config.set(geometry_key, geometry)
+            config_manager.save_immediate()
 
-        logger.debug(
-            "[ResultsTableDialog] Saved geometry immediately: %s",
-            geometry,
-            extra={"dev_only": True},
-        )
+            logger.debug(
+                "[ResultsTableDialog] Saved geometry immediately: %s",
+                geometry,
+                extra={"dev_only": True},
+            )
+        except Exception as e:
+            logger.warning(
+                "[ResultsTableDialog] Failed to save geometry: %s",
+                e,
+                extra={"dev_only": True},
+            )
 
         super().closeEvent(event)
 
