@@ -174,26 +174,43 @@
 
 ## What Remains to Complete Boundary Enforcement
 
-### Phase 6: Final Boundary Cleanup (NOT STARTED)
+### Phase 6: Final Boundary Cleanup (IN PROGRESS)
 
-**6.1. Eliminate Core → UI Imports (6 violations)**
+**6.1. Eliminate Core → UI Imports ✅ COMPLETE**
 
-1. **load_manager.py drag helpers** (2 violations)
-   - Problem: Core imports UI drag state
-   - Solution: Create DragStatePort, move helpers to adapter
-   - Files: `core/file/load_manager.py`
+**Status:** All 6 violations fixed in commits 9c1350f6, 26aa6a33
 
-2. **operations_manager.py widget** (1 violation)
-   - Problem: Core imports StyledComboBox
-   - Solution: Use standard QComboBox, styling in UI
+1. **load_manager.py drag helpers** (2 violations) ✅
+   - Solution: Created DragStatePort protocol + QtDragStateAdapter
+   - Pattern: Dependency injection with lazy-loading property
+   - Files: `app/ports/drag_state.py`, `ui/adapters/qt_drag_state.py`
+   - Tests: 25/25 passing with mock injection
+
+2. **operations_manager.py widget** (1 violation) ✅
+   - Solution: Replaced StyledComboBox with standard QComboBox
    - Files: `core/metadata/operations_manager.py`
 
-3. **application_context.py Qt wrapper** (2 violations)
-   - Problem: Core imports QtAppContext from UI
-   - Solution: Factory pattern or lazy import
+3. **application_context.py Qt wrapper** (2 violations) ✅
+   - Solution: Lazy import inside __init__ method
+   - Pattern: Runtime import in deprecated wrapper only
    - Files: `core/application_context.py`
 
-**6.2. Remove Qt from Core** (BLOCKER)
+4. **TYPE_CHECKING cleanup** (1 violation) ✅
+   - Solution: Removed QtAppContext from TYPE_CHECKING block
+   - Reason: Only needed in runtime lazy import
+
+**Quality Gates:**
+- Ruff: ✅ All checks passed
+- Mypy: ✅ Success on all modified files
+- Tests: ✅ 25/25 passing
+
+**Architecture Established:**
+- Port-Adapter pattern with dependency injection
+- Lazy-loading properties via ApplicationContext
+- Mock fixtures for testing
+- TYPE_CHECKING for static analysis only
+
+**6.2. Remove Qt from Core ⏳ PENDING** (BLOCKER)
 
 1. **unified_rename_engine.py** (Qt signals in core)
    - Problem: Core business logic has Qt dependencies
@@ -205,7 +222,7 @@
    - Solution: Consolidate into preview.py
    - Impact: Remove duplicate paths
 
-**6.3. Reduce UI → Core Imports** (64 violations)
+**6.3. Reduce UI → Core Imports ⏳ PENDING** (64 violations)
 
 Priority targets:
 - UI widgets importing `core.application_context` → use dependency injection
@@ -213,14 +230,20 @@ Priority targets:
 - UI drag handlers importing core drag helpers → use adapters
 
 **Estimated Effort:**
-- Phase 6.1: 4-6 hours
-- Phase 6.2: 6-8 hours (Qt signal refactor complex)
-- Phase 6.3: 8-12 hours (many files)
-- **Total: 18-26 hours**
+- Phase 6.1: ✅ 6 hours (DONE)
+- Phase 6.2: ⏳ 6-8 hours (Qt signal refactor complex)
+- Phase 6.3: ⏳ 8-12 hours (many files)
+- **Total: 14-20 hours remaining**
 
-**Target Metrics After Phase 6:**
-- core → ui: **0** (down from 6)
-- ui → core: **<10** (down from 64)
+**Metrics After Phase 6.1:**
+- core → ui: **0** ✅ (down from 6)
+- ui → core: **64** ⏳ (needs Phase 6.3)
+- Qt signals in core: **Yes** ⏳ (needs Phase 6.2)
+- Duplicates: **1** ⏳ (preview_engine.py)
+
+**Target After Phase 6 Complete:**
+- core → ui: **0** ✅
+- ui → core: **<10**
 - Qt signals in core: **0**
 - Duplicates: **0**
 
