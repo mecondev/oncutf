@@ -22,13 +22,13 @@ from PyQt5.QtCore import (
     pyqtSignal,
 )
 
-from oncutf.ui.adapters.application_context import get_app_context
 from oncutf.models.file_item import FileItem
 from oncutf.models.file_table.data_provider import DataProvider
 from oncutf.models.file_table.icon_manager import IconManager
 from oncutf.models.file_table.model_column_manager import ColumnManager
 from oncutf.models.file_table.model_file_operations import FileOperationsManager
 from oncutf.models.file_table.sort_manager import SortManager
+from oncutf.ui.adapters.application_context import get_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

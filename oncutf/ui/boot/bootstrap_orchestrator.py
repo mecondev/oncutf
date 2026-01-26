@@ -77,7 +77,6 @@ class BootstrapOrchestrator:
         - Core managers
         """
         from oncutf.app.services import get_rename_history_manager
-        from oncutf.ui.adapters.application_context import ApplicationContext
         from oncutf.core.backup_manager import get_backup_manager
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
         from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
@@ -87,6 +86,7 @@ class BootstrapOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
+        from oncutf.ui.adapters.application_context import ApplicationContext
         from oncutf.ui.adapters.qt_rename_engine import QtRenameEngine
         from oncutf.ui.drag.drag_manager import DragManager
 

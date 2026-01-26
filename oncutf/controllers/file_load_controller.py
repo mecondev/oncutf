@@ -26,9 +26,9 @@ from PyQt5.QtCore import Qt
 from oncutf.config import ALLOWED_EXTENSIONS
 
 if TYPE_CHECKING:
-    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.core.file.load_manager import FileLoadManager
     from oncutf.core.file.store import FileStore
+    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.ui.managers.table_manager import TableManager
 
 logger = logging.getLogger(__name__)

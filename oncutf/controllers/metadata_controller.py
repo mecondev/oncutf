@@ -20,10 +20,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.core.metadata import UnifiedMetadataManager
     from oncutf.core.metadata.structured_manager import StructuredMetadataManager
     from oncutf.models.file_item import FileItem
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 

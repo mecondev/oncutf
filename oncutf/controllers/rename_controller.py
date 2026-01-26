@@ -20,11 +20,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.core.file.store import FileStore
     from oncutf.core.rename.rename_manager import RenameManager
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
+    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 
