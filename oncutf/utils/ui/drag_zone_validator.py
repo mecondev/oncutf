@@ -13,7 +13,7 @@ from typing import ClassVar
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.core.drag.drag_visual_manager import DropZoneState, update_drop_zone_state
+from oncutf.ui.drag.drag_visual_manager import DropZoneState, update_drop_zone_state
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

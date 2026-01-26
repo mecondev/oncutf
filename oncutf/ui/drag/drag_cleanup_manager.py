@@ -18,7 +18,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 from oncutf.config import STATUS_COLORS
-from oncutf.core.drag.drag_manager import DragManager
+from oncutf.ui.drag.drag_manager import DragManager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

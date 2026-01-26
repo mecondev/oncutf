@@ -20,8 +20,8 @@ from PyQt5.QtCore import QEvent, QModelIndex, Qt
 from PyQt5.QtGui import QCursor, QDropEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.core.drag.drag_manager import DragManager
-from oncutf.core.drag.drag_visual_manager import (
+from oncutf.ui.drag.drag_manager import DragManager
+from oncutf.ui.drag.drag_visual_manager import (
     DragType,
     DragVisualManager,
     end_drag_visual,
