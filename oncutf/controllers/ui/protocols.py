@@ -35,10 +35,10 @@ if TYPE_CHECKING:
     )
 
     from oncutf.core.application_context import ApplicationContext
-    from oncutf.core.ui_managers.shortcut_manager import ShortcutManager
-    from oncutf.core.ui_managers.splitter_manager import SplitterManager
-    from oncutf.core.ui_managers.status_manager import StatusManager
     from oncutf.models.file_table_model import FileTableModel
+    from oncutf.ui.managers.shortcut_manager import ShortcutManager
+    from oncutf.ui.managers.splitter_manager import SplitterManager
+    from oncutf.ui.managers.status_manager import StatusManager
     from oncutf.ui.services.utility_manager import UtilityManager
     from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
     from oncutf.ui.widgets.file_table import FileTableView

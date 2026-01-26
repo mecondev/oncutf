@@ -119,7 +119,7 @@ class DataProvider:
 
         elif role == Qt.TextAlignmentRole:
             # Get alignment from UnifiedColumnService
-            from oncutf.core.ui_managers import get_column_service
+            from oncutf.ui.managers import get_column_service
 
             service = get_column_service()
             config = service.get_column_config(column_key)

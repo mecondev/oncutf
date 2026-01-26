@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from oncutf.core.application_context import ApplicationContext
     from oncutf.core.file.load_manager import FileLoadManager
     from oncutf.core.file.store import FileStore
-    from oncutf.core.ui_managers.table_manager import TableManager
+    from oncutf.ui.managers.table_manager import TableManager
 
 logger = logging.getLogger(__name__)
 

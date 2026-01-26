@@ -12,12 +12,12 @@ from PyQt5.QtWidgets import QHeaderView
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.ui_managers.column_service import UnifiedColumnService
     from oncutf.ui.behaviors.column_management.protocols import ColumnManageableWidget
     from oncutf.ui.behaviors.column_management.visibility_manager import (
         ColumnVisibilityManager,
     )
     from oncutf.ui.behaviors.column_management.width_manager import ColumnWidthManager
+    from oncutf.ui.managers.column_service import UnifiedColumnService
 
 logger = get_cached_logger(__name__)
 
