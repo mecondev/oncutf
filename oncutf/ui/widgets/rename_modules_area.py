@@ -28,12 +28,6 @@ from oncutf.ui.widgets.rename_module_widget import RenameModuleWidget
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 
-# ApplicationContext integration
-try:
-    from oncutf.core.application_context import get_app_context
-except ImportError:
-    get_app_context = None
-
 logger = get_cached_logger(__name__)
 
 
@@ -124,12 +118,11 @@ class RenameModulesArea(QWidget):
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
-        if get_app_context is None:
-            return None
         try:
+            from oncutf.core.application_context import get_app_context
             return get_app_context()
-        except RuntimeError:
-            # ApplicationContext not ready yet
+        except (ImportError, RuntimeError):
+            # ApplicationContext not available or not ready yet
             return None
 
     def _on_module_updated(self):

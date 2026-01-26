@@ -37,12 +37,6 @@ from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
-# ApplicationContext integration
-try:
-    from oncutf.core.application_context import get_app_context
-except ImportError:
-    get_app_context = None
-
 logger = get_cached_logger(__name__)
 
 
@@ -265,12 +259,11 @@ class RenameModuleWidget(QWidget):
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
-        if get_app_context is None:
-            return None
         try:
+            from oncutf.core.application_context import get_app_context
             return get_app_context()
-        except RuntimeError:
-            # ApplicationContext not ready yet
+        except (ImportError, RuntimeError):
+            # ApplicationContext not available or not ready yet
             return None
 
     def _compute_stable_height(self, rows: int, content_widget: QWidget | None) -> int:

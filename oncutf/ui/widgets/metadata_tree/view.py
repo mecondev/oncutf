@@ -59,12 +59,6 @@ from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
 from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
 from oncutf.utils.ui.tooltip_helper import TreeViewTooltipFilter
 
-# ApplicationContext integration
-try:
-    from oncutf.core.application_context import get_app_context
-except ImportError:
-    get_app_context = None
-
 # Metadata service integration (command system + unified manager)
 try:
     from oncutf.app.services import get_metadata_command_manager, get_metadata_service
@@ -913,12 +907,11 @@ class MetadataTreeView(QTreeView):
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
-        if get_app_context is None:
-            return None
         try:
+            from oncutf.core.application_context import get_app_context
             return get_app_context()
-        except RuntimeError:
-            # ApplicationContext not ready yet
+        except (ImportError, RuntimeError):
+            # ApplicationContext not available or not ready yet
             return None
 
     def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:
