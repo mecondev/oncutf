@@ -82,13 +82,13 @@ class BootstrapOrchestrator:
         from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
         from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.database import initialize_database
-        from oncutf.core.drag.drag_manager import DragManager
         from oncutf.core.file import FileOperationsManager
         from oncutf.core.metadata import (
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
         from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
+        from oncutf.ui.drag.drag_manager import DragManager
 
         # Core Application Context
         self.window.context = ApplicationContext.create_instance(parent=self.window)
@@ -195,11 +195,11 @@ class BootstrapOrchestrator:
             SignalController,
             WindowSetupController,
         )
-        from oncutf.core.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.core.file import get_file_validation_manager
         from oncutf.core.file.load_manager import FileLoadManager
         from oncutf.core.rename.rename_manager import RenameManager
         from oncutf.ui.boot.bootstrap_manager import BootstrapManager
+        from oncutf.ui.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.ui.events.event_coordinator import EventCoordinator
         from oncutf.ui.managers.column_manager import ColumnManager
         from oncutf.ui.managers.shortcut_manager import ShortcutManager

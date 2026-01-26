@@ -20,14 +20,14 @@ from PyQt5.QtGui import QCursor, QMouseEvent
 from PyQt5.QtWidgets import QApplication
 
 from oncutf.config import ALLOWED_EXTENSIONS
-from oncutf.core.drag.drag_manager import DragManager
-from oncutf.core.drag.drag_visual_manager import (
+from oncutf.core.modifier_handler import decode_modifiers_to_flags
+from oncutf.ui.drag.drag_manager import DragManager
+from oncutf.ui.drag.drag_visual_manager import (
     DragVisualManager,
     end_drag_visual,
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
-from oncutf.core.modifier_handler import decode_modifiers_to_flags
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 
@@ -422,7 +422,7 @@ class DragHandler:
         if not self._is_dragging or self._drag_path != folder_path:
             return
 
-        from oncutf.core.drag.drag_visual_manager import update_source_info
+        from oncutf.ui.drag.drag_visual_manager import update_source_info
         from oncutf.utils.filesystem.folder_counter import count_folder_contents
 
         modifiers = QApplication.keyboardModifiers()
