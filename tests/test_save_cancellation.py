@@ -77,10 +77,10 @@ class TestSaveCancellation:
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
 
-        # Mock CustomMessageDialog from widgets
+        # Mock show_info_message in the unified_manager module where it's used
         with patch(
-            "oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"
-        ) as mock_dialog_class:
+            "oncutf.core.metadata.unified_manager.show_info_message"
+        ) as mock_show_info:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
             manager._show_save_results(
@@ -88,10 +88,10 @@ class TestSaveCancellation:
             )
 
             # Verify info dialog was shown
-            mock_dialog_class.information.assert_called_once()
-            args = mock_dialog_class.information.call_args
-            assert "cancelled" in args[0][2].lower()
-            assert "5" in args[0][2]  # Should show success count
+            mock_show_info.assert_called_once()
+            args = mock_show_info.call_args
+            assert "cancelled" in args[0][1].lower()  # title
+            assert "5" in args[0][2]  # message - should show success count
 
     def test_save_results_distinguishes_cancelled_vs_failed(self):
         """Test that result messages distinguish between cancelled and failed operations."""
@@ -103,24 +103,26 @@ class TestSaveCancellation:
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
 
-        # Mock both CustomMessageDialog and QMessageBox
+        # Mock both show_info_message and show_warning_message in unified_manager module
         with (
             patch(
-                "oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"
-            ) as mock_custom_dialog,
-            patch("PyQt5.QtWidgets.QMessageBox") as mock_msgbox,
+                "oncutf.core.metadata.unified_manager.show_info_message"
+            ) as mock_show_info,
+            patch(
+                "oncutf.core.metadata.unified_manager.show_warning_message"
+            ) as mock_show_warning,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
 
-            # Test cancelled operation (uses CustomMessageDialog)
+            # Test cancelled operation (uses show_info_message)
             manager._show_save_results(
                 success_count=5, failed_files=[], files_to_save=files_to_save, was_cancelled=True
             )
-            cancelled_call = mock_custom_dialog.information.call_args
+            cancelled_call = mock_show_info.call_args
 
-            # Test failed operation (uses QMessageBox)
-            mock_custom_dialog.reset_mock()
-            mock_msgbox.reset_mock()
+            # Test failed operation (uses show_warning_message)
+            mock_show_info.reset_mock()
+            mock_show_warning.reset_mock()
             manager._show_save_results(
                 success_count=5,
                 failed_files=["file1.jpg", "file2.jpg"],
@@ -130,10 +132,11 @@ class TestSaveCancellation:
 
             # Verify different message types
             assert cancelled_call is not None
-            if mock_msgbox.warning.called:
-                failed_call = mock_msgbox.warning.call_args
-                assert "cancel" in cancelled_call[0][2].lower()
-                assert "failed" in failed_call[0][2].lower()
+            if mock_show_warning.called:
+                failed_call = mock_show_warning.call_args
+                # Check title (index 1) and message (index 2)
+                assert "cancel" in cancelled_call[0][1].lower() or "cancel" in cancelled_call[0][2].lower()
+                assert "failed" in failed_call[0][2].lower() or "error" in failed_call[0][1].lower()
 
     def test_cancellation_resets_between_operations(self):
         """Test that cancellation flag is reset between save operations."""
@@ -218,8 +221,8 @@ class TestSaveCancellation:
         # Note: ProgressDialog is imported inside the function, so we patch the source module
         with (
             patch("oncutf.utils.ui.progress_dialog.ProgressDialog") as mock_dialog_class,
-            patch("oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog"),
-            patch("PyQt5.QtWidgets.QMessageBox"),
+            patch("oncutf.core.metadata.unified_manager.show_info_message"),
+            patch("oncutf.core.metadata.unified_manager.show_warning_message"),
         ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog

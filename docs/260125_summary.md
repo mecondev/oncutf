@@ -15,13 +15,13 @@
 
 ## Remaining Violations (Actual Counts)
 
-| Violation Type | Before QW-1 | After QW-1 | After QW-2 | Status |
-|----------------|-------------|------------|------------|--------|
-| core -> ui imports | 39 | 39 | 39 | OPEN |
-| ui -> core imports | 159 | 79 (-50%) | **43** (-73% total) | **IMPROVED** |
-| `# type: ignore` | 13 | 13 | 13 | OPEN |
-| Duplicate rename paths | 4+ files | 4+ files | 4+ files | OPEN |
-| Duplicate ExifTool paths | 3+ files | 3+ files | 3+ files | OPEN |
+| Violation Type | Before QW-1 | After QW-1 | After QW-2 | After QW-5 | Status |
+|----------------|-------------|------------|------------|------------|--------|
+| core -> ui imports | 39 | 39 | 39 | **27** (-31% total) | **IMPROVED** |
+| ui -> core imports | 159 | 79 (-50%) | **43** (-73% total) | 43 | **STABLE** |
+| `# type: ignore` | 13 | 13 | 13 | 13 | OPEN |
+| Duplicate rename paths | 4+ files | 4+ files | 4+ files | 4+ files | OPEN |
+| Duplicate ExifTool paths | 3+ files | 3+ files | 3+ files | 3+ files | OPEN |
 
 **Phase Status:**
 - Phase A (Domain isolation): IN PROGRESS
@@ -29,13 +29,18 @@
 - Phase C (UI adapter creation): NOT STARTED
 - Phase D (Duplicate removal): NOT STARTED
 
-**Recent Progress (2026-01-25):**
+**Recent Progress (2026-01-25 to 2026-01-26):**
 - ✅ QW-1 completed: Removed all `oncutf.core.pyqt_imports` from UI layer (80+ files)
 - ✅ QW-2 completed: Moved `theme_manager.py` from core to ui (58 imports updated)
 - ✅ ApplicationContext split: Created Qt-free AppContext + Qt wrapper QtAppContext
 - ✅ QW-3 completed: Removed UI re-exports from `core/events/__init__.py`
 - ✅ QW-4 completed: Removed UI fallbacks from `app/services/user_interaction.py`
+- ✅ **QW-5 completed: Replace CustomMessageDialog with UserDialogPort in core/**
+  - core/hash/*: 8 → 1 violations (-87%)
+  - core/file/operations_manager.py: 2 → 1 violations (-50%)
+  - core/metadata/*: 8 → 3 violations (-62%)
 - 📉 ui → core imports reduced by 73% total (159 → 79 → 43)
+- 📉 **core → ui imports reduced by 31% total (39 → 27)**
 - 📉 app → ui violations reduced by 8 (from user_interaction.py)
 - 🔄 Backward compatibility maintained via deprecated wrapper
 
@@ -377,6 +382,50 @@ adapter.show_info(title, message)
 - `app/services/ui_state.py` - 1 import to `FileTableView` (TODO: use protocol)
 
 **Next:** Continue with remaining boundary violations
+
+---
+
+### ✅ QW-5: Replace CustomMessageDialog with UserDialogPort (COMPLETED - 2026-01-26)
+
+**Status:** DONE — All CustomMessageDialog calls in core/hash, core/file, core/metadata now use UserDialogPort adapter
+
+**Problem:** Core modules directly imported `oncutf.ui.dialogs.custom_message_dialog.CustomMessageDialog`, creating core→ui violations.
+
+**Changes made:**
+- Replaced all `CustomMessageDialog.information()` → `show_info_message()`
+- Replaced all `CustomMessageDialog.show_warning()` → `show_warning_message()`
+- Replaced all `CustomMessageDialog.show_error()` → `show_error_message()`
+- Replaced all `CustomMessageDialog.question()` → `show_question_message()`
+
+**Files affected:**
+- `core/hash/hash_operations_manager.py`: 3 violations fixed
+- `core/hash/hash_results_presenter.py`: 5 violations fixed
+- `core/file/operations_manager.py`: 2 violations fixed
+- `core/metadata/metadata_writer.py`: 2 violations fixed
+- `core/metadata/unified_manager.py`: 2 violations fixed
+- `core/metadata/operations_manager.py`: 3 violations fixed (+ 1 unused import removed)
+
+**Quality gates passed:**
+- ✅ ruff check: All checks passed
+- ✅ mypy: Success (0 errors in modified files)
+- ✅ pytest tests/core/hash/: 8 passed
+
+**Impact:**
+- core→ui imports: 41 → 27 (-34%, -14 violations)
+- All CustomMessageDialog dialog calls now go through port-adapter pattern
+- Core modules no longer have direct UI dependencies for user dialogs
+- Better testability (can mock UserDialogPort adapter)
+
+**Remaining violations in affected modules:**
+- `ResultsTableDialog` (needs port) - 1 occurrence in hash_results_presenter.py
+- `ConflictResolutionDialog` (needs port) - 1 occurrence in operations_manager.py
+- `StyledComboBox` (needs port) - 1 occurrence in metadata/operations_manager.py
+- `MetadataEditDialog` (needs port) - 1 occurrence in metadata/operations_manager.py
+- `update_info_icon()` helper (needs port) - 1 occurrence in metadata_writer.py
+
+**Commit:** be429445
+
+**Next:** Address remaining specialized dialogs and UI helpers that don't have ports yet
 
 ---
 
