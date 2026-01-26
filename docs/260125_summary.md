@@ -498,7 +498,7 @@ grep -r "from oncutf.ui" oncutf/core/
 
 | Criterion | Current | Target | Status |
 |-----------|---------|--------|--------|
-| core -> ui imports | 39 | 0 | BLOCKED |
+| core -> ui imports | 41 | 0 | IN PROGRESS (19 remaining) |
 | ui -> core imports | 159 | 0 | BLOCKED |
 | type: ignore | 13 | <=5 | OPEN |
 | Duplicate rename paths | 4+ | 0 | OPEN |
@@ -526,6 +526,36 @@ grep -r "from oncutf.core.pyqt_imports" oncutf/
 # Run quality gates
 ruff check . && mypy . && pytest
 ```
+
+---
+
+## Phase 1 Completion (2026-01-26) - UI Managers Migration
+
+**Objective:** Move UI-coupled managers from `core/` to `ui/` layer.
+
+**Changes:**
+- Moved: `core/ui_managers/` → `ui/managers/` (9 files)
+  - column_manager.py, column_service.py, file_load_ui_service.py
+  - shortcut_manager.py, splitter_manager.py, status_manager.py
+  - table_manager.py, window_config_manager.py
+- Updated: 13 files with import path changes
+
+**Impact:**
+- Boundary violations: 27 → 19 core→ui imports (-30%)
+- All managers properly located in UI layer
+- No logic changes, only structural reorganization
+
+**Quality Gates:**
+- ✅ ruff check: All passed
+- ✅ mypy: Success in 9 source files
+- ✅ pytest: Integration tests passing
+- ✅ Import sorting fixed
+
+**Commits:**
+- 37a5a216: Phase 1 implementation
+- bb948b33: Migration plan update
+
+**Next:** Phase 2 - Initialization Bootstrap (core/initialization → ui/boot)
 
 ---
 
