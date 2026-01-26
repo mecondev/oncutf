@@ -6,19 +6,28 @@ Define interfaces that infrastructure layer implements:
 - Filesystem
 - CacheStore
 - DatabaseRepository
+- UI Dialogs and Updates
 
 Author: Michael Economou
 Date: 2026-01-22
 """
 
+from oncutf.app.ports.conflict_resolution import ConflictResolutionPort
 from oncutf.app.ports.metadata import CacheStore, MetadataProvider, MetadataWriter
+from oncutf.app.ports.metadata_editing import MetadataEditPort
+from oncutf.app.ports.results_display import ResultsDisplayPort
+from oncutf.app.ports.ui_update import UIUpdatePort
 from oncutf.app.ports.user_interaction import ProgressReporter, StatusReporter, UserDialogPort
 
 __all__ = [
     "CacheStore",
+    "ConflictResolutionPort",
+    "MetadataEditPort",
     "MetadataProvider",
     "MetadataWriter",
     "ProgressReporter",
+    "ResultsDisplayPort",
     "StatusReporter",
+    "UIUpdatePort",
     "UserDialogPort",
 ]

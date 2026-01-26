@@ -5,6 +5,8 @@ Date: 2026-01-04
 
 Handles the presentation of hash operation results to the user through dialogs and status updates.
 Separated from business logic for better maintainability.
+
+Uses ResultsDisplayPort for UI decoupling (Phase 5).
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
+    from oncutf.app.ports.results_display import ResultsDisplayPort
     from oncutf.models.file_item import FileItem
 
 from oncutf.app.services.user_interaction import show_info_message
@@ -33,14 +36,32 @@ class HashResultsPresenter:
     - Updating application status based on results
     """
 
-    def __init__(self, parent_window: QWidget) -> None:
+    def __init__(
+        self,
+        parent_window: QWidget,
+        results_display: ResultsDisplayPort | None = None,
+    ) -> None:
         """Initialize the results presenter.
 
         Args:
             parent_window: Reference to the main window for status updates
+            results_display: Port for showing results dialogs (injected)
 
         """
         self.parent_window: Any = parent_window
+        self._results_display = results_display
+
+    @property
+    def results_display(self) -> ResultsDisplayPort:
+        """Lazy-load results display adapter from ApplicationContext."""
+        if self._results_display is None:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            self._results_display = context.get_manager("results_display")
+            if self._results_display is None:
+                raise RuntimeError("ResultsDisplayPort not registered in ApplicationContext")
+        return self._results_display
 
     def show_duplicate_results(
         self, duplicates: dict[str, list[FileItem]], scope: str
@@ -207,9 +228,7 @@ class HashResultsPresenter:
             return
 
         # Show results in the new table dialog
-        from oncutf.ui.dialogs.results_table_dialog import ResultsTableDialog
-
-        ResultsTableDialog.show_hash_results(
+        self.results_display.show_hash_results(
             parent=self.parent_window,
             hash_results=hash_results,
             was_cancelled=was_cancelled,

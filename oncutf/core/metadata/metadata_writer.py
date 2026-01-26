@@ -13,6 +13,8 @@ Responsibilities:
 - Save all modified metadata
 - Write metadata to disk using ExifTool
 - Progress tracking and UI updates for save operations
+
+Uses UIUpdatePort for UI decoupling (Phase 5).
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.app.ports.ui_update import UIUpdatePort
     from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
@@ -46,12 +49,35 @@ class MetadataWriter(QObject):
     - Progress tracking and UI updates
     """
 
-    def __init__(self, parent_window: Any = None) -> None:
-        """Initialize metadata writer with parent window reference."""
+    def __init__(
+        self,
+        parent_window: Any = None,
+        ui_update: UIUpdatePort | None = None,
+    ) -> None:
+        """Initialize metadata writer with parent window reference.
+
+        Args:
+            parent_window: Reference to main window
+            ui_update: Port for UI updates (injected)
+
+        """
         super().__init__(parent_window)
         self.parent_window = parent_window
         self._exiftool_wrapper: ExifToolWrapper | None = None
         self._save_cancelled = False
+        self._ui_update = ui_update
+
+    @property
+    def ui_update(self) -> UIUpdatePort:
+        """Lazy-load UI update adapter from ApplicationContext."""
+        if self._ui_update is None:
+            from oncutf.core.application_context import get_app_context
+
+            context = get_app_context()
+            self._ui_update = context.get_manager("ui_update")
+            if self._ui_update is None:
+                raise RuntimeError("UIUpdatePort not registered in ApplicationContext")
+        return self._ui_update
 
     @property
     def exiftool_wrapper(self) -> ExifToolWrapper:
@@ -515,10 +541,8 @@ class MetadataWriter(QObject):
         requiring a full table reload.
         """
         try:
-            from oncutf.ui.widgets.view_helpers import update_info_icon
-
             if hasattr(self.parent_window, "file_table_view") and hasattr(self.parent_window, "file_model"):
-                update_info_icon(
+                self.ui_update.update_file_icon(
                     self.parent_window.file_table_view,
                     self.parent_window.file_model,
                     file_item.full_path,
