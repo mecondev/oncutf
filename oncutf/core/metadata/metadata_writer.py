@@ -33,7 +33,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.app.ports.ui_update import UIUpdatePort
-    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -71,7 +71,7 @@ class MetadataWriter(QObject):
     def ui_update(self) -> UIUpdatePort:
         """Lazy-load UI update adapter from ApplicationContext."""
         if self._ui_update is None:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._ui_update = context.get_manager("ui_update")
@@ -83,7 +83,7 @@ class MetadataWriter(QObject):
     def exiftool_wrapper(self) -> ExifToolWrapper:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             self._exiftool_wrapper = ExifToolWrapper()
         return self._exiftool_wrapper
@@ -314,9 +314,14 @@ class MetadataWriter(QObject):
                 if hasattr(folder_tree, "_filesystem_handler"):
                     filesystem_monitor = folder_tree._filesystem_handler.filesystem_monitor
                     if filesystem_monitor:
-                        logger.info("[MetadataWriter] Found filesystem_monitor from folder_tree handler")
+                        logger.info(
+                            "[MetadataWriter] Found filesystem_monitor from folder_tree handler"
+                        )
                     else:
-                        logger.debug("[MetadataWriter] folder_tree exists but filesystem_monitor not yet initialized", extra={"dev_only": True})
+                        logger.debug(
+                            "[MetadataWriter] folder_tree exists but filesystem_monitor not yet initialized",
+                            extra={"dev_only": True},
+                        )
             else:
                 logger.warning("[MetadataWriter] parent_window has no folder_tree attribute")
         except Exception as e:
@@ -326,7 +331,9 @@ class MetadataWriter(QObject):
             filesystem_monitor.pause()
             logger.info("[MetadataWriter] Paused filesystem monitoring during save")
         elif filesystem_monitor:
-            logger.debug("[MetadataWriter] filesystem_monitor has no pause method", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWriter] filesystem_monitor has no pause method", extra={"dev_only": True}
+            )
 
         try:
             if save_mode == "multiple_files_dialog":
@@ -408,7 +415,9 @@ class MetadataWriter(QObject):
                 def delayed_resume() -> None:
                     if filesystem_monitor:
                         filesystem_monitor.resume()
-                        logger.info("[MetadataWriter] Resumed filesystem monitoring after save (delayed)")
+                        logger.info(
+                            "[MetadataWriter] Resumed filesystem monitoring after save (delayed)"
+                        )
 
                 get_timer_manager().schedule(
                     delayed_resume,
@@ -541,7 +550,9 @@ class MetadataWriter(QObject):
         requiring a full table reload.
         """
         try:
-            if hasattr(self.parent_window, "file_table_view") and hasattr(self.parent_window, "file_model"):
+            if hasattr(self.parent_window, "file_table_view") and hasattr(
+                self.parent_window, "file_model"
+            ):
                 self.ui_update.update_file_icon(
                     self.parent_window.file_table_view,
                     self.parent_window.file_model,
@@ -581,9 +592,7 @@ class MetadataWriter(QObject):
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                show_info_message(
-                    self.parent_window, "Save Cancelled", "\n".join(msg_parts)
-                )
+                show_info_message(self.parent_window, "Save Cancelled", "\n".join(msg_parts))
             return
 
         if success_count > 0:

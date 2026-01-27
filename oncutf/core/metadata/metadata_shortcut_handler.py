@@ -154,8 +154,7 @@ class MetadataShortcutHandler:
             from oncutf.app.services import show_info_message
 
             message = (
-                f"All {len(selected_files)} selected file(s) already have "
-                f"fast metadata or better."
+                f"All {len(selected_files)} selected file(s) already have fast metadata or better."
             )
             if metadata_analysis.get("fast_tooltip"):
                 message += f"\n\n{metadata_analysis['fast_tooltip']}"
@@ -343,7 +342,7 @@ class MetadataShortcutHandler:
 
     def _get_all_files(self) -> list[FileItem]:
         """Get all files from the application context."""
-        from oncutf.ui.adapters.application_context import ApplicationContext
+        from oncutf.app.state.context import AppContext as ApplicationContext
 
         context = ApplicationContext()
         return context.file_store.get_loaded_files()

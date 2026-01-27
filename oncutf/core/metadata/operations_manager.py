@@ -69,7 +69,7 @@ class MetadataOperationsManager:
     def metadata_edit(self) -> MetadataEditPort:
         """Lazy-load metadata edit adapter from ApplicationContext."""
         if self._metadata_edit is None:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._metadata_edit = context.get_manager("metadata_edit")
@@ -136,10 +136,7 @@ class MetadataOperationsManager:
             bool: True if any files have metadata, False otherwise
 
         """
-        if (
-            not hasattr(self.parent_window, "file_model")
-            or not self.parent_window.file_model
-        ):
+        if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
             return False
 
         all_files = self.parent_window.file_model.get_all_file_items()
@@ -199,7 +196,9 @@ class MetadataOperationsManager:
         # Show dialog
         dialog.exec_()
 
-    def _execute_export(self, dialog: Any, format_combo: Any, file_items: list[FileItem], scope: str) -> None:
+    def _execute_export(
+        self, dialog: Any, format_combo: Any, file_items: list[FileItem], scope: str
+    ) -> None:
         """Execute the actual export process."""
         # Get format
         format_map = {0: "json", 1: "markdown"}

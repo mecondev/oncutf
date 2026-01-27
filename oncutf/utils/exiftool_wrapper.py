@@ -1,6 +1,6 @@
 """Compatibility re-export for ExifToolWrapper.
 
-DEPRECATED: Import from oncutf.utils.shared.exiftool_wrapper instead.
+DEPRECATED: Import from oncutf.infra.external.exiftool_wrapper instead.
 
 This module exists for backward compatibility only and may be removed in future versions.
 
@@ -12,12 +12,12 @@ import warnings
 
 warnings.warn(
     "Importing from oncutf.utils.exiftool_wrapper is deprecated. "
-    "Use 'from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper' instead.",
+    "Use 'from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper' instead.",
     DeprecationWarning,
     stacklevel=2,
 )
 
 # Re-export for compatibility
-from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
 __all__ = ["ExifToolWrapper"]

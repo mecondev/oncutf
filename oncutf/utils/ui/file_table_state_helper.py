@@ -23,8 +23,12 @@ from typing import TYPE_CHECKING, NamedTuple
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
 if TYPE_CHECKING:
+    from oncutf.app.state.context import AppContext
     from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.ui.widgets.file_table import FileTableView
+
+    # Union type for context - supports both Qt-free and Qt versions
+    ContextType = AppContext | ApplicationContext
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +60,7 @@ class FileTableStateHelper:
     """
 
     @staticmethod
-    def save_state(
-        file_table_view: "FileTableView", context: "ApplicationContext"
-    ) -> FileTableState:
+    def save_state(file_table_view: "FileTableView", context: "ContextType") -> FileTableState:
         """Save current file table state for later restoration.
 
         Args:
@@ -137,7 +139,7 @@ class FileTableStateHelper:
     @staticmethod
     def restore_state(
         file_table_view: "FileTableView",
-        context: "ApplicationContext",
+        context: "ContextType",
         state: FileTableState,
         delay_ms: int = 100,
     ) -> None:
@@ -207,7 +209,6 @@ class FileTableStateHelper:
                         # This ensures the selection is visible in the table
                         selection_model = file_table_view.selectionModel()
                         if selection_model:
-
                             model = file_table_view.model()
                             if model:
                                 # Clear existing selection
@@ -274,7 +275,7 @@ class FileTableStateHelper:
     @staticmethod
     def restore_state_sync(
         file_table_view: "FileTableView",
-        context: "ApplicationContext",
+        context: "ContextType",
         state: FileTableState,
     ) -> None:
         """Restore file table state SYNCHRONOUSLY (no timer delay).
@@ -329,7 +330,6 @@ class FileTableStateHelper:
                     # CRITICAL: Also update Qt selection model for visual feedback
                     selection_model = file_table_view.selectionModel()
                     if selection_model:
-
                         model = file_table_view.model()
                         if model:
                             # Clear existing selection
@@ -371,7 +371,7 @@ class FileTableStateHelper:
     @staticmethod
     def clear_all_state(
         file_table_view: "FileTableView",
-        context: "ApplicationContext",
+        context: "ContextType",
         metadata_tree_view=None,
     ) -> None:
         """Clear all file table state for manual F5 refresh.

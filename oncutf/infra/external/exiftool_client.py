@@ -60,7 +60,7 @@ class ExifToolClient:
         """Lazy initialization of ExifToolWrapper."""
         if self._wrapper is None:
             try:
-                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
                 self._wrapper = ExifToolWrapper()
                 logger.debug("ExifToolWrapper initialized")
@@ -80,7 +80,7 @@ class ExifToolClient:
             return self._available
 
         try:
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             self._available = ExifToolWrapper.is_available()
         except Exception as e:

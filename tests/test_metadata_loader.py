@@ -145,7 +145,7 @@ class TestExifToolWrapperProperty:
     def test_creates_wrapper_if_no_getter(self) -> None:
         """Should create new wrapper if no getter provided."""
         from oncutf.core.metadata.metadata_loader import MetadataLoader
-        from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
         loader = MetadataLoader(exiftool_getter=None)
 

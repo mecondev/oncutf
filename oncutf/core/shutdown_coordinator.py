@@ -581,7 +581,7 @@ class ShutdownCoordinator(QObject):
         if not self._exiftool_wrapper:
             # Still do force cleanup even if no wrapper registered
             try:
-                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
                 threading.Thread(
                     target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
@@ -614,7 +614,7 @@ class ShutdownCoordinator(QObject):
 
                 # Force cleanup all ExifTool processes
                 # This is critical on Windows to prevent zombie processes
-                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
                 # IMPORTANT: Do this in background; psutil.process_iter() can occasionally
                 # block on Windows and would freeze the UI thread during close.
@@ -630,7 +630,7 @@ class ShutdownCoordinator(QObject):
                 logger.exception("ExifTool shutdown failed: %s", e)
                 # Even on error, try force cleanup one more time
                 try:
-                    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+                    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
                     threading.Thread(
                         target=ExifToolWrapper.force_cleanup_all_exiftool_processes,

@@ -65,13 +65,14 @@ class FileLoadManager:
     def drag_state(self) -> "DragStatePort":
         """Lazy-load drag state adapter from ApplicationContext."""
         if self._drag_state is None:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._drag_state = context.get_manager("drag_state")
             if self._drag_state is None:
                 raise RuntimeError("DragStatePort not registered in ApplicationContext")
         return self._drag_state
+
     """Unified file loading manager with fully optimized policy:
     - All operations: wait_cursor only (fast, synchronous like external drops)
     - Same behavior for drag, import, and external operations
@@ -216,7 +217,9 @@ class FileLoadManager:
                 self._update_ui_with_files([path], clear=not merge_mode)
 
     def load_files_from_dropped_items(
-        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+        self,
+        paths: list[str],
+        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
     ) -> None:
         """Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.
@@ -294,16 +297,10 @@ class FileLoadManager:
                                 file_paths.append(full_path)
                             except Exception as e:
                                 logger.warning(
-                                    "[FileLoadManager] Error processing file %s: %s",
-                                    filename,
-                                    e
+                                    "[FileLoadManager] Error processing file %s: %s", filename, e
                                 )
             except Exception as e:
-                logger.exception(
-                    "[FileLoadManager] Error walking directory %s: %s",
-                    folder_path,
-                    e
-                )
+                logger.exception("[FileLoadManager] Error walking directory %s: %s", folder_path, e)
         else:
             try:
                 for filename in os.listdir(folder_path):
@@ -312,11 +309,7 @@ class FileLoadManager:
                         if os.path.isfile(full_path):
                             file_paths.append(full_path)
             except OSError as e:
-                logger.error(
-                    "[FileLoadManager] Error listing directory %s: %s",
-                    folder_path,
-                    e
-                )
+                logger.error("[FileLoadManager] Error listing directory %s: %s", folder_path, e)
 
         if sorted_output:
             file_paths.sort()
@@ -325,7 +318,7 @@ class FileLoadManager:
             "[FileLoadManager] Found %d files in %s (recursive=%s)",
             len(file_paths),
             folder_path,
-            recursive
+            recursive,
         )
         return file_paths
 
@@ -373,9 +366,7 @@ class FileLoadManager:
                 return cached_files
 
         # Scan folder using unified scanning method (I/O operation)
-        file_paths = self._get_files_from_folder(
-            folder_path, recursive=False, sorted_output=True
-        )
+        file_paths = self._get_files_from_folder(folder_path, recursive=False, sorted_output=True)
 
         # Convert to FileItem objects
         file_items = []
@@ -386,7 +377,7 @@ class FileLoadManager:
                 logger.warning(
                     "[FileLoadManager] Could not create FileItem for %s: %s",
                     os.path.basename(file_path),
-                    e
+                    e,
                 )
                 continue
 
@@ -397,9 +388,7 @@ class FileLoadManager:
         # Load color tags from database for all files
         self._load_color_tags(file_items)
 
-        logger.info(
-            "[FileLoadManager] Scanned %s: %d files", folder_path, len(file_items)
-        )
+        logger.info("[FileLoadManager] Scanned %s: %d files", folder_path, len(file_items))
         return file_items
 
     def _filter_companion_files(self, file_paths: list[str]) -> list[str]:
@@ -430,7 +419,7 @@ class FileLoadManager:
 
             if companion_count > 0:
                 logger.info(
-                    "[FileLoadManager] Filtered out %d companion files. " "Showing %d main files.",
+                    "[FileLoadManager] Filtered out %d companion files. Showing %d main files.",
                     companion_count,
                     len(filtered_files),
                 )

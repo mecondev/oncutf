@@ -153,9 +153,7 @@ class RenameManager:
             """Safe wrapper for post-rename workflow with error handling."""
             try:
                 # Check if main window is still valid
-                if not self.main_window or not hasattr(
-                    self.main_window, "current_folder_path"
-                ):
+                if not self.main_window or not hasattr(self.main_window, "current_folder_path"):
                     logger.warning(
                         "[RenameManager] Main window no longer valid, skipping post-rename workflow"
                     )
@@ -218,6 +216,7 @@ class RenameManager:
 
             # Reload folder for faster loading
             logger.debug("[RenameManager] Reloading folder after rename")
+
             # Schedule state restoration AFTER folder load is complete.
             # NOTE: Folder loads can be streaming (many model resets). A fixed delay races and
             # can lose selection due to later UI refresh calls.
@@ -233,7 +232,7 @@ class RenameManager:
 
                     # Use ui_state facade for consistent restoration
                     from oncutf.app.services.ui_state import UIState, restore_ui_state_sync
-                    from oncutf.ui.adapters.application_context import get_app_context
+                    from oncutf.app.state.context import get_app_context
 
                     state = UIState(
                         selected_paths=list(selected_paths) if selected_paths else [],
@@ -312,7 +311,7 @@ class RenameManager:
             # Debounced restore: wait until FileStore.files_loaded stops firing.
             from contextlib import suppress
 
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
             from oncutf.utils.shared.timer_manager import (
                 TimerPriority,
                 TimerType,

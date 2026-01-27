@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
     from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
+    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
     from oncutf.models.file_item import FileItem
-    from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -94,7 +94,7 @@ class MetadataLoader:
         if self._exiftool_getter:
             return self._exiftool_getter()
         # Fallback: create new instance
-        from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
         return ExifToolWrapper()
 
@@ -294,10 +294,8 @@ class MetadataLoader:
             if has_valid_cache and cache_entry is not None:
                 # Already has extended - never downgrade
                 if (
-                    (cache_entry.is_extended
-                    and not use_extended)
-                    or cache_entry.is_extended == use_extended
-                ):
+                    cache_entry.is_extended and not use_extended
+                ) or cache_entry.is_extended == use_extended:
                     skipped_count += 1
                     continue
                 # else: Need upgrade from fast to extended - add to needs_loading
@@ -343,7 +341,7 @@ class MetadataLoader:
 
         # Try SelectionStore first (most reliable)
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             if context and hasattr(context, "selection_store"):
@@ -437,9 +435,7 @@ class MetadataLoader:
                         self._parent_window.file_model.refresh_icons()
 
                     # Smart display: respect selection count
-                    self._smart_display_metadata(
-                        enhanced_metadata, context="single_file_load"
-                    )
+                    self._smart_display_metadata(enhanced_metadata, context="single_file_load")
 
                     logger.debug(
                         "[MetadataLoader] Loaded %s metadata for %s",
@@ -665,10 +661,8 @@ class MetadataLoader:
 
             if has_valid_cache and cache_entry is not None:
                 if (
-                    (cache_entry.is_extended
-                    and not use_extended)
-                    or cache_entry.is_extended == use_extended
-                ):
+                    cache_entry.is_extended and not use_extended
+                ) or cache_entry.is_extended == use_extended:
                     yield item, cache_entry.data
                     continue
 

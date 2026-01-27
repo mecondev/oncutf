@@ -55,7 +55,7 @@ class HashResultsPresenter:
     def results_display(self) -> ResultsDisplayPort:
         """Lazy-load results display adapter from ApplicationContext."""
         if self._results_display is None:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._results_display = context.get_manager("results_display")
@@ -63,9 +63,7 @@ class HashResultsPresenter:
                 raise RuntimeError("ResultsDisplayPort not registered in ApplicationContext")
         return self._results_display
 
-    def show_duplicate_results(
-        self, duplicates: dict[str, list[FileItem]], scope: str
-    ) -> None:
+    def show_duplicate_results(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
         """Show duplicate detection results to the user.
 
         Args:
@@ -91,9 +89,7 @@ class HashResultsPresenter:
         duplicate_count = sum(len(files) for files in duplicates.values())
         duplicate_groups = len(duplicates)
 
-        message_lines = [
-            f"Found {duplicate_count} duplicate files in {duplicate_groups} groups:\n"
-        ]
+        message_lines = [f"Found {duplicate_count} duplicate files in {duplicate_groups} groups:\n"]
 
         for i, (hash_val, files) in enumerate(duplicates.items(), 1):
             message_lines.append(f"Group {i} ({len(files)} files):")
@@ -121,9 +117,7 @@ class HashResultsPresenter:
             duplicate_groups,
         )
 
-    def show_comparison_results(
-        self, results: dict[str, Any], external_folder: str
-    ) -> None:
+    def show_comparison_results(self, results: dict[str, Any], external_folder: str) -> None:
         """Show external folder comparison results to the user.
 
         Args:
@@ -219,9 +213,7 @@ class HashResultsPresenter:
                     "No checksums could be calculated.",
                 )
             if hasattr(self.parent_window, "set_status"):
-                status_msg = (
-                    "Operation cancelled" if was_cancelled else "No checksums calculated"
-                )
+                status_msg = "Operation cancelled" if was_cancelled else "No checksums calculated"
                 self.parent_window.set_status(
                     status_msg, color=STATUS_COLORS["no_action"], auto_reset=True
                 )

@@ -115,7 +115,7 @@ class UnifiedMetadataManager(QObject):
     def exiftool_wrapper(self) -> Any:
         """Lazy-initialized ExifTool wrapper."""
         if self._exiftool_wrapper is None:
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             self._exiftool_wrapper = ExifToolWrapper()
             logger.debug(

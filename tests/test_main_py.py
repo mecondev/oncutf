@@ -63,8 +63,8 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
     # Ensure cleanup flag is reset
     monkeypatch.setattr(main, "_cleanup_done", False)
 
-    # Create a fake utils.exiftool_wrapper module with a callable ExifToolWrapper
-    fake_mod = ModuleType("oncutf.utils.shared.exiftool_wrapper")
+    # Create a fake infra.external.exiftool_wrapper module with a callable ExifToolWrapper
+    fake_mod = ModuleType("oncutf.infra.external.exiftool_wrapper")
 
     calls = {"count": 0}
 
@@ -76,7 +76,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
     fake_mod.ExifToolWrapper = FakeExif
 
     # Inject into sys.modules so import inside function finds it
-    sys.modules["oncutf.utils.shared.exiftool_wrapper"] = fake_mod
+    sys.modules["oncutf.infra.external.exiftool_wrapper"] = fake_mod
 
     try:
         # First call should invoke the fake cleanup
@@ -90,7 +90,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
 
     finally:
         # Clean up our injected module
-        sys.modules.pop("oncutf.utils.shared.exiftool_wrapper", None)
+        sys.modules.pop("oncutf.infra.external.exiftool_wrapper", None)
 
 
 def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
@@ -121,7 +121,10 @@ def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
 
     # We expect the function to catch the ImportError and log a warning
     # The actual message may vary, so check for import-related error
-    assert any(
-        "Error" in rec.getMessage() or "import" in rec.getMessage().lower()
-        for rec in caplog.records
-    ) or len(caplog.records) > 0  # At least some logging happened
+    assert (
+        any(
+            "Error" in rec.getMessage() or "import" in rec.getMessage().lower()
+            for rec in caplog.records
+        )
+        or len(caplog.records) > 0
+    )  # At least some logging happened

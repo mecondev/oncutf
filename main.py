@@ -73,7 +73,7 @@ def cleanup_on_exit() -> None:
         logger.warning("[App] Error saving configuration during cleanup: %s", e)
 
     try:
-        from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("[App] Emergency ExifTool cleanup completed")
@@ -397,7 +397,7 @@ def main() -> int:
         # Force cleanup any remaining ExifTool processes
         global _cleanup_done, _app_quit_called
         try:
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
@@ -454,7 +454,7 @@ def main() -> int:
         logger.exception("Fatal error in main: %s", str(e))
         # Emergency cleanup on crash
         try:
-            from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
         except Exception:

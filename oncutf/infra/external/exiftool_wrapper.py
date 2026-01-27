@@ -227,7 +227,8 @@ class ExifToolWrapper:
 
             data = json.loads(output)
             if isinstance(data, list) and len(data) > 0:
-                return data[0]
+                result = data[0]
+                return dict(result) if isinstance(result, dict) else None
             else:
                 logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
                 return None
@@ -294,7 +295,7 @@ class ExifToolWrapper:
                     len(data),
                     extra={"dev_only": True},
                 )
-                return data
+                return list(data)
             else:
                 logger.warning(
                     "[ExifToolWrapper] Batch metadata failed with code %d",
@@ -419,7 +420,7 @@ class ExifToolWrapper:
                 extra={"dev_only": True},
             )
 
-            return result_dict
+            return dict(result_dict)
 
         except subprocess.TimeoutExpired:
             # Timeout is expected for large video files - log as warning, not error

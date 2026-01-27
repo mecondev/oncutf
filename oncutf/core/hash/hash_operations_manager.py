@@ -112,10 +112,7 @@ class HashOperationsManager:
             list: FileItem objects without hashes
 
         """
-        if (
-            not hasattr(self.parent_window, "file_model")
-            or not self.parent_window.file_model
-        ):
+        if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
             return []
 
         all_files = self.parent_window.file_model.get_all_file_items()
@@ -136,10 +133,7 @@ class HashOperationsManager:
             files_to_check = selected_files
         else:
             scope = "all"
-            if (
-                not hasattr(self.parent_window, "file_model")
-                or not self.parent_window.file_model
-            ):
+            if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
                 logger.warning("[HashManager] No file model available")
                 return
             files_to_check = self.parent_window.file_model.get_all_file_items()
@@ -284,9 +278,7 @@ class HashOperationsManager:
 
         except Exception as e:
             logger.error("[HashManager] Error calculating checksum: %s", e)
-            show_info_message(
-                self.parent_window, "Error", f"Failed to calculate checksum: {e!s}"
-            )
+            show_info_message(self.parent_window, "Error", f"Failed to calculate checksum: {e!s}")
 
     # ===== Worker Callbacks =====
 
@@ -320,14 +312,11 @@ class HashOperationsManager:
 
         """
         # Update file table view to show new hash
-        if (
-            hasattr(self.parent_window, "file_table_view")
-            and self.parent_window.file_table_view
-        ):
+        if hasattr(self.parent_window, "file_table_view") and self.parent_window.file_table_view:
             try:
                 from PyQt5.QtCore import Qt
 
-                from oncutf.ui.adapters.application_context import get_app_context
+                from oncutf.app.state.context import get_app_context
 
                 file_store = get_app_context().file_store
                 model = self.parent_window.file_table_view.model()
@@ -344,6 +333,7 @@ class HashOperationsManager:
 
                             # Force immediate repaint
                             from PyQt5.QtWidgets import QApplication
+
                             app_instance = QApplication.instance()
                             if app_instance:
                                 app_instance.processEvents()
@@ -351,9 +341,7 @@ class HashOperationsManager:
 
             except Exception as e:
                 logger.debug(
-                    "[HashManager] Could not refresh file item UI: %s",
-                    e,
-                    extra={"dev_only": True}
+                    "[HashManager] Could not refresh file item UI: %s", e, extra={"dev_only": True}
                 )
 
         logger.debug(
@@ -363,9 +351,7 @@ class HashOperationsManager:
             extra={"dev_only": True},
         )
 
-    def _on_duplicates_found(
-        self, duplicates: dict[str, list[FileItem]], scope: str
-    ) -> None:
+    def _on_duplicates_found(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:
         """Handle duplicate detection results.
 
         Args:
@@ -375,9 +361,7 @@ class HashOperationsManager:
         """
         self._results_presenter.show_duplicate_results(duplicates, scope)
 
-    def _on_comparison_result(
-        self, results: dict[str, Any], external_folder: str
-    ) -> None:
+    def _on_comparison_result(self, results: dict[str, Any], external_folder: str) -> None:
         """Handle external comparison results.
 
         Args:
@@ -387,9 +371,7 @@ class HashOperationsManager:
         """
         self._results_presenter.show_comparison_results(results, external_folder)
 
-    def _on_checksums_calculated(
-        self, hash_results: dict[str, dict[str, str]]
-    ) -> None:
+    def _on_checksums_calculated(self, hash_results: dict[str, dict[str, str]]) -> None:
         """Handle checksum calculation results.
 
         Args:
@@ -417,10 +399,7 @@ class HashOperationsManager:
 
         """
         # Refresh file table icons to show new hash status
-        if (
-            hasattr(self.parent_window, "file_model")
-            and self.parent_window.file_model
-        ):
+        if hasattr(self.parent_window, "file_model") and self.parent_window.file_model:
             if hasattr(self.parent_window.file_model, "refresh_icons"):
                 self.parent_window.file_model.refresh_icons()
                 logger.debug(
@@ -429,10 +408,7 @@ class HashOperationsManager:
                 )
 
         # Notify preview manager about hash calculation completion
-        if (
-            hasattr(self.parent_window, "preview_manager")
-            and self.parent_window.preview_manager
-        ):
+        if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:
             self.parent_window.preview_manager.on_hash_calculation_completed()
 
     def _on_hash_operation_error(self, error_message: str) -> None:
@@ -445,9 +421,7 @@ class HashOperationsManager:
         logger.error("[HashManager] Hash operation error: %s", error_message)
 
         # Show error message
-        show_info_message(
-            self.parent_window, "Error", f"Hash operation failed: {error_message}"
-        )
+        show_info_message(self.parent_window, "Error", f"Hash operation failed: {error_message}")
 
         # Update status
         if hasattr(self.parent_window, "set_status"):
@@ -471,10 +445,7 @@ class HashOperationsManager:
         """
         if files is None:
             # Check all files
-            if (
-                not hasattr(self.parent_window, "file_model")
-                or not self.parent_window.file_model
-            ):
+            if not hasattr(self.parent_window, "file_model") or not self.parent_window.file_model:
                 return False
             files = self.parent_window.file_model.get_all_file_items()
 

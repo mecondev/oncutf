@@ -652,7 +652,7 @@ class ShutdownLifecycleHandler:
 
             # Register ExifTool wrapper (get active instance if any)
             try:
-                from oncutf.utils.shared.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
                 if ExifToolWrapper._instances:

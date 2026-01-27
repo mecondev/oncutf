@@ -15,8 +15,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 if TYPE_CHECKING:
+    from oncutf.app.state.context import AppContext
     from oncutf.ui.adapters.application_context import ApplicationContext
     from oncutf.ui.widgets.file_table.view import FileTableView
+
+    # Union type for context - supports both Qt-free and Qt versions
+    ContextType = AppContext | ApplicationContext
 
 
 class UIState(NamedTuple):
@@ -31,7 +35,7 @@ class UIState(NamedTuple):
     scroll_position: int
 
 
-def save_ui_state(file_table_view: FileTableView, context: ApplicationContext) -> Any:
+def save_ui_state(file_table_view: FileTableView, context: ContextType) -> Any:
     """Save current UI state (selection, checked, scroll position).
 
     Args:
@@ -48,7 +52,7 @@ def save_ui_state(file_table_view: FileTableView, context: ApplicationContext) -
 
 
 def restore_ui_state(
-    file_table_view: FileTableView, context: ApplicationContext, state: Any, delay_ms: int = 0
+    file_table_view: FileTableView, context: ContextType, state: Any, delay_ms: int = 0
 ) -> None:
     """Restore previously saved UI state.
 
@@ -64,9 +68,7 @@ def restore_ui_state(
     FileTableStateHelper.restore_state(file_table_view, context, state, delay_ms)
 
 
-def restore_ui_state_sync(
-    file_table_view: FileTableView, context: ApplicationContext, state: Any
-) -> None:
+def restore_ui_state_sync(file_table_view: FileTableView, context: ContextType, state: Any) -> None:
     """Restore UI state synchronously (no delay).
 
     Args:
@@ -93,7 +95,7 @@ def restore_ui_state_sync(
 
 
 def clear_ui_state(
-    file_table_view: FileTableView, context: ApplicationContext, metadata_tree_view: Any = None
+    file_table_view: FileTableView, context: ContextType, metadata_tree_view: Any = None
 ) -> None:
     """Clear all UI state (selection, checked, scroll position).
 
