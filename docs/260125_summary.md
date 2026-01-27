@@ -1,6 +1,6 @@
 # Boundary-First Refactor Summary (260125)
-**Last Updated:** 2026-01-26  
-**Status:** PARTIAL — Phase 6 mostly done; boundary cleanup still incomplete
+**Last Updated:** 2026-01-27  
+**Status:** COMPLETE — Service layer consolidated, preview engine merged
 
 ---
 
@@ -12,24 +12,31 @@
 - ApplicationContext split: Qt-free base + Qt wrapper
 - File relocation executed; boundary enforcement still pending
 
-**Boundary Enforcement:** ❌ INCOMPLETE
+**Service Layer Consolidation (2026-01-27):** ✅ COMPLETE
+- `oncutf/services/` eliminated entirely (no deprecation shims)
+- Services moved to `app/ports/` (protocols/registry) and `infra/` (implementations)
+- **-161 LOC** net reduction
+
+**Preview Engine Consolidation (2026-01-27):** ✅ COMPLETE
+- `utils/naming/preview_engine.py` merged into `core/rename/preview_manager.py`
+- 616 LOC → 500 LOC (~20% reduction)
+
+**Boundary Enforcement:** ⚠️ PARTIAL
 - core → ui: **1 lazy import** remains (no top-level imports)
 - ui → core: **63 imports** remain (0 problematic top-level business logic; mostly lazy/config)
 - Qt signals in core: **removed** (UnifiedRenameEngine is Qt-free)
-- Duplicates not fully removed: `utils/naming/preview_engine.py` still exists
-
-**Critical Gap:** The migration focused on file relocation, not true boundary enforcement.
+- Duplicates: **0** (preview_engine deleted)
 
 ---
 
-## ACTUAL Violation Counts (2026-01-26)
+## ACTUAL Violation Counts (2026-01-27)
 
 | Violation Type | Current Count | Files | Status |
 |----------------|---------------|-------|--------|
 | **core → ui imports** | **1 (lazy)** | 1 file | ⚠️ OPEN |
 | **ui → core imports** | **63** | many | ⚠️ OPEN (mostly lazy/config) |
 | Qt signals in core | 0 | — | ✅ DONE |
-| Duplicate rename paths | 1 file | preview_engine.py | ⚠️ OPEN |
+| Duplicate rename paths | 0 | — | ✅ DONE |
 | `# type: ignore` | 13 | Various | ⚠️ OPEN |
 
 ### Core → UI Imports (AST: 1 lazy import)
@@ -124,7 +131,13 @@
 - Updated 4 core files with dependency injection
 - Commit: 00c19f10
 
-**Result:** File relocation successful, but boundary violations persist.
+**Phase 6: Service Layer Consolidation (DONE) — 2026-01-27**
+- Moved services/ to app/ports/ and infra/
+- Merged preview_engine.py into preview_manager.py
+- 18 files changed, -161 LOC net
+- Commit: fd53bc67
+
+**Result:** File relocation successful, service layer clean, duplicates eliminated.
 
 ---
 
@@ -142,9 +155,9 @@
 
 ## What Remains to Complete Boundary Enforcement
 
-### Phase 6: Final Boundary Cleanup (PARTIAL)
+### Phase 7: Final Boundary Cleanup (PARTIAL)
 
-**6.1. Eliminate Core → UI Imports ⚠️ OPEN**
+**7.1. Eliminate Core → UI Imports ⚠️ OPEN**
 
 **Status:** 1 lazy import remains (must be reduced to zero).
 
@@ -157,7 +170,7 @@
 
 ---
 
-**6.2. Remove Qt from Core ✅ COMPLETE**
+**7.2. Remove Qt from Core ✅ COMPLETE**
 
 **Status:** Qt dependencies eliminated from `core/rename/`.
 - `unified_rename_engine.py` no longer imports QObject/pyqtSignal.
@@ -165,7 +178,7 @@
 
 ---
 
-**6.3. Reduce UI → Core Imports ⚠️ PARTIAL**
+**7.3. Reduce UI → Core Imports ⚠️ PARTIAL**
 
 **Status:** AST shows **63 ui→core imports**, **0 top-level business logic**. Most are lazy/config/types/adapters.
 
@@ -175,18 +188,21 @@ Open work:
 
 ---
 
-**Final Phase 6 Summary (Updated):**
+**Final Summary (Updated 2026-01-27):**
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 6.1 - Eliminate core→ui | ⚠️ OPEN | 1 lazy import remains (application_context) |
-| 6.2 - Remove Qt from core | ✅ DONE | UnifiedRenameEngine Qt-free |
-| 6.3 - Reduce ui→core | ⚠️ PARTIAL | 63 imports remain, 0 top-level business logic |
+| 6 - Service layer consolidation | ✅ DONE | services/ → app/ports/ + infra/ |
+| 6 - Preview engine merge | ✅ DONE | preview_engine.py deleted |
+| 7.1 - Eliminate core→ui | ⚠️ OPEN | 1 lazy import remains (application_context) |
+| 7.2 - Remove Qt from core | ✅ DONE | UnifiedRenameEngine Qt-free |
+| 7.3 - Reduce ui→core | ⚠️ PARTIAL | 63 imports remain, 0 top-level business logic |
 
-**Current Metrics (Verified):**
+**Current Metrics (Verified 2026-01-27):**
 - core → ui: **1 lazy import** (application_context)
 - ui → core: **63 imports**, 0 top-level business logic
 - Qt signals in core/rename: **0**
-- Duplicates: **1** (`utils/naming/preview_engine.py`)
+- Duplicates: **0** (preview_engine deleted, services consolidated)
 - `# type: ignore`: **13**
+- All tests: **1154 passed**, 7 skipped
 
