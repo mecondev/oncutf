@@ -10,7 +10,7 @@ import pytest
 
 from oncutf.models.counter_scope import CounterScope
 from oncutf.models.file_item import FileItem
-from oncutf.utils.naming.preview_engine import apply_rename_modules, calculate_scope_aware_index
+from oncutf.core.rename.preview_manager import apply_rename_modules, calculate_scope_aware_index
 
 
 class TestPerFileGroupScope:
@@ -203,10 +203,6 @@ class TestPerFileGroupScope:
 
     def test_per_filegroup_fallback_without_all_files(self, multi_folder_files):
         """Test PER_FILEGROUP fallback to global index when all_files is None."""
-        from oncutf.utils.naming import preview_engine
-
-        preview_engine._module_cache.clear()
-
         modules_data = [
             {
                 "type": "counter",
@@ -219,9 +215,12 @@ class TestPerFileGroupScope:
 
         results = []
         for idx, file_item in enumerate(multi_folder_files):
-            preview_engine._module_cache.clear()
             new_name = apply_rename_modules(
-                modules_data, idx, file_item, metadata_cache=None, all_files=None  # No files list!
+                modules_data,
+                idx,
+                file_item,
+                metadata_cache=None,
+                all_files=None,  # No files list!
             )
             results.append(new_name)
 
@@ -234,13 +233,10 @@ class TestPerFileGroupScope:
 
     def test_per_filegroup_vs_per_folder_same_result(self, multi_folder_files):
         """Test that PER_FILEGROUP and PER_FOLDER produce same results (default grouping)."""
-        from oncutf.utils.naming import preview_engine
-
         per_folder_results = []
         per_filegroup_results = []
 
         # Test PER_FOLDER
-        preview_engine._module_cache.clear()
         modules_data_folder = [
             {
                 "type": "counter",
@@ -252,7 +248,6 @@ class TestPerFileGroupScope:
         ]
 
         for idx, file_item in enumerate(multi_folder_files):
-            preview_engine._module_cache.clear()
             new_name = apply_rename_modules(
                 modules_data_folder,
                 idx,
@@ -263,7 +258,6 @@ class TestPerFileGroupScope:
             per_folder_results.append(new_name)
 
         # Test PER_FILEGROUP
-        preview_engine._module_cache.clear()
         modules_data_filegroup = [
             {
                 "type": "counter",
@@ -275,7 +269,6 @@ class TestPerFileGroupScope:
         ]
 
         for idx, file_item in enumerate(multi_folder_files):
-            preview_engine._module_cache.clear()
             new_name = apply_rename_modules(
                 modules_data_filegroup,
                 idx,

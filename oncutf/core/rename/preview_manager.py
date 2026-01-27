@@ -7,7 +7,10 @@ preview generation using batch queries and caching.
 
 Author: Michael Economou
 Date: 2026-01-01
+Updated: 2026-01-27 (consolidated preview_engine.py)
 """
+
+from __future__ import annotations
 
 import json
 import os
@@ -15,13 +18,28 @@ import time
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
     from oncutf.models.file_item import FileItem
 
 from oncutf.core.rename.data_classes import PreviewResult
-from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
+from oncutf.models.counter_scope import CounterScope
+from oncutf.modules.counter_module import CounterModule
+from oncutf.modules.metadata_module import MetadataModule
+from oncutf.modules.original_name_module import OriginalNameModule
+from oncutf.modules.specified_text_module import SpecifiedTextModule
+from oncutf.modules.text_removal_module import TextRemovalModule
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+# Module type mapping for rename operations
+MODULE_TYPE_MAP = {
+    "specified_text": SpecifiedTextModule,
+    "counter": CounterModule,
+    "metadata": MetadataModule,
+    "original_name": OriginalNameModule,
+    "remove_text_from_original_name": TextRemovalModule,
+}
 
 
 class UnifiedPreviewManager:
@@ -40,7 +58,7 @@ class UnifiedPreviewManager:
 
     def generate_preview(
         self,
-        files: list["FileItem"],
+        files: list[FileItem],
         modules_data: list[dict[str, Any]],
         post_transform: dict[str, Any],
         metadata_cache: Any,
@@ -107,7 +125,7 @@ class UnifiedPreviewManager:
 
     def _generate_cache_key(
         self,
-        files: list["FileItem"],
+        files: list[FileItem],
         modules_data: list[dict[str, Any]],
         post_transform: dict[str, Any],
     ) -> str:
@@ -130,7 +148,7 @@ class UnifiedPreviewManager:
 
     def _generate_name_pairs(
         self,
-        files: list["FileItem"],
+        files: list[FileItem],
         modules_data: list[dict[str, Any]],
         post_transform: dict[str, Any],
         metadata_cache: Any,
@@ -192,13 +210,13 @@ class UnifiedPreviewManager:
 
     def _apply_modules_with_context(
         self,
-        file: "FileItem",
+        file: FileItem,
         modules_data: list[dict[str, Any]],
         index: int,
         metadata_cache: Any,
         hash_availability: dict[str, bool],
         metadata_availability: dict[str, bool],
-        all_files: list["FileItem"] | None = None,
+        all_files: list[FileItem] | None = None,
     ) -> str:
         """Apply rename modules for a single file, checking required data.
 
@@ -216,8 +234,6 @@ class UnifiedPreviewManager:
             all_files: Full file list (for scope-aware counters)
 
         """
-        from oncutf.utils.naming.preview_engine import apply_rename_modules
-
         # Check if this file has required data for modules
         for module_data in modules_data:
             if module_data.get("type") == "metadata":
@@ -232,19 +248,133 @@ class UnifiedPreviewManager:
                         return "missing_metadata"
 
         # Apply modules normally with full file list for scope-aware counters
-        return apply_rename_modules(modules_data, index, file, metadata_cache, all_files=all_files)
+        return self._apply_rename_modules(modules_data, index, file, metadata_cache, all_files)
 
-    def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
-        """Strip extension from fullname if present.
+    def _apply_rename_modules(
+        self,
+        modules_data: list[dict[str, Any]],
+        index: int,
+        file_item: FileItem,
+        metadata_cache: dict[str, Any] | None = None,
+        all_files: list[FileItem] | None = None,
+    ) -> str:
+        """Apply rename modules to generate a new filename.
 
         Args:
-            fullname: The full generated name (may include extension).
-            extension: The original file extension (with dot).
+            modules_data: List of module configurations
+            index: Global index of file in the list
+            file_item: FileItem being renamed
+            metadata_cache: Optional metadata cache
+            all_files: Full list of files (required for scope-aware counters)
 
         Returns:
-            Basename without extension.
+            The new filename (basename only, without extension).
 
         """
+        original_base_name, _ext = os.path.splitext(file_item.filename)
+        new_name_parts = []
+
+        for data in modules_data:
+            module_type = data.get("type")
+            part = ""
+
+            if module_type == "counter":
+                # Calculate scope-aware index for counter
+                scope = data.get("scope", CounterScope.PER_FOLDER.value)
+                counter_index = self._calculate_scope_aware_index(
+                    scope, index, file_item, all_files
+                )
+                part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
+
+            elif module_type == "specified_text":
+                part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+
+            elif module_type == "original_name":
+                part = original_base_name or "originalname"
+
+            elif module_type == "remove_text_from_original_name":
+                result_filename = TextRemovalModule.apply_from_data(
+                    data, file_item, index, metadata_cache
+                )
+                part, _ = os.path.splitext(result_filename)
+
+            elif module_type == "metadata":
+                part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
+
+            new_name_parts.append(part)
+
+        return "".join(new_name_parts)
+
+    def _calculate_scope_aware_index(
+        self,
+        scope: str,
+        global_index: int,
+        file_item: FileItem,
+        all_files: list[FileItem] | None = None,
+    ) -> int:
+        """Calculate the appropriate counter index based on scope.
+
+        Args:
+            scope: Counter scope ('global', 'per_folder', 'per_extension', 'per_filegroup')
+            global_index: The global index in the full file list
+            file_item: Current file being processed
+            all_files: Full list of files
+
+        Returns:
+            The scope-adjusted index to use for counter calculation
+
+        """
+        try:
+            scope_enum = CounterScope(scope)
+        except ValueError:
+            logger.warning("[PreviewManager] Unknown counter scope: %s, using GLOBAL", scope)
+            return global_index
+
+        if scope_enum == CounterScope.GLOBAL:
+            return global_index
+
+        if scope_enum == CounterScope.PER_FOLDER:
+            if not all_files or not file_item:
+                return global_index
+            current_folder = os.path.dirname(file_item.full_path)
+            folder_index = 0
+            for i, f in enumerate(all_files):
+                if i >= global_index:
+                    break
+                if os.path.dirname(f.full_path) == current_folder:
+                    folder_index += 1
+            return folder_index
+
+        if scope_enum == CounterScope.PER_EXTENSION:
+            if not all_files or not file_item:
+                return global_index
+            current_ext = os.path.splitext(file_item.filename)[1].lower()
+            ext_index = 0
+            for i, f in enumerate(all_files):
+                if i >= global_index:
+                    break
+                if os.path.splitext(f.filename)[1].lower() == current_ext:
+                    ext_index += 1
+            return ext_index
+
+        if scope_enum == CounterScope.PER_FILEGROUP:
+            if not all_files or not file_item:
+                return global_index
+            from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
+
+            try:
+                return calculate_filegroup_counter_index(
+                    file_item, all_files, global_index, groups=None
+                )
+            except Exception as e:
+                logger.warning("[PreviewManager] Error calculating filegroup index: %s", e)
+                return global_index
+
+        # Fallback for unknown scopes (should not reach here if CounterScope is complete)
+        return global_index  # type: ignore[unreachable]  # pragma: no cover
+
+    def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
+        """Strip extension from fullname if present."""
         if extension and fullname.lower().endswith(extension.lower()):
             return fullname[: -(len(extension))]
         return fullname
@@ -252,45 +382,119 @@ class UnifiedPreviewManager:
     def _apply_post_transform_if_needed(
         self, basename: str, post_transform: dict[str, Any], has_transform: bool
     ) -> str:
-        """Apply post-transform to basename if transform is active.
-
-        Args:
-            basename: The base name to transform.
-            post_transform: Transform configuration dictionary.
-            has_transform: Flag indicating if transform should be applied.
-
-        Returns:
-            Transformed basename or original if no transform.
-
-        """
+        """Apply post-transform to basename if transform is active."""
         if not has_transform:
             return basename
-
         from oncutf.modules.name_transform_module import NameTransformModule
 
         return NameTransformModule.apply_from_data(post_transform, basename)
 
     def _build_final_filename(self, basename: str, extension: str) -> str:
-        """Build final filename from basename and extension.
-
-        Args:
-            basename: The validated base name.
-            extension: The file extension (with dot, may be empty).
-
-        Returns:
-            Complete filename.
-
-        """
+        """Build final filename from basename and extension."""
         return f"{basename}{extension}" if extension else basename
 
     def _is_valid_filename_text(self, basename: str) -> bool:
-        """Return True if `basename` is acceptable for use as a filename.
-
-        Falls back to permissive behaviour if the validator import fails.
-        """
+        """Return True if `basename` is acceptable for use as a filename."""
         try:
             from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
 
             return is_valid_filename_text(basename)
         except ImportError:
             return True
+
+
+# Backwards-compatible standalone functions (for direct callers)
+def apply_rename_modules(
+    modules_data: list[dict[str, Any]],
+    index: int,
+    file_item: FileItem,
+    metadata_cache: dict[str, Any] | None = None,
+    all_files: list[FileItem] | None = None,
+) -> str:
+    """Apply rename modules to generate a new filename (standalone function).
+
+    This is a backwards-compatible wrapper. New code should use
+    UnifiedPreviewManager._apply_rename_modules instead.
+    """
+    # Create a minimal manager instance for standalone use
+    original_base_name, _ext = os.path.splitext(file_item.filename)
+    new_name_parts = []
+
+    for data in modules_data:
+        module_type = data.get("type")
+        part = ""
+
+        if module_type == "counter":
+            scope = data.get("scope", CounterScope.PER_FOLDER.value)
+            counter_index = calculate_scope_aware_index(scope, index, file_item, all_files)
+            part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
+        elif module_type == "specified_text":
+            part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+        elif module_type == "original_name":
+            part = original_base_name or "originalname"
+        elif module_type == "remove_text_from_original_name":
+            result_filename = TextRemovalModule.apply_from_data(
+                data, file_item, index, metadata_cache
+            )
+            part, _ = os.path.splitext(result_filename)
+        elif module_type == "metadata":
+            part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
+
+        new_name_parts.append(part)
+
+    return "".join(new_name_parts)
+
+
+def calculate_scope_aware_index(
+    scope: str,
+    global_index: int,
+    file_item: FileItem,
+    all_files: list[FileItem] | None = None,
+) -> int:
+    """Calculate counter index based on scope (standalone function)."""
+    try:
+        scope_enum = CounterScope(scope)
+    except ValueError:
+        return global_index
+
+    if scope_enum == CounterScope.GLOBAL:
+        return global_index
+
+    if scope_enum == CounterScope.PER_FOLDER:
+        if not all_files or not file_item:
+            return global_index
+        current_folder = os.path.dirname(file_item.full_path)
+        folder_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.dirname(f.full_path) == current_folder:
+                folder_index += 1
+        return folder_index
+
+    if scope_enum == CounterScope.PER_EXTENSION:
+        if not all_files or not file_item:
+            return global_index
+        current_ext = os.path.splitext(file_item.filename)[1].lower()
+        ext_index = 0
+        for i, f in enumerate(all_files):
+            if i >= global_index:
+                break
+            if os.path.splitext(f.filename)[1].lower() == current_ext:
+                ext_index += 1
+        return ext_index
+
+    if scope_enum == CounterScope.PER_FILEGROUP:
+        if not all_files or not file_item:
+            return global_index
+        from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
+
+        try:
+            return calculate_filegroup_counter_index(
+                file_item, all_files, global_index, groups=None
+            )
+        except Exception:
+            return global_index
+
+    # Fallback for unknown scopes (should not reach here if CounterScope is complete)
+    return global_index  # type: ignore[unreachable]  # pragma: no cover

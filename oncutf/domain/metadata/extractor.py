@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.services.interfaces import HashServiceProtocol, MetadataServiceProtocol
+    from oncutf.app.ports.service_interfaces import HashServiceProtocol, MetadataServiceProtocol
 
 logger = get_cached_logger(__name__)
 
@@ -87,8 +87,8 @@ class MetadataExtractor:
     def _get_metadata_service_from_registry(self) -> MetadataServiceProtocol | None:
         """Get metadata service from the ServiceRegistry."""
         try:
-            from oncutf.services.interfaces import MetadataServiceProtocol as MetaProto
-            from oncutf.services.registry import get_service_registry
+            from oncutf.app.ports.service_interfaces import MetadataServiceProtocol as MetaProto
+            from oncutf.app.ports.service_registry import get_service_registry
 
             registry = get_service_registry()
             return registry.get(MetaProto)
@@ -99,8 +99,8 @@ class MetadataExtractor:
     def _get_hash_service_from_registry(self) -> HashServiceProtocol | None:
         """Get hash service from the ServiceRegistry."""
         try:
-            from oncutf.services.interfaces import HashServiceProtocol as HashProto
-            from oncutf.services.registry import get_service_registry
+            from oncutf.app.ports.service_interfaces import HashServiceProtocol as HashProto
+            from oncutf.app.ports.service_registry import get_service_registry
 
             registry = get_service_registry()
             return registry.get(HashProto)

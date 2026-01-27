@@ -10,7 +10,7 @@ type checking) and enables dependency injection for testability.
 All protocols are runtime-checkable, meaning isinstance() works with them.
 
 Usage:
-    from oncutf.services.interfaces import MetadataServiceProtocol
+    from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
 
     class MockMetadataService:
         def load_metadata(self, path: Path) -> dict[str, Any]:

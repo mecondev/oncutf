@@ -8,7 +8,7 @@ for filesystem operations. It abstracts file operations with proper error
 handling and cross-platform compatibility.
 
 Usage:
-    from oncutf.services.filesystem_service import FilesystemService
+    from oncutf.infra.filesystem.filesystem_service import FilesystemService
 
     service = FilesystemService()
     if service.file_exists(Path("/path/to/file.txt")):
@@ -27,7 +27,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from oncutf.services.interfaces import FilesystemServiceProtocol
+    from oncutf.app.ports.service_interfaces import FilesystemServiceProtocol
 
 logger = get_cached_logger(__name__)
 

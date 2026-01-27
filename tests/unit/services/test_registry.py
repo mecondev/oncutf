@@ -12,7 +12,7 @@ from typing import Protocol, runtime_checkable
 
 import pytest
 
-from oncutf.services.registry import (
+from oncutf.app.ports.service_registry import (
     ServiceRegistry,
     configure_default_services,
     get_service_registry,
@@ -208,7 +208,7 @@ class TestConfigureDefaultServices:
         registry = ServiceRegistry()
         configure_default_services(registry)
 
-        from oncutf.services.interfaces import MetadataServiceProtocol
+        from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
 
         assert registry.has(MetadataServiceProtocol)
 
@@ -217,7 +217,7 @@ class TestConfigureDefaultServices:
         registry = ServiceRegistry()
         configure_default_services(registry)
 
-        from oncutf.services.interfaces import HashServiceProtocol
+        from oncutf.app.ports.service_interfaces import HashServiceProtocol
 
         assert registry.has(HashServiceProtocol)
 
@@ -226,7 +226,7 @@ class TestConfigureDefaultServices:
         registry = ServiceRegistry()
         configure_default_services(registry)
 
-        from oncutf.services.interfaces import FilesystemServiceProtocol
+        from oncutf.app.ports.service_interfaces import FilesystemServiceProtocol
 
         assert registry.has(FilesystemServiceProtocol)
 
@@ -235,6 +235,6 @@ class TestConfigureDefaultServices:
         ServiceRegistry.reset_instance()
         configure_default_services()
 
-        from oncutf.services.interfaces import MetadataServiceProtocol
+        from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
 
         assert get_service_registry().has(MetadataServiceProtocol)

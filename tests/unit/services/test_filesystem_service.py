@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from oncutf.services.filesystem_service import FilesystemService
-from oncutf.services.interfaces import FilesystemServiceProtocol
+from oncutf.app.ports.service_interfaces import FilesystemServiceProtocol
+from oncutf.infra.filesystem.filesystem_service import FilesystemService
 
 if TYPE_CHECKING:
     from pathlib import Path

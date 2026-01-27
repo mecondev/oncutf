@@ -7,8 +7,8 @@ This module provides a simple service locator pattern for dependency injection.
 Services can be registered by their protocol type and retrieved later.
 
 Usage:
-    from oncutf.services.registry import ServiceRegistry, get_service_registry
-    from oncutf.services.interfaces import MetadataServiceProtocol
+    from oncutf.app.ports.service_registry import ServiceRegistry, get_service_registry
+    from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
     from oncutf.infra.external.exiftool_client import ExifToolClient
 
     # Register a service
@@ -221,15 +221,15 @@ def configure_default_services(registry: ServiceRegistry | None = None) -> None:
     if registry is None:
         registry = get_service_registry()
 
-    # Import protocols and implementations
-    from oncutf.infra.external.exiftool_client import ExifToolClient
-    from oncutf.services.cached_hash_service import CachedHashService
-    from oncutf.services.filesystem_service import FilesystemService
-    from oncutf.services.interfaces import (
+    # Import protocols and implementations - NEW PATHS
+    from oncutf.app.ports.service_interfaces import (
         FilesystemServiceProtocol,
         HashServiceProtocol,
         MetadataServiceProtocol,
     )
+    from oncutf.infra.cache.cached_hash_service import CachedHashService
+    from oncutf.infra.external.exiftool_client import ExifToolClient
+    from oncutf.infra.filesystem.filesystem_service import FilesystemService
 
     # Register default implementations using factories for lazy init
     registry.register_factory(MetadataServiceProtocol, ExifToolClient)

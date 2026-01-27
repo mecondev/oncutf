@@ -210,7 +210,7 @@ def main() -> int:
 
         # Configure default services for dependency injection
         logger.debug("Configuring default services...", extra={"dev_only": True})
-        from oncutf.services import configure_default_services
+        from oncutf.app.ports import configure_default_services
 
         configure_default_services()
         logger.info("[App] Default services configured")
@@ -232,7 +232,9 @@ def main() -> int:
                 app.processEvents()
 
             logger.info(
-                "[App] Splash screen displayed (size: %dx%d)", splash.splash_width, splash.splash_height
+                "[App] Splash screen displayed (size: %dx%d)",
+                splash.splash_width,
+                splash.splash_height,
             )
 
             # Initialize state for dual-flag synchronization
