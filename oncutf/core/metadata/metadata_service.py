@@ -12,11 +12,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.core.metadata import MetadataStagingManager, UnifiedMetadataManager
+    from oncutf.core.metadata import MetadataStagingManager
     from oncutf.core.metadata.commands import (
         EditMetadataFieldCommand,
         ResetMetadataFieldCommand,
     )
+    from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
 
 
 class MetadataService:
@@ -47,7 +48,7 @@ class MetadataService:
     def unified_manager(self) -> UnifiedMetadataManager:
         """Get unified metadata manager (lazy-loaded)."""
         if self._unified_manager is None:
-            from oncutf.core.metadata import UnifiedMetadataManager
+            from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
 
             self._unified_manager = UnifiedMetadataManager()
         return self._unified_manager

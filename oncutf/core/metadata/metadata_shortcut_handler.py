@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.metadata import UnifiedMetadataManager
     from oncutf.models.file_item import FileItem
+    from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
 
 logger = get_cached_logger(__name__)
 
