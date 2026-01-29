@@ -92,7 +92,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
     # Patch logger methods for safe Unicode handling
     if not getattr(logger, "_patched_for_safe_log", False):
         patch_logger_safe_methods(logger)
-        logger._patched_for_safe_log = True  # type: ignore[attr-defined]
+        logger._patched_for_safe_log = True  # type: ignore[attr-defined]  # Marker attr
 
     return logger
 

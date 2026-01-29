@@ -41,7 +41,7 @@ def get_project_root() -> Path:
     # Handle PyInstaller frozen executables
     if getattr(sys, "frozen", False):
         # Running as compiled exe - use _MEIPASS for bundled resources
-        project_root = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+        project_root = Path(getattr(sys, "_MEIPASS", "."))
         logger.debug(
             "Running as frozen exe, project root: %s",
             project_root,

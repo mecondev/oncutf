@@ -333,7 +333,7 @@ class UnifiedPreviewManager:
         if scope_enum == CounterScope.GLOBAL:
             return global_index
 
-        if scope_enum == CounterScope.PER_FOLDER:
+        elif scope_enum == CounterScope.PER_FOLDER:
             if not all_files or not file_item:
                 return global_index
             current_folder = os.path.dirname(file_item.full_path)
@@ -345,7 +345,7 @@ class UnifiedPreviewManager:
                     folder_index += 1
             return folder_index
 
-        if scope_enum == CounterScope.PER_EXTENSION:
+        elif scope_enum == CounterScope.PER_EXTENSION:
             if not all_files or not file_item:
                 return global_index
             current_ext = os.path.splitext(file_item.filename)[1].lower()
@@ -357,7 +357,7 @@ class UnifiedPreviewManager:
                     ext_index += 1
             return ext_index
 
-        if scope_enum == CounterScope.PER_FILEGROUP:
+        else:  # CounterScope.PER_FILEGROUP
             if not all_files or not file_item:
                 return global_index
             from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
@@ -369,9 +369,6 @@ class UnifiedPreviewManager:
             except Exception as e:
                 logger.warning("[PreviewManager] Error calculating filegroup index: %s", e)
                 return global_index
-
-        # Fallback for unknown scopes (should not reach here if CounterScope is complete)
-        return global_index  # type: ignore[unreachable]  # pragma: no cover
 
     def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
         """Strip extension from fullname if present."""
@@ -460,7 +457,7 @@ def calculate_scope_aware_index(
     if scope_enum == CounterScope.GLOBAL:
         return global_index
 
-    if scope_enum == CounterScope.PER_FOLDER:
+    elif scope_enum == CounterScope.PER_FOLDER:
         if not all_files or not file_item:
             return global_index
         current_folder = os.path.dirname(file_item.full_path)
@@ -472,7 +469,7 @@ def calculate_scope_aware_index(
                 folder_index += 1
         return folder_index
 
-    if scope_enum == CounterScope.PER_EXTENSION:
+    elif scope_enum == CounterScope.PER_EXTENSION:
         if not all_files or not file_item:
             return global_index
         current_ext = os.path.splitext(file_item.filename)[1].lower()
@@ -484,7 +481,7 @@ def calculate_scope_aware_index(
                 ext_index += 1
         return ext_index
 
-    if scope_enum == CounterScope.PER_FILEGROUP:
+    else:  # CounterScope.PER_FILEGROUP
         if not all_files or not file_item:
             return global_index
         from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
@@ -495,6 +492,3 @@ def calculate_scope_aware_index(
             )
         except Exception:
             return global_index
-
-    # Fallback for unknown scopes (should not reach here if CounterScope is complete)
-    return global_index  # type: ignore[unreachable]  # pragma: no cover

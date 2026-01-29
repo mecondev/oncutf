@@ -192,7 +192,7 @@ class AppPaths:
         """
         if getattr(sys, "frozen", False):
             # Running as compiled exe - use _MEIPASS for bundled resources
-            base_path = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+            base_path = Path(getattr(sys, "_MEIPASS", "."))
         else:
             # Running from source - go up to project root
             # oncutf/utils/paths.py -> oncutf/utils/ -> oncutf/ -> project root

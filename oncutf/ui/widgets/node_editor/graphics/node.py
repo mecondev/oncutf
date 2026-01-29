@@ -296,7 +296,7 @@ class QDMGraphicsNode(QGraphicsItem):
     def initTitle(self) -> None:
         """Create and configure title text item."""
         self.title_item = QGraphicsTextItem(self)
-        self.title_item.node = self.node  # type: ignore[attr-defined]  # Dynamic node reference
+        self.title_item.node = self.node  # type: ignore[attr-defined]  # Dynamic Qt ref
         self.title_item.setDefaultTextColor(self._title_color)
         self.title_item.setFont(self._title_font)
         self.title_item.setPos(self.title_horizontal_padding, 0)
@@ -313,7 +313,7 @@ class QDMGraphicsNode(QGraphicsItem):
             )
 
         self.graphics_content = self.node.scene.graphics_scene.addWidget(self.content)
-        self.graphics_content.node = self.node  # type: ignore[attr-defined]  # Dynamic node reference
+        self.graphics_content.node = self.node  # type: ignore[attr-defined]  # Dynamic Qt ref
         self.graphics_content.setParentItem(self)
 
     def paint(self, painter, _option: QStyleOptionGraphicsItem, _widget=None) -> None:
