@@ -17,13 +17,13 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.cache.persistent_metadata_cache import MetadataEntry
+    from oncutf.infra.cache.persistent_metadata_cache import MetadataEntry
 
 logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [FileStatusHelpers] Module imported", extra={"dev_only": True})
 
 try:
-    from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+    from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
     logger.debug(
         "[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache",
@@ -34,7 +34,7 @@ except Exception as e:
     raise
 
 try:
-    from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+    from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
 
     logger.debug(
         "[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_hash_cache",

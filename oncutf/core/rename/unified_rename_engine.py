@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
-from oncutf.core.batch.processor import BatchProcessorFactory
 from oncutf.core.cache.advanced_cache_manager import AdvancedCacheManager
 from oncutf.core.conflict_resolver import ConflictResolver
 from oncutf.core.performance_monitor import get_performance_monitor, monitor_performance
@@ -38,6 +37,7 @@ from oncutf.core.rename.preview_manager import UnifiedPreviewManager
 from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
 from oncutf.core.rename.state_manager import RenameStateManager
 from oncutf.core.rename.validation_manager import UnifiedValidationManager
+from oncutf.infra.batch.processor import BatchProcessorFactory
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

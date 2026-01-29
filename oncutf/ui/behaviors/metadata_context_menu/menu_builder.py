@@ -127,7 +127,7 @@ class MenuBuilder:
             normalized_key_path = normalize_metadata_field_name(key_path)
 
             # Check staging manager
-            from oncutf.app.services import get_metadata_service
+            from oncutf.core.metadata.metadata_service import get_metadata_service
 
             metadata_service = get_metadata_service()
             staged_changes = metadata_service.staging_manager.get_staged_changes(
@@ -267,7 +267,7 @@ class MenuBuilder:
 
         # Check if undo/redo are available and get descriptions
         try:
-            from oncutf.app.services import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             can_undo = command_manager.can_undo()
@@ -337,7 +337,7 @@ class MenuBuilder:
 
         """
         try:
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+            from oncutf.ui.helpers.icons_loader import get_menu_icon
 
             return get_menu_icon(icon_name)
         except ImportError:

@@ -27,7 +27,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from oncutf.app.ports.service_interfaces import FilesystemServiceProtocol
+    from oncutf.domain.ports import FilesystemServiceProtocol
 
 logger = get_cached_logger(__name__)
 

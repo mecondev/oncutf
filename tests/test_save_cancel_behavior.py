@@ -13,7 +13,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.utils.ui.progress_dialog import ProgressDialog
+from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
 
 @pytest.fixture
@@ -210,7 +210,7 @@ class TestSaveCancelIntegration:
         # We test this by checking the method signature directly
         import inspect
 
-        from oncutf.core.metadata import UnifiedMetadataManager
+        from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
 
         # Get the signature of save_all_modified_metadata
         sig = inspect.signature(UnifiedMetadataManager.save_all_modified_metadata)

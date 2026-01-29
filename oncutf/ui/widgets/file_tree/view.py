@@ -189,7 +189,7 @@ class FileTreeView(QTreeView):
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
         try:
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+            from oncutf.ui.helpers.icons_loader import get_menu_icon
 
             try:
                 _closed_icon = get_menu_icon("chevron-right")

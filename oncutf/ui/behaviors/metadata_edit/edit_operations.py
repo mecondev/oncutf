@@ -151,7 +151,7 @@ class EditOperations:
 
         """
         try:
-            from oncutf.app.services import get_metadata_command_manager, get_metadata_service
+            from oncutf.core.metadata import get_metadata_command_manager, get_metadata_service
 
             command_manager = get_metadata_command_manager()
             metadata_service = get_metadata_service()
@@ -235,7 +235,7 @@ class EditOperations:
             files_to_modify: List of file items to modify
 
         """
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
 

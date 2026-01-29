@@ -34,7 +34,7 @@ class MetadataTreeCacheHandler:
     def initialize_direct_loader(self) -> None:
         """Initialize the direct metadata loader."""
         try:
-            from oncutf.app.services import get_metadata_service
+            from oncutf.core.metadata.metadata_service import get_metadata_service
 
             metadata_service = get_metadata_service()
             self._view._direct_loader = metadata_service.unified_manager

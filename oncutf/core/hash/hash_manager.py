@@ -35,7 +35,7 @@ class HashManager:
         """Initialize HashManager with persistent hash cache."""
         # Use persistent hash cache for better performance and persistence
         try:
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
 
             self._persistent_cache = get_persistent_hash_cache()
             self._use_persistent_cache = True

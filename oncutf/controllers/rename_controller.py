@@ -20,11 +20,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from oncutf.core.file.store import FileStore
-    from oncutf.core.rename.rename_manager import RenameManager
+    from oncutf.app.state.context import AppContext as ApplicationContext
+    from oncutf.app.state.file_store import FileStore
+    from oncutf.controllers.protocols import RenameManagerProtocol, ValidationDialogProtocol
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
-    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +54,10 @@ class RenameController:
     def __init__(
         self,
         unified_rename_engine: Optional["UnifiedRenameEngine"] = None,
-        rename_manager: Optional["RenameManager"] = None,
+        rename_manager: Optional["RenameManagerProtocol"] = None,
         file_store: Optional["FileStore"] = None,
         context: Optional["ApplicationContext"] = None,
+        validation_dialog: Optional["ValidationDialogProtocol"] = None,
     ) -> None:
         """Initialize RenameController.
 
@@ -65,6 +66,7 @@ class RenameController:
             rename_manager: Manager for rename execution (injected)
             file_store: Store for maintaining file state (injected)
             context: Application context for global state (injected)
+            validation_dialog: Handler for validation issue dialogs (injected)
 
         """
         logger.info("[RenameController] Initializing controller")
@@ -72,15 +74,17 @@ class RenameController:
         self._rename_manager = rename_manager
         self._file_store = file_store
         self._context = context
+        self._validation_dialog = validation_dialog
 
         logger.debug(
             "[RenameController] Initialized with managers: "
             "unified_rename_engine=%s, rename_manager=%s, "
-            "file_store=%s, context=%s",
+            "file_store=%s, context=%s, validation_dialog=%s",
             unified_rename_engine is not None,
             rename_manager is not None,
             file_store is not None,
             context is not None,
+            validation_dialog is not None,
             extra={"dev_only": True},
         )
 
@@ -530,7 +534,7 @@ class RenameController:
             logger.warning("[RenameController] Error clearing state: %s", str(e))
 
     def _handle_validation_issues(self, validation_result: Any) -> str:
-        """Handle validation issues by showing dialog.
+        """Handle validation issues by delegating to validation dialog handler.
 
         Args:
             validation_result: ValidationResult with issues
@@ -539,22 +543,14 @@ class RenameController:
             str: User decision ("skip", "cancel", or "refresh")
 
         """
-        try:
-            from oncutf.ui.dialogs.validation_issues_dialog import (
-                ValidationIssuesDialog,
-            )
-
-            dialog = ValidationIssuesDialog(validation_result)
-            result_code = dialog.exec_()
-
-            if result_code == ValidationIssuesDialog.SKIP_AND_CONTINUE:
-                return "skip"
-            elif result_code == ValidationIssuesDialog.REFRESH_PREVIEW:
-                return "refresh"
-            else:
+        # Use injected validation dialog handler if available
+        if self._validation_dialog is not None:
+            try:
+                return self._validation_dialog.show_validation_issues(validation_result)
+            except Exception as e:
+                logger.error("[RenameController] Error with validation dialog: %s", str(e))
                 return "cancel"
 
-        except Exception as e:
-            logger.error("[RenameController] Error showing validation dialog: %s", str(e))
-            # Fallback: cancel on error
-            return "cancel"
+        # Fallback: cancel if no handler available
+        logger.warning("[RenameController] No validation dialog handler available")
+        return "cancel"

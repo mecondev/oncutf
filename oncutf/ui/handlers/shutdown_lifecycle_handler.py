@@ -132,7 +132,7 @@ class ShutdownLifecycleHandler:
         """Start the coordinated shutdown process using ShutdownCoordinator."""
         try:
             # Canonical helper (see project guidelines)
-            from oncutf.utils.ui.cursor_helper import wait_cursor
+            from oncutf.ui.helpers.cursor_helper import wait_cursor
         except Exception:
             # Shutdown must never crash due to helper import issues.
             from contextlib import contextmanager
@@ -594,7 +594,7 @@ class ShutdownLifecycleHandler:
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
         # Find and close any active progress dialogs
         dialogs_closed = 0
@@ -652,11 +652,12 @@ class ShutdownLifecycleHandler:
 
             # Register ExifTool wrapper (get active instance if any)
             try:
-                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+                from oncutf.boot.infra_wiring import get_exiftool_wrapper
 
+                exiftool_wrapper_class = get_exiftool_wrapper()
                 # Get any active instance
-                if ExifToolWrapper._instances:
-                    exiftool = next(iter(ExifToolWrapper._instances))
+                if exiftool_wrapper_class._instances:
+                    exiftool = next(iter(exiftool_wrapper_class._instances))
                     self.main_window.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
                 logger.debug("[MainWindow] ExifTool wrapper not available: %s", e)

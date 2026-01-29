@@ -152,7 +152,7 @@ class TreeUiStateHandler:
                 return
 
             # Get metadata service for modified count
-            from oncutf.app.services import get_metadata_service
+            from oncutf.core.metadata.metadata_service import get_metadata_service
 
             metadata_service = get_metadata_service()
 
@@ -277,7 +277,7 @@ class TreeUiStateHandler:
         self.view._scroll_behavior.clear_scroll_memory()
 
         # Clear all staged changes
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         metadata_service.clear_staged_changes()

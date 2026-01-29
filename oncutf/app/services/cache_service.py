@@ -13,17 +13,27 @@ Architecture:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
-    from oncutf.core.cache.persistent_metadata_cache import (
-        DummyMetadataCache,
-        PersistentMetadataCache,
-    )
+    from oncutf.app.ports.infra_protocols import HashCacheProtocol, MetadataCacheProtocol
 
-# Type alias for metadata cache (can be either real or dummy)
-MetadataCache = Union["PersistentMetadataCache", "DummyMetadataCache"]
+
+# Factory functions - registered during bootstrap
+_hash_cache_factory: Any = None
+_metadata_cache_factory: Any = None
+
+
+def register_hash_cache_factory(factory: Any) -> None:
+    """Register factory for creating hash cache instances."""
+    global _hash_cache_factory
+    _hash_cache_factory = factory
+
+
+def register_metadata_cache_factory(factory: Any) -> None:
+    """Register factory for creating metadata cache instances."""
+    global _metadata_cache_factory
+    _metadata_cache_factory = factory
 
 
 class CacheService:
@@ -41,25 +51,19 @@ class CacheService:
 
     def __init__(self) -> None:
         """Initialize cache service."""
-        self._metadata_cache: MetadataCache | None = None
-        self._hash_cache: PersistentHashCache | None = None
+        self._metadata_cache: MetadataCacheProtocol | None = None
+        self._hash_cache: HashCacheProtocol | None = None
 
-    def _get_metadata_cache(self) -> MetadataCache | None:
-        """Get metadata cache instance (lazy loading)."""
-        if self._metadata_cache is None:
-            from oncutf.core.cache.persistent_metadata_cache import (
-                get_persistent_metadata_cache,
-            )
-
-            self._metadata_cache = get_persistent_metadata_cache()
+    def _get_metadata_cache(self) -> MetadataCacheProtocol | None:
+        """Get metadata cache instance (lazy loading via factory)."""
+        if self._metadata_cache is None and _metadata_cache_factory is not None:
+            self._metadata_cache = _metadata_cache_factory()
         return self._metadata_cache
 
-    def _get_hash_cache(self) -> PersistentHashCache:
-        """Get hash cache instance (lazy loading)."""
-        if self._hash_cache is None:
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
-
-            self._hash_cache = get_persistent_hash_cache()
+    def _get_hash_cache(self) -> HashCacheProtocol | None:
+        """Get hash cache instance (lazy loading via factory)."""
+        if self._hash_cache is None and _hash_cache_factory is not None:
+            self._hash_cache = _hash_cache_factory()
         return self._hash_cache
 
     def get_metadata_entry(self, file_path: str) -> dict[str, Any] | None:
@@ -77,11 +81,8 @@ class CacheService:
             return None
 
         try:
-            # Support both persistent cache (get_entry) and dict-like access
-            if hasattr(cache, "get_entry"):
-                return cast("dict[str, Any] | None", cache.get_entry(file_path))
-            else:
-                return cast("dict[str, Any] | None", cache.get(file_path))
+            # Use the protocol's get_metadata method
+            return cache.get_metadata(file_path)
         except Exception:
             return None
 
@@ -139,7 +140,7 @@ class CacheService:
         if not cache:
             return set()
 
-        return cast("set[str]", cache.get_files_with_hash_batch(file_paths, hash_type))
+        return cache.get_files_with_hash_batch(file_paths, hash_type)
 
 
 # Singleton instance

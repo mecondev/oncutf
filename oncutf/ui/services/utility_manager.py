@@ -17,9 +17,9 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QApplication
 
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
@@ -122,7 +122,7 @@ class UtilityManager:
         )
 
         # Show wait cursor during reload operation
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor():
             self.main_window.load_files_from_folder(
@@ -275,7 +275,7 @@ class UtilityManager:
 
     def generate_preview_names(self) -> None:
         """Generate preview names for selected files with performance optimizations."""
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor():
             selected_files = self.main_window.get_selected_files()

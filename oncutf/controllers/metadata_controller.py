@@ -20,10 +20,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from oncutf.core.metadata import UnifiedMetadataManager
+    from oncutf.app.state.context import AppContext as ApplicationContext
+    from oncutf.controllers.protocols import MetadataExporterProtocol
+    from oncutf.core.metadata import UnifiedMetadataManagerProtocol
     from oncutf.core.metadata.structured_manager import StructuredMetadataManager
     from oncutf.models.file_item import FileItem
-    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +43,15 @@ class MetadataController:
         - UnifiedMetadataManager: Core metadata loading service
         - StructuredMetadataManager: Structured metadata access
         - ApplicationContext: Access to file store and settings
+        - MetadataExporterProtocol: Optional exporter for metadata export
     """
 
     def __init__(
         self,
-        unified_metadata_manager: UnifiedMetadataManager,
+        unified_metadata_manager: UnifiedMetadataManagerProtocol,
         structured_metadata_manager: StructuredMetadataManager,
         app_context: ApplicationContext,
+        metadata_exporter: MetadataExporterProtocol | None = None,
     ) -> None:
         """Initialize MetadataController.
 
@@ -56,11 +59,13 @@ class MetadataController:
             unified_metadata_manager: Manager for metadata loading operations
             structured_metadata_manager: Manager for structured metadata access
             app_context: Application context for file store and settings
+            metadata_exporter: Optional exporter for metadata export operations
 
         """
         self._unified_metadata_mgr = unified_metadata_manager
         self._structured_metadata_mgr = structured_metadata_manager
         self._app_context = app_context
+        self._metadata_exporter = metadata_exporter
 
         logger.info(
             "[MetadataController] Initialized with managers: UnifiedMetadata=%s, StructuredMetadata=%s",
@@ -318,12 +323,20 @@ class MetadataController:
             export_format,
         )
 
-        try:
-            # Use MetadataExporter class
-            from oncutf.core.metadata.exporter import MetadataExporter
+        # Check if exporter is available
+        if self._metadata_exporter is None:
+            error_msg = "MetadataExporter not available"
+            logger.error("[MetadataController] %s", error_msg)
+            return {
+                "success": False,
+                "exported_count": 0,
+                "output_path": output_path,
+                "errors": [error_msg],
+            }
 
-            exporter = MetadataExporter()
-            success = exporter.export_files(
+        try:
+            # Use injected exporter
+            success = self._metadata_exporter.export_files(
                 files=file_items,
                 output_dir=str(Path(output_path).parent),
                 format_type=export_format,

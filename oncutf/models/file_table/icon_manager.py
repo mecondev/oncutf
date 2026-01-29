@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
 
+from oncutf.ui.helpers.icons_loader import load_metadata_icons
 from oncutf.utils.filesystem.file_status_helpers import get_hash_for_file, has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import load_metadata_icons
 
 logger = get_cached_logger(__name__)
 

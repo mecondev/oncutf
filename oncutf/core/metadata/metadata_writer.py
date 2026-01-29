@@ -499,7 +499,7 @@ class MetadataWriter(QObject):
 
         # Update persistent cache
         try:
-            from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+            from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
             if persistent_cache:

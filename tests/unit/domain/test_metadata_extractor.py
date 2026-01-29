@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from oncutf.domain.metadata.extractor import ExtractionResult, MetadataExtractor
+from oncutf.core.metadata.metadata_extractor import ExtractionResult, MetadataExtractor
 
 
 @pytest.fixture

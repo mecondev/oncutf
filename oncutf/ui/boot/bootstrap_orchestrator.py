@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
 
-from oncutf.app.services.icons import (
+from oncutf.ui.services.icon_service import (
     create_colored_icon,
     get_icons_loader,
     load_metadata_icons,
@@ -62,11 +62,25 @@ class BootstrapOrchestrator:
         4. Configuration and finalization (with theme application)
 
         """
+        self._phase0_register_infra_factories()
         self._phase1_core_infrastructure()
         self._phase2_attributes_and_state()
         self._phase3_ui_setup()
         self._phase4_configuration_and_finalization(theme_callback)
         logger.info("[MAINWINDOW] MainWindow initialization orchestration complete")
+
+    def _phase0_register_infra_factories(self) -> None:
+        """Phase 0: Register infrastructure factories for dependency inversion.
+
+        This delegates to the boot layer which is the ONLY place allowed
+        to import infra implementations.
+        """
+        from oncutf.boot import register_infra_factories, wire_service_registry
+
+        register_infra_factories()
+        wire_service_registry()
+
+        logger.debug("Phase 0: Infra factories registered via boot layer", extra={"dev_only": True})
 
     def _phase1_core_infrastructure(self) -> None:
         """Phase 1: Initialize core infrastructure.
@@ -77,9 +91,11 @@ class BootstrapOrchestrator:
         - Core managers
         """
         from oncutf.app.services import get_rename_history_manager
+        from oncutf.boot.infra_wiring import (
+            get_hash_cache_instance,
+            get_metadata_cache_instance,
+        )
         from oncutf.core.backup_manager import get_backup_manager
-        from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
-        from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
         from oncutf.core.database import initialize_database
         from oncutf.core.file import FileOperationsManager
         from oncutf.core.metadata import (
@@ -129,9 +145,12 @@ class BootstrapOrchestrator:
         self.window.metadata_manager = None
 
         # Database System Initialization
+        # Note: Caches are now accessed via boot layer functions
         self.window.db_manager = initialize_database()
-        self.window.metadata_cache = get_persistent_metadata_cache()
-        self.window.hash_cache = get_persistent_hash_cache()
+
+        # Get caches via boot layer (no direct infra imports in UI)
+        self.window.metadata_cache = get_metadata_cache_instance()
+        self.window.hash_cache = get_hash_cache_instance()
         self.window.rename_history_manager = get_rename_history_manager()
         self.window.backup_manager = get_backup_manager(str(self.window.db_manager.db_path))
 
@@ -152,8 +171,8 @@ class BootstrapOrchestrator:
         - State tracking attributes
         """
         from oncutf.core.metadata import get_unified_metadata_manager
-        from oncutf.core.selection.selection_manager import SelectionManager
         from oncutf.models.file_table_model import FileTableModel
+        from oncutf.ui.managers.selection_manager import SelectionManager
 
         # Thread attributes
         self.window.metadata_thread = None
@@ -211,11 +230,13 @@ class BootstrapOrchestrator:
         )
         from oncutf.core.file import get_file_validation_manager
         from oncutf.core.file.load_manager import FileLoadManager
-        from oncutf.core.rename.rename_manager import RenameManager
+        from oncutf.ui.adapters.controller_adapters import ValidationDialogAdapter
         from oncutf.ui.boot.bootstrap_manager import BootstrapManager
         from oncutf.ui.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.ui.events.event_coordinator import EventCoordinator
         from oncutf.ui.managers.column_manager import ColumnManager
+        from oncutf.ui.managers.metadata_exporter import MetadataExporter
+        from oncutf.ui.managers.rename_manager import RenameManager
         from oncutf.ui.managers.shortcut_manager import ShortcutManager
         from oncutf.ui.managers.splitter_manager import SplitterManager
         from oncutf.ui.managers.table_manager import TableManager
@@ -243,10 +264,12 @@ class BootstrapOrchestrator:
         # Phase 1B: Initialize MetadataController (orchestration layer)
         # Get StructuredMetadataManager from UnifiedMetadataManager
         structured_metadata_mgr = self.window.metadata_manager.structured
+        metadata_exporter = MetadataExporter()
         self.window.metadata_controller = MetadataController(
             unified_metadata_manager=self.window.metadata_manager,
             structured_metadata_manager=structured_metadata_mgr,
             app_context=self.window.context,
+            metadata_exporter=metadata_exporter,
         )
         logger.info("[Phase1B] MetadataController initialized", extra={"dev_only": True})
 
@@ -256,11 +279,13 @@ class BootstrapOrchestrator:
         # Phase 1C: Initialize RenameController (orchestration layer)
         from oncutf.controllers.rename_controller import RenameController
 
+        validation_dialog_adapter = ValidationDialogAdapter()
         self.window.rename_controller = RenameController(
             unified_rename_engine=self.window.unified_rename_engine,
             rename_manager=self.window.rename_manager,
             file_store=self.window.file_model,  # FileTableModel acts as FileStore
             context=self.window.context,
+            validation_dialog=validation_dialog_adapter,
         )
         logger.info("[Phase1C] RenameController initialized", extra={"dev_only": True})
 
@@ -357,9 +382,9 @@ class BootstrapOrchestrator:
         # Initialize service layer and coordinators
         self.window.app_service = initialize_application_service(self.window)
 
-        from oncutf.core.batch import get_batch_manager
+        from oncutf.boot.infra_wiring import get_batch_manager_instance
 
-        self.window.batch_manager = get_batch_manager(self.window)
+        self.window.batch_manager = get_batch_manager_instance(self.window)
 
         self.window.signal_coordinator = SignalCoordinator(self.window)
         self.window.shutdown_coordinator = get_shutdown_coordinator()

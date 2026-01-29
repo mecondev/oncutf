@@ -26,10 +26,10 @@ from PyQt5.QtCore import Qt
 from oncutf.config import ALLOWED_EXTENSIONS
 
 if TYPE_CHECKING:
+    from oncutf.app.state.context import AppContext as ApplicationContext
+    from oncutf.app.state.file_store import FileStore
+    from oncutf.controllers.protocols import TableManagerProtocol
     from oncutf.core.file.load_manager import FileLoadManager
-    from oncutf.core.file.store import FileStore
-    from oncutf.ui.adapters.application_context import ApplicationContext
-    from oncutf.ui.managers.table_manager import TableManager
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class FileLoadController:
         self,
         file_load_manager: Optional["FileLoadManager"] = None,
         file_store: Optional["FileStore"] = None,
-        table_manager: Optional["TableManager"] = None,
+        table_manager: Optional["TableManagerProtocol"] = None,
         context: Optional["ApplicationContext"] = None,
     ) -> None:
         """Initialize FileLoadController.

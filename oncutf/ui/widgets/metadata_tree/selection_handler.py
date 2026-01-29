@@ -244,7 +244,7 @@ class MetadataTreeSelectionHandler:
 
         """
         # Get metadata service
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
 

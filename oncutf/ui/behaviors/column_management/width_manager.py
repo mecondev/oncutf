@@ -91,8 +91,8 @@ class ColumnWidthManager:
 
         """
         try:
+            from oncutf.ui.helpers.layout_calculators import calculate_dynamic_filename_width
             from oncutf.utils.shared.json_config_manager import get_app_config_manager
-            from oncutf.utils.ui.layout_calculators import calculate_dynamic_filename_width
 
             config_manager = get_app_config_manager()
             window_config = config_manager.get_category("window")

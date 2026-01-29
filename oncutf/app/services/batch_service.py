@@ -12,7 +12,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.core.batch import BatchOperationsManager
+    from oncutf.app.ports.infra_protocols import BatchOperationsManagerProtocol
+
+
+# Factory function - registered during bootstrap
+_batch_manager_factory: Any = None
+
+
+def register_batch_manager_factory(factory: Any) -> None:
+    """Register factory for creating batch manager instances."""
+    global _batch_manager_factory
+    _batch_manager_factory = factory
 
 
 class BatchService:
@@ -24,15 +34,13 @@ class BatchService:
 
     def __init__(self) -> None:
         """Initialize batch service."""
-        self._batch_manager: BatchOperationsManager | None = None
+        self._batch_manager: BatchOperationsManagerProtocol | None = None
 
     @property
-    def batch_manager(self) -> BatchOperationsManager:
-        """Get batch operations manager (lazy-loaded)."""
-        if self._batch_manager is None:
-            from oncutf.core.batch import BatchOperationsManager
-
-            self._batch_manager = BatchOperationsManager()
+    def batch_manager(self) -> BatchOperationsManagerProtocol | None:
+        """Get batch operations manager (lazy-loaded via factory)."""
+        if self._batch_manager is None and _batch_manager_factory is not None:
+            self._batch_manager = _batch_manager_factory()
         return self._batch_manager
 
     def process_batch(

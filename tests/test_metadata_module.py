@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # Clear metadata cache before each test to avoid interference
 def setup_function(function):
-    from oncutf.domain.metadata.extractor import MetadataExtractor
+    from oncutf.core.metadata.metadata_extractor import MetadataExtractor
 
     MetadataExtractor().clear_cache()
 

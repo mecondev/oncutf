@@ -16,7 +16,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from oncutf.core.database.database_manager import DatabaseManager
+    from oncutf.app.ports.infra_protocols import DatabaseManagerProtocol
+
+
+# Factory function - registered during bootstrap
+_database_manager_factory: Any = None
+
+
+def register_database_manager_factory(factory: Any) -> None:
+    """Register factory for creating database manager instances."""
+    global _database_manager_factory
+    _database_manager_factory = factory
 
 
 class DatabaseService:
@@ -34,14 +44,12 @@ class DatabaseService:
 
     def __init__(self) -> None:
         """Initialize database service."""
-        self._db_manager: DatabaseManager | None = None
+        self._db_manager: DatabaseManagerProtocol | None = None
 
-    def _get_db_manager(self) -> DatabaseManager | None:
-        """Get database manager instance (lazy loading)."""
-        if self._db_manager is None:
-            from oncutf.core.database.database_manager import get_database_manager
-
-            self._db_manager = get_database_manager()
+    def _get_db_manager(self) -> DatabaseManagerProtocol | None:
+        """Get database manager instance (lazy loading via factory)."""
+        if self._db_manager is None and _database_manager_factory is not None:
+            self._db_manager = _database_manager_factory()
         return self._db_manager
 
     def set_file_color(self, file_path: str, color_hex: str | None) -> bool:
@@ -61,7 +69,8 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "set_file_color"):
-                return cast("bool", db_manager.set_file_color(file_path, color_hex))
+                result = db_manager.set_file_color(file_path, color_hex)
+                return bool(result) if result is not None else False
             return False
         except Exception:
             return False
@@ -82,7 +91,8 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "get_file_color"):
-                return cast("str | None", db_manager.get_file_color(file_path))
+                result = db_manager.get_file_color(file_path)
+                return str(result) if result is not None else None
             return None
         except Exception:
             return None

@@ -11,13 +11,12 @@ This package contains all metadata-related functionality:
 - MetadataShortcutHandler: Keyboard shortcut handling for metadata operations
 - MetadataProgressHandler: Progress dialog management for metadata/hash operations
 - MetadataLoader: Orchestration of metadata loading operations (single/batch/streaming)
-- HashLoadingService: Hash loading operations with progress and cancellation support
 - MetadataCommandManager: Undo/redo command management for metadata operations
-- MetadataOperationsManager: Export, field editing, compatibility checks
 - MetadataStagingManager: Staged changes management (pending modifications)
 - FieldCompatibilityChecker: Field compatibility checking for file types
-- UnifiedMetadataManager: Facade for all metadata operations
 - Commands: Command pattern implementations (MetadataCommand, EditMetadataFieldCommand, etc.)
+
+NOTE: HashLoadingService, MetadataOperationsManager, UnifiedMetadataManager moved to ui/managers/.
 """
 
 from oncutf.core.metadata.command_manager import (
@@ -38,48 +37,36 @@ from oncutf.core.metadata.field_compatibility import (
     FieldCompatibilityChecker,
     get_field_compatibility_checker,
 )
-from oncutf.core.metadata.hash_loading_service import HashLoadingService
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
 from oncutf.core.metadata.metadata_loader import MetadataLoader
 from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
 from oncutf.core.metadata.metadata_shortcut_handler import MetadataShortcutHandler
 from oncutf.core.metadata.metadata_writer import MetadataWriter
-from oncutf.core.metadata.operations_manager import MetadataOperationsManager
 from oncutf.core.metadata.staging_manager import (
     MetadataStagingManager,
     get_metadata_staging_manager,
     set_metadata_staging_manager,
 )
-from oncutf.core.metadata.unified_manager import (
-    UnifiedMetadataManager,
-    get_unified_metadata_manager,
-)
+from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
 
 __all__ = [
     "BatchMetadataCommand",
     "CompanionMetadataHandler",
     "EditMetadataFieldCommand",
-    # Field compatibility
     "FieldCompatibilityChecker",
-    "HashLoadingService",
-    # Cache and handlers
     "MetadataCacheService",
-    # Command pattern
     "MetadataCommand",
-    # Managers
     "MetadataCommandManager",
     "MetadataLoader",
-    "MetadataOperationsManager",
     "MetadataProgressHandler",
     "MetadataShortcutHandler",
     "MetadataStagingManager",
     "MetadataWriter",
     "ResetMetadataFieldCommand",
     "SaveMetadataCommand",
-    "UnifiedMetadataManager",
+    "UnifiedMetadataManagerProtocol",
     "get_field_compatibility_checker",
     "get_metadata_command_manager",
     "get_metadata_staging_manager",
-    "get_unified_metadata_manager",
     "set_metadata_staging_manager",
 ]

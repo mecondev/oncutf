@@ -8,9 +8,9 @@ Integration tests for PER_FILEGROUP counter scope with preview engine.
 
 import pytest
 
+from oncutf.core.rename.preview_manager import apply_rename_modules, calculate_scope_aware_index
 from oncutf.models.counter_scope import CounterScope
 from oncutf.models.file_item import FileItem
-from oncutf.core.rename.preview_manager import apply_rename_modules, calculate_scope_aware_index
 
 
 class TestPerFileGroupScope:

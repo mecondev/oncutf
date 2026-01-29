@@ -289,10 +289,10 @@ class MetadataTreeViewConfig:
                     )
                 else:
                     # Calculate from ratios (always ratio-based, no hardcoded fallback)
-                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
-                    from oncutf.utils.ui.layout_calculators import (
+                    from oncutf.ui.helpers.layout_calculators import (
                         get_metadata_tree_widths_from_ratios,
                     )
+                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
                     config_manager = get_app_config_manager()
                     window_config = config_manager.get_category("window")

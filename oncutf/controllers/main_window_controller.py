@@ -29,10 +29,10 @@ import os
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from oncutf.app.state.context import AppContext as ApplicationContext
     from oncutf.controllers.file_load_controller import FileLoadController
     from oncutf.controllers.metadata_controller import MetadataController
     from oncutf.controllers.rename_controller import RenameController
-    from oncutf.ui.adapters.application_context import ApplicationContext
 
 logger = logging.getLogger(__name__)
 

@@ -178,7 +178,7 @@ class RenameModuleWidget(QWidget):
         plate_layout.setSpacing(0)
 
         # --- Drag Handle Area ---
-        from oncutf.utils.ui.icons_loader import get_menu_icon
+        from oncutf.ui.helpers.icons_loader import get_menu_icon
 
         self.drag_handle = QLabel()
         self.drag_handle.setFixedWidth(30)

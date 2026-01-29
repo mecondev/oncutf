@@ -21,9 +21,9 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.file.store import FileStore
-    from oncutf.core.selection.selection_store import SelectionStore
-    from oncutf.core.type_aliases import MetadataCache
+    from oncutf.app.state.file_store import FileStore
+    from oncutf.app.state.selection_store import SelectionStore
+    from oncutf.app.types import MetadataCache
     from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
@@ -78,13 +78,13 @@ class AppContext:
     def initialize_stores(self) -> None:
         """Initialize core stores after basic setup is complete."""
         if self._file_store is None:
-            from oncutf.core.file.store import FileStore
+            from oncutf.app.state.file_store import FileStore
 
             self._file_store = FileStore()
             logger.info("FileStore initialized in AppContext", extra={"dev_only": True})
 
         if self._selection_store is None:
-            from oncutf.core.selection.selection_store import SelectionStore
+            from oncutf.app.state.selection_store import SelectionStore
 
             self._selection_store = SelectionStore()
             logger.info("SelectionStore initialized in AppContext", extra={"dev_only": True})

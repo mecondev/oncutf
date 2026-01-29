@@ -28,8 +28,8 @@ from PyQt5.QtWidgets import (
 
 from oncutf.controllers.header_interaction_controller import HeaderInteractionController
 from oncutf.ui.behaviors.column_visibility_menu_builder import ColumnVisibilityMenuBuilder
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QRect
@@ -742,7 +742,7 @@ class InteractiveHeader(QHeaderView):
         # Add sorting options for columns > 0
         if logical_index > 0:
             try:
-                from oncutf.utils.ui.icons_loader import get_menu_icon
+                from oncutf.ui.helpers.icons_loader import get_menu_icon
 
                 sort_asc = QAction("Sort Ascending", self)
                 sort_asc.setIcon(get_menu_icon("chevron-down"))
@@ -802,7 +802,7 @@ class InteractiveHeader(QHeaderView):
     def _add_lock_columns_toggle(self, menu, file_table_view):
         """Add lock/unlock columns toggle to menu."""
         try:
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+            from oncutf.ui.helpers.icons_loader import get_menu_icon
 
             # Check current lock state
             is_locked = self._is_columns_locked()
@@ -862,7 +862,7 @@ class InteractiveHeader(QHeaderView):
     def _add_reset_column_order(self, menu, file_table_view):
         """Add reset column order option to menu."""
         try:
-            from oncutf.utils.ui.icons_loader import get_menu_icon
+            from oncutf.ui.helpers.icons_loader import get_menu_icon
 
             reset_action = QAction("Reset Column Order", menu)
             reset_action.setIcon(get_menu_icon("refresh"))

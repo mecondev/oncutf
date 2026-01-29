@@ -39,9 +39,9 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.app.state.context import AppContext
 
-    ctx = ApplicationContext.get_instance()
+    ctx = AppContext.get_instance()
     if not ctx.has_manager("user_dialog"):
         raise RuntimeError(
             "UserDialogPort adapter not registered. "
@@ -64,9 +64,9 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.app.state.context import AppContext
 
-    ctx = ApplicationContext.get_instance()
+    ctx = AppContext.get_instance()
     if not ctx.has_manager("user_dialog"):
         raise RuntimeError(
             "UserDialogPort adapter not registered. "
@@ -89,9 +89,9 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.app.state.context import AppContext
 
-    ctx = ApplicationContext.get_instance()
+    ctx = AppContext.get_instance()
     if not ctx.has_manager("user_dialog"):
         raise RuntimeError(
             "UserDialogPort adapter not registered. "
@@ -117,9 +117,9 @@ def show_question_message(parent: QWidget | None, title: str, message: str) -> b
         RuntimeError: If user_dialog adapter is not registered
 
     """
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.app.state.context import AppContext
 
-    ctx = ApplicationContext.get_instance()
+    ctx = AppContext.get_instance()
     if not ctx.has_manager("user_dialog"):
         raise RuntimeError(
             "UserDialogPort adapter not registered. "
@@ -141,12 +141,11 @@ def get_dialog_adapter() -> UserDialogPort | None:
         Most code should use show_info_message(), show_error_message(), etc.
 
     """
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.app.state.context import AppContext
 
     try:
-        ctx = ApplicationContext.get_instance()
+        ctx = AppContext.get_instance()
         return ctx.get_manager("user_dialog") if ctx.has_manager("user_dialog") else None
     except RuntimeError:
-        # ApplicationContext not initialized (e.g., in tests)
+        # AppContext not initialized (e.g., in tests)
         return None
-

@@ -169,7 +169,7 @@ class ShortcutCommandHandler:
             # Show warning dialog if files already have colors
             if files_with_colors:
                 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-                from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
+                from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 
                 total_selected = len(self.main_window.file_model.files)
                 count_with_colors = len(files_with_colors)
@@ -230,14 +230,14 @@ class ShortcutCommandHandler:
                 )
 
             # Execute command with wait cursor
-            from oncutf.utils.ui.cursor_helper import wait_cursor
+            from oncutf.ui.helpers.cursor_helper import wait_cursor
 
             with wait_cursor():
                 success = command.execute()
 
             if success:
                 # Add to command manager for undo/redo
-                from oncutf.app.services import get_metadata_command_manager
+                from oncutf.core.metadata import get_metadata_command_manager
 
                 cmd_manager = get_metadata_command_manager()
                 cmd_manager._undo_stack.append(command)

@@ -26,8 +26,8 @@ from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from oncutf.app.state.file_store import FileStore
     from oncutf.core.file.load_manager import FileLoadManager
-    from oncutf.core.file.store import FileStore
 
 logger = logging.getLogger(__name__)
 

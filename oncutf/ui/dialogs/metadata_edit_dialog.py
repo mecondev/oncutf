@@ -90,14 +90,14 @@ class MetadataEditDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label with DPI awareness."""
-        from oncutf.utils.ui.fonts import get_inter_css_weight, get_inter_family
+        from oncutf.ui.helpers.fonts import get_inter_css_weight, get_inter_family
 
         font_family = get_inter_family("base")
         font_weight = get_inter_css_weight("base")
 
         # Get DPI-aware font size
         try:
-            from oncutf.utils.ui.theme_font_generator import get_ui_font_sizes
+            from oncutf.ui.helpers.theme_font_generator import get_ui_font_sizes
 
             font_size = get_ui_font_sizes()["small"]
         except ImportError:

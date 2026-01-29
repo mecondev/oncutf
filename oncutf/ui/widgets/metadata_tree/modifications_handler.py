@@ -40,14 +40,14 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get metadata service
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         return metadata_service.staging_manager.get_all_staged_changes()
 
     def clear_modifications(self) -> None:
         """Clear all modified metadata items for the current file."""
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         if self._view._current_file_path:
@@ -67,7 +67,7 @@ class MetadataTreeModificationsHandler:
             file_path: Full path of the file to clear modifications for
 
         """
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         metadata_service.clear_staged_changes(file_path)
@@ -100,7 +100,7 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get metadata service
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
 
@@ -124,7 +124,7 @@ class MetadataTreeModificationsHandler:
 
         """
         # Get metadata service
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         return metadata_service.staging_manager.has_any_staged_changes()

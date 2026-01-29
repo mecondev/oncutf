@@ -72,7 +72,7 @@ class ResetHandler:
                 self._update_tree_item_value(key_path, str(original_value))
 
                 # Remove from staging
-                from oncutf.app.services import get_metadata_service
+                from oncutf.core.metadata.metadata_service import get_metadata_service
 
                 metadata_service = get_metadata_service()
                 if self._widget._current_file_path:
@@ -114,7 +114,7 @@ class ResetHandler:
             original_value: Original value to restore
 
         """
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
 

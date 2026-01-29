@@ -35,7 +35,7 @@ class UndoRedoHandler:
     def undo_metadata_operation(self) -> None:
         """Undo the last metadata operation from context menu."""
         try:
-            from oncutf.app.services import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 
@@ -64,7 +64,7 @@ class UndoRedoHandler:
     def redo_metadata_operation(self) -> None:
         """Redo the last undone metadata operation from context menu."""
         try:
-            from oncutf.app.services import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
 

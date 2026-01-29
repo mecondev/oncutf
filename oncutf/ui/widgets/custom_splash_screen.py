@@ -81,7 +81,7 @@ class CustomSplashScreen(QSplashScreen):
             painter.setPen(QPen(Qt.white))
 
             # Use our custom InterDisplay-SemiBold for title
-            from oncutf.utils.ui.fonts import get_default_ui_font, get_inter_font
+            from oncutf.ui.helpers.fonts import get_default_ui_font, get_inter_font
 
             try:
                 font = get_inter_font("titles", 24)  # Uses InterDisplay-SemiBold
@@ -305,7 +305,7 @@ class CustomSplashScreen(QSplashScreen):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Set up fonts using our custom font system
-        from oncutf.utils.ui.fonts import get_default_ui_font, get_inter_font
+        from oncutf.ui.helpers.fonts import get_default_ui_font, get_inter_font
 
         try:
             version_font = get_inter_font("base", 11)  # Uses Inter-Regular

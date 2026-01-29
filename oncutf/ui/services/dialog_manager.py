@@ -146,7 +146,7 @@ class DialogManager:
         if not window:
             return
 
-        from oncutf.utils.ui.multiscreen_helper import center_dialog_on_screen
+        from oncutf.ui.helpers.multiscreen_helper import center_dialog_on_screen
 
         center_dialog_on_screen(window)
 

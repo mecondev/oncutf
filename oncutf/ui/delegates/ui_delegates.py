@@ -178,7 +178,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def leaveEvent(self, event) -> None:
         """Handle mouse leave events to hide tooltips."""
         # Hide any active tooltips when mouse leaves the delegate
-        from oncutf.utils.ui.tooltip_helper import TooltipHelper
+        from oncutf.ui.helpers.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):
@@ -203,7 +203,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
     def focusOutEvent(self, event) -> None:
         """Handle focus loss events to hide tooltips."""
         # Hide any active tooltips when focus is lost
-        from oncutf.utils.ui.tooltip_helper import TooltipHelper
+        from oncutf.ui.helpers.tooltip_helper import TooltipHelper
 
         parent_widget = self.parent()
         if isinstance(parent_widget, QWidget):

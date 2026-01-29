@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtWidgets import QAction, QMenu
 
+from oncutf.ui.helpers.stylesheet_utils import inject_font_family
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.stylesheet_utils import inject_font_family
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
@@ -40,12 +40,12 @@ class ContextMenuHandlers:
         self.parent_window = parent_window
 
         # Delegate hash operations to specialized manager
-        from oncutf.core.hash.hash_operations_manager import HashOperationsManager
+        from oncutf.ui.managers.hash_operations_manager import HashOperationsManager
 
         self.hash_ops = HashOperationsManager(parent_window)
 
         # Delegate metadata operations to specialized manager
-        from oncutf.core.metadata import MetadataOperationsManager
+        from oncutf.ui.managers.metadata_operations_manager import MetadataOperationsManager
 
         self.metadata_ops = MetadataOperationsManager(parent_window)
 
@@ -83,7 +83,7 @@ class ContextMenuHandlers:
                     )
                     return
 
-        from oncutf.app.services.icons import get_menu_icon
+        from oncutf.ui.services.icon_service import get_menu_icon
 
         # Helper function to create actions with shortcuts
         def create_action_with_shortcut(
@@ -434,7 +434,7 @@ class ContextMenuHandlers:
 
         # Enable/disable undo/redo based on command manager state
         try:
-            from oncutf.app.services import get_metadata_command_manager
+            from oncutf.core.metadata import get_metadata_command_manager
 
             command_manager = get_metadata_command_manager()
             action_undo.setEnabled(command_manager.can_undo())

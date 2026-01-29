@@ -96,7 +96,7 @@ class MetadataModule:
 
         # Use MetadataExtractor with cached-only hash service for rename preview
         # This ensures no expensive hash computation happens during preview
-        from oncutf.domain.metadata.extractor import MetadataExtractor
+        from oncutf.core.metadata.metadata_extractor import MetadataExtractor
         from oncutf.infra.cache.cached_hash_service import CachedHashService
 
         extractor = MetadataExtractor(hash_service=CachedHashService())
@@ -129,7 +129,7 @@ class MetadataModule:
         """
         if not metadata_cache:
             # Use persistent metadata cache
-            from oncutf.core.cache.persistent_metadata_cache import get_persistent_metadata_cache
+            from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
             if persistent_cache:

@@ -20,10 +20,19 @@ import uuid
 from datetime import datetime
 from typing import Any, Protocol
 
-from oncutf.core.database.database_manager import get_database_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+
+# Factory function - registered during bootstrap
+_database_manager_factory: Any = None
+
+
+def register_database_manager_factory_for_history(factory: Any) -> None:
+    """Register factory for creating database manager instances."""
+    global _database_manager_factory
+    _database_manager_factory = factory
 
 
 class RenameHistoryDB(Protocol):
@@ -99,7 +108,9 @@ class RenameHistoryManager:
         """Initialize rename history manager with database backend."""
         from typing import cast
 
-        self._db_manager: RenameHistoryDB = cast("RenameHistoryDB", get_database_manager())
+        if _database_manager_factory is None:
+            raise RuntimeError("Database manager factory not registered")
+        self._db_manager: RenameHistoryDB = cast("RenameHistoryDB", _database_manager_factory())
         logger.info("[RenameHistoryManager] Initialized with database backend")
 
     def record_rename_batch(

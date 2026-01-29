@@ -47,6 +47,8 @@ from oncutf.config import (
     METADATA_TREE_USE_CUSTOM_DELEGATE,
 )
 from oncutf.controllers.ui.protocols import LayoutContext
+from oncutf.ui.helpers.icons_loader import get_menu_icon
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.viewport_specs import (
     FILES_HEADER_HEIGHT,
     VIEWPORT_BUTTON_SIZE,
@@ -54,8 +56,6 @@ from oncutf.ui.viewport_specs import (
     VIEWPORT_SPECS,
 )
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import get_menu_icon
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -193,8 +193,8 @@ class LayoutController:
         self.parent_window.horizontal_splitter = QSplitter(Qt.Horizontal)
         self.parent_window.vertical_splitter.addWidget(self.parent_window.horizontal_splitter)
 
+        from oncutf.ui.helpers.layout_calculators import calculate_splitter_sizes_from_ratios
         from oncutf.utils.shared.json_config_manager import get_app_config_manager
-        from oncutf.utils.ui.layout_calculators import calculate_splitter_sizes_from_ratios
 
         config_manager = get_app_config_manager()
         window_config = config_manager.get_category("window")

@@ -17,8 +17,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileSystemModel
 
 from oncutf.config import ALLOWED_EXTENSIONS
+from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

@@ -12,9 +12,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QLineEdit, QMenu
 
 from oncutf.controllers.ui.protocols import SignalContext
+from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_selection_update, schedule_ui_update
-from oncutf.utils.ui.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
 
@@ -201,8 +201,8 @@ class SignalController:
     def _refresh_file_table(self) -> None:
         """Refresh file table (F5) - reloads files and clears ALL state."""
         from oncutf.ui.adapters.application_context import get_app_context
-        from oncutf.utils.ui.cursor_helper import wait_cursor
-        from oncutf.utils.ui.file_table_state_helper import FileTableStateHelper
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.file_table_state_helper import FileTableStateHelper
 
         logger.info("[FileTable] F5 pressed - refreshing file table with full state reset")
 
@@ -226,7 +226,7 @@ class SignalController:
         """Show custom context menu for the search field."""
         menu = QMenu(line_edit)
 
-        from oncutf.utils.ui.stylesheet_utils import inject_font_family
+        from oncutf.ui.helpers.stylesheet_utils import inject_font_family
 
         menu_qss = """
             QMenu {

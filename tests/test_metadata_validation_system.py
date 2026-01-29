@@ -406,7 +406,7 @@ class TestMetadataValidatedWidgets:
         # Should preserve multiline text
         assert description_widget.text() == multiline_text
 
-    @patch("oncutf.utils.ui.tooltip_helper.TooltipHelper.show_tooltip")
+    @patch("oncutf.ui.helpers.tooltip_helper.TooltipHelper.show_tooltip")
     def test_character_blocking_tooltip(self, mock_tooltip, title_widget):
         """Test that blocked characters show error tooltip."""
         # Create a mock key event

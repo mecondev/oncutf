@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from oncutf.app.services import get_metadata_simplification_service
+from oncutf.core.metadata.metadata_simplification_service import get_metadata_simplification_service
 from oncutf.ui.widgets.metadata_tree.model import (
     EXTENDED_ONLY_PATTERNS,
     FieldStatus,
@@ -595,7 +595,7 @@ def create_metadata_tree_service() -> MetadataTreeService:
 
     # Try to inject staging manager if available
     try:
-        from oncutf.app.services import get_metadata_service
+        from oncutf.core.metadata.metadata_service import get_metadata_service
 
         metadata_service = get_metadata_service()
         service.set_staging_manager(metadata_service.staging_manager)

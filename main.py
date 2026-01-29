@@ -31,12 +31,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from oncutf.config import SPLASH_SCREEN_DURATION, WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS
+from oncutf.ui.helpers.fonts import _get_inter_fonts, _get_jetbrains_fonts
 from oncutf.ui.main_window import MainWindow
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
 from oncutf.utils.logging.logger_setup import ConfigureLogger
 from oncutf.utils.paths import AppPaths
-from oncutf.utils.ui.fonts import _get_inter_fonts, _get_jetbrains_fonts
 
 # Configure logging to use centralized user data directory
 logs_dir = str(AppPaths.get_logs_dir())
@@ -171,14 +171,14 @@ def main() -> int:
             logger.warning("Could not get locale: %s", e)
 
         # Initialize DPI helper early
-        from oncutf.utils.ui.dpi_helper import get_dpi_helper, log_dpi_info
+        from oncutf.ui.helpers.dpi_helper import get_dpi_helper, log_dpi_info
 
         get_dpi_helper()  # Initialize but don't store
         log_dpi_info()
 
         # Log font sizes for debugging
         try:
-            from oncutf.utils.ui.theme_font_generator import get_ui_font_sizes
+            from oncutf.ui.helpers.theme_font_generator import get_ui_font_sizes
 
             font_sizes = get_ui_font_sizes()
             logger.debug("Applied font sizes: %s", font_sizes, extra={"dev_only": True})
@@ -305,7 +305,7 @@ def main() -> int:
                     # Suppress wait cursor during MainWindow construction so any
                     # early wait_cursor usage inside init does not flicker.
                     try:
-                        from oncutf.utils.ui.cursor_helper import suppress_wait_cursor_for
+                        from oncutf.ui.helpers.cursor_helper import suppress_wait_cursor_for
 
                         suppress_wait_cursor_for(5.0)
                     except Exception:
@@ -325,7 +325,7 @@ def main() -> int:
                     try:
                         import time
 
-                        from oncutf.utils.ui.cursor_helper import set_wait_cursor_suppressed_until
+                        from oncutf.ui.helpers.cursor_helper import set_wait_cursor_suppressed_until
 
                         set_wait_cursor_suppressed_until(
                             time.monotonic() + (WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS / 1000.0)

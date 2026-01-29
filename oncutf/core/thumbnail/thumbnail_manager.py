@@ -40,8 +40,8 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.paths import AppPaths
 
 if TYPE_CHECKING:
-    from oncutf.core.database.thumbnail_store import ThumbnailStore
     from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
+    from oncutf.infra.db.thumbnail_store import ThumbnailStore
 
 logger = get_cached_logger(__name__)
 

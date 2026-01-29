@@ -6,7 +6,7 @@ import pytest
 try:
     from PyQt5.QtWidgets import QApplication
 
-    from oncutf.core.file.store import FileItem
+    from oncutf.app.state.file_store import FileItem
     from oncutf.core.metadata import MetadataStagingManager
     from oncutf.ui.widgets.metadata_tree.view import MetadataTreeView
 

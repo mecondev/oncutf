@@ -111,7 +111,7 @@ class QtCursorAdapter:
 
     def force_restore_cursor(self) -> None:
         """Force restore cursor (emergency cleanup)."""
-        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+        from oncutf.ui.helpers.cursor_helper import force_restore_cursor
 
         force_restore_cursor()
 
@@ -141,7 +141,7 @@ class QtProgressDialogAdapter:
             is_exit_save: Whether this is an exit save operation
 
         """
-        from oncutf.utils.ui.progress_dialog import ProgressDialog
+        from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
         self._dialog = ProgressDialog(
             parent=parent,
@@ -157,7 +157,7 @@ class QtProgressDialogAdapter:
 
     def show(self) -> None:
         """Show the progress dialog with smooth appearance."""
-        from oncutf.utils.ui.dialog_utils import show_dialog_smooth
+        from oncutf.ui.helpers.dialog_utils import show_dialog_smooth
 
         show_dialog_smooth(self._dialog)
 

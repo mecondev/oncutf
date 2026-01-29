@@ -46,7 +46,7 @@ class BatchQueryManager:
             return {}
 
         try:
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
 
             hash_cache = get_persistent_hash_cache()
 

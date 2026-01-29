@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from oncutf.core.metadata.hash_loading_service import HashLoadingService
 from oncutf.models.file_item import FileItem
+from oncutf.ui.managers.hash_loading_service import HashLoadingService
 
 
 @pytest.fixture

@@ -89,7 +89,7 @@ class EventHandler:
 
     def _refresh_tree_view(self) -> None:
         """Refresh the tree view by refreshing the underlying model."""
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         logger.info("[EventHandler] F5 pressed - refreshing tree view")
 
@@ -153,8 +153,8 @@ class EventHandler:
 
     def handle_item_expanded(self) -> None:
         """Handle item expansion with wait cursor for better UX."""
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
         from oncutf.utils.shared.timer_manager import schedule_ui_update
-        from oncutf.utils.ui.cursor_helper import wait_cursor
 
         def show_wait_cursor() -> None:
             with wait_cursor():

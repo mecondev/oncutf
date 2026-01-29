@@ -19,11 +19,11 @@ from PyQt5.QtWidgets import (
 )
 
 from oncutf.config import ICON_SIZES
+from oncutf.ui.helpers.icons_loader import get_menu_icon
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
-from oncutf.utils.ui.icons_loader import get_menu_icon
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 

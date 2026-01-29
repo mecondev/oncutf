@@ -488,7 +488,7 @@ class EventHandler:
         """Handle focus in events."""
         selection_model = self._view.selectionModel()
         if selection_model is not None:
-            from oncutf.utils.ui.selection_provider import get_selected_row_set
+            from oncutf.ui.helpers.selection_provider import get_selected_row_set
 
             selected_rows = get_selected_row_set(selection_model)
             self._view._selection_behavior.update_selection_store(selected_rows, emit_signal=False)

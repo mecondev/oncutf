@@ -11,7 +11,7 @@ import threading
 
 import pytest
 
-from oncutf.core.database.session_state_store import SessionStateStore
+from oncutf.infra.db.session_state_store import SessionStateStore
 
 
 @pytest.fixture

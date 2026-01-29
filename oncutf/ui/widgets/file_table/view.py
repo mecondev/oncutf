@@ -39,6 +39,7 @@ from oncutf.ui.behaviors import (
     DragDropBehavior,
     SelectionBehavior,
 )
+from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.file_table.event_handler import EventHandler
 from oncutf.ui.widgets.file_table.hover_handler import HoverHandler
@@ -46,7 +47,6 @@ from oncutf.ui.widgets.file_table.tooltip_handler import TooltipHandler
 from oncutf.ui.widgets.file_table.viewport_handler import ViewportHandler
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
-from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
 
 logger = get_cached_logger(__name__)
 

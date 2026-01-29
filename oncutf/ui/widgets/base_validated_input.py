@@ -17,9 +17,9 @@ from oncutf.config import (
     QLABEL_DARK_BORDER,
     QLABEL_INFO_TEXT,
 )
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.tooltip_helper import TooltipHelper
 
 logger = get_cached_logger(__name__)
 

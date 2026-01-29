@@ -34,6 +34,6 @@ class QtDragStateAdapter:
     @staticmethod
     def clear_drag_state(source: str) -> None:
         """Clear drag state for a specific source."""
-        from oncutf.app.services.drag_state import clear_drag_state
+        from oncutf.ui.services.drag_state import clear_drag_state
 
         clear_drag_state(source)

@@ -208,32 +208,43 @@ def get_service_registry() -> ServiceRegistry:
     return ServiceRegistry.instance()
 
 
-def configure_default_services(registry: ServiceRegistry | None = None) -> None:
+def configure_default_services(
+    registry: ServiceRegistry | None = None,
+    *,
+    metadata_service_factory: Any = None,
+    hash_service_factory: Any = None,
+    filesystem_service_factory: Any = None,
+) -> None:
     """Configure default service implementations.
 
     This function registers the standard service implementations.
-    Call this during application startup.
+    Call this during application startup from the UI/bootstrap layer.
 
     Args:
         registry: Optional registry to configure. Uses global if None.
+        metadata_service_factory: Factory for MetadataServiceProtocol (from infra)
+        hash_service_factory: Factory for HashServiceProtocol (from infra)
+        filesystem_service_factory: Factory for FilesystemServiceProtocol (from infra)
 
     """
     if registry is None:
         registry = get_service_registry()
 
-    # Import protocols and implementations - NEW PATHS
+    # Import protocols only (no infra imports here)
     from oncutf.app.ports.service_interfaces import (
         FilesystemServiceProtocol,
         HashServiceProtocol,
         MetadataServiceProtocol,
     )
-    from oncutf.infra.cache.cached_hash_service import CachedHashService
-    from oncutf.infra.external.exiftool_client import ExifToolClient
-    from oncutf.infra.filesystem.filesystem_service import FilesystemService
 
-    # Register default implementations using factories for lazy init
-    registry.register_factory(MetadataServiceProtocol, ExifToolClient)
-    registry.register_factory(HashServiceProtocol, CachedHashService)
-    registry.register_factory(FilesystemServiceProtocol, FilesystemService)
+    # Register implementations provided by caller (typically from UI bootstrap)
+    if metadata_service_factory is not None:
+        registry.register_factory(MetadataServiceProtocol, metadata_service_factory)
+
+    if hash_service_factory is not None:
+        registry.register_factory(HashServiceProtocol, hash_service_factory)
+
+    if filesystem_service_factory is not None:
+        registry.register_factory(FilesystemServiceProtocol, filesystem_service_factory)
 
     logger.debug("Default services configured")

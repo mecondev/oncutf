@@ -27,6 +27,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.naming.filename_validator import (
@@ -34,8 +36,6 @@ from oncutf.utils.naming.filename_validator import (
     is_validation_error_marker,
 )
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust, schedule_ui_update
-from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -70,7 +70,7 @@ class PreviewTableWidget(QTableWidget):
                 # Check if this is a validation error case
                 if is_validation_error_marker(item.text()):
                     # Show enhanced error tooltip
-                    from oncutf.utils.ui.tooltip_helper import TooltipHelper
+                    from oncutf.ui.helpers.tooltip_helper import TooltipHelper
 
                     error_msg = "Invalid filename - contains validation errors"
                     TooltipHelper.show_error_tooltip(self, error_msg)
@@ -269,7 +269,7 @@ class PreviewTablesView(QWidget):
 
     def _on_refresh_shortcut_pressed(self) -> None:
         """Handle F5 shortcut press - refresh preview with status message."""
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         logger.info("[PreviewTables] F5 pressed - refreshing preview")
 

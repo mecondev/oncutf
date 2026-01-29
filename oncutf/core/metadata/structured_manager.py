@@ -7,7 +7,7 @@ that can be stored in the database with proper categorization and field definiti
 from pathlib import Path
 from typing import Any
 
-from oncutf.core.database.database_manager import get_database_manager
+from oncutf.infra.db.database_manager import get_database_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

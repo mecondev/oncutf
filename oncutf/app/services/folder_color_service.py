@@ -12,8 +12,28 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.core.folder_color_command import AutoColorByFolderCommand
+    from oncutf.app.ports.infra_protocols import (
+        AutoColorCommandProtocol,
+        DatabaseManagerProtocol,
+    )
     from oncutf.models.file_item import FileItem
+
+
+# Factory function - registered during bootstrap
+# The factory is a class (AutoColorByFolderCommand) that we instantiate
+_auto_color_command_factory: Any = None
+
+
+def register_auto_color_command_factory(factory: Any) -> None:
+    """Register factory for creating auto color commands.
+
+    Args:
+        factory: A class or callable that creates AutoColorCommandProtocol instances.
+                 Expected to accept file_items, db_manager, and skip_existing.
+
+    """
+    global _auto_color_command_factory
+    _auto_color_command_factory = factory
 
 
 class FolderColorService:
@@ -25,9 +45,9 @@ class FolderColorService:
     def create_auto_color_command(
         self,
         file_items: list[FileItem],
-        db_manager: Any,
+        db_manager: DatabaseManagerProtocol,
         skip_existing: bool = True,
-    ) -> AutoColorByFolderCommand:
+    ) -> AutoColorCommandProtocol | None:
         """Create auto color by folder command.
 
         Args:
@@ -36,17 +56,19 @@ class FolderColorService:
             skip_existing: If True, skip files with existing colors; if False, recolor all
 
         Returns:
-            AutoColorByFolderCommand instance
+            AutoColorCommandProtocol instance or None if factory not registered
 
         """
-        from oncutf.core.folder_color_command import AutoColorByFolderCommand
-
-        return AutoColorByFolderCommand(
+        if _auto_color_command_factory is None:
+            return None
+        # Factory returns a concrete type that implements AutoColorCommandProtocol
+        result: AutoColorCommandProtocol = _auto_color_command_factory(
             file_items=file_items, db_manager=db_manager, skip_existing=skip_existing
         )
+        return result
 
     def get_files_with_existing_colors(
-        self, file_items: list[FileItem], db_manager: Any
+        self, file_items: list[FileItem], db_manager: DatabaseManagerProtocol
     ) -> list[str]:
         """Get list of files that already have colors assigned.
 
@@ -59,10 +81,12 @@ class FolderColorService:
 
         """
         command = self.create_auto_color_command(file_items, db_manager)
+        if command is None:
+            return []
         return command.get_files_with_existing_colors()
 
     def execute_auto_color(
-        self, file_items: list[FileItem], db_manager: Any, skip_existing: bool = True
+        self, file_items: list[FileItem], db_manager: DatabaseManagerProtocol, skip_existing: bool = True
     ) -> bool:
         """Execute automatic coloring by folder.
 
@@ -76,6 +100,8 @@ class FolderColorService:
 
         """
         command = self.create_auto_color_command(file_items, db_manager, skip_existing=skip_existing)
+        if command is None:
+            return False
         return command.execute()
 
 

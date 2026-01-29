@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from PyQt5.QtCore import QItemSelection, Qt
     from PyQt5.QtGui import QModelIndex
 
-    from oncutf.core.selection.selection_store import SelectionStore
+    from oncutf.app.state.selection_store import SelectionStore
     from oncutf.ui.behaviors.selection.protocols import SelectableWidget
 
 logger = get_cached_logger(__name__)

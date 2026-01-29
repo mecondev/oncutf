@@ -44,6 +44,8 @@ from oncutf.ui.behaviors.metadata_cache_behavior import MetadataCacheBehavior
 from oncutf.ui.behaviors.metadata_context_menu import MetadataContextMenuBehavior
 from oncutf.ui.behaviors.metadata_edit import MetadataEditBehavior
 from oncutf.ui.behaviors.metadata_scroll_behavior import MetadataScrollBehavior
+from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
+from oncutf.ui.helpers.tooltip_helper import TreeViewTooltipFilter
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.event_handler import MetadataTreeEventHandler
@@ -56,12 +58,10 @@ from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_scroll_adjust
-from oncutf.utils.ui.placeholder_helper import create_placeholder_helper
-from oncutf.utils.ui.tooltip_helper import TreeViewTooltipFilter
 
 # Metadata service integration (command system + unified manager)
 try:
-    from oncutf.app.services import get_metadata_command_manager, get_metadata_service
+    from oncutf.core.metadata import get_metadata_command_manager, get_metadata_service
 except ImportError:
     get_metadata_command_manager = None
     get_metadata_service = None
@@ -274,7 +274,7 @@ class MetadataTreeView(QTreeView):
     def _lazy_init_controller(self) -> None:
         """Lazy initialization of controller layer."""
         try:
-            from oncutf.app.services import get_metadata_service
+            from oncutf.core.metadata.metadata_service import get_metadata_service
             from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
 
             metadata_service = get_metadata_service()
@@ -825,7 +825,7 @@ class MetadataTreeView(QTreeView):
 
     def _on_refresh_shortcut(self) -> None:
         """Handle F5 shortcut press - refresh metadata with status message."""
-        from oncutf.utils.ui.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         logger.info("[MetadataTree] F5 pressed - refreshing metadata")
 

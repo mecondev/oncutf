@@ -164,7 +164,7 @@ class RotationHandlers:
         dlg = CustomMessageDialog("Load Metadata First?", message, buttons, self.parent_window)
 
         if self.parent_window:
-            from oncutf.app.services.dialog_positioning import ensure_dialog_centered
+            from oncutf.ui.services.dialog_positioning import ensure_dialog_centered
 
             ensure_dialog_centered(dlg, self.parent_window)
 

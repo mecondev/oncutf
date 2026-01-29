@@ -204,37 +204,62 @@ class TestConfigureDefaultServices:
     """Tests for default service configuration."""
 
     def test_configures_metadata_service(self) -> None:
-        """Test that metadata service is configured."""
+        """Test that metadata service is configured when factory provided."""
         registry = ServiceRegistry()
-        configure_default_services(registry)
+
+        # Create mock factory
+        class MockMetadataService:
+            def load_metadata(self, path):
+                return {}
+            def load_metadata_batch(self, paths):
+                return {}
+
+        configure_default_services(registry, metadata_service_factory=MockMetadataService)
 
         from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
 
         assert registry.has(MetadataServiceProtocol)
 
     def test_configures_hash_service(self) -> None:
-        """Test that hash service is configured."""
+        """Test that hash service is configured when factory provided."""
         registry = ServiceRegistry()
-        configure_default_services(registry)
+
+        class MockHashService:
+            def compute_hash(self, path, algorithm="crc32"):
+                return "abc123"
+            def compute_hashes_batch(self, paths, algorithm="crc32"):
+                return {}
+
+        configure_default_services(registry, hash_service_factory=MockHashService)
 
         from oncutf.app.ports.service_interfaces import HashServiceProtocol
 
         assert registry.has(HashServiceProtocol)
 
     def test_configures_filesystem_service(self) -> None:
-        """Test that filesystem service is configured."""
+        """Test that filesystem service is configured when factory provided."""
         registry = ServiceRegistry()
-        configure_default_services(registry)
+
+        class MockFilesystemService:
+            def rename_file(self, source, target):
+                return True
+            def file_exists(self, path):
+                return False
+            def get_file_info(self, path):
+                return {}
+
+        configure_default_services(registry, filesystem_service_factory=MockFilesystemService)
 
         from oncutf.app.ports.service_interfaces import FilesystemServiceProtocol
 
         assert registry.has(FilesystemServiceProtocol)
 
-    def test_uses_global_registry_if_none_provided(self) -> None:
-        """Test that configure uses global registry when None."""
-        ServiceRegistry.reset_instance()
-        configure_default_services()
+    def test_does_not_register_if_no_factory_provided(self) -> None:
+        """Test that services are not registered if no factory is provided."""
+        registry = ServiceRegistry()
+        configure_default_services(registry)
 
         from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
 
-        assert get_service_registry().has(MetadataServiceProtocol)
+        # Without factories, nothing is registered
+        assert not registry.has(MetadataServiceProtocol)

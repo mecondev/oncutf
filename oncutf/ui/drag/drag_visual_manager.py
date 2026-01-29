@@ -31,8 +31,8 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QApplication, QWidget
 
-from oncutf.app.services.icons import get_menu_icon
 from oncutf.config import ICON_SIZES
+from oncutf.ui.services.icon_service import get_menu_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

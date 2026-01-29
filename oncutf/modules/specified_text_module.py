@@ -21,12 +21,12 @@ from PyQt5.QtWidgets import (
 )
 
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.ui.widgets.validated_line_edit import ValidatedLineEdit
 
 # initialize logger
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.naming.filename_validator import validate_filename_part
-from oncutf.utils.ui.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

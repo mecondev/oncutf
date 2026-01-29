@@ -268,7 +268,7 @@ class DragManager(QObject):
                     )
 
                     # Check if ProgressDialog is active
-                    from oncutf.app.services.active_dialogs import has_active_progress_dialogs
+                    from oncutf.ui.services.active_dialogs import has_active_progress_dialogs
 
                     if has_active_progress_dialogs():
                         logger.debug(

@@ -30,9 +30,9 @@ from PyQt5.QtWidgets import (
 )
 
 from oncutf.config import QLABEL_MUTED_TEXT
+from oncutf.ui.helpers.stylesheet_utils import inject_font_family
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.stylesheet_utils import inject_font_family
 
 logger = get_cached_logger(__name__)
 
@@ -104,7 +104,7 @@ class BulkRotationDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
-        from oncutf.utils.ui.fonts import get_inter_css_weight, get_inter_family
+        from oncutf.ui.helpers.fonts import get_inter_css_weight, get_inter_family
 
         font_family = get_inter_family("base")
         font_weight = get_inter_css_weight("base")

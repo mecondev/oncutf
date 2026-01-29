@@ -28,9 +28,9 @@ from oncutf.ui.drag.drag_visual_manager import (
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
+from oncutf.ui.helpers.file_drop_helper import extract_file_paths
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
-from oncutf.utils.ui.file_drop_helper import extract_file_paths
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QRect
@@ -448,7 +448,7 @@ class DragDropBehavior:
 
     def _force_cursor_cleanup(self) -> None:
         """Force cleanup of any stuck cursors during drag operations."""
-        from oncutf.utils.ui.cursor_helper import force_restore_cursor
+        from oncutf.ui.helpers.cursor_helper import force_restore_cursor
 
         force_restore_cursor()
 

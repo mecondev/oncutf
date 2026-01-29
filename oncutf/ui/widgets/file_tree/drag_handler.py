@@ -28,8 +28,8 @@ from oncutf.ui.drag.drag_visual_manager import (
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
+from oncutf.ui.helpers.drag_zone_validator import DragZoneValidator
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.drag_zone_validator import DragZoneValidator
 
 if TYPE_CHECKING:
     from oncutf.ui.widgets.file_tree.view import FileTreeView

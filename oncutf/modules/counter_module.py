@@ -24,13 +24,13 @@ from PyQt5.QtWidgets import (
 from oncutf.config import ICON_SIZES
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.helpers.icons_loader import get_menu_icon
+from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 
 # initialize logger
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import get_menu_icon
-from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 logger = get_cached_logger(__name__)
 

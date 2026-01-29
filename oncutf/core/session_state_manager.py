@@ -54,7 +54,7 @@ class SessionStateManager:
     def db_manager(self) -> Any:
         """Lazy-load database manager to avoid circular imports."""
         if self._db_manager is None:
-            from oncutf.core.database.database_manager import get_database_manager
+            from oncutf.infra.db.database_manager import get_database_manager
             self._db_manager = get_database_manager()
         return self._db_manager
 

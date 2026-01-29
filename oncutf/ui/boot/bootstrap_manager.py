@@ -97,8 +97,8 @@ class BootstrapManager:
 
         """
         from oncutf.app.services import wait_cursor
-        from oncutf.app.services.ui_state import restore_ui_state, save_ui_state
         from oncutf.ui.adapters.application_context import get_app_context
+        from oncutf.ui.services.ui_state_service import restore_ui_state, save_ui_state
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files", len(files)

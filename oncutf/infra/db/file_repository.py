@@ -163,7 +163,7 @@ def get_file_repository() -> FileRepository:
     global _file_repository
     if _file_repository is None:
         # Import here to avoid circular dependency
-        from oncutf.core.database.database_manager import get_database_manager
+        from oncutf.infra.db.database_manager import get_database_manager
 
         _file_repository = FileRepository(get_database_manager())
     return _file_repository

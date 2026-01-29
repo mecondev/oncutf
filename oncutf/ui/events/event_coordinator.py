@@ -21,9 +21,9 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
 
-    from oncutf.core.events.file_event_handlers import FileEventHandlers
-    from oncutf.core.events.ui_event_handlers import UIEventHandlers
     from oncutf.ui.events.context_menu import ContextMenuHandlers
+    from oncutf.ui.managers.file_event_handlers import FileEventHandlers
+    from oncutf.ui.managers.ui_event_handlers import UIEventHandlers
 
 logger = get_cached_logger(__name__)
 
@@ -58,7 +58,7 @@ class EventCoordinator:
     def file_handlers(self) -> FileEventHandlers:
         """Lazy-initialized file event handlers."""
         if self._file_handlers is None:
-            from oncutf.core.events.file_event_handlers import FileEventHandlers
+            from oncutf.ui.managers.file_event_handlers import FileEventHandlers
 
             self._file_handlers = FileEventHandlers(self.parent_window)
         return self._file_handlers
@@ -67,7 +67,7 @@ class EventCoordinator:
     def ui_handlers(self) -> UIEventHandlers:
         """Lazy-initialized UI event handlers."""
         if self._ui_handlers is None:
-            from oncutf.core.events.ui_event_handlers import UIEventHandlers
+            from oncutf.ui.managers.ui_event_handlers import UIEventHandlers
 
             self._ui_handlers = UIEventHandlers(self.parent_window)
         return self._ui_handlers

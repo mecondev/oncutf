@@ -8,12 +8,7 @@ Core package providing application services, type definitions, and base classes.
 
 # Type aliases and TypedDicts for type safety
 # Base worker classes for background operations
-from oncutf.core.base_worker import (
-    CancellableMixin,
-    WorkerProtocol,
-    WorkerResult,
-)
-from oncutf.core.type_aliases import (
+from oncutf.app.types import (
     ExifMetadata,
     FilePath,
     FilePathList,
@@ -26,6 +21,11 @@ from oncutf.core.type_aliases import (
     ModulesDataList,
     NamePair,
     NamePairsList,
+)
+from oncutf.core.base_worker import (
+    CancellableMixin,
+    WorkerProtocol,
+    WorkerResult,
 )
 
 __all__ = [

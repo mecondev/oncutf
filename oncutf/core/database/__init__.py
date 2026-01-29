@@ -1,7 +1,7 @@
 """Database operations module.
 
-This module provides database management functionality including:
-- DatabaseManager: Main database operations and migrations
+This module provides database management functionality.
+NOTE: DatabaseManager moved to infra/db/database_manager.py
 
 Author: Michael Economou
 Date: 2025-12-20
@@ -9,19 +9,17 @@ Date: 2025-12-20
 
 from __future__ import annotations
 
-from oncutf.core.database.database_manager import DatabaseManager
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from oncutf.infra.db.database_manager import DatabaseManager as _DatabaseManager
 
 __all__ = [
-    "DatabaseManager",
     "initialize_database",
 ]
 
 
-# Singleton instance
-_db_manager_instance: DatabaseManager | None = None
-
-
-def initialize_database(db_path: str | None = None) -> DatabaseManager:
+def initialize_database(db_path: str | None = None) -> _DatabaseManager:
     """Initialize database manager with custom path (backward compatibility).
 
     Args:
@@ -31,6 +29,6 @@ def initialize_database(db_path: str | None = None) -> DatabaseManager:
         DatabaseManager instance
 
     """
-    global _db_manager_instance
-    _db_manager_instance = DatabaseManager(db_path)
-    return _db_manager_instance
+    from oncutf.infra.db.database_manager import DatabaseManager
+
+    return DatabaseManager(db_path)

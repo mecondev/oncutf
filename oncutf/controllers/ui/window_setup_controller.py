@@ -16,8 +16,8 @@ from oncutf.config import (
     WINDOW_WIDTH,
 )
 from oncutf.controllers.ui.protocols import WindowSetupContext
+from oncutf.ui.helpers.icons_loader import get_app_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.ui.icons_loader import get_app_icon
 
 logger = get_cached_logger(__name__)
 

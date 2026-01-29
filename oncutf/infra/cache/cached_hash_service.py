@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from oncutf.core.cache.persistent_hash_cache import PersistentHashCache
+    from oncutf.infra.cache.persistent_hash_cache import PersistentHashCache
 
 logger = get_cached_logger(__name__)
 
@@ -39,7 +39,7 @@ class CachedHashService:
     def _get_cache_manager(self) -> PersistentHashCache:
         """Lazy load the hash cache manager."""
         if self._cache_manager is None:
-            from oncutf.core.cache.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
 
             self._cache_manager = get_persistent_hash_cache()
         return self._cache_manager
