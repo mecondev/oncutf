@@ -24,11 +24,11 @@ from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.ui.adapters.qt_app_context import QtAppContext
     from oncutf.ui.widgets.file_table import FileTableView
 
     # Union type for context - supports both Qt-free and Qt versions
-    ContextType = AppContext | ApplicationContext
+    ContextType = AppContext | QtAppContext
 
 logger = logging.getLogger(__name__)
 

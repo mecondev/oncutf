@@ -21,7 +21,7 @@ from oncutf.boot.infra_wiring import (
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.ui.adapters.qt_app_context import QtAppContext
 
 logger = get_cached_logger(__name__)
 
@@ -42,8 +42,8 @@ class AppComponents:
         self.rename_history_manager: Any = None
 
 
-def create_app_context(parent: Any = None) -> ApplicationContext:
-    """Create and configure the ApplicationContext.
+def create_app_context(parent: Any = None) -> QtAppContext:
+    """Create and configure the QtAppContext.
 
     This is the main entry point for UI code to get a configured
     application context without importing infra directly.
@@ -52,7 +52,7 @@ def create_app_context(parent: Any = None) -> ApplicationContext:
         parent: Optional parent QObject
 
     Returns:
-        Configured ApplicationContext instance
+        Configured QtAppContext instance
 
     """
     # First, register all infra factories
@@ -60,9 +60,9 @@ def create_app_context(parent: Any = None) -> ApplicationContext:
     wire_service_registry()
 
     # Create the context
-    from oncutf.ui.adapters.application_context import ApplicationContext
+    from oncutf.ui.adapters.qt_app_context import QtAppContext
 
-    context = ApplicationContext.create_instance(parent=parent)
+    context = QtAppContext.create_instance(parent=parent)
 
     logger.info("[boot] Application context created")
     return context
