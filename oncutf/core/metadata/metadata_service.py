@@ -168,22 +168,28 @@ _metadata_service: MetadataService | None = None
 
 
 def get_metadata_service(
-    unified_manager: UnifiedMetadataManagerProtocol,
+    unified_manager: UnifiedMetadataManagerProtocol | None = None,
 ) -> MetadataService:
     """Get singleton metadata service instance.
 
     Args:
-        unified_manager: Unified metadata manager instance (required on first call)
+        unified_manager: Unified metadata manager instance.
+            Required on first call, optional on subsequent calls.
+            If not provided on first call, raises RuntimeError.
 
     Returns:
         MetadataService instance
 
-    Note:
-        unified_manager is only used on first call. Subsequent calls ignore it
-        and return the existing singleton instance.
+    Raises:
+        RuntimeError: If called for the first time without unified_manager
 
     """
     global _metadata_service
     if _metadata_service is None:
+        if unified_manager is None:
+            raise RuntimeError(
+                "UnifiedMetadataManager must be provided on first call to get_metadata_service(). "
+                "Ensure bootstrap_orchestrator initializes the service properly."
+            )
         _metadata_service = MetadataService(unified_manager)
     return _metadata_service
