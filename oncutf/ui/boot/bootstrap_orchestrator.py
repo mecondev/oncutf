@@ -188,6 +188,11 @@ class BootstrapOrchestrator:
 
         # Metadata system
         self.window.metadata_manager = get_unified_metadata_manager(self.window)
+
+        # Initialize MetadataService with the manager
+        from oncutf.core.metadata.metadata_service import get_metadata_service
+        get_metadata_service(unified_manager=self.window.metadata_manager)
+
         self.window.selection_manager = SelectionManager(parent_window=self.window)
 
         # Theme setup

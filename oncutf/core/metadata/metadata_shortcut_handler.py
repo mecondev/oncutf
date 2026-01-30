@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
     from oncutf.models.file_item import FileItem
-    from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
 
 logger = get_cached_logger(__name__)
 
@@ -29,17 +29,19 @@ class MetadataShortcutHandler:
     """Handler for keyboard shortcuts that trigger metadata operations.
 
     This class encapsulates all shortcut-related logic that was previously
-    in UnifiedMetadataManager, including:
+    in the metadata manager, including:
     - Modifier key detection (Ctrl, Shift)
     - Metadata mode determination (fast vs extended)
     - Shortcut methods for loading metadata (selected, all)
     """
 
-    def __init__(self, manager: UnifiedMetadataManager, parent_window: Any = None) -> None:
+    def __init__(
+        self, manager: UnifiedMetadataManagerProtocol, parent_window: Any = None
+    ) -> None:
         """Initialize shortcut handler.
 
         Args:
-            manager: Reference to the UnifiedMetadataManager for delegation
+            manager: Reference to the metadata manager for delegation
             parent_window: Reference to the main application window
 
         """

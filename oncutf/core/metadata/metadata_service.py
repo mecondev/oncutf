@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         EditMetadataFieldCommand,
         ResetMetadataFieldCommand,
     )
-    from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
+    from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
 
 
 class MetadataService:
@@ -27,10 +27,16 @@ class MetadataService:
     Lazy-loads managers on first use to avoid circular dependencies.
     """
 
-    def __init__(self) -> None:
-        """Initialize metadata service."""
+    def __init__(self, unified_manager: UnifiedMetadataManagerProtocol | None = None) -> None:
+        """Initialize metadata service.
+
+        Args:
+            unified_manager: Optional unified metadata manager instance.
+                If None, will be lazy-loaded on first use.
+
+        """
         self._staging_manager: MetadataStagingManager | None = None
-        self._unified_manager: UnifiedMetadataManager | None = None
+        self._unified_manager: UnifiedMetadataManagerProtocol | None = unified_manager
 
     @property
     def staging_manager(self) -> MetadataStagingManager:
@@ -45,12 +51,18 @@ class MetadataService:
         return self._staging_manager
 
     @property
-    def unified_manager(self) -> UnifiedMetadataManager:
-        """Get unified metadata manager (lazy-loaded)."""
-        if self._unified_manager is None:
-            from oncutf.ui.managers.metadata_unified_manager import UnifiedMetadataManager
+    def unified_manager(self) -> UnifiedMetadataManagerProtocol:
+        """Get unified metadata manager.
 
-            self._unified_manager = UnifiedMetadataManager()
+        Raises:
+            RuntimeError: If unified_manager was not passed during initialization
+
+        """
+        if self._unified_manager is None:
+            raise RuntimeError(
+                "UnifiedMetadataManager not initialized. "
+                "Pass unified_manager to get_metadata_service() during bootstrap."
+            )
         return self._unified_manager
 
     # Staging Manager Operations
@@ -166,8 +178,14 @@ class MetadataService:
 _metadata_service: MetadataService | None = None
 
 
-def get_metadata_service() -> MetadataService:
+def get_metadata_service(
+    unified_manager: UnifiedMetadataManagerProtocol | None = None,
+) -> MetadataService:
     """Get singleton metadata service instance.
+
+    Args:
+        unified_manager: Optional UnifiedMetadataManager instance.
+            Required on first call, ignored on subsequent calls.
 
     Returns:
         MetadataService instance
@@ -175,5 +193,10 @@ def get_metadata_service() -> MetadataService:
     """
     global _metadata_service
     if _metadata_service is None:
-        _metadata_service = MetadataService()
+        if unified_manager is None:
+            raise RuntimeError(
+                "UnifiedMetadataManager must be provided on first call to get_metadata_service(). "
+                "Call get_metadata_service(unified_manager=...) during bootstrap."
+            )
+        _metadata_service = MetadataService(unified_manager)
     return _metadata_service
