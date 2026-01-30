@@ -21,8 +21,8 @@ Provides the primary UI including:
 from PyQt5.QtWidgets import QMainWindow
 
 # Import all config constants directly from the config package (which re-exports them)
-from oncutf.config import *  # noqa: F403
-
+# Config imported only if needed (currently seems unused or can be explicit)
+# from oncutf.config import *
 # Data models and business logic modules
 # Phase 4A UI Handlers
 from oncutf.ui.handlers.shutdown_lifecycle_handler import (
