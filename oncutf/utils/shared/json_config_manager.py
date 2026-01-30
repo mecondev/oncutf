@@ -83,9 +83,9 @@ class WindowConfig(ConfigCategory[Any]):
             },
             "file_table_fixed_columns": {
                 "color": 50,
-                "file_size": 75,
-                "type": 50,
-                "modified": 174,
+                "file_size": 85,
+                "type": 60,
+                "modified": 154,
             },
             "file_table_column_widths": {},
             "file_table_columns": {},

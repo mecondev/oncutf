@@ -98,9 +98,9 @@ class ColumnWidthManager:
             window_config = config_manager.get_category("window")
             fixed_columns = window_config.get("file_table_fixed_columns", {
                 "color": 50,
-                "file_size": 75,
-                "type": 50,
-                "modified": 174,
+                "file_size": 85,
+                "type": 60,
+                "modified": 154,
             })
 
             viewport = self._widget.viewport()
@@ -118,7 +118,7 @@ class ColumnWidthManager:
                 panel_width=panel_width,
                 fixed_column_widths=fixed_columns,
                 min_width=80,
-                reserved_space=50,
+                reserved_space=55,
             )
 
             logger.debug(
