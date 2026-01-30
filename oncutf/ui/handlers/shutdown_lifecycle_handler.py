@@ -236,7 +236,16 @@ class ShutdownLifecycleHandler:
                 self._post_coordinator_cleanup()
 
             summary = self.main_window.shutdown_coordinator.get_summary()
-            logger.info("[CloseEvent] Shutdown summary: %s", summary)
+            if summary.get("executed", False):
+                logger.info(
+                    "[CloseEvent] Shutdown summary: %d/%d phases successful, %.2fs total, emergency=%s",
+                    summary.get("successful_phases", 0),
+                    summary.get("total_phases", 0),
+                    summary.get("total_duration", 0.0),
+                    summary.get("emergency_mode", False),
+                )
+            else:
+                logger.info("[CloseEvent] Shutdown summary: not executed")
 
             QTimer.singleShot(0, self._shutdown_step_finalize)
         except Exception as e:
@@ -345,6 +354,13 @@ class ShutdownLifecycleHandler:
             # Log completion
             status = "successfully" if success else "with errors"
             logger.info("[CloseEvent] Shutdown completed %s", status)
+
+            # Flush logs before quit to ensure summary is visible
+            import logging
+            import sys
+            logging.shutdown()
+            sys.stdout.flush()
+            sys.stderr.flush()
 
             # Quit immediately - no delay
             with contextlib.suppress(RuntimeError):
