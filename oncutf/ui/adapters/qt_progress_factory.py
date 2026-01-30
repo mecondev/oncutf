@@ -26,7 +26,7 @@ class QtProgressFactory:
     Qt-independent progress dialog creation from core/ layer.
     """
 
-    def create_dialog(
+    def create_progress_dialog(
         self,
         parent: Any = None,
         operation_type: OperationType = "metadata_basic",
@@ -53,4 +53,56 @@ class QtProgressFactory:
             cancel_callback=cancel_callback,
             show_enhanced_info=show_enhanced_info,
             is_exit_save=is_exit_save,
+        )
+
+    def create_metadata_dialog(
+        self,
+        parent: Any = None,
+        is_extended: bool = False,
+        cancel_callback: Callable[[], None] | None = None,
+        show_enhanced_info: bool = True,
+        use_size_based_progress: bool = True,
+    ) -> ProgressDialog:
+        """Create a progress dialog preconfigured for metadata operations.
+
+        Args:
+            parent: Parent widget
+            is_extended: True for extended metadata, False for basic
+            cancel_callback: Function to call when user cancels
+            show_enhanced_info: Whether to show enhanced size/time tracking
+            use_size_based_progress: Whether to use size-based progress bar
+
+        Returns:
+            ProgressDialog configured for metadata operations
+
+        """
+        return ProgressDialog.create_metadata_dialog(
+            parent=parent,
+            is_extended=is_extended,
+            cancel_callback=cancel_callback,
+            show_enhanced_info=show_enhanced_info,
+            use_size_based_progress=use_size_based_progress,
+        )
+
+    def create_hash_dialog(
+        self,
+        parent: Any = None,
+        cancel_callback: Callable[[], None] | None = None,
+        show_enhanced_info: bool = True,
+    ) -> ProgressDialog:
+        """Create a progress dialog preconfigured for hash operations.
+
+        Args:
+            parent: Parent widget
+            cancel_callback: Function to call when user cancels
+            show_enhanced_info: Whether to show enhanced size/time tracking
+
+        Returns:
+            ProgressDialog configured for hash operations
+
+        """
+        return ProgressDialog.create_hash_dialog(
+            parent=parent,
+            cancel_callback=cancel_callback,
+            show_enhanced_info=show_enhanced_info,
         )
