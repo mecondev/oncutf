@@ -123,6 +123,9 @@ class NullProgressDialog:
     def raise_(self) -> None:
         """No-op raise window."""
 
+    def start_progress_tracking(self, total_size: int = 0) -> None:
+        """No-op start progress tracking."""
+
 
 def create_progress_dialog(
     parent: Any = None,
