@@ -274,18 +274,11 @@ def format_size_progress(
         '1.00 KB / 2.00 KB'
 
     """
+    from oncutf.utils.filesystem.file_size_formatter import get_default_formatter
 
-    def format_bytes(size: int) -> str:
-        """Format bytes as human-readable."""
-        size_float = float(size)
-        for unit in ["B", "KB", "MB", "GB"]:
-            if size_float < 1024.0:
-                return f"{size_float:.2f} {unit}"
-            size_float /= 1024.0
-        return f"{size_float:.2f} TB"
-
-    processed_str = format_bytes(processed_bytes)
-    total_str = format_bytes(total_bytes)
+    formatter = get_default_formatter()
+    processed_str = formatter.format_size(processed_bytes)
+    total_str = formatter.format_size(total_bytes)
 
     if include_percent and total_bytes > 0:
         percent = (processed_bytes / total_bytes) * 100.0

@@ -157,7 +157,11 @@ class BatchOperationsManager:
         operation = BatchOperation(
             operation_type="file_io",
             key=f"{operation_type}_{file_path}",
-            data={"operation_type": operation_type, "file_path": file_path, "data": data},
+            data={
+                "operation_type": operation_type,
+                "file_path": file_path,
+                "data": data,
+            },
             callback=callback,
             priority=priority,
         )
@@ -349,7 +353,11 @@ class BatchOperationsManager:
                             operation.callback(success=True)
 
                     except Exception as e:
-                        logger.error("[BatchOps] Metadata set failed for %s: %s", operation.key, e)
+                        logger.error(
+                            "[BatchOps] Metadata set failed for %s: %s",
+                            operation.key,
+                            e,
+                        )
                         if operation.callback:
                             operation.callback(success=False, error=e)
 
@@ -362,7 +370,11 @@ class BatchOperationsManager:
                 if hasattr(cache, "rollback_batch"):
                     cache.rollback_batch()
 
-        logger.debug("[BatchOps] Metadata batch: %d/%d successful", success_count, len(operations))
+        logger.debug(
+            "[BatchOps] Metadata batch: %d/%d successful",
+            success_count,
+            len(operations),
+        )
 
     def _handle_hash_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of hash cache store operations."""
@@ -517,7 +529,11 @@ class BatchOperationsManager:
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
-        logger.debug("[BatchOps] File read batch: %d/%d successful", success_count, len(operations))
+        logger.debug(
+            "[BatchOps] File read batch: %d/%d successful",
+            success_count,
+            len(operations),
+        )
 
     def _handle_file_write_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch file write operations."""
@@ -552,7 +568,9 @@ class BatchOperationsManager:
                     operation.callback(success=False, error=e)
 
         logger.debug(
-            "[BatchOps] File write batch: %d/%d successful", success_count, len(operations)
+            "[BatchOps] File write batch: %d/%d successful",
+            success_count,
+            len(operations),
         )
 
     def _handle_cache_batch(self, operations: list[BatchOperation]) -> None:

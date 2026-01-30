@@ -104,7 +104,10 @@ class ThumbnailViewportWidget(QWidget):
         self._setup_ui()
         self._connect_signals()
 
-        logger.info("[ThumbnailViewport] Initialized with thumbnail size: %d", self._thumbnail_size)
+        logger.info(
+            "[ThumbnailViewport] Initialized with thumbnail size: %d",
+            self._thumbnail_size,
+        )
 
     def _setup_ui(self) -> None:
         """Set up the UI components."""
@@ -333,7 +336,11 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # End lasso
-            elif event.button() == Qt.LeftButton and self._rubber_band and self._rubber_band.isVisible():
+            elif (
+                event.button() == Qt.LeftButton
+                and self._rubber_band
+                and self._rubber_band.isVisible()
+            ):
                 self._rubber_band.hide()
                 self._rubber_band_origin = None
                 return False  # Let QListView handle the release
@@ -406,7 +413,7 @@ class ThumbnailViewportWidget(QWidget):
         logger.debug(
             "[ThumbnailViewport] Selection changed: %d items selected",
             len(selected_rows),
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def _on_context_menu(self, position: QPoint) -> None:
@@ -625,14 +632,22 @@ class ThumbnailViewportWidget(QWidget):
         if not self._model or not self._model.files:
             return
 
-        logger.debug("[ThumbnailViewport] thumbnail_ready signal received: %s (pixmap valid=%s)", file_path, not pixmap.isNull())
+        logger.debug(
+            "[ThumbnailViewport] thumbnail_ready signal received: %s (pixmap valid=%s)",
+            file_path,
+            not pixmap.isNull(),
+        )
         # Find the row for this file
         for row, file_item in enumerate(self._model.files):
             if file_item.full_path == file_path:
                 # Update the view for this item
                 index = self._model.index(row, 0)
                 self._list_view.update(index)
-                logger.debug("[ThumbnailViewport] Updated view for row=%d, file=%s", row, file_path)
+                logger.debug(
+                    "[ThumbnailViewport] Updated view for row=%d, file=%s",
+                    row,
+                    file_path,
+                )
                 return
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations

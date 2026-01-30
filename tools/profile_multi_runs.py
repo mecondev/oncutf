@@ -62,7 +62,7 @@ def main() -> int:
     results = []
 
     for i in range(num_runs):
-        print(f"Run {i+1}/{num_runs}...", end=" ", flush=True)
+        print(f"Run {i + 1}/{num_runs}...", end=" ", flush=True)
         try:
             total, import_t, app_t, window_t = measure_startup()
             results.append(
@@ -73,7 +73,7 @@ def main() -> int:
                     "window": window_t * 1000,
                 }
             )
-            print(f"{total*1000:.1f}ms")
+            print(f"{total * 1000:.1f}ms")
         except Exception as e:
             print(f"FAILED: {e}")
             continue

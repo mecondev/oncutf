@@ -145,6 +145,8 @@ class FileItem:
         """Returns a human-readable string for the file size, e.g. '1.2 GB', '540 MB', '999 KB'.
         Uses cross-platform formatting that respects system locale and conventions.
         """
-        from oncutf.utils.filesystem.file_size_formatter import format_file_size_system_compatible
+        from oncutf.utils.filesystem.file_size_formatter import (
+            format_file_size_system_compatible,
+        )
 
         return format_file_size_system_compatible(self.size)

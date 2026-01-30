@@ -80,15 +80,14 @@ class FilesystemService:
                 return False
 
         # Handle existing target
-        if target.exists():
-            if self._backup_on_overwrite:
-                backup_path = self._create_backup_path(target)
-                try:
-                    shutil.copy2(target, backup_path)
-                    logger.debug("Created backup: %s", backup_path)
-                except OSError as e:
-                    logger.error("Failed to create backup: %s", e)
-                    return False
+        if target.exists() and self._backup_on_overwrite:
+            backup_path = self._create_backup_path(target)
+            try:
+                shutil.copy2(target, backup_path)
+                logger.debug("Created backup: %s", backup_path)
+            except OSError as e:
+                logger.error("Failed to create backup: %s", e)
+                return False
 
         try:
             source.rename(target)

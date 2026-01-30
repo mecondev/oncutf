@@ -116,7 +116,11 @@ class EventHandler:
             anchor_before = self._view._selection_behavior.get_anchor_row()
             logger.info(
                 "[MOUSE PRESS] Row=%d, Modifiers=%s, AlreadySelected=%s, Selection=%s, Anchor=%s",
-                index.row(), _format_modifiers(modifiers), is_already_selected, sorted(current_selection), anchor_before
+                index.row(),
+                _format_modifiers(modifiers),
+                is_already_selected,
+                sorted(current_selection),
+                anchor_before,
             )
 
             # Ctrl+drag lasso setup: store initial selection and start point, skip default handling
@@ -135,11 +139,17 @@ class EventHandler:
 
             # If clicking on selected item without modifiers OR with Shift (extended drag), preserve selection for drag
             # Block selection changes by temporarily disconnecting selection model
-            if modifiers in (Qt.NoModifier, Qt.ShiftModifier) and is_already_selected and len(current_selection) > 1:
+            if (
+                modifiers in (Qt.NoModifier, Qt.ShiftModifier)
+                and is_already_selected
+                and len(current_selection) > 1
+            ):
                 # Preserve selection without changing anchor (keep original anchor for correct drag behavior)
                 logger.info(
                     "[PRESERVE] Preserving multi-selection for drag, clicked row=%d, keeping anchor=%s, selection=%s",
-                    index.row(), anchor_before, sorted(current_selection)
+                    index.row(),
+                    anchor_before,
+                    sorted(current_selection),
                 )
                 self._view._preserved_selection_for_drag = True
                 self._view._preserved_selection_rows = current_selection.copy()
@@ -151,6 +161,7 @@ class EventHandler:
                     # So we DON'T call super() at all for this specific case
                     # But we DO need to set the current index for focus purposes
                     from PyQt5.QtCore import QItemSelectionModel
+
                     selection_model.setCurrentIndex(index, QItemSelectionModel.Current)
 
                     # Ensure anchor is preserved (it might not change, but just in case)
@@ -160,7 +171,7 @@ class EventHandler:
                         "[PRESERVE] Skipped super(), set CurrentIndex=%d, selection=%s, anchor=%s",
                         index.row(),
                         sorted(self._view._get_current_selection_safe()),
-                        self._view._selection_behavior.get_anchor_row()
+                        self._view._selection_behavior.get_anchor_row(),
                     )
                     return True  # Prevent calling super
                 else:
@@ -220,19 +231,29 @@ class EventHandler:
                 actual_drag_happened = self._ctrl_drag_active
                 if not actual_drag_happened:
                     from PyQt5.QtWidgets import QApplication
+
                     distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
                     actual_drag_happened = distance >= QApplication.startDragDistance()
 
                 start_index = self._view.indexAt(self._view._drag_start_pos)
-                start_row = start_index.row() if start_index.isValid() else self._ctrl_drag_start_row
-                end_row = self._view.indexAt(event.pos()).row() if self._view.indexAt(event.pos()).isValid() else start_row
+                start_row = (
+                    start_index.row() if start_index.isValid() else self._ctrl_drag_start_row
+                )
+                end_row = (
+                    self._view.indexAt(event.pos()).row()
+                    if self._view.indexAt(event.pos()).isValid()
+                    else start_row
+                )
 
                 if start_row is not None and end_row is not None and actual_drag_happened:
                     range_rows = set(range(min(start_row, end_row), max(start_row, end_row) + 1))
                     toggled = self._ctrl_drag_initial_selection.symmetric_difference(range_rows)
                     logger.info(
                         "[CTRL DRAG END] range=%s-%s, initial=%s, final=%s",
-                        start_row, end_row, sorted(self._ctrl_drag_initial_selection), sorted(toggled)
+                        start_row,
+                        end_row,
+                        sorted(self._ctrl_drag_initial_selection),
+                        sorted(toggled),
                     )
                     self._view._selection_behavior.update_selection_store(toggled, emit_signal=True)
                     self._view._selection_behavior.set_anchor_row(start_row, emit_signal=False)
@@ -261,6 +282,7 @@ class EventHandler:
             actual_drag_happened = self._view._drag_drop_behavior.is_dragging
             if not actual_drag_happened and self._view._drag_start_pos is not None:
                 from PyQt5.QtWidgets import QApplication
+
                 distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
                 # Only consider it a real drag if moved at least the drag distance
                 actual_drag_happened = distance >= QApplication.startDragDistance()
@@ -270,24 +292,32 @@ class EventHandler:
                 self._view._preserved_selection_for_drag,
                 self._view._drag_drop_behavior.is_dragging,
                 actual_drag_happened,
-                self._view._clicked_index.row() if self._view._clicked_index and self._view._clicked_index.isValid() else None,
+                self._view._clicked_index.row()
+                if self._view._clicked_index and self._view._clicked_index.isValid()
+                else None,
                 sorted(current_selection),
-                anchor_before
+                anchor_before,
             )
 
             # If we preserved selection but no actual drag happened, select only clicked item
-            if (self._view._preserved_selection_for_drag and
-                not actual_drag_happened and
-                self._view._clicked_index is not None and
-                self._view._clicked_index.isValid()):
+            if (
+                self._view._preserved_selection_for_drag
+                and not actual_drag_happened
+                and self._view._clicked_index is not None
+                and self._view._clicked_index.isValid()
+            ):
                 # User clicked on selected item but didn't drag - select only that item
-                logger.info("[SINGLE SELECT] Converting multi-selection to single: %d", self._view._clicked_index.row())
+                logger.info(
+                    "[SINGLE SELECT] Converting multi-selection to single: %d",
+                    self._view._clicked_index.row(),
+                )
                 from PyQt5.QtCore import QItemSelectionModel
+
                 sm = self._view.selectionModel()
                 if sm:
                     sm.select(
                         self._view._clicked_index,
-                        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
+                        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
                     )
                     sm.setCurrentIndex(self._view._clicked_index, QItemSelectionModel.NoUpdate)
                     self._view._selection_behavior.set_anchor_row(
@@ -303,7 +333,9 @@ class EventHandler:
                     new_selection = self._view._get_current_selection_safe()
                     logger.info(
                         "[SINGLE SELECT] Done - Selection=%s, Anchor=%s -> %s",
-                        sorted(new_selection), anchor_before, anchor_after
+                        sorted(new_selection),
+                        anchor_before,
+                        anchor_after,
                     )
 
             # Clear preserved selection cache
@@ -357,7 +389,9 @@ class EventHandler:
                     return True
 
                 start_index = self._view.indexAt(self._view._drag_start_pos)
-                start_row = start_index.row() if start_index.isValid() else self._ctrl_drag_start_row
+                start_row = (
+                    start_index.row() if start_index.isValid() else self._ctrl_drag_start_row
+                )
                 end_row = index.row() if index.isValid() else start_row
 
                 if start_row is None or end_row is None:
@@ -370,7 +404,10 @@ class EventHandler:
                 self._view._selection_behavior.set_anchor_row(start_row, emit_signal=False)
                 logger.info(
                     "[CTRL DRAG MOVE] start=%s end=%s range=%s selection=%s",
-                    start_row, end_row, sorted(range_rows), sorted(toggled)
+                    start_row,
+                    end_row,
+                    sorted(range_rows),
+                    sorted(toggled),
                 )
                 return True
 
@@ -387,7 +424,9 @@ class EventHandler:
             # Calculate required drag distance based on modifiers
             # Shift+drag for extended metadata needs 3x the normal distance to prevent accidental selection changes
             base_distance = QApplication.startDragDistance()
-            required_distance = base_distance * 3 if event.modifiers() & Qt.ShiftModifier else base_distance
+            required_distance = (
+                base_distance * 3 if event.modifiers() & Qt.ShiftModifier else base_distance
+            )
 
             distance = (event.pos() - self._view._drag_start_pos).manhattanLength()
 
@@ -401,15 +440,21 @@ class EventHandler:
                         if preserved_rows:
                             current = self._view._selection_behavior.get_current_selection_safe()
                             if current != preserved_rows:
-                                selection_store = self._view._selection_behavior.get_selection_store()
+                                selection_store = (
+                                    self._view._selection_behavior.get_selection_store()
+                                )
                                 if selection_store:
-                                    selection_store.set_selected_rows(preserved_rows, emit_signal=False)
+                                    selection_store.set_selected_rows(
+                                        preserved_rows, emit_signal=False
+                                    )
                                 self._view._selection_behavior.set_anchor_row(
-                                    self._view._selection_behavior.get_anchor_row(), emit_signal=False
+                                    self._view._selection_behavior.get_anchor_row(),
+                                    emit_signal=False,
                                 )
                                 logger.info(
                                     "[DRAG] Restored preserved selection before drag: %s -> %s",
-                                    sorted(current), sorted(preserved_rows)
+                                    sorted(current),
+                                    sorted(preserved_rows),
                                 )
                         self._view._drag_start_pos = None
                         self._view._drag_drop_behavior.start_drag()

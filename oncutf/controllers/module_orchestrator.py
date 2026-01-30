@@ -105,9 +105,7 @@ class ModuleOrchestrator:
                     class_name = obj.__name__
 
                     # Phase 3.1: Read metadata from class attributes
-                    display_name = getattr(
-                        obj, "DISPLAY_NAME", class_name.replace("Module", "")
-                    )
+                    display_name = getattr(obj, "DISPLAY_NAME", class_name.replace("Module", ""))
                     ui_rows = getattr(obj, "UI_ROWS", 1)
                     category = getattr(obj, "CATEGORY", "Other")
 
@@ -289,9 +287,7 @@ class ModuleOrchestrator:
 
         module = self._module_instances.pop(from_index)
         self._module_instances.insert(to_index, module)
-        logger.debug(
-            "[ModuleOrchestrator] Reordered module from %d to %d", from_index, to_index
-        )
+        logger.debug("[ModuleOrchestrator] Reordered module from %d to %d", from_index, to_index)
         return True
 
     def get_module_count(self) -> int:

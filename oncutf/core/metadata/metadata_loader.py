@@ -485,7 +485,9 @@ class MetadataLoader:
 
         # Create progress dialog
         from oncutf.app.services import create_metadata_dialog
-        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+        from oncutf.utils.filesystem.file_size_calculator import (
+            calculate_files_total_size,
+        )
 
         loading_dialog = create_metadata_dialog(
             self._parent_window,
@@ -507,7 +509,7 @@ class MetadataLoader:
             file_count=0,
             total_files=total_files,
             processed_bytes=0,
-            total_bytes=total_size
+            total_bytes=total_size,
         )
         if needs_loading:
             loading_dialog.set_filename(needs_loading[0].filename)
@@ -671,12 +673,16 @@ class MetadataLoader:
                 and cache_entry.data
             )
 
-            if has_valid_cache and cache_entry is not None:
-                if (
-                    cache_entry.is_extended and not use_extended
-                ) or cache_entry.is_extended == use_extended:
-                    yield item, cache_entry.data
-                    continue
+            if (
+                has_valid_cache
+                and cache_entry is not None
+                and (
+                    (cache_entry.is_extended and not use_extended)
+                    or cache_entry.is_extended == use_extended
+                )
+            ):
+                yield item, cache_entry.data
+                continue
 
             items_to_load.append(item)
 
@@ -720,7 +726,10 @@ class MetadataLoader:
     # =========================================================================
 
     def _enhance_with_companions(
-        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+        self,
+        file_item: FileItem,
+        base_metadata: dict[str, Any],
+        all_files: list[FileItem],
     ) -> dict[str, Any]:
         """Enhance metadata with companion file data.
 
@@ -746,7 +755,10 @@ class MetadataLoader:
         return self._enhance_metadata_with_companions_inline(file_item, base_metadata, all_files)
 
     def _enhance_metadata_with_companions_inline(
-        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+        self,
+        file_item: FileItem,
+        base_metadata: dict[str, Any],
+        all_files: list[FileItem],
     ) -> dict[str, Any]:
         """Inline implementation of companion metadata enhancement.
 

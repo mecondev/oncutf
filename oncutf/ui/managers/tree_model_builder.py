@@ -35,7 +35,11 @@ def classify_key(key: str) -> str:
     key_lower = key.lower()
 
     # File-related metadata
-    if key_lower.startswith("file") or key_lower in {"rotation", "directory", "sourcefile"}:
+    if key_lower.startswith("file") or key_lower in {
+        "rotation",
+        "directory",
+        "sourcefile",
+    }:
         return "File Info"
 
     # Camera Settings - Critical for photography/videography
@@ -155,7 +159,16 @@ def classify_key(key: str) -> str:
     # Technical/System
     if any(
         term in key_lower
-        for term in ["version", "software", "firmware", "make", "model", "serial", "uuid", "id"]
+        for term in [
+            "version",
+            "software",
+            "firmware",
+            "make",
+            "model",
+            "serial",
+            "uuid",
+            "id",
+        ]
     ):
         return "Technical Info"
 

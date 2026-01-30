@@ -100,9 +100,9 @@ class ViewportHandler:
     def _use_column_manager_scrollbar(self) -> None:
         """Use column manager for scrollbar handling with fallback."""
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context and hasattr(context, "column_manager"):
                 context.column_manager.ensure_horizontal_scrollbar_state(self._view)
         except (RuntimeError, AttributeError):

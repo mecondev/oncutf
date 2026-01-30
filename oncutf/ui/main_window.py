@@ -18,15 +18,16 @@ Provides the primary UI including:
 # Import all config constants from centralized module
 # Core application modules
 # Import PyQt5 classes directly
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMainWindow
 
-from oncutf.core.config_imports import *
+# Import all config constants directly from the config package (which re-exports them)
+from oncutf.config import *  # noqa: F403
 
 # Data models and business logic modules
 # Phase 4A UI Handlers
-from oncutf.ui.handlers.shutdown_lifecycle_handler import ShutdownLifecycleHandler  # noqa: F401
+from oncutf.ui.handlers.shutdown_lifecycle_handler import (
+    ShutdownLifecycleHandler,
+)
 
 # Import delegate classes
 from oncutf.ui.main_window_delegates import (
@@ -92,8 +93,6 @@ class MainWindow(
     # -------------------------------------------------------------------------
     # Backward Compatibility Properties
     # -------------------------------------------------------------------------
-
-
 
     # Note: All other methods are inherited from delegate classes in main_window_delegates/
     # See: selection_delegates, metadata_delegates, file_operation_delegates, etc.

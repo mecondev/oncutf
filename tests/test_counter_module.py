@@ -6,14 +6,8 @@ Date: 2025-05-13
 This module provides functionality for the oncutf batch file renaming application.
 """
 
-import warnings
-
 from oncutf.modules.counter_module import CounterModule
 from tests.mocks import MockFileItem
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_counter_module_default():

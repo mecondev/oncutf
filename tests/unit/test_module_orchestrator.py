@@ -6,7 +6,6 @@ Date: 2025-12-27
 Tests the module pipeline management logic independently of UI.
 """
 
-
 from oncutf.controllers.module_orchestrator import ModuleDescriptor, ModuleOrchestrator
 from oncutf.modules.counter_module import CounterModule
 
@@ -361,6 +360,7 @@ class TestClassLevelMetadata:
 
         # Verify metadata comes from class attributes
         from oncutf.modules.counter_module import CounterModule
+
         assert counter_desc.display_name == CounterModule.DISPLAY_NAME
         assert counter_desc.ui_rows == CounterModule.UI_ROWS
 
@@ -376,5 +376,6 @@ class TestClassLevelMetadata:
             assert descriptor.ui_rows >= 1, f"Module {descriptor.name} has invalid ui_rows"
 
             # All should have module_class with required method
-            assert hasattr(descriptor.module_class, "apply_from_data"), \
+            assert hasattr(descriptor.module_class, "apply_from_data"), (
                 f"Module {descriptor.name} missing apply_from_data method"
+            )

@@ -16,7 +16,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.app.ports.infra_protocols import HashCacheProtocol, MetadataCacheProtocol
+    from oncutf.app.ports.infra_protocols import (
+        HashCacheProtocol,
+        MetadataCacheProtocol,
+    )
 
 
 # Factory functions - registered during bootstrap

@@ -129,9 +129,7 @@ class MetadataEditBehavior:
 
         # Initialize handlers - rotation handler needs self reference for callbacks
         self._tree_navigator = TreeNavigator(widget)
-        self._edit_ops = EditOperations(
-            widget, self._tree_navigator, self._update_tree_item_value
-        )
+        self._edit_ops = EditOperations(widget, self._tree_navigator, self._update_tree_item_value)
         self._rotation_handler = RotationHandler(widget, self)
         self._reset_handler = ResetHandler(widget, self._update_tree_item_value)
         self._undo_redo = UndoRedoHandler(widget)
@@ -267,10 +265,7 @@ class MetadataEditBehavior:
         schedule_ui_update(self._widget._cache_behavior.update_file_icon_status, delay=0)
 
         # Update information label if available
-        if (
-            hasattr(self._widget, "_current_display_data")
-            and self._widget._current_display_data
-        ):
+        if hasattr(self._widget, "_current_display_data") and self._widget._current_display_data:
             self._widget._update_information_label(self._widget._current_display_data)
 
         # Update the view

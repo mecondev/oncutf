@@ -31,7 +31,12 @@ class MetadataFieldMapper:
         # Rotation/Orientation (images use "Orientation", videos use "Rotation")
         "rotation": ["Orientation", "Rotation", "CameraOrientation", "AutoRotate"],
         # Duration (videos and audio files)
-        "duration": ["Duration", "MediaDuration", "VideoTrackDuration", "AudioTrackDuration"],
+        "duration": [
+            "Duration",
+            "MediaDuration",
+            "VideoTrackDuration",
+            "AudioTrackDuration",
+        ],
         # Audio properties
         "audio_channels": ["AudioChannels", "Channels"],
         "audio_format": ["AudioFormat", "AudioEncoding", "AudioCodec"],

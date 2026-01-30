@@ -74,7 +74,10 @@ class ProgressDialog(QDialog):
             "bar_color": SAVE_COLOR,
             "bar_bg_color": SAVE_BG_COLOR,
         },
-        "file_loading": {"bar_color": FILE_LOADING_COLOR, "bar_bg_color": FILE_LOADING_BG_COLOR},
+        "file_loading": {
+            "bar_color": FILE_LOADING_COLOR,
+            "bar_bg_color": FILE_LOADING_BG_COLOR,
+        },
         "hash_calculation": {
             "bar_color": HASH_CALCULATION_COLOR,
             "bar_bg_color": HASH_CALCULATION_BG_COLOR,
@@ -206,7 +209,8 @@ class ProgressDialog(QDialog):
 
             # Handle cancellation
             logger.info(
-                "[ProgressDialog] ESC pressed - initiating cancellation for %s", self.operation_type
+                "[ProgressDialog] ESC pressed - initiating cancellation for %s",
+                self.operation_type,
             )
             self._handle_cancellation()
             event.accept()
@@ -303,7 +307,10 @@ class ProgressDialog(QDialog):
         """Start progress tracking with optional total size."""
         if hasattr(self.waiting_widget, "start_progress_tracking"):
             self.waiting_widget.start_progress_tracking(total_size)
-            logger.debug("[ProgressDialog] Started progress tracking (total_size: %d)", total_size)
+            logger.debug(
+                "[ProgressDialog] Started progress tracking (total_size: %d)",
+                total_size,
+            )
 
     def update_progress_with_size(self, current: int, total: int, current_size: int = 0) -> None:
         """Update progress with size tracking."""

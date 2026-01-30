@@ -65,9 +65,7 @@ class ThumbnailStore:
         except (sqlite3.ProgrammingError, AttributeError):
             return False
 
-    def get_cached_entry(
-        self, file_path: str, mtime: float
-    ) -> dict[str, Any] | None:
+    def get_cached_entry(self, file_path: str, mtime: float) -> dict[str, Any] | None:
         """Retrieve cached thumbnail metadata for a file.
 
         Args:
@@ -162,7 +160,14 @@ class ThumbnailStore:
                 (folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time),
+                (
+                    folder_path,
+                    file_path,
+                    file_mtime,
+                    file_size,
+                    cache_filename,
+                    video_frame_time,
+                ),
             )
             self._connection.commit()
 
@@ -238,7 +243,10 @@ class ThumbnailStore:
 
         row = cursor.fetchone()
         if not row:
-            logger.debug("[ThumbnailStore] No manual order for folder: %s", Path(folder_path).name)
+            logger.debug(
+                "[ThumbnailStore] No manual order for folder: %s",
+                Path(folder_path).name,
+            )
             return None
 
         try:
@@ -314,7 +322,10 @@ class ThumbnailStore:
 
             deleted = cursor.rowcount > 0
             if deleted:
-                logger.info("[ThumbnailStore] Cleared manual order for: %s", Path(folder_path).name)
+                logger.info(
+                    "[ThumbnailStore] Cleared manual order for: %s",
+                    Path(folder_path).name,
+                )
             return deleted
 
         except sqlite3.Error as e:

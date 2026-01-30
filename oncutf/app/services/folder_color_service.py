@@ -86,7 +86,10 @@ class FolderColorService:
         return command.get_files_with_existing_colors()
 
     def execute_auto_color(
-        self, file_items: list[FileItem], db_manager: DatabaseManagerProtocol, skip_existing: bool = True
+        self,
+        file_items: list[FileItem],
+        db_manager: DatabaseManagerProtocol,
+        skip_existing: bool = True,
     ) -> bool:
         """Execute automatic coloring by folder.
 
@@ -99,7 +102,9 @@ class FolderColorService:
             True if successful, False otherwise
 
         """
-        command = self.create_auto_color_command(file_items, db_manager, skip_existing=skip_existing)
+        command = self.create_auto_color_command(
+            file_items, db_manager, skip_existing=skip_existing
+        )
         if command is None:
             return False
         return command.execute()

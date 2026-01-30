@@ -88,7 +88,9 @@ class FileOperationsManager:
                     auto_reset=True,
                 )
             show_warning_message(
-                self.parent_window, "Rename Warning", "No files are selected for renaming."
+                self.parent_window,
+                "Rename Warning",
+                "No files are selected for renaming.",
             )
             return 0
 
@@ -150,7 +152,10 @@ class FileOperationsManager:
                 # Remember action if "Apply to All" was checked
                 if apply_to_all and action in ("skip", "overwrite", "rename"):
                     remembered_action = action
-                    logger.info("[Rename] Remembering action '%s' for remaining conflicts", action)
+                    logger.info(
+                        "[Rename] Remembering action '%s' for remaining conflicts",
+                        action,
+                    )
 
                 # Handle "rename" action (add numeric suffix)
                 if action == "rename":
@@ -173,7 +178,9 @@ class FileOperationsManager:
             logger.error("[Rename] UnifiedRenameEngine not available in parent window")
             if self.parent_window and hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.finish_operation(
-                    operation_id, success=False, final_message="Rename engine not initialized"
+                    operation_id,
+                    success=False,
+                    final_message="Rename engine not initialized",
                 )
             return 0
 
@@ -192,7 +199,9 @@ class FileOperationsManager:
             logger.exception("[Rename] Error generating preview: %s", e)
             if self.parent_window and hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.finish_operation(
-                    operation_id, success=False, final_message=f"Preview generation failed: {e}"
+                    operation_id,
+                    success=False,
+                    final_message=f"Preview generation failed: {e}",
                 )
             return 0
 
@@ -208,7 +217,9 @@ class FileOperationsManager:
             logger.exception("[Rename] Error executing rename: %s", e)
             if self.parent_window and hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.finish_operation(
-                    operation_id, success=False, final_message=f"Rename execution failed: {e}"
+                    operation_id,
+                    success=False,
+                    final_message=f"Rename execution failed: {e}",
                 )
             return 0
 
@@ -223,10 +234,16 @@ class FileOperationsManager:
                     item.full_path = exec_item.new_path
             elif exec_item.skip_reason:
                 logger.info(
-                    "[Rename] Skipped: %s — Reason: %s", exec_item.old_path, exec_item.skip_reason
+                    "[Rename] Skipped: %s — Reason: %s",
+                    exec_item.old_path,
+                    exec_item.skip_reason,
                 )
             elif exec_item.error_message:
-                logger.error("[Rename] Error: %s — %s", exec_item.old_path, exec_item.error_message)
+                logger.error(
+                    "[Rename] Error: %s — %s",
+                    exec_item.old_path,
+                    exec_item.error_message,
+                )
 
         logger.info(
             "[Rename] Completed: %d renamed out of %d total",

@@ -115,11 +115,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         """
         # Total width: border + padding + thumbnail + padding + border
-        width = (
-            self.FRAME_BORDER_WIDTH * 2
-            + self.FRAME_PADDING * 2
-            + self._thumbnail_size
-        )
+        width = self.FRAME_BORDER_WIDTH * 2 + self.FRAME_PADDING * 2 + self._thumbnail_size
 
         # Total height: border + padding + thumbnail + padding + filename + border
         height = (
@@ -180,7 +176,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
             logger.debug("[ThumbnailDelegate] Drawing actual thumbnail for row=%d", index.row())
             self._draw_thumbnail(painter, thumbnail_rect, thumbnail_pixmap)
         else:
-            logger.debug("[ThumbnailDelegate] Drawing placeholder for row=%d (pixmap=%s)", index.row(), type(thumbnail_pixmap).__name__)
+            logger.debug(
+                "[ThumbnailDelegate] Drawing placeholder for row=%d (pixmap=%s)",
+                index.row(),
+                type(thumbnail_pixmap).__name__,
+            )
             self._draw_placeholder(painter, thumbnail_rect, file_item)
 
         # Draw metadata/hash indicators (two circles, top-left)
@@ -210,11 +210,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             Frame rectangle (excludes filename area)
 
         """
-        frame_size = (
-            self.FRAME_BORDER_WIDTH * 2
-            + self.FRAME_PADDING * 2
-            + self._thumbnail_size
-        )
+        frame_size = self.FRAME_BORDER_WIDTH * 2 + self.FRAME_PADDING * 2 + self._thumbnail_size
 
         # Center horizontally
         x = item_rect.left() + (item_rect.width() - frame_size) // 2
@@ -493,21 +489,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
         """
         # Calculate center position based on corner
         if corner == "top-left":
-            center_x = (
-                frame_rect.left()
-                + self.INDICATOR_MARGIN
-                + self.INDICATOR_CIRCLE_SIZE // 2
-            )
+            center_x = frame_rect.left() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
         else:  # top-right
-            center_x = (
-                frame_rect.right()
-                - self.INDICATOR_MARGIN
-                - self.INDICATOR_CIRCLE_SIZE // 2
-            )
+            center_x = frame_rect.right() - self.INDICATOR_MARGIN - self.INDICATOR_CIRCLE_SIZE // 2
 
-        center_y = (
-            frame_rect.top() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
-        )
+        center_y = frame_rect.top() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
 
         # Parse color
         color = QColor(color_hex)

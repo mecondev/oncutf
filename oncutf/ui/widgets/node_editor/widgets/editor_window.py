@@ -24,7 +24,14 @@ import json
 import os
 
 from PyQt5.QtCore import QPoint, QSettings, QSize
-from PyQt5.QtWidgets import QAction, QApplication, QFileDialog, QLabel, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QFileDialog,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+)
 
 from oncutf.ui.widgets.node_editor.widgets.editor_widget import NodeEditorWidget
 
@@ -50,8 +57,8 @@ class NodeEditorWindow(QMainWindow):
         """Initialize main window with menus and central widget."""
         super().__init__()
 
-        self.name_company = 'oncut'
-        self.name_product = 'NodeEditor'
+        self.name_company = "oncut"
+        self.name_product = "NodeEditor"
 
         self.init_ui()
 
@@ -88,49 +95,82 @@ class NodeEditorWindow(QMainWindow):
     def create_actions(self) -> None:
         """Create QAction instances for menus."""
         self.actNew = QAction(
-            '&New', self, shortcut='Ctrl+N',
-            statusTip="Create new graph", triggered=self.on_file_new
+            "&New",
+            self,
+            shortcut="Ctrl+N",
+            statusTip="Create new graph",
+            triggered=self.on_file_new,
         )
         self.actOpen = QAction(
-            '&Open', self, shortcut='Ctrl+O',
-            statusTip="Open file", triggered=self.on_file_open
+            "&Open",
+            self,
+            shortcut="Ctrl+O",
+            statusTip="Open file",
+            triggered=self.on_file_open,
         )
         self.actSave = QAction(
-            '&Save', self, shortcut='Ctrl+S',
-            statusTip="Save file", triggered=self.on_file_save
+            "&Save",
+            self,
+            shortcut="Ctrl+S",
+            statusTip="Save file",
+            triggered=self.on_file_save,
         )
         self.actSaveAs = QAction(
-            'Save &As...', self, shortcut='Ctrl+Shift+S',
-            statusTip="Save file as...", triggered=self.on_file_save_as
+            "Save &As...",
+            self,
+            shortcut="Ctrl+Shift+S",
+            statusTip="Save file as...",
+            triggered=self.on_file_save_as,
         )
         self.actExit = QAction(
-            'E&xit', self, shortcut='Ctrl+Q',
-            statusTip="Exit application", triggered=self.close
+            "E&xit",
+            self,
+            shortcut="Ctrl+Q",
+            statusTip="Exit application",
+            triggered=self.close,
         )
 
         self.actUndo = QAction(
-            '&Undo', self, shortcut='Ctrl+Z',
-            statusTip="Undo last operation", triggered=self.on_edit_undo
+            "&Undo",
+            self,
+            shortcut="Ctrl+Z",
+            statusTip="Undo last operation",
+            triggered=self.on_edit_undo,
         )
         self.actRedo = QAction(
-            '&Redo', self, shortcut='Ctrl+Shift+Z',
-            statusTip="Redo last operation", triggered=self.on_edit_redo
+            "&Redo",
+            self,
+            shortcut="Ctrl+Shift+Z",
+            statusTip="Redo last operation",
+            triggered=self.on_edit_redo,
         )
         self.actCut = QAction(
-            'Cu&t', self, shortcut='Ctrl+X',
-            statusTip="Cut to clipboard", triggered=self.on_edit_cut
+            "Cu&t",
+            self,
+            shortcut="Ctrl+X",
+            statusTip="Cut to clipboard",
+            triggered=self.on_edit_cut,
         )
         self.actCopy = QAction(
-            '&Copy', self, shortcut='Ctrl+C',
-            statusTip="Copy to clipboard", triggered=self.on_edit_copy
+            "&Copy",
+            self,
+            shortcut="Ctrl+C",
+            statusTip="Copy to clipboard",
+            triggered=self.on_edit_copy,
         )
         self.actPaste = QAction(
-            '&Paste', self, shortcut='Ctrl+V',
-            statusTip="Paste from clipboard", triggered=self.on_edit_paste
+            "&Paste",
+            self,
+            shortcut="Ctrl+V",
+            statusTip="Paste from clipboard",
+            triggered=self.on_edit_paste,
         )
         self.actDelete = QAction(
-            '&Delete', self, shortcut='Del',
-            statusTip="Delete selected items", triggered=self.on_edit_delete
+            "&Delete",
+            self,
+            shortcut="Del",
+            statusTip="Delete selected items",
+            triggered=self.on_edit_delete,
         )
 
     def create_menus(self) -> None:
@@ -141,7 +181,7 @@ class NodeEditorWindow(QMainWindow):
     def create_file_menu(self) -> None:
         """Populate File menu with actions."""
         menubar = self.menuBar()
-        self.fileMenu = menubar.addMenu('&File')
+        self.fileMenu = menubar.addMenu("&File")
         self.fileMenu.addAction(self.actNew)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.actOpen)
@@ -153,7 +193,7 @@ class NodeEditorWindow(QMainWindow):
     def create_edit_menu(self) -> None:
         """Populate Edit menu with actions."""
         menubar = self.menuBar()
-        self.editMenu = menubar.addMenu('&Edit')
+        self.editMenu = menubar.addMenu("&Edit")
         self.editMenu.addAction(self.actUndo)
         self.editMenu.addAction(self.actRedo)
         self.editMenu.addSeparator()
@@ -213,9 +253,10 @@ class NodeEditorWindow(QMainWindow):
             return True
 
         res = QMessageBox.warning(
-            self, "About to lose your work?",
+            self,
+            "About to lose your work?",
             "The document has been modified.\n Do you want to save your changes?",
-            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
         )
 
         if res == QMessageBox.Save:
@@ -242,7 +283,7 @@ class NodeEditorWindow(QMainWindow):
             Directory path string.
 
         """
-        return ''
+        return ""
 
     def get_file_dialog_filter(self) -> str:
         """Get file type filter for dialogs.
@@ -251,7 +292,7 @@ class NodeEditorWindow(QMainWindow):
             Filter string for QFileDialog.
 
         """
-        return 'Graph (*.json);;All files (*)'
+        return "Graph (*.json);;All files (*)"
 
     def on_file_new(self) -> None:
         """Create new empty graph after save prompt."""
@@ -268,11 +309,12 @@ class NodeEditorWindow(QMainWindow):
 
         if self.maybe_save():
             fname, _filter = QFileDialog.getOpenFileName(
-                self, 'Open graph from file',
+                self,
+                "Open graph from file",
                 self.get_file_dialog_directory(),
-                self.get_file_dialog_filter()
+                self.get_file_dialog_filter(),
             )
-            if fname != '' and os.path.isfile(fname):
+            if fname != "" and os.path.isfile(fname):
                 current_nodeeditor.file_load(fname)
                 self.set_title()
 
@@ -289,9 +331,7 @@ class NodeEditorWindow(QMainWindow):
                 return self.on_file_save_as()
 
             current_nodeeditor.file_save()
-            self.statusBar().showMessage(
-                f"Successfully saved {current_nodeeditor.filename}", 5000
-            )
+            self.statusBar().showMessage(f"Successfully saved {current_nodeeditor.filename}", 5000)
 
             if hasattr(current_nodeeditor, "set_title"):
                 current_nodeeditor.set_title()
@@ -312,11 +352,12 @@ class NodeEditorWindow(QMainWindow):
         current_nodeeditor = self.get_current_node_editor_widget()
         if current_nodeeditor is not None:
             fname, _filter = QFileDialog.getSaveFileName(
-                self, 'Save graph to file',
+                self,
+                "Save graph to file",
                 self.get_file_dialog_directory(),
-                self.get_file_dialog_filter()
+                self.get_file_dialog_filter(),
             )
-            if fname == '':
+            if fname == "":
                 return False
 
             self.on_before_save_as(current_nodeeditor, fname)
@@ -363,14 +404,18 @@ class NodeEditorWindow(QMainWindow):
     def on_edit_cut(self) -> None:
         """Cut selected items to clipboard."""
         if self.get_current_node_editor_widget():
-            data = self.get_current_node_editor_widget().scene.clipboard.serialize_selected(delete=True)
+            data = self.get_current_node_editor_widget().scene.clipboard.serialize_selected(
+                delete=True
+            )
             str_data = json.dumps(data, indent=4)
             QApplication.instance().clipboard().setText(str_data)
 
     def on_edit_copy(self) -> None:
         """Copy selected items to clipboard."""
         if self.get_current_node_editor_widget():
-            data = self.get_current_node_editor_widget().scene.clipboard.serialize_selected(delete=False)
+            data = self.get_current_node_editor_widget().scene.clipboard.serialize_selected(
+                delete=False
+            )
             str_data = json.dumps(data, indent=4)
             QApplication.instance().clipboard().setText(str_data)
 
@@ -384,7 +429,7 @@ class NodeEditorWindow(QMainWindow):
             except ValueError:
                 return
 
-            if 'nodes' not in data:
+            if "nodes" not in data:
                 return
 
             self.get_current_node_editor_widget().scene.clipboard.deserialize_from_clipboard(data)
@@ -392,13 +437,13 @@ class NodeEditorWindow(QMainWindow):
     def read_settings(self) -> None:
         """Restore window geometry from persistent settings."""
         settings = QSettings(self.name_company, self.name_product)
-        pos = settings.value('pos', QPoint(200, 200))
-        size = settings.value('size', QSize(400, 400))
+        pos = settings.value("pos", QPoint(200, 200))
+        size = settings.value("size", QSize(400, 400))
         self.move(pos)
         self.resize(size)
 
     def write_settings(self) -> None:
         """Save window geometry to persistent settings."""
         settings = QSettings(self.name_company, self.name_product)
-        settings.setValue('pos', self.pos())
-        settings.setValue('size', self.size())
+        settings.setValue("pos", self.pos())
+        settings.setValue("size", self.size())

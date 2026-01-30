@@ -24,7 +24,9 @@ class StreamingFileLoader:
     the UI. This class loads files in batches using QTimer scheduling.
     """
 
-    def __init__(self, parent_window: Any = None, ui_service: Any = None, batch_size: int = 100) -> None:
+    def __init__(
+        self, parent_window: Any = None, ui_service: Any = None, batch_size: int = 100
+    ) -> None:
         """Initialize streaming loader.
 
         Args:

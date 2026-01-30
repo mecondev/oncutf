@@ -50,8 +50,14 @@ class ShortcutController:
 
         file_table_shortcuts = [
             (FILE_TABLE_SHORTCUTS["SELECT_ALL"], self.parent_window.select_all_rows),
-            (FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"], self.parent_window.clear_all_selection),
-            (FILE_TABLE_SHORTCUTS["INVERT_SELECTION"], self.parent_window.invert_selection),
+            (
+                FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"],
+                self.parent_window.clear_all_selection,
+            ),
+            (
+                FILE_TABLE_SHORTCUTS["INVERT_SELECTION"],
+                self.parent_window.invert_selection,
+            ),
             (
                 FILE_TABLE_SHORTCUTS["CALCULATE_HASH"],
                 self.parent_window.shortcut_calculate_hash_selected,
@@ -71,14 +77,23 @@ class ShortcutController:
 
         global_shortcuts = [
             (GLOBAL_SHORTCUTS["BROWSE_FOLDER"], self.parent_window.handle_browse),
-            (GLOBAL_SHORTCUTS["SAVE_METADATA"], self.parent_window.shortcut_save_all_metadata),
+            (
+                GLOBAL_SHORTCUTS["SAVE_METADATA"],
+                self.parent_window.shortcut_save_all_metadata,
+            ),
             (GLOBAL_SHORTCUTS["CANCEL_DRAG"], self.parent_window.force_drag_cleanup),
-            (GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"], self.parent_window.clear_file_table_shortcut),
+            (
+                GLOBAL_SHORTCUTS["CLEAR_FILE_TABLE"],
+                self.parent_window.clear_file_table_shortcut,
+            ),
             (GLOBAL_SHORTCUTS["UNDO"], self.parent_window.global_undo),
             (GLOBAL_SHORTCUTS["REDO"], self.parent_window.global_redo),
             (GLOBAL_SHORTCUTS["SHOW_HISTORY"], self.parent_window.show_command_history),
             # Metadata shortcuts - global so they work in both file table and thumbnail views
-            (FILE_TABLE_SHORTCUTS["LOAD_METADATA"], self.parent_window.shortcut_load_metadata),
+            (
+                FILE_TABLE_SHORTCUTS["LOAD_METADATA"],
+                self.parent_window.shortcut_load_metadata,
+            ),
             (
                 FILE_TABLE_SHORTCUTS["LOAD_EXTENDED_METADATA"],
                 self.parent_window.shortcut_load_extended_metadata,

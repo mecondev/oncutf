@@ -46,10 +46,20 @@ class SmartKeySimplifier:
     """
 
     # Stop words that can be optionally removed (currently disabled by default)
-    STOP_WORDS: ClassVar[set[str]] = {'of', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for'}
+    STOP_WORDS: ClassVar[set[str]] = {
+        "of",
+        "the",
+        "a",
+        "an",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+    }
 
     # Words to preserve (boolean/negation/important)
-    PRESERVE_WORDS: ClassVar[set[str]] = {'not', 'is', 'has', 'can', 'no', 'yes'}
+    PRESERVE_WORDS: ClassVar[set[str]] = {"not", "is", "has", "can", "no", "yes"}
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize simplifier with configuration.
@@ -125,16 +135,16 @@ class SmartKeySimplifier:
         key = unquote(key)
 
         # Unicode normalization (NFC)
-        key = unicodedata.normalize('NFC', key)
+        key = unicodedata.normalize("NFC", key)
 
         # Remove zero-width and invisible characters
-        key = re.sub(r'[\u200B-\u200D\uFEFF]', '', key)
+        key = re.sub(r"[\u200B-\u200D\uFEFF]", "", key)
 
         # Strip whitespace and trailing punctuation
-        key = key.strip().rstrip('.,;')
+        key = key.strip().rstrip(".,;")
 
         # Normalize multiple spaces
-        key = re.sub(r'\s+', ' ', key)
+        key = re.sub(r"\s+", " ", key)
 
         return key
 
@@ -155,36 +165,36 @@ class SmartKeySimplifier:
 
         """
         # Remove zero-width chars if still present
-        text = re.sub(r'[\u200B-\u200D\uFEFF]', '', text)
+        text = re.sub(r"[\u200B-\u200D\uFEFF]", "", text)
 
         # Remove key-value separators (but keep metadata prefixes like "EXIF:")
         # Only split on : if not followed by word (to keep EXIF:, XMP:, etc.)
-        if ':' in text and not re.search(r'[A-Z]+:', text):
-            text = text.split(':')[0].strip()
-        if '=' in text:
-            text = text.split('=')[0].strip()
+        if ":" in text and not re.search(r"[A-Z]+:", text):
+            text = text.split(":")[0].strip()
+        if "=" in text:
+            text = text.split("=")[0].strip()
 
         # Remove units in parentheses/brackets
-        text = re.sub(r'\s*[\(\[]([^)\]]+)[\)\]]', '', text)
+        text = re.sub(r"\s*[\(\[]([^)\]]+)[\)\]]", "", text)
 
         # Split CamelCase
-        text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+        text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
 
         # Normalize array notation [N] -> keep as "N"
-        text = re.sub(r'\s*\[(\d+)\]', r' \1 ', text)
+        text = re.sub(r"\s*\[(\d+)\]", r" \1 ", text)
 
         # Split by delimiters (space, underscore, dash, dot)
-        tokens = re.split(r'[\s_\-\.]+', text)
+        tokens = re.split(r"[\s_\-\.]+", text)
 
         # Filter empty tokens
         return [t for t in tokens if t]
 
-    def _simplify_single_key(self, key: str, all_keys: list[str]) -> str:
+    def _simplify_single_key(self, key: str, _all_keys: list[str]) -> str:
         """Simplify a single key with context awareness.
 
         Args:
             key: Key to simplify
-            all_keys: All keys (for context)
+            _all_keys: All keys (for context - reserved for future use)
 
         Returns:
             Simplified key
@@ -216,11 +226,11 @@ class SmartKeySimplifier:
             if domain and domain in cleaned_tokens:
                 # Keep domain + last (N-1)
                 cleaned_tokens.remove(domain)
-                cleaned_tokens = [domain, *cleaned_tokens[-(max_seg - 1):]]
+                cleaned_tokens = [domain, *cleaned_tokens[-(max_seg - 1) :]]
             else:
                 cleaned_tokens = cleaned_tokens[-max_seg:]
 
-        result = ' '.join(cleaned_tokens)
+        result = " ".join(cleaned_tokens)
         return result if result else key
 
     def _remove_repetitions_iterative(self, tokens: list[str]) -> list[str]:
@@ -305,7 +315,7 @@ class SmartKeySimplifier:
 
         """
         # Version number (X.Y or X.Y.Z)
-        if re.match(r'^\d+\.\d+(\.\d+)?$', token):
+        if re.match(r"^\d+\.\d+(\.\d+)?$", token):
             return True
 
         # Contains digits
@@ -326,7 +336,12 @@ class SmartKeySimplifier:
             token_lower = token.lower()
 
             # Preserve boolean/negation words
-            if token_lower in self.PRESERVE_WORDS or token_lower not in self.STOP_WORDS or i == 0 or i == len(tokens) - 1:
+            if (
+                token_lower in self.PRESERVE_WORDS
+                or token_lower not in self.STOP_WORDS
+                or i == 0
+                or i == len(tokens) - 1
+            ):
                 result.append(token)
 
         return result
@@ -403,6 +418,6 @@ class SmartKeySimplifier:
                         result[orig] = f"{simp} ({unique_to_this[0]})"
                     else:
                         # Fallback: add index
-                        result[orig] = f"{simp} ({i+1})"
+                        result[orig] = f"{simp} ({i + 1})"
 
         return result

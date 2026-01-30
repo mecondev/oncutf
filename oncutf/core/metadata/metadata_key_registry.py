@@ -248,9 +248,7 @@ class MetadataKeyRegistry:
             priority,
         )
 
-    def remove_mapping(
-        self, original: str, create_snapshot: bool = True
-    ) -> bool:
+    def remove_mapping(self, original: str, create_snapshot: bool = True) -> bool:
         """Remove a key mapping.
 
         Args:
@@ -272,9 +270,7 @@ class MetadataKeyRegistry:
         # Update semantic index
         if mapping.semantic and mapping.semantic in self._semantic_index:
             self._semantic_index[mapping.semantic] = [
-                key
-                for key in self._semantic_index[mapping.semantic]
-                if key != original
+                key for key in self._semantic_index[mapping.semantic] if key != original
             ]
             # Clean up empty semantic entries
             if not self._semantic_index[mapping.semantic]:
@@ -334,9 +330,7 @@ class MetadataKeyRegistry:
                 # Sort by priority descending
                 mappings_with_priority.sort(key=lambda x: x[1], reverse=True)
                 resolved = mappings_with_priority[0][0]
-                logger.debug(
-                    "Resolved semantic alias %s -> %s", key, resolved
-                )
+                logger.debug("Resolved semantic alias %s -> %s", key, resolved)
                 return resolved
 
         logger.debug("Could not resolve key: %s", key)
@@ -360,9 +354,7 @@ class MetadataKeyRegistry:
         # Not in mappings, return None
         return None
 
-    def load_semantic_aliases(
-        self, custom_aliases: dict[str, list[str]] | None = None
-    ) -> None:
+    def load_semantic_aliases(self, custom_aliases: dict[str, list[str]] | None = None) -> None:
         """Load semantic aliases (default + optional custom).
 
         Args:
@@ -397,11 +389,7 @@ class MetadataKeyRegistry:
 
     def _clear_semantic_mappings(self) -> None:
         """Clear all semantic-source mappings."""
-        to_remove = [
-            key
-            for key, mapping in self._mappings.items()
-            if mapping.source == "semantic"
-        ]
+        to_remove = [key for key, mapping in self._mappings.items() if mapping.source == "semantic"]
         for key in to_remove:
             self.remove_mapping(key, create_snapshot=False)
 
@@ -523,9 +511,7 @@ class MetadataKeyRegistry:
             ],
         }
 
-    def import_from_dict(
-        self, data: dict[str, Any], merge: bool = False
-    ) -> None:
+    def import_from_dict(self, data: dict[str, Any], merge: bool = False) -> None:
         """Import registry from dictionary.
 
         Args:
@@ -548,9 +534,7 @@ class MetadataKeyRegistry:
                 create_snapshot=False,
             )
 
-        logger.info(
-            "Imported %d mappings (merge=%s)", len(mappings_data), merge
-        )
+        logger.info("Imported %d mappings (merge=%s)", len(mappings_data), merge)
 
     def export_to_file(self, filepath: Path | str) -> None:
         """Export registry to JSON file.
@@ -568,9 +552,7 @@ class MetadataKeyRegistry:
 
         logger.info("Exported registry to %s", filepath)
 
-    def import_from_file(
-        self, filepath: Path | str, merge: bool = False
-    ) -> None:
+    def import_from_file(self, filepath: Path | str, merge: bool = False) -> None:
         """Import registry from JSON file.
 
         Args:

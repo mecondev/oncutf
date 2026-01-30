@@ -65,7 +65,9 @@ class RenameHistoryDialog(QDialog):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
-        from oncutf.ui.helpers.multiscreen_helper import position_dialog_relative_to_parent
+        from oncutf.ui.helpers.multiscreen_helper import (
+            position_dialog_relative_to_parent,
+        )
 
         position_dialog_relative_to_parent(self)
 
@@ -340,7 +342,9 @@ class RenameHistoryDialog(QDialog):
 
             if cleaned_count > 0:
                 CustomMessageDialog.information(
-                    self, "Cleanup Complete", f"Cleaned up {cleaned_count} old history records."
+                    self,
+                    "Cleanup Complete",
+                    f"Cleaned up {cleaned_count} old history records.",
                 )
                 self._load_history()
             else:

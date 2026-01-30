@@ -39,7 +39,9 @@ class CachedHashService:
     def _get_cache_manager(self) -> PersistentHashCache:
         """Lazy load the hash cache manager."""
         if self._cache_manager is None:
-            from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
+            from oncutf.infra.cache.persistent_hash_cache import (
+                get_persistent_hash_cache,
+            )
 
             self._cache_manager = get_persistent_hash_cache()
         return self._cache_manager
@@ -66,7 +68,10 @@ class CachedHashService:
             cached_value = cache.get_hash(str(path), algorithm.upper())
             if cached_value:
                 logger.debug(
-                    "Cache hit for %s (%s)", path.name, algorithm, extra={"dev_only": True}
+                    "Cache hit for %s (%s)",
+                    path.name,
+                    algorithm,
+                    extra={"dev_only": True},
                 )
                 return cached_value
 

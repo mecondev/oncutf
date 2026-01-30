@@ -130,9 +130,7 @@ class SimplifiedMetadata:
             True if key exists in either mapping
 
         """
-        return (
-            key in self._original_metadata or key in self._simplified_to_original
-        )
+        return key in self._original_metadata or key in self._simplified_to_original
 
     def items_simplified(self) -> Iterator[tuple[str, str]]:
         """Iterate over (simplified_key, value) pairs.
@@ -142,9 +140,7 @@ class SimplifiedMetadata:
 
         """
         for original_key, value in self._original_metadata.items():
-            simplified_key = self._original_to_simplified.get(
-                original_key, original_key
-            )
+            simplified_key = self._original_to_simplified.get(original_key, original_key)
             yield (simplified_key, value)
 
     def items_original(self) -> Iterator[tuple[str, str]]:
@@ -282,7 +278,4 @@ class SimplifiedMetadata:
             String representation showing entry count
 
         """
-        return (
-            f"SimplifiedMetadata({len(self)} entries, "
-            f"{len(self._user_overrides)} overrides)"
-        )
+        return f"SimplifiedMetadata({len(self)} entries, {len(self._user_overrides)} overrides)"

@@ -195,29 +195,35 @@ def get_full_docstring_coverage(path: Path) -> dict:
                     method_has_doc = ast.get_docstring(item) is not None
                     if method_has_doc:
                         documented += 1
-                    methods.append({
-                        "name": item.name,
-                        "has_doc": method_has_doc,
-                        "line": item.lineno,
-                    })
+                    methods.append(
+                        {
+                            "name": item.name,
+                            "has_doc": method_has_doc,
+                            "line": item.lineno,
+                        }
+                    )
 
-            classes.append({
-                "name": node.name,
-                "has_doc": class_has_doc,
-                "line": node.lineno,
-                "methods": methods,
-            })
+            classes.append(
+                {
+                    "name": node.name,
+                    "has_doc": class_has_doc,
+                    "line": node.lineno,
+                    "methods": methods,
+                }
+            )
 
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             total += 1
             func_has_doc = ast.get_docstring(node) is not None
             if func_has_doc:
                 documented += 1
-            functions.append({
-                "name": node.name,
-                "has_doc": func_has_doc,
-                "line": node.lineno,
-            })
+            functions.append(
+                {
+                    "name": node.name,
+                    "has_doc": func_has_doc,
+                    "line": node.lineno,
+                }
+            )
 
     return {
         "line_count": line_count,
@@ -276,25 +282,31 @@ def get_full_docstring_texts(path: Path) -> dict:
             methods = []
             for item in node.body:
                 if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
-                    methods.append({
-                        "name": item.name,
-                        "line": item.lineno,
-                        "doc": ast.get_docstring(item),
-                    })
+                    methods.append(
+                        {
+                            "name": item.name,
+                            "line": item.lineno,
+                            "doc": ast.get_docstring(item),
+                        }
+                    )
 
-            classes.append({
-                "name": node.name,
-                "line": node.lineno,
-                "doc": cls_doc,
-                "methods": methods,
-            })
+            classes.append(
+                {
+                    "name": node.name,
+                    "line": node.lineno,
+                    "doc": cls_doc,
+                    "methods": methods,
+                }
+            )
 
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            functions.append({
-                "name": node.name,
-                "line": node.lineno,
-                "doc": ast.get_docstring(node),
-            })
+            functions.append(
+                {
+                    "name": node.name,
+                    "line": node.lineno,
+                    "doc": ast.get_docstring(node),
+                }
+            )
 
     return {
         "line_count": line_count,
@@ -470,7 +482,9 @@ def generate_structure_full_report(
         f.write("- Function/method docstrings\n\n")
         if include_docstrings:
             f.write("---\n\n")
-            f.write("**NOTE:** This run includes the full text of module/class/function docstrings below each item.\n\n")
+            f.write(
+                "**NOTE:** This run includes the full text of module/class/function docstrings below each item.\n\n"
+            )
         f.write("---\n\n")
 
         for py_file in py_files:
@@ -556,7 +570,9 @@ def generate_structure_full_report(
                             # methods
                             for method in tcls.get("methods", []):
                                 if method.get("doc"):
-                                    f.write(f"    **Method `{method['name']}()` docstring:** (line {method['line']})\n\n")
+                                    f.write(
+                                        f"    **Method `{method['name']}()` docstring:** (line {method['line']})\n\n"
+                                    )
                                     f.write("    ```\n")
                                     for line in method["doc"].splitlines():
                                         f.write("    " + line + "\n")

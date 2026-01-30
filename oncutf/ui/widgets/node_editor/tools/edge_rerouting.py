@@ -142,7 +142,9 @@ class EdgeRerouting:
 
             new_edge = edge_class(self.start_socket.node.scene, edge_type=edge.edge_type)
             new_edge.start_socket = other_socket
-            new_edge.graphics_edge.set_source(*other_socket.node.get_socket_scene_position(other_socket))
+            new_edge.graphics_edge.set_source(
+                *other_socket.node.get_socket_scene_position(other_socket)
+            )
             new_edge.graphics_edge.set_destination(*start_position)
             new_edge.graphics_edge.update()
             self.rerouting_edges.append(new_edge)

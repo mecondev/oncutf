@@ -141,9 +141,7 @@ class MetadataCacheBehavior:
         # Extract value from original metadata dict
         return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
 
-    def _get_value_from_metadata_dict(
-        self, metadata: dict[str, Any], key_path: str
-    ) -> Any | None:
+    def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
         """Extract a value from metadata dictionary using key path.
 
         Args:

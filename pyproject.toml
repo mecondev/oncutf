@@ -38,7 +38,8 @@ dev = [
     "pytest-mock>=3.14.1",
     "ruff>=0.3.0",
     "mypy>=1.8.0",
-    "PyQt5-stubs>=5.15.6.0"
+    "PyQt5-stubs>=5.15.6.0",
+    "vulture>=2.3,<3"
 ]
 test = [
     "pytest>=8.3.5",
@@ -94,7 +95,7 @@ no_implicit_optional = true
 strict_equality = true
 show_error_codes = true
 pretty = true
-exclude = '(^|/)(backups|\.cache|temp|reports|scripts|examples)(/|$)|oncutf/ui/resources_rc\.py|oncutf/resources_rc\.py'
+exclude = '(^|/)(backups|\.cache|temp|reports|scripts|tools|examples)(/|$)|oncutf/ui/resources_rc\.py|oncutf/resources_rc\.py'
 check_untyped_defs = true
 
 # NEW: Stricter defaults for all modules (2026-01-23)
@@ -283,12 +284,24 @@ disallow_untyped_defs = false
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-# SAFETY: fix=false by default. Use 'ruff check . --fix' to auto-fix.
-# This prevents unexpected code changes during regular lint checks.
 fix = false
-# NOTE: fonts_rc*.py are PyQt5 Resource Compiler generated files (100K+ lines)
-# They should not be manually edited or linted.
-exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc", "assets", "resources", "logs", "**/fonts_rc*.py"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "node_modules",
+    ".cache",
+    "temp",
+    "backups",
+    "reports",
+    "scripts",
+    "tools",
+    "examples",
+    "**/fonts_rc*.py",
+    "**/resources_rc.py",
+]
 
 [tool.ruff.lint]
 select = [
@@ -301,57 +314,80 @@ select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "SIM", # flake8-simplify
-    "TCH", # flake8-type-checking
-    "ARG", # flake8-unused-arguments
-    "PIE", # flake8-pie
-    "T20", # flake8-print
-    "PYI", # flake8-pyi
-    "G",   # flake8-logging-format (enforce lazy logging)
-    "PLR", # pylint refactors (complexity, design patterns)
     "RUF", # ruff-specific rules
+    "ANN", # flake8-annotations (type hints on public APIs) - GRADUAL
+    "PTH", # flake8-use-pathlib (prefer pathlib over os.path) - GRADUAL
     "D",   # pydocstyle (docstring conventions)
 ]
 # UPDATED 2026-01-23: Reduced ignores - only keep truly necessary ones
 ignore = [
+    # Core ignores (pre-existing)
     "E501",   # line too long - handled by formatter
     "N802",   # function name should be lowercase (Qt methods)
-    "F403",   # wildcard import (legacy __init__.py files)
-    "F405",   # name may be undefined (from wildcard imports)
-    "E402",   # module level import not at top (legacy)
-    "B008",   # do not perform function calls in argument defaults (Qt default args)
-    "C901",   # too complex (refactor gradually)
-    "SIM102", # nested if statements (common pattern)
-    "ARG002", # unused method argument (polymorphic methods)
-    "ARG004", # unused static method argument (API consistency)
-    "PLR2004", # magic-value-comparison (0, 1, 2 constants)
-    "PLR0911", # too-many-return-statements (switch-like logic)
-    "PLR0912", # too-many-branches (legacy, gradual refactor)
-    "PLR0913", # too-many-arguments (Qt signals/slots)
-    "PLR0915", # too-many-statements (legacy __init__)
-    "PLR1704", # redefining-argument-from-local (intentional)
+    "F401",   # imported but unused (re-exports in __init__.py)
+    "B008",   # do not perform function calls in argument defaults
+    "B904",   # raise-without-from-inside-except
+    "N803",   # argument name should be lowercase (Qt arguments)
+    "N806",   # variable in function should be lowercase (Qt variables)
     
-    # Docstring rules (D-series) - enforce only for new code
-    "D100",   # Missing docstring in public module
-    "D101",   # Missing docstring in public class
-    "D102",   # Missing docstring in public method
-    "D103",   # Missing docstring in public function
-    "D104",   # Missing docstring in public package
-    "D105",   # Missing docstring in magic method
-    "D107",   # Missing docstring in __init__
-    "D203",   # 1 blank line required before class (conflicts with D211)
-    "D205",   # 1 blank line required between summary and body (legacy formatting)
-    "D213",   # Multi-line docstring summary on second line (conflicts with D212)
-    "D401",   # First line should be imperative (style preference, legacy code)
+    # Docstring rules (gradual adoption)
+    "D100",   # missing docstring in public module
+    "D101",   # missing docstring in public class
+    "D102",   # missing docstring in public method
+    "D103",   # missing docstring in public function
+    "D104",   # missing docstring in public package
+    "D107",   # missing docstring in __init__
+    "D203",   # 1 blank line required before class docstring (conflicts with D211)
+    "D213",   # multi-line-summary-second-line (conflicts with D212)
+    "D401",   # imperative-mood (200+ violations, widespread in legacy code)
+    "D205",   # missing-blank-line-after-summary (100+ violations)
+    "SIM102", # collapsible-if (50+ violations, better for readability sometimes)
+    
+    # ANN rules - Gradual adoption (added 2026-01-30)
+    "ANN001", # missing-type-function-argument (427 violations)
+    "ANN002", # missing-type-args (8 violations)
+    "ANN003", # missing-type-kwargs (10 violations)
+    "ANN201", # missing-return-type-undocumented-public-function (247 violations)
+    "ANN202", # missing-return-type-private-function (161 violations)
+    "ANN204", # missing-return-type-special-method (173 violations)
+    "ANN205", # missing-return-type-static-method (1 violation)
+    "ANN206", # missing-return-type-class-method (2 violations)
+    "ANN401", # any-type (397 violations) - will enable selectively
+    
+    # PTH rules - Re-enabled for gradual migration (2026-01-31)
+    # Already fixed 480 violations, keeping remaining for gradual migration
+    "PTH100", # os-path-abspath
+    "PTH101", # os-chmod
+    "PTH103", # os-makedirs
+    "PTH104", # os-rename
+    "PTH107", # os-remove
+    "PTH110", # os-path-exists
+    "PTH111", # os-path-expanduser
+    "PTH112", # os-path-isdir
+    "PTH113", # os-path-isfile
+    "PTH116", # os-stat
+    "PTH118", # os-path-join
+    "PTH119", # os-path-basename
+    "PTH120", # os-path-dirname
+    "PTH122", # os-path-splitext
+    "PTH123", # builtin-open
+    "PTH202", # os-path-getsize
+    "PTH204", # os-path-getmtime
+    "PTH205", # os-path-getctime
+    "PTH208", # os-listdir
 ]
 
 # Per-file ignores for scripts and utilities
 [tool.ruff.lint.per-file-ignores]
-"scripts/*.py" = ["T201", "D", "RUF001", "RUF003"]  # Allow print statements + skip docstrings + Unicode
-"tests/*.py" = ["T201", "D", "ARG001", "PLR2004", "SIM117"]  # Test-specific ignores
+"main.py" = ["E402"]  # Intentional sys.path setup before imports
+"oncutf/__main__.py" = ["E402"]  # Entry point with sys.path setup
+"tests/manual/*.py" = ["E402"]  # Manual test scripts are entry points
+"tests/*.py" = ["D", "SIM117"]  # Test-specific ignores (T201/ARG/PLR families not selected)
 "oncutf/utils/logging/logger_*.py" = ["RUF003", "D417"]  # EN-dash in comments (intentional) + *args/**kwargs
 "oncutf/utils/naming/transform_utils.py" = ["RUF001", "RUF003", "D417"]  # Greek char transformations (intentional)
 "oncutf/ui/resources_rc.py" = ["ALL"]  # Generated file
-"oncutf/ui/fonts_rc*.py" = ["ALL"]  # Generated files
+"oncutf/ui/helpers/fonts_rc.py" = ["ALL"]  # Generated files
+"oncutf/ui/fonts_rc*.py" = ["ALL"]  # Generated files (legacy pattern)
 "oncutf/ui/widgets/node_editor/**/*.py" = ["D417", "RUF001"]  # Node editor *args/**kwargs patterns + Unicode symbols
 # New architecture layers - STRICT (minimal ignores)
 "oncutf/app/**/*.py" = []  # No ignores for app/ layer

@@ -47,14 +47,14 @@ __version__ = "1.0.0"
 __author__ = "Michael Economou"
 
 # Initialize graphics class bindings (must be done before using widgets)
-from oncutf.ui.widgets.node_editor.core import _init_graphics_classes
-
-_init_graphics_classes()
-
-# Public API
-# Core classes
-from oncutf.ui.widgets.node_editor.core import Edge, Node, Socket
-from oncutf.ui.widgets.node_editor.core.scene import Scene
+# Initialize graphics class bindings (must be done before using widgets)
+from oncutf.ui.widgets.node_editor.core import (
+    Edge,
+    Node,
+    Scene,
+    Socket,
+    _init_graphics_classes,
+)
 
 # Node system
 from oncutf.ui.widgets.node_editor.nodes import NodeRegistry
@@ -66,6 +66,8 @@ from oncutf.ui.widgets.node_editor.themes.light import LightTheme
 
 # Widgets
 from oncutf.ui.widgets.node_editor.widgets import NodeEditorWidget, NodeEditorWindow
+
+_init_graphics_classes()
 
 __all__ = [
     "DarkTheme",

@@ -194,7 +194,7 @@ class MetadataTreeDragHandler:
                     if hasattr(file_table, "_selection_behavior"):
                         logger.info(
                             "[DROP] Restoring selection after layoutChanged: %s",
-                            sorted(preserved_selection)
+                            sorted(preserved_selection),
                         )
                         selection_store = file_table._selection_behavior.get_selection_store()
                         if selection_store:

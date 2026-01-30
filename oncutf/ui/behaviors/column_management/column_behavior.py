@@ -6,13 +6,16 @@ of specialized managers.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt
 
 from oncutf.ui.behaviors.column_management.header_configurator import HeaderConfigurator
 from oncutf.ui.behaviors.column_management.protocols import ColumnManageableWidget
-from oncutf.ui.behaviors.column_management.visibility_manager import ColumnVisibilityManager
+from oncutf.ui.behaviors.column_management.visibility_manager import (
+    ColumnVisibilityManager,
+)
 from oncutf.ui.behaviors.column_management.width_manager import ColumnWidthManager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -78,7 +81,11 @@ class ColumnManagementBehavior:
         Should be called after model is set up. Uses delayed configuration
         to ensure model synchronization.
         """
-        from oncutf.utils.shared.timer_manager import TimerPriority, TimerType, get_timer_manager
+        from oncutf.utils.shared.timer_manager import (
+            TimerPriority,
+            TimerType,
+            get_timer_manager,
+        )
 
         self._header_configurator.is_configuring = True
         get_timer_manager().schedule(
@@ -95,9 +102,7 @@ class ColumnManagementBehavior:
         for column_index, column_key in enumerate(visible_columns):
             actual_column_index = column_index + 1  # +1 for status column
             current_width = self._widget.columnWidth(actual_column_index)
-            proper_width = self._width_manager.ensure_column_proper_width(
-                column_key, current_width
-            )
+            proper_width = self._width_manager.ensure_column_proper_width(column_key, current_width)
             if proper_width != current_width:
                 self._programmatic_resize = True
                 self._widget.setColumnWidth(actual_column_index, proper_width)
@@ -336,9 +341,9 @@ class ColumnManagementBehavior:
             return
 
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if hasattr(context, "register_shutdown_callback"):
                 context.register_shutdown_callback(self.force_save_column_changes)
                 self._shutdown_hook_registered = True
@@ -354,9 +359,9 @@ class ColumnManagementBehavior:
             return
 
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if hasattr(context, "unregister_shutdown_callback"):
                 context.unregister_shutdown_callback(self.force_save_column_changes)
                 self._shutdown_hook_registered = False
@@ -395,11 +400,11 @@ class ColumnManagementBehavior:
             alignment,
         )
 
-    def _clear_selection_for_column_update(self, force_emit_signal: bool = False) -> None:
+    def _clear_selection_for_column_update(self, _force_emit_signal: bool = False) -> None:
         """Clear selection before column update.
 
         Args:
-            force_emit_signal: Whether to force emit selection change signal
+            _force_emit_signal: Whether to force emit selection change signal
 
         """
         # This method can be overridden or connected to widget's selection clearing

@@ -21,7 +21,14 @@ from typing import ClassVar
 
 from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
 from PyQt5.QtGui import QHelpEvent
-from PyQt5.QtWidgets import QApplication, QLabel, QListWidget, QMenu, QTableWidget, QWidget
+from PyQt5.QtWidgets import (
+    QApplication,
+    QLabel,
+    QListWidget,
+    QMenu,
+    QTableWidget,
+    QWidget,
+)
 
 from oncutf.config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
 from oncutf.utils.logging.logger_helper import get_logger
@@ -509,7 +516,11 @@ class TooltipHelper:
 
     @classmethod
     def setup_action_tooltip(
-        cls, action, message: str, tooltip_type: str = TooltipType.INFO, menu: QMenu | None = None
+        cls,
+        action,
+        message: str,
+        tooltip_type: str = TooltipType.INFO,
+        menu: QMenu | None = None,
     ) -> None:
         """Setup a custom tooltip for QAction in a QMenu.
 
@@ -700,7 +711,12 @@ class TreeViewTooltipFilter(QObject):
 
     """
 
-    def __init__(self, view_widget, parent: QObject | None = None, tooltip_type: str = TooltipType.INFO):
+    def __init__(
+        self,
+        view_widget,
+        parent: QObject | None = None,
+        tooltip_type: str = TooltipType.INFO,
+    ):
         """Initialize tooltip filter for tree/table view.
 
         Args:
@@ -760,7 +776,6 @@ class TreeViewTooltipFilter(QObject):
 
         # Handle ToolTip event
         if event.type() == QEvent.ToolTip:
-
             if not isinstance(event, QHelpEvent):
                 return False
 

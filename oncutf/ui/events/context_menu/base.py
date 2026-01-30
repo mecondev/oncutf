@@ -45,7 +45,9 @@ class ContextMenuHandlers:
         self.hash_ops = HashOperationsManager(parent_window)
 
         # Delegate metadata operations to specialized manager
-        from oncutf.ui.managers.metadata_operations_manager import MetadataOperationsManager
+        from oncutf.ui.managers.metadata_operations_manager import (
+            MetadataOperationsManager,
+        )
 
         self.metadata_ops = MetadataOperationsManager(parent_window)
 
@@ -117,8 +119,8 @@ class ContextMenuHandlers:
         # Enhanced styling for better appearance and spacing
         menu_qss = f"""
             QMenu {{
-                background-color: {theme.get_color('menu_background')};
-                color: {theme.get_color('menu_text')};
+                background-color: {theme.get_color("menu_background")};
+                color: {theme.get_color("menu_text")};
                 border: none;
                 border-radius: 8px;
                 font-family: "Inter", "Segoe UI", Arial, sans-serif;
@@ -134,18 +136,18 @@ class ContextMenuHandlers:
                 icon-size: 16px;
             }}
             QMenu::item:selected {{
-                background-color: {theme.get_color('menu_selected_bg')};
-                color: {theme.get_color('menu_selected_text')};
+                background-color: {theme.get_color("menu_selected_bg")};
+                color: {theme.get_color("menu_selected_text")};
             }}
             QMenu::item:disabled {{
-                color: {theme.get_color('menu_disabled_text')};
+                color: {theme.get_color("menu_disabled_text")};
             }}
             QMenu::icon {{
                 padding-left: 6px;
                 padding-right: 6px;
             }}
             QMenu::separator {{
-                background-color: {theme.get_color('separator')};
+                background-color: {theme.get_color("separator")};
                 height: 1px;
                 margin: 4px 8px;
             }}
@@ -493,7 +495,10 @@ class ContextMenuHandlers:
             )
         else:
             TooltipHelper.setup_action_tooltip(
-                action_export_all, "No files have metadata to export", TooltipType.WARNING, menu
+                action_export_all,
+                "No files have metadata to export",
+                TooltipType.WARNING,
+                menu,
             )
 
         # Enable/disable logic for non-operation actions
@@ -580,8 +585,7 @@ class ContextMenuHandlers:
         elif action == action_export_all:
             all_files = (
                 self.parent_window.file_model.get_all_file_items()
-                if hasattr(self.parent_window, "file_model")
-                and self.parent_window.file_model
+                if hasattr(self.parent_window, "file_model") and self.parent_window.file_model
                 else []
             )
             self.metadata_ops.handle_export_metadata(all_files, "all")

@@ -178,7 +178,9 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         socket_type_end = self.edge.end_socket.socket_type
         if socket_type_start != socket_type_end:
             return False
-        self.change_color(self.edge.start_socket.graphics_socket.get_socket_color(socket_type_start))
+        self.change_color(
+            self.edge.start_socket.graphics_socket.get_socket_color(socket_type_start)
+        )
         return True
 
     def on_selected(self) -> None:

@@ -85,7 +85,11 @@ class PerformanceMonitor:
         self.operation_timers[operation] = time.time()
 
     def end_operation(
-        self, operation: str, file_count: int = 0, success: bool = True, error_message: str = ""
+        self,
+        operation: str,
+        file_count: int = 0,
+        success: bool = True,
+        error_message: str = "",
     ) -> None:
         """End timing an operation and record metric."""
         if operation not in self.operation_timers:
@@ -190,6 +194,7 @@ class PerformanceDecorator:
 
     def __call__(self, func: Any) -> Any:
         """Wrap function with performance monitoring."""
+
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Start timing
             self.monitor.start_operation(self.operation_name)

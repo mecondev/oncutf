@@ -17,7 +17,9 @@ if TYPE_CHECKING:
         EditMetadataFieldCommand,
         ResetMetadataFieldCommand,
     )
-    from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
+    from oncutf.core.metadata.unified_metadata_protocol import (
+        UnifiedMetadataManagerProtocol,
+    )
 
 
 class MetadataService:
@@ -144,7 +146,11 @@ class MetadataService:
         return EditMetadataFieldCommand(file_path, key, new_value, old_value)
 
     def create_reset_command(
-        self, file_path: str, key: str, staged_value: Any, original_value: Any | None = None
+        self,
+        file_path: str,
+        key: str,
+        staged_value: Any,
+        original_value: Any | None = None,
     ) -> ResetMetadataFieldCommand:
         """Create reset metadata field command.
 

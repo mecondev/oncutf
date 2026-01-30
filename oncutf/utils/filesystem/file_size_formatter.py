@@ -67,7 +67,14 @@ class FileSizeFormatter:
     DECIMAL_UNITS: ClassVar[list[str]] = ["B", "KB", "MB", "GB", "TB", "PB"]
 
     # Legacy units (for compatibility with existing systems)
-    LEGACY_BINARY_UNITS: ClassVar[list[str]] = ["B", "KB", "MB", "GB", "TB", "PB"]  # Using KB instead of KiB
+    LEGACY_BINARY_UNITS: ClassVar[list[str]] = [
+        "B",
+        "KB",
+        "MB",
+        "GB",
+        "TB",
+        "PB",
+    ]  # Using KB instead of KiB
 
     def __init__(
         self,

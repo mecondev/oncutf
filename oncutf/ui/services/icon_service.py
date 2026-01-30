@@ -25,7 +25,9 @@ if TYPE_CHECKING:
     from PyQt5.QtGui import QIcon, QPixmap
 
 
-def load_preview_status_icons(size: tuple[int, int] | None = None) -> dict[str, "QIcon"]:
+def load_preview_status_icons(
+    size: tuple[int, int] | None = None,
+) -> dict[str, "QIcon"]:
     """Load and scale preview status icons (valid, invalid, etc.) for use in the UI.
 
     Facade for utils.ui.icon_cache.load_preview_status_icons().

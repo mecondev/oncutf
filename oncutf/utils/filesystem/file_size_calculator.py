@@ -141,7 +141,9 @@ def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> in
 
     except (OSError, PermissionError) as e:
         logger.debug(
-            "[FileSizeCalculator] Error calculating folder size for %s: %s", folder_path, e
+            "[FileSizeCalculator] Error calculating folder size for %s: %s",
+            folder_path,
+            e,
         )
 
     logger.debug(
@@ -169,10 +171,16 @@ def estimate_operation_time(
     # Basic estimation rates (files per second and bytes per second)
     rates = {
         "metadata": {"files_per_sec": 10, "bytes_per_sec": 50 * 1024 * 1024},  # 50MB/s
-        "metadata_extended": {"files_per_sec": 3, "bytes_per_sec": 20 * 1024 * 1024},  # 20MB/s
+        "metadata_extended": {
+            "files_per_sec": 3,
+            "bytes_per_sec": 20 * 1024 * 1024,
+        },  # 20MB/s
         "hash": {"files_per_sec": 5, "bytes_per_sec": 100 * 1024 * 1024},  # 100MB/s
         "rename": {"files_per_sec": 50, "bytes_per_sec": 500 * 1024 * 1024},  # 500MB/s
-        "file_loading": {"files_per_sec": 100, "bytes_per_sec": 1000 * 1024 * 1024},  # 1GB/s
+        "file_loading": {
+            "files_per_sec": 100,
+            "bytes_per_sec": 1000 * 1024 * 1024,
+        },  # 1GB/s
     }
 
     rate = rates.get(operation_type, rates["metadata"])

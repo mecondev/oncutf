@@ -187,11 +187,11 @@ class ResultsTableDialog(QDialog):
 
         style = f"""
         QDialog {{
-            background-color: {theme.get_color('dialog_background')};
+            background-color: {theme.get_color("dialog_background")};
         }}
 
         QLabel#title_label {{
-            color: {theme.get_color('text')};
+            color: {theme.get_color("text")};
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 4px;
@@ -199,12 +199,12 @@ class ResultsTableDialog(QDialog):
         }}
 
         QTableView {{
-            background-color: {theme.get_color('table_background')};
-            alternate-background-color: {theme.get_color('table_alternate')};
-            color: {theme.get_color('text')};
-            border: 1px solid {theme.get_color('border')};
+            background-color: {theme.get_color("table_background")};
+            alternate-background-color: {theme.get_color("table_alternate")};
+            color: {theme.get_color("text")};
+            border: 1px solid {theme.get_color("border")};
             gridline-color: transparent;
-            selection-background-color: {theme.get_color('table_selection_bg')};
+            selection-background-color: {theme.get_color("table_selection_bg")};
             font-size: 11px;
         }}
 
@@ -213,16 +213,16 @@ class ResultsTableDialog(QDialog):
         }}
 
         QHeaderView::section {{
-            background-color: {theme.get_color('results_header_bg')};
-            color: {theme.get_color('text')};
-            border: 1px solid {theme.get_color('border')};
+            background-color: {theme.get_color("results_header_bg")};
+            color: {theme.get_color("text")};
+            border: 1px solid {theme.get_color("border")};
             padding: 0px 8px;
             font-weight: 600;
             font-size: 11px;
         }}
 
         QHeaderView::section:hover {{
-            background-color: {theme.get_color('results_header_bg')};
+            background-color: {theme.get_color("results_header_bg")};
         }}
         """
         self.setStyleSheet(style)

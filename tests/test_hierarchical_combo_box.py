@@ -9,14 +9,9 @@ These tests cover the combobox issues we've been addressing.
 """
 
 import os
-import warnings
 from unittest.mock import patch
 
 import pytest
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # PyQt5 widget tests (only run if PyQt5 is available and not in CI)
 try:
@@ -71,7 +66,11 @@ class TestHierarchicalComboBox:
                 ("ISO", "iso"),
                 ("F-Stop", "fstop"),
             ],
-            "GPS": [("Latitude", "latitude"), ("Longitude", "longitude"), ("Altitude", "altitude")],
+            "GPS": [
+                ("Latitude", "latitude"),
+                ("Longitude", "longitude"),
+                ("Altitude", "altitude"),
+            ],
         }
 
     @pytest.fixture
@@ -344,11 +343,17 @@ class TestHierarchicalComboBoxLogic:
             return ""
 
         # Test with File Name available
-        groups_with_filename = {"File Info": ["File Name", "File Size"], "EXIF": ["Camera Make"]}
+        groups_with_filename = {
+            "File Info": ["File Name", "File Size"],
+            "EXIF": ["Camera Make"],
+        }
         assert get_default_selection(groups_with_filename) == "File Info/File Name"
 
         # Test without File Name
-        groups_without_filename = {"EXIF": ["Camera Make", "Camera Model"], "GPS": ["Latitude"]}
+        groups_without_filename = {
+            "EXIF": ["Camera Make", "Camera Model"],
+            "GPS": ["Latitude"],
+        }
         assert get_default_selection(groups_without_filename) == "EXIF/Camera Make"
 
         # Test empty groups

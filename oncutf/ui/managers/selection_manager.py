@@ -46,7 +46,10 @@ class SelectionManager:
         if not file_model or not file_table_view or not file_model.files:
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files to select", selected_count=0, total_count=0, auto_reset=True
+                    "No files to select",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 
@@ -81,7 +84,8 @@ class SelectionManager:
                     if metadata_tree_view:
                         # Use centralized logic - select_all means multiple files, so show empty state
                         if hasattr(
-                            metadata_tree_view, "should_display_metadata_for_selection"
+                            metadata_tree_view,
+                            "should_display_metadata_for_selection",
                         ) and not metadata_tree_view.should_display_metadata_for_selection(
                             len(file_model.files)
                         ):
@@ -152,7 +156,10 @@ class SelectionManager:
         if not file_model or not file_table_view or not file_model.files:
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files to invert selection", selected_count=0, total_count=0, auto_reset=True
+                    "No files to invert selection",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 

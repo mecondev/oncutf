@@ -6,7 +6,6 @@ Date: 2025-12-27
 Tests drag & drop state management independently of UI.
 """
 
-
 from oncutf.controllers.module_drag_drop_manager import ModuleDragDropManager
 
 
@@ -197,9 +196,9 @@ class TestModuleDragDropManager:
             ((100, 100), (104, 100), False),  # 4px horizontal
             ((100, 100), (100, 104), False),  # 4px vertical
             ((100, 100), (103, 103), False),  # 4.24px diagonal
-            ((100, 100), (106, 100), True),   # 6px horizontal
-            ((100, 100), (100, 106), True),   # 6px vertical
-            ((100, 100), (104, 104), True),   # 5.66px diagonal
+            ((100, 100), (106, 100), True),  # 6px horizontal
+            ((100, 100), (100, 106), True),  # 6px vertical
+            ((100, 100), (104, 104), True),  # 5.66px diagonal
         ]
 
         for start_pos, end_pos, expected in test_cases:

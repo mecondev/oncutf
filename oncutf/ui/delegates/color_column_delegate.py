@@ -223,7 +223,10 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         """
         logger.info(
-            "[ColorColumnDelegate] Setting color %s for %d rows: %s", color, len(rows), rows
+            "[ColorColumnDelegate] Setting color %s for %d rows: %s",
+            color,
+            len(rows),
+            rows,
         )
 
         if not hasattr(model, "files"):
@@ -260,7 +263,9 @@ class ColorColumnDelegate(FileTableHoverDelegate):
                 last_index = idx
 
                 logger.debug(
-                    "[ColorColumnDelegate] Set color %s for file: %s", color, file_item.filename
+                    "[ColorColumnDelegate] Set color %s for file: %s",
+                    color,
+                    file_item.filename,
                 )
 
         # Emit dataChanged for entire range to refresh all colored cells

@@ -88,7 +88,8 @@ class TimerManager(QObject):
         self._failed_callbacks: int = 0
 
         logger.debug(
-            "[TimerManager] Initialized with centralized timer control", extra={"dev_only": True}
+            "[TimerManager] Initialized with centralized timer control",
+            extra={"dev_only": True},
         )
 
     def schedule(

@@ -29,7 +29,9 @@ class QtConflictResolutionAdapter:
             Tuple of (action, apply_to_all)
 
         """
-        from oncutf.ui.dialogs.conflict_resolution_dialog import ConflictResolutionDialog
+        from oncutf.ui.dialogs.conflict_resolution_dialog import (
+            ConflictResolutionDialog,
+        )
 
         return ConflictResolutionDialog.show_conflict(
             old_filename=old_filename,

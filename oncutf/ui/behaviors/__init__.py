@@ -58,6 +58,28 @@ Naming Convention:
 
 from __future__ import annotations
 
+from oncutf.ui.behaviors.column_management import (
+    ColumnManageableWidget,
+    ColumnManagementBehavior,
+)
+from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior, DraggableWidget
+from oncutf.ui.behaviors.metadata_cache_behavior import (
+    CacheableWidget,
+    MetadataCacheBehavior,
+)
+from oncutf.ui.behaviors.metadata_context_menu import (
+    ContextMenuWidget,
+    MetadataContextMenuBehavior,
+)
+from oncutf.ui.behaviors.metadata_edit import (
+    EditableWidget,
+    MetadataEditBehavior,
+)
+from oncutf.ui.behaviors.metadata_scroll_behavior import (
+    MetadataScrollBehavior,
+    ScrollableTreeWidget,
+)
+from oncutf.ui.behaviors.selection import SelectableWidget, SelectionBehavior
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -131,28 +153,6 @@ class FileTableView(QTableView):
 """
 
 # Export all public interfaces
-from oncutf.ui.behaviors.column_management import (
-    ColumnManageableWidget,
-    ColumnManagementBehavior,
-)
-from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior, DraggableWidget
-from oncutf.ui.behaviors.metadata_cache_behavior import (
-    CacheableWidget,
-    MetadataCacheBehavior,
-)
-from oncutf.ui.behaviors.metadata_context_menu import (
-    ContextMenuWidget,
-    MetadataContextMenuBehavior,
-)
-from oncutf.ui.behaviors.metadata_edit import (
-    EditableWidget,
-    MetadataEditBehavior,
-)
-from oncutf.ui.behaviors.metadata_scroll_behavior import (
-    MetadataScrollBehavior,
-    ScrollableTreeWidget,
-)
-from oncutf.ui.behaviors.selection import SelectableWidget, SelectionBehavior
 
 __all__ = [
     "CacheableWidget",

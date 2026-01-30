@@ -7,15 +7,9 @@ This module provides functionality for the oncutf batch file renaming applicatio
 Tests work cross-platform with Greek characters and Windows/Linux paths.
 """
 
-import warnings
-
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from tests.mocks import MockFileItem
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_metadata_from_date_attr():

@@ -50,9 +50,9 @@ class NumberInputContent(QDMNodeContentWidget):
 
     def on_value_changed(self):
         """Handle value changes and trigger node evaluation."""
-        if hasattr(self.node, 'mark_dirty'):
+        if hasattr(self.node, "mark_dirty"):
             self.node.mark_dirty()
-        if hasattr(self.node, 'eval'):
+        if hasattr(self.node, "eval"):
             self.node.eval()
 
     def serialize(self):
@@ -83,9 +83,9 @@ class TextInputContent(QDMNodeContentWidget):
 
     def on_value_changed(self):
         """Handle value changes and trigger node evaluation."""
-        if hasattr(self.node, 'mark_dirty'):
+        if hasattr(self.node, "mark_dirty"):
             self.node.mark_dirty()
-        if hasattr(self.node, 'eval'):
+        if hasattr(self.node, "eval"):
             self.node.eval()
 
     def serialize(self):

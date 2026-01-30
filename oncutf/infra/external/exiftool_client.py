@@ -175,6 +175,7 @@ class ExifToolClient:
         results = self.extract_batch(paths)
         # Convert string keys back to Path objects
         from pathlib import Path as PathlibPath
+
         return {PathlibPath(k): v for k, v in results.items()}
 
     def write_metadata(

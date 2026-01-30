@@ -33,7 +33,7 @@ def simulate_viewport_scroll(
     manager: ThumbnailManager,
     all_files: list[str],
     viewport_size: int = 10,
-    num_scrolls: int = 20
+    num_scrolls: int = 20,
 ) -> dict[str, int]:
     """Simulate scrolling through thumbnail grid.
 
@@ -71,14 +71,16 @@ def simulate_viewport_scroll(
         if scroll_idx % 5 == 0:
             queue_size = manager._request_queue.qsize()
             pending_size = len(manager._pending_requests)
-            print(f"  Scroll {scroll_idx:2d}: visible=[{start_idx}:{end_idx}], "
-                  f"queue={queue_size}, pending={pending_size}")
+            print(
+                f"  Scroll {scroll_idx:2d}: visible=[{start_idx}:{end_idx}], "
+                f"queue={queue_size}, pending={pending_size}"
+            )
 
     end_time = time.perf_counter()
 
     final_queue = manager._request_queue.qsize()
     final_pending = len(manager._pending_requests)
-    unique_files = len(set(all_files[:viewport_size * 3]))  # Files we've actually seen
+    unique_files = len(set(all_files[: viewport_size * 3]))  # Files we've actually seen
 
     print("\nResults:")
     print(f"  Total get_thumbnail() calls: {total_requests}")
@@ -137,12 +139,7 @@ def main() -> None:
     print(f"Test files: {len(test_files)} files")
 
     # Run test
-    stats = simulate_viewport_scroll(
-        manager,
-        test_files,
-        viewport_size=10,
-        num_scrolls=20
-    )
+    stats = simulate_viewport_scroll(manager, test_files, viewport_size=10, num_scrolls=20)
 
     # Validate results
     print("\n" + "=" * 80)

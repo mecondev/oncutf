@@ -22,10 +22,10 @@ from typing import Protocol, runtime_checkable
 class NodeHostBridge(Protocol):
     """Interface for host-provided services/data."""
 
-    def get(self, node_sid: str, key: str) -> object | None:
+    def get(self, _node_sid: str, key: str) -> object | None:
         """Retrieve a value from the host."""
 
-    def set(self, node_sid: str, key: str, value: object) -> None:
+    def set(self, _node_sid: str, key: str, value: object) -> None:
         """Store a value in the host."""
 
 

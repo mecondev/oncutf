@@ -118,7 +118,9 @@ class DragHandler:
             return False
 
         # Check drag distance threshold
-        if (event.pos() - self._drag_start_pos).manhattanLength() < QApplication.startDragDistance():
+        if (
+            event.pos() - self._drag_start_pos
+        ).manhattanLength() < QApplication.startDragDistance():
             return False
 
         logger.debug("[DragHandler] About to start custom drag", extra={"dev_only": True})
@@ -292,7 +294,8 @@ class DragHandler:
         drag_manager = DragManager.get_instance()
         if not drag_manager.is_drag_active():
             logger.debug(
-                "[DragHandler] Drag was cancelled, skipping drop", extra={"dev_only": True}
+                "[DragHandler] Drag was cancelled, skipping drop",
+                extra={"dev_only": True},
             )
             self._cleanup_drag_state()
             return

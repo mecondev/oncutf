@@ -27,7 +27,9 @@ from PyQt5.QtWidgets import (
 )
 
 from oncutf.controllers.header_interaction_controller import HeaderInteractionController
-from oncutf.ui.behaviors.column_visibility_menu_builder import ColumnVisibilityMenuBuilder
+from oncutf.ui.behaviors.column_visibility_menu_builder import (
+    ColumnVisibilityMenuBuilder,
+)
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -73,6 +75,7 @@ class DropIndicatorWidget(QWidget):
 
         # Get text color from theme for indicator
         from oncutf.ui.theme_manager import get_theme_manager
+
         theme = get_theme_manager()
         text_color = theme.get_color("table_header_text")
         indicator_color = QColor(text_color) if isinstance(text_color, str) else text_color
@@ -216,9 +219,7 @@ class InteractiveHeader(QHeaderView):
 
         # Create custom drop indicator widget with paintEvent
         self._drop_indicator_widget = DropIndicatorWidget(
-            self,
-            self._drop_indicator_x,
-            self.height()
+            self, self._drop_indicator_x, self.height()
         )
         self._drop_indicator_widget.setGeometry(0, 0, self.width(), self.height())
         self._drop_indicator_widget.show()
@@ -485,7 +486,7 @@ class InteractiveHeader(QHeaderView):
         """Clear table hover when mouse enters header."""
         # Get file table view to clear its hover state
         file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, '_hover_handler'):
+        if file_table_view and hasattr(file_table_view, "_hover_handler"):
             file_table_view._hover_handler.clear_hover()
         super().enterEvent(event)
 
@@ -535,7 +536,7 @@ class InteractiveHeader(QHeaderView):
             released_index,
             self._pressed_index,
             self._click_actions_enabled,
-            (event.pos() - self._press_pos).manhattanLength()
+            (event.pos() - self._press_pos).manhattanLength(),
         )
 
         # Use controller to determine if click should be handled
@@ -560,9 +561,11 @@ class InteractiveHeader(QHeaderView):
             logger.info("[HEADER RELEASE] Column 0 clicked - calling controller.handle_toggle_all")
             controller.handle_toggle_all()
         elif action_type == "sort":
-            logger.info("[HEADER RELEASE] Column %d clicked - calling controller.handle_sort", released_index)
+            logger.info(
+                "[HEADER RELEASE] Column %d clicked - calling controller.handle_sort",
+                released_index,
+            )
             controller.handle_sort(released_index)
-
 
     def _get_header_tooltip_text(self, logical_index: int) -> str | None:
         if logical_index == 0:
@@ -583,7 +586,10 @@ class InteractiveHeader(QHeaderView):
     def viewportEvent(self, event: QEvent) -> bool:
         """Handle tooltip events on the header viewport to suppress Qt default tooltips."""
         if event.type() == QEvent.ToolTip:
-            from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
+            from oncutf.utils.shared.timer_manager import (
+                cancel_timer,
+                schedule_dialog_close,
+            )
 
             logical_index = self.logicalIndexAt(event.pos())
             text = self._get_header_tooltip_text(logical_index)
@@ -615,6 +621,7 @@ class InteractiveHeader(QHeaderView):
         if event.type() == QEvent.Leave:
             if self._tooltip_timer_id:
                 from oncutf.utils.shared.timer_manager import cancel_timer
+
                 cancel_timer(self._tooltip_timer_id)
                 self._tooltip_timer_id = None
             TooltipHelper.clear_tooltips_for_widget(self)
@@ -700,7 +707,7 @@ class InteractiveHeader(QHeaderView):
 
             # While locked: neutralize hover.
             qss = (
-                "\nQHeaderView[oncutf_locked=\"true\"]::section:hover {"
+                '\nQHeaderView[oncutf_locked="true"]::section:hover {'
                 f"background-color: {header_bg};"
                 f"color: {header_text};"
                 "}"
@@ -720,8 +727,6 @@ class InteractiveHeader(QHeaderView):
             self.style().unpolish(self)
             self.style().polish(self)
         self.update()
-
-
 
     def contextMenuEvent(self, event):
         """Show unified right-click context menu for header."""
@@ -853,9 +858,7 @@ class InteractiveHeader(QHeaderView):
                 window_config.set("columns_locked", not new_state)
                 config_manager.mark_dirty()
 
-                logger.info(
-                    "Columns %s", "locked" if not new_state else "unlocked"
-                )
+                logger.info("Columns %s", "locked" if not new_state else "unlocked")
         except Exception as e:
             logger.warning("Failed to save columns lock state: %s", e)
 
@@ -900,6 +903,7 @@ class InteractiveHeader(QHeaderView):
 
             # 3. Reset column visibility to defaults (from FILE_TABLE_COLUMN_CONFIG)
             from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+
             default_visibility = {
                 key: config.get("default_visible", True)
                 for key, config in FILE_TABLE_COLUMN_CONFIG.items()

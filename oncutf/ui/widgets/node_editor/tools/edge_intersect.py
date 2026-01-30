@@ -109,13 +109,25 @@ class EdgeIntersect:
 
         edge_type = edge.edge_type
         edge.remove()
-        self.graphics_view.graphics_scene.scene.history.store_history("Delete existing edge", set_modified=True)
+        self.graphics_view.graphics_scene.scene.history.store_history(
+            "Delete existing edge", set_modified=True
+        )
 
         new_node_socket_in = node.inputs[0]
-        Edge(self.graphics_scene.scene, socket_start, new_node_socket_in, edge_type=edge_type)
+        Edge(
+            self.graphics_scene.scene,
+            socket_start,
+            new_node_socket_in,
+            edge_type=edge_type,
+        )
 
         new_node_socket_out = node.outputs[0]
-        Edge(self.graphics_scene.scene, new_node_socket_out, socket_end, edge_type=edge_type)
+        Edge(
+            self.graphics_scene.scene,
+            new_node_socket_out,
+            socket_end,
+            edge_type=edge_type,
+        )
 
         self.graphics_view.graphics_scene.scene.history.store_history(
             "Created new edges by dropping node", set_modified=True
@@ -154,7 +166,9 @@ class EdgeIntersect:
         self.hoveredList = []
 
         for graphics_item in graphics_items:
-            if hasattr(graphics_item, "edge") and not self.draggedNode.has_connected_edge(graphics_item.edge):
+            if hasattr(graphics_item, "edge") and not self.draggedNode.has_connected_edge(
+                graphics_item.edge
+            ):
                 self.hoveredList.append(graphics_item)
                 graphics_item.hovered = True
 
@@ -170,7 +184,9 @@ class EdgeIntersect:
         """
         graphics_items = self.graphics_scene.items(node_box)
         for graphics_item in graphics_items:
-            if hasattr(graphics_item, "edge") and not self.draggedNode.has_connected_edge(graphics_item.edge):
+            if hasattr(graphics_item, "edge") and not self.draggedNode.has_connected_edge(
+                graphics_item.edge
+            ):
                 return graphics_item.edge
         return None
 

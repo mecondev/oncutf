@@ -55,7 +55,14 @@ class NameTransformModule:
             logger.debug("[NameTransformModule] After Greeklish: %s", base_name)
 
         # Apply case transformation
-        if case in ("lower", "UPPER", "Capitalize", "camelCase", "PascalCase", "Title Case"):
+        if case in (
+            "lower",
+            "UPPER",
+            "Capitalize",
+            "camelCase",
+            "PascalCase",
+            "Title Case",
+        ):
             base_name = apply_transform(base_name, case)
 
         # Apply separator transformation

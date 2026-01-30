@@ -65,7 +65,8 @@ class MetadataHistoryDialog(QDialog):
         self.setWindowTitle("Command History - Undo/Redo Operations")
         self.setModal(True)
         self.resize(
-            UNDO_REDO_SETTINGS["HISTORY_DIALOG_WIDTH"], UNDO_REDO_SETTINGS["HISTORY_DIALOG_HEIGHT"]
+            UNDO_REDO_SETTINGS["HISTORY_DIALOG_WIDTH"],
+            UNDO_REDO_SETTINGS["HISTORY_DIALOG_HEIGHT"],
         )
 
         self._setup_ui()
@@ -165,7 +166,9 @@ class MetadataHistoryDialog(QDialog):
         self.undo_button.setEnabled(False)
         self.undo_button.clicked.connect(self._undo_selected)
         TooltipHelper.setup_tooltip(
-            self.undo_button, "Undo the selected operation from history", TooltipType.INFO
+            self.undo_button,
+            "Undo the selected operation from history",
+            TooltipType.INFO,
         )
         button_layout.addWidget(self.undo_button)
 
@@ -173,7 +176,9 @@ class MetadataHistoryDialog(QDialog):
         self.redo_button.setEnabled(False)
         self.redo_button.clicked.connect(self._redo_selected)
         TooltipHelper.setup_tooltip(
-            self.redo_button, "Redo the selected operation from history", TooltipType.INFO
+            self.redo_button,
+            "Redo the selected operation from history",
+            TooltipType.INFO,
         )
         button_layout.addWidget(self.redo_button)
 

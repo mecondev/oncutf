@@ -51,9 +51,7 @@ class SemanticAliasesManager:
         """
         return AppPaths.get_user_data_dir() / self.ALIASES_FILENAME
 
-    def load_aliases(
-        self, auto_create: bool = True
-    ) -> dict[str, list[str]]:
+    def load_aliases(self, auto_create: bool = True) -> dict[str, list[str]]:
         """Load semantic aliases from file or create with defaults.
 
         Args:
@@ -72,9 +70,7 @@ class SemanticAliasesManager:
                 self._create_default_file()
                 return self._load_from_file()
             else:
-                logger.warning(
-                    "Semantic aliases file not found: %s", self._aliases_file
-                )
+                logger.warning("Semantic aliases file not found: %s", self._aliases_file)
                 return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
         return self._load_from_file()
@@ -99,9 +95,7 @@ class SemanticAliasesManager:
 
             for key, value in data.items():
                 if not isinstance(value, list):
-                    raise ValueError(
-                        f"Alias '{key}' must map to a list of keys"
-                    )
+                    raise ValueError(f"Alias '{key}' must map to a list of keys")
 
             logger.debug(
                 "Loaded %d semantic aliases from %s",
@@ -121,9 +115,7 @@ class SemanticAliasesManager:
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
         except Exception as e:
-            logger.exception(
-                "Error loading semantic aliases: %s", e
-            )
+            logger.exception("Error loading semantic aliases: %s", e)
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
     def _create_default_file(self) -> None:
@@ -164,9 +156,7 @@ class SemanticAliasesManager:
             return True
 
         except Exception as e:
-            logger.exception(
-                "Failed to save semantic aliases: %s", e
-            )
+            logger.exception("Failed to save semantic aliases: %s", e)
             return False
 
     def reload_aliases(self) -> dict[str, list[str]]:
@@ -194,9 +184,7 @@ class SemanticAliasesManager:
             import shutil
 
             shutil.copy2(self._aliases_file, backup_path)
-            logger.warning(
-                "Backed up corrupted aliases file to %s", backup_path
-            )
+            logger.warning("Backed up corrupted aliases file to %s", backup_path)
         except Exception as e:
             logger.error("Failed to backup corrupted file: %s", e)
 
@@ -229,9 +217,7 @@ class SemanticAliasesManager:
         defaults = MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
         return self.save_aliases(defaults)
 
-    def add_alias(
-        self, semantic_name: str, original_keys: list[str]
-    ) -> bool:
+    def add_alias(self, semantic_name: str, original_keys: list[str]) -> bool:
         """Add or update a semantic alias.
 
         Args:

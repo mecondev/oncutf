@@ -74,7 +74,8 @@ class DatabaseManager:
         if DEBUG_FRESH_START and not _FRESH_START_DONE:
             if self.db_path.exists():
                 logger.info(
-                    "[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s", self.db_path
+                    "[DatabaseManager] DEBUG_FRESH_START enabled - deleting: %s",
+                    self.db_path,
                 )
                 try:
                     self.db_path.unlink()
@@ -494,7 +495,12 @@ class DatabaseManager:
 
         """
         return self.thumbnail_store.save_cache_entry(
-            folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time
+            folder_path,
+            file_path,
+            file_mtime,
+            file_size,
+            cache_filename,
+            video_frame_time,
         )
 
     def get_thumbnail_folder_order(self, folder_path: str) -> list[str] | None:

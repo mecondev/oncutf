@@ -45,7 +45,9 @@ class CompanionMetadataHandler:
     def companion_helper(self) -> type[CompanionFilesHelper]:
         """Lazy-initialized CompanionFilesHelper."""
         if self._companion_helper is None:
-            from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+            from oncutf.utils.filesystem.companion_files_helper import (
+                CompanionFilesHelper,
+            )
 
             self._companion_helper = CompanionFilesHelper
         return self._companion_helper
@@ -146,7 +148,10 @@ class CompanionMetadataHandler:
             return base_metadata
 
     def enhance_metadata_with_companions(
-        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+        self,
+        file_item: FileItem,
+        base_metadata: dict[str, Any],
+        all_files: list[FileItem],
     ) -> dict[str, Any]:
         """Enhance metadata with companion file data during loading.
 

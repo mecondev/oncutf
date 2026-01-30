@@ -57,7 +57,10 @@ from oncutf.ui.widgets.node_editor.nodes.conversion_nodes import (
     ToNumberNode,
     ToStringNode,
 )
-from oncutf.ui.widgets.node_editor.nodes.input_node import NumberInputNode, TextInputNode
+from oncutf.ui.widgets.node_editor.nodes.input_node import (
+    NumberInputNode,
+    TextInputNode,
+)
 from oncutf.ui.widgets.node_editor.nodes.list_nodes import (
     AppendNode,
     CreateListNode,

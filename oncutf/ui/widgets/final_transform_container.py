@@ -78,7 +78,9 @@ class FinalTransformContainer(QWidget):
         self.greeklish_checkbox = GreeklishToggle()
         self.greeklish_checkbox.setChecked(False)
         TooltipHelper.setup_tooltip(
-            self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO
+            self.greeklish_checkbox,
+            "Toggle Greek to Greeklish conversion",
+            TooltipType.INFO,
         )
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
 
@@ -182,9 +184,7 @@ class FinalTransformContainer(QWidget):
         if self._preview_timer_id:
             cancel_timer(self._preview_timer_id)
         # Schedule with 50ms debounce via TimerManager
-        self._preview_timer_id = schedule_ui_update(
-            self._trigger_central_preview_update, delay=50
-        )
+        self._preview_timer_id = schedule_ui_update(self._trigger_central_preview_update, delay=50)
 
     def _trigger_central_preview_update(self):
         """Trigger central preview update."""
@@ -251,7 +251,6 @@ class FinalTransformContainer(QWidget):
 
             disabled_icon = QIcon(disabled_pixmap)
             self.remove_button.setIcon(disabled_icon)
-
 
 
 class GreeklishToggle(QLabel):

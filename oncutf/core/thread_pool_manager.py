@@ -283,7 +283,10 @@ class ThreadPoolManager(QObject):
     pool_resized = pyqtSignal(int)  # new_size
 
     def __init__(
-        self, min_threads: int = 2, max_threads: int | None = None, parent: QObject | None = None
+        self,
+        min_threads: int = 2,
+        max_threads: int | None = None,
+        parent: QObject | None = None,
     ):
         """Initialize thread pool manager.
 

@@ -11,7 +11,10 @@ Popup sizing logic is delegated to combo_popup_helper for reusability.
 from PyQt5.QtWidgets import QComboBox, QWidget
 
 from oncutf.ui.delegates.ui_delegates import ComboBoxItemDelegate
-from oncutf.ui.helpers.combo_popup_helper import apply_combo_popup_metrics, prepare_combo_popup
+from oncutf.ui.helpers.combo_popup_helper import (
+    apply_combo_popup_metrics,
+    prepare_combo_popup,
+)
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -83,7 +86,6 @@ class StyledComboBox(QComboBox):
             focus_border = theme.get_color("input_focus_border")
             hover_border = theme.get_color("outline")
             menu_bg = theme.get_color("menu_background")
-
 
             self.setStyleSheet(f"""
                 QComboBox {{

@@ -326,7 +326,8 @@ class MetadataCommandManager(QObject):
         else:
             # Multiple commands, create batch
             batch_command = BatchMetadataCommand(
-                self._pending_commands, f"Batch edit: {len(self._pending_commands)} operations"
+                self._pending_commands,
+                f"Batch edit: {len(self._pending_commands)} operations",
             )
             self._add_to_undo_stack(batch_command)
 
@@ -344,7 +345,10 @@ class MetadataCommandManager(QObject):
         if len(self._undo_stack) > int(self.max_history):
             self._undo_stack.pop(0)
 
-        logger.debug("[MetadataCommandManager] Added to undo stack: %s", command.get_description())
+        logger.debug(
+            "[MetadataCommandManager] Added to undo stack: %s",
+            command.get_description(),
+        )
 
     def _emit_state_signals(self) -> None:
         """Emit signals for UI state updates."""

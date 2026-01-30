@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 from PyQt5.QtCore import QModelIndex, Qt
 
-from oncutf.ui.adapters.application_context import get_app_context
+from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -125,7 +125,7 @@ class FileOperationsManager:
 
         # Optionally notify parent window
         try:
-            get_app_context()
+            get_qt_app_context()
             if self.model.parent_window:
                 self.model.parent_window.update_files_label()
         except RuntimeError:
@@ -220,7 +220,9 @@ class FileOperationsManager:
 
             # Emit dataChanged for all roles that might be affected by metadata update
             self.model.dataChanged.emit(
-                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole, Qt.DisplayRole]
+                top_left,
+                bottom_right,
+                [Qt.DecorationRole, Qt.ToolTipRole, Qt.DisplayRole],
             )
         except ValueError:
             # File item not found in the model

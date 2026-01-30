@@ -34,7 +34,6 @@ class ThumbnailGenerationError(Exception):
     """Raised when thumbnail generation fails."""
 
 
-
 class ThumbnailProvider(ABC):
     """Abstract base class for thumbnail generation.
 
@@ -259,9 +258,15 @@ class ImageThumbnailProvider(ThumbnailProvider):
                                 )
                                 return pixmap
                 except rawpy.LibRawNoThumbnailError:
-                    logger.debug("[ImageThumbnailProvider] No embedded thumbnail in: %s", file_path)
+                    logger.debug(
+                        "[ImageThumbnailProvider] No embedded thumbnail in: %s",
+                        file_path,
+                    )
                 except rawpy.LibRawUnsupportedThumbnailError:
-                    logger.debug("[ImageThumbnailProvider] Unsupported thumbnail format in: %s", file_path)
+                    logger.debug(
+                        "[ImageThumbnailProvider] Unsupported thumbnail format in: %s",
+                        file_path,
+                    )
 
                 # Fallback: Full RAW processing (slower but always works)
                 logger.debug("[ImageThumbnailProvider] Full RAW processing for: %s", file_path)
@@ -304,7 +309,9 @@ class ImageThumbnailProvider(ThumbnailProvider):
         except rawpy.LibRawError as e:
             raise ThumbnailGenerationError(f"RAW processing error for {file_path}: {e}") from e
         except Exception as e:
-            raise ThumbnailGenerationError(f"Unexpected error processing RAW {file_path}: {e}") from e
+            raise ThumbnailGenerationError(
+                f"Unexpected error processing RAW {file_path}: {e}"
+            ) from e
 
 
 class VideoThumbnailProvider(ThumbnailProvider):
@@ -534,7 +541,11 @@ class VideoThumbnailProvider(ThumbnailProvider):
             )
             return duration
 
-        except (subprocess.CalledProcessError, ValueError, subprocess.TimeoutExpired) as e:
+        except (
+            subprocess.CalledProcessError,
+            ValueError,
+            subprocess.TimeoutExpired,
+        ) as e:
             logger.warning("[VideoThumbnailProvider] Failed to get duration: %s", e)
             return None
 
@@ -683,9 +694,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
         contrast = max(luma_values) - min(luma_values)
 
         # Check thresholds
-        is_valid = (
-            avg_luma >= self.MIN_LUMA_THRESHOLD and contrast >= self.MIN_CONTRAST_THRESHOLD
-        )
+        is_valid = avg_luma >= self.MIN_LUMA_THRESHOLD and contrast >= self.MIN_CONTRAST_THRESHOLD
 
         if not is_valid:
             logger.debug(
@@ -734,7 +743,11 @@ class VideoThumbnailProvider(ThumbnailProvider):
                         cmdline = " ".join(proc.info["cmdline"]).lower()
                         if "ffmpeg" in cmdline:
                             ffmpeg_processes.append(proc)
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                except (
+                    psutil.NoSuchProcess,
+                    psutil.AccessDenied,
+                    psutil.ZombieProcess,
+                ):
                     pass
 
             if not ffmpeg_processes:

@@ -32,8 +32,7 @@ PROJECT_START = datetime(2025, 5, 1)
 
 
 def is_excluded(filepath: Path, project_path: Path) -> bool:
-    """Check if file is in excluded list.
-    """
+    """Check if file is in excluded list."""
     relative_path = filepath.relative_to(project_path)
     filepath_str = str(relative_path)
 

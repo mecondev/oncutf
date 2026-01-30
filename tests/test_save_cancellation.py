@@ -84,7 +84,10 @@ class TestSaveCancellation:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
             manager._show_save_results(
-                success_count=5, failed_files=[], files_to_save=files_to_save, was_cancelled=True
+                success_count=5,
+                failed_files=[],
+                files_to_save=files_to_save,
+                was_cancelled=True,
             )
 
             # Verify info dialog was shown
@@ -116,7 +119,10 @@ class TestSaveCancellation:
 
             # Test cancelled operation (uses show_info_message)
             manager._show_save_results(
-                success_count=5, failed_files=[], files_to_save=files_to_save, was_cancelled=True
+                success_count=5,
+                failed_files=[],
+                files_to_save=files_to_save,
+                was_cancelled=True,
             )
             cancelled_call = mock_show_info.call_args
 
@@ -135,7 +141,10 @@ class TestSaveCancellation:
             if mock_show_warning.called:
                 failed_call = mock_show_warning.call_args
                 # Check title (index 1) and message (index 2)
-                assert "cancel" in cancelled_call[0][1].lower() or "cancel" in cancelled_call[0][2].lower()
+                assert (
+                    "cancel" in cancelled_call[0][1].lower()
+                    or "cancel" in cancelled_call[0][2].lower()
+                )
                 assert "failed" in failed_call[0][2].lower() or "error" in failed_call[0][1].lower()
 
     def test_cancellation_resets_between_operations(self):

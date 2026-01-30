@@ -19,7 +19,10 @@ Date:
     2025-12-11
 """
 
-from oncutf.ui.widgets.node_editor.widgets.content_widget import QDMNodeContentWidget, QDMTextEdit
+from oncutf.ui.widgets.node_editor.widgets.content_widget import (
+    QDMNodeContentWidget,
+    QDMTextEdit,
+)
 from oncutf.ui.widgets.node_editor.widgets.editor_widget import NodeEditorWidget
 from oncutf.ui.widgets.node_editor.widgets.editor_window import NodeEditorWindow
 

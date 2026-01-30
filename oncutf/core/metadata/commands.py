@@ -217,7 +217,9 @@ class EditMetadataFieldCommand(MetadataCommand):
                     "[EditMetadataFieldCommand] No staging manager available, using fallback"
                 )
                 # Fallback to old cache method
-                self.metadata_tree_view._cache_behavior.update_metadata_in_cache(field_path, str(value))
+                self.metadata_tree_view._cache_behavior.update_metadata_in_cache(
+                    field_path, str(value)
+                )
 
             # Update tree view display using display_path (for grouped paths)
             # CRITICAL: Set current file path before updating tree, otherwise refresh will fail
@@ -230,7 +232,9 @@ class EditMetadataFieldCommand(MetadataCommand):
             if hasattr(self.metadata_tree_view, "_edit_behavior"):
                 self.metadata_tree_view._edit_behavior.smart_mark_modified(self.display_path, value)
             elif hasattr(self.metadata_tree_view, "mark_as_modified"):
-                self.metadata_tree_view._edit_behavior.mark_as_modified(self.display_path)  # Fallback
+                self.metadata_tree_view._edit_behavior.mark_as_modified(
+                    self.display_path
+                )  # Fallback
 
             # Update file icon status
             self.metadata_tree_view._cache_behavior.update_file_icon_status()

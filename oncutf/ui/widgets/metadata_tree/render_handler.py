@@ -107,7 +107,7 @@ class TreeRenderHandler:
 
             display_state = MetadataDisplayState(
                 file_path=self.view._current_file_path,
-                modified_keys=set()  # Service will populate from staging manager
+                modified_keys=set(),  # Service will populate from staging manager
             )
 
             # Pass __extended__ flag to display state for service to handle

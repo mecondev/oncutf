@@ -65,7 +65,7 @@ class DraggableWidget(Protocol):
         """Map global position to widget coordinates."""
         ...
 
-    def blockSignals(self, block: bool) -> bool:
+    def blockSignals(self, _block: bool) -> bool:
         """Block/unblock signals."""
         ...
 
@@ -461,7 +461,8 @@ class DragDropBehavior:
         """
         if not self._drag_data:
             logger.debug(
-                "[DragDropBehavior] No drag data for metadata tree drop", extra={"dev_only": True}
+                "[DragDropBehavior] No drag data for metadata tree drop",
+                extra={"dev_only": True},
             )
             return False
 

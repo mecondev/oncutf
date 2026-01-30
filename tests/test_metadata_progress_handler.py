@@ -22,7 +22,9 @@ class TestProgressDialogCreation:
     def test_create_metadata_dialog_calls_factory(self) -> None:
         """create_metadata_progress_dialog should return a progress dialog port."""
         from oncutf.app.ports.user_interaction import ProgressDialogPort
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -32,7 +34,9 @@ class TestProgressDialogCreation:
 
     def test_create_metadata_dialog_stores_reference(self) -> None:
         """Should store reference to created dialog."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
         assert handler._metadata_progress_dialog is None
@@ -44,7 +48,9 @@ class TestProgressDialogCreation:
     def test_create_hash_dialog_calls_factory(self) -> None:
         """create_hash_progress_dialog should return a progress dialog port."""
         from oncutf.app.ports.user_interaction import ProgressDialogPort
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -54,7 +60,9 @@ class TestProgressDialogCreation:
 
     def test_create_hash_dialog_stores_reference(self) -> None:
         """Should store reference to created hash dialog."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
         assert handler._hash_progress_dialog is None
@@ -69,7 +77,9 @@ class TestDialogLifecycle:
 
     def test_close_metadata_dialog_when_exists(self) -> None:
         """close_metadata_progress_dialog should close existing dialog."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -83,7 +93,9 @@ class TestDialogLifecycle:
 
     def test_close_metadata_dialog_when_none(self) -> None:
         """close_metadata_progress_dialog should handle None gracefully."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
         handler._metadata_progress_dialog = None
@@ -95,7 +107,9 @@ class TestDialogLifecycle:
 
     def test_close_metadata_dialog_suppresses_exceptions(self) -> None:
         """close_metadata_progress_dialog should suppress exceptions."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -115,7 +129,9 @@ class TestParentWindowProperty:
 
     def test_getter_returns_set_value(self) -> None:
         """Getter should return the parent window set at init."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         mock_window = MagicMock()
         handler = MetadataProgressHandler(parent_window=mock_window)
@@ -124,7 +140,9 @@ class TestParentWindowProperty:
 
     def test_setter_updates_value(self) -> None:
         """Setter should update the parent window."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
         assert handler.parent_window is None
@@ -136,7 +154,9 @@ class TestParentWindowProperty:
 
     def test_initial_none_parent(self) -> None:
         """Parent window should be None by default."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler()
 
@@ -148,7 +168,9 @@ class TestInitialState:
 
     def test_dialogs_initially_none(self) -> None:
         """Both dialog references should be None initially."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         handler = MetadataProgressHandler(parent_window=None)
 
@@ -157,7 +179,9 @@ class TestInitialState:
 
     def test_accepts_parent_window(self) -> None:
         """Should accept parent_window in constructor."""
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
 
         mock_window = MagicMock()
         handler = MetadataProgressHandler(parent_window=mock_window)
@@ -171,7 +195,9 @@ class TestShowDialogMethods:
     def test_show_metadata_dialog_returns_dialog(self) -> None:
         """show_metadata_progress_dialog should return a dialog."""
         from oncutf.app.services.progress_service import NullProgressDialog
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
         from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)
@@ -190,7 +216,9 @@ class TestShowDialogMethods:
     def test_show_hash_dialog_returns_dialog(self) -> None:
         """show_hash_progress_dialog should return a dialog."""
         from oncutf.app.services.progress_service import NullProgressDialog
-        from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+        from oncutf.core.metadata.metadata_progress_handler import (
+            MetadataProgressHandler,
+        )
         from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
         handler = MetadataProgressHandler(parent_window=None)

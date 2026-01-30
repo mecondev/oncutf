@@ -72,7 +72,10 @@ class MetadataFieldValidator:
             char for char in MetadataFieldValidator.INVALID_FILENAME_CHARS if char in stripped_value
         ]
         if invalid_chars_found:
-            return False, f"Title contains invalid characters: {''.join(invalid_chars_found)}"
+            return (
+                False,
+                f"Title contains invalid characters: {''.join(invalid_chars_found)}",
+            )
 
         return True, ""
 
@@ -209,7 +212,10 @@ class MetadataFieldValidator:
         keywords = [keyword for keyword in keywords if keyword]
 
         if len(keywords) > MetadataFieldValidator.MAX_KEYWORDS_COUNT:
-            return False, f"Too many keywords (maximum {MetadataFieldValidator.MAX_KEYWORDS_COUNT})"
+            return (
+                False,
+                f"Too many keywords (maximum {MetadataFieldValidator.MAX_KEYWORDS_COUNT})",
+            )
 
         # Check individual keyword length
         for keyword in keywords:
@@ -316,7 +322,9 @@ class MetadataFieldValidator:
         return ", ".join(clean_keywords)
 
     @staticmethod
-    def get_field_validator(field_name: str) -> Callable[[Any], tuple[bool, str]] | None:
+    def get_field_validator(
+        field_name: str,
+    ) -> Callable[[Any], tuple[bool, str]] | None:
         """Get the appropriate validator function for a field name.
 
         Args:

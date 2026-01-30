@@ -431,18 +431,14 @@ class SelectionStore(QObject):
         self._pending_selection_signal = True
         if not self._update_timer_id:
             # Schedule with 15ms debounce for UI updates (via TimerManager)
-            self._update_timer_id = schedule_ui_update(
-                self._emit_deferred_signals, delay=15
-            )
+            self._update_timer_id = schedule_ui_update(self._emit_deferred_signals, delay=15)
 
     def _schedule_checked_signal(self) -> None:
         """Schedule checked_changed signal emission with debouncing."""
         self._pending_checked_signal = True
         if not self._update_timer_id:
             # Schedule with 15ms debounce for UI updates (via TimerManager)
-            self._update_timer_id = schedule_ui_update(
-                self._emit_deferred_signals, delay=15
-            )
+            self._update_timer_id = schedule_ui_update(self._emit_deferred_signals, delay=15)
 
     def _emit_deferred_signals(self) -> None:
         """Emit pending signals after debounce timer."""

@@ -63,10 +63,14 @@ class TestSafeRenameWorkflow:
             # Verify timer was scheduled for state restoration (debounced/safety variants allowed)
             assert mock_timer.schedule.called
             # Collect scheduled timer_ids from all calls
-            timer_ids = [kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list]
+            timer_ids = [
+                kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list
+            ]
             # Expect at least one timer related to post-rename state restoration
             assert any(
-                (tid and "post_rename_state_restore" in tid) or tid in (
+                (tid and "post_rename_state_restore" in tid)
+                or tid
+                in (
                     "post_rename_state_restore_debounced",
                     "post_rename_state_restore_fallback",
                     "post_rename_state_restore_safety",

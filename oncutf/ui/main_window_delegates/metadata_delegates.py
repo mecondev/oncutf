@@ -27,9 +27,12 @@ class MetadataDelegates:
         """Save all modified metadata via Application Service."""
         return self.shortcut_handler.shortcut_save_all_metadata()
 
-    def load_metadata_for_items(self, items: list, use_extended: bool = False, source: str = "unknown") -> None:
+    def load_metadata_for_items(
+        self, items: list, use_extended: bool = False, source: str = "unknown"
+    ) -> None:
         """Load metadata for items via MetadataController."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         result = self.metadata_controller.load_metadata(items, use_extended, source)
@@ -42,6 +45,7 @@ class MetadataDelegates:
     def restore_fileitem_metadata_from_cache(self) -> None:
         """Restore metadata from cache via MetadataController."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         result = self.metadata_controller.restore_metadata_from_cache()

@@ -332,7 +332,9 @@ class MetadataExporter:
         """Get metadata for a file from cache or file item using file_status_helpers."""
         try:
             # Use file_status_helpers for direct cache access
-            from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
+            from oncutf.utils.filesystem.file_status_helpers import (
+                get_metadata_for_file,
+            )
 
             if hasattr(file_item, "full_path"):
                 metadata = get_metadata_for_file(file_item.full_path)
@@ -352,7 +354,12 @@ class MetadataExporter:
     def _group_metadata(self, metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:
         """Group metadata by categories with extended key detection."""
         grouped: dict[str, dict[str, Any]] = defaultdict(
-            lambda: {"items": {}, "extended_keys": set(), "total_count": 0, "extended_count": 0}
+            lambda: {
+                "items": {},
+                "extended_keys": set(),
+                "total_count": 0,
+                "extended_count": 0,
+            }
         )
 
         # Detect extended keys

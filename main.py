@@ -19,11 +19,12 @@ import platform
 import signal
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 # Add the project root to the path FIRST - before any local imports
-# Normalize the path for Windows compatibility
-project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
+# Use pathlib for path manipulation
+project_root = str(Path(__file__).resolve().parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -139,7 +140,7 @@ def main() -> int:
         # CRITICAL: Set working directory to project root first
         # This ensures all relative paths work correctly regardless of where script is run from
         os.chdir(project_root)
-        logger.info("[App] Working directory set to: %s", os.getcwd())
+        logger.info("[App] Working directory set to: %s", Path.cwd())
 
         # Log platform information for debugging
         logger.info("[App] Platform: %s %s", platform.system(), platform.release())
@@ -189,7 +190,8 @@ def main() -> int:
         # This ensures proper alternating row colors and theme consistency
         app.setStyle("Fusion")
         logger.debug(
-            "Applied Fusion style for cross-platform consistency", extra={"dev_only": True}
+            "Applied Fusion style for cross-platform consistency",
+            extra={"dev_only": True},
         )
 
         # Load Inter fonts
@@ -305,7 +307,9 @@ def main() -> int:
                     # Suppress wait cursor during MainWindow construction so any
                     # early wait_cursor usage inside init does not flicker.
                     try:
-                        from oncutf.ui.helpers.cursor_helper import suppress_wait_cursor_for
+                        from oncutf.ui.helpers.cursor_helper import (
+                            suppress_wait_cursor_for,
+                        )
 
                         suppress_wait_cursor_for(5.0)
                     except Exception:
@@ -325,7 +329,9 @@ def main() -> int:
                     try:
                         import time
 
-                        from oncutf.ui.helpers.cursor_helper import set_wait_cursor_suppressed_until
+                        from oncutf.ui.helpers.cursor_helper import (
+                            set_wait_cursor_suppressed_until,
+                        )
 
                         set_wait_cursor_suppressed_until(
                             time.monotonic() + (WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS / 1000.0)
@@ -363,7 +369,9 @@ def main() -> int:
             from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
 
             get_timer_manager().schedule(
-                on_min_time_elapsed, delay=SPLASH_SCREEN_DURATION, timer_type=TimerType.GENERIC
+                on_min_time_elapsed,
+                delay=SPLASH_SCREEN_DURATION,
+                timer_type=TimerType.GENERIC,
             )
 
             # Add timeout safety fallback (10 seconds)

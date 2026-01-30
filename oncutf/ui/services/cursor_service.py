@@ -82,6 +82,8 @@ def force_restore_cursor() -> None:
         adapter.force_restore_cursor()
     else:
         # Fallback: direct Qt import (legacy behavior)
-        from oncutf.ui.helpers.cursor_helper import force_restore_cursor as legacy_force_restore
+        from oncutf.ui.helpers.cursor_helper import (
+            force_restore_cursor as legacy_force_restore,
+        )
 
         legacy_force_restore()

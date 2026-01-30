@@ -14,7 +14,8 @@ sys.path.insert(0, str(project_root))
 
 from core.parallel_metadata_loader import ParallelMetadataLoader
 from models.file_item import FileItem
-from utils.exiftool_wrapper import ExifToolWrapper
+
+from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
 
 def create_file_items(
@@ -116,13 +117,13 @@ def main():
     max_files = int(sys.argv[2]) if len(sys.argv) > 2 else 50
     use_extended = len(sys.argv) > 3 and sys.argv[3].lower() == "extended"
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(" Parallel Metadata Loading Benchmark")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Directory: {directory}")
     print(f"Max files: {max_files}")
     print(f"Extended mode: {use_extended}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Create file items
     print("\n Scanning directory...")
@@ -150,16 +151,16 @@ def main():
         ((sequential_time - parallel_time) / sequential_time * 100) if sequential_time > 0 else 0
     )
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(" SUMMARY")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Sequential:  {sequential_time:.2f}s ({len(items) / sequential_time:.1f} files/sec)")
     print(f"Parallel:    {parallel_time:.2f}s ({len(items) / parallel_time:.1f} files/sec)")
     print("")
     print(f" Speedup:   {speedup:.2f}x faster")
     print(f" Improvement: {improvement:.1f}% time saved")
     print(f"⏱️  Time saved: {sequential_time - parallel_time:.2f}s")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Performance category
     if speedup >= 3:

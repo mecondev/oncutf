@@ -73,15 +73,11 @@ class LoggerVisitor(ast.NodeVisitor):
 
         # Check for 'logger' variable or 'self.logger' attribute
         is_logger_call = False
-        if (
-            (isinstance(node.func.value, ast.Name)
-            and node.func.value.id == "logger")
-            or (
-                isinstance(node.func.value, ast.Attribute)
-                and isinstance(node.func.value.value, ast.Name)
-                and node.func.value.value.id == "self"
-                and node.func.value.attr == "logger"
-            )
+        if (isinstance(node.func.value, ast.Name) and node.func.value.id == "logger") or (
+            isinstance(node.func.value, ast.Attribute)
+            and isinstance(node.func.value.value, ast.Name)
+            and node.func.value.value.id == "self"
+            and node.func.value.attr == "logger"
         ):
             is_logger_call = True
 

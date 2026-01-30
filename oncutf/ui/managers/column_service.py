@@ -84,9 +84,9 @@ class UnifiedColumnService:
         """Get main window using multiple fallback methods."""
         # Method 1: Try application context
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            app_context = get_app_context()
+            app_context = get_qt_app_context()
             main_window = getattr(app_context, "main_window", None)
             if main_window:
                 return main_window
@@ -349,7 +349,10 @@ class UnifiedColumnService:
                 )
             else:
                 # Fallback to direct JSON saving
-                from oncutf.utils.shared.json_config_manager import load_config, save_config
+                from oncutf.utils.shared.json_config_manager import (
+                    load_config,
+                    save_config,
+                )
 
                 config = load_config()
                 config["window"] = settings

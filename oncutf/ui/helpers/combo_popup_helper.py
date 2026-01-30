@@ -43,7 +43,7 @@ def prepare_combo_popup(combo: QComboBox) -> None:
 
     # Also ensure the popup container (parent window) has no frame
     container = view.window()
-    if container and hasattr(container, 'setFrameShape'):
+    if container and hasattr(container, "setFrameShape"):
         container.setFrameShape(QFrame.Shape.NoFrame)
 
     logger.debug("Combo popup prepared: frameless container set")
@@ -126,7 +126,12 @@ def apply_combo_popup_metrics(combo: QComboBox, *, pre_show: bool = False) -> No
 
         logger.debug(
             "Combo popup metrics: pre_show=%s, count=%d, visible=%d, row_h=%d, extra=%d, total=%d",
-            pre_show, count, visible_rows, row_h, extra_h, desired_view_h
+            pre_show,
+            count,
+            visible_rows,
+            row_h,
+            extra_h,
+            desired_view_h,
         )
     except Exception as e:
         logger.warning("Failed to apply combo popup metrics: %s", e)

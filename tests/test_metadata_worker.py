@@ -7,16 +7,11 @@ This module provides functionality for the oncutf batch file renaming applicatio
 """
 
 import time
-import warnings
 
 import pytest
 from PyQt5.QtCore import QCoreApplication
 
 from oncutf.ui.widgets.metadata_tree.worker import MetadataWorker
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 @pytest.fixture
@@ -73,9 +68,9 @@ def test_metadata_worker_runs_to_completion(qtbot, fake_reader, fake_cache, mock
 
     worker.run_batch()
 
-    assert (
-        len(progress_updates) == 3
-    ), f"Worker did not complete all files, got {len(progress_updates)} progress updates"
+    assert len(progress_updates) == 3, (
+        f"Worker did not complete all files, got {len(progress_updates)} progress updates"
+    )
 
     # With batch operations, cache.set might not be called directly
     # Instead, check that the reader was called for each file

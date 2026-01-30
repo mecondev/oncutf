@@ -48,7 +48,10 @@ class CustomSplashScreen(QSplashScreen):
         if not original_pixmap.isNull():
             # Scale to our desired size
             scaled_pixmap = original_pixmap.scaled(
-                self.splash_width, self.splash_height, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                self.splash_width,
+                self.splash_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
             )
 
             # Create a new pixmap with exact dimensions if scaling didn't match

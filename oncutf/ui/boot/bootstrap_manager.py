@@ -65,7 +65,8 @@ class BootstrapManager:
                     self.main_window.update_preview_from_selection
                 )
                 logger.debug(
-                    "[MainWindow] Connected SelectionStore signals", extra={"dev_only": True}
+                    "[MainWindow] Connected SelectionStore signals",
+                    extra={"dev_only": True},
                 )
             else:
                 pass
@@ -101,7 +102,8 @@ class BootstrapManager:
         from oncutf.ui.services.ui_state_service import restore_ui_state, save_ui_state
 
         logger.info(
-            "[MainWindow] Files changed from context - updating UI with %d files", len(files)
+            "[MainWindow] Files changed from context - updating UI with %d files",
+            len(files),
         )
 
         # Skip state management during shutdown (model becomes unavailable)
@@ -125,7 +127,10 @@ class BootstrapManager:
                 # Do NOT clear selections - the manager will handle state appropriately
 
                 # 1. Clear preview cache
-                if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+                if (
+                    hasattr(self.main_window, "unified_rename_engine")
+                    and self.main_window.unified_rename_engine
+                ):
                     self.main_window.unified_rename_engine.cache_manager.clear_cache()
                 if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                     self.main_window.update_preview_tables_from_pairs([])
@@ -159,21 +164,29 @@ class BootstrapManager:
                 pass
 
             # 2. Clear preview cache and tables (stale data)
-            if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+            if (
+                hasattr(self.main_window, "unified_rename_engine")
+                and self.main_window.unified_rename_engine
+            ):
                 self.main_window.unified_rename_engine.cache_manager.clear_cache()
             if hasattr(self.main_window, "update_preview_tables_from_pairs"):
                 self.main_window.update_preview_tables_from_pairs([])
 
             # 3. Apply companion file filtering (maintain state after refresh)
-            from oncutf.config import COMPANION_FILES_ENABLED, SHOW_COMPANION_FILES_IN_TABLE
+            from oncutf.config import (
+                COMPANION_FILES_ENABLED,
+                SHOW_COMPANION_FILES_IN_TABLE,
+            )
 
             filtered_files = files
             if COMPANION_FILES_ENABLED and not SHOW_COMPANION_FILES_IN_TABLE:
                 try:
-                    from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
+                    from oncutf.utils.filesystem.companion_files_helper import (
+                        CompanionFilesHelper,
+                    )
 
                     file_groups = CompanionFilesHelper.group_files_with_companions(
-                        [f.full_path if hasattr(f, 'full_path') else str(f) for f in files]
+                        [f.full_path if hasattr(f, "full_path") else str(f) for f in files]
                     )
                     # Extract main files only
                     companion_count = 0
@@ -181,7 +194,7 @@ class BootstrapManager:
                     for main_file, group_info in file_groups.items():
                         # Find FileItem matching main_file
                         for f in files:
-                            file_path = f.full_path if hasattr(f, 'full_path') else str(f)
+                            file_path = f.full_path if hasattr(f, "full_path") else str(f)
                             if file_path == main_file:
                                 main_files.append(f)
                                 break
@@ -201,9 +214,7 @@ class BootstrapManager:
             self.main_window.file_table_view.prepare_table(filtered_files)
 
             # 5. Restore file table state (selection, checked, scroll position)
-            restore_ui_state(
-                self.main_window.file_table_view, context, state, delay_ms=100
-            )
+            restore_ui_state(self.main_window.file_table_view, context, state, delay_ms=100)
 
             # 6. Update placeholder visibility
             if files:
@@ -226,7 +237,8 @@ class BootstrapManager:
         This can be extended with other initialization logic.
         """
         logger.debug(
-            "[BootstrapManager] Setting up application components", extra={"dev_only": True}
+            "[BootstrapManager] Setting up application components",
+            extra={"dev_only": True},
         )
 
         # Enable SelectionStore mode
@@ -260,7 +272,12 @@ class BootstrapManager:
             True if initialization is valid, False otherwise
 
         """
-        required_components = ["status_manager", "file_model", "file_table_view", "preview_manager"]
+        required_components = [
+            "status_manager",
+            "file_model",
+            "file_table_view",
+            "preview_manager",
+        ]
 
         for component in required_components:
             if (

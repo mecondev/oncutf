@@ -11,7 +11,9 @@ No business logic exists in these classes.
 """
 
 from oncutf.ui.main_window_delegates.event_delegates import EventDelegates
-from oncutf.ui.main_window_delegates.file_operation_delegates import FileOperationDelegates
+from oncutf.ui.main_window_delegates.file_operation_delegates import (
+    FileOperationDelegates,
+)
 from oncutf.ui.main_window_delegates.metadata_delegates import MetadataDelegates
 from oncutf.ui.main_window_delegates.preview_delegates import PreviewDelegates
 from oncutf.ui.main_window_delegates.selection_delegates import SelectionDelegates

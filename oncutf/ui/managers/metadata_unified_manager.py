@@ -128,7 +128,9 @@ class UnifiedMetadataManager(QObject):
     def structured(self) -> Any:
         """Lazy-initialized structured metadata manager."""
         if self._structured_manager is None:
-            from oncutf.core.metadata.structured_manager import StructuredMetadataManager
+            from oncutf.core.metadata.structured_manager import (
+                StructuredMetadataManager,
+            )
 
             self._structured_manager = StructuredMetadataManager()
         return self._structured_manager
@@ -174,7 +176,10 @@ class UnifiedMetadataManager(QObject):
         return self._companion_handler.get_enhanced_metadata(file_item, base_metadata, folder_files)
 
     def _enhance_metadata_with_companions(
-        self, file_item: FileItem, base_metadata: dict[str, Any], all_files: list[FileItem]
+        self,
+        file_item: FileItem,
+        base_metadata: dict[str, Any],
+        all_files: list[FileItem],
     ) -> dict[str, Any]:
         """Delegate to companion_handler."""
         return self._companion_handler.enhance_metadata_with_companions(
@@ -480,7 +485,8 @@ class UnifiedMetadataManager(QObject):
                     persistent_cache.set(file_item.full_path, updated, is_extended=False)
         except Exception:
             logger.warning(
-                "[UnifiedMetadataManager] Failed to update persistent cache", exc_info=True
+                "[UnifiedMetadataManager] Failed to update persistent cache",
+                exc_info=True,
             )
 
     def _update_nested_metadata(self, data: dict[str, Any], key_path: str, value: str) -> None:
@@ -573,7 +579,9 @@ class UnifiedMetadataManager(QObject):
     ) -> None:
         """Record save command for undo/redo."""
         try:
-            from oncutf.core.metadata.command_manager import get_metadata_command_manager
+            from oncutf.core.metadata.command_manager import (
+                get_metadata_command_manager,
+            )
             from oncutf.core.metadata.commands import SaveMetadataCommand
 
             command_manager = get_metadata_command_manager()

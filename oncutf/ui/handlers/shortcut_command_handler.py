@@ -55,7 +55,9 @@ class ShortcutCommandHandler:
 
     def shortcut_load_extended_metadata(self) -> None:
         """Load extended metadata via MetadataController."""
-        logger.info("[ShortcutCommandHandler] shortcut_load_extended_metadata CALLED -> extended=True")
+        logger.info(
+            "[ShortcutCommandHandler] shortcut_load_extended_metadata CALLED -> extended=True"
+        )
         self.main_window.metadata_controller.load_metadata_for_selected(extended=True)
 
     def shortcut_save_selected_metadata(self) -> None:
@@ -91,7 +93,9 @@ class ShortcutCommandHandler:
 
         Note: Unified undo/redo system not yet implemented.
         """
-        logger.info("[ShortcutCommandHandler] Global Ctrl+Z pressed - Unified undo system not yet implemented")
+        logger.info(
+            "[ShortcutCommandHandler] Global Ctrl+Z pressed - Unified undo system not yet implemented"
+        )
 
     def global_redo(self) -> None:
         """Global redo handler (Ctrl+Shift+Z).
@@ -114,7 +118,9 @@ class ShortcutCommandHandler:
             dialog.exec_()
         except Exception as e:
             logger.error("[ShortcutCommandHandler] Error showing command history dialog: %s", e)
-            logger.info("[ShortcutCommandHandler] Unified command history not yet fully implemented")
+            logger.info(
+                "[ShortcutCommandHandler] Unified command history not yet fully implemented"
+            )
 
     # -------------------------------------------------------------------------
     # Complex Methods
@@ -150,11 +156,14 @@ class ShortcutCommandHandler:
 
             if len(folders) < 2:
                 logger.info(
-                    "[ShortcutCommandHandler] AUTO_COLOR: Need at least 2 folders, found %d", len(folders)
+                    "[ShortcutCommandHandler] AUTO_COLOR: Need at least 2 folders, found %d",
+                    len(folders),
                 )
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_file_operation_status(
-                        f"Need 2+ folders (found {len(folders)})", success=False, auto_reset=True
+                        f"Need 2+ folders (found {len(folders)})",
+                        success=False,
+                        auto_reset=True,
                     )
                 return
 

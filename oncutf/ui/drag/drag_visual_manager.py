@@ -244,7 +244,10 @@ class DragVisualManager:
         elif self._drop_zone_state == DropZoneState.VALID:
             # For files, ignore recursive modifiers (no subdirectories)
             if self._drag_type == DragType.FILE:
-                if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
+                if self._modifier_state in [
+                    ModifierState.SHIFT,
+                    ModifierState.CTRL_SHIFT,
+                ]:
                     action_icons = (
                         ["plus", "layers"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
@@ -341,7 +344,12 @@ class DragVisualManager:
             text_rect = QRect(40, 10, text_width, text_height)
             path = QPainterPath()
             path.addRoundedRect(
-                text_rect.x(), text_rect.y(), text_rect.width(), text_rect.height(), 4, 4
+                text_rect.x(),
+                text_rect.y(),
+                text_rect.width(),
+                text_rect.height(),
+                4,
+                4,
             )
 
             painter.fillPath(path, QColor(40, 40, 40, 200))
@@ -598,7 +606,9 @@ class DragVisualManager:
 
 
 # Global convenience functions
-def start_drag_visual(drag_type: DragType, source_info: str, drag_source: str | None = None) -> None:
+def start_drag_visual(
+    drag_type: DragType, source_info: str, drag_source: str | None = None
+) -> None:
     """Start visual feedback for drag operation."""
     DragVisualManager.get_instance().start_drag_visual(drag_type, source_info, drag_source)
 

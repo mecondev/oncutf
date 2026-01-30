@@ -211,7 +211,9 @@ class UnifiedExecutionManager:
                     # Create execution items for companions
                     for old_companion_path, new_companion_path in companion_renames:
                         companion_item = ExecutionItem(
-                            old_path=old_companion_path, new_path=new_companion_path, success=False
+                            old_path=old_companion_path,
+                            new_path=new_companion_path,
+                            success=False,
                         )
                         companion_items.append(companion_item)
                         logger.debug(
@@ -256,7 +258,10 @@ class UnifiedExecutionManager:
         moves.
         """
         try:
-            from oncutf.utils.naming.rename_logic import is_case_only_change, safe_case_rename
+            from oncutf.utils.naming.rename_logic import (
+                is_case_only_change,
+                safe_case_rename,
+            )
 
             old_name = os.path.basename(item.old_path)
             new_name = os.path.basename(item.new_path)

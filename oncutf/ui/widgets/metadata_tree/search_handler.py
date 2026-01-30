@@ -93,10 +93,10 @@ class MetadataTreeSearchHandler:
         search_field.setStyleSheet(
             f"""
             QLineEdit#metadataSearchField {{
-                background-color: {theme.get_color('input_bg')};
-                border: 1px solid {theme.get_color('border')};
+                background-color: {theme.get_color("input_bg")};
+                border: 1px solid {theme.get_color("border")};
                 border-radius: 4px;
-                color: {theme.get_color('text')};
+                color: {theme.get_color("text")};
                 padding: 2px 8px;
                 min-height: 16px;
                 max-height: 18px;
@@ -104,12 +104,12 @@ class MetadataTreeSearchHandler:
                 margin-bottom: 2px;
             }}
             QLineEdit#metadataSearchField:hover {{
-                background-color: {theme.get_color('input_hover_bg')};
-                border-color: {theme.get_color('border_hover')};
+                background-color: {theme.get_color("input_hover_bg")};
+                border-color: {theme.get_color("border_hover")};
             }}
             QLineEdit#metadataSearchField:focus {{
-                border-color: {theme.get_color('accent')};
-                background-color: {theme.get_color('input_focus_bg')};
+                border-color: {theme.get_color("accent")};
+                background-color: {theme.get_color("input_focus_bg")};
             }}
         """
         )
@@ -144,10 +144,10 @@ class MetadataTreeSearchHandler:
         search_field.setStyleSheet(
             f"""
             QLineEdit#metadataSearchField:disabled {{
-                background-color: {theme.get_color('input_bg')};
-                border: 1px solid {theme.get_color('border')};
+                background-color: {theme.get_color("input_bg")};
+                border: 1px solid {theme.get_color("border")};
                 border-radius: 4px;
-                color: {theme.get_color('text_disabled')};
+                color: {theme.get_color("text_disabled")};
                 padding: 2px 8px;
                 min-height: 16px;
                 max-height: 18px;
@@ -155,9 +155,9 @@ class MetadataTreeSearchHandler:
                 margin-bottom: 2px;
             }}
             QLineEdit#metadataSearchField:disabled:hover {{
-                background-color: {theme.get_color('input_bg')};
-                color: {theme.get_color('text_disabled')};
-                border: 1px solid {theme.get_color('border')};
+                background-color: {theme.get_color("input_bg")};
+                color: {theme.get_color("text_disabled")};
+                border: 1px solid {theme.get_color("border")};
             }}
         """
         )

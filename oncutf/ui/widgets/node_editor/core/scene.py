@@ -28,7 +28,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from oncutf.ui.widgets.node_editor.core.host_bridge import NodeHostBridge, NullNodeHostBridge
+from oncutf.ui.widgets.node_editor.core.host_bridge import (
+    NodeHostBridge,
+    NullNodeHostBridge,
+)
 from oncutf.ui.widgets.node_editor.core.serializable import Serializable
 from oncutf.ui.widgets.node_editor.utils.helpers import dump_exception
 
@@ -471,7 +474,12 @@ class Scene(Serializable):
         return self.serialize_snapshot()
 
     def deserialize_snapshot(
-        self, data: dict, hashmap: dict | None = None, restore_id: bool = True, *args, **kwargs
+        self,
+        data: dict,
+        hashmap: dict | None = None,
+        restore_id: bool = True,
+        *args,
+        **kwargs,
     ) -> bool:
         """Restore scene state from serialized dictionary.
 
@@ -559,7 +567,12 @@ class Scene(Serializable):
         return True
 
     def deserialize(
-        self, data: dict, hashmap: dict | None = None, restore_id: bool = True, *args, **kwargs
+        self,
+        data: dict,
+        hashmap: dict | None = None,
+        restore_id: bool = True,
+        *args,
+        **kwargs,
     ) -> bool:
         """Backward-compatible alias for :meth:`deserialize_snapshot`."""
         return self.deserialize_snapshot(

@@ -341,7 +341,9 @@ class HashOperationsManager:
 
             except Exception as e:
                 logger.debug(
-                    "[HashManager] Could not refresh file item UI: %s", e, extra={"dev_only": True}
+                    "[HashManager] Could not refresh file item UI: %s",
+                    e,
+                    extra={"dev_only": True},
                 )
 
         logger.debug(

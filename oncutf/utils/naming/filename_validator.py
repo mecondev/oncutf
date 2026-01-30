@@ -13,7 +13,11 @@ Contains:
 
 import logging
 
-from oncutf.config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER, INVALID_TRAILING_CHARS
+from oncutf.config import (
+    INVALID_FILENAME_CHARS,
+    INVALID_FILENAME_MARKER,
+    INVALID_TRAILING_CHARS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +66,11 @@ def clean_trailing_chars(filename_part: str) -> str:
     cleaned = filename_part.rstrip(INVALID_TRAILING_CHARS)
 
     if cleaned != original:
-        logger.debug("[FilenameValidator] Removed trailing chars: '%s' -> '%s'", original, cleaned)
+        logger.debug(
+            "[FilenameValidator] Removed trailing chars: '%s' -> '%s'",
+            original,
+            cleaned,
+        )
 
     return cleaned
 

@@ -28,7 +28,7 @@ from oncutf.models.file_table.icon_manager import IconManager
 from oncutf.models.file_table.model_column_manager import ColumnManager
 from oncutf.models.file_table.model_file_operations import FileOperationsManager
 from oncutf.models.file_table.sort_manager import SortManager
-from oncutf.ui.adapters.application_context import get_app_context
+from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -257,7 +257,7 @@ class FileTableModel(QAbstractTableModel):
         """Get the selection model from parent window."""
         selection_model = None
         try:
-            get_app_context()
+            get_qt_app_context()
             if self.parent_window:
                 selection_model = self.parent_window.file_table_view.selectionModel()
         except RuntimeError:
@@ -287,7 +287,7 @@ class FileTableModel(QAbstractTableModel):
     def _refresh_metadata_tree(self) -> None:
         """Refresh metadata tree after sorting."""
         try:
-            get_app_context()
+            get_qt_app_context()
             if self.parent_window:
                 self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
         except RuntimeError:
@@ -363,9 +363,9 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            db_manager = get_app_context().get_manager("database")
+            db_manager = get_qt_app_context().get_manager("database")
             if not db_manager:
                 logger.warning("[FileTableModel] Database manager not available")
                 return
@@ -409,9 +409,9 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            db_manager = get_app_context().get_manager("database")
+            db_manager = get_qt_app_context().get_manager("database")
             if not db_manager:
                 return
 
@@ -435,9 +435,9 @@ class FileTableModel(QAbstractTableModel):
             return
 
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            db_manager = get_app_context().get_manager("database")
+            db_manager = get_qt_app_context().get_manager("database")
             if not db_manager:
                 return
 

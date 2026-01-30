@@ -80,7 +80,7 @@ def measure_import_times() -> dict[str, float]:
             status = f"FAILED: {e}"
 
         if import_times[module_name] >= 0:
-            print(f"  {module_name}: {import_times[module_name]*1000:.1f}ms")
+            print(f"  {module_name}: {import_times[module_name] * 1000:.1f}ms")
         else:
             print(f"  {module_name}: {status}")
 
@@ -109,18 +109,18 @@ def measure_window_creation() -> tuple[float, float]:
     from oncutf.ui.main_window import MainWindow
 
     import_time = time.perf_counter() - start_import
-    print(f"  MainWindow import: {import_time*1000:.1f}ms")
+    print(f"  MainWindow import: {import_time * 1000:.1f}ms")
 
     start_create = time.perf_counter()
     window = MainWindow()
     creation_time = time.perf_counter() - start_create
-    print(f"  MainWindow.__init__: {creation_time*1000:.1f}ms")
+    print(f"  MainWindow.__init__: {creation_time * 1000:.1f}ms")
 
     start_show = time.perf_counter()
     window.show()
     app.processEvents()  # Process pending events
     show_time = time.perf_counter() - start_show
-    print(f"  MainWindow.show(): {show_time*1000:.1f}ms")
+    print(f"  MainWindow.show(): {show_time * 1000:.1f}ms")
 
     # Cleanup
     window.close()
@@ -182,11 +182,11 @@ def print_summary(import_times: dict[str, float], creation_time: float, show_tim
     total_import = sum(t for t in import_times.values() if t >= 0)
     total_startup = total_import + creation_time + show_time
 
-    print(f"\nTotal import time:     {total_import*1000:.1f}ms")
-    print(f"Window creation time:  {creation_time*1000:.1f}ms")
-    print(f"Window show time:      {show_time*1000:.1f}ms")
-    print(f"{'='*30}")
-    print(f"TOTAL STARTUP TIME:    {total_startup*1000:.1f}ms ({total_startup:.2f}s)")
+    print(f"\nTotal import time:     {total_import * 1000:.1f}ms")
+    print(f"Window creation time:  {creation_time * 1000:.1f}ms")
+    print(f"Window show time:      {show_time * 1000:.1f}ms")
+    print(f"{'=' * 30}")
+    print(f"TOTAL STARTUP TIME:    {total_startup * 1000:.1f}ms ({total_startup:.2f}s)")
 
     # Identify slowest imports
     print("\nSlowest imports:")
@@ -194,7 +194,7 @@ def print_summary(import_times: dict[str, float], creation_time: float, show_tim
         [(k, v) for k, v in import_times.items() if v > 0], key=lambda x: x[1], reverse=True
     )
     for name, t in sorted_imports[:5]:
-        print(f"  {name}: {t*1000:.1f}ms")
+        print(f"  {name}: {t * 1000:.1f}ms")
 
 
 def main() -> int:

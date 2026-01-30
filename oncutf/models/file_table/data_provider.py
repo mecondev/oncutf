@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 from PyQt5.QtCore import QModelIndex, Qt, QVariant
 
-from oncutf.ui.adapters.application_context import get_app_context
+from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -210,7 +210,9 @@ class DataProvider:
                     return pixmap
             except Exception as e:
                 logger.debug(
-                    "[DataProvider] Thumbnail request failed: %s", e, extra={"dev_only": True}
+                    "[DataProvider] Thumbnail request failed: %s",
+                    e,
+                    extra={"dev_only": True},
                 )
             return QVariant()
 
@@ -320,7 +322,7 @@ class DataProvider:
     def _update_ui_after_check_change(self) -> None:
         """Update UI elements after checkbox state change."""
         try:
-            get_app_context()
+            get_qt_app_context()
             if self.parent_window:
                 self.parent_window.header.update_state(self.model.files)
                 self.parent_window.update_files_label()
@@ -366,33 +368,32 @@ class DataProvider:
             Header data for the section
 
         """
-        if orientation == Qt.Horizontal:
-            if role == Qt.DisplayRole:
-                if section == 0:
-                    return ""  # Don't display title in status column
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if section == 0:
+                return ""  # Don't display title in status column
 
-                col_key = self.column_manager.get_column_key(section)
-                if col_key:
-                    # Get the proper title from configuration
-                    from oncutf.config import FILE_TABLE_COLUMN_CONFIG
+            col_key = self.column_manager.get_column_key(section)
+            if col_key:
+                # Get the proper title from configuration
+                from oncutf.config import FILE_TABLE_COLUMN_CONFIG
 
-                    config = FILE_TABLE_COLUMN_CONFIG.get(col_key, {})
-                    # Use display_title if available (for headers), fallback to title
-                    title = config.get("display_title") or config.get("title", col_key)
+                config = FILE_TABLE_COLUMN_CONFIG.get(col_key, {})
+                # Use display_title if available (for headers), fallback to title
+                title = config.get("display_title") or config.get("title", col_key)
 
-                    logger.debug(
-                        "[HeaderData] Section %d -> column '%s' -> display_title '%s'",
-                        section,
-                        col_key,
-                        title,
-                        extra={"dev_only": True},
-                    )
-                    return title
-                logger.warning(
-                    "[HeaderData] No column mapping found for section %d",
+                logger.debug(
+                    "[HeaderData] Section %d -> column '%s' -> display_title '%s'",
                     section,
+                    col_key,
+                    title,
+                    extra={"dev_only": True},
                 )
-                return ""
+                return title
+            logger.warning(
+                "[HeaderData] No column mapping found for section %d",
+                section,
+            )
+            return ""
 
             # NOTE: Header tooltips are rendered by InteractiveHeader via TooltipHelper
             # for consistent styling across platforms.

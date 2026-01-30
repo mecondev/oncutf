@@ -6,12 +6,6 @@ Date: 2025-05-31
 Tests for filename validation utilities
 """
 
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 from oncutf.config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 from oncutf.utils.naming.filename_validator import (
     clean_and_validate,

@@ -47,7 +47,9 @@ from oncutf.core.metadata.staging_manager import (
     get_metadata_staging_manager,
     set_metadata_staging_manager,
 )
-from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
+from oncutf.core.metadata.unified_metadata_protocol import (
+    UnifiedMetadataManagerProtocol,
+)
 
 __all__ = [
     "BatchMetadataCommand",

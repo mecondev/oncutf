@@ -1,39 +1,3 @@
-import zlib
-from pathlib import Path
-
-from oncutf.core.hash.hash_manager import HashManager, calculate_crc32
-
-
-def write_file(path: Path, content: bytes):
-    path.write_bytes(content)
-    return path
-
-
-def expected_crc32_bytes(content: bytes) -> str:
-    return f"{(zlib.crc32(content) & 0xFFFFFFFF):08x}"
-
-
-def test_calculate_crc32(tmp_path):
-    f1 = write_file(tmp_path / "one.bin", b"hello")
-    expected = expected_crc32_bytes(b"hello")
-    got = calculate_crc32(f1)
-    assert got == expected
-
-
-def test_find_duplicates_in_paths_and_clear_cache(tmp_path):
-    f1 = write_file(tmp_path / "a.txt", b"same")
-    f2 = write_file(tmp_path / "b.txt", b"same")
-    mgr = HashManager()
-    dups = mgr.find_duplicates_in_paths([str(f1), str(f2)])
-    # hashes should be same and group contains both
-    assert len(dups) == 1
-    for _k, v in dups.items():
-        assert len(v) == 2
-
-    # clear cache should not raise
-    mgr.clear_cache()
-
-
 #!/usr/bin/env python3
 """
 Module: test_hash_manager.py
@@ -45,17 +9,11 @@ test_hash_manager.py
 Test module for hash calculation functionality.
 """
 
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from oncutf.core.hash.hash_manager import compare_folders
+from oncutf.core.hash.hash_manager import HashManager, calculate_crc32, compare_folders
 from tests.mocks import MockFileItem
 
 
@@ -156,7 +114,10 @@ class TestHashManager:
         with patch.object(manager, "calculate_hash") as mock_calc:
             mock_calc.side_effect = ["hash1", "hash2"]
 
-            files = [MockFileItem(filename="file1.txt"), MockFileItem(filename="file2.txt")]
+            files = [
+                MockFileItem(filename="file1.txt"),
+                MockFileItem(filename="file2.txt"),
+            ]
 
             result = manager.find_duplicates_in_list(files)
             assert result == {}
@@ -508,15 +469,15 @@ class TestPerformance:
 
             # Verify progress values make sense
             assert progress_calls[0] > 0, "First progress call should be > 0"
-            assert progress_calls[-1] == len(
-                test_data
-            ), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+            assert progress_calls[-1] == len(test_data), (
+                f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+            )
 
             # Verify progress is monotonically increasing
             for i in range(1, len(progress_calls)):
-                assert (
-                    progress_calls[i] >= progress_calls[i - 1]
-                ), "Progress should be monotonically increasing"
+                assert progress_calls[i] >= progress_calls[i - 1], (
+                    "Progress should be monotonically increasing"
+                )
 
         finally:
             Path(temp_path).unlink()

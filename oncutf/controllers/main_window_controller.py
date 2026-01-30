@@ -138,7 +138,8 @@ class MainWindowController:
         # Step 1: Validate folder
         if not last_folder:
             logger.debug(
-                "[MainWindowController] No last folder to restore", extra={"dev_only": True}
+                "[MainWindowController] No last folder to restore",
+                extra={"dev_only": True},
             )
             result["success"] = True  # Not an error, just nothing to restore
             return result
@@ -193,7 +194,9 @@ class MainWindowController:
 
                 if loaded_files:
                     metadata_result = self._metadata_controller.load_metadata(
-                        file_items=loaded_files, use_extended=False, source="session_restore"
+                        file_items=loaded_files,
+                        use_extended=False,
+                        source="session_restore",
                     )
 
                     if metadata_result.get("success", False):
@@ -279,7 +282,9 @@ class MainWindowController:
             # Step 1: Save configuration (10%)
             update_progress("Saving configuration...", 0.1)
             try:
-                from oncutf.utils.shared.json_config_manager import get_app_config_manager
+                from oncutf.utils.shared.json_config_manager import (
+                    get_app_config_manager,
+                )
 
                 get_app_config_manager().save_immediate()
                 result["config_saved"] = True
@@ -362,7 +367,10 @@ class MainWindowController:
                     )
                     result["coordinator_success"] = coordinator_success
                     result["summary"] = main_window.shutdown_coordinator.get_summary()
-                    logger.info("[Shutdown] ShutdownCoordinator executed: %s", coordinator_success)
+                    logger.info(
+                        "[Shutdown] ShutdownCoordinator executed: %s",
+                        coordinator_success,
+                    )
                 except Exception as e:
                     error_msg = f"ShutdownCoordinator failed: {e}"
                     logger.error("[Shutdown] %s", error_msg)

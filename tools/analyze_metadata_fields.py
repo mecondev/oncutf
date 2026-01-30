@@ -98,7 +98,7 @@ class MetadataAnalyzer:
             print(f"⏭️  Skipping large file: {file_path.name}")
             return
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f" Analyzing: {file_path.name}")
         print(f"   Size: {file_path.stat().st_size / 1024:.1f} KB")
         # Get fast metadata
@@ -119,8 +119,8 @@ class MetadataAnalyzer:
         fast_only = fast_fields - extended_fields
         extended_only = extended_fields - fast_fields
         common = fast_fields & extended_fields
-        print(f"\n    Fast mode: {len(fast_fields)} fields in {fast_time*1000:.1f}ms")
-        print(f"    Extended mode: {len(extended_fields)} fields in {extended_time*1000:.1f}ms")
+        print(f"\n    Fast mode: {len(fast_fields)} fields in {fast_time * 1000:.1f}ms")
+        print(f"    Extended mode: {len(extended_fields)} fields in {extended_time * 1000:.1f}ms")
         print(
             f"    Common: {len(common)} | Fast-only: {len(fast_only)} | Extended-only: {len(extended_only)}"
         )
@@ -252,18 +252,18 @@ class MetadataAnalyzer:
 
     def print_summary(self) -> None:
         """Print summary of findings."""
-        print(f"\n\n{'='*80}")
+        print(f"\n\n{'=' * 80}")
         print(" SUMMARY OF FINDINGS")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         for category, data in sorted(self.results.items()):
             samples = data["samples"]
             if not samples:
                 continue
 
-            print(f"\n{'─'*80}")
+            print(f"\n{'─' * 80}")
             print(f" {category} Files ({len(samples)} analyzed)")
-            print(f"{'─'*80}")
+            print(f"{'─' * 80}")
 
             # Average field counts
             avg_fast = sum(s["fast_field_count"] for s in samples) / len(samples)
@@ -296,9 +296,9 @@ class MetadataAnalyzer:
                 print(f"\n   ️  Manufacturers found: {', '.join(sorted(makes))}")
 
         # Recommendations
-        print(f"\n\n{'='*80}")
+        print(f"\n\n{'=' * 80}")
         print(" RECOMMENDATIONS")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         for category, data in sorted(self.results.items()):
             if not data["samples"]:

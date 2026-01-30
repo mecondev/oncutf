@@ -5,6 +5,7 @@ Handles add/remove columns, visibility config loading/saving, and sync.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -96,7 +97,10 @@ class ColumnVisibilityManager:
                 window_config.set("file_table_columns", visibility_dict)
                 config_manager.mark_dirty()
             else:
-                from oncutf.utils.shared.json_config_manager import load_config, save_config
+                from oncutf.utils.shared.json_config_manager import (
+                    load_config,
+                    save_config,
+                )
 
                 config = load_config()
                 if "window" not in config:
@@ -228,9 +232,7 @@ class ColumnVisibilityManager:
         """Ensure view and model have synchronized column visibility."""
         model = self._widget.model()
         if not model or not hasattr(model, "get_visible_columns"):
-            logger.debug(
-                "[ColumnSync] No model or model doesn't support get_visible_columns"
-            )
+            logger.debug("[ColumnSync] No model or model doesn't support get_visible_columns")
             return
 
         try:

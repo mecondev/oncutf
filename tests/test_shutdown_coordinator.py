@@ -11,7 +11,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from oncutf.core.shutdown_coordinator import ShutdownCoordinator, ShutdownPhase, ShutdownResult
+from oncutf.core.shutdown_coordinator import (
+    ShutdownCoordinator,
+    ShutdownPhase,
+    ShutdownResult,
+)
 
 
 class TestShutdownCoordinator:

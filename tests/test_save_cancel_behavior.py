@@ -124,9 +124,9 @@ class TestSaveCancelBehavior:
             qtbot.addWidget(dialog)
 
             # Verify ESC should be allowed
-            assert (
-                dialog._should_block_esc() is False
-            ), f"ESC should be allowed for {operation_type}"
+            assert dialog._should_block_esc() is False, (
+                f"ESC should be allowed for {operation_type}"
+            )
 
             # Press ESC
             QTest.keyPress(dialog, Qt.Key_Escape)

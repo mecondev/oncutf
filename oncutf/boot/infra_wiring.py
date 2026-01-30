@@ -32,13 +32,17 @@ def register_infra_factories() -> None:
         register_metadata_cache_factory,
     )
     from oncutf.app.services.database_service import register_database_manager_factory
-    from oncutf.app.services.folder_color_service import register_auto_color_command_factory
+    from oncutf.app.services.folder_color_service import (
+        register_auto_color_command_factory,
+    )
     from oncutf.app.services.rename_history_service import (
         register_database_manager_factory_for_history,
     )
     from oncutf.infra.batch import BatchOperationsManager
     from oncutf.infra.cache.persistent_hash_cache import get_persistent_hash_cache
-    from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
+    from oncutf.infra.cache.persistent_metadata_cache import (
+        get_persistent_metadata_cache,
+    )
     from oncutf.infra.db.database_manager import get_database_manager
     from oncutf.infra.folder_color_command import AutoColorByFolderCommand
 
@@ -104,7 +108,9 @@ def get_metadata_cache_instance() -> object:
         PersistentMetadataCache instance or None
 
     """
-    from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
+    from oncutf.infra.cache.persistent_metadata_cache import (
+        get_persistent_metadata_cache,
+    )
 
     return get_persistent_metadata_cache()
 

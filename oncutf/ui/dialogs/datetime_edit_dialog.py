@@ -60,66 +60,66 @@ class DateTimeEditDialog(QDialog):
         theme = get_theme_manager()
         dialog_qss = f"""
             QDialog {{
-                background-color: {theme.get_color('dialog_background')};
-                color: {theme.get_color('text')};
+                background-color: {theme.get_color("dialog_background")};
+                color: {theme.get_color("text")};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
             }}
             QLabel {{
                 background-color: transparent;
-                color: {theme.get_color('text')};
+                color: {theme.get_color("text")};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 padding: 2px;
             }}
             QCheckBox {{
-                color: {theme.get_color('text')};
+                color: {theme.get_color("text")};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 spacing: 8px;
             }}
             QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border: 1px solid {theme.get_color('border')};
+                border: 1px solid {theme.get_color("border")};
                 border-radius: 3px;
-                background-color: {theme.get_color('input_bg')};
+                background-color: {theme.get_color("input_bg")};
             }}
             QCheckBox::indicator:checked {{
-                background-color: {theme.get_color('selected')};
-                border-color: {theme.get_color('selected')};
+                background-color: {theme.get_color("selected")};
+                border-color: {theme.get_color("selected")};
             }}
             QDateTimeEdit {{
-                background-color: {theme.get_color('input_bg')};
-                color: {theme.get_color('text')};
-                border: 1px solid {theme.get_color('border')};
+                background-color: {theme.get_color("input_bg")};
+                color: {theme.get_color("text")};
+                border: 1px solid {theme.get_color("border")};
                 border-radius: 4px;
                 padding: 4px 8px;
                 font-size: 10pt;
                 min-height: 24px;
             }}
             QDateTimeEdit:hover {{
-                border-color: {theme.get_color('border_hover')};
+                border-color: {theme.get_color("border_hover")};
             }}
             QDateTimeEdit:focus {{
-                border-color: {theme.get_color('selected')};
+                border-color: {theme.get_color("selected")};
             }}
             QDateTimeEdit::drop-down {{
                 subcontrol-origin: padding;
                 subcontrol-position: top right;
                 width: 20px;
-                border-left: 1px solid {theme.get_color('border')};
+                border-left: 1px solid {theme.get_color("border")};
             }}
             QCalendarWidget {{
-                background-color: {theme.get_color('dialog_background')};
-                color: {theme.get_color('text')};
+                background-color: {theme.get_color("dialog_background")};
+                color: {theme.get_color("text")};
             }}
             QCalendarWidget QTableView {{
-                background-color: {theme.get_color('table_background')};
-                alternate-background-color: {theme.get_color('table_alternate')};
-                selection-background-color: {theme.get_color('selected')};
+                background-color: {theme.get_color("table_background")};
+                alternate-background-color: {theme.get_color("table_alternate")};
+                selection-background-color: {theme.get_color("selected")};
             }}
             QScrollArea {{
-                background-color: {theme.get_color('background')};
-                border: 1px solid {theme.get_color('border')};
+                background-color: {theme.get_color("background")};
+                border: 1px solid {theme.get_color("border")};
                 border-radius: 4px;
             }}
             QScrollArea QWidget {{
@@ -212,8 +212,8 @@ class DateTimeEditDialog(QDialog):
         theme = get_theme_manager()
         cancel_qss = f"""
             QPushButton {{
-                background-color: {theme.get_color('button_bg')};
-                color: {theme.get_color('text')};
+                background-color: {theme.get_color("button_bg")};
+                color: {theme.get_color("text")};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
@@ -221,10 +221,10 @@ class DateTimeEditDialog(QDialog):
                 min-width: 70px;
             }}
             QPushButton:hover {{
-                background-color: {theme.get_color('selected')};
+                background-color: {theme.get_color("selected")};
             }}
             QPushButton:pressed {{
-                background-color: {theme.get_color('pressed')};
+                background-color: {theme.get_color("pressed")};
             }}
         """
         self.cancel_button.setStyleSheet(inject_font_family(cancel_qss))
@@ -236,8 +236,8 @@ class DateTimeEditDialog(QDialog):
         theme = get_theme_manager()
         apply_qss = f"""
             QPushButton {{
-                background-color: {theme.get_color('button_bg')};
-                color: {theme.get_color('text')};
+                background-color: {theme.get_color("button_bg")};
+                color: {theme.get_color("text")};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
@@ -245,10 +245,10 @@ class DateTimeEditDialog(QDialog):
                 min-width: 70px;
             }}
             QPushButton:hover {{
-                background-color: {theme.get_color('button_hover_bg')};
+                background-color: {theme.get_color("button_hover_bg")};
             }}
             QPushButton:pressed {{
-                background-color: {theme.get_color('pressed')};
+                background-color: {theme.get_color("pressed")};
             }}
         """
         self.apply_button.setStyleSheet(inject_font_family(apply_qss))
@@ -261,7 +261,7 @@ class DateTimeEditDialog(QDialog):
     def _apply_info_label_style(self, label: QLabel, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
         label.setStyleSheet(
-            f"color: {color}; opacity: {opacity}; " f"font-size: 9pt; font-weight: 400;"
+            f"color: {color}; opacity: {opacity}; font-size: 9pt; font-weight: 400;"
         )
 
     def _select_all(self):

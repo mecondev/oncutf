@@ -55,6 +55,7 @@ class HeaderInteractionController:
         """
         logger.info("[CONTROLLER] Toggle all files")
         from PyQt5.QtCore import Qt
+
         checked = Qt.Checked
         self._main_window.handle_header_toggle(checked)
 
@@ -138,7 +139,10 @@ class HeaderInteractionController:
 
         # Check for drag (manhattan distance > 4)
         if manhattan_length > 4:
-            logger.debug("[CONTROLLER] Click ignored - drag detected (manhattan=%d)", manhattan_length)
+            logger.debug(
+                "[CONTROLLER] Click ignored - drag detected (manhattan=%d)",
+                manhattan_length,
+            )
             return False, ""
 
         # Check if release position matches press position

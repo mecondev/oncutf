@@ -89,8 +89,7 @@ class TestMetadataDisplayScenarios:
             ),
             (
                 "drag_drop",
-                "Drag & Drop to MetadataTree - "
-                "Shows 'N files selected' if multiple selected",
+                "Drag & Drop to MetadataTree - Shows 'N files selected' if multiple selected",
             ),
             (
                 "all_cached",

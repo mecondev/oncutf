@@ -170,7 +170,10 @@ class MetadataWriter(QObject):
             logger.info("[MetadataWriter] No files selected for metadata saving")
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files selected", selected_count=0, total_count=0, auto_reset=True
+                    "No files selected",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 
@@ -332,7 +335,8 @@ class MetadataWriter(QObject):
             logger.info("[MetadataWriter] Paused filesystem monitoring during save")
         elif filesystem_monitor:
             logger.debug(
-                "[MetadataWriter] filesystem_monitor has no pause method", extra={"dev_only": True}
+                "[MetadataWriter] filesystem_monitor has no pause method",
+                extra={"dev_only": True},
             )
 
         try:
@@ -410,7 +414,10 @@ class MetadataWriter(QObject):
             # Resume filesystem monitoring with delay to catch late events
             # QFileSystemWatcher may send events slightly after the file write completes
             if filesystem_monitor and hasattr(filesystem_monitor, "resume"):
-                from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+                from oncutf.utils.shared.timer_manager import (
+                    TimerType,
+                    get_timer_manager,
+                )
 
                 def delayed_resume() -> None:
                     if filesystem_monitor:
@@ -499,7 +506,9 @@ class MetadataWriter(QObject):
 
         # Update persistent cache
         try:
-            from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
+            from oncutf.infra.cache.persistent_metadata_cache import (
+                get_persistent_metadata_cache,
+            )
 
             persistent_cache = get_persistent_metadata_cache()
             if persistent_cache:
@@ -559,7 +568,11 @@ class MetadataWriter(QObject):
                     file_item.full_path,
                 )
         except Exception as e:
-            logger.debug("[MetadataWriter] Could not update icon for %s: %s", file_item.filename, e)
+            logger.debug(
+                "[MetadataWriter] Could not update icon for %s: %s",
+                file_item.filename,
+                e,
+            )
 
     def _show_save_results(
         self,

@@ -54,8 +54,11 @@ class DragCleanupManager:
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
 
         # Check if header is doing a column drag - let it handle ESC first
-        if hasattr(self.main_window, 'header') and self.main_window.header:
-            if hasattr(self.main_window.header, '_drag_active') and self.main_window.header._drag_active:
+        if hasattr(self.main_window, "header") and self.main_window.header:
+            if (
+                hasattr(self.main_window.header, "_drag_active")
+                and self.main_window.header._drag_active
+            ):
                 logger.info("[MainWindow] FORCE CLEANUP: Column drag active - delegating to header")
                 # Create a synthetic ESC key event and send it to the header
                 key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)

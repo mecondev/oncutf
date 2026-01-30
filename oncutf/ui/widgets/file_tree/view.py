@@ -202,12 +202,15 @@ class FileTreeView(QTreeView):
                 return
 
             logger.debug(
-                "[FileTreeView] Custom branch icons setup attempted", extra={"dev_only": True}
+                "[FileTreeView] Custom branch icons setup attempted",
+                extra={"dev_only": True},
             )
 
         except Exception as e:
             logger.debug(
-                "[FileTreeView] Branch icons setup skipped: %s", e, extra={"dev_only": True}
+                "[FileTreeView] Branch icons setup skipped: %s",
+                e,
+                extra={"dev_only": True},
             )
 
     # =====================================

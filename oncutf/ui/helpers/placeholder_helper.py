@@ -108,7 +108,10 @@ class PlaceholderHelper:
             if not placeholder_icon.isNull():
                 # Use FastTransformation for better performance (visual quality difference is minimal)
                 scaled = placeholder_icon.scaled(
-                    self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.FastTransformation
+                    self.icon_size,
+                    self.icon_size,
+                    Qt.KeepAspectRatio,
+                    Qt.FastTransformation,
                 )
 
                 # Cache the scaled pixmap

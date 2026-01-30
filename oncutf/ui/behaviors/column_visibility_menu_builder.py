@@ -46,7 +46,12 @@ class ColumnVisibilityMenuBuilder:
         "Video": ["video_fps", "video_avg_bitrate", "video_codec", "video_format"],
         "Audio": ["audio_channels", "audio_format"],
         "Metadata": ["artist", "copyright", "owner_name"],
-        "Device": ["device_manufacturer", "device_model", "device_serial_no", "target_umid"],
+        "Device": [
+            "device_manufacturer",
+            "device_model",
+            "device_serial_no",
+            "target_umid",
+        ],
     }
 
     def __init__(self, file_table_view) -> None:
@@ -82,7 +87,9 @@ class ColumnVisibilityMenuBuilder:
             columns_menu.setIcon(get_menu_icon("columns"))
 
             # Get current visible columns
-            visible_columns_list = self._file_table_view._column_mgmt_behavior.get_visible_columns_list()
+            visible_columns_list = (
+                self._file_table_view._column_mgmt_behavior.get_visible_columns_list()
+            )
 
             # Build grouped columns
             column_groups = self._build_column_groups()
@@ -147,7 +154,15 @@ class ColumnVisibilityMenuBuilder:
 
         """
         first_group = True
-        for group_name in ["File", "Image", "Video", "Audio", "Metadata", "Device", "Other"]:
+        for group_name in [
+            "File",
+            "Image",
+            "Video",
+            "Audio",
+            "Metadata",
+            "Device",
+            "Other",
+        ]:
             group_columns = column_groups[group_name]
             if not group_columns:
                 continue
@@ -177,5 +192,7 @@ class ColumnVisibilityMenuBuilder:
                     action.setIcon(get_menu_icon("toggle-left"))
 
                 # Connect toggle action
-                action.triggered.connect(lambda _checked=False, key=column_key: toggle_callback(key))
+                action.triggered.connect(
+                    lambda _checked=False, key=column_key: toggle_callback(key)
+                )
                 menu.addAction(action)

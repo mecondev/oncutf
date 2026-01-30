@@ -153,6 +153,7 @@ class FilesystemHandler:
             # Schedule delayed reconnection if managers not found
             if file_store is None or file_load_manager is None:
                 from oncutf.utils.shared.timer_manager import schedule_ui_update
+
                 schedule_ui_update(self._reconnect_managers, 500)  # Try again after 500ms
 
             # Connect directory change signal for tree model refresh
@@ -245,7 +246,9 @@ class FilesystemHandler:
             return
 
         logger.debug(
-            "[FilesystemHandler] Directory changed: %s", dir_path, extra={"dev_only": True}
+            "[FilesystemHandler] Directory changed: %s",
+            dir_path,
+            extra={"dev_only": True},
         )
 
         # Save state before refresh
@@ -323,9 +326,7 @@ class FilesystemHandler:
         name_filters = (
             old_source_model.nameFilters() if hasattr(old_source_model, "nameFilters") else []
         )
-        file_filter = (
-            old_source_model.filter() if hasattr(old_source_model, "filter") else None
-        )
+        file_filter = old_source_model.filter() if hasattr(old_source_model, "filter") else None
 
         try:
             # Set refresh flag to prevent recursive calls
@@ -368,6 +369,7 @@ class FilesystemHandler:
             # Linux/macOS: Use root directory
             if platform.system() == "Windows":
                 from PyQt5.QtCore import QModelIndex
+
                 self._view.setRootIndex(QModelIndex())
             else:
                 self._view.setRootIndex(proxy_model.index_from_path(root))
@@ -506,7 +508,8 @@ class FilesystemHandler:
                 self._filesystem_monitor.deleteLater()
                 self._filesystem_monitor = None
                 logger.debug(
-                    "[FilesystemHandler] Filesystem monitor stopped", extra={"dev_only": True}
+                    "[FilesystemHandler] Filesystem monitor stopped",
+                    extra={"dev_only": True},
                 )
             except Exception as e:
                 logger.warning("[FilesystemHandler] Error stopping filesystem monitor: %s", e)

@@ -68,9 +68,7 @@ class MetadataSimplificationService:
                 self._registry.get_semantic_count(),
             )
 
-    def get_simplified_metadata(
-        self, file_item: FileItem
-    ) -> SimplifiedMetadata | None:
+    def get_simplified_metadata(self, file_item: FileItem) -> SimplifiedMetadata | None:
         """Get SimplifiedMetadata wrapper for FileItem's metadata.
 
         Args:
@@ -89,9 +87,7 @@ class MetadataSimplificationService:
         original_metadata.pop("__extended__", None)
         original_metadata.pop("__companion__", None)
 
-        return SimplifiedMetadata(
-            original_metadata=original_metadata, simplifier=self._simplifier
-        )
+        return SimplifiedMetadata(original_metadata=original_metadata, simplifier=self._simplifier)
 
     def get_metadata_value(
         self,
@@ -127,9 +123,7 @@ class MetadataSimplificationService:
         # Try semantic alias resolution
         if use_semantic_fallback:
             available_keys = list(original_metadata.keys())
-            resolved_key = self._registry.resolve_key_with_fallback(
-                key, available_keys
-            )
+            resolved_key = self._registry.resolve_key_with_fallback(key, available_keys)
             if resolved_key:
                 return original_metadata.get(resolved_key)
 
@@ -142,9 +136,7 @@ class MetadataSimplificationService:
         except KeyError:
             return None
 
-    def get_simplified_keys(
-        self, file_item: FileItem
-    ) -> list[tuple[str, str]]:
+    def get_simplified_keys(self, file_item: FileItem) -> list[tuple[str, str]]:
         """Get list of (simplified_key, original_key) tuples.
 
         Args:
@@ -220,9 +212,7 @@ class MetadataSimplificationService:
         # No simplification possible
         return key
 
-    def get_semantic_groups(
-        self, file_item: FileItem
-    ) -> dict[str, list[tuple[str, str, Any]]]:
+    def get_semantic_groups(self, file_item: FileItem) -> dict[str, list[tuple[str, str, Any]]]:
         """Group metadata by semantic categories.
 
         Returns metadata organized into:
@@ -254,9 +244,7 @@ class MetadataSimplificationService:
             semantic_name,
             _original_keys_list,
         ) in self._registry._semantic_index.items():
-            resolved = self._registry.resolve_key_with_fallback(
-                semantic_name, available_keys
-            )
+            resolved = self._registry.resolve_key_with_fallback(semantic_name, available_keys)
             if resolved:
                 value = original_metadata.get(resolved)
                 common_fields.append((semantic_name, resolved, value))
@@ -288,9 +276,7 @@ class MetadataSimplificationService:
             self._registry.get_semantic_count(),
         )
 
-    def add_user_override(
-        self, original_key: str, custom_simplified: str
-    ) -> None:
+    def add_user_override(self, original_key: str, custom_simplified: str) -> None:
         """Add user override for a specific key's simplified form.
 
         Args:
@@ -309,9 +295,7 @@ class MetadataSimplificationService:
             priority=100,  # User overrides have high priority
             source="user",
         )
-        logger.info(
-            "Added user override: %s -> %s", original_key, custom_simplified
-        )
+        logger.info("Added user override: %s -> %s", original_key, custom_simplified)
 
     def undo_override(self) -> bool:
         """Undo last key mapping override.
@@ -342,9 +326,7 @@ class MetadataSimplificationService:
         self._registry.export_to_file(filepath)
         logger.info("Exported user overrides to %s", filepath)
 
-    def import_user_overrides(
-        self, filepath: str, merge: bool = True
-    ) -> None:
+    def import_user_overrides(self, filepath: str, merge: bool = True) -> None:
         """Import user overrides from JSON file.
 
         Args:
@@ -353,9 +335,7 @@ class MetadataSimplificationService:
 
         """
         self._registry.import_from_file(filepath, merge=merge)
-        logger.info(
-            "Imported user overrides from %s (merge=%s)", filepath, merge
-        )
+        logger.info("Imported user overrides from %s (merge=%s)", filepath, merge)
 
     def get_aliases_file_path(self) -> str:
         """Get path to semantic aliases configuration file.

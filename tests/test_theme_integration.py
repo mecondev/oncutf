@@ -8,13 +8,8 @@ Tests color consistency, QSS application, and visual state management.
 """
 
 import os
-import warnings
 
 import pytest
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # PyQt5 widget tests (only run if PyQt5 is available and not in CI)
 try:
@@ -169,7 +164,11 @@ class TestThemeLogic:
             template += "}"
             return template
 
-        colors = {"color": "#000000", "background-color": "#ffffff", "selection-color": "#ffffff"}
+        colors = {
+            "color": "#000000",
+            "background-color": "#ffffff",
+            "selection-color": "#ffffff",
+        }
 
         qss = generate_qss_template(colors)
         assert "QTreeView" in qss

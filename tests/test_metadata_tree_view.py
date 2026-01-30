@@ -7,16 +7,11 @@ Tests for MetadataTreeView widget
 """
 
 import os
-import warnings
 
 # Force headless Qt platform to reduce GUI-related crashes in tests
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 try:
     from PyQt5.QtCore import Qt
@@ -253,7 +248,9 @@ class TestMetadataTreeViewRotation:
         )
 
         # Verify tree was updated
-        tree_view._edit_behavior._update_tree_item_value.assert_called_once_with("EXIF:Orientation", "0")
+        tree_view._edit_behavior._update_tree_item_value.assert_called_once_with(
+            "EXIF:Orientation", "0"
+        )
 
         # Verify modified state was set
         tree_view._edit_behavior.mark_as_modified.assert_called_once_with("EXIF:Orientation")

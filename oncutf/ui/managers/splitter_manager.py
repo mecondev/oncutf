@@ -286,11 +286,13 @@ class SplitterManager:
             if hasattr(self.parent_window, "preview_tables_view"):
                 if hasattr(self.parent_window.preview_tables_view, "old_names_table"):
                     self.parent_window.column_manager.adjust_columns_for_splitter_change(
-                        self.parent_window.preview_tables_view.old_names_table, "preview_old"
+                        self.parent_window.preview_tables_view.old_names_table,
+                        "preview_old",
                     )
                 if hasattr(self.parent_window.preview_tables_view, "new_names_table"):
                     self.parent_window.column_manager.adjust_columns_for_splitter_change(
-                        self.parent_window.preview_tables_view.new_names_table, "preview_new"
+                        self.parent_window.preview_tables_view.new_names_table,
+                        "preview_new",
                     )
 
             logger.debug("[SplitterManager] Triggered ColumnManager adjustment for other tables")

@@ -80,7 +80,10 @@ class SmartIconCache(QObject):
     cache_evicted = pyqtSignal(str)  # cache_key
 
     def __init__(
-        self, max_entries: int = 500, max_memory_mb: float = 50.0, parent: QObject | None = None
+        self,
+        max_entries: int = 500,
+        max_memory_mb: float = 50.0,
+        parent: QObject | None = None,
     ) -> None:
         """Initialize smart icon cache.
 
@@ -149,7 +152,9 @@ class SmartIconCache(QObject):
         self._cleanup_timer.start(300000)  # 5 minutes
 
         logger.info(
-            "[SmartIconCache] Initialized with %d entries, %dMB limit", max_entries, max_memory_mb
+            "[SmartIconCache] Initialized with %d entries, %dMB limit",
+            max_entries,
+            max_memory_mb,
         )
 
     def get_icon(self, name: str, size: QSize | None = None, theme: str | None = None) -> QIcon:
@@ -255,7 +260,11 @@ class SmartIconCache(QObject):
 
             # Create cache entry
             entry = IconCacheEntry(
-                icon=icon, size=size, theme=theme, file_path=name, memory_size_bytes=memory_size
+                icon=icon,
+                size=size,
+                theme=theme,
+                file_path=name,
+                memory_size_bytes=memory_size,
             )
 
             # Store in cache

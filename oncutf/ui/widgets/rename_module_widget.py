@@ -108,8 +108,8 @@ class RenameModuleWidget(QWidget):
         """
         # Height calculation: base_height + (ui_rows * row_height) + padding
         base_height = 28  # Label + combo
-        row_height = 24   # Per content row
-        padding = 6       # Top + bottom padding
+        row_height = 24  # Per content row
+        padding = 6  # Top + bottom padding
 
         heights = {}
         for descriptor in cls._orchestrator.get_available_modules():
@@ -117,11 +117,11 @@ class RenameModuleWidget(QWidget):
 
             # Apply manual overrides for specific modules (backward compatibility)
             overrides = {
-                "Counter": 88,          # Needs extra space for focus border
-                "Metadata": 66,         # Reduced row spacing
-                "Original Name": 34,    # Minimal padding
+                "Counter": 88,  # Needs extra space for focus border
+                "Metadata": 66,  # Reduced row spacing
+                "Original Name": 34,  # Minimal padding
                 "Remove Text from Original Name": 64,  # Two rows
-                "Specified Text": 37,   # Prevent clipping
+                "Specified Text": 37,  # Prevent clipping
             }
 
             heights[descriptor.display_name] = overrides.get(
@@ -261,6 +261,7 @@ class RenameModuleWidget(QWidget):
         """Get QtAppContext with fallback to None."""
         try:
             from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+
             return get_qt_app_context()
         except (ImportError, RuntimeError):
             # QtAppContext not available or not ready yet
@@ -342,6 +343,7 @@ class RenameModuleWidget(QWidget):
         # Schedule preview update after module initialization completes
         # Small delay ensures MetadataWidget's auto-selection has finished
         from oncutf.utils.shared.timer_manager import schedule_ui_update
+
         schedule_ui_update(lambda: self.updated.emit(self), 50)
 
     def get_data(self) -> dict:

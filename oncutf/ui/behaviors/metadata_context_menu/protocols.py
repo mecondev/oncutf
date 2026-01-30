@@ -3,6 +3,7 @@
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:

@@ -26,7 +26,7 @@ logger = get_cached_logger(__name__)
 # Default values for session state
 SESSION_STATE_DEFAULTS = {
     "sort_column": 2,  # Filename column
-    "sort_order": 0,   # Ascending
+    "sort_order": 0,  # Ascending
     "last_folder": "",
     "recursive_mode": False,
     "column_order": None,
@@ -55,6 +55,7 @@ class SessionStateManager:
         """Lazy-load database manager to avoid circular imports."""
         if self._db_manager is None:
             from oncutf.infra.db.database_manager import get_database_manager
+
             self._db_manager = get_database_manager()
         return self._db_manager
 
@@ -65,8 +66,7 @@ class SessionStateManager:
     def get_sort_column(self) -> int:
         """Get current sort column index."""
         return self.db_manager.get_session_state(
-            "sort_column",
-            SESSION_STATE_DEFAULTS["sort_column"]
+            "sort_column", SESSION_STATE_DEFAULTS["sort_column"]
         )
 
     def set_sort_column(self, column: int) -> bool:
@@ -75,10 +75,7 @@ class SessionStateManager:
 
     def get_sort_order(self) -> int:
         """Get current sort order (0=Ascending, 1=Descending)."""
-        return self.db_manager.get_session_state(
-            "sort_order",
-            SESSION_STATE_DEFAULTS["sort_order"]
-        )
+        return self.db_manager.get_session_state("sort_order", SESSION_STATE_DEFAULTS["sort_order"])
 
     def set_sort_order(self, order: int) -> bool:
         """Set sort order (0=Ascending, 1=Descending)."""
@@ -86,10 +83,12 @@ class SessionStateManager:
 
     def set_sort_state(self, column: int, order: int) -> bool:
         """Set both sort column and order atomically."""
-        return self.db_manager.set_many_session_state({
-            "sort_column": column,
-            "sort_order": order,
-        })
+        return self.db_manager.set_many_session_state(
+            {
+                "sort_column": column,
+                "sort_order": order,
+            }
+        )
 
     # ====================================================================
     # Folder State
@@ -98,8 +97,7 @@ class SessionStateManager:
     def get_last_folder(self) -> str:
         """Get last opened folder path."""
         return self.db_manager.get_session_state(
-            "last_folder",
-            SESSION_STATE_DEFAULTS["last_folder"]
+            "last_folder", SESSION_STATE_DEFAULTS["last_folder"]
         )
 
     def set_last_folder(self, folder: str) -> bool:
@@ -109,8 +107,7 @@ class SessionStateManager:
     def get_recursive_mode(self) -> bool:
         """Get recursive mode setting."""
         return self.db_manager.get_session_state(
-            "recursive_mode",
-            SESSION_STATE_DEFAULTS["recursive_mode"]
+            "recursive_mode", SESSION_STATE_DEFAULTS["recursive_mode"]
         )
 
     def set_recursive_mode(self, recursive: bool) -> bool:
@@ -124,8 +121,7 @@ class SessionStateManager:
     def get_column_order(self) -> list[str] | None:
         """Get column order list."""
         return self.db_manager.get_session_state(
-            "column_order",
-            SESSION_STATE_DEFAULTS["column_order"]
+            "column_order", SESSION_STATE_DEFAULTS["column_order"]
         )
 
     def set_column_order(self, order: list[str]) -> bool:
@@ -135,8 +131,7 @@ class SessionStateManager:
     def get_columns_locked(self) -> bool:
         """Get columns locked setting."""
         return self.db_manager.get_session_state(
-            "columns_locked",
-            SESSION_STATE_DEFAULTS["columns_locked"]
+            "columns_locked", SESSION_STATE_DEFAULTS["columns_locked"]
         )
 
     def set_columns_locked(self, locked: bool) -> bool:
@@ -147,7 +142,7 @@ class SessionStateManager:
         """Get file table column widths."""
         return self.db_manager.get_session_state(
             "file_table_column_widths",
-            SESSION_STATE_DEFAULTS["file_table_column_widths"]
+            SESSION_STATE_DEFAULTS["file_table_column_widths"],
         )
 
     def set_file_table_column_widths(self, widths: dict[str, int]) -> bool:
@@ -157,8 +152,7 @@ class SessionStateManager:
     def get_file_table_columns(self) -> dict[str, bool]:
         """Get file table column visibility."""
         return self.db_manager.get_session_state(
-            "file_table_columns",
-            SESSION_STATE_DEFAULTS["file_table_columns"]
+            "file_table_columns", SESSION_STATE_DEFAULTS["file_table_columns"]
         )
 
     def set_file_table_columns(self, columns: dict[str, bool]) -> bool:
@@ -172,8 +166,7 @@ class SessionStateManager:
     def get_recent_folders(self) -> list[str]:
         """Get recent folders list."""
         return self.db_manager.get_session_state(
-            "recent_folders",
-            SESSION_STATE_DEFAULTS["recent_folders"]
+            "recent_folders", SESSION_STATE_DEFAULTS["recent_folders"]
         )
 
     def set_recent_folders(self, folders: list[str]) -> bool:
@@ -202,7 +195,7 @@ class SessionStateManager:
         """Get metadata tree column widths."""
         return self.db_manager.get_session_state(
             "metadata_tree_column_widths",
-            SESSION_STATE_DEFAULTS["metadata_tree_column_widths"]
+            SESSION_STATE_DEFAULTS["metadata_tree_column_widths"],
         )
 
     def set_metadata_tree_column_widths(self, widths: dict[str, int]) -> bool:

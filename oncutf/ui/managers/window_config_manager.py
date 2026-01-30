@@ -37,7 +37,9 @@ class WindowConfigManager:
             # Load geometry
             geometry = window_config.get("geometry")
             logger.debug(
-                "[Config] Loaded geometry from config: %s", geometry, extra={"dev_only": True}
+                "[Config] Loaded geometry from config: %s",
+                geometry,
+                extra={"dev_only": True},
             )
 
             if geometry:
@@ -45,7 +47,9 @@ class WindowConfigManager:
                     geometry["x"], geometry["y"], geometry["width"], geometry["height"]
                 )
                 logger.debug(
-                    "[Config] Applied saved window geometry: %s", geometry, extra={"dev_only": True}
+                    "[Config] Applied saved window geometry: %s",
+                    geometry,
+                    extra={"dev_only": True},
                 )
             else:
                 # No saved geometry - set smart defaults based on screen size
@@ -65,7 +69,8 @@ class WindowConfigManager:
             self._initial_geometry = self.main_window.geometry()
 
             logger.info(
-                "[Config] Window configuration loaded successfully", extra={"dev_only": True}
+                "[Config] Window configuration loaded successfully",
+                extra={"dev_only": True},
             )
 
         except Exception as e:
@@ -101,7 +106,12 @@ class WindowConfigManager:
 
             window_config.set(
                 "geometry",
-                {"x": geo.x(), "y": geo.y(), "width": geo.width(), "height": geo.height()},
+                {
+                    "x": geo.x(),
+                    "y": geo.y(),
+                    "width": geo.width(),
+                    "height": geo.height(),
+                },
             )
 
             # Save window state
@@ -115,6 +125,7 @@ class WindowConfigManager:
 
             # Save session state to database (ACID-safe, atomic)
             from oncutf.core.session_state_manager import get_session_state_manager
+
             session_manager = get_session_state_manager()
 
             # Save sort state
@@ -208,8 +219,12 @@ class WindowConfigManager:
                     tree_header = self.main_window.metadata_tree_view.header()
                     if tree_header and tree_header.count() >= 2:
                         metadata_column_widths = {}
-                        metadata_column_widths["key"] = self.main_window.metadata_tree_view.columnWidth(0)
-                        metadata_column_widths["value"] = self.main_window.metadata_tree_view.columnWidth(1)
+                        metadata_column_widths["key"] = (
+                            self.main_window.metadata_tree_view.columnWidth(0)
+                        )
+                        metadata_column_widths["value"] = (
+                            self.main_window.metadata_tree_view.columnWidth(1)
+                        )
                         # Save to database (ACID-safe)
                         session_manager.set_metadata_tree_column_widths(metadata_column_widths)
                         logger.debug(
@@ -269,7 +284,10 @@ class WindowConfigManager:
             # Mark dirty for debounced save
             self.config_manager.mark_dirty()
 
-            logger.info("[Config] Window configuration marked for save", extra={"dev_only": True})
+            logger.info(
+                "[Config] Window configuration marked for save",
+                extra={"dev_only": True},
+            )
 
         except Exception as e:
             logger.error("[Config] Failed to save window configuration: %s", e)
@@ -337,7 +355,11 @@ class WindowConfigManager:
             # Apply the geometry
             self.main_window.setGeometry(x, y, window_width, window_height)
             logger.info(
-                "[Config] Smart geometry set: %dx%d at (%d, %d)", window_width, window_height, x, y
+                "[Config] Smart geometry set: %dx%d at (%d, %d)",
+                window_width,
+                window_height,
+                x,
+                y,
             )
 
         except Exception as e:
@@ -380,6 +402,7 @@ class WindowConfigManager:
 
             # Load session state from database (ACID-safe)
             from oncutf.core.session_state_manager import get_session_state_manager
+
             session_manager = get_session_state_manager()
 
             # Load folder state from database
@@ -391,7 +414,9 @@ class WindowConfigManager:
             self.main_window._sort_order_from_config = session_manager.get_sort_order()
             # Apply sort state immediately
             self.main_window.current_sort_column = self.main_window._sort_column_from_config
-            self.main_window.current_sort_order = Qt.SortOrder(self.main_window._sort_order_from_config)
+            self.main_window.current_sort_order = Qt.SortOrder(
+                self.main_window._sort_order_from_config
+            )
 
             # Load column visibility states from database
             try:
@@ -430,7 +455,9 @@ class WindowConfigManager:
                             )
 
                         # Initialize runtime widths in view_config so they persist during session
-                        view_config = getattr(self.main_window.metadata_tree_view, "_view_config", None)
+                        view_config = getattr(
+                            self.main_window.metadata_tree_view, "_view_config", None
+                        )
                         if view_config and hasattr(view_config, "_runtime_widths"):
                             view_config._runtime_widths = metadata_tree_columns.copy()
 
@@ -491,7 +518,10 @@ class WindowConfigManager:
         try:
             if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view:
                 # Schedule a delayed refresh to allow window state to settle
-                from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+                from oncutf.utils.shared.timer_manager import (
+                    TimerType,
+                    get_timer_manager,
+                )
 
                 def refresh() -> None:
                     # Reset manual column preference for auto-sizing - use original FileTableView logic

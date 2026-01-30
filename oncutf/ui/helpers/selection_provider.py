@@ -198,7 +198,9 @@ class SelectionProvider:
                 return result
             except Exception as e:
                 logger.debug(
-                    "[SelectionProvider] SelectionStore failed: %s", e, extra={"dev_only": True}
+                    "[SelectionProvider] SelectionStore failed: %s",
+                    e,
+                    extra={"dev_only": True},
                 )
 
         # Fallback: use selection model
@@ -207,7 +209,9 @@ class SelectionProvider:
             if file_table_view:
                 selection_model = file_table_view.selectionModel()
                 if selection_model:
-                    from oncutf.ui.helpers.selection_provider import get_selected_row_set
+                    from oncutf.ui.helpers.selection_provider import (
+                        get_selected_row_set,
+                    )
 
                     result = get_selected_row_set(selection_model)
                     cls._cached_selected_rows = result

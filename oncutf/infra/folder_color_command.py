@@ -82,7 +82,9 @@ class AutoColorByFolderCommand(MetadataCommand):
             # Assign colors to all folders
             folder_paths = sorted(folder_groups.keys())  # Sort for deterministic order
             logger.debug(
-                "[AutoColorByFolder] Found %d folders: %s", len(folder_paths), folder_paths
+                "[AutoColorByFolder] Found %d folders: %s",
+                len(folder_paths),
+                folder_paths,
             )
 
             for folder_path in folder_paths:
@@ -155,7 +157,8 @@ class AutoColorByFolderCommand(MetadataCommand):
 
             self.undone = True
             logger.info(
-                "[AutoColorByFolder] Undone auto-color for %d files", len(self.previous_colors)
+                "[AutoColorByFolder] Undone auto-color for %d files",
+                len(self.previous_colors),
             )
             return True
 
@@ -177,7 +180,10 @@ class AutoColorByFolderCommand(MetadataCommand):
                     self.db_manager.set_color_tag(file_item.path, new_color)
 
             self.undone = False
-            logger.info("[AutoColorByFolder] Redone auto-color for %d files", len(self.new_colors))
+            logger.info(
+                "[AutoColorByFolder] Redone auto-color for %d files",
+                len(self.new_colors),
+            )
             return True
 
         except Exception:
@@ -202,8 +208,11 @@ class AutoColorByFolderCommand(MetadataCommand):
         folder_groups: dict[str, list[FileItem]] = {}
 
         for file_item in self.file_items:
-            # Normalize path to use forward slashes consistently (cross-platform)
-            folder_path = str(Path(file_item.path).parent).replace("\\", "/")
+            # Normalize path using centralized function
+            from oncutf.utils.filesystem.path_normalizer import normalize_path
+
+            # Use parent path for grouping
+            folder_path = normalize_path(Path(file_item.path).parent)
 
             if folder_path not in folder_groups:
                 folder_groups[folder_path] = []

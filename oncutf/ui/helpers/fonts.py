@@ -46,7 +46,7 @@ class InterFonts:
         """Load all Inter fonts from Qt resources."""
         try:
             # Import is used for side effects to register resources
-            import oncutf.ui.resources_rc  # noqa: F401
+            import oncutf.ui.resources_rc
 
             for font_key, font_file in self.FONT_FILES.items():
                 resource_path = f":/fonts/fonts/inter/{font_file}"
@@ -222,7 +222,7 @@ class JetBrainsFonts:
         """Load all JetBrains Mono fonts from embedded QRC resources."""
         try:
             # Import is used for side effects to register resources
-            import oncutf.ui.resources_rc  # noqa: F401
+            import oncutf.ui.resources_rc
 
             for font_key, font_file in self.FONT_FILES.items():
                 resource_path = f":/fonts/fonts/jetbrains/{font_file}"
@@ -333,5 +333,3 @@ def get_default_ui_font(size: int = 10, style: str = "regular") -> QFont:
     else:
         # Default to Inter
         return get_inter_font(use_case="body", size=adjusted_size)
-
-

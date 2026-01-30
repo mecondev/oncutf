@@ -28,7 +28,9 @@ class TestHeaderInteractionController:
     @pytest.fixture
     def controller(self, mock_main_window):
         """Create a controller with mock main window."""
-        from oncutf.controllers.header_interaction_controller import HeaderInteractionController
+        from oncutf.controllers.header_interaction_controller import (
+            HeaderInteractionController,
+        )
 
         return HeaderInteractionController(mock_main_window)
 

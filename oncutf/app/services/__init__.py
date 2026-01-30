@@ -35,7 +35,10 @@ from oncutf.app.services.user_interaction import (
     show_question_message,
     show_warning_message,
 )
-from oncutf.app.services.validation_service import ValidationService, get_validation_service
+from oncutf.app.services.validation_service import (
+    ValidationService,
+    get_validation_service,
+)
 
 # NOTE: MetadataService, MetadataSimplificationService are in core.metadata
 

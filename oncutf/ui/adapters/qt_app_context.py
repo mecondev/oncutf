@@ -84,9 +84,7 @@ class QtAppContext(QObject):
 
         # Connect SelectionStore signals if available
         if self._app_context._selection_store is not None:
-            self._app_context._selection_store.selection_changed.connect(
-                self._on_selection_changed
-            )
+            self._app_context._selection_store.selection_changed.connect(self._on_selection_changed)
             self._app_context._selection_store.checked_changed.connect(self._on_checked_changed)
 
     def initialize_stores(self) -> None:

@@ -362,7 +362,8 @@ class ThemeManager(QObject):
         if qss:
             app.setStyleSheet(qss)
             logger.info(
-                "[ThemeManager] Applied complete theme '%s' to application", self._current_theme
+                "[ThemeManager] Applied complete theme '%s' to application",
+                self._current_theme,
             )
         else:
             logger.warning("[ThemeManager] No QSS available for complete theme")

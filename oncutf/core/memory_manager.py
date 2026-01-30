@@ -297,7 +297,10 @@ class MemoryManager(QObject):
                 self.memory_warning.emit(memory_usage_percent)
                 self.cache_cleaned.emit(cleaned_entries)
 
-                logger.info("[MemoryManager] Cleanup completed, freed %d entries", cleaned_entries)
+                logger.info(
+                    "[MemoryManager] Cleanup completed, freed %d entries",
+                    cleaned_entries,
+                )
 
         except Exception as e:
             logger.error("[MemoryManager] Error during cleanup: %s", e)

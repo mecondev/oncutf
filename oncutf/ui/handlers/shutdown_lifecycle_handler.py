@@ -77,7 +77,10 @@ class ShutdownLifecycleHandler:
                         hasattr(self.main_window, "metadata_manager")
                         and self.main_window.metadata_manager
                     ):
-                        if hasattr(self.main_window.metadata_manager, "save_all_modified_metadata"):
+                        if hasattr(
+                            self.main_window.metadata_manager,
+                            "save_all_modified_metadata",
+                        ):
                             self.main_window.metadata_manager.save_all_modified_metadata(
                                 is_exit_save=True
                             )
@@ -91,7 +94,9 @@ class ShutdownLifecycleHandler:
                 except Exception as e:
                     logger.error("[CloseEvent] Failed to save metadata before closing: %s", e)
                     # Show error but continue closing anyway
-                    from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
+                    from oncutf.ui.dialogs.custom_message_dialog import (
+                        CustomMessageDialog,
+                    )
 
                     CustomMessageDialog.information(
                         self.main_window,
@@ -138,7 +143,7 @@ class ShutdownLifecycleHandler:
             from contextlib import contextmanager
 
             @contextmanager
-            def wait_cursor(show_wait: bool = True) -> Generator[None, None, None]:  # noqa: ARG001
+            def wait_cursor(_show_wait: bool = True) -> Generator[None, None, None]:
                 yield
 
         # Watchdog disabled: user requested to stop creating temp watchdog logs.
@@ -309,7 +314,9 @@ class ShutdownLifecycleHandler:
                 f.flush()
 
                 logger.info(
-                    "[CloseEvent] Shutdown watchdog armed (%.1fs): %s", timeout_s, dump_path
+                    "[CloseEvent] Shutdown watchdog armed (%.1fs): %s",
+                    timeout_s,
+                    dump_path,
                 )
 
                 # Ensure faulthandler is enabled and configured to include all threads.
@@ -358,6 +365,7 @@ class ShutdownLifecycleHandler:
             # Flush logs before quit to ensure summary is visible
             import logging
             import sys
+
             logging.shutdown()
             sys.stdout.flush()
             sys.stderr.flush()
@@ -409,19 +417,28 @@ class ShutdownLifecycleHandler:
             and self.main_window.window_config_manager
         ):
             try:
-                logger.debug("[CloseEvent] Calling save_window_config()", extra={"dev_only": True})
+                logger.debug(
+                    "[CloseEvent] Calling save_window_config()",
+                    extra={"dev_only": True},
+                )
                 self.main_window.window_config_manager.save_window_config()
                 logger.info("[CloseEvent] Window configuration saved to config manager")
 
                 # Force immediate save to disk after marking config as dirty
                 try:
-                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
+                    from oncutf.utils.shared.json_config_manager import (
+                        get_app_config_manager,
+                    )
 
                     config_mgr = get_app_config_manager()
-                    logger.debug("[CloseEvent] Calling save_immediate()", extra={"dev_only": True})
+                    logger.debug(
+                        "[CloseEvent] Calling save_immediate()",
+                        extra={"dev_only": True},
+                    )
                     result = config_mgr.save_immediate()
                     logger.info(
-                        "[CloseEvent] Configuration saved to disk immediately (result: %s)", result
+                        "[CloseEvent] Configuration saved to disk immediately (result: %s)",
+                        result,
                     )
                 except Exception as save_error:
                     logger.error("[CloseEvent] Failed to save config immediately: %s", save_error)
@@ -535,13 +552,12 @@ class ShutdownLifecycleHandler:
             if (
                 hasattr(self.main_window.metadata_tree_view, "_current_file_path")
                 and self.main_window.metadata_tree_view._current_file_path
-            ):
-                if self.main_window.metadata_tree_view.modified_items:
-                    self.main_window.metadata_tree_view._scroll_behavior._set_in_path_dict(
-                        self.main_window.metadata_tree_view._current_file_path,
-                        self.main_window.metadata_tree_view.modified_items.copy(),
-                        self.main_window.metadata_tree_view.modified_items_per_file,
-                    )
+            ) and self.main_window.metadata_tree_view.modified_items:
+                self.main_window.metadata_tree_view._scroll_behavior._set_in_path_dict(
+                    self.main_window.metadata_tree_view._current_file_path,
+                    self.main_window.metadata_tree_view.modified_items.copy(),
+                    self.main_window.metadata_tree_view.modified_items_per_file,
+                )
 
             # Get all modified metadata for all files
             all_modifications = (
@@ -553,11 +569,16 @@ class ShutdownLifecycleHandler:
 
             if has_modifications:
                 logger.info(
-                    "[CloseEvent] Found unsaved changes in %d files", len(all_modifications)
+                    "[CloseEvent] Found unsaved changes in %d files",
+                    len(all_modifications),
                 )
                 for file_path, modifications in all_modifications.items():
                     if modifications:
-                        logger.debug("[CloseEvent] - %s: %s", file_path, list(modifications.keys()))
+                        logger.debug(
+                            "[CloseEvent] - %s: %s",
+                            file_path,
+                            list(modifications.keys()),
+                        )
 
             return has_modifications
 

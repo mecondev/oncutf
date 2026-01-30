@@ -115,7 +115,9 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         # Draw text with padding (matches QSS padding: 0px 8px)
         text_rect = option.rect.adjusted(8, 0, -8, 0)
         text = index.data(Qt.ItemDataRole.DisplayRole) or ""
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text)
+        painter.drawText(
+            text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text
+        )
 
         painter.restore()
 
@@ -317,7 +319,9 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             painter.save()
             painter.setPen(text_color)
 
-            text_rect = option.rect.adjusted(4, 1, -4, -1)  # Horizontal and vertical padding for centering
+            text_rect = option.rect.adjusted(
+                4, 1, -4, -1
+            )  # Horizontal and vertical padding for centering
 
             alignment = (
                 model.data(index, Qt.ItemDataRole.TextAlignmentRole)

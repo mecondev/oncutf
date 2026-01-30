@@ -211,6 +211,7 @@ class TestConfigureDefaultServices:
         class MockMetadataService:
             def load_metadata(self, path):
                 return {}
+
             def load_metadata_batch(self, paths):
                 return {}
 
@@ -227,6 +228,7 @@ class TestConfigureDefaultServices:
         class MockHashService:
             def compute_hash(self, path, algorithm="crc32"):
                 return "abc123"
+
             def compute_hashes_batch(self, paths, algorithm="crc32"):
                 return {}
 
@@ -243,8 +245,10 @@ class TestConfigureDefaultServices:
         class MockFilesystemService:
             def rename_file(self, source, target):
                 return True
+
             def file_exists(self, path):
                 return False
+
             def get_file_info(self, path):
                 return {}
 

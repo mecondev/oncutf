@@ -3,6 +3,7 @@
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -20,7 +21,7 @@ class SelectableWidget(Protocol):
         """Return the data model."""
         ...
 
-    def blockSignals(self, block: bool) -> bool:
+    def blockSignals(self, _block: bool) -> bool:
         """Block/unblock signals."""
         ...
 

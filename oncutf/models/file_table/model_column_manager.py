@@ -191,7 +191,8 @@ class ColumnManager:
             # Update view for column changes
             if hasattr(self.model, "_table_view_ref") and self.model._table_view_ref:
                 logger.debug(
-                    "[ColumnManager] Calling table view refresh methods", extra={"dev_only": True}
+                    "[ColumnManager] Calling table view refresh methods",
+                    extra={"dev_only": True},
                 )
                 if hasattr(self.model._table_view_ref, "refresh_columns_after_model_change"):
                     logger.debug(
@@ -350,4 +351,7 @@ class ColumnManager:
             self.get_column_count(),
             extra={"dev_only": True},
         )
-        logger.debug("[ColumnDebug] =========================================", extra={"dev_only": True})
+        logger.debug(
+            "[ColumnDebug] =========================================",
+            extra={"dev_only": True},
+        )

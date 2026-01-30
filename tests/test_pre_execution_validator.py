@@ -6,9 +6,11 @@ Date: 2025-12-16
 Tests for PreExecutionValidator.
 """
 
+import contextlib
 import os
 import platform
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,7 +31,8 @@ class TestPreExecutionValidator:
             path = f.name
         yield path
         if os.path.exists(path):
-            os.unlink(path)
+            with contextlib.suppress(OSError):
+                Path(path).unlink()
 
     @pytest.fixture
     def file_item(self, temp_file):
@@ -121,7 +124,8 @@ class TestPreExecutionValidator:
 
         # Mock hash calculation to return matching hash
         with patch(
-            "oncutf.core.hash.hash_manager.HashManager.calculate_hash", return_value=file_item.hash
+            "oncutf.core.hash.hash_manager.HashManager.calculate_hash",
+            return_value=file_item.hash,
         ):
             result = validator.validate([file_item])
 

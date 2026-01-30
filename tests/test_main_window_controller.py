@@ -140,7 +140,10 @@ class TestRestoreLastSessionWorkflow:
         # Mock loaded files
         mock_file1 = MagicMock()
         mock_file2 = MagicMock()
-        mock_app_context.file_store.get_loaded_files.return_value = [mock_file1, mock_file2]
+        mock_app_context.file_store.get_loaded_files.return_value = [
+            mock_file1,
+            mock_file2,
+        ]
 
         result = controller.restore_last_session_workflow(
             last_folder="/test/folder", recursive=True, load_metadata=True
@@ -279,7 +282,11 @@ class TestRestoreLastSessionWorkflow:
         file_load, metadata, _ = mock_controllers
 
         # Mock empty folder
-        file_load.load_folder.return_value = {"success": True, "loaded_count": 0, "errors": []}
+        file_load.load_folder.return_value = {
+            "success": True,
+            "loaded_count": 0,
+            "errors": [],
+        }
 
         result = controller.restore_last_session_workflow(
             last_folder="/test/folder", load_metadata=True

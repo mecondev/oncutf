@@ -77,9 +77,7 @@ class ConflictResolutionDialog(CustomMessageDialog):
 
         # Primary action (Skip) is safe default
         if "Skip" in self._buttons:
-            self._buttons["Skip"].setStyleSheet(
-                "QPushButton { font-weight: bold; }"
-            )
+            self._buttons["Skip"].setStyleSheet("QPushButton { font-weight: bold; }")
 
     def get_resolution(self) -> tuple[str, bool]:
         """Execute dialog and return user choice.

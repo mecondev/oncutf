@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from oncutf.app.ports import UserDialogPort
 
 
-def show_info_message(parent: QWidget | None, title: str, message: str) -> None:  # noqa: ARG001
+def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show information dialog using registered adapter.
 
     Args:
@@ -52,7 +52,7 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     adapter.show_info(title, message)
 
 
-def show_error_message(parent: QWidget | None, title: str, message: str) -> None:  # noqa: ARG001
+def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show error dialog using registered adapter.
 
     Args:
@@ -77,7 +77,7 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
     adapter.show_error(title, message)
 
 
-def show_warning_message(parent: QWidget | None, title: str, message: str) -> None:  # noqa: ARG001
+def show_warning_message(parent: QWidget | None, title: str, message: str) -> None:
     """Show warning dialog using registered adapter.
 
     Args:
@@ -102,7 +102,7 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
     adapter.show_warning(title, message)
 
 
-def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:  # noqa: ARG001
+def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
     """Show yes/no question dialog using registered adapter.
 
     Args:

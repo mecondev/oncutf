@@ -183,7 +183,11 @@ class ThumbnailManager(QObject):
 
         """
         # Validate file exists
-        logger.debug("[ThumbnailManager] get_thumbnail() called: %s (size=%d)", file_path, size_px)
+        logger.debug(
+            "[ThumbnailManager] get_thumbnail() called: %s (size=%d)",
+            file_path,
+            size_px,
+        )
         if not os.path.exists(file_path):
             logger.warning("[ThumbnailManager] File not found for thumbnail: %s", file_path)
             return self._get_placeholder()
@@ -281,12 +285,15 @@ class ThumbnailManager(QObject):
         self._workers = [w for w in self._workers if w.isRunning()]
         if len(self._workers) < initial_count:
             logger.debug(
-                "[ThumbnailManager] Cleaned up %d dead workers", initial_count - len(self._workers)
+                "[ThumbnailManager] Cleaned up %d dead workers",
+                initial_count - len(self._workers),
             )
 
         # Start new workers if needed
         logger.debug(
-            "[ThumbnailManager] Current workers: %d, max: %d", len(self._workers), self._max_workers
+            "[ThumbnailManager] Current workers: %d, max: %d",
+            len(self._workers),
+            self._max_workers,
         )
         while len(self._workers) < self._max_workers and not self._shutdown_flag:
             from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker

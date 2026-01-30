@@ -178,7 +178,9 @@ class StateHandler:
         if selected_path and os.path.exists(selected_path):
             self._view.select_path(selected_path)
             logger.debug(
-                "[StateHandler] Restored selection: %s", selected_path, extra={"dev_only": True}
+                "[StateHandler] Restored selection: %s",
+                selected_path,
+                extra={"dev_only": True},
             )
 
         if scroll_position > 0:
@@ -292,7 +294,8 @@ class StateHandler:
             if hasattr(parent, "window_config_manager"):
                 parent.window_config_manager.save_window_config()
                 logger.debug(
-                    "[StateHandler] Expanded state saved to config", extra={"dev_only": True}
+                    "[StateHandler] Expanded state saved to config",
+                    extra={"dev_only": True},
                 )
                 return
             parent = parent.parent() if hasattr(parent, "parent") else None

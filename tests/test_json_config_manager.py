@@ -1,4 +1,8 @@
-from oncutf.utils.shared.json_config_manager import FileHashConfig, JSONConfigManager, WindowConfig
+from oncutf.utils.shared.json_config_manager import (
+    FileHashConfig,
+    JSONConfigManager,
+    WindowConfig,
+)
 
 
 def test_register_save_load(tmp_path):

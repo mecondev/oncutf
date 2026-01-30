@@ -27,6 +27,7 @@ try:
 
     _SESSION_QAPP = QApplication.instance() or QApplication([])
     if not _QT_MESSAGE_HANDLER_INSTALLED:
+
         def _qt_message_handler(_msg_type, _context, message):
             if "Must construct a QGuiApplication" in message:
                 return
@@ -93,6 +94,14 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "gui: mark test as requiring GUI")
     config.addinivalue_line("markers", "local_only: mark test as local environment only")
 
+    # Filter warnings globally for all tests (replaces per-file E402 violations)
+    import warnings
+
+    # Ignore PendingDeprecationWarning which are noisy in Third-party libs
+    warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+    # Ignore specific coroutine non-awaited warnings if needed
+    warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+
 
 def pytest_sessionstart(session) -> None:
     """Ensure a QApplication exists before any test collection side effects."""
@@ -138,7 +147,7 @@ def ci_environment():
 def pyqt5_available():
     """Fixture to check PyQt5 availability."""
     try:
-        import PyQt5  # noqa: F401
+        import PyQt5
 
         return True
     except ImportError:
@@ -161,8 +170,17 @@ def mock_theme_colors():
 def sample_metadata():
     """Fixture providing sample metadata for testing."""
     return {
-        "EXIF": {"Camera Make": "Canon", "Camera Model": "EOS R5", "ISO": "100", "F-Stop": "f/2.8"},
-        "File": {"File Name": "test_image.jpg", "File Size": "2.5 MB", "File Type": "JPEG"},
+        "EXIF": {
+            "Camera Make": "Canon",
+            "Camera Model": "EOS R5",
+            "ISO": "100",
+            "F-Stop": "f/2.8",
+        },
+        "File": {
+            "File Name": "test_image.jpg",
+            "File Size": "2.5 MB",
+            "File Type": "JPEG",
+        },
         "GPS": {"Latitude": "37.7749° N", "Longitude": "122.4194° W"},
     }
 

@@ -84,7 +84,9 @@ class CompanionFilesWidget(QWidget):
 
         self.show_radio = QRadioButton("Show companion files in file table")
         TooltipHelper.setup_tooltip(
-            self.show_radio, "Companion files are shown alongside main files", TooltipType.INFO
+            self.show_radio,
+            "Companion files are shown alongside main files",
+            TooltipType.INFO,
         )
         self.display_button_group.addButton(self.show_radio, 1)
         display_layout.addWidget(self.show_radio)

@@ -11,12 +11,6 @@ Tests the logging system setup to verify:
 Run this after setting up init_logging and logger_file_helper.
 """
 
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import logging
 import os
 
@@ -26,7 +20,11 @@ from oncutf.utils.logging.logger_file_helper import add_file_handler
 
 # Clean log files (for test only)
 def clean_logs():
-    for filename in ["logs/oncutf_activity.log", "logs/oncutf_errors.log", "logs/rename.log"]:
+    for filename in [
+        "logs/oncutf_activity.log",
+        "logs/oncutf_errors.log",
+        "logs/rename.log",
+    ]:
         if os.path.exists(filename):
             with open(filename, "w", encoding="utf-8") as f:
                 f.write("")

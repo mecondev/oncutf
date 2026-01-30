@@ -104,20 +104,14 @@ class TestSimplifiedMetadata:
         original = {"Audio Format Audio Rec Port Audio Codec": "AAC"}
         meta = SimplifiedMetadata(original)
 
-        assert (
-            meta.get_original_key("Audio Codec")
-            == "Audio Format Audio Rec Port Audio Codec"
-        )
+        assert meta.get_original_key("Audio Codec") == "Audio Format Audio Rec Port Audio Codec"
 
     def test_get_simplified_key(self):
         """Test getting simplified key from original."""
         original = {"Audio Format Audio Rec Port Audio Codec": "AAC"}
         meta = SimplifiedMetadata(original)
 
-        assert (
-            meta.get_simplified_key("Audio Format Audio Rec Port Audio Codec")
-            == "Audio Codec"
-        )
+        assert meta.get_simplified_key("Audio Format Audio Rec Port Audio Codec") == "Audio Codec"
 
     def test_collision_detection(self):
         """Test detecting when collision resolution was applied."""
@@ -142,9 +136,7 @@ class TestSimplifiedMetadata:
         meta = SimplifiedMetadata(original)
 
         # Override simplified key
-        meta.override_simplified(
-            "Audio Format Audio Rec Port Audio Codec", "Audio Type"
-        )
+        meta.override_simplified("Audio Format Audio Rec Port Audio Codec", "Audio Type")
 
         # Should now work with new simplified key
         assert meta["Audio Type"] == "AAC"
@@ -165,9 +157,7 @@ class TestSimplifiedMetadata:
 
         assert meta.get_user_overrides() == {}
 
-        meta.override_simplified(
-            "Audio Format Audio Rec Port Audio Codec", "Audio Type"
-        )
+        meta.override_simplified("Audio Format Audio Rec Port Audio Codec", "Audio Type")
 
         overrides = meta.get_user_overrides()
         assert overrides == {"Audio Format Audio Rec Port Audio Codec": "Audio Type"}

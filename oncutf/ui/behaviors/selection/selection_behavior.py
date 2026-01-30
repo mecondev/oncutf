@@ -10,12 +10,13 @@ Usage:
     class MyTableView(QTableView):
         def __init__(self, parent=None):
             super().__init__(parent)
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
             self.selection_behavior = SelectionBehavior(
                 widget=self,
-                selection_store=get_app_context().selection_store
+                selection_store=get_qt_app_context().selection_store
             )
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -120,9 +121,7 @@ class SelectionBehavior:
         finally:
             self._processing_selection_change = False
 
-    def update_selection_store(
-        self, selected_rows: set[int], emit_signal: bool = True
-    ) -> None:
+    def update_selection_store(self, selected_rows: set[int], emit_signal: bool = True) -> None:
         """Update SelectionStore and Qt selection model with new selection.
 
         Args:
@@ -167,9 +166,7 @@ class SelectionBehavior:
                     last_index = model.index(row, last_col)
                     selection.select(index, last_index)
 
-            selection_model.select(
-                selection, QItemSelectionModel.Select | QItemSelectionModel.Rows
-            )
+            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
         finally:
             self._processing_selection_change = False
@@ -183,9 +180,7 @@ class SelectionBehavior:
 
         """
         self._anchor_row = row
-        logger.debug(
-            "[SelectionBehavior] Anchor row set to %s", row, extra={"dev_only": True}
-        )
+        logger.debug("[SelectionBehavior] Anchor row set to %s", row, extra={"dev_only": True})
 
     def get_anchor_row(self) -> int | None:
         """Get the current anchor row.
@@ -253,9 +248,7 @@ class SelectionBehavior:
 
         self.update_selection_store(inverted, emit_signal=True)
 
-    def ensure_anchor_or_select(
-        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers
-    ) -> None:
+    def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support.
 
         Implements Windows Explorer-like selection behavior:
@@ -271,9 +264,7 @@ class SelectionBehavior:
         from PyQt5.QtCore import Qt
 
         if self._ensuring_selection:
-            logger.debug(
-                "[SelectionBehavior] ensure_anchor_or_select already running, skipping"
-            )
+            logger.debug("[SelectionBehavior] ensure_anchor_or_select already running, skipping")
             return
 
         self._ensuring_selection = True
@@ -330,9 +321,7 @@ class SelectionBehavior:
             current_qt_selection = {idx.row() for idx in sm.selectedRows()}
             self.selection_store.set_selected_rows(current_qt_selection, emit_signal=False)
             # Always use the original anchor, not the clicked row
-            self.selection_store.set_anchor_row(
-                self._manual_anchor_index.row(), emit_signal=False
-            )
+            self.selection_store.set_anchor_row(self._manual_anchor_index.row(), emit_signal=False)
 
         self._update_row_visual(model, index.row())
 
@@ -477,9 +466,7 @@ class SelectionBehavior:
                 rows_to_select.append(i)
 
         if not rows_to_select:
-            logger.debug(
-                "[SelectionBehavior] No matching files found", extra={"dev_only": True}
-            )
+            logger.debug("[SelectionBehavior] No matching files found", extra={"dev_only": True})
             return
 
         if self._widget.keyboardModifiers() != Qt.NoModifier:

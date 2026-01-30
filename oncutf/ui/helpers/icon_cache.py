@@ -18,7 +18,11 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
 
-from oncutf.config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
+from oncutf.config import (
+    PREVIEW_COLORS,
+    PREVIEW_INDICATOR_SHAPE,
+    PREVIEW_INDICATOR_SIZE,
+)
 from oncutf.ui.helpers.icon_utilities import create_colored_icon
 
 # Initialize Logger

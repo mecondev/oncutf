@@ -14,6 +14,7 @@ For complex operations requiring signals/progress, use UnifiedMetadataManager.
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -23,14 +24,19 @@ logger = get_cached_logger(__name__)
 logger.debug("[DEBUG] [FileStatusHelpers] Module imported", extra={"dev_only": True})
 
 try:
-    from oncutf.infra.cache.persistent_metadata_cache import get_persistent_metadata_cache
+    from oncutf.infra.cache.persistent_metadata_cache import (
+        get_persistent_metadata_cache,
+    )
 
     logger.debug(
         "[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache",
         extra={"dev_only": True},
     )
 except Exception as e:
-    logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: %s", e)
+    logger.error(
+        "[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: %s",
+        e,
+    )
     raise
 
 try:
@@ -43,8 +49,6 @@ try:
 except Exception as e:
     logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: %s", e)
     raise
-
-from oncutf.utils.filesystem.path_normalizer import normalize_path
 
 
 # --- Metadata helpers ---

@@ -11,7 +11,9 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from oncutf.core.metadata.metadata_simplification_service import get_metadata_simplification_service
+from oncutf.core.metadata.metadata_simplification_service import (
+    get_metadata_simplification_service,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -147,7 +149,11 @@ class MetadataKeysHandler:
         key_lower = key.lower()
 
         # File-related metadata
-        if key_lower.startswith("file") or key_lower in {"rotation", "directory", "sourcefile"}:
+        if key_lower.startswith("file") or key_lower in {
+            "rotation",
+            "directory",
+            "sourcefile",
+        }:
             return "File Info"
 
         # Camera Settings - Critical for photography/videography
@@ -220,7 +226,16 @@ class MetadataKeysHandler:
         # Technical/System
         if any(
             term in key_lower
-            for term in ["version", "software", "firmware", "make", "model", "serial", "uuid", "id"]
+            for term in [
+                "version",
+                "software",
+                "firmware",
+                "make",
+                "model",
+                "serial",
+                "uuid",
+                "id",
+            ]
         ):
             return "Technical Info"
 

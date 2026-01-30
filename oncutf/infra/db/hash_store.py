@@ -46,12 +46,19 @@ class HashStore:
         try:
             # Validate inputs
             if not file_path or not hash_value:
-                logger.warning("[HashStore] Invalid input: file_path=%s, hash_value=%s", file_path, hash_value)
+                logger.warning(
+                    "[HashStore] Invalid input: file_path=%s, hash_value=%s",
+                    file_path,
+                    hash_value,
+                )
                 return False
 
             # Check for null bytes (SQLite doesn't support them)
-            if '\x00' in file_path or '\x00' in hash_value:
-                logger.warning("[HashStore] Null byte detected in path or hash, skipping: %s", file_path)
+            if "\x00" in file_path or "\x00" in hash_value:
+                logger.warning(
+                    "[HashStore] Null byte detected in path or hash, skipping: %s",
+                    file_path,
+                )
                 return False
 
             with self._write_lock:
@@ -112,7 +119,7 @@ class HashStore:
                 return None
 
             # Check for null bytes
-            if '\x00' in file_path:
+            if "\x00" in file_path:
                 logger.warning("[HashStore] Null byte detected in path, skipping: %s", file_path)
                 return None
 

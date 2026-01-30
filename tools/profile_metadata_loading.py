@@ -53,7 +53,7 @@ def profile_exiftool_overhead() -> dict[str, float]:
 
     # Import time
     import_start = time.perf_counter()
-    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
     import_time = time.perf_counter() - import_start
 
@@ -103,7 +103,7 @@ def profile_sequential_loading() -> dict[str, float]:
 
     print(f"Testing with {len(test_images)} files")
 
-    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
     exiftool = ExifToolWrapper()
 
@@ -134,7 +134,7 @@ def profile_sequential_loading() -> dict[str, float]:
     print(f"  Avg/file:   {results['avg_per_file']:>8.1f} ms")
     print(f"  Min/file:   {results['min_per_file']:>8.1f} ms")
     print(f"  Max/file:   {results['max_per_file']:>8.1f} ms")
-    print(f"  Throughput: {len(test_images) / (results['total_time']/1000):>8.1f} files/sec")
+    print(f"  Throughput: {len(test_images) / (results['total_time'] / 1000):>8.1f} files/sec")
 
     return results
 
@@ -152,7 +152,7 @@ def profile_batch_loading() -> dict[str, float]:
 
     print(f"Testing with {len(test_images)} files")
 
-    from oncutf.utils.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
     exiftool = ExifToolWrapper()
 
@@ -172,7 +172,7 @@ def profile_batch_loading() -> dict[str, float]:
     print(f"\n📊 Batch Loading ({len(test_images)} files):")
     print(f"  Total:      {results['total_time']:>8.1f} ms")
     print(f"  Avg/file:   {results['avg_per_file']:>8.1f} ms")
-    print(f"  Throughput: {len(test_images) / (results['total_time']/1000):>8.1f} files/sec")
+    print(f"  Throughput: {len(test_images) / (results['total_time'] / 1000):>8.1f} files/sec")
 
     return results
 

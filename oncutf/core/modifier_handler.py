@@ -71,7 +71,9 @@ def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
         return False, False  # merge=False, recursive=False
 
 
-def decode_modifiers_to_flags(modifiers: Qt.KeyboardModifiers) -> tuple[bool, bool, str]:
+def decode_modifiers_to_flags(
+    modifiers: Qt.KeyboardModifiers,
+) -> tuple[bool, bool, str]:
     """Convenience function to decode modifiers directly to flags and description.
 
     Args:

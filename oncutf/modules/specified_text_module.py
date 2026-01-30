@@ -317,7 +317,10 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.reset_validation_state()  # Reset ValidatedLineEdit state
 
     def apply(
-        self, file_item: Any, index: int = 0, metadata_cache: dict[str, Any] | None = None
+        self,
+        file_item: Any,
+        index: int = 0,
+        metadata_cache: dict[str, Any] | None = None,
     ) -> str:
         """Apply specified text module using current widget value.
 

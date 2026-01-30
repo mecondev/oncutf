@@ -97,7 +97,8 @@ class FilesystemMonitor(QObject):
         # Initialize current drives
         self._current_drives = self._get_available_drives()
         logger.info(
-            "[FilesystemMonitor] Initial drives: %s", ", ".join(sorted(self._current_drives))
+            "[FilesystemMonitor] Initial drives: %s",
+            ", ".join(sorted(self._current_drives)),
         )
 
         # Start drive polling
@@ -137,7 +138,9 @@ class FilesystemMonitor(QObject):
             self._watcher.addPath(normalized_path)
             self._monitored_folders.add(normalized_path)
             logger.debug(
-                "[FilesystemMonitor] Now watching: %s", normalized_path, extra={"dev_only": True}
+                "[FilesystemMonitor] Now watching: %s",
+                normalized_path,
+                extra={"dev_only": True},
             )
             return True
 
@@ -304,7 +307,8 @@ class FilesystemMonitor(QObject):
             if self.file_load_manager and self.file_store:
                 try:
                     logger.info(
-                        "[FilesystemMonitor] Refreshing FileStore after drive unmount: %s", drive
+                        "[FilesystemMonitor] Refreshing FileStore after drive unmount: %s",
+                        drive,
                     )
                     # Use FileLoadManager to scan filesystem and update FileStore
                     # This will check if files still exist and automatically update the UI
@@ -318,7 +322,8 @@ class FilesystemMonitor(QObject):
                         )
                 except Exception as e:
                     logger.exception(
-                        "[FilesystemMonitor] Error refreshing FileStore after unmount: %s", e
+                        "[FilesystemMonitor] Error refreshing FileStore after unmount: %s",
+                        e,
                     )
             else:
                 logger.warning(
@@ -421,7 +426,8 @@ class FilesystemMonitor(QObject):
 
         if has_files_in_folder:
             logger.info(
-                "[FilesystemMonitor] Refreshing FileStore for changed folder: %s", changed_path
+                "[FilesystemMonitor] Refreshing FileStore for changed folder: %s",
+                changed_path,
             )
             # Use FileLoadManager to scan filesystem and refresh files from affected folder
             self.file_load_manager.refresh_loaded_folders(

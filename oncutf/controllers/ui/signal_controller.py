@@ -14,7 +14,10 @@ from PyQt5.QtWidgets import QAction, QLineEdit, QMenu
 from oncutf.controllers.ui.protocols import SignalContext
 from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import schedule_selection_update, schedule_ui_update
+from oncutf.utils.shared.timer_manager import (
+    schedule_selection_update,
+    schedule_ui_update,
+)
 
 logger = get_cached_logger(__name__)
 
@@ -127,9 +130,7 @@ class SignalController:
         )
 
         # Connect F5 refresh request
-        self.parent_window.file_table_view.refresh_requested.connect(
-            self._refresh_file_table
-        )
+        self.parent_window.file_table_view.refresh_requested.connect(self._refresh_file_table)
 
     def _setup_metadata_signals(self) -> None:
         """Connect metadata tree signals."""
@@ -200,7 +201,7 @@ class SignalController:
 
     def _refresh_file_table(self) -> None:
         """Refresh file table (F5) - reloads files and clears ALL state."""
-        from oncutf.ui.adapters.application_context import get_app_context
+        from oncutf.ui.adapters.qt_app_context import get_qt_app_context
         from oncutf.ui.helpers.cursor_helper import wait_cursor
         from oncutf.ui.helpers.file_table_state_helper import FileTableStateHelper
 
@@ -209,7 +210,7 @@ class SignalController:
         with wait_cursor():
             metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context:
                 FileTableStateHelper.clear_all_state(
                     self.parent_window.file_table_view, context, metadata_tree_view

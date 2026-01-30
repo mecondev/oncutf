@@ -120,6 +120,7 @@ class RenameModulesArea(QWidget):
         """Get QtAppContext with fallback to None."""
         try:
             from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+
             return get_qt_app_context()
         except (ImportError, RuntimeError):
             # QtAppContext not available or not ready yet
@@ -289,7 +290,8 @@ class RenameModulesArea(QWidget):
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
         logger.debug(
-            "[RenameModulesArea] Timer timeout - emitting updated signal", extra={"dev_only": True}
+            "[RenameModulesArea] Timer timeout - emitting updated signal",
+            extra={"dev_only": True},
         )
         self.updated.emit()
         # Trigger central preview update
@@ -314,7 +316,9 @@ class RenameModulesArea(QWidget):
         """Handle when a module starts being dragged."""
         self.dragged_module = module
         logger.debug(
-            "[RenameModulesArea] Module drag started: %s", module, extra={"dev_only": True}
+            "[RenameModulesArea] Module drag started: %s",
+            module,
+            extra={"dev_only": True},
         )
         # Create a visual placeholder to reserve space while dragging
         self._create_drag_placeholder(module)
@@ -325,7 +329,11 @@ class RenameModulesArea(QWidget):
 
     def module_drag_ended(self, module):
         """Handle when a module drag ends."""
-        logger.debug("[RenameModulesArea] Module drag ended: %s", module, extra={"dev_only": True})
+        logger.debug(
+            "[RenameModulesArea] Module drag ended: %s",
+            module,
+            extra={"dev_only": True},
+        )
 
         # Stop auto-scrolling
         self.auto_scroll_timer.stop()

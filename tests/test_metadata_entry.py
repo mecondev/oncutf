@@ -190,7 +190,11 @@ class TestMetadataEntryProperties:
         entry = MetadataEntry(
             data={
                 "Title": "Test",
-                "EXIF": {"Model": "Camera", "Make": "Canon", "DateTimeOriginal": "2024"},
+                "EXIF": {
+                    "Model": "Camera",
+                    "Make": "Canon",
+                    "DateTimeOriginal": "2024",
+                },
             }
         )
         # 1 top-level + 3 nested = 4

@@ -3,6 +3,7 @@
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -41,7 +42,7 @@ class ColumnManageableWidget(Protocol):
         """Update geometry."""
         ...
 
-    def indexAt(self, point) -> "QModelIndex":
+    def indexAt(self, _point) -> "QModelIndex":
         """Return index at point."""
         ...
 

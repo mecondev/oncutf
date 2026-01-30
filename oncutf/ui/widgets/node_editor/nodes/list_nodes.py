@@ -180,7 +180,9 @@ class GetItemNode(Node):
                 self.value = input_list[index]
             except IndexError:
                 self.mark_invalid()
-                self.graphics_node.setToolTip(f"Index {index} out of range (length: {len(input_list)})")
+                self.graphics_node.setToolTip(
+                    f"Index {index} out of range (length: {len(input_list)})"
+                )
                 self.value = None
                 return None
 

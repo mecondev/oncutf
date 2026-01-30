@@ -6,13 +6,8 @@ Date: 2025-05-31
 Integration tests for the enhanced rename workflow with validation
 """
 
-import warnings
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from oncutf.config import INVALID_FILENAME_MARKER
 from oncutf.models.file_item import FileItem
@@ -79,9 +74,13 @@ class TestRenameIntegration:
 
             # Verify timer was scheduled for state restoration (debounced/safety variants allowed)
             assert mock_timer.schedule.called
-            timer_ids = [kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list]
+            timer_ids = [
+                kwargs.get("timer_id") for (_args, kwargs) in mock_timer.schedule.call_args_list
+            ]
             assert any(
-                (tid and "post_rename_state_restore" in tid) or tid in (
+                (tid and "post_rename_state_restore" in tid)
+                or tid
+                in (
                     "post_rename_state_restore_debounced",
                     "post_rename_state_restore_fallback",
                     "post_rename_state_restore_safety",

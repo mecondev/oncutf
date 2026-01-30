@@ -57,4 +57,3 @@ def inject_font_family(qss_string: str, widget_type: str | None = None) -> str:
         '"Inter", "Segoe UI", Arial, sans-serif', get_font_family_css(widget_type)
     )
     return result
-

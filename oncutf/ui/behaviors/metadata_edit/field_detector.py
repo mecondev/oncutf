@@ -24,44 +24,48 @@ class FieldDetector:
     """
 
     # Date/time keywords for field detection
-    DATE_KEYWORDS: ClassVar[frozenset[str]] = frozenset([
-        "date",
-        "time",
-        "datetime",
-        "timestamp",
-        "created",
-        "modified",
-        "accessed",
-        "filemodifydate",
-        "filecreatedate",
-        "createdate",
-        "modifydate",
-        "datetimeoriginal",
-        "datetimedigitized",
-    ])
+    DATE_KEYWORDS: ClassVar[frozenset[str]] = frozenset(
+        [
+            "date",
+            "time",
+            "datetime",
+            "timestamp",
+            "created",
+            "modified",
+            "accessed",
+            "filemodifydate",
+            "filecreatedate",
+            "createdate",
+            "modifydate",
+            "datetimeoriginal",
+            "datetimedigitized",
+        ]
+    )
 
     # Editable metadata fields (case-insensitive)
-    EDITABLE_FIELDS = frozenset([
-        # Rotation/Orientation
-        "rotation",
-        "orientation",
-        "exif:orientation",
-        # Dates
-        "datetimeoriginal",
-        "createdate",
-        "modifydate",
-        "exif:datetimeoriginal",
-        "exif:createdate",
-        "exif:modifydate",
-        "file:filemodifydate",
-        # XMP fields
-        "xmp:creator",
-        "xmp:title",
-        "xmp:description",
-        "creator",
-        "title",
-        "description",
-    ])
+    EDITABLE_FIELDS = frozenset(
+        [
+            # Rotation/Orientation
+            "rotation",
+            "orientation",
+            "exif:orientation",
+            # Dates
+            "datetimeoriginal",
+            "createdate",
+            "modifydate",
+            "exif:datetimeoriginal",
+            "exif:createdate",
+            "exif:modifydate",
+            "file:filemodifydate",
+            # XMP fields
+            "xmp:creator",
+            "xmp:title",
+            "xmp:description",
+            "creator",
+            "title",
+            "description",
+        ]
+    )
 
     # Mapping of field variants to canonical names
     FIELD_MAPPING: ClassVar[dict[str, str]] = {

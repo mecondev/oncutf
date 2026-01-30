@@ -18,10 +18,15 @@ class FileOperationDelegates:
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """Load files from paths via FileLoadController."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         result = self.file_load_controller.load_files(file_paths, clear=clear)
-        logger.debug("[FileLoadController] load_files result: %s", result, extra={"dev_only": True})
+        logger.debug(
+            "[FileLoadController] load_files result: %s",
+            result,
+            extra={"dev_only": True},
+        )
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers=None) -> None:
         """Load files from dropped items via FileLoadController."""
@@ -37,13 +42,24 @@ class FileOperationDelegates:
             modifiers = Qt.NoModifier
 
         t0 = time.time()
-        logger.debug("[DROP-MAIN] load_files_from_dropped_items START with %d paths", len(paths), extra={"dev_only": True})
+        logger.debug(
+            "[DROP-MAIN] load_files_from_dropped_items START with %d paths",
+            len(paths),
+            extra={"dev_only": True},
+        )
 
         result = self.file_load_controller.handle_drop(paths, modifiers)
 
-        logger.debug("[DROP-MAIN] handle_drop returned at +%.3fms, success=%s", (time.time()-t0)*1000, result.get("success"), extra={"dev_only": True})
         logger.debug(
-            "[FileLoadController] handle_drop result: %s", result, extra={"dev_only": True}
+            "[DROP-MAIN] handle_drop returned at +%.3fms, success=%s",
+            (time.time() - t0) * 1000,
+            result.get("success"),
+            extra={"dev_only": True},
+        )
+        logger.debug(
+            "[FileLoadController] handle_drop result: %s",
+            result,
+            extra={"dev_only": True},
         )
 
     def load_single_item_from_drop(self, path: str, modifiers=None) -> None:
@@ -61,7 +77,11 @@ class FileOperationDelegates:
             modifiers = Qt.NoModifier
 
         t0 = time.time()
-        logger.debug("[DROP-SINGLE] load_single_item_from_drop START: %s", path, extra={"dev_only": True})
+        logger.debug(
+            "[DROP-SINGLE] load_single_item_from_drop START: %s",
+            path,
+            extra={"dev_only": True},
+        )
 
         # Set wait cursor IMMEDIATELY before any processing.
         from PyQt5.QtWidgets import QApplication
@@ -115,11 +135,14 @@ class FileOperationDelegates:
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """Clear file table via FileLoadController."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         success = self.file_load_controller.clear_files()
         logger.debug(
-            "[FileLoadController] clear_files result: %s", success, extra={"dev_only": True}
+            "[FileLoadController] clear_files result: %s",
+            success,
+            extra={"dev_only": True},
         )
 
     def clear_file_table_shortcut(self) -> None:

@@ -104,7 +104,11 @@ def count_folder_contents(
         )
 
     except PermissionError:
-        logger.debug("[FolderCounter] Permission denied: %s", folder_path, extra={"dev_only": True})
+        logger.debug(
+            "[FolderCounter] Permission denied: %s",
+            folder_path,
+            extra={"dev_only": True},
+        )
     except Exception as e:
         logger.warning("[FolderCounter] Error counting %s: %s", folder_path, e)
 

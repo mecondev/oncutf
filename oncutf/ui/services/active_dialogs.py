@@ -31,9 +31,7 @@ def has_active_progress_dialogs() -> bool:
     from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
     active_dialogs = [
-        w
-        for w in QApplication.topLevelWidgets()
-        if isinstance(w, ProgressDialog) and w.isVisible()
+        w for w in QApplication.topLevelWidgets() if isinstance(w, ProgressDialog) and w.isVisible()
     ]
 
     return len(active_dialogs) > 0

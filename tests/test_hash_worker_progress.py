@@ -8,12 +8,6 @@ Tests for HashWorker cumulative progress tracking.
 Ensures that progress never goes backwards and accumulates correctly.
 """
 
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import os
 import tempfile
 import time
@@ -77,9 +71,9 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check final state - cumulative bytes should equal total
-            assert (
-                self.worker._cumulative_processed_bytes == total_size
-            ), f"Expected cumulative bytes {total_size}, got {self.worker._cumulative_processed_bytes}"
+            assert self.worker._cumulative_processed_bytes == total_size, (
+                f"Expected cumulative bytes {total_size}, got {self.worker._cumulative_processed_bytes}"
+            )
 
     def test_worker_overflow_protection(self):
         """Test that worker handles large files without overflow."""
@@ -119,14 +113,14 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check that we didn't overflow (no negative values)
-            assert (
-                self.worker._cumulative_processed_bytes >= 0
-            ), f"Cumulative bytes went negative: {self.worker._cumulative_processed_bytes}"
+            assert self.worker._cumulative_processed_bytes >= 0, (
+                f"Cumulative bytes went negative: {self.worker._cumulative_processed_bytes}"
+            )
 
             # Should have processed the full file
-            assert (
-                self.worker._cumulative_processed_bytes == size
-            ), f"Expected {size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            assert self.worker._cumulative_processed_bytes == size, (
+                f"Expected {size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            )
 
     def test_duplicate_scan_functionality(self):
         """Test that duplicate scan maintains correct state."""
@@ -171,9 +165,9 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check final state
-            assert (
-                self.worker._cumulative_processed_bytes == total_size
-            ), f"Expected {total_size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            assert self.worker._cumulative_processed_bytes == total_size, (
+                f"Expected {total_size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            )
 
     def test_worker_cancellation(self):
         """Test that worker can be cancelled properly."""

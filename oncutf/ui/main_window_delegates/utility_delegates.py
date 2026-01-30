@@ -24,7 +24,11 @@ class UtilityDelegates:
         return self.utility_manager.find_consecutive_ranges(indices)
 
     def set_status(
-        self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000
+        self,
+        text: str,
+        color: str = "",
+        auto_reset: bool = False,
+        reset_delay: int = 3000,
     ) -> None:
         """Set status text and color via StatusManager."""
         self.status_manager.set_status(text, color, auto_reset, reset_delay)
@@ -32,6 +36,7 @@ class UtilityDelegates:
     def _enable_selection_store_mode(self):
         """Enable SelectionStore mode in FileTableView."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
 
         if hasattr(self, "initialization_manager"):

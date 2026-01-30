@@ -445,9 +445,7 @@ class MetadataStore:
             # Get field info
             field_info = self.get_metadata_field_by_key(field_key)
             if not field_info:
-                logger.warning(
-                    "[MetadataStore] Field '%s' not found in metadata_fields", field_key
-                )
+                logger.warning("[MetadataStore] Field '%s' not found in metadata_fields", field_key)
                 return False
 
             cursor = self.connection.cursor()
@@ -466,7 +464,9 @@ class MetadataStore:
 
         except Exception as e:
             logger.error(
-                "[MetadataStore] Error storing structured metadata for %s: %s", file_path, e
+                "[MetadataStore] Error storing structured metadata for %s: %s",
+                file_path,
+                e,
             )
             return False
 
@@ -569,7 +569,9 @@ class MetadataStore:
 
         except Exception as e:
             logger.error(
-                "[MetadataStore] Error getting structured metadata for %s: %s", file_path, e
+                "[MetadataStore] Error getting structured metadata for %s: %s",
+                file_path,
+                e,
             )
             return {}
 

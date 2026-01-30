@@ -60,43 +60,45 @@ def test_modified_keys_styling(app):
             found_modified["Aperture"] = key_item
 
     # Verify styling for ISOSpeed
-    assert (
-        "ISOSpeed" in found_modified
-    ), f"ISOSpeed key not found. Found in group: {[camera_settings_group.child(i, 0).text() for i in range(camera_settings_group.rowCount())]}"
+    assert "ISOSpeed" in found_modified, (
+        f"ISOSpeed key not found. Found in group: {[camera_settings_group.child(i, 0).text() for i in range(camera_settings_group.rowCount())]}"
+    )
     iso_item = found_modified["ISOSpeed"]
     iso_color = iso_item.foreground().color()
     expected_hex = METADATA_ICON_COLORS["modified"]
     expected_color = iso_color.fromRgbF(1, 1, 1)  # placeholder to access QColor class
     # Use QColor.fromRgb to parse the hex string to avoid hardcoding RGB values
     expected_color = expected_color.fromRgb(
-        int(expected_hex[1:3], 16), int(expected_hex[3:5], 16), int(expected_hex[5:7], 16)
+        int(expected_hex[1:3], 16),
+        int(expected_hex[3:5], 16),
+        int(expected_hex[5:7], 16),
     )
-    assert (
-        iso_color.red() == expected_color.red()
-    ), f"Expected red={expected_color.red()}, got {iso_color.red()}"
-    assert (
-        iso_color.green() == expected_color.green()
-    ), f"Expected green={expected_color.green()}, got {iso_color.green()}"
-    assert (
-        iso_color.blue() == expected_color.blue()
-    ), f"Expected blue={expected_color.blue()}, got {iso_color.blue()}"
+    assert iso_color.red() == expected_color.red(), (
+        f"Expected red={expected_color.red()}, got {iso_color.red()}"
+    )
+    assert iso_color.green() == expected_color.green(), (
+        f"Expected green={expected_color.green()}, got {iso_color.green()}"
+    )
+    assert iso_color.blue() == expected_color.blue(), (
+        f"Expected blue={expected_color.blue()}, got {iso_color.blue()}"
+    )
     assert iso_item.font().bold(), "ISOSpeed font should be bold"
 
     # Verify styling for Aperture
-    assert (
-        "Aperture" in found_modified
-    ), f"Aperture key not found. Found in group: {[camera_settings_group.child(i, 0).text() for i in range(camera_settings_group.rowCount())]}"
+    assert "Aperture" in found_modified, (
+        f"Aperture key not found. Found in group: {[camera_settings_group.child(i, 0).text() for i in range(camera_settings_group.rowCount())]}"
+    )
     aperture_item = found_modified["Aperture"]
     aperture_color = aperture_item.foreground().color()
-    assert (
-        aperture_color.red() == expected_color.red()
-    ), f"Expected red={expected_color.red()}, got {aperture_color.red()}"
-    assert (
-        aperture_color.green() == expected_color.green()
-    ), f"Expected green={expected_color.green()}, got {aperture_color.green()}"
-    assert (
-        aperture_color.blue() == expected_color.blue()
-    ), f"Expected blue={expected_color.blue()}, got {aperture_color.blue()}"
+    assert aperture_color.red() == expected_color.red(), (
+        f"Expected red={expected_color.red()}, got {aperture_color.red()}"
+    )
+    assert aperture_color.green() == expected_color.green(), (
+        f"Expected green={expected_color.green()}, got {aperture_color.green()}"
+    )
+    assert aperture_color.blue() == expected_color.blue(), (
+        f"Expected blue={expected_color.blue()}, got {aperture_color.blue()}"
+    )
     assert aperture_item.font().bold(), "Aperture font should be bold"
 
 
@@ -133,12 +135,12 @@ def test_unmodified_keys_normal_styling(app):
             focal_color = key_item.foreground().color()
             # Unmodified should have default color (usually black/0,0,0)
             assert focal_color.red() == 0, f"Expected red=0 for unmodified, got {focal_color.red()}"
-            assert (
-                focal_color.green() == 0
-            ), f"Expected green=0 for unmodified, got {focal_color.green()}"
-            assert (
-                focal_color.blue() == 0
-            ), f"Expected blue=0 for unmodified, got {focal_color.blue()}"
+            assert focal_color.green() == 0, (
+                f"Expected green=0 for unmodified, got {focal_color.green()}"
+            )
+            assert focal_color.blue() == 0, (
+                f"Expected blue=0 for unmodified, got {focal_color.blue()}"
+            )
             assert not key_item.font().bold(), "Unmodified font should not be bold"
             break
 

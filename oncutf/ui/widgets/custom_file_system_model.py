@@ -113,12 +113,22 @@ class CustomFileSystemModel(QFileSystemModel):
         self._preload_icons()
 
         logger.debug(
-            "[CustomFileSystemModel] Initialized with feather icons", extra={"dev_only": True}
+            "[CustomFileSystemModel] Initialized with feather icons",
+            extra={"dev_only": True},
         )
 
     def _preload_icons(self):
         """Preload commonly used icons into cache for better performance."""
-        common_icons = ["folder", "file", "image", "video", "music", "file-text", "archive", "code"]
+        common_icons = [
+            "folder",
+            "file",
+            "image",
+            "video",
+            "music",
+            "file-text",
+            "archive",
+            "code",
+        ]
 
         for icon_name in common_icons:
             try:
@@ -185,12 +195,11 @@ class CustomFileSystemModel(QFileSystemModel):
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
         """Override data method to provide custom icons."""
         # Handle decoration role (icons)
-        if role == Qt.DecorationRole:
-            if index.isValid():
-                file_path = self.filePath(index)
-                if file_path:
-                    icon_name = self._get_file_type_icon(file_path)
-                    return self._get_cached_icon(icon_name)
+        if role == Qt.DecorationRole and index.isValid():
+            file_path = self.filePath(index)
+            if file_path:
+                icon_name = self._get_file_type_icon(file_path)
+                return self._get_cached_icon(icon_name)
 
         # For all other roles, use default behavior
         return super().data(index, role)

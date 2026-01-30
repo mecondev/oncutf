@@ -42,7 +42,10 @@ class MetadataSignalHandler:
 
         """
         logger.info(
-            "[MetadataEdit] Value changed: %s = '%s' -> '%s'", key_path, old_value, new_value
+            "[MetadataEdit] Value changed: %s = '%s' -> '%s'",
+            key_path,
+            old_value,
+            new_value,
         )
 
         # Use specialized metadata status method if status manager is available
@@ -69,7 +72,9 @@ class MetadataSignalHandler:
         # Use specialized metadata status method if status manager is available
         if hasattr(self.main_window, "status_manager") and self.main_window.status_manager:
             self.main_window.status_manager.set_metadata_status(
-                f"Reset {key_path} to original value", operation_type="success", auto_reset=True
+                f"Reset {key_path} to original value",
+                operation_type="success",
+                auto_reset=True,
             )
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
@@ -91,9 +96,14 @@ class MetadataSignalHandler:
             )
 
             # Override the reset delay for clipboard operations (shorter feedback)
-            if hasattr(self.main_window.status_manager, "_status_timer") and self.main_window.status_manager._status_timer:
+            if (
+                hasattr(self.main_window.status_manager, "_status_timer")
+                and self.main_window.status_manager._status_timer
+            ):
                 self.main_window.status_manager._status_timer.stop()
-                self.main_window.status_manager._status_timer.start(2000)  # 2 seconds for clipboard feedback
+                self.main_window.status_manager._status_timer.start(
+                    2000
+                )  # 2 seconds for clipboard feedback
 
     def refresh_metadata_widgets(self):
         """Refresh all active MetadataWidget instances and trigger preview update."""
@@ -117,7 +127,10 @@ class MetadataSignalHandler:
     def _trigger_unified_preview_update(self):
         """Trigger preview update using UnifiedRenameEngine ONLY."""
         try:
-            if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+            if (
+                hasattr(self.main_window, "unified_rename_engine")
+                and self.main_window.unified_rename_engine
+            ):
                 # Clear cache to force fresh preview
                 self.main_window.unified_rename_engine.clear_cache()
                 logger.debug("[MainWindow] Unified preview update triggered")

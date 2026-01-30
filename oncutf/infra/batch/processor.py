@@ -43,7 +43,11 @@ class BatchProcessor:
         self.stats["total_batches"] = len(batches)
         self.stats["total_items"] = len(items)
 
-        logger.debug("[BatchProcessor] Processing %d items in %d batches", len(items), len(batches))
+        logger.debug(
+            "[BatchProcessor] Processing %d items in %d batches",
+            len(items),
+            len(batches),
+        )
 
         # Process batches
         results = []
@@ -218,9 +222,7 @@ class BatchProcessorFactory:
             return BatchProcessor(**kwargs_any)
 
     @staticmethod
-    def get_optimal_config(
-        item_count: int, item_type: str = "file"
-    ) -> dict[str, Any]:
+    def get_optimal_config(item_count: int, _item_type: str = "file") -> dict[str, Any]:
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}

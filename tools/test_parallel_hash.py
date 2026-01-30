@@ -205,7 +205,7 @@ def main():
             print(f"Parallel time: {parallel_time:.2f}s")
             print(f"Speedup:       {speedup:.2f}x")
             print(
-                f"Time saved:    {serial_time - parallel_time:.2f}s ({(1 - parallel_time/serial_time) * 100:.1f}%)"
+                f"Time saved:    {serial_time - parallel_time:.2f}s ({(1 - parallel_time / serial_time) * 100:.1f}%)"
             )
 
             # Verify results match

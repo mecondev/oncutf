@@ -226,14 +226,14 @@ class TestLoadFolder:
 
     def test_load_folder_stores_recursive_state(self, manager, temp_dir):
         """Test that load_folder stores recursive state in context."""
-        with patch.object(manager, '_load_folder_with_wait_cursor'):
+        with patch.object(manager, "_load_folder_with_wait_cursor"):
             manager.load_folder(str(temp_dir), merge_mode=False, recursive=True)
 
             manager.parent_window.context.set_recursive_mode.assert_called_with(True)
 
     def test_load_folder_merge_mode_preserves_recursive(self, manager, temp_dir):
         """Test that merge mode doesn't change recursive state."""
-        with patch.object(manager, '_load_folder_with_wait_cursor'):
+        with patch.object(manager, "_load_folder_with_wait_cursor"):
             manager.load_folder(str(temp_dir), merge_mode=True, recursive=True)
 
             # Should NOT call set_recursive_mode in merge mode
@@ -241,7 +241,7 @@ class TestLoadFolder:
 
     def test_load_folder_invalid_path_logs_error(self, manager):
         """Test that invalid folder path logs error."""
-        with patch('oncutf.core.file.load_manager.logger') as mock_logger:
+        with patch("oncutf.core.file.load_manager.logger") as mock_logger:
             manager.load_folder("/not/a/directory")
 
             # Should log error for invalid directory

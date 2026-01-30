@@ -40,7 +40,9 @@ if TYPE_CHECKING:
     from oncutf.ui.widgets.node_editor.core.edge import Edge
     from oncutf.ui.widgets.node_editor.core.scene import Scene
     from oncutf.ui.widgets.node_editor.graphics.node import QDMGraphicsNode
-    from oncutf.ui.widgets.node_editor.widgets.content_widget import QDMNodeContentWidget
+    from oncutf.ui.widgets.node_editor.widgets.content_widget import (
+        QDMNodeContentWidget,
+    )
 
 
 class Node(Serializable):

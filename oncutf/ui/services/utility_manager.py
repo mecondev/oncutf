@@ -78,9 +78,7 @@ class UtilityManager:
             cancel_timer(self._preview_timer_id)
 
         # Schedule preview update with 300ms debounce (consistent with UI refresh)
-        self._preview_timer_id = schedule_preview_update(
-            self.generate_preview_names, delay=300
-        )
+        self._preview_timer_id = schedule_preview_update(self.generate_preview_names, delay=300)
 
     def force_reload(self) -> None:
         """Triggered by F5.
@@ -125,9 +123,7 @@ class UtilityManager:
         from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor():
-            self.main_window.load_files_from_folder(
-                current_folder, force=True
-            )
+            self.main_window.load_files_from_folder(current_folder, force=True)
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
@@ -266,7 +262,10 @@ class UtilityManager:
 
     def clear_preview_caches(self) -> None:
         """Clear all preview-related caches when files change."""
-        if hasattr(self.main_window, "unified_rename_engine") and self.main_window.unified_rename_engine:
+        if (
+            hasattr(self.main_window, "unified_rename_engine")
+            and self.main_window.unified_rename_engine
+        ):
             self.main_window.unified_rename_engine.cache_manager.clear_cache()
 
         # Reset cache hashes
@@ -315,14 +314,19 @@ class UtilityManager:
 
             try:
                 # Generate previews using UnifiedRenameEngine
-                if not hasattr(self.main_window, "unified_rename_engine") or not self.main_window.unified_rename_engine:
+                if (
+                    not hasattr(self.main_window, "unified_rename_engine")
+                    or not self.main_window.unified_rename_engine
+                ):
                     return
 
-                preview_result = self.main_window.unified_rename_engine.preview_manager.generate_preview(
-                    selected_files,
-                    rename_data.get("modules", []),
-                    rename_data.get("post_transform", {}),
-                    self.main_window.metadata_cache
+                preview_result = (
+                    self.main_window.unified_rename_engine.preview_manager.generate_preview(
+                        selected_files,
+                        rename_data.get("modules", []),
+                        rename_data.get("post_transform", {}),
+                        self.main_window.metadata_cache,
+                    )
                 )
 
                 name_pairs = preview_result.name_pairs
@@ -348,7 +352,9 @@ class UtilityManager:
         if not has_changes:
             self.main_window.rename_button.setEnabled(False)
             TooltipHelper.setup_tooltip(
-                self.main_window.rename_button, "No changes to apply", TooltipType.WARNING
+                self.main_window.rename_button,
+                "No changes to apply",
+                TooltipType.WARNING,
             )
             return
 

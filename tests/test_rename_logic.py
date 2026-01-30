@@ -9,15 +9,10 @@ This module provides functionality for the oncutf batch file renaming applicatio
 import os
 import shutil
 import tempfile
-import warnings
 
 import pytest
 
 from oncutf.utils.naming.rename_logic import build_rename_plan, execute_rename_plan
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 class MockFile:

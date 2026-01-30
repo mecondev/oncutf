@@ -49,7 +49,11 @@ class OriginalNameModule:
 
         """
         base_name = os.path.splitext(file_item.filename)[0]
-        logger.debug("[OriginalNameModule] Starting with: %s", base_name, extra={"dev_only": True})
+        logger.debug(
+            "[OriginalNameModule] Starting with: %s",
+            base_name,
+            extra={"dev_only": True},
+        )
 
         # Only apply Greeklish transformation if requested
         if data.get("greeklish"):

@@ -6,15 +6,9 @@ Date: 2025-05-12
 Cross-platform metadata module tests - Windows/Linux/Greek compatible.
 """
 
-import warnings
-
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from tests.mocks import MockFileItem
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 # Clear metadata cache before each test to avoid interference
@@ -65,7 +59,11 @@ def test_metadata_module_exif_style_date():
     normalized = normalize_path(file_item.full_path)
     metadata_cache = {normalized: {"DateTimeOriginal": "2024:05:12 10:00:00"}}
 
-    data = {"type": "metadata", "field": "DateTimeOriginal", "category": "metadata_keys"}
+    data = {
+        "type": "metadata",
+        "field": "DateTimeOriginal",
+        "category": "metadata_keys",
+    }
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
     assert result == "2024_05_12_10_00_00"
 

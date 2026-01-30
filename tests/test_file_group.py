@@ -128,7 +128,9 @@ class TestFileGroupRepresentation:
         test_path = Path("test") / "folder"
         test_file = test_path / "file1.txt"
         group = FileGroup(
-            source_path=test_path, files=[FileItem.from_path(str(test_file))], recursive=True
+            source_path=test_path,
+            files=[FileItem.from_path(str(test_file))],
+            recursive=True,
         )
 
         repr_str = repr(group)

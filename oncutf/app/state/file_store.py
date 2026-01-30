@@ -112,7 +112,9 @@ class FileStore(QObject):
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
         logger.debug(
-            "[FileStore] Filtered files: %d match extensions %s", len(filtered), extensions
+            "[FileStore] Filtered files: %d match extensions %s",
+            len(filtered),
+            extensions,
         )
         return filtered
 
@@ -210,12 +212,18 @@ class FileStore(QObject):
         initial_count = len(self._loaded_files)
 
         self._loaded_files = [
-            f for f in self._loaded_files if os.path.normpath(os.path.dirname(f.full_path)) != folder_norm
+            f
+            for f in self._loaded_files
+            if os.path.normpath(os.path.dirname(f.full_path)) != folder_norm
         ]
 
         removed_count = initial_count - len(self._loaded_files)
         if removed_count > 0:
             self.files_loaded.emit(self._loaded_files)
-            logger.info("[FileStore] Removed %d files from folder %s", removed_count, folder_path)
+            logger.info(
+                "[FileStore] Removed %d files from folder %s",
+                removed_count,
+                folder_path,
+            )
             return True
         return False

@@ -60,7 +60,10 @@ class TestFindMatches:
     def test_anywhere_first_match(self):
         """Test finding first match anywhere."""
         matches = TextRemovalModule.find_matches(
-            "test_old_file_old", "_old", position="Anywhere (first)", case_sensitive=False
+            "test_old_file_old",
+            "_old",
+            position="Anywhere (first)",
+            case_sensitive=False,
         )
         assert len(matches) == 1
         assert matches[0].start == 4

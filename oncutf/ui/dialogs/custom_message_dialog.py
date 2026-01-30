@@ -124,7 +124,9 @@ class CustomMessageDialog(QDialog):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
-        from oncutf.ui.helpers.multiscreen_helper import position_dialog_relative_to_parent
+        from oncutf.ui.helpers.multiscreen_helper import (
+            position_dialog_relative_to_parent,
+        )
 
         position_dialog_relative_to_parent(self)
 
@@ -168,7 +170,11 @@ class CustomMessageDialog(QDialog):
 
     @staticmethod
     def question(
-        parent: QWidget, title: str, message: str, yes_text: str = "Yes", no_text: str = "No"
+        parent: QWidget,
+        title: str,
+        message: str,
+        yes_text: str = "Yes",
+        no_text: str = "No",
     ) -> bool:
         """Displays a question dialog, returning True if the "Yes" button was
         clicked and False if the "No" button was clicked.
@@ -196,7 +202,9 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -228,7 +236,9 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -254,7 +264,9 @@ class CustomMessageDialog(QDialog):
         """
         dlg = CustomMessageDialog(title, message, ["OK"], parent)
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
         dlg.exec_()
@@ -279,7 +291,9 @@ class CustomMessageDialog(QDialog):
         """
         dlg = CustomMessageDialog(title, message, ["OK"], parent)
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
         dlg.exec_()
@@ -312,7 +326,9 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -375,7 +391,9 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
 
@@ -469,7 +487,9 @@ class CustomMessageDialog(QDialog):
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
-            from oncutf.ui.helpers.multiscreen_helper import ensure_dialog_on_parent_screen
+            from oncutf.ui.helpers.multiscreen_helper import (
+                ensure_dialog_on_parent_screen,
+            )
 
             ensure_dialog_on_parent_screen(dlg, parent)
 

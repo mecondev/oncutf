@@ -193,7 +193,10 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
 
             except (OSError, PermissionError) as e:
                 logger.debug(
-                    "[%s] Could not get size for %s: %s", self.__class__.__name__, file_path, e
+                    "[%s] Could not get size for %s: %s",
+                    self.__class__.__name__,
+                    file_path,
+                    e,
                 )
                 continue
 

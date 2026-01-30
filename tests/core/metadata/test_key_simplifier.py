@@ -4,7 +4,6 @@ Author: Michael Economou
 Date: 2026-01-15
 """
 
-
 from oncutf.core.metadata.key_simplifier import SmartKeySimplifier
 
 
@@ -91,9 +90,9 @@ class TestSmartKeySimplifier:
         # Check that results are unique
         assert len(set(result.values())) == len(keys)
         # Check that numbers appear somewhere (in main result or differentiator)
-        combined_text = ' '.join(result.values())
-        assert '1' in combined_text
-        assert '2' in combined_text
+        combined_text = " ".join(result.values())
+        assert "1" in combined_text
+        assert "2" in combined_text
 
     def test_mixed_delimiters(self):
         """Test handling of mixed delimiters."""
@@ -319,7 +318,7 @@ class TestEdgeCases:
         """Test zero-width/invisible characters."""
         simplifier = SmartKeySimplifier()
 
-        keys = ["Audio\u200BFormat\u200BCodec"]
+        keys = ["Audio\u200bFormat\u200bCodec"]
         result = simplifier.simplify_keys(keys)
 
         # Should handle without crashing and produce some result
@@ -340,8 +339,8 @@ class TestEdgeCases:
         # Should produce different results for different indices
         assert result[keys[0]] != result[keys[1]]
         # Numbers should appear somewhere (main text or differentiator)
-        combined = ' '.join(result.values())
-        assert '0' in combined or '1' in combined
+        combined = " ".join(result.values())
+        assert "0" in combined or "1" in combined
 
     def test_extremely_long_single_token(self):
         """Test very long single token."""

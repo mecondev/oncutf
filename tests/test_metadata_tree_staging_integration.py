@@ -18,7 +18,6 @@ except ImportError:
 @pytest.mark.skipif(not PYQT5_AVAILABLE, reason="PyQt5 not available")
 @pytest.mark.skipif("CI" in os.environ, reason="GUI tests don't work on CI")
 class TestMetadataTreeStagingIntegration:
-
     @pytest.fixture(scope="session")
     def qapp(self):
         if not QApplication.instance():
@@ -45,14 +44,16 @@ class TestMetadataTreeStagingIntegration:
 
         # Mock both get_metadata_staging_manager and get_metadata_service
         # Note: get_metadata_service is imported inside the method, so patch at source
-        with patch(
-            "oncutf.core.metadata.get_metadata_staging_manager",
-            return_value=staging_manager,
-        ), patch(
-            "oncutf.core.metadata.metadata_service.get_metadata_service",
-            return_value=mock_metadata_service,
+        with (
+            patch(
+                "oncutf.core.metadata.get_metadata_staging_manager",
+                return_value=staging_manager,
+            ),
+            patch(
+                "oncutf.core.metadata.metadata_service.get_metadata_service",
+                return_value=mock_metadata_service,
+            ),
         ):
-
             # Setup file item
             file_item = MagicMock(spec=FileItem)
             file_item.full_path = "/test/file.jpg"

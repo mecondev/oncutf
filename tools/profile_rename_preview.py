@@ -86,7 +86,7 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
     print(f"  Validation:      {results['validate_time']:>8.3f} ms")
     print(f"  Total:           {results['total_time']:>8.3f} ms")
     print(f"  Per file:        {results['per_file']:>8.4f} ms")
-    print(f"  Throughput:      {file_count / (results['total_time']/1000):>8.0f} files/sec")
+    print(f"  Throughput:      {file_count / (results['total_time'] / 1000):>8.0f} files/sec")
     print(f"  Conflicts:       {results['conflicts']}")
 
     return results
@@ -138,7 +138,7 @@ def main() -> int:
             print(
                 f"| {r['file_count']:>5} | {r['total_time']:>10.3f} | "
                 f"{per_file_us:>13.2f} | "
-                f"{r['file_count'] / (r['total_time']/1000):>22.0f} |"
+                f"{r['file_count'] / (r['total_time'] / 1000):>22.0f} |"
             )
 
         # Check for linear scaling

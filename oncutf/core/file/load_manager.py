@@ -105,7 +105,9 @@ class FileLoadManager:
         if not merge_mode:
             self.parent_window.context.set_recursive_mode(recursive)
             logger.info(
-                "[FileLoadManager] Stored recursive state: %s", recursive, extra={"dev_only": True}
+                "[FileLoadManager] Stored recursive state: %s",
+                recursive,
+                extra={"dev_only": True},
             )
 
         # CRITICAL: Force cleanup any active drag state immediately
@@ -170,13 +172,17 @@ class FileLoadManager:
             self._update_ui_with_files(all_file_paths, clear=clear)
 
     def load_single_item_from_drop(
-        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+        self,
+        path: str,
+        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
     ) -> None:
         """Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
         logger.info(
-            "[FileLoadManager] load_single_item_from_drop: %s", path, extra={"dev_only": True}
+            "[FileLoadManager] load_single_item_from_drop: %s",
+            path,
+            extra={"dev_only": True},
         )
 
         # Parse modifiers
@@ -297,7 +303,9 @@ class FileLoadManager:
                                 file_paths.append(full_path)
                             except Exception as e:
                                 logger.warning(
-                                    "[FileLoadManager] Error processing file %s: %s", filename, e
+                                    "[FileLoadManager] Error processing file %s: %s",
+                                    filename,
+                                    e,
                                 )
             except Exception as e:
                 logger.exception("[FileLoadManager] Error walking directory %s: %s", folder_path, e)
@@ -487,7 +495,10 @@ class FileLoadManager:
     def clear_metadata_operation_flag(self) -> None:
         """Clear the metadata operation flag."""
         self._metadata_operation_in_progress = False
-        logger.debug("[FileLoadManager] Cleared metadata operation flag", extra={"dev_only": True})
+        logger.debug(
+            "[FileLoadManager] Cleared metadata operation flag",
+            extra={"dev_only": True},
+        )
 
     def refresh_loaded_folders(
         self, changed_folder: str | None = None, file_store: Any = None
@@ -531,7 +542,8 @@ class FileLoadManager:
             changed_folder_norm = os.path.normpath(changed_folder)
             if changed_folder_norm not in loaded_folders:
                 logger.debug(
-                    "[FileLoadManager] Changed folder not in loaded files: %s", changed_folder
+                    "[FileLoadManager] Changed folder not in loaded files: %s",
+                    changed_folder,
                 )
                 return False
 
@@ -554,7 +566,8 @@ class FileLoadManager:
             # Skip folders that no longer exist (e.g., unmounted USB drives)
             if not os.path.exists(folder):
                 logger.info(
-                    "[FileLoadManager] Folder no longer exists, removing its files: %s", folder
+                    "[FileLoadManager] Folder no longer exists, removing its files: %s",
+                    folder,
                 )
                 continue
 

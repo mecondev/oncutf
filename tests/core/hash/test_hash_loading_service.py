@@ -60,15 +60,15 @@ def test_load_hashes_callbacks_stored(hash_service):
     on_progress = Mock()
 
     with (
-        patch.object(hash_service, '_show_hash_progress_dialog'),
-        patch.object(hash_service, '_start_hash_loading')
+        patch.object(hash_service, "_show_hash_progress_dialog"),
+        patch.object(hash_service, "_start_hash_loading"),
     ):
         hash_service.load_hashes_for_files(
-                [file_item],
-                on_finished_callback=on_finished,
-                on_file_hash_callback=on_file_hash,
-                on_progress_callback=on_progress
-            )
+            [file_item],
+            on_finished_callback=on_finished,
+            on_file_hash_callback=on_file_hash,
+            on_progress_callback=on_progress,
+        )
 
     assert hash_service._on_finished_callback == on_finished
     assert hash_service._on_file_hash_callback == on_file_hash
@@ -113,8 +113,8 @@ def test_on_file_hash_calculated_with_callback(hash_service):
     hash_service._currently_loading = {"/test/file.txt"}
 
     with (
-        patch('os.path.exists', return_value=True),
-        patch('os.path.getsize', return_value=1024)
+        patch("os.path.exists", return_value=True),
+        patch("os.path.getsize", return_value=1024),
     ):
         hash_service._on_file_hash_calculated("/test/file.txt", "abc123")
 

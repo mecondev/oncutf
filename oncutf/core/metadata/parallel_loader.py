@@ -147,7 +147,8 @@ class ParallelMetadataLoader:
                                         terminated_count += 1
                                 except Exception as e:
                                     logger.debug(
-                                        "[ParallelMetadataLoader] Error terminating process: %s", e
+                                        "[ParallelMetadataLoader] Error terminating process: %s",
+                                        e,
                                     )
                             if terminated_count > 0:
                                 logger.info(
@@ -163,7 +164,8 @@ class ParallelMetadataLoader:
                                 cancelled_count += 1
 
                         logger.info(
-                            "[ParallelMetadataLoader] Cancelled %d pending tasks", cancelled_count
+                            "[ParallelMetadataLoader] Cancelled %d pending tasks",
+                            cancelled_count,
                         )
 
                         # Shutdown executor without waiting
@@ -341,16 +343,26 @@ class ParallelMetadataLoader:
                             proc.kill()  # Force kill if terminate doesn't work
                         terminated_count += 1
                 except Exception as e:
-                    logger.debug("[ParallelMetadataLoader] Error terminating process during cleanup: %s", e)
+                    logger.debug(
+                        "[ParallelMetadataLoader] Error terminating process during cleanup: %s",
+                        e,
+                    )
             if terminated_count > 0:
-                logger.info("[ParallelMetadataLoader] Terminated %d processes during cleanup", terminated_count)
+                logger.info(
+                    "[ParallelMetadataLoader] Terminated %d processes during cleanup",
+                    terminated_count,
+                )
             self._active_processes.clear()
 
         logger.info("[ParallelMetadataLoader] Cleanup completed")
 
 
 def update_file_item_metadata(
-    item: FileItem, metadata: dict[str, Any], parent_window: Any, metadata_cache: Any, use_extended: bool
+    item: FileItem,
+    metadata: dict[str, Any],
+    parent_window: Any,
+    metadata_cache: Any,
+    use_extended: bool,
 ) -> None:
     """Update FileItem with metadata and emit UI signals.
 

@@ -53,7 +53,9 @@ class TestEditMetadataFieldCommand:
         self.mock_tree_view._scroll_behavior.set_current_file_path = Mock()
         # Legacy compatibility
         self.mock_tree_view._update_tree_item_value = Mock()
-        self.mock_tree_view.smart_mark_modified = self.mock_tree_view._edit_behavior.smart_mark_modified
+        self.mock_tree_view.smart_mark_modified = (
+            self.mock_tree_view._edit_behavior.smart_mark_modified
+        )
         self.mock_tree_view.mark_as_modified = self.mock_tree_view._edit_behavior.mark_as_modified
 
         self.command = EditMetadataFieldCommand(
@@ -539,7 +541,9 @@ class TestIntegration:
         # Legacy
         self.mock_tree_view._update_tree_item_value = Mock()
         self.mock_tree_view._reset_metadata_in_cache = Mock()
-        self.mock_tree_view.smart_mark_modified = self.mock_tree_view._edit_behavior.smart_mark_modified
+        self.mock_tree_view.smart_mark_modified = (
+            self.mock_tree_view._edit_behavior.smart_mark_modified
+        )
         self.mock_tree_view.mark_as_modified = self.mock_tree_view._edit_behavior.mark_as_modified
 
     def test_complete_edit_workflow(self):
@@ -559,8 +563,12 @@ class TestIntegration:
         assert self.manager.can_redo() is False
 
         # Verify execution calls
-        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_called_with("EXIF/Rotation", "90")
-        self.mock_tree_view._edit_behavior.smart_mark_modified.assert_called_with("EXIF/Rotation", "90")
+        self.mock_tree_view._cache_behavior.update_metadata_in_cache.assert_called_with(
+            "EXIF/Rotation", "90"
+        )
+        self.mock_tree_view._edit_behavior.smart_mark_modified.assert_called_with(
+            "EXIF/Rotation", "90"
+        )
 
         # Undo
         assert self.manager.undo() is True

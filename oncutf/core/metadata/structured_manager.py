@@ -172,7 +172,9 @@ class StructuredMetadataManager:
 
         except Exception as e:
             logger.error(
-                "[StructuredMetadataManager] Error formatting field '%s': %s", field_key, e
+                "[StructuredMetadataManager] Error formatting field '%s': %s",
+                field_key,
+                e,
             )
             return str(field_value)
 
@@ -389,7 +391,11 @@ class StructuredMetadataManager:
             return success
 
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error updating field '%s': %s", field_key, e)
+            logger.error(
+                "[StructuredMetadataManager] Error updating field '%s': %s",
+                field_key,
+                e,
+            )
             return False
 
     def search_files_by_metadata(

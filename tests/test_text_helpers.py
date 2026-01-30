@@ -1,44 +1,3 @@
-from oncutf.utils.naming import text_helpers
-
-
-def test_elide_text_short():
-    assert text_helpers.elide_text("short", 10) == "short"
-
-
-def test_elide_text_exact():
-    assert text_helpers.elide_text("exact", 5) == "exact"
-
-
-def test_elide_text_truncate():
-    assert text_helpers.elide_text("abcdefghijklmnopqrstuvwxyz", 5) == "abcd…"
-
-
-def test_truncate_filename_middle_no_ext():
-    name = "a" * 80
-    truncated = text_helpers.truncate_filename_middle(name, max_length=20)
-    assert "..." in truncated
-    assert len(truncated) <= 20
-
-
-def test_truncate_filename_middle_with_ext():
-    filename = "very_long_filename_example_that_needs_truncation.jpg"
-    out = text_helpers.truncate_filename_middle(filename, max_length=30)
-    assert out.endswith(".jpg")
-    assert len(out) <= 30
-
-
-def test_format_file_size_stable_bytes():
-    s = text_helpers.format_file_size_stable(123)
-    assert s.strip().endswith("B")
-    assert len(s) == 10
-
-
-def test_format_file_size_stable_kb():
-    s = text_helpers.format_file_size_stable(2048)
-    assert s.strip().endswith("KB") or s.strip().endswith("MB")
-    assert len(s) == 10
-
-
 """
 Module: test_text_helpers.py
 
@@ -48,12 +7,6 @@ Date: 2025-05-31
 test_text_helpers.py
 Tests for text helper functions in utils/text_helpers.py
 """
-
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from oncutf.utils.naming.text_helpers import (
     elide_text,

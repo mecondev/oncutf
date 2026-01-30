@@ -104,7 +104,8 @@ class SignalCoordinator:
             )
 
             logger.debug(
-                "[SignalCoordinator] Connected selection_store signals", extra={"dev_only": True}
+                "[SignalCoordinator] Connected selection_store signals",
+                extra={"dev_only": True},
             )
 
         # Metadata refresh (try QtAppContext or UnifiedMetadataManager)

@@ -30,7 +30,8 @@ class DragCancelFilter:
         """Activate the filter to preserve current selection."""
         self._active = True
         logger.debug(
-            "[DragCancelFilter] Activated - preserving selection", extra={"dev_only": True}
+            "[DragCancelFilter] Activated - preserving selection",
+            extra={"dev_only": True},
         )
 
     def deactivate(self) -> None:

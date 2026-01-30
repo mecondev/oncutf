@@ -22,7 +22,10 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext as ApplicationContext
     from oncutf.app.state.file_store import FileStore
-    from oncutf.controllers.protocols import RenameManagerProtocol, ValidationDialogProtocol
+    from oncutf.controllers.protocols import (
+        RenameManagerProtocol,
+        ValidationDialogProtocol,
+    )
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
 
@@ -354,7 +357,7 @@ class RenameController:
 
             if validation_result.has_errors:
                 logger.warning(
-                    "[RenameController] Validation errors detected: " "invalid=%d, duplicates=%d",
+                    "[RenameController] Validation errors detected: invalid=%d, duplicates=%d",
                     validation_result.invalid_count,
                     validation_result.duplicate_count,
                 )

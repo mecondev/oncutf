@@ -28,8 +28,14 @@ class DragZoneValidator:
 
     # Define valid/invalid drop zones for each source type
     ZONE_RULES: ClassVar[dict[str, dict[str, list[str]]]] = {
-        "file_tree": {"valid": ["FileTableView"], "invalid": ["FileTreeView", "MetadataTreeView"]},
-        "file_table": {"valid": ["MetadataTreeView"], "invalid": ["FileTreeView", "FileTableView"]},
+        "file_tree": {
+            "valid": ["FileTableView"],
+            "invalid": ["FileTreeView", "MetadataTreeView"],
+        },
+        "file_table": {
+            "valid": ["MetadataTreeView"],
+            "invalid": ["FileTreeView", "FileTableView"],
+        },
     }
 
     # Track initial drag positions and "left and returned" state

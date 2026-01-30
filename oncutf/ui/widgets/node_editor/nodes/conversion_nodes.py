@@ -166,7 +166,9 @@ class ToNumberNode(Node):
                 self.value = float(input_value)
             else:
                 self.mark_invalid()
-                self.graphics_node.setToolTip(f"Cannot convert {type(input_value).__name__} to number")
+                self.graphics_node.setToolTip(
+                    f"Cannot convert {type(input_value).__name__} to number"
+                )
                 self.value = None
                 return None
 
@@ -350,7 +352,9 @@ class ToIntNode(Node):
                 self.value = int(input_value)
             else:
                 self.mark_invalid()
-                self.graphics_node.setToolTip(f"Cannot convert {type(input_value).__name__} to integer")
+                self.graphics_node.setToolTip(
+                    f"Cannot convert {type(input_value).__name__} to integer"
+                )
                 self.value = None
                 return None
 

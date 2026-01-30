@@ -52,7 +52,10 @@ class ShortcutManager:
             logger.info("[MainWindow] CLEAR TABLE: No files to clear")
             if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_selection_status(
-                    "No files to clear", selected_count=0, total_count=0, auto_reset=True
+                    "No files to clear",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 
@@ -74,7 +77,10 @@ class ShortcutManager:
                 "File table cleared", success=True, auto_reset=True
             )
             # Cancel existing timer and schedule a faster reset (1 second)
-            from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
+            from oncutf.utils.shared.timer_manager import (
+                cancel_timer,
+                schedule_dialog_close,
+            )
 
             if self.main_window.status_manager._status_timer_id:
                 cancel_timer(self.main_window.status_manager._status_timer_id)
@@ -174,7 +180,9 @@ class ShortcutManager:
 
         try:
             # Show the metadata history dialog
-            from oncutf.ui.dialogs.metadata_history_dialog import show_metadata_history_dialog
+            from oncutf.ui.dialogs.metadata_history_dialog import (
+                show_metadata_history_dialog,
+            )
 
             show_metadata_history_dialog(self.main_window)
 
@@ -195,19 +203,26 @@ class ShortcutManager:
 
         try:
             # Show the rename history dialog
-            from oncutf.ui.dialogs.rename_history_dialog import show_rename_history_dialog
+            from oncutf.ui.dialogs.rename_history_dialog import (
+                show_rename_history_dialog,
+            )
 
             show_rename_history_dialog(self.main_window)
 
             logger.info("[MainWindow] RENAME_HISTORY: Rename history dialog shown successfully")
 
         except Exception as e:
-            logger.error("[MainWindow] RENAME_HISTORY: Error showing rename history dialog: %s", e)
+            logger.error(
+                "[MainWindow] RENAME_HISTORY: Error showing rename history dialog: %s",
+                e,
+            )
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "Failed to show rename history dialog", success=False, auto_reset=True
+                    "Failed to show rename history dialog",
+                    success=False,
+                    auto_reset=True,
                 )
 
     def show_results_hash_list(self) -> None:
@@ -225,7 +240,10 @@ class ShortcutManager:
                 logger.info("[MainWindow] RESULTS_HASH_LIST: No files loaded")
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_selection_status(
-                        "No files loaded", selected_count=0, total_count=0, auto_reset=True
+                        "No files loaded",
+                        selected_count=0,
+                        total_count=0,
+                        auto_reset=True,
                     )
                 return
 

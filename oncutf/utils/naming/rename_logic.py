@@ -95,10 +95,10 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
                 platform.system() == "Windows"
                 and "temp_path" in locals()
                 and os.path.exists(temp_path)
+                and not os.path.exists(src_path)
             ):
-                if not os.path.exists(src_path):
-                    os.rename(temp_path, src_path)
-                    logger.info("Restored original file after failed case rename: %s", src_path)
+                os.rename(temp_path, src_path)
+                logger.info("Restored original file after failed case rename: %s", src_path)
         except Exception as cleanup_error:
             logger.error("Failed to cleanup after case rename failure: %s", cleanup_error)
 
@@ -108,7 +108,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 def build_rename_plan(
     _file_items: list[Any], preview_pairs: list[tuple[str, str]], folder_path: str
 ) -> list[dict[str, Any]]:
-    """Builds a plan of rename operations with conflict detection.
+    """Build a plan of rename operations with conflict detection.
 
     Args:
         file_items (List[object]): List of file objects, each with .filename
@@ -151,9 +151,10 @@ def build_rename_plan(
 
 
 def resolve_rename_conflicts(
-    plan: list[dict[str, Any]], ask_user_callback: Callable[[str, str], tuple[str, bool]]
+    plan: list[dict[str, Any]],
+    ask_user_callback: Callable[[str, str], tuple[str, bool]],
 ) -> list[dict[str, Any]]:
-    """Resolves rename conflicts by prompting the user.
+    """Resolve rename conflicts by prompting the user.
 
     Args:
         plan (List[Dict]): The rename plan with conflict flags.
@@ -191,7 +192,7 @@ def resolve_rename_conflicts(
 
 
 def execute_rename_plan(plan: list[dict[str, Any]]) -> int:
-    """Executes the rename plan based on resolved actions.
+    """Execute the rename plan based on resolved actions.
 
     Args:
         plan (List[Dict]): List of rename instructions with 'action' field defined
@@ -211,7 +212,11 @@ def execute_rename_plan(plan: list[dict[str, Any]]) -> int:
             if entry.get("is_case_only", False):
                 if safe_case_rename(entry["src_path"], entry["dst_path"]):
                     success_count += 1
-                    logger.info("Case-only rename successful: %s -> %s", entry["src"], entry["dst"])
+                    logger.info(
+                        "Case-only rename successful: %s -> %s",
+                        entry["src"],
+                        entry["dst"],
+                    )
                 else:
                     logger.warning("Case-only rename failed: %s -> %s", entry["src"], entry["dst"])
             else:
@@ -227,7 +232,7 @@ def execute_rename_plan(plan: list[dict[str, Any]]) -> int:
 def get_preview_pairs(
     file_items: list[Any], rename_function: Callable[[Any], str]
 ) -> list[tuple[str, str]]:
-    """Generates preview name pairs (old, new) for the selected files using rename logic.
+    """Generate preview name pairs (old, new) for the selected files using rename logic.
 
     Args:
         file_items (List[object]): List of checked FileItem-like objects

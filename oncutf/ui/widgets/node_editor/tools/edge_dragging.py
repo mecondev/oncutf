@@ -92,10 +92,7 @@ class EdgeDragging:
             self.drag_start_socket = item.socket
             edge_class = self.get_edge_class()
             self.drag_edge = edge_class(
-                item.socket.node.scene,
-                item.socket,
-                None,
-                EDGE_TYPE_DEFAULT
+                item.socket.node.scene, item.socket, None, EDGE_TYPE_DEFAULT
             )
             self.drag_edge.graphics_edge.make_unselectable()
 
@@ -149,7 +146,7 @@ class EdgeDragging:
                         item.socket.node.scene,
                         self.drag_start_socket,
                         item.socket,
-                        edge_type=EDGE_TYPE_DEFAULT
+                        edge_type=EDGE_TYPE_DEFAULT,
                     )
 
                     for socket in [self.drag_start_socket, item.socket]:

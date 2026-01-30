@@ -101,6 +101,3 @@ def is_alt_pressed(event) -> bool:
 
     """
     return bool(event.modifiers() & Qt.AltModifier)
-
-
-

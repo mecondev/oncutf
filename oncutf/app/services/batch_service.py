@@ -43,9 +43,7 @@ class BatchService:
             self._batch_manager = _batch_manager_factory()
         return self._batch_manager
 
-    def process_batch(
-        self, files: list[str], operation: str, **kwargs: Any
-    ) -> dict[str, Any]:
+    def process_batch(self, files: list[str], operation: str, **kwargs: Any) -> dict[str, Any]:
         """Process batch operation on files.
 
         Args:

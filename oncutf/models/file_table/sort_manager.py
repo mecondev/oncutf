@@ -64,21 +64,37 @@ class SortManager:
         if column_key == "filename":
             return sorted(files, key=lambda f: f.filename.lower(), reverse=reverse)
         elif column_key == "file_size":
-            return sorted(files, key=lambda f: f.size if hasattr(f, "size") else 0, reverse=reverse)
+            return sorted(
+                files,
+                key=lambda f: f.size if hasattr(f, "size") else 0,
+                reverse=reverse,
+            )
         elif column_key == "type":
             return sorted(files, key=lambda f: f.extension.lower(), reverse=reverse)
         elif column_key == "modified":
             return sorted(files, key=lambda f: f.modified, reverse=reverse)
         elif column_key == "file_hash":
             if self._get_hash_value:
-                return sorted(files, key=lambda f: self._get_hash_value(f.full_path), reverse=reverse)
+                return sorted(
+                    files,
+                    key=lambda f: self._get_hash_value(f.full_path),
+                    reverse=reverse,
+                )
             return files
         elif column_key == "color":
             # Sort by color: "none" first, then alphabetically by hex value
-            return sorted(files, key=lambda f: (f.color != "none", f.color.lower()), reverse=reverse)
+            return sorted(
+                files,
+                key=lambda f: (f.color != "none", f.color.lower()),
+                reverse=reverse,
+            )
         else:
             # For metadata columns, sort by the metadata value
-            return sorted(files, key=lambda f: self.get_metadata_sort_key(f, column_key), reverse=reverse)
+            return sorted(
+                files,
+                key=lambda f: self.get_metadata_sort_key(f, column_key),
+                reverse=reverse,
+            )
 
     def get_metadata_sort_key(self, file: "FileItem", column_key: str) -> Any:
         """Get sort key for a file based on metadata column.

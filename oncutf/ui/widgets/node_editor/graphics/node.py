@@ -33,7 +33,9 @@ if TYPE_CHECKING:
     from PyQt5.QtWidgets import QGraphicsSceneHoverEvent, QStyleOptionGraphicsItem
 
     from oncutf.ui.widgets.node_editor.core.node import Node
-    from oncutf.ui.widgets.node_editor.widgets.content_widget import QDMNodeContentWidget
+    from oncutf.ui.widgets.node_editor.widgets.content_widget import (
+        QDMNodeContentWidget,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +192,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         try:
             scene = self.scene()
-            if scene is None or not hasattr(scene, 'scene'):
+            if scene is None or not hasattr(scene, "scene"):
                 return
 
             # Schedule batch edge update if not already pending
@@ -218,7 +220,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         try:
             scene = self.scene()
-            if scene is None or not hasattr(scene, 'scene'):
+            if scene is None or not hasattr(scene, "scene"):
                 return
 
             # Update edges for all selected nodes once
@@ -331,10 +333,18 @@ class QDMGraphicsNode(QGraphicsItem):
         path_title = QPainterPath()
         path_title.setFillRule(Qt.FillRule.WindingFill)
         path_title.addRoundedRect(
-            0, 0, self.width, self.title_height, self.edge_roundness, self.edge_roundness
+            0,
+            0,
+            self.width,
+            self.title_height,
+            self.edge_roundness,
+            self.edge_roundness,
         )
         path_title.addRect(
-            0, self.title_height - self.edge_roundness, self.edge_roundness, self.edge_roundness
+            0,
+            self.title_height - self.edge_roundness,
+            self.edge_roundness,
+            self.edge_roundness,
         )
         path_title.addRect(
             self.width - self.edge_roundness,
@@ -369,7 +379,12 @@ class QDMGraphicsNode(QGraphicsItem):
 
         path_outline = QPainterPath()
         path_outline.addRoundedRect(
-            -1, -1, self.width + 2, self.height + 2, self.edge_roundness, self.edge_roundness
+            -1,
+            -1,
+            self.width + 2,
+            self.height + 2,
+            self.edge_roundness,
+            self.edge_roundness,
         )
         painter.setBrush(Qt.BrushStyle.NoBrush)
 

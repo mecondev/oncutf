@@ -12,7 +12,9 @@ Date: 2026-01-15
 
 from datetime import datetime
 
-from oncutf.core.metadata.metadata_simplification_service import get_metadata_simplification_service
+from oncutf.core.metadata.metadata_simplification_service import (
+    get_metadata_simplification_service,
+)
 from oncutf.models.file_item import FileItem
 
 
@@ -22,11 +24,7 @@ class TestMetadataSimplificationWorkflow:
     def test_mp4_file_simplified_keys(self):
         """Test MP4 file with long metadata keys gets simplified."""
         # Create FileItem with typical MP4 metadata
-        file_item = FileItem(
-            "/test/video.mp4",
-            "mp4",
-            datetime.now()
-        )
+        file_item = FileItem("/test/video.mp4", "mp4", datetime.now())
 
         # Simulate metadata loading (typical MP4 structure)
         file_item.metadata = {
@@ -35,7 +33,7 @@ class TestMetadataSimplificationWorkflow:
             "QuickTime:Duration": "120.5",
             "QuickTime:VideoFrameRate": "30",
             "File:FileSize": "1024000",
-            "__extended__": False
+            "__extended__": False,
         }
 
         # Get simplified metadata
@@ -61,14 +59,14 @@ class TestMetadataSimplificationWorkflow:
         jpg_file.metadata = {
             "EXIF:DateTimeOriginal": "2026:01:15 10:30:00",
             "EXIF:Model": "Canon EOS R5",
-            "EXIF:Make": "Canon"
+            "EXIF:Make": "Canon",
         }
 
         # MP4 file with QuickTime
         mp4_file = FileItem("/test/video.mp4", "mp4", datetime.now())
         mp4_file.metadata = {
             "QuickTime:CreateDate": "2026:01:15 11:00:00",
-            "QuickTime:Duration": "60.0"
+            "QuickTime:Duration": "60.0",
         }
 
         # Test semantic alias "Creation Date" resolves correctly
@@ -83,9 +81,7 @@ class TestMetadataSimplificationWorkflow:
         assert mp4_creation == "2026:01:15 11:00:00"
 
         # Test semantic alias "Camera Model" resolves
-        jpg_model = service.get_metadata_value(
-            jpg_file, "Camera Model", use_semantic_fallback=True
-        )
+        jpg_model = service.get_metadata_value(jpg_file, "Camera Model", use_semantic_fallback=True)
         assert jpg_model == "Canon EOS R5"
 
     def test_simplified_keys_list_generation(self):
@@ -95,7 +91,7 @@ class TestMetadataSimplificationWorkflow:
             "EXIF:DateTimeOriginal": "2026:01:15",
             "EXIF:Model": "Canon",
             "EXIF:ISO": "400",
-            "File:FileSize": "2048000"
+            "File:FileSize": "2048000",
         }
 
         service = get_metadata_simplification_service()
@@ -144,9 +140,7 @@ class TestMetadataSimplificationWorkflow:
         service = get_metadata_simplification_service()
 
         # Add user override
-        service.add_user_override(
-            "CustomKey", "My Custom Name"
-        )
+        service.add_user_override("CustomKey", "My Custom Name")
 
         # Verify override applied
         result = service.simplify_single_key("CustomKey")
@@ -245,7 +239,7 @@ class TestMetadataSimplificationWorkflow:
         file_item.metadata = {
             "EXIF:Model": "Canon",
             "__extended__": True,
-            "__companion__": False
+            "__companion__": False,
         }
 
         service = get_metadata_simplification_service()

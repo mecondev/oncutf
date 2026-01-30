@@ -138,8 +138,10 @@ class MetadataTreeViewConfig:
             # Save if widths are valid (not placeholder widths)
             if current_key > 0 and current_value > 0:
                 # Don't overwrite runtime widths with placeholder widths (140, 250)
-                if current_key != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"] or \
-                   current_value != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"]:
+                if (
+                    current_key != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"]
+                    or current_value != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"]
+                ):
                     self._runtime_widths["key"] = current_key
                     self._runtime_widths["value"] = current_value
 
@@ -215,6 +217,7 @@ class MetadataTreeViewConfig:
             # Disable hover effect on metadata tree header
             try:
                 from oncutf.ui.theme_manager import get_theme_manager
+
                 theme = get_theme_manager()
                 header_bg = theme.get_color("table_header_bg")
                 header_text = theme.get_color("table_header_text")
@@ -242,7 +245,9 @@ class MetadataTreeViewConfig:
                     if ratio < 0.20 or ratio > 0.40:
                         logger.info(
                             "[MetadataTree] Clearing invalid runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f%%",
-                            key_w, value_w, ratio * 100
+                            key_w,
+                            value_w,
+                            ratio * 100,
                         )
                         self._runtime_widths.clear()
 
@@ -258,7 +263,8 @@ class MetadataTreeViewConfig:
                     if not (0.25 <= actual_ratio <= 0.35):
                         logger.info(
                             "[MetadataTree] Clearing invalid runtime widths (ratio: %.1f/%.1f)",
-                            100 * actual_ratio, 100 * (1 - actual_ratio)
+                            100 * actual_ratio,
+                            100 * (1 - actual_ratio),
                         )
                         self._runtime_widths.clear()
 
@@ -269,9 +275,10 @@ class MetadataTreeViewConfig:
                 value_width = self._runtime_widths["value"]
                 logger.info(
                     "[MetadataTree] Using runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
-                    key_width, value_width,
+                    key_width,
+                    value_width,
                     100 * key_width / (key_width + value_width),
-                    100 * value_width / (key_width + value_width)
+                    100 * value_width / (key_width + value_width),
                 )
             else:
                 # Check for saved widths in config/database
@@ -283,20 +290,25 @@ class MetadataTreeViewConfig:
                     self._runtime_widths["value"] = value_width
                     logger.info(
                         "[MetadataTree] Using saved widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
-                        key_width, value_width,
+                        key_width,
+                        value_width,
                         100 * key_width / (key_width + value_width),
-                        100 * value_width / (key_width + value_width)
+                        100 * value_width / (key_width + value_width),
                     )
                 else:
                     # Calculate from ratios (always ratio-based, no hardcoded fallback)
                     from oncutf.ui.helpers.layout_calculators import (
                         get_metadata_tree_widths_from_ratios,
                     )
-                    from oncutf.utils.shared.json_config_manager import get_app_config_manager
+                    from oncutf.utils.shared.json_config_manager import (
+                        get_app_config_manager,
+                    )
 
                     config_manager = get_app_config_manager()
                     window_config = config_manager.get_category("window")
-                    ratios = window_config.get("metadata_tree_column_ratios", {"key": 0.30, "value": 0.70})
+                    ratios = window_config.get(
+                        "metadata_tree_column_ratios", {"key": 0.30, "value": 0.70}
+                    )
 
                     # Add extra pixels to force horizontal scrollbar when content is wide
                     # This makes total width exceed viewport, allowing scroll
@@ -317,12 +329,27 @@ class MetadataTreeViewConfig:
                     value_width = calculated_widths["value"]
 
                     # Log width calculations for debugging
-                    actual_ratio_key = key_width / (key_width + value_width) if (key_width + value_width) > 0 else 0
-                    actual_ratio_value = value_width / (key_width + value_width) if (key_width + value_width) > 0 else 0
+                    actual_ratio_key = (
+                        key_width / (key_width + value_width)
+                        if (key_width + value_width) > 0
+                        else 0
+                    )
+                    actual_ratio_value = (
+                        value_width / (key_width + value_width)
+                        if (key_width + value_width) > 0
+                        else 0
+                    )
                     logger.info(
                         "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d (%.1f%%), Value: %d (%.1f%%), Total: %d, Target: %.1f%%/%.1f%%",
-                        viewport_width, panel_width, key_width, actual_ratio_key * 100, value_width, actual_ratio_value * 100,
-                        key_width + value_width, ratios["key"] * 100, ratios["value"] * 100
+                        viewport_width,
+                        panel_width,
+                        key_width,
+                        actual_ratio_key * 100,
+                        value_width,
+                        actual_ratio_value * 100,
+                        key_width + value_width,
+                        ratios["key"] * 100,
+                        ratios["value"] * 100,
                     )
 
             # Key column: min 80px, initial width, max 800px
@@ -375,7 +402,8 @@ class MetadataTreeViewConfig:
         header = view.header()
         if not header:
             logger.debug(
-                "[MetadataTree] No header - cannot update visibility", extra={"dev_only": True}
+                "[MetadataTree] No header - cannot update visibility",
+                extra={"dev_only": True},
             )
             return
 

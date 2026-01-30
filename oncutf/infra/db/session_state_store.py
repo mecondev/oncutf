@@ -98,10 +98,7 @@ class SessionStateStore:
         """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(
-                "SELECT value, value_type FROM session_state WHERE key = ?",
-                (key,)
-            )
+            cursor.execute("SELECT value, value_type FROM session_state WHERE key = ?", (key,))
             row = cursor.fetchone()
 
             if row is None:
@@ -161,10 +158,13 @@ class SessionStateStore:
 
             with self._write_lock:
                 cursor = self.connection.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO session_state (key, value, value_type, updated_at)
                     VALUES (?, ?, ?, ?)
-                """, (key, serialized, value_type, timestamp))
+                """,
+                    (key, serialized, value_type, timestamp),
+                )
                 self.connection.commit()
 
             logger.debug(
@@ -273,10 +273,13 @@ class SessionStateStore:
                         value_type = "string"
                         serialized = str(value) if value is not None else ""
 
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT OR REPLACE INTO session_state (key, value, value_type, updated_at)
                         VALUES (?, ?, ?, ?)
-                    """, (key, serialized, value_type, timestamp))
+                    """,
+                        (key, serialized, value_type, timestamp),
+                    )
 
                 self.connection.commit()
 
@@ -319,10 +322,7 @@ class SessionStateStore:
         """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(
-                "SELECT 1 FROM session_state WHERE key = ? LIMIT 1",
-                (key,)
-            )
+            cursor.execute("SELECT 1 FROM session_state WHERE key = ? LIMIT 1", (key,))
             return cursor.fetchone() is not None
 
         except sqlite3.Error as e:

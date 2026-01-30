@@ -80,7 +80,10 @@ class BootstrapOrchestrator:
         register_infra_factories()
         wire_service_registry()
 
-        logger.debug("Phase 0: Infra factories registered via boot layer", extra={"dev_only": True})
+        logger.debug(
+            "Phase 0: Infra factories registered via boot layer",
+            extra={"dev_only": True},
+        )
 
     def _phase1_core_infrastructure(self) -> None:
         """Phase 1: Initialize core infrastructure.
@@ -110,13 +113,18 @@ class BootstrapOrchestrator:
         self.window.context = QtAppContext.create_instance(parent=self.window)
 
         # Register UI adapters for dependency inversion
-        from oncutf.ui.adapters.qt_conflict_resolution import QtConflictResolutionAdapter
+        from oncutf.ui.adapters.qt_conflict_resolution import (
+            QtConflictResolutionAdapter,
+        )
         from oncutf.ui.adapters.qt_drag_state import QtDragStateAdapter
         from oncutf.ui.adapters.qt_file_load_ui import QtFileLoadUIAdapter
         from oncutf.ui.adapters.qt_metadata_edit import QtMetadataEditAdapter
         from oncutf.ui.adapters.qt_results_display import QtResultsDisplayAdapter
         from oncutf.ui.adapters.qt_ui_update import QtUIUpdateAdapter
-        from oncutf.ui.adapters.qt_user_interaction import QtCursorAdapter, QtUserDialogAdapter
+        from oncutf.ui.adapters.qt_user_interaction import (
+            QtCursorAdapter,
+            QtUserDialogAdapter,
+        )
 
         self.window.context.register_manager("user_dialog", QtUserDialogAdapter(self.window))
         self.window.context.register_manager("cursor", QtCursorAdapter())
@@ -162,7 +170,9 @@ class BootstrapOrchestrator:
         # Thumbnail System Initialization
         from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager
 
-        self.window.thumbnail_manager = ThumbnailManager(db_store=self.window.db_manager.thumbnail_store)
+        self.window.thumbnail_manager = ThumbnailManager(
+            db_store=self.window.db_manager.thumbnail_store
+        )
 
         logger.debug("Phase 1: Core infrastructure initialized", extra={"dev_only": True})
 
@@ -176,7 +186,9 @@ class BootstrapOrchestrator:
         - State tracking attributes
         """
         from oncutf.models.file_table_model import FileTableModel
-        from oncutf.ui.managers.metadata_unified_manager import get_unified_metadata_manager
+        from oncutf.ui.managers.metadata_unified_manager import (
+            get_unified_metadata_manager,
+        )
         from oncutf.ui.managers.selection_manager import SelectionManager
 
         # Thread attributes
@@ -196,6 +208,7 @@ class BootstrapOrchestrator:
 
         # Initialize MetadataService with the manager
         from oncutf.core.metadata.metadata_service import get_metadata_service
+
         get_metadata_service(unified_manager=self.window.metadata_manager)
 
         self.window.selection_manager = SelectionManager(parent_window=self.window)
@@ -321,7 +334,9 @@ class BootstrapOrchestrator:
         from oncutf.ui.handlers.config_column_handler import ConfigColumnHandler
         from oncutf.ui.handlers.metadata_signal_handler import MetadataSignalHandler
         from oncutf.ui.handlers.shortcut_command_handler import ShortcutCommandHandler
-        from oncutf.ui.handlers.shutdown_lifecycle_handler import ShutdownLifecycleHandler
+        from oncutf.ui.handlers.shutdown_lifecycle_handler import (
+            ShutdownLifecycleHandler,
+        )
         from oncutf.ui.handlers.window_event_handler import WindowEventHandler
 
         self.window.shortcut_handler = ShortcutCommandHandler(self.window)

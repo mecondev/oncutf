@@ -339,7 +339,10 @@ Estimated cost:
 
 
 def should_process_file(
-    filepath: Path, root: Path, include_archives: bool = False, custom_excludes: list[str] | None = None
+    filepath: Path,
+    root: Path,
+    include_archives: bool = False,
+    custom_excludes: list[str] | None = None,
 ) -> bool:
     """Check if file should be processed based on exclusions."""
     # Check extension
@@ -626,7 +629,6 @@ def scan_repository(
 
     # Process files with progress bar
     for filepath in tqdm(files_to_process, desc="Processing files", unit="file"):
-
         files_scanned += 1
         relative_path = filepath.relative_to(root)
 
@@ -729,20 +731,22 @@ EXCLUSIONS (built-in):
     )
 
     parser.add_argument(
-        "-f", "--file",
+        "-f",
+        "--file",
         type=str,
         action="append",
         dest="files",
         metavar="PATH",
         help="Input file or directory to process (can be used multiple times). "
-             "When specified, processes only these paths instead of entire repository."
+        "When specified, processes only these paths instead of entire repository.",
     )
 
     parser.add_argument(
-        "-a", "--apply",
+        "-a",
+        "--apply",
         action="store_true",
         dest="fix",
-        help="Apply changes and write to files (default: dry-run mode shows changes without writing)"
+        help="Apply changes and write to files (default: dry-run mode shows changes without writing)",
     )
 
     parser.add_argument(
@@ -750,14 +754,14 @@ EXCLUSIONS (built-in):
         type=str,
         default=".",
         help="Root directory to scan (default: current directory). "
-             "Only used when --file is not specified."
+        "Only used when --file is not specified.",
     )
 
     parser.add_argument(
         "--include-archives",
         action="store_true",
         help="Include docs/archive/ directory in scan (excluded by default). "
-             "Useful for translating archived/legacy documentation.",
+        "Useful for translating archived/legacy documentation.",
     )
 
     parser.add_argument(
@@ -766,7 +770,7 @@ EXCLUSIONS (built-in):
         action="append",
         metavar="PATTERN",
         help="Additional file/directory patterns to exclude (can be used multiple times). "
-             "Example: --exclude build/ --exclude temp/",
+        "Example: --exclude build/ --exclude temp/",
     )
 
     args = parser.parse_args()

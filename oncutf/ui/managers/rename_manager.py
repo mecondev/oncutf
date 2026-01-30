@@ -232,7 +232,10 @@ class RenameManager:
 
                     # Use ui_state facade for consistent restoration
                     from oncutf.app.state.context import get_app_context
-                    from oncutf.ui.services.ui_state_service import UIState, restore_ui_state_sync
+                    from oncutf.ui.services.ui_state_service import (
+                        UIState,
+                        restore_ui_state_sync,
+                    )
 
                     state = UIState(
                         selected_paths=list(selected_paths) if selected_paths else [],

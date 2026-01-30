@@ -154,7 +154,6 @@ class MetadataWidget(QWidget):
         self.setLayout(layout)
         logger.debug("MetadataWidget UI setup completed")
 
-
     def _emit_settings_changed(self) -> None:
         """Emit settings_changed signal on ANY user interaction.
 
@@ -223,6 +222,7 @@ class MetadataWidget(QWidget):
         """Get QtAppContext with fallback to None."""
         try:
             from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+
             return get_qt_app_context()
         except (ImportError, RuntimeError):
             # QtAppContext not available or not ready yet
@@ -361,7 +361,10 @@ class MetadataWidget(QWidget):
 
         if new_data != self._last_data:
             self._last_data = new_data
-            logger.debug("[MetadataWidget] Data changed, emitting signal", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Data changed, emitting signal",
+                extra={"dev_only": True},
+            )
             self.updated.emit(self)
         else:
             # If data is the same but category changed, still emit for preview update
@@ -462,7 +465,9 @@ class MetadataWidget(QWidget):
             if main_window and hasattr(main_window, "load_metadata_for_items"):
                 # Use the existing metadata loading method
                 main_window.load_metadata_for_items(
-                    file_items_needing_metadata, use_extended=False, source="metadata_widget"
+                    file_items_needing_metadata,
+                    use_extended=False,
+                    source="metadata_widget",
                 )
 
                 # Force preview update after metadata loading
@@ -505,9 +510,9 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from oncutf.ui.adapters.application_context import get_app_context
+                from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-                context = get_app_context()
+                context = get_qt_app_context()
                 if (
                     context
                     and hasattr(context, "main_window")
@@ -520,7 +525,8 @@ class MetadataWidget(QWidget):
         if preview_manager:
             preview_manager.clear_cache()
             logger.debug(
-                "[MetadataWidget] Preview cache cleared on item selection", extra={"dev_only": True}
+                "[MetadataWidget] Preview cache cleared on item selection",
+                extra={"dev_only": True},
             )
         else:
             logger.warning("[MetadataWidget] Could not find preview_manager to clear cache")
@@ -553,9 +559,9 @@ class MetadataWidget(QWidget):
         # Fallback: Try to find via application context
         if not preview_manager:
             try:
-                from oncutf.ui.adapters.application_context import get_app_context
+                from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-                context = get_app_context()
+                context = get_qt_app_context()
                 if (
                     context
                     and hasattr(context, "main_window")
@@ -574,7 +580,8 @@ class MetadataWidget(QWidget):
             )
         else:
             logger.debug(
-                "[MetadataWidget] No preview_manager found to clear cache", extra={"dev_only": True}
+                "[MetadataWidget] No preview_manager found to clear cache",
+                extra={"dev_only": True},
             )
 
         # Ask parent window to refresh preview immediately (no debounce)
@@ -625,7 +632,8 @@ class MetadataWidget(QWidget):
         self.emit_if_changed()
         self.updated.emit(self)
         logger.debug(
-            "[MetadataWidget] Emitted updated after confirmed selection", extra={"dev_only": True}
+            "[MetadataWidget] Emitted updated after confirmed selection",
+            extra={"dev_only": True},
         )
 
     def _on_selection_changed(self):

@@ -132,6 +132,7 @@ def classify_layer(py_file: Path, package_dir: Path) -> str:
 @dataclass(frozen=True)
 class ImportRef:
     """A single import reference found in a file."""
+
     module: str
     lineno: int
     kind: str  # "import" or "from"
@@ -232,6 +233,7 @@ def infer_imported_layer(module: str, package: str) -> str:
 @dataclass(frozen=True)
 class RuleViolation:
     """A detected boundary violation."""
+
     file: str
     file_layer: str
     imported: str
@@ -395,7 +397,9 @@ def summarize(reports: list[FileReport], violations: list[RuleViolation]) -> dic
         "type_ignores_total": type_ignores_total,
         "violations_total": len(violations),
         "violations_by_rule": dict(sorted(by_rule.items(), key=lambda kv: (-kv[1], kv[0]))),
-        "violations_by_direction": dict(sorted(by_direction.items(), key=lambda kv: (-kv[1], kv[0]))),
+        "violations_by_direction": dict(
+            sorted(by_direction.items(), key=lambda kv: (-kv[1], kv[0]))
+        ),
     }
 
 
@@ -432,7 +436,9 @@ def print_human_report(
 
         print("Top violations (file:line -> import):")
         for v in violations[:max_items]:
-            print(f"  - {v.file}:{v.lineno} [{v.file_layer} -> {v.imported_layer}] {v.imported} ({v.rule})")
+            print(
+                f"  - {v.file}:{v.lineno} [{v.file_layer} -> {v.imported_layer}] {v.imported} ({v.rule})"
+            )
         if len(violations) > max_items:
             print(f"  ... ({len(violations) - max_items} more)")
         print()
@@ -453,12 +459,22 @@ def print_human_report(
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point."""
-    parser = argparse.ArgumentParser(description="Audit internal import boundaries and '# type: ignore' usage.")
+    parser = argparse.ArgumentParser(
+        description="Audit internal import boundaries and '# type: ignore' usage."
+    )
     parser.add_argument("--root", default=".", help="Repository root directory (default: .)")
-    parser.add_argument("--package", default="oncutf", help="Top-level package directory to scan (default: oncutf)")
-    parser.add_argument("--only-violations", action="store_true", help="Print only boundary violations.")
-    parser.add_argument("--max-items", type=int, default=60, help="Max items to print for lists (default: 60)")
-    parser.add_argument("--json", dest="json_path", default="", help="Write JSON report to this path (optional).")
+    parser.add_argument(
+        "--package", default="oncutf", help="Top-level package directory to scan (default: oncutf)"
+    )
+    parser.add_argument(
+        "--only-violations", action="store_true", help="Print only boundary violations."
+    )
+    parser.add_argument(
+        "--max-items", type=int, default=60, help="Max items to print for lists (default: 60)"
+    )
+    parser.add_argument(
+        "--json", dest="json_path", default="", help="Write JSON report to this path (optional)."
+    )
     parser.add_argument(
         "--strict-ui-core",
         action="store_true",
@@ -478,7 +494,9 @@ def main(argv: list[str] | None = None) -> int:
 
     violations.sort(key=lambda v: (v.rule, v.file, v.lineno))
 
-    print_human_report(reports, violations, only_violations=args.only_violations, max_items=args.max_items)
+    print_human_report(
+        reports, violations, only_violations=args.only_violations, max_items=args.max_items
+    )
 
     if args.json_path:
         payload = {

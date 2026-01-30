@@ -8,7 +8,10 @@ Integration tests for PER_FILEGROUP counter scope with preview engine.
 
 import pytest
 
-from oncutf.core.rename.preview_manager import apply_rename_modules, calculate_scope_aware_index
+from oncutf.core.rename.preview_manager import (
+    apply_rename_modules,
+    calculate_scope_aware_index,
+)
 from oncutf.models.counter_scope import CounterScope
 from oncutf.models.file_item import FileItem
 
@@ -82,7 +85,11 @@ class TestPerFileGroupScope:
         results = []
         for idx, file_item in enumerate(multi_folder_files):
             new_name = apply_rename_modules(
-                modules_data, idx, file_item, metadata_cache=None, all_files=multi_folder_files
+                modules_data,
+                idx,
+                file_item,
+                metadata_cache=None,
+                all_files=multi_folder_files,
             )
             results.append(new_name)
 
@@ -102,14 +109,20 @@ class TestPerFileGroupScope:
         # Test folder A files
         for i in range(3):
             index = calculate_scope_aware_index(
-                CounterScope.PER_FILEGROUP.value, i, multi_folder_files[i], multi_folder_files
+                CounterScope.PER_FILEGROUP.value,
+                i,
+                multi_folder_files[i],
+                multi_folder_files,
             )
             assert index == i  # Within folder group
 
         # Test folder B files (should reset)
         for i in range(3, 5):
             index = calculate_scope_aware_index(
-                CounterScope.PER_FILEGROUP.value, i, multi_folder_files[i], multi_folder_files
+                CounterScope.PER_FILEGROUP.value,
+                i,
+                multi_folder_files[i],
+                multi_folder_files,
             )
             assert index == (i - 3)  # Reset to 0, 1
 
@@ -128,7 +141,11 @@ class TestPerFileGroupScope:
         results = []
         for idx, file_item in enumerate(multi_folder_files):
             new_name = apply_rename_modules(
-                modules_data, idx, file_item, metadata_cache=None, all_files=multi_folder_files
+                modules_data,
+                idx,
+                file_item,
+                metadata_cache=None,
+                all_files=multi_folder_files,
             )
             results.append(new_name)
 
@@ -156,7 +173,11 @@ class TestPerFileGroupScope:
         results = []
         for idx, file_item in enumerate(multi_folder_files):
             new_name = apply_rename_modules(
-                modules_data, idx, file_item, metadata_cache=None, all_files=multi_folder_files
+                modules_data,
+                idx,
+                file_item,
+                metadata_cache=None,
+                all_files=multi_folder_files,
             )
             results.append(new_name)
 

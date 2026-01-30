@@ -267,10 +267,14 @@ class ExifToolWrapper:
                 cmd.append("-a")  # All tags for extended mode
             cmd.extend(file_paths)
 
-            from oncutf.config import EXIFTOOL_TIMEOUT_BATCH_BASE, EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+            from oncutf.config import (
+                EXIFTOOL_TIMEOUT_BATCH_BASE,
+                EXIFTOOL_TIMEOUT_BATCH_PER_FILE,
+            )
 
             dynamic_timeout = max(
-                EXIFTOOL_TIMEOUT_BATCH_BASE, len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+                EXIFTOOL_TIMEOUT_BATCH_BASE,
+                len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE,
             )
 
             result = subprocess.run(
@@ -325,7 +329,14 @@ class ExifToolWrapper:
             return None
 
         # Construct command with -ee flag for extended metadata and -api largefilesupport=1 for large files
-        cmd = [self._exiftool_path, "-api", "largefilesupport=1", "-j", "-ee", file_path]
+        cmd = [
+            self._exiftool_path,
+            "-api",
+            "largefilesupport=1",
+            "-j",
+            "-ee",
+            file_path,
+        ]
         logger.info("[ExtendedReader] Running command: %s", " ".join(cmd))
 
         try:
@@ -465,7 +476,9 @@ class ExifToolWrapper:
             cmd = [self._exiftool_path, "-overwrite_original"]
 
             # Use the centralized metadata field mapping helper
-            from oncutf.core.metadata.field_mapping_helper import MetadataFieldMappingHelper
+            from oncutf.core.metadata.field_mapping_helper import (
+                MetadataFieldMappingHelper,
+            )
 
             # Prepare metadata changes using the field mapping helper
             prepared_changes = MetadataFieldMappingHelper.prepare_metadata_for_write(
@@ -611,7 +624,8 @@ class ExifToolWrapper:
                         proc.wait(timeout=kill_wait_s)
                     except subprocess.TimeoutExpired:
                         logger.error(
-                            "[ExifToolWrapper] Zombie process detected", extra={"dev_only": True}
+                            "[ExifToolWrapper] Zombie process detected",
+                            extra={"dev_only": True},
                         )
             except Exception:
                 pass
@@ -658,7 +672,11 @@ class ExifToolWrapper:
                         cmdline = " ".join(proc.info["cmdline"]).lower()
                         if "exiftool" in cmdline and "-stay_open" in cmdline:
                             exiftool_processes.append(proc)
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                except (
+                    psutil.NoSuchProcess,
+                    psutil.AccessDenied,
+                    psutil.ZombieProcess,
+                ):
                     pass
 
             if not exiftool_processes:
@@ -714,7 +732,8 @@ class ExifToolWrapper:
                         proc.kill()
             else:
                 logger.debug(
-                    "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}
+                    "[ExifToolWrapper] No ExifTool processes to clean up",
+                    extra={"dev_only": True},
                 )
 
         except ImportError:

@@ -19,7 +19,9 @@ from typing import TYPE_CHECKING, Any
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.metadata.unified_metadata_protocol import UnifiedMetadataManagerProtocol
+    from oncutf.core.metadata.unified_metadata_protocol import (
+        UnifiedMetadataManagerProtocol,
+    )
     from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
@@ -35,9 +37,7 @@ class MetadataShortcutHandler:
     - Shortcut methods for loading metadata (selected, all)
     """
 
-    def __init__(
-        self, manager: UnifiedMetadataManagerProtocol, parent_window: Any = None
-    ) -> None:
+    def __init__(self, manager: UnifiedMetadataManagerProtocol, parent_window: Any = None) -> None:
         """Initialize shortcut handler.
 
         Args:
@@ -168,7 +168,10 @@ class MetadataShortcutHandler:
             )
             return
 
-        logger.info("[MetadataShortcut] Loading basic metadata for %d files", len(selected_files))
+        logger.info(
+            "[MetadataShortcut] Loading basic metadata for %d files",
+            len(selected_files),
+        )
         # Delegate to manager for actual loading
         self._manager.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
 
@@ -233,7 +236,8 @@ class MetadataShortcutHandler:
                 return
 
         logger.info(
-            "[MetadataShortcut] Loading extended metadata for %d files", len(selected_files)
+            "[MetadataShortcut] Loading extended metadata for %d files",
+            len(selected_files),
         )
         # Delegate to manager for actual loading
         self._manager.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
@@ -260,7 +264,10 @@ class MetadataShortcutHandler:
             logger.info("[MetadataShortcut] No files available for metadata loading")
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files available", selected_count=0, total_count=0, auto_reset=True
+                    "No files available",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 
@@ -303,7 +310,10 @@ class MetadataShortcutHandler:
             logger.info("[MetadataShortcut] No files available for extended metadata loading")
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files available", selected_count=0, total_count=0, auto_reset=True
+                    "No files available",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
                 )
             return
 

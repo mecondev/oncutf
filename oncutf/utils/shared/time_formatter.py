@@ -185,7 +185,9 @@ class ProgressEstimator:
             Tuple of (processed_size_str, total_size_str)
 
         """
-        from oncutf.utils.filesystem.file_size_formatter import format_file_size_system_compatible
+        from oncutf.utils.filesystem.file_size_formatter import (
+            format_file_size_system_compatible,
+        )
 
         processed_str = format_file_size_system_compatible(self.processed_size)
         total_str = format_file_size_system_compatible(self.total_size)

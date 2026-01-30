@@ -5,14 +5,8 @@ Date: 2025-05-13
 
 """
 
-import warnings
-
 from oncutf.modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_specified_text_valid():

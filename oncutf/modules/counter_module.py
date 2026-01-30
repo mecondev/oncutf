@@ -96,7 +96,11 @@ class CounterModule(BaseRenameModule):
         self.emit_if_changed(str(self.get_data()))
 
     def _create_row(
-        self, label_text: str, initial_value: int = 1, min_val: int = 0, max_val: int = 999999
+        self,
+        label_text: str,
+        initial_value: int = 1,
+        min_val: int = 0,
+        max_val: int = 999999,
     ) -> tuple[QLineEdit, QHBoxLayout]:
         """Create a row layout with:
         [QLabel(label_text)] [QLineEdit] [btn_minus] [btn_plus]

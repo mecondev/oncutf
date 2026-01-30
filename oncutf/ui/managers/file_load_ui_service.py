@@ -87,6 +87,7 @@ class FileLoadUIService:
             if len(items) > 200:
                 # Delegate to streaming loader (will handle model + UI updates)
                 from oncutf.core.file.streaming_loader import StreamingFileLoader
+
                 streaming_loader = StreamingFileLoader(self.parent_window, self)
                 streaming_loader.load_files_streaming(items, clear=clear)
             else:
@@ -191,7 +192,8 @@ class FileLoadUIService:
             self._update_metadata_tree()
 
             logger.info(
-                "[FileLoadUIService] UI refresh completed successfully", extra={"dev_only": True}
+                "[FileLoadUIService] UI refresh completed successfully",
+                extra={"dev_only": True},
             )
 
         except Exception as e:
@@ -205,7 +207,7 @@ class FileLoadUIService:
             logger.debug(
                 "[FileLoadUIService] %s file table placeholder",
                 "Shown" if visible else "Hidden",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
     def _update_header_state(self, total_files: int) -> None:
@@ -271,14 +273,16 @@ class FileLoadUIService:
         if hasattr(self.parent_window.file_model, "refresh_icons"):
             self.parent_window.file_model.refresh_icons()
             logger.debug(
-                "[FileLoadUIService] Refreshed file table icons", extra={"dev_only": True}
+                "[FileLoadUIService] Refreshed file table icons",
+                extra={"dev_only": True},
             )
 
         # Reset selection state to ensure clicks work
         if hasattr(self.parent_window.file_table_view, "_selection_behavior"):
             self.parent_window.file_table_view._selection_behavior.sync_selection_safely()
             logger.debug(
-                "[FileLoadUIService] Refreshed file table view", extra={"dev_only": True}
+                "[FileLoadUIService] Refreshed file table view",
+                extra={"dev_only": True},
             )
 
     def _update_metadata_tree(self) -> None:
@@ -299,9 +303,7 @@ class FileLoadUIService:
         # Refresh metadata from current selection
         if hasattr(self.parent_window.metadata_tree_view, "refresh_metadata_from_selection"):
             self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-            logger.debug(
-                "[FileLoadUIService] Refreshed metadata tree", extra={"dev_only": True}
-            )
+            logger.debug("[FileLoadUIService] Refreshed metadata tree", extra={"dev_only": True})
 
     def update_metadata_search_state(self, enabled: bool) -> None:
         """Update metadata search field enabled state.

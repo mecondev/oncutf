@@ -360,7 +360,9 @@ class UnifiedPreviewManager:
         else:  # CounterScope.PER_FILEGROUP
             if not all_files or not file_item:
                 return global_index
-            from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
+            from oncutf.utils.filesystem.file_grouper import (
+                calculate_filegroup_counter_index,
+            )
 
             try:
                 return calculate_filegroup_counter_index(
@@ -393,7 +395,9 @@ class UnifiedPreviewManager:
     def _is_valid_filename_text(self, basename: str) -> bool:
         """Return True if `basename` is acceptable for use as a filename."""
         try:
-            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import (
+                is_valid_filename_text,
+            )
 
             return is_valid_filename_text(basename)
         except ImportError:
@@ -484,7 +488,9 @@ def calculate_scope_aware_index(
     else:  # CounterScope.PER_FILEGROUP
         if not all_files or not file_item:
             return global_index
-        from oncutf.utils.filesystem.file_grouper import calculate_filegroup_counter_index
+        from oncutf.utils.filesystem.file_grouper import (
+            calculate_filegroup_counter_index,
+        )
 
         try:
             return calculate_filegroup_counter_index(

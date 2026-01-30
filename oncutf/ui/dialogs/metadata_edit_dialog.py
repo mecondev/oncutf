@@ -473,7 +473,11 @@ class MetadataEditDialog(QDialog):
             "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
             "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
             "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
-            "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+            "Description": [
+                "XMP:Description",
+                "IPTC:Caption-Abstract",
+                "EXIF:ImageDescription",
+            ],
             "Keywords": ["XMP:Keywords", "IPTC:Keywords"],
             "Rotation": ["Rotation", "EXIF:Orientation", "XMP:Orientation"],
         }

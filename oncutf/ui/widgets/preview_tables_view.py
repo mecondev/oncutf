@@ -130,7 +130,8 @@ class PreviewTablesView(QWidget):
         schedule_ui_update(self._handle_table_resize, 50)
 
         logger.debug(
-            "[PreviewTablesView] Initialized with intelligent scrolling", extra={"dev_only": True}
+            "[PreviewTablesView] Initialized with intelligent scrolling",
+            extra={"dev_only": True},
         )
 
     def _setup_ui(self):
@@ -528,7 +529,9 @@ class PreviewTablesView(QWidget):
             else:
                 # Check if filename is valid
                 try:
-                    from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
+                    from oncutf.utils.naming.validate_filename_text import (
+                        is_valid_filename_text,
+                    )
 
                     basename, _ = os.path.splitext(new_name)
                     if is_valid_filename_text(basename):
@@ -642,5 +645,6 @@ class PreviewTablesView(QWidget):
         self._set_placeholders_visible(True)
         self._placeholders_ready = True
         logger.debug(
-            "[PreviewTablesView] Placeholders initialized and shown", extra={"dev_only": True}
+            "[PreviewTablesView] Placeholders initialized and shown",
+            extra={"dev_only": True},
         )

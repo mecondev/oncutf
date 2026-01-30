@@ -24,7 +24,7 @@ def temp_file():
 
     # Cleanup
     if os.path.exists(temp_path):
-        os.unlink(temp_path)
+        Path(temp_path).unlink()
 
 
 @pytest.fixture

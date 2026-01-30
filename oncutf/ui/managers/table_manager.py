@@ -185,7 +185,9 @@ class TableManager:
 
         # Check which viewport is active and get selection from it
         selection_model = None
-        use_selected_indexes = False  # QListView needs selectedIndexes(), QTreeView uses selectedRows()
+        use_selected_indexes = (
+            False  # QListView needs selectedIndexes(), QTreeView uses selectedRows()
+        )
 
         # If viewport_stack exists, check which view is active
         if hasattr(self.parent_window, "viewport_stack"):
@@ -241,7 +243,9 @@ class TableManager:
         common_keys = None
 
         for file in selected_files:
-            from oncutf.utils.filesystem.file_status_helpers import get_metadata_for_file
+            from oncutf.utils.filesystem.file_status_helpers import (
+                get_metadata_for_file,
+            )
 
             metadata = get_metadata_for_file(file.full_path) or {}
             keys = set(metadata.keys())

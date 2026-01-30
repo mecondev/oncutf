@@ -25,10 +25,40 @@ class MetadataFieldMappingHelper:
     """
 
     # Define supported file extensions by category
-    IMAGE_EXTENSIONS: ClassVar[set[str]] = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".gif"}
-    RAW_EXTENSIONS: ClassVar[set[str]] = {".cr2", ".nef", ".arw", ".orf", ".rw2", ".dng"}
-    VIDEO_EXTENSIONS: ClassVar[set[str]] = {".mp4", ".mov", ".m4v", ".3gp", ".avi", ".mkv", ".wmv"}
-    AUDIO_EXTENSIONS: ClassVar[set[str]] = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg"}
+    IMAGE_EXTENSIONS: ClassVar[set[str]] = {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".tiff",
+        ".tif",
+        ".bmp",
+        ".gif",
+    }
+    RAW_EXTENSIONS: ClassVar[set[str]] = {
+        ".cr2",
+        ".nef",
+        ".arw",
+        ".orf",
+        ".rw2",
+        ".dng",
+    }
+    VIDEO_EXTENSIONS: ClassVar[set[str]] = {
+        ".mp4",
+        ".mov",
+        ".m4v",
+        ".3gp",
+        ".avi",
+        ".mkv",
+        ".wmv",
+    }
+    AUDIO_EXTENSIONS: ClassVar[set[str]] = {
+        ".mp3",
+        ".wav",
+        ".flac",
+        ".aac",
+        ".m4a",
+        ".ogg",
+    }
 
     # Field mapping for write operations (maps generic field -> file-specific field)
     WRITE_FIELD_MAPPING: ClassVar[dict[str, dict[str, str | None]]] = {

@@ -392,7 +392,10 @@ def initialize_default_metadata_schema(
 
         # Technical Information
         cat_id = create_metadata_category(
-            "technical", "Technical Details", "Technical metadata and processing information", 6
+            "technical",
+            "Technical Details",
+            "Technical metadata and processing information",
+            6,
         )
         category_mapping["technical"] = cat_id
 
@@ -400,7 +403,16 @@ def initialize_default_metadata_schema(
         default_fields = [
             # File Basic
             ("System:FileName", "Filename", "file_basic", "text", False, True, None, 0),
-            ("System:FileSize", "File Size", "file_basic", "size", False, True, "bytes", 1),
+            (
+                "System:FileSize",
+                "File Size",
+                "file_basic",
+                "size",
+                False,
+                True,
+                "bytes",
+                1,
+            ),
             (
                 "System:FileModifyDate",
                 "Modified Date",
@@ -424,8 +436,26 @@ def initialize_default_metadata_schema(
             ("File:FileType", "File Type", "file_basic", "text", False, True, None, 4),
             ("File:MIMEType", "MIME Type", "file_basic", "text", False, True, None, 5),
             # Image
-            ("EXIF:ImageWidth", "Image Width", "image", "number", False, True, "pixels", 0),
-            ("EXIF:ImageHeight", "Image Height", "image", "number", False, True, "pixels", 1),
+            (
+                "EXIF:ImageWidth",
+                "Image Width",
+                "image",
+                "number",
+                False,
+                True,
+                "pixels",
+                0,
+            ),
+            (
+                "EXIF:ImageHeight",
+                "Image Height",
+                "image",
+                "number",
+                False,
+                True,
+                "pixels",
+                1,
+            ),
             ("EXIF:Orientation", "Orientation", "image", "text", True, True, None, 2),
             (
                 "QuickTime:Rotation",
@@ -455,9 +485,27 @@ def initialize_default_metadata_schema(
             ("EXIF:LensModel", "Lens Model", "camera", "text", True, True, None, 2),
             ("EXIF:ISO", "ISO", "camera", "number", True, True, None, 3),
             ("EXIF:FNumber", "F-Number", "camera", "number", True, True, "f/", 4),
-            ("EXIF:ExposureTime", "Exposure Time", "camera", "text", True, True, "sec", 5),
+            (
+                "EXIF:ExposureTime",
+                "Exposure Time",
+                "camera",
+                "text",
+                True,
+                True,
+                "sec",
+                5,
+            ),
             ("EXIF:FocalLength", "Focal Length", "camera", "text", True, True, "mm", 6),
-            ("EXIF:WhiteBalance", "White Balance", "camera", "text", True, True, None, 7),
+            (
+                "EXIF:WhiteBalance",
+                "White Balance",
+                "camera",
+                "text",
+                True,
+                True,
+                None,
+                7,
+            ),
             ("EXIF:Flash", "Flash", "camera", "text", True, True, None, 8),
             # Video
             (
@@ -480,7 +528,16 @@ def initialize_default_metadata_schema(
                 "pixels",
                 1,
             ),
-            ("QuickTime:Duration", "Duration", "video", "duration", False, True, "seconds", 2),
+            (
+                "QuickTime:Duration",
+                "Duration",
+                "video",
+                "duration",
+                False,
+                True,
+                "seconds",
+                2,
+            ),
             (
                 "QuickTime:VideoFrameRate",
                 "Frame Rate",
@@ -491,7 +548,16 @@ def initialize_default_metadata_schema(
                 "fps",
                 3,
             ),
-            ("QuickTime:VideoCodec", "Video Codec", "video", "text", False, True, None, 4),
+            (
+                "QuickTime:VideoCodec",
+                "Video Codec",
+                "video",
+                "text",
+                False,
+                True,
+                None,
+                4,
+            ),
             (
                 "QuickTime:AvgBitrate",
                 "Average Bitrate",
@@ -523,7 +589,16 @@ def initialize_default_metadata_schema(
                 "Hz",
                 1,
             ),
-            ("QuickTime:AudioFormat", "Audio Format", "audio", "text", False, True, None, 2),
+            (
+                "QuickTime:AudioFormat",
+                "Audio Format",
+                "audio",
+                "text",
+                False,
+                True,
+                None,
+                2,
+            ),
             (
                 "QuickTime:AudioBitrate",
                 "Audio Bitrate",
@@ -535,7 +610,16 @@ def initialize_default_metadata_schema(
                 3,
             ),
             # Location
-            ("GPS:GPSLatitude", "Latitude", "location", "coordinate", True, True, "degrees", 0),
+            (
+                "GPS:GPSLatitude",
+                "Latitude",
+                "location",
+                "coordinate",
+                True,
+                True,
+                "degrees",
+                0,
+            ),
             (
                 "GPS:GPSLongitude",
                 "Longitude",
@@ -546,7 +630,16 @@ def initialize_default_metadata_schema(
                 "degrees",
                 1,
             ),
-            ("GPS:GPSAltitude", "Altitude", "location", "number", True, True, "meters", 2),
+            (
+                "GPS:GPSAltitude",
+                "Altitude",
+                "location",
+                "number",
+                True,
+                True,
+                "meters",
+                2,
+            ),
             ("GPS:GPSMapDatum", "Map Datum", "location", "text", True, True, None, 3),
             # Technical
             (

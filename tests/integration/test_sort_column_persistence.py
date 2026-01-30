@@ -37,7 +37,7 @@ def mock_main_window():
     window.lower_section_splitter.sizes.return_value = [868, 867]
 
     # Mock geometry
-    window.saveGeometry.return_value = b'mock_geometry'
+    window.saveGeometry.return_value = b"mock_geometry"
     window.restoreGeometry.return_value = True
 
     return window
@@ -166,4 +166,3 @@ class TestSortColumnIntegration:
         # Step 4: Verify sort state was restored
         assert new_window.current_sort_column == 3
         assert new_window.current_sort_order == Qt.DescendingOrder
-

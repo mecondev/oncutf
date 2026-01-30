@@ -197,7 +197,12 @@ class FileLoadController:
         except Exception as e:
             logger.exception("[FileLoadController] Error during file loading: %s", str(e))
             errors.append(f"Loading error: {e!s}")
-            return {"success": False, "loaded_count": 0, "errors": errors, "skipped": skipped}
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "errors": errors,
+                "skipped": skipped,
+            }
 
     def load_folder(
         self, folder_path: str, merge_mode: bool = False, recursive: bool = False
@@ -222,7 +227,11 @@ class FileLoadController:
 
         if not self._file_load_manager:
             logger.error("[FileLoadController] FileLoadManager not available")
-            return {"success": False, "loaded_count": 0, "errors": ["Manager not initialized"]}
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "errors": ["Manager not initialized"],
+            }
 
         # Validate folder exists
         folder = Path(folder_path)
@@ -250,7 +259,11 @@ class FileLoadController:
             self._file_load_manager.load_folder(folder_path, merge_mode, recursive)
 
             logger.info("[FileLoadController] Folder loaded successfully")
-            return {"success": True, "loaded_count": -1, "errors": []}  # Count not available yet
+            return {
+                "success": True,
+                "loaded_count": -1,
+                "errors": [],
+            }  # Count not available yet
 
         except Exception as e:
             logger.exception(
@@ -260,7 +273,9 @@ class FileLoadController:
             return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
     def handle_drop(
-        self, paths: list[str], modifiers: "Qt.KeyboardModifiers" = Qt.KeyboardModifiers()
+        self,
+        paths: list[str],
+        modifiers: "Qt.KeyboardModifiers" = Qt.KeyboardModifiers(),
     ) -> dict[str, Any]:
         """Handle file/folder drop with keyboard modifiers.
 
@@ -273,6 +288,7 @@ class FileLoadController:
 
         """
         import time
+
         t0 = time.time()
 
         # Decode modifiers for readable logging
@@ -280,7 +296,10 @@ class FileLoadController:
 
         _, _, modifier_desc = decode_modifiers_to_flags(modifiers)
         logger.debug(
-            "[DROP-CONTROLLER] handle_drop START: %d paths (modifiers=%s)", len(paths), modifier_desc, extra={"dev_only": True}
+            "[DROP-CONTROLLER] handle_drop START: %d paths (modifiers=%s)",
+            len(paths),
+            modifier_desc,
+            extra={"dev_only": True},
         )
 
         if not self._file_load_manager:
@@ -294,12 +313,20 @@ class FileLoadController:
         # Delegate to FileLoadManager which handles modifiers
         try:
             t1 = time.time()
-            logger.debug("[DROP-CONTROLLER] Calling load_files_from_dropped_items at +%.3fms", (t1-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-CONTROLLER] Calling load_files_from_dropped_items at +%.3fms",
+                (t1 - t0) * 1000,
+                extra={"dev_only": True},
+            )
 
             self._file_load_manager.load_files_from_dropped_items(paths, modifiers)
 
             t2 = time.time()
-            logger.debug("[DROP-CONTROLLER] load_files_from_dropped_items returned at +%.3fms", (t2-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-CONTROLLER] load_files_from_dropped_items returned at +%.3fms",
+                (t2 - t0) * 1000,
+                extra={"dev_only": True},
+            )
             logger.info("[FileLoadController] Drop handled successfully")
             return {"success": True, "errors": []}
 
@@ -312,10 +339,19 @@ class FileLoadController:
         finally:
             # Ensure wait cursor is restored
             from PyQt5.QtWidgets import QApplication
+
             t_restore = time.time()
-            logger.debug("[DROP-CONTROLLER] Restoring cursor at +%.3fms", (t_restore-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-CONTROLLER] Restoring cursor at +%.3fms",
+                (t_restore - t0) * 1000,
+                extra={"dev_only": True},
+            )
             QApplication.restoreOverrideCursor()
-            logger.debug("[DROP-CONTROLLER] Cursor restored at +%.3fms", (time.time()-t0)*1000, extra={"dev_only": True})
+            logger.debug(
+                "[DROP-CONTROLLER] Cursor restored at +%.3fms",
+                (time.time() - t0) * 1000,
+                extra={"dev_only": True},
+            )
 
     def clear_files(self) -> bool:
         """Clear all loaded files.
@@ -360,7 +396,9 @@ class FileLoadController:
         try:
             count = len(self._file_store.get_loaded_files())
             logger.debug(
-                "[FileLoadController] Current file count: %d", count, extra={"dev_only": True}
+                "[FileLoadController] Current file count: %d",
+                count,
+                extra={"dev_only": True},
             )
             return count
         except Exception as e:

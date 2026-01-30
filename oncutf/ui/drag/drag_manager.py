@@ -99,7 +99,8 @@ class DragManager(QObject):
         """
         if not self._drag_active:
             logger.debug(
-                "[DragManager] Drag end called but no drag active", extra={"dev_only": True}
+                "[DragManager] Drag end called but no drag active",
+                extra={"dev_only": True},
             )
             return
 
@@ -203,7 +204,8 @@ class DragManager(QObject):
             if QApplication.overrideCursor():
                 QApplication.setOverrideCursor(Qt.ArrowCursor)
                 logger.debug(
-                    "[DragManager] Set explicit arrow cursor as fallback", extra={"dev_only": True}
+                    "[DragManager] Set explicit arrow cursor as fallback",
+                    extra={"dev_only": True},
                 )
 
         except Exception as e:
@@ -231,7 +233,8 @@ class DragManager(QObject):
         """
         if not self._drag_active:
             logger.debug(
-                "[DragManager] Force cleanup called but no drag active", extra={"dev_only": True}
+                "[DragManager] Force cleanup called but no drag active",
+                extra={"dev_only": True},
             )
             return
 
@@ -264,11 +267,14 @@ class DragManager(QObject):
                 key = event.key()
                 if key == Qt.Key_Escape:
                     logger.debug(
-                        "[DragManager] Escape key pressed during drag", extra={"dev_only": True}
+                        "[DragManager] Escape key pressed during drag",
+                        extra={"dev_only": True},
                     )
 
                     # Check if ProgressDialog is active
-                    from oncutf.ui.services.active_dialogs import has_active_progress_dialogs
+                    from oncutf.ui.services.active_dialogs import (
+                        has_active_progress_dialogs,
+                    )
 
                     if has_active_progress_dialogs():
                         logger.debug(
@@ -294,7 +300,8 @@ class DragManager(QObject):
                 elapsed = time.time() - self._drag_start_time
                 if elapsed > 3.0:  # Only cleanup after 3 seconds
                     logger.debug(
-                        "[DragManager] Window deactivated after long drag", extra={"dev_only": True}
+                        "[DragManager] Window deactivated after long drag",
+                        extra={"dev_only": True},
                     )
                     schedule_drag_cleanup(self.force_cleanup, 500)
 

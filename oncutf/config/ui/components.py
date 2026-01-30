@@ -6,6 +6,10 @@ Date: 2026-01-13
 Icons, metadata tree, preview indicators, tooltips, tables, dialogs, and color picker.
 """
 
+from pathlib import Path
+
+from oncutf.config.ui.layout import CONTENT_MARGINS
+
 ICON_SIZES = {
     "SMALL": 16,
     "MEDIUM": 24,
@@ -48,8 +52,6 @@ RESULTS_TABLE_RIGHT_COLUMN_WIDTH = 100
 
 HASH_LIST_ROW_HEIGHT = 22
 
-from oncutf.config.ui.layout import CONTENT_MARGINS
-
 HASH_LIST_WINDOW_DEFAULT_WIDTH = RESULTS_TABLE_DEFAULT_WIDTH
 HASH_LIST_WINDOW_DEFAULT_HEIGHT = RESULTS_TABLE_DEFAULT_HEIGHT
 HASH_LIST_WINDOW_MIN_HEIGHT = RESULTS_TABLE_MIN_HEIGHT
@@ -61,13 +63,43 @@ HASH_LIST_HEADER_ALIGNMENT = "left"
 HASH_LIST_LABEL_BACKGROUND = ""
 
 FILE_TAG_COLOR_ARRAY = [
-    "#ffb86a", "#ffdf20", "#7bf1a8", "#46ecd5", "#74d4ff", "#a3b3ff", "#dab2ff", "#fda5d5", "#cccccc",
-    "#ff6900", "#f0b100", "#00c950", "#00bba7", "#00a6f4", "#615fff", "#ad46ff", "#f6339a", "#888888",
-    "#ca3500", "#a65f00", "#008236", "#00786f", "#0069a8", "#432dd7", "#8200db", "#c6005c", "#444444",
-    "#7e2a0c", "#733e0a", "#0d542b", "#0b4f4a", "#024a70", "#312c85", "#59168b", "#861043", "#000000",
+    "#ffb86a",
+    "#ffdf20",
+    "#7bf1a8",
+    "#46ecd5",
+    "#74d4ff",
+    "#a3b3ff",
+    "#dab2ff",
+    "#fda5d5",
+    "#cccccc",
+    "#ff6900",
+    "#f0b100",
+    "#00c950",
+    "#00bba7",
+    "#00a6f4",
+    "#615fff",
+    "#ad46ff",
+    "#f6339a",
+    "#888888",
+    "#ca3500",
+    "#a65f00",
+    "#008236",
+    "#00786f",
+    "#0069a8",
+    "#432dd7",
+    "#8200db",
+    "#c6005c",
+    "#444444",
+    "#7e2a0c",
+    "#733e0a",
+    "#0d542b",
+    "#0b4f4a",
+    "#024a70",
+    "#312c85",
+    "#59168b",
+    "#861043",
+    "#000000",
 ]
-
-from pathlib import Path
 
 COLOR_GRID_ROWS = 4
 COLOR_GRID_COLS = 9

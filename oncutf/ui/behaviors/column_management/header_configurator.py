@@ -5,6 +5,7 @@ Handles header setup, resize modes, and delayed configuration.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QHeaderView
@@ -177,14 +178,20 @@ class HeaderConfigurator:
                 current_visual = header.visualIndex(0)
                 # Only restore if it's not already at position 0 (avoid infinite loop)
                 if current_visual != 0:
-                    logger.info("[COLUMN_LOCK] Restoring status column from visual %d to 0", current_visual)
+                    logger.info(
+                        "[COLUMN_LOCK] Restoring status column from visual %d to 0",
+                        current_visual,
+                    )
                     header.blockSignals(True)
                     try:
                         # Allow controlled move even if InteractiveHeader blocks normal moves
                         header._allow_forced_section_move = True
                         QHeaderView.moveSection(header, current_visual, 0)
                     except Exception:
-                        logger.warning("[COLUMN_LOCK] Failed to force status column restore", exc_info=True)
+                        logger.warning(
+                            "[COLUMN_LOCK] Failed to force status column restore",
+                            exc_info=True,
+                        )
                     finally:
                         header._allow_forced_section_move = False
                         header.blockSignals(False)

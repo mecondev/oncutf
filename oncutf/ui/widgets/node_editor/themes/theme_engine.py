@@ -164,24 +164,24 @@ class ThemeEngine:
 
         """
         # Refresh scene
-        if hasattr(scene, 'graphics_scene') and hasattr(scene.graphics_scene, 'init_assets'):
+        if hasattr(scene, "graphics_scene") and hasattr(scene.graphics_scene, "init_assets"):
             scene.graphics_scene.init_assets()
             scene.graphics_scene.update()
 
         # Refresh all nodes
         for node in scene.nodes:
-            if node.graphics_node and hasattr(node.graphics_node, 'init_assets'):
+            if node.graphics_node and hasattr(node.graphics_node, "init_assets"):
                 node.graphics_node.init_assets()
                 node.graphics_node.update()
 
             # Refresh sockets
             for socket in node.inputs + node.outputs:
-                if hasattr(socket.graphics_socket, 'init_assets'):
+                if hasattr(socket.graphics_socket, "init_assets"):
                     socket.graphics_socket.init_assets()
                     socket.graphics_socket.update()
 
         # Refresh all edges
         for edge in scene.edges:
-            if edge.graphics_edge and hasattr(edge.graphics_edge, 'init_assets'):
+            if edge.graphics_edge and hasattr(edge.graphics_edge, "init_assets"):
                 edge.graphics_edge.init_assets()
                 edge.graphics_edge.update()

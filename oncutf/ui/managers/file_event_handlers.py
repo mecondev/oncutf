@@ -87,6 +87,4 @@ class FileEventHandlers:
         merge_mode, recursive, _ = decode_modifiers_to_flags(modifiers)
 
         # Use controller for orchestration (proper architecture)
-        self.parent_window.file_load_controller.load_folder(
-            selected_path, merge_mode, recursive
-        )
+        self.parent_window.file_load_controller.load_folder(selected_path, merge_mode, recursive)

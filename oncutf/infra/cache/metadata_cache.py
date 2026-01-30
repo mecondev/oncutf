@@ -76,7 +76,11 @@ class MetadataCache:
                 return None
         except OSError:
             # File no longer exists or not accessible
-            logger.debug("File not accessible, removing from cache: %s", path, extra={"dev_only": True})
+            logger.debug(
+                "File not accessible, removing from cache: %s",
+                path,
+                extra={"dev_only": True},
+            )
             del self._cache[key]
             return None
 
@@ -137,7 +141,8 @@ class MetadataCache:
         """
         current_time = time.time()
         expired_keys = [
-            key for key, (_, cache_time, _) in self._cache.items()
+            key
+            for key, (_, cache_time, _) in self._cache.items()
             if current_time - cache_time > self._ttl
         ]
 

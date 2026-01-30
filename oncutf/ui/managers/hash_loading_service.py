@@ -167,14 +167,22 @@ class HashLoadingService:
             dialog.set_status("Calculating hash...")
 
             # Calculate total size for progress tracking
-            from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.filesystem.file_size_calculator import (
+                calculate_files_total_size,
+            )
+
             total_size = calculate_files_total_size(files)
             dialog.start_progress_tracking(total_size)
 
             # Set initial count (0/N files) and first filename BEFORE showing
             total_files = len(files)
             dialog.set_count(0, total_files)
-            dialog.update_progress(file_count=0, total_files=total_files, processed_bytes=0, total_bytes=total_size)
+            dialog.update_progress(
+                file_count=0,
+                total_files=total_files,
+                processed_bytes=0,
+                total_bytes=total_size,
+            )
             if files:
                 dialog.set_filename(files[0].filename)
 
@@ -186,6 +194,7 @@ class HashLoadingService:
 
             # Force UI update to display initialized state
             from PyQt5.QtWidgets import QApplication
+
             QApplication.processEvents()
 
             # Start worker AFTER dialog is visible with initial state
@@ -308,7 +317,9 @@ class HashLoadingService:
                                 i, self.parent_window.file_model.columnCount() - 1
                             )
                             self.parent_window.file_model.dataChanged.emit(
-                                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                                top_left,
+                                bottom_right,
+                                [Qt.DecorationRole, Qt.ToolTipRole],
                             )
                             break
                 except Exception:
@@ -477,7 +488,9 @@ class HashLoadingService:
         import time
 
         from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
-        from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+        from oncutf.utils.filesystem.file_size_calculator import (
+            calculate_files_total_size,
+        )
 
         self._operation_start_time = time.time()
 

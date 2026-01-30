@@ -326,4 +326,3 @@ class ColumnManager:
             "[ColumnManager] load_column_state called (handled by service)",
             extra={"dev_only": True},
         )
-

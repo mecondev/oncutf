@@ -33,7 +33,9 @@ from oncutf.infra.db.database_manager import DatabaseManager
 from oncutf.utils.paths import AppPaths
 
 
-def simulate_scroll_events(manager: ThumbnailManager, test_file: str, num_scrolls: int = 100) -> dict[str, int]:
+def simulate_scroll_events(
+    manager: ThumbnailManager, test_file: str, num_scrolls: int = 100
+) -> dict[str, int]:
     """Simulate rapid scrolling that triggers multiple get_thumbnail() calls.
 
     Args:

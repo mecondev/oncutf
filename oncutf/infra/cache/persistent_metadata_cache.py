@@ -85,7 +85,10 @@ class PersistentMetadataCache:
 
     def __init__(self) -> None:
         """Initialize persistent metadata cache with database backend."""
-        logger.debug("[DEBUG] [PersistentMetadataCache] __init__ CALLED", extra={"dev_only": True})
+        logger.debug(
+            "[DEBUG] [PersistentMetadataCache] __init__ CALLED",
+            extra={"dev_only": True},
+        )
         try:
             self._db_manager = get_database_manager()
             logger.debug(
@@ -94,7 +97,10 @@ class PersistentMetadataCache:
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error("[DEBUG] [PersistentMetadataCache] Error getting database manager: %s", e)
+            logger.error(
+                "[DEBUG] [PersistentMetadataCache] Error getting database manager: %s",
+                e,
+            )
             raise
         # Use OrderedDict for LRU behavior - limit cache size to prevent memory growth
         self._memory_cache: OrderedDict[str, MetadataEntry] = OrderedDict()
@@ -193,7 +199,9 @@ class PersistentMetadataCache:
         if norm_path in self._memory_cache:
             self._cache_hits += 1
             logger.debug(
-                "[PersistentMetadataCache] Cache HIT for: %s", norm_path, extra={"dev_only": True}
+                "[PersistentMetadataCache] Cache HIT for: %s",
+                norm_path,
+                extra={"dev_only": True},
             )
             # Move to end (most recently used) for LRU
             self._memory_cache.move_to_end(norm_path)
@@ -416,7 +424,8 @@ def get_persistent_metadata_cache() -> Union[PersistentMetadataCache, "DummyMeta
     )
     if _persistent_metadata_cache_instance is None:
         logger.debug(
-            "[DEBUG] [PersistentMetadataCache] Creating new instance", extra={"dev_only": True}
+            "[DEBUG] [PersistentMetadataCache] Creating new instance",
+            extra={"dev_only": True},
         )
         try:
             _persistent_metadata_cache_instance = PersistentMetadataCache()
@@ -432,7 +441,8 @@ def get_persistent_metadata_cache() -> Union[PersistentMetadataCache, "DummyMeta
             _persistent_metadata_cache_instance = DummyMetadataCache()
     else:
         logger.debug(
-            "[DEBUG] [PersistentMetadataCache] Using existing instance", extra={"dev_only": True}
+            "[DEBUG] [PersistentMetadataCache] Using existing instance",
+            extra={"dev_only": True},
         )
     return _persistent_metadata_cache_instance
 

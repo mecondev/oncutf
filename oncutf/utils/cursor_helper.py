@@ -12,9 +12,16 @@ This module exists to provide a stable import path:
 The implementation lives in oncutf.ui.helpers.cursor_helper.
 """
 
-from oncutf.ui.helpers.cursor_helper import (  # noqa: F401
+from oncutf.ui.helpers.cursor_helper import (
     emergency_cursor_cleanup,
     force_restore_cursor,
     get_current_cursor_info,
     wait_cursor,
 )
+
+__all__ = [
+    "emergency_cursor_cleanup",
+    "force_restore_cursor",
+    "get_current_cursor_info",
+    "wait_cursor",
+]

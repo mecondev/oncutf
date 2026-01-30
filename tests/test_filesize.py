@@ -12,12 +12,6 @@ Note: Linux-specific tests are skipped on Windows.
 
 import os
 import platform
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import subprocess
 import sys
 import unittest
@@ -29,7 +23,7 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from oncutf.models.file_item import FileItem
+from oncutf.models.file_item import FileItem  # noqa: E402
 
 # Check if we're on Windows
 IS_WINDOWS = platform.system() == "Windows"
@@ -51,7 +45,12 @@ class TestFileSizeComparison(unittest.TestCase):
             ls_output = subprocess.check_output(["ls", "-l", filepath], text=True)
             ls_size = int(ls_output.split()[4])
             results["ls"] = ls_size
-        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
+        except (
+            subprocess.CalledProcessError,
+            ValueError,
+            IndexError,
+            FileNotFoundError,
+        ):
             results["ls"] = "Error"
 
         try:
@@ -67,7 +66,12 @@ class TestFileSizeComparison(unittest.TestCase):
             du_output = subprocess.check_output(["du", "-b", filepath], text=True)
             du_size = int(du_output.split()[0])
             results["du"] = du_size
-        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
+        except (
+            subprocess.CalledProcessError,
+            ValueError,
+            IndexError,
+            FileNotFoundError,
+        ):
             results["du"] = "Error"
 
         try:
@@ -75,7 +79,12 @@ class TestFileSizeComparison(unittest.TestCase):
             wc_output = subprocess.check_output(["wc", "-c", filepath], text=True)
             wc_size = int(wc_output.split()[0])
             results["wc"] = wc_size
-        except (subprocess.CalledProcessError, ValueError, IndexError, FileNotFoundError):
+        except (
+            subprocess.CalledProcessError,
+            ValueError,
+            IndexError,
+            FileNotFoundError,
+        ):
             results["wc"] = "Error"
 
         return results

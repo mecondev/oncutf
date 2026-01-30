@@ -242,7 +242,7 @@ class BaseValidatedInput:
             if not self._is_valid:
                 # Invalid state - red border only, normal background
                 style = f"""
-                    border: 2px solid {theme.get_color('error')};
+                    border: 2px solid {theme.get_color("error")};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -250,7 +250,7 @@ class BaseValidatedInput:
             elif not text and self._has_had_content:
                 # Empty after having content - orange/warning styling
                 style = f"""
-                    border: 2px solid {theme.get_color('warning')};
+                    border: 2px solid {theme.get_color("warning")};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -258,7 +258,7 @@ class BaseValidatedInput:
             elif self.maxLength() > 0 and len(text) >= self.maxLength():
                 # At character limit - gray styling
                 style = f"""
-                    border: 2px solid {theme.get_color('border_muted')};
+                    border: 2px solid {theme.get_color("border_muted")};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -285,7 +285,7 @@ class BaseValidatedInput:
             # Apply error style immediately - red border only
             theme = get_theme_manager()
             error_style = f"""
-                border: 2px solid {theme.get_color('error')};
+                border: 2px solid {theme.get_color("error")};
                 background-color: {QLABEL_DARK_BG};
                 color: {QLABEL_INFO_TEXT};
                 font-weight: normal;

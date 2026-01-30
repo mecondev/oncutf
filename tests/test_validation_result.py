@@ -66,7 +66,9 @@ class TestValidationIssue:
     def test_issue_creation_minimal(self, mock_file_item):
         """Test creating issue with minimal fields."""
         issue = ValidationIssue(
-            file=mock_file_item, issue_type=ValidationIssueType.LOCKED, message="File is locked"
+            file=mock_file_item,
+            issue_type=ValidationIssueType.LOCKED,
+            message="File is locked",
         )
 
         assert issue.file == mock_file_item
@@ -112,10 +114,14 @@ class TestValidationResult:
         """Test result with missing files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="File missing"
+                file=mock_files[0],
+                issue_type=ValidationIssueType.MISSING,
+                message="File missing",
             ),
             ValidationIssue(
-                file=mock_files[1], issue_type=ValidationIssueType.MISSING, message="File missing"
+                file=mock_files[1],
+                issue_type=ValidationIssueType.MISSING,
+                message="File missing",
             ),
         ]
 
@@ -133,7 +139,9 @@ class TestValidationResult:
         """Test result with locked files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0], issue_type=ValidationIssueType.LOCKED, message="File locked"
+                file=mock_files[0],
+                issue_type=ValidationIssueType.LOCKED,
+                message="File locked",
             )
         ]
 
@@ -167,7 +175,9 @@ class TestValidationResult:
         """Test result with modified files."""
         issues = [
             ValidationIssue(
-                file=mock_files[0], issue_type=ValidationIssueType.MODIFIED, message="File modified"
+                file=mock_files[0],
+                issue_type=ValidationIssueType.MODIFIED,
+                message="File modified",
             )
         ]
 
@@ -183,13 +193,19 @@ class TestValidationResult:
         """Test result with multiple issue types."""
         issues = [
             ValidationIssue(
-                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="Missing"
+                file=mock_files[0],
+                issue_type=ValidationIssueType.MISSING,
+                message="Missing",
             ),
             ValidationIssue(
-                file=mock_files[1], issue_type=ValidationIssueType.LOCKED, message="Locked"
+                file=mock_files[1],
+                issue_type=ValidationIssueType.LOCKED,
+                message="Locked",
             ),
             ValidationIssue(
-                file=mock_files[2], issue_type=ValidationIssueType.MODIFIED, message="Modified"
+                file=mock_files[2],
+                issue_type=ValidationIssueType.MODIFIED,
+                message="Modified",
             ),
         ]
 
@@ -215,10 +231,14 @@ class TestValidationResult:
         """Test summary with issues."""
         issues = [
             ValidationIssue(
-                file=mock_files[0], issue_type=ValidationIssueType.MISSING, message="Missing"
+                file=mock_files[0],
+                issue_type=ValidationIssueType.MISSING,
+                message="Missing",
             ),
             ValidationIssue(
-                file=mock_files[1], issue_type=ValidationIssueType.LOCKED, message="Locked"
+                file=mock_files[1],
+                issue_type=ValidationIssueType.LOCKED,
+                message="Locked",
             ),
         ]
 

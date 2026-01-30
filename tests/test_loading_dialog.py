@@ -1,28 +1,4 @@
-"""Module: test_loading_dialog.py
-
-Author: Michael Economou
-Date: 2025-05-09
-
-This module contains tests for the loading dialog behavior used in the oncutf application,
-specifically for the non-blocking progress dialog implemented via CustomMessageDialog.show_waiting().
-The tests validate:
-- Correct initialization and visibility of the dialog
-- Dynamic updates of progress bar values and ranges
-- Signal-based integration with background workers (e.g., FakeWorker)
-- Proper closure of the dialog upon completion
-- Modal behavior and safe event handling
-These tests ensure that the loading dialog provides responsive and reliable user feedback
-during asynchronous operations like metadata scanning.
-"""
-
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 #!/usr/bin/python3
-# coding: utf-8
 
 """
 Module: test_loading_dialog.py
@@ -49,8 +25,7 @@ from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
 
 class FakeWorker(QObject):
-    """A fake worker with progressed and finished signals to simulate metadata loading.
-    """
+    """A fake worker with progressed and finished signals to simulate metadata loading."""
 
     progressed = pyqtSignal(int, int)  # emit(value, total)
     finished = pyqtSignal()
@@ -58,8 +33,7 @@ class FakeWorker(QObject):
 
 @pytest.fixture
 def parent_widget(qtbot):
-    """A simple parent QWidget for dialogs.
-    """
+    """A simple parent QWidget for dialogs."""
     widget = QWidget()
     qtbot.addWidget(widget)
     widget.show()
@@ -68,8 +42,7 @@ def parent_widget(qtbot):
 
 @pytest.fixture
 def dialog(qtbot, parent_widget):
-    """Create a non-modal waiting dialog using show_waiting.
-    """
+    """Create a non-modal waiting dialog using show_waiting."""
     dlg = CustomMessageDialog.show_waiting(parent_widget, message="Loading...")
     qtbot.addWidget(dlg)
     assert dlg.progress_bar is not None, "Progress bar should be initialized"

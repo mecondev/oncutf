@@ -1,33 +1,4 @@
-"""Module: test_custom_msgdialog.py
-
-Author: Michael Economou
-Date: 2025-05-09
-
-This module contains unit tests for the CustomMessageDialog class used in the oncutf application.
-CustomMessageDialog is a styled and flexible alternative to the standard QMessageBox, supporting:
-- Modal and non-modal dialogs
-- Progress bar display for long-running operations
-- Cancel via Escape key
-- Custom question and conflict dialogs
-Tests in this module cover:
-- Dialog creation and visibility
-- Escape key cancellation behavior
-- Progress bar value updates
-- Static dialogs for questions and information
-- File conflict resolution options
-- Application modality settings
-- Callback triggering (e.g., accept on cancel)
-These tests ensure consistent and reliable user interaction in dialog-based flows within the application.
-"""
-
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 #!/usr/bin/python3
-# coding: utf-8
 
 """
 Module: test_custom_msgdialog.py
@@ -51,7 +22,6 @@ Tests in this module cover:
 
 These tests ensure consistent and reliable user interaction in dialog-based flows within the application.
 """
-
 
 import os
 
@@ -122,7 +92,9 @@ def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
 
 def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(
-        CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Overwrite")
+        CustomMessageDialog,
+        "exec_",
+        lambda self: setattr(self, "selected", "Overwrite"),
     )
     result = CustomMessageDialog.rename_conflict_dialog(QWidget(), "example.txt")
     assert result == "overwrite"

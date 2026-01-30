@@ -43,7 +43,10 @@ def calculate_splitter_sizes_from_ratios(
                 redistributed = 0
                 for j in range(len(sizes)):
                     if j != i and sizes[j] > (min_sizes[j] if min_sizes else 0):
-                        reduction = min(deficit - redistributed, sizes[j] - (min_sizes[j] if min_sizes else 0))
+                        reduction = min(
+                            deficit - redistributed,
+                            sizes[j] - (min_sizes[j] if min_sizes else 0),
+                        )
                         sizes[j] -= reduction
                         redistributed += reduction
                         if redistributed >= deficit:

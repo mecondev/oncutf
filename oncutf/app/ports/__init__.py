@@ -24,7 +24,11 @@ from oncutf.app.ports.service_registry import (
     get_service_registry,
 )
 from oncutf.app.ports.ui_update import UIUpdatePort
-from oncutf.app.ports.user_interaction import ProgressReporter, StatusReporter, UserDialogPort
+from oncutf.app.ports.user_interaction import (
+    ProgressReporter,
+    StatusReporter,
+    UserDialogPort,
+)
 from oncutf.domain.ports import (
     FilesystemServiceProtocol,
     HashServiceProtocol,

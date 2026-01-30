@@ -20,7 +20,9 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from oncutf.core.metadata.metadata_simplification_service import get_metadata_simplification_service
+from oncutf.core.metadata.metadata_simplification_service import (
+    get_metadata_simplification_service,
+)
 from oncutf.ui.widgets.metadata_tree.model import (
     EXTENDED_ONLY_PATTERNS,
     FieldStatus,
@@ -121,7 +123,11 @@ class MetadataTreeService:
         key_lower = key.lower()
 
         # File-related metadata
-        if key_lower.startswith("file") or key_lower in {"rotation", "directory", "sourcefile"}:
+        if key_lower.startswith("file") or key_lower in {
+            "rotation",
+            "directory",
+            "sourcefile",
+        }:
             return "File Info"
 
         # Camera Settings - Critical for photography/videography
@@ -229,7 +235,14 @@ class MetadataTreeService:
         # Lens Information
         if any(
             term in key_lower
-            for term in ["lens", "zoom", "focus", "distortion", "vignetting", "chromatic"]
+            for term in [
+                "lens",
+                "zoom",
+                "focus",
+                "distortion",
+                "vignetting",
+                "chromatic",
+            ]
         ):
             return "Lens Info"
 
@@ -243,7 +256,16 @@ class MetadataTreeService:
         # Technical/System
         if any(
             term in key_lower
-            for term in ["version", "software", "firmware", "make", "model", "serial", "uuid", "id"]
+            for term in [
+                "version",
+                "software",
+                "firmware",
+                "make",
+                "model",
+                "serial",
+                "uuid",
+                "id",
+            ]
         ):
             return "Technical Info"
 

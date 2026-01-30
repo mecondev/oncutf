@@ -13,7 +13,9 @@ from oncutf.utils.filesystem.file_status_helpers import get_metadata_value
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.ui.behaviors.metadata_edit.metadata_edit_behavior import MetadataEditBehavior
+    from oncutf.ui.behaviors.metadata_edit.metadata_edit_behavior import (
+        MetadataEditBehavior,
+    )
 
 logger = get_cached_logger(__name__)
 
@@ -69,9 +71,7 @@ class RotationHandler:
         if self._widget._direct_loader:
             try:
                 # Set rotation to 0
-                self._widget._direct_loader.set_metadata_value(
-                    file_item.full_path, key_path, "0"
-                )
+                self._widget._direct_loader.set_metadata_value(file_item.full_path, key_path, "0")
 
                 # Update tree display via behavior method (allows test mocking)
                 self._behavior._update_tree_item_value(key_path, "0")
@@ -120,9 +120,7 @@ class RotationHandler:
         # Update metadata in staging
         selected_files = self._widget._get_current_selection()
         for file_item in selected_files:
-            metadata_service.staging_manager.stage_change(
-                file_item.full_path, key_path, new_value
-            )
+            metadata_service.staging_manager.stage_change(file_item.full_path, key_path, new_value)
             file_item.metadata_status = "modified"
 
         # Update the file icon status immediately

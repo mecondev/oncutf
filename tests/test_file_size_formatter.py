@@ -1,39 +1,3 @@
-from oncutf.utils.filesystem.file_size_formatter import (
-    FileSizeFormatter,
-    format_file_size_system_compatible,
-)
-
-
-def test_file_size_formatter_basic():
-    f = FileSizeFormatter(use_binary=True, use_locale=False, use_legacy_labels=False)
-    assert f.format_size(0) == "0 B"
-    assert f.format_size(1024) in ("1 KiB", "1 KiB")
-
-
-def test_file_size_formatter_decimal():
-    f = FileSizeFormatter(use_binary=False, use_locale=False)
-    assert f.format_size(1500).startswith("1.5 ")
-
-
-def test_format_file_size_system_compatible():
-    out = format_file_size_system_compatible(1024)
-    # Should return a string with a unit suffix
-    assert isinstance(out, str) and len(out) > 2
-
-
-def test_get_decimal_separator_locale():
-    # Temporarily try to set a known locale if available
-    f = FileSizeFormatter(use_binary=False, use_locale=True)
-    sep = f.get_decimal_separator()
-    assert sep in (".", ",")
-
-
-def test_format_file_size_uses_default():
-    # format_file_size_system_compatible uses system-compatible formatter
-    out = format_file_size_system_compatible(1234)
-    assert isinstance(out, str)
-
-
 #!/usr/bin/env python3
 """
 Module: test_file_size_formatter.py
@@ -46,15 +10,14 @@ Test cases for the FileSizeFormatter utility.
 Tests cross-platform file size formatting with various units and locales.
 """
 
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import sys
 import unittest
 from pathlib import Path
+
+from oncutf.utils.filesystem.file_size_formatter import (
+    FileSizeFormatter,
+    format_file_size_system_compatible,
+)
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent

@@ -53,21 +53,57 @@ FIELD_SUPPORT_MAP: dict[str, list[str]] = {
 
 # File extension sets
 IMAGE_EXTENSIONS = {
-    "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif",
-    "webp", "heic", "raw", "cr2", "nef", "arw",
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "bmp",
+    "tiff",
+    "tif",
+    "webp",
+    "heic",
+    "raw",
+    "cr2",
+    "nef",
+    "arw",
 }
 
 VIDEO_EXTENSIONS = {
-    "mp4", "avi", "mkv", "mov", "wmv", "flv",
-    "webm", "m4v", "3gp", "mpg", "mpeg",
+    "mp4",
+    "avi",
+    "mkv",
+    "mov",
+    "wmv",
+    "flv",
+    "webm",
+    "m4v",
+    "3gp",
+    "mpg",
+    "mpeg",
 }
 
 AUDIO_EXTENSIONS = {
-    "mp3", "flac", "wav", "ogg", "aac", "m4a", "wma", "opus",
+    "mp3",
+    "flac",
+    "wav",
+    "ogg",
+    "aac",
+    "m4a",
+    "wma",
+    "opus",
 }
 
 DOCUMENT_EXTENSIONS = {
-    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "odt",
+    "ods",
+    "odp",
 }
 
 
@@ -96,9 +132,7 @@ class FieldCompatibilityChecker:
         """
         self._metadata_cache = cache
 
-    def check_field_compatibility(
-        self, selected_files: list[FileItem], field_name: str
-    ) -> bool:
+    def check_field_compatibility(self, selected_files: list[FileItem], field_name: str) -> bool:
         """Check if all selected files support a specific metadata field.
 
         Args:
@@ -289,7 +323,9 @@ class FieldCompatibilityChecker:
 _field_compatibility_checker: FieldCompatibilityChecker | None = None
 
 
-def get_field_compatibility_checker(metadata_cache: Any = None) -> FieldCompatibilityChecker:
+def get_field_compatibility_checker(
+    metadata_cache: Any = None,
+) -> FieldCompatibilityChecker:
     """Get or create the field compatibility checker singleton.
 
     Args:

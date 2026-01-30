@@ -37,7 +37,10 @@ from typing import ClassVar
 
 from PyQt5.QtWidgets import QWidget
 
-from oncutf.ui.widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
+from oncutf.ui.widgets.progress_widget import (
+    ProgressWidget,
+    create_size_based_progress_widget,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -86,7 +89,10 @@ class ProgressManager:
         elif self.operation_type == "metadata":
             # Metadata operations: count-based with optional size tracking
             self.progress_widget = ProgressWidget(
-                parent=self.parent, progress_mode="count", show_size_info=True, show_time_info=True
+                parent=self.parent,
+                progress_mode="count",
+                show_size_info=True,
+                show_time_info=True,
             )
         elif self.operation_type == "copy":
             # Copy operations: size-based progress (future)

@@ -258,7 +258,12 @@ class TextRemovalModule(BaseRenameModule):
         """
         self.text_input.setText(data.get("text_to_remove", ""))
         position = data.get("position", "End of name")
-        if position in ["End of name", "Start of name", "Anywhere (first)", "Anywhere (all)"]:
+        if position in [
+            "End of name",
+            "Start of name",
+            "Anywhere (first)",
+            "Anywhere (all)",
+        ]:
             self.position_combo.setCurrentText(position)
         self.case_sensitive_check.setChecked(data.get("case_sensitive", False))
 
@@ -370,7 +375,9 @@ class TextRemovalModule(BaseRenameModule):
         return len(text_to_remove) > 0
 
     @staticmethod
-    def apply_from_data(data: dict[str, Any], file_item: Any, _index: int, _metadata_cache: Any = None) -> str:
+    def apply_from_data(
+        data: dict[str, Any], file_item: Any, _index: int, _metadata_cache: Any = None
+    ) -> str:
         """Apply text removal to a filename based on configuration data.
 
         Args:

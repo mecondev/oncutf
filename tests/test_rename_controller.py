@@ -7,14 +7,9 @@ Unit tests for RenameController.
 Tests the controller's orchestration logic without Qt dependencies.
 """
 
-import warnings
 from datetime import datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
 
@@ -204,7 +199,11 @@ class TestGeneratePreview:
     """Tests for generate_preview method."""
 
     def test_generate_preview_success(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test successful preview generation."""
         # Setup mock
@@ -266,7 +265,11 @@ class TestGeneratePreview:
         assert "Rename engine not initialized" in result["errors"]
 
     def test_generate_preview_no_changes(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test preview generation with no changes."""
         # Setup mock
@@ -287,7 +290,11 @@ class TestGeneratePreview:
         assert len(result["name_pairs"]) == 0
 
     def test_generate_preview_exception_handling(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test preview generation handles exceptions."""
         # Setup mock to raise exception
@@ -360,7 +367,10 @@ class TestValidatePreview:
             unchanged_count=0,
             items=[
                 MockValidationItem(
-                    "file1.txt", "invalid<>.txt", is_valid=False, error_message="Invalid characters"
+                    "file1.txt",
+                    "invalid<>.txt",
+                    is_valid=False,
+                    error_message="Invalid characters",
                 ),
                 MockValidationItem("file2.jpg", "valid.jpg", is_valid=True),
                 MockValidationItem("file3.pdf", "valid.jpg", is_valid=True, is_duplicate=True),
@@ -404,7 +414,11 @@ class TestExecuteRename:
     """Tests for execute_rename method."""
 
     def test_execute_rename_success(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test successful rename execution."""
         # Setup mocks
@@ -473,7 +487,11 @@ class TestExecuteRename:
         assert "No files provided" in result["errors"]
 
     def test_execute_rename_no_changes(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test rename execution with no changes."""
         # Setup mock
@@ -496,7 +514,11 @@ class TestExecuteRename:
         assert "No changes detected" in result["errors"]
 
     def test_execute_rename_validation_errors(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test rename execution with validation errors."""
         # Setup mocks
@@ -522,7 +544,11 @@ class TestExecuteRename:
         assert "invalid filenames" in result["errors"][0]
 
     def test_execute_rename_partial_failure(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test rename execution with partial failures."""
         # Setup mocks
@@ -541,7 +567,10 @@ class TestExecuteRename:
                 MockRenameResult("/test/file1.txt", "/test/new1.txt", success=True),
                 MockRenameResult("/test/file2.jpg", "/test/new2.jpg", success=True),
                 MockRenameResult(
-                    "/test/file3.pdf", "/test/new3.pdf", success=False, error="Permission denied"
+                    "/test/file3.pdf",
+                    "/test/new3.pdf",
+                    success=False,
+                    error="Permission denied",
                 ),
             ],
         )
@@ -592,7 +621,11 @@ class TestExecuteRename:
         assert "Rename engine not initialized" in result["errors"]
 
     def test_execute_rename_exception_handling(
-        self, rename_controller, sample_file_items, sample_modules_data, sample_post_transform
+        self,
+        rename_controller,
+        sample_file_items,
+        sample_modules_data,
+        sample_post_transform,
     ):
         """Test rename execution handles exceptions."""
         rename_controller._unified_rename_engine.generate_preview.side_effect = Exception(

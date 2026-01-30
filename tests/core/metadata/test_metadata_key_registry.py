@@ -18,9 +18,7 @@ class TestKeyMapping:
 
     def test_create_basic_mapping(self):
         """Test creating basic key mapping."""
-        mapping = KeyMapping(
-            original="EXIF:DateTimeOriginal", simplified="Date Original"
-        )
+        mapping = KeyMapping(original="EXIF:DateTimeOriginal", simplified="Date Original")
         assert mapping.original == "EXIF:DateTimeOriginal"
         assert mapping.simplified == "Date Original"
         assert mapping.semantic is None
@@ -123,9 +121,7 @@ class TestMetadataKeyRegistry:
         registry.load_semantic_aliases()
 
         available = ["EXIF:DateTimeOriginal", "EXIF:Model"]
-        result = registry.resolve_key_with_fallback(
-            "Creation Date", available
-        )
+        result = registry.resolve_key_with_fallback("Creation Date", available)
         assert result == "EXIF:DateTimeOriginal"
 
     def test_resolve_semantic_alias_priority(self):
@@ -149,24 +145,18 @@ class TestMetadataKeyRegistry:
 
         # Both available - should pick higher priority
         available = ["EXIF:DateTimeOriginal", "XMP:CreateDate"]
-        result = registry.resolve_key_with_fallback(
-            "Creation Date", available
-        )
+        result = registry.resolve_key_with_fallback("Creation Date", available)
         assert result == "EXIF:DateTimeOriginal"
 
         # Only lower priority available
         available = ["XMP:CreateDate"]
-        result = registry.resolve_key_with_fallback(
-            "Creation Date", available
-        )
+        result = registry.resolve_key_with_fallback("Creation Date", available)
         assert result == "XMP:CreateDate"
 
     def test_resolve_not_found(self):
         """Test resolving non-existent key returns None."""
         registry = MetadataKeyRegistry()
-        result = registry.resolve_key_with_fallback(
-            "NonExistent", ["Key1", "Key2"]
-        )
+        result = registry.resolve_key_with_fallback("NonExistent", ["Key1", "Key2"])
         assert result is None
 
     def test_load_default_semantic_aliases(self):
@@ -272,12 +262,8 @@ class TestMetadataKeyRegistry:
     def test_export_import_dict(self):
         """Test export/import to dictionary."""
         registry = MetadataKeyRegistry()
-        registry.add_mapping(
-            "EXIF:Model", "Camera Model", priority=5, source="user"
-        )
-        registry.add_mapping(
-            "EXIF:Make", "Camera Make", priority=3, source="user"
-        )
+        registry.add_mapping("EXIF:Model", "Camera Model", priority=5, source="user")
+        registry.add_mapping("EXIF:Make", "Camera Make", priority=3, source="user")
 
         # Export
         data = registry.export_to_dict()
@@ -399,9 +385,7 @@ class TestMetadataKeyRegistry:
     def test_semantic_index_cleanup(self):
         """Test semantic index is cleaned up when mapping removed."""
         registry = MetadataKeyRegistry()
-        registry.add_mapping(
-            "Key1", "K1", semantic="Semantic1", source="semantic"
-        )
+        registry.add_mapping("Key1", "K1", semantic="Semantic1", source="semantic")
 
         assert registry.get_semantic_count() == 1
 
@@ -445,9 +429,7 @@ class TestEdgeCases:
             "Creation Date",
             semantic="Creation Date",
         )
-        registry.add_mapping(
-            "XMP:CreateDate", "Creation Date", semantic="Creation Date"
-        )
+        registry.add_mapping("XMP:CreateDate", "Creation Date", semantic="Creation Date")
 
         assert registry.get_semantic_count() == 1
         assert len(registry._semantic_index["Creation Date"]) == 2

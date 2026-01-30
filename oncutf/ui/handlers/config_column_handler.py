@@ -58,7 +58,10 @@ class ConfigColumnHandler:
     def ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
         # Use the original FileTableView column configuration logic instead of ColumnManager
-        if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view.model():
+        if (
+            hasattr(self.main_window, "file_table_view")
+            and self.main_window.file_table_view.model()
+        ):
             # Trigger the original, sophisticated column configuration
             if hasattr(self.main_window.file_table_view, "_column_mgmt_behavior"):
                 self.main_window.file_table_view._column_mgmt_behavior.configure_columns()
@@ -73,7 +76,10 @@ class ConfigColumnHandler:
         # Configure other table views with ColumnManager (they don't have the sophisticated logic)
         # Note: MetadataTreeView handles its own column configuration, so we skip it here
 
-        if hasattr(self.main_window, "preview_tables_view") and self.main_window.preview_tables_view:
+        if (
+            hasattr(self.main_window, "preview_tables_view")
+            and self.main_window.preview_tables_view
+        ):
             # Configure preview tables
             if hasattr(self.main_window.preview_tables_view, "old_names_table"):
                 self.main_window.column_manager.configure_table_columns(
@@ -107,7 +113,9 @@ class ConfigColumnHandler:
             # Core managers
             self.main_window.context.register_manager("table", self.main_window.table_manager)
             self.main_window.context.register_manager("metadata", self.main_window.metadata_manager)
-            self.main_window.context.register_manager("selection", self.main_window.selection_manager)
+            self.main_window.context.register_manager(
+                "selection", self.main_window.selection_manager
+            )
             self.main_window.context.register_manager("rename", self.main_window.rename_manager)
             self.main_window.context.register_manager("preview", self.main_window.preview_manager)
 
@@ -116,25 +124,41 @@ class ConfigColumnHandler:
             self.main_window.context.register_manager("status", self.main_window.status_manager)
             self.main_window.context.register_manager("shortcut", self.main_window.shortcut_manager)
             self.main_window.context.register_manager("splitter", self.main_window.splitter_manager)
-            self.main_window.context.register_manager("window_config", self.main_window.window_config_manager)
+            self.main_window.context.register_manager(
+                "window_config", self.main_window.window_config_manager
+            )
             self.main_window.context.register_manager("column", self.main_window.column_manager)
 
             # File operations managers
-            self.main_window.context.register_manager("file_load", self.main_window.file_load_manager)
-            self.main_window.context.register_manager("file_operations", self.main_window.file_operations_manager)
-            self.main_window.context.register_manager("file_validation", self.main_window.file_validation_manager)
+            self.main_window.context.register_manager(
+                "file_load", self.main_window.file_load_manager
+            )
+            self.main_window.context.register_manager(
+                "file_operations", self.main_window.file_operations_manager
+            )
+            self.main_window.context.register_manager(
+                "file_validation", self.main_window.file_validation_manager
+            )
 
             # System managers
             self.main_window.context.register_manager("db", self.main_window.db_manager)
             self.main_window.context.register_manager("backup", self.main_window.backup_manager)
-            self.main_window.context.register_manager("rename_history", self.main_window.rename_history_manager)
+            self.main_window.context.register_manager(
+                "rename_history", self.main_window.rename_history_manager
+            )
 
             # Utility managers
             self.main_window.context.register_manager("utility", self.main_window.utility_manager)
-            self.main_window.context.register_manager("event_handler", self.main_window.event_handler_manager)
+            self.main_window.context.register_manager(
+                "event_handler", self.main_window.event_handler_manager
+            )
             self.main_window.context.register_manager("drag", self.main_window.drag_manager)
-            self.main_window.context.register_manager("drag_cleanup", self.main_window.drag_cleanup_manager)
-            self.main_window.context.register_manager("initialization", self.main_window.initialization_manager)
+            self.main_window.context.register_manager(
+                "drag_cleanup", self.main_window.drag_cleanup_manager
+            )
+            self.main_window.context.register_manager(
+                "initialization", self.main_window.initialization_manager
+            )
 
             # Service layer
             self.main_window.context.register_manager("app_service", self.main_window.app_service)
@@ -142,10 +166,14 @@ class ConfigColumnHandler:
             self.main_window.context.register_manager("config", self.main_window.config_manager)
 
             # Coordinators
-            self.main_window.context.register_manager("signal_coordinator", self.main_window.signal_coordinator)
+            self.main_window.context.register_manager(
+                "signal_coordinator", self.main_window.signal_coordinator
+            )
 
             # Engines
-            self.main_window.context.register_manager("rename_engine", self.main_window.unified_rename_engine)
+            self.main_window.context.register_manager(
+                "rename_engine", self.main_window.unified_rename_engine
+            )
 
             logger.info(
                 "[ConfigColumnHandler] Registered %d managers in QtAppContext",

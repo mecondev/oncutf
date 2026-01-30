@@ -151,7 +151,10 @@ class EditOperations:
 
         """
         try:
-            from oncutf.core.metadata import get_metadata_command_manager, get_metadata_service
+            from oncutf.core.metadata import (
+                get_metadata_command_manager,
+                get_metadata_service,
+            )
 
             command_manager = get_metadata_command_manager()
             metadata_service = get_metadata_service()
@@ -252,9 +255,7 @@ class EditOperations:
                 key_path,
                 new_value,
             )
-            metadata_service.staging_manager.stage_change(
-                file_item.full_path, key_path, new_value
-            )
+            metadata_service.staging_manager.stage_change(file_item.full_path, key_path, new_value)
             success_count += 1
             file_item.metadata_status = "modified"
 

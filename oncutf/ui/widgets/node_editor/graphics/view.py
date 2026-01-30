@@ -40,7 +40,10 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import QApplication, QGraphicsView
 
 from oncutf.ui.widgets.node_editor.utils.helpers import dump_exception
-from oncutf.ui.widgets.node_editor.utils.qt_helpers import is_ctrl_pressed, is_shift_pressed
+from oncutf.ui.widgets.node_editor.utils.qt_helpers import (
+    is_ctrl_pressed,
+    is_shift_pressed,
+)
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QGraphicsItem, QWidget
@@ -61,6 +64,7 @@ EDGE_DRAG_START_THRESHOLD = 50  # Distance threshold for edge drag
 EDGE_REROUTING_UE = True  # Enable UnrealEngine style rerouting
 EDGE_SNAPPING_RADIUS = 24  # Socket snapping distance
 EDGE_SNAPPING = True  # Enable socket snapping
+
 
 class QDMGraphicsView(QGraphicsView):
     """Graphics view managing node editor interactions.
@@ -339,10 +343,9 @@ class QDMGraphicsView(QGraphicsView):
                 super().mousePressEvent(fake_event)
                 return
 
-        if hasattr(item, "node"):
-            if self.mode == MODE_NOOP:
-                self.mode = MODE_NODE_DRAG
-                self.edgeIntersect.enter_state(item.node)
+        if hasattr(item, "node") and self.mode == MODE_NOOP:
+            self.mode = MODE_NODE_DRAG
+            self.edgeIntersect.enter_state(item.node)
 
         if self.is_snapping_enabled(event):
             item = self.snapping.getSnappedSocketItem(event)

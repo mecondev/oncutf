@@ -46,7 +46,10 @@ if TYPE_CHECKING:
     from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
     from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
     from oncutf.ui.widgets.interactive_header import InteractiveHeader
-    from oncutf.ui.widgets.metadata_tree.view import MetadataProxyModel, MetadataTreeView
+    from oncutf.ui.widgets.metadata_tree.view import (
+        MetadataProxyModel,
+        MetadataTreeView,
+    )
     from oncutf.ui.widgets.preview_tables_view import PreviewTablesView
     from oncutf.ui.widgets.rename_modules_area import RenameModulesArea
     from oncutf.ui.widgets.thumbnail_viewport import ThumbnailViewportWidget

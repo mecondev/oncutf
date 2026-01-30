@@ -14,47 +14,80 @@ from pathlib import Path
 PATTERNS = [
     # Qt attribute access
     (r"Qt\.WA_\w+.*# type: ignore$", "# type: ignore[attr-defined]  # Qt widget attribute"),
-    (r"Qt\.(AlignCenter|AlignLeft|AlignRight|AlignTop|AlignBottom|AlignVCenter|AlignHCenter).*# type: ignore$", "# type: ignore[arg-type]  # Qt alignment flag"),
-    (r"Qt\.(LeftButton|RightButton|MiddleButton).*# type: ignore$", "# type: ignore[comparison-overlap]  # Qt mouse button"),
-    (r"Qt\.(PointingHandCursor|WaitCursor|ArrowCursor).*# type: ignore$", "# type: ignore[attr-defined]  # Qt cursor"),
-    (r"Qt\.(FramelessWindowHint|WindowStaysOnTopHint|ToolTip|Dialog).*# type: ignore$", "# type: ignore[attr-defined]  # Qt window flags"),
-    (r"Qt\.(ScrollBarAlways|ScrollBarAsNeeded|ScrollBarAlwaysOff).*# type: ignore$", "# type: ignore[attr-defined]  # Qt scrollbar policy"),
+    (
+        r"Qt\.(AlignCenter|AlignLeft|AlignRight|AlignTop|AlignBottom|AlignVCenter|AlignHCenter).*# type: ignore$",
+        "# type: ignore[arg-type]  # Qt alignment flag",
+    ),
+    (
+        r"Qt\.(LeftButton|RightButton|MiddleButton).*# type: ignore$",
+        "# type: ignore[comparison-overlap]  # Qt mouse button",
+    ),
+    (
+        r"Qt\.(PointingHandCursor|WaitCursor|ArrowCursor).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt cursor",
+    ),
+    (
+        r"Qt\.(FramelessWindowHint|WindowStaysOnTopHint|ToolTip|Dialog).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt window flags",
+    ),
+    (
+        r"Qt\.(ScrollBarAlways|ScrollBarAsNeeded|ScrollBarAlwaysOff).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt scrollbar policy",
+    ),
     (r"Qt\.(transparent|white|black).*# type: ignore$", "# type: ignore[attr-defined]  # Qt color"),
-    (r"Qt\.(UserRole|DisplayRole|DecorationRole).*# type: ignore$", "# type: ignore[attr-defined]  # Qt item role"),
+    (
+        r"Qt\.(UserRole|DisplayRole|DecorationRole).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt item role",
+    ),
     (r"Qt\.(ItemIsEnabled).*# type: ignore$", "# type: ignore[attr-defined]  # Qt item flags"),
-    (r"Qt\.(StrongFocus|NoFocus).*# type: ignore$", "# type: ignore[attr-defined]  # Qt focus policy"),
-    (r"Qt\.(NoModifier|AscendingOrder|DescendingOrder).*# type: ignore$", "# type: ignore[attr-defined]  # Qt enum"),
+    (
+        r"Qt\.(StrongFocus|NoFocus).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt focus policy",
+    ),
+    (
+        r"Qt\.(NoModifier|AscendingOrder|DescendingOrder).*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt enum",
+    ),
     (r"Qt\.(Key_\w+).*# type: ignore$", "# type: ignore[attr-defined]  # Qt key constants"),
     (r"QEvent\.\w+.*# type: ignore$", "# type: ignore[attr-defined]  # QEvent type"),
-
     # app.primaryScreen(), app.screens()
-    (r"app\.(primaryScreen|screens|overrideCursor)\(\).*# type: ignore$", "# type: ignore[attr-defined]  # QApplication method"),
-
+    (
+        r"app\.(primaryScreen|screens|overrideCursor)\(\).*# type: ignore$",
+        "# type: ignore[attr-defined]  # QApplication method",
+    ),
     # sys._MEIPASS
     (r"sys\._MEIPASS.*# type: ignore$", "# type: ignore[attr-defined]  # PyInstaller attribute"),
-
     # logger patching
     (r"logger\._patched_.*# type: ignore$", "# type: ignore[attr-defined]  # Dynamic attribute"),
-
     # Widget methods that take Qt flags
     (r"\.setAlignment\(.*# type: ignore$", "# type: ignore[arg-type]  # Qt alignment argument"),
-    (r"\.addWidget\(.*Qt\.Align.*# type: ignore$", "# type: ignore[arg-type]  # Qt alignment argument"),
+    (
+        r"\.addWidget\(.*Qt\.Align.*# type: ignore$",
+        "# type: ignore[arg-type]  # Qt alignment argument",
+    ),
     (r"\.setWindowFlags\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt window flags"),
     (r"\.setAttribute\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt widget attribute"),
     (r"\.setCursor\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt cursor"),
     (r"\.setFocusPolicy\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt focus policy"),
-    (r"\.setVerticalScrollBarPolicy\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt scrollbar policy"),
-    (r"\.setHorizontalScrollBarPolicy\(.*# type: ignore$", "# type: ignore[attr-defined]  # Qt scrollbar policy"),
+    (
+        r"\.setVerticalScrollBarPolicy\(.*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt scrollbar policy",
+    ),
+    (
+        r"\.setHorizontalScrollBarPolicy\(.*# type: ignore$",
+        "# type: ignore[attr-defined]  # Qt scrollbar policy",
+    ),
     (r"\.fill\(Qt\..*# type: ignore$", "# type: ignore[attr-defined]  # Qt color"),
     (r"\.setData\(.*Qt\.UserRole.*# type: ignore$", "# type: ignore[attr-defined]  # Qt item role"),
     (r"\.setFlags\(.*Qt\..*# type: ignore$", "# type: ignore[attr-defined]  # Qt item flags"),
     (r"\.setForeground\(.*# type: ignore$", "# type: ignore[arg-type]  # QColor argument"),
-
     # Event handling
-    (r"event\.button\(\) ==.*# type: ignore$", "# type: ignore[comparison-overlap]  # Qt button comparison"),
+    (
+        r"event\.button\(\) ==.*# type: ignore$",
+        "# type: ignore[comparison-overlap]  # Qt button comparison",
+    ),
     (r"event\.buttons\(\) &.*# type: ignore$", "# type: ignore[operator]  # Qt button bitwise op"),
     (r"event\.key\(\).*# type: ignore$", "# type: ignore[attr-defined]  # Qt key constant"),
-
     # Other patterns
     (r"overrideCursor\(\).*# type: ignore$", "# type: ignore[attr-defined]  # QApplication method"),
     (r"is_effective_data\(.*# type: ignore$", "# type: ignore[attr-defined]  # Dynamic attribute"),
@@ -78,7 +111,7 @@ def process_file(filepath: Path, dry_run: bool = False) -> tuple[int, int]:
         matches = re.findall(pattern, content, re.MULTILINE)
         if matches:
             # Replace pattern - use simple string replacement to avoid regex escape issues
-            lines = content.split('\n')
+            lines = content.split("\n")
             new_lines = []
             for line in lines:
                 if re.search(pattern, line):
@@ -88,7 +121,7 @@ def process_file(filepath: Path, dry_run: bool = False) -> tuple[int, int]:
                     lines_changed += 1
                 else:
                     new_lines.append(line)
-            content = '\n'.join(new_lines)
+            content = "\n".join(new_lines)
 
     # Count remaining generic type:ignore
     remaining = len(re.findall(r"# type: ignore$", content, re.MULTILINE))

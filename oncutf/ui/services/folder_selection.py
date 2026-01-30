@@ -36,6 +36,8 @@ def select_folder(
         Selected folder path (empty string if cancelled)
 
     """
-    from oncutf.ui.helpers.multiscreen_helper import get_existing_directory_on_parent_screen
+    from oncutf.ui.helpers.multiscreen_helper import (
+        get_existing_directory_on_parent_screen,
+    )
 
     return get_existing_directory_on_parent_screen(parent, title, start_dir)

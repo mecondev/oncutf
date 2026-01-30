@@ -70,6 +70,7 @@ class NodeRegistry:
                     op_title = "My Node"
 
         """
+
         def decorator(node_class: type) -> type:
             """Register the node class and set its op_code attribute.
 
@@ -87,15 +88,16 @@ class NodeRegistry:
                 existing = cls._nodes[op_code].__name__
                 logger.error(
                     "Duplicate op_code %s: already registered to %s, cannot register %s",
-                    op_code, existing, node_class.__name__
+                    op_code,
+                    existing,
+                    node_class.__name__,
                 )
-                raise ValueError(
-                    f"OpCode {op_code} already registered to {existing}"
-                )
+                raise ValueError(f"OpCode {op_code} already registered to {existing}")
             cls._nodes[op_code] = node_class
             node_class.op_code = op_code
             logger.debug("Registered node: %s with op_code %s", node_class.__name__, op_code)
             return node_class
+
         return decorator
 
     @classmethod
@@ -114,11 +116,11 @@ class NodeRegistry:
             existing = cls._nodes[op_code].__name__
             logger.error(
                 "Duplicate op_code %s: already registered to %s, cannot register %s",
-                op_code, existing, node_class.__name__
+                op_code,
+                existing,
+                node_class.__name__,
             )
-            raise ValueError(
-                f"OpCode {op_code} already registered to {existing}"
-            )
+            raise ValueError(f"OpCode {op_code} already registered to {existing}")
         cls._nodes[op_code] = node_class
         node_class.op_code = op_code
         logger.debug("Registered node: %s with op_code %s", node_class.__name__, op_code)

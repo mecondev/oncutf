@@ -100,7 +100,8 @@ class HierarchicalComboBox(QComboBox):
             self.expand_category(first_category)
 
         logger.debug(
-            "[HierarchicalComboBox] Popup shown with proper expansion", extra={"dev_only": True}
+            "[HierarchicalComboBox] Popup shown with proper expansion",
+            extra={"dev_only": True},
         )
 
     def hidePopup(self):

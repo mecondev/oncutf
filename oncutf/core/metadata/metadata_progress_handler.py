@@ -111,7 +111,9 @@ class MetadataProgressHandler:
         try:
             from PyQt5.QtWidgets import QApplication
 
-            from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.filesystem.file_size_calculator import (
+                calculate_files_total_size,
+            )
 
             # Create dialog
             dialog = self.create_metadata_progress_dialog(is_extended, cancel_callback)
@@ -190,7 +192,9 @@ class MetadataProgressHandler:
         try:
             from PyQt5.QtWidgets import QApplication
 
-            from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
+            from oncutf.utils.filesystem.file_size_calculator import (
+                calculate_files_total_size,
+            )
 
             # Create dialog
             dialog = self.create_hash_progress_dialog(cancel_callback)

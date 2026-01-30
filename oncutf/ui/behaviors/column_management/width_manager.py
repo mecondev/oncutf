@@ -5,6 +5,7 @@ Handles width loading, saving, scheduling delayed saves, and width enforcement.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -91,17 +92,22 @@ class ColumnWidthManager:
 
         """
         try:
-            from oncutf.ui.helpers.layout_calculators import calculate_dynamic_filename_width
+            from oncutf.ui.helpers.layout_calculators import (
+                calculate_dynamic_filename_width,
+            )
             from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
             config_manager = get_app_config_manager()
             window_config = config_manager.get_category("window")
-            fixed_columns = window_config.get("file_table_fixed_columns", {
-                "color": 50,
-                "file_size": 85,
-                "type": 60,
-                "modified": 154,
-            })
+            fixed_columns = window_config.get(
+                "file_table_fixed_columns",
+                {
+                    "color": 50,
+                    "file_size": 85,
+                    "type": 60,
+                    "modified": 154,
+                },
+            )
 
             viewport = self._widget.viewport()
             if viewport:
@@ -124,7 +130,7 @@ class ColumnWidthManager:
             logger.debug(
                 "[WidthManager] Calculated dynamic filename width: %dpx (panel: %dpx)",
                 width,
-                panel_width
+                panel_width,
             )
             return width
 
@@ -180,9 +186,7 @@ class ColumnWidthManager:
         # Start new timer (7 seconds) via TimerManager
         self._config_save_timer_id = schedule_dialog_close(self._save_pending_changes, delay=7000)
 
-        logger.debug(
-            "[FileTable] Scheduled delayed save for '%s' width %dpx", column_key, width
-        )
+        logger.debug("[FileTable] Scheduled delayed save for '%s' width %dpx", column_key, width)
 
     def _save_pending_changes(self) -> None:
         """Save all pending column width changes to config."""

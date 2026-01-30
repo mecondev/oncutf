@@ -407,7 +407,9 @@ class MetadataExtractor:
 
         # Try validation if available
         try:
-            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import (
+                is_valid_filename_text,
+            )
 
             if is_valid_filename_text(cleaned):
                 return cleaned
@@ -417,7 +419,9 @@ class MetadataExtractor:
         # Try more aggressive cleaning if validation failed
         try:
             from oncutf.utils.naming.filename_validator import clean_filename_text
-            from oncutf.utils.naming.validate_filename_text import is_valid_filename_text
+            from oncutf.utils.naming.validate_filename_text import (
+                is_valid_filename_text,
+            )
 
             alt_cleaned = clean_filename_text(cleaned)
             if is_valid_filename_text(alt_cleaned):
@@ -451,7 +455,12 @@ class MetadataExtractor:
                 "last_modified_compact",
             ],
             "hash": ["hash_crc32"],
-            "metadata_keys": ["creation_date", "date", "DateTimeOriginal", "CreateDate"],
+            "metadata_keys": [
+                "creation_date",
+                "date",
+                "DateTimeOriginal",
+                "CreateDate",
+            ],
         }
         return category_fields.get(category, [])
 

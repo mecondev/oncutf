@@ -275,11 +275,9 @@ class RotationHandlers:
                                     self.parent_window.metadata_tree_view.modified_items_per_file,
                                 )
 
-                            existing_modifications = (
-                                self.parent_window.metadata_tree_view._scroll_behavior._get_from_path_dict(
-                                    file_item.full_path,
-                                    self.parent_window.metadata_tree_view.modified_items_per_file,
-                                )
+                            existing_modifications = self.parent_window.metadata_tree_view._scroll_behavior._get_from_path_dict(
+                                file_item.full_path,
+                                self.parent_window.metadata_tree_view.modified_items_per_file,
                             )
                             if existing_modifications is None:
                                 existing_modifications = set()
@@ -291,7 +289,8 @@ class RotationHandlers:
                             )
 
                             if hasattr(
-                                self.parent_window.metadata_tree_view, "_current_file_path"
+                                self.parent_window.metadata_tree_view,
+                                "_current_file_path",
                             ) and paths_equal(
                                 self.parent_window.metadata_tree_view._current_file_path,
                                 file_item.full_path,
@@ -313,7 +312,9 @@ class RotationHandlers:
                         status_msg = f"Set rotation to 0 deg for {modified_count} file(s)"
 
                     self.parent_window.set_status(
-                        status_msg, color=STATUS_COLORS["operation_success"], auto_reset=True
+                        status_msg,
+                        color=STATUS_COLORS["operation_success"],
+                        auto_reset=True,
                     )
 
                 logger.info(

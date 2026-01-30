@@ -22,7 +22,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from oncutf.config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
+from oncutf.config import (
+    EXTENDED_METADATA_SIZE_LIMIT_MB,
+    LARGE_FOLDER_WARNING_THRESHOLD,
+)
 from oncutf.core.hash.hash_manager import HashManager
 from oncutf.infra.db.database_manager import get_database_manager
 from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
@@ -368,7 +371,8 @@ class FileValidationManager:
                     # Update path in database
                     self.db_manager.get_or_create_path_id(file_path)  # This updates the path
                     logger.info(
-                        "[FileValidationManager] Updated path for moved file: %s", file_path
+                        "[FileValidationManager] Updated path for moved file: %s",
+                        file_path,
                     )
                     return moved_file, True  # Found by content, was moved
 
@@ -435,7 +439,12 @@ class FileValidationManager:
         Returns validation summary and recommendations.
         """
         if not files:
-            return {"proceed": True, "warnings": [], "file_count": 0, "total_size_mb": 0}
+            return {
+                "proceed": True,
+                "warnings": [],
+                "file_count": 0,
+                "total_size_mb": 0,
+            }
 
         # Calculate total size efficiently
         total_size_bytes = calculate_files_total_size(files)
@@ -480,7 +489,10 @@ class FileValidationManager:
         """Estimate operation time based on file count, size, and operation type."""
         # Base rates (conservative estimates for archival scenarios)
         rates = {
-            OperationType.METADATA_FAST: {"files_per_sec": 15, "bytes_per_sec": 80 * 1024 * 1024},
+            OperationType.METADATA_FAST: {
+                "files_per_sec": 15,
+                "bytes_per_sec": 80 * 1024 * 1024,
+            },
             OperationType.METADATA_EXTENDED: {
                 "files_per_sec": 5,
                 "bytes_per_sec": 30 * 1024 * 1024,
@@ -493,7 +505,10 @@ class FileValidationManager:
                 "files_per_sec": 100,
                 "bytes_per_sec": 1000 * 1024 * 1024,
             },
-            OperationType.FILE_LOADING: {"files_per_sec": 200, "bytes_per_sec": 2000 * 1024 * 1024},
+            OperationType.FILE_LOADING: {
+                "files_per_sec": 200,
+                "bytes_per_sec": 2000 * 1024 * 1024,
+            },
         }
 
         rate = rates.get(operation, rates[OperationType.FILE_LOADING])

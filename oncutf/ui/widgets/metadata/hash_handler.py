@@ -242,7 +242,11 @@ class HashHandler:
 
             # Show dialog
             result = CustomMessageDialog.question(
-                self._widget.parent_window, title, message, yes_text=yes_text, no_text="Cancel"
+                self._widget.parent_window,
+                title,
+                message,
+                yes_text=yes_text,
+                no_text="Cancel",
             )
 
             if result:

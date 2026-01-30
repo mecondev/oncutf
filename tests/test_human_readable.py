@@ -11,12 +11,6 @@ Note: Linux-specific tests are skipped on Windows.
 """
 
 import platform
-import warnings
-
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-
 import subprocess
 import sys
 from pathlib import Path
@@ -27,7 +21,7 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from oncutf.models.file_item import FileItem
+from oncutf.models.file_item import FileItem  # noqa: E402
 
 # Check if we're on Windows
 IS_WINDOWS = platform.system() == "Windows"
@@ -87,7 +81,12 @@ def format_size_our_way(size):
 def test_actual_files():
     """Test with actual files comparing our format vs system (Linux only)."""
     # Test with some larger files if available
-    test_paths = ["oncutf/config.py", "main.py", "oncutf/ui/main_window.py", "requirements.txt"]
+    test_paths = [
+        "oncutf/config.py",
+        "main.py",
+        "oncutf/ui/main_window.py",
+        "requirements.txt",
+    ]
 
     for filepath in test_paths:
         full_path = project_root / filepath

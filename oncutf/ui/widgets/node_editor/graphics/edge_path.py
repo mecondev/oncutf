@@ -79,9 +79,7 @@ class GraphicsEdgePathDirect(GraphicsEdgePathBase):
             QPainterPath with single line segment.
 
         """
-        path = QPainterPath(
-            QPointF(self.owner.pos_source[0], self.owner.pos_source[1])
-        )
+        path = QPainterPath(QPointF(self.owner.pos_source[0], self.owner.pos_source[1]))
         path.lineTo(self.owner.pos_destination[0], self.owner.pos_destination[1])
         return path
 
@@ -117,17 +115,13 @@ class GraphicsEdgePathBezier(GraphicsEdgePathBase):
                 cpx_s *= -1
 
                 cpy_d = (
-                    (s[1] - d[1])
-                    / math.fabs((s[1] - d[1]) if (s[1] - d[1]) != 0 else 0.00001)
+                    (s[1] - d[1]) / math.fabs((s[1] - d[1]) if (s[1] - d[1]) != 0 else 0.00001)
                 ) * EDGE_CP_ROUNDNESS
                 cpy_s = (
-                    (d[1] - s[1])
-                    / math.fabs((d[1] - s[1]) if (d[1] - s[1]) != 0 else 0.00001)
+                    (d[1] - s[1]) / math.fabs((d[1] - s[1]) if (d[1] - s[1]) != 0 else 0.00001)
                 ) * EDGE_CP_ROUNDNESS
 
-        path = QPainterPath(
-            QPointF(self.owner.pos_source[0], self.owner.pos_source[1])
-        )
+        path = QPainterPath(QPointF(self.owner.pos_source[0], self.owner.pos_source[1]))
         path.cubicTo(
             s[0] + cpx_s,
             s[1] + cpy_s,
@@ -249,9 +243,7 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
         path = QPainterPath(QPointF(sx, sy))
 
         if abs(dist) > NODE_DISTANCE:
-            curvature = max(
-                EDGE_CURVATURE, (EDGE_CURVATURE * abs(dist)) / EDGE_IBCP_ROUNDNESS
-            )
+            curvature = max(EDGE_CURVATURE, (EDGE_CURVATURE * abs(dist)) / EDGE_IBCP_ROUNDNESS)
 
             node_sdist = (-NODE_DISTANCE) if sleft else NODE_DISTANCE
             node_edist = (-NODE_DISTANCE) if eleft else NODE_DISTANCE

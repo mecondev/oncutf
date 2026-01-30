@@ -17,9 +17,9 @@ import sys
 from pathlib import Path
 from typing import Any, TypeVar
 
-T = TypeVar("T")
-
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+T = TypeVar("T")
 
 logger = get_cached_logger(__name__)
 
@@ -242,17 +242,13 @@ def paths_equal(path1: str, path2: str) -> bool:
     if not path1 or not path2:
         return path1 == path2
 
-    # Normalize both paths to use forward slashes for comparison
-    norm1 = path1.replace("\\", "/").replace("//", "/")
-    norm2 = path2.replace("\\", "/").replace("//", "/")
+    from oncutf.utils.filesystem.path_normalizer import normalize_path
 
-    # Remove trailing slashes for consistent comparison (except for root)
-    if len(norm1) > 1 and norm1.endswith("/"):
-        norm1 = norm1.rstrip("/")
-    if len(norm2) > 1 and norm2.endswith("/"):
-        norm2 = norm2.rstrip("/")
+    # Normalize both paths using centralized normalizer
+    norm1 = normalize_path(path1)
+    norm2 = normalize_path(path2)
 
-    # Case-insensitive comparison for Windows-style paths
+    # Simple string comparison after normalization
     if ":" in norm1 or ":" in norm2:  # Likely Windows paths
         return norm1.lower() == norm2.lower()
     else:

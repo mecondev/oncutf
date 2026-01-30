@@ -44,9 +44,9 @@ class MetadataTreeSelectionHandler:
 
         # Try SelectionStore first (most reliable)
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context and hasattr(context, "selection_store"):
                 return len(context.selection_store.get_selected_rows())
         except Exception:
@@ -88,7 +88,9 @@ class MetadataTreeSelectionHandler:
         if not selected_files:
             try:
                 if hasattr(parent_window.file_table_view, "_selection_behavior"):
-                    selected_rows = parent_window.file_table_view._selection_behavior.get_current_selection()
+                    selected_rows = (
+                        parent_window.file_table_view._selection_behavior.get_current_selection()
+                    )
                     if selected_rows and hasattr(parent_window, "file_model"):
                         file_model = parent_window.file_model
                         for row in selected_rows:
@@ -126,7 +128,9 @@ class MetadataTreeSelectionHandler:
             # Handle single file selection
             if len(selection) == 1:
                 file_item = selection[0]
-                metadata = self._view._cache_behavior.try_lazy_metadata_loading(file_item, "parent_selection")
+                metadata = self._view._cache_behavior.try_lazy_metadata_loading(
+                    file_item, "parent_selection"
+                )
                 if metadata:
                     self._view.display_metadata(metadata, "parent_selection")
                     logger.debug(
@@ -153,7 +157,10 @@ class MetadataTreeSelectionHandler:
         """Convenience method that triggers metadata update from parent selection.
         Can be called from parent window when selection changes.
         """
-        logger.debug("[MetadataTree] Refreshing metadata from selection", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataTree] Refreshing metadata from selection",
+            extra={"dev_only": True},
+        )
         self.update_from_parent_selection()
 
     def handle_selection_change(self) -> None:

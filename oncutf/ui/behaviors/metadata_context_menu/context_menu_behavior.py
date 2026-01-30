@@ -6,6 +6,7 @@ composition of specialized handlers.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from oncutf.ui.behaviors.metadata_context_menu.menu_builder import MenuBuilder

@@ -208,7 +208,8 @@ def calculate_filegroup_counter_index(
 
     if group_idx == -1:
         logger.warning(
-            "[FileGrouper] File not in any group, using global index: %s", file_item.filename
+            "[FileGrouper] File not in any group, using global index: %s",
+            file_item.filename,
         )
         return global_index
 

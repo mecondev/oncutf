@@ -247,7 +247,9 @@ class MetadataOperationsManager:
         except Exception as e:
             logger.exception("[EventHandler] Export error: %s", e)
             show_error_message(
-                self.parent_window, "Export Error", f"An error occurred during export:\n{e!s}"
+                self.parent_window,
+                "Export Error",
+                f"An error occurred during export:\n{e!s}",
             )
 
     # ===== Metadata Field Editing =====
@@ -302,7 +304,9 @@ class MetadataOperationsManager:
 
                 status_msg = f"Updated {field_name} for {len(files_to_modify)} file(s)"
                 self.parent_window.set_status(
-                    status_msg, color=STATUS_COLORS["operation_success"], auto_reset=True
+                    status_msg,
+                    color=STATUS_COLORS["operation_success"],
+                    auto_reset=True,
                 )
 
             logger.info(
@@ -390,7 +394,11 @@ class MetadataOperationsManager:
             "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
             "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
             "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
-            "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+            "Description": [
+                "XMP:Description",
+                "IPTC:Caption-Abstract",
+                "EXIF:ImageDescription",
+            ],
             "Keywords": ["XMP:Keywords", "IPTC:Keywords"],
         }
         return field_standards.get(field_name, [])
@@ -455,7 +463,12 @@ class MetadataOperationsManager:
 
             # Priority order (exiftool's preference: XMP > IPTC > EXIF)
             field_priorities = {
-                "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription", "XMP:Description"],
+                "Title": [
+                    "XMP:Title",
+                    "IPTC:Headline",
+                    "EXIF:ImageDescription",
+                    "XMP:Description",
+                ],
                 "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist", "XMP:Author"],
                 "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist", "XMP:Author"],
                 "Copyright": [
@@ -512,7 +525,9 @@ class MetadataOperationsManager:
 
         except Exception as e:
             logger.debug(
-                "[FieldStandard] Error getting preferred standard for %s: %s", field_name, e
+                "[FieldStandard] Error getting preferred standard for %s: %s",
+                field_name,
+                e,
             )
             return None
 

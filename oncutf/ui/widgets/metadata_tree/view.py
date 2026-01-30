@@ -49,10 +49,14 @@ from oncutf.ui.helpers.tooltip_helper import TreeViewTooltipFilter
 from oncutf.ui.widgets.metadata_tree.cache_handler import MetadataTreeCacheHandler
 from oncutf.ui.widgets.metadata_tree.drag_handler import MetadataTreeDragHandler
 from oncutf.ui.widgets.metadata_tree.event_handler import MetadataTreeEventHandler
-from oncutf.ui.widgets.metadata_tree.modifications_handler import MetadataTreeModificationsHandler
+from oncutf.ui.widgets.metadata_tree.modifications_handler import (
+    MetadataTreeModificationsHandler,
+)
 from oncutf.ui.widgets.metadata_tree.render_handler import TreeRenderHandler
 from oncutf.ui.widgets.metadata_tree.search_handler import MetadataTreeSearchHandler
-from oncutf.ui.widgets.metadata_tree.selection_handler import MetadataTreeSelectionHandler
+from oncutf.ui.widgets.metadata_tree.selection_handler import (
+    MetadataTreeSelectionHandler,
+)
 from oncutf.ui.widgets.metadata_tree.ui_state_handler import TreeUiStateHandler
 from oncutf.ui.widgets.metadata_tree.view_config import MetadataTreeViewConfig
 from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
@@ -207,7 +211,8 @@ class MetadataTreeView(QTreeView):
         self._use_proxy = METADATA_TREE_USE_PROXY
         if not self._use_proxy:
             logger.warning(
-                "[MetadataTree] Metadata proxy disabled via config", extra={"dev_only": True}
+                "[MetadataTree] Metadata proxy disabled via config",
+                extra={"dev_only": True},
             )
 
         # Display level for metadata filtering (load from config)
@@ -275,7 +280,9 @@ class MetadataTreeView(QTreeView):
         """Lazy initialization of controller layer."""
         try:
             from oncutf.core.metadata.metadata_service import get_metadata_service
-            from oncutf.ui.widgets.metadata_tree.controller import create_metadata_tree_controller
+            from oncutf.ui.widgets.metadata_tree.controller import (
+                create_metadata_tree_controller,
+            )
 
             metadata_service = get_metadata_service()
             self._controller = create_metadata_tree_controller(
@@ -909,6 +916,7 @@ class MetadataTreeView(QTreeView):
         """Get QtAppContext with fallback to None."""
         try:
             from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+
             return get_qt_app_context()
         except (ImportError, RuntimeError):
             # QtAppContext not available or not ready yet

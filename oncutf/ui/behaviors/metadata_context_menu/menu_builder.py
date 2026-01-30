@@ -5,11 +5,14 @@ Handles construction and display of context menu items.
 Author: Michael Economou
 Date: 2026-01-05
 """
+
 from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QAction, QMenu
 
-from oncutf.ui.behaviors.metadata_edit.field_detector import normalize_metadata_field_name
+from oncutf.ui.behaviors.metadata_edit.field_detector import (
+    normalize_metadata_field_name,
+)
 from oncutf.utils.filesystem.file_status_helpers import get_metadata_value
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -69,9 +72,7 @@ class MenuBuilder:
         )
 
         # Check if current file has modifications for this field
-        has_modifications, current_field_value = self._get_field_state(
-            key_path, selected_files
-        )
+        has_modifications, current_field_value = self._get_field_state(key_path, selected_files)
 
         # Create menu
         menu = QMenu(self._widget)
@@ -85,11 +86,14 @@ class MenuBuilder:
 
         # Add menu sections
         self._add_edit_actions(
-            menu, key_path, value, has_multiple_selection, is_editable_field, has_modifications
+            menu,
+            key_path,
+            value,
+            has_multiple_selection,
+            is_editable_field,
+            has_modifications,
         )
-        self._add_rotation_action(
-            menu, key_path, has_multiple_selection, current_field_value
-        )
+        self._add_rotation_action(menu, key_path, has_multiple_selection, current_field_value)
 
         menu.addSeparator()
         self._add_history_menu(menu)
@@ -106,9 +110,7 @@ class MenuBuilder:
         """Clean up the current menu reference."""
         self._widget._current_menu = None
 
-    def _get_field_state(
-        self, key_path: str, selected_files: list
-    ) -> tuple[bool, str | None]:
+    def _get_field_state(self, key_path: str, selected_files: list) -> tuple[bool, str | None]:
         """Get modification state and current value for a field.
 
         Args:
@@ -139,9 +141,7 @@ class MenuBuilder:
             if selected_files:
                 file_item = selected_files[0]
                 # Get value from cache using file_status_helpers
-                current_field_value = get_metadata_value(
-                    file_item.full_path, normalized_key_path
-                )
+                current_field_value = get_metadata_value(file_item.full_path, normalized_key_path)
 
                 # Fallback to file item metadata if not in cache
                 if (
@@ -149,8 +149,10 @@ class MenuBuilder:
                     and hasattr(file_item, "metadata")
                     and file_item.metadata
                 ):
-                    current_field_value = self._widget._cache_behavior._get_value_from_metadata_dict(
-                        file_item.metadata, key_path
+                    current_field_value = (
+                        self._widget._cache_behavior._get_value_from_metadata_dict(
+                            file_item.metadata, key_path
+                        )
                     )
 
                 # Default to empty string if no value found
@@ -200,9 +202,7 @@ class MenuBuilder:
         # Reset action
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        reset_action.triggered.connect(
-            lambda: self._widget._edit_behavior.reset_value(key_path)
-        )
+        reset_action.triggered.connect(lambda: self._widget._edit_behavior.reset_value(key_path))
         reset_action.setEnabled(
             not has_multiple_selection and is_editable_field and has_modifications
         )
@@ -249,9 +249,7 @@ class MenuBuilder:
         elif is_zero_rotation:
             set_zero_action.setToolTip("Rotation is already set to 0")
         else:
-            set_zero_action.setToolTip(
-                f"Set rotation to 0 (current: {current_field_value})"
-            )
+            set_zero_action.setToolTip(f"Set rotation to 0 (current: {current_field_value})")
 
         menu.addAction(set_zero_action)
 
@@ -289,9 +287,7 @@ class MenuBuilder:
         undo_action.triggered.connect(self._widget._edit_behavior._undo_metadata_operation)
 
         # Redo action with operation description
-        redo_text = (
-            f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
-        )
+        redo_text = f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
         redo_action = QAction(redo_text, history_menu)
         redo_action.setIcon(self._get_menu_icon("rotate-cw"))
         redo_action.setEnabled(can_redo)
@@ -320,9 +316,7 @@ class MenuBuilder:
         """
         copy_action = QAction("Copy", menu)
         copy_action.setIcon(self._get_menu_icon("copy"))
-        copy_action.triggered.connect(
-            lambda: self._widget._edit_behavior.copy_value(value)
-        )
+        copy_action.triggered.connect(lambda: self._widget._edit_behavior.copy_value(value))
         copy_action.setEnabled(bool(value))
         menu.addAction(copy_action)
 

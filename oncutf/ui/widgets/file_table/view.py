@@ -167,7 +167,7 @@ class FileTableView(QTableView):
 
             def eventFilter(self, obj, event):
                 if event.type() == QEvent.Enter:
-                    if hasattr(self.table_view, '_hover_handler'):
+                    if hasattr(self.table_view, "_hover_handler"):
                         self.table_view._hover_handler.clear_hover()
                 return False
 
@@ -412,7 +412,9 @@ class FileTableView(QTableView):
     def prepare_table(self, file_items: list, *, preserve_selection: bool = False) -> None:
         """Prepare the table for display with file items."""
         logger.debug(
-            "prepare_table called with %d items", len(file_items), extra={"dev_only": True}
+            "prepare_table called with %d items",
+            len(file_items),
+            extra={"dev_only": True},
         )
         self._has_manual_preference = False
         self._user_preferred_width = None
@@ -518,7 +520,7 @@ class FileTableView(QTableView):
         """Update scrollbar visibility based on content."""
         self._viewport_handler.update_scrollbar_visibility()
 
-    def _smart_scrollbar_adjustment(self, column_added: bool = False) -> None:
+    def _smart_scrollbar_adjustment(self, _column_added: bool = False) -> None:
         """Smart scrollbar position adjustment (currently disabled)."""
 
     def ensure_scrollbar_visibility(self) -> None:
@@ -608,6 +610,7 @@ class FileTableView(QTableView):
         import time
 
         from oncutf.utils.logging.logger_factory import get_cached_logger
+
         logger = get_cached_logger(__name__)
         from oncutf.utils.cursor_helper import wait_cursor
 

@@ -192,6 +192,7 @@ class MetadataWorker(QObject):
 
                 try:
                     from pathlib import Path
+
                     metadata = self.reader.extract_metadata(Path(path))
 
                     # Get previous entry using file_status_helpers
@@ -202,9 +203,7 @@ class MetadataWorker(QObject):
                     previous_extended = False
                     try:
                         previous_entry = get_metadata_cache_entry(path)
-                        previous_extended = (
-                            previous_entry.is_extended if previous_entry else False
-                        )
+                        previous_extended = previous_entry.is_extended if previous_entry else False
                     except Exception as e:
                         logger.debug(
                             "[Worker] Cache entry error: %s",
@@ -266,7 +265,11 @@ class MetadataWorker(QObject):
 
                         # Store operation info for final flush
                         self._batch_operations.append(
-                            {"path": path, "metadata": metadata, "is_extended": is_extended_flag}
+                            {
+                                "path": path,
+                                "metadata": metadata,
+                                "is_extended": is_extended_flag,
+                            }
                         )
                     else:
                         # Fallback to direct cache operation
@@ -342,7 +345,9 @@ class MetadataWorker(QObject):
                     for op in self._batch_operations:
                         try:
                             self.metadata_cache.set(
-                                op["path"], op["metadata"], is_extended=op["is_extended"]
+                                op["path"],
+                                op["metadata"],
+                                is_extended=op["is_extended"],
                             )
                         except Exception as fallback_error:
                             logger.error(

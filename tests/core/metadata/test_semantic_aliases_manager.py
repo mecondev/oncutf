@@ -108,9 +108,7 @@ class TestSemanticAliasesManager:
 
             # Manually modify file
             modified = {"Field2": ["Key2"]}
-            with open(
-                manager.get_aliases_file_path(), "w", encoding="utf-8"
-            ) as f:
+            with open(manager.get_aliases_file_path(), "w", encoding="utf-8") as f:
                 json.dump(modified, f)
 
             # Reload should get modified version
@@ -125,9 +123,7 @@ class TestSemanticAliasesManager:
         ):
             manager = SemanticAliasesManager()
 
-            result = manager.add_alias(
-                "New Field", ["New:Key1", "New:Key2"]
-            )
+            result = manager.add_alias("New Field", ["New:Key1", "New:Key2"])
             assert result is True
 
             aliases = manager.load_aliases()
@@ -262,9 +258,7 @@ class TestCorruptedFileHandling:
             assert "Creation Date" in aliases
 
             # Check if backup was created
-            backup_files = list(
-                tmp_path.glob("semantic_metadata_aliases.json.corrupted_*")
-            )
+            backup_files = list(tmp_path.glob("semantic_metadata_aliases.json.corrupted_*"))
             assert len(backup_files) == 1
 
     def test_load_invalid_structure_not_dict(self, tmp_path):
@@ -363,9 +357,7 @@ class TestIntegration:
 
             # Test resolution
             available = ["EXIF:DateTimeOriginal"]
-            result = registry.resolve_key_with_fallback(
-                "Creation Date", available
-            )
+            result = registry.resolve_key_with_fallback("Creation Date", available)
             assert result == "EXIF:DateTimeOriginal"
 
     def test_custom_aliases_in_registry(self, tmp_path):
@@ -378,9 +370,7 @@ class TestIntegration:
             registry = MetadataKeyRegistry()
 
             # Add custom alias
-            manager.add_alias(
-                "My Custom Field", ["Custom:Key1", "Custom:Key2"]
-            )
+            manager.add_alias("My Custom Field", ["Custom:Key1", "Custom:Key2"])
 
             # Load into registry
             aliases = manager.load_aliases()
@@ -388,7 +378,5 @@ class TestIntegration:
 
             # Test resolution of custom alias
             available = ["Custom:Key2", "Other:Key"]
-            result = registry.resolve_key_with_fallback(
-                "My Custom Field", available
-            )
+            result = registry.resolve_key_with_fallback("My Custom Field", available)
             assert result == "Custom:Key2"

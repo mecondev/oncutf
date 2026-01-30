@@ -11,7 +11,6 @@ import os
 import sqlite3
 from datetime import datetime
 
-from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -47,7 +46,7 @@ class PathStore:
             raise ValueError("file_path cannot be empty")
 
         # Check for null bytes (SQLite doesn't support them)
-        if '\x00' in file_path:
+        if "\x00" in file_path:
             raise ValueError(f"file_path contains null byte: {file_path!r}")
 
         norm_path = self.normalize_path(file_path)
@@ -92,8 +91,15 @@ class PathStore:
         return last_row_id
 
     def normalize_path(self, file_path: str) -> str:
-        """Use the central normalize_path function."""
-        return normalize_path(file_path)
+        """Normalize file path for consistent database keys.
+
+        Delegates to the canonical normalize_path implementation.
+        """
+        from oncutf.utils.filesystem.path_normalizer import (
+            normalize_path as _normalize_path,
+        )
+
+        return _normalize_path(file_path)
 
     def get_path_id(self, file_path: str) -> int | None:
         """Get path_id for a file without creating it."""

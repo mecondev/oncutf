@@ -116,7 +116,7 @@ class ProgressWidget(QWidget):
         self.total_size = 0
         self.processed_size = 0
         self.current_count = 0  # Track current file count
-        self.total_count = 0    # Track total file count
+        self.total_count = 0  # Track total file count
 
         # Optimized throttling for better responsiveness
         self._last_update_time = 0
@@ -431,7 +431,8 @@ class ProgressWidget(QWidget):
         self.progress_bar.show()
         self.percentage_label.hide()
         logger.debug(
-            "[ProgressWidget] Progress bar set to indeterminate mode", extra={"dev_only": True}
+            "[ProgressWidget] Progress bar set to indeterminate mode",
+            extra={"dev_only": True},
         )
 
     def set_determinate_mode(self):
@@ -444,7 +445,8 @@ class ProgressWidget(QWidget):
         self.percentage_label.show()
         self.count_label.setText("0 of 0")
         logger.debug(
-            "[ProgressWidget] Progress bar set to determinate mode", extra={"dev_only": True}
+            "[ProgressWidget] Progress bar set to determinate mode",
+            extra={"dev_only": True},
         )
 
     def set_progress_mode(self, mode: str):
@@ -487,6 +489,7 @@ class ProgressWidget(QWidget):
             from oncutf.utils.filesystem.file_size_formatter import (
                 format_file_size_system_compatible,
             )
+
             self.size_current_label.setText("0 B")
             if total_size > 0:
                 total_str = format_file_size_system_compatible(total_size)
@@ -584,7 +587,11 @@ class ProgressWidget(QWidget):
         Widths are derived from the formatted total size plus a couple of
         worst-case candidates near unit boundaries to avoid truncation.
         """
-        if not (self.show_size_info and hasattr(self, "size_current_label") and hasattr(self, "size_total_label")):
+        if not (
+            self.show_size_info
+            and hasattr(self, "size_current_label")
+            and hasattr(self, "size_total_label")
+        ):
             return
 
         if self._size_label_width_total == total_size:

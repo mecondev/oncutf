@@ -341,7 +341,7 @@ class CompanionFilesHelper:
         # Get all files by folder for efficient processing
         folders: dict[str, list[str]] = {}
         for path in file_paths:
-            folder = os.path.dirname(path)
+            folder = str(Path(path).parent)
             if folder not in folders:
                 folders[folder] = []
             folders[folder].append(path)
@@ -351,7 +351,7 @@ class CompanionFilesHelper:
             if file_path in processed_files:
                 continue
 
-            folder = os.path.dirname(file_path)
+            folder = str(Path(file_path).parent)
             folder_files = folders[folder]
 
             # Check if this is a companion file
@@ -586,7 +586,7 @@ class CompanionFilesHelper:
         metadata = {"source": "xmp_sidecar"}
 
         try:
-            with open(xmp_path, encoding="utf-8") as f:
+            with Path(xmp_path).open(encoding="utf-8") as f:
                 content = f.read()
 
             # Basic XMP parsing - look for common tags

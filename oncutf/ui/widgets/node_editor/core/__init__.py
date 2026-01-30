@@ -45,7 +45,9 @@ def _init_graphics_classes():
     from oncutf.ui.widgets.node_editor.graphics.edge import QDMGraphicsEdge
     from oncutf.ui.widgets.node_editor.graphics.node import QDMGraphicsNode
     from oncutf.ui.widgets.node_editor.graphics.socket import QDMGraphicsSocket
-    from oncutf.ui.widgets.node_editor.widgets.content_widget import QDMNodeContentWidget
+    from oncutf.ui.widgets.node_editor.widgets.content_widget import (
+        QDMNodeContentWidget,
+    )
 
     Socket._graphics_socket_class = QDMGraphicsSocket
     Node._graphics_node_class = QDMGraphicsNode

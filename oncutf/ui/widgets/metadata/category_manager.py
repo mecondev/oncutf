@@ -239,7 +239,8 @@ class CategoryManager:
         """Check if calculation dialog is needed for the selected category."""
         if self.widget._hash_dialog_active:
             logger.debug(
-                "[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True}
+                "[MetadataWidget] Dialog already active, skipping check",
+                extra={"dev_only": True},
             )
             return
 
@@ -279,9 +280,7 @@ class CategoryManager:
                 extra={"dev_only": True},
             )
             self.widget._hash_dialog_active = True
-            self.widget._hash_handler.show_calculation_dialog(
-                files_needing_metadata, "metadata"
-            )
+            self.widget._hash_handler.show_calculation_dialog(files_needing_metadata, "metadata")
         else:
             logger.debug(
                 "[MetadataWidget] All files have metadata - no dialog needed",

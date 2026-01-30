@@ -11,17 +11,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from oncutf.ui.adapters.application_context import ApplicationContext, get_app_context
 from oncutf.ui.adapters.qt_app_context import QtAppContext, get_qt_app_context
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
 __all__ = [
-    "ApplicationContext",
     "DialogAdapterProtocol",
     "QtAppContext",
-    "get_app_context",
     "get_qt_app_context",
 ]
 
@@ -29,33 +26,23 @@ __all__ = [
 class DialogAdapterProtocol(Protocol):
     """Protocol for showing dialogs without Qt dependencies in core."""
 
-    def show_info(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_info(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show information dialog."""
         ...
 
-    def show_warning(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_warning(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show warning dialog."""
         ...
 
-    def show_error(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_error(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show error dialog."""
         ...
 
-    def ask_yes_no(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> bool:
+    def ask_yes_no(self, parent: QWidget | None, title: str, message: str) -> bool:
         """Ask yes/no question. Returns True for yes, False for no."""
         ...
 
-    def ask_ok_cancel(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> bool:
+    def ask_ok_cancel(self, parent: QWidget | None, title: str, message: str) -> bool:
         """Ask ok/cancel question. Returns True for ok, False for cancel."""
         ...
 
@@ -67,41 +54,31 @@ class DialogAdapter:
     Core modules can depend on the Protocol, while UI provides the implementation.
     """
 
-    def show_info(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_info(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show information dialog."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.information(parent, title, message)
 
-    def show_warning(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_warning(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show warning dialog."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.warning(parent, title, message)
 
-    def show_error(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> None:
+    def show_error(self, parent: QWidget | None, title: str, message: str) -> None:
         """Show error dialog."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         CustomMessageDialog.critical(parent, title, message)
 
-    def ask_yes_no(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> bool:
+    def ask_yes_no(self, parent: QWidget | None, title: str, message: str) -> bool:
         """Ask yes/no question. Returns True for yes, False for no."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
         return CustomMessageDialog.question(parent, title, message)
 
-    def ask_ok_cancel(
-        self, parent: QWidget | None, title: str, message: str
-    ) -> bool:
+    def ask_ok_cancel(self, parent: QWidget | None, title: str, message: str) -> bool:
         """Ask ok/cancel question. Returns True for ok, False for cancel."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 

@@ -259,7 +259,11 @@ class StatusManager:
         )
 
     def set_rename_status(
-        self, message: str, renamed_count: int = 0, success: bool = True, auto_reset: bool = True
+        self,
+        message: str,
+        renamed_count: int = 0,
+        success: bool = True,
+        auto_reset: bool = True,
     ) -> None:
         """Set status for rename operations with count information."""
         if success:
@@ -278,7 +282,11 @@ class StatusManager:
         )
 
     def set_selection_status(
-        self, message: str, selected_count: int = 0, total_count: int = 0, auto_reset: bool = True
+        self,
+        message: str,
+        selected_count: int = 0,
+        total_count: int = 0,
+        auto_reset: bool = True,
     ) -> None:
         """Set status for selection operations with count information."""
         if selected_count == 0 and "No" not in message:
@@ -453,7 +461,11 @@ class StatusManager:
         self.set_progress_status(message, progress_percent, operation_id)
 
     def set_batch_completion_status(
-        self, operation_type: str, _total_processed: int, successful: int, failed: int = 0
+        self,
+        operation_type: str,
+        _total_processed: int,
+        successful: int,
+        failed: int = 0,
     ) -> None:
         """Set status for completed batch operations with summary."""
         if failed == 0:
@@ -571,7 +583,9 @@ class StatusManager:
             extra={"dev_only": True},
         )
 
-    def clear_file_table_status(self, files_label: Any, message: str = "No folder selected") -> None:
+    def clear_file_table_status(
+        self, files_label: Any, message: str = "No folder selected"
+    ) -> None:
         """Enhanced file table clear status with context."""
         if files_label:
             files_label.setText("Files (0)")

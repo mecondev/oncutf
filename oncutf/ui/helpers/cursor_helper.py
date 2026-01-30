@@ -108,7 +108,8 @@ def wait_cursor(restore_after: bool = True):
         )
     else:
         logger.debug(
-            "[Cursor] Wait cursor activated. Caller path not in oncutf/", extra={"dev_only": True}
+            "[Cursor] Wait cursor activated. Caller path not in oncutf/",
+            extra={"dev_only": True},
         )
 
     try:
@@ -119,7 +120,8 @@ def wait_cursor(restore_after: bool = True):
             logger.debug("[Cursor] Wait cursor restored.", extra={"dev_only": True})
         else:
             logger.debug(
-                "[Cursor] Wait cursor NOT restored (as requested).", extra={"dev_only": True}
+                "[Cursor] Wait cursor NOT restored (as requested).",
+                extra={"dev_only": True},
             )
 
 
@@ -169,7 +171,11 @@ def force_restore_cursor() -> None:
             break
 
     if count > 0:
-        logger.debug("[Cursor] Force restore: Removed %d cursors", count, extra={"dev_only": True})
+        logger.debug(
+            "[Cursor] Force restore: Removed %d cursors",
+            count,
+            extra={"dev_only": True},
+        )
 
 
 def get_current_cursor_info() -> str | None:
@@ -218,6 +224,11 @@ def is_drag_cursor_active() -> bool:
         return False
 
     shape = current.shape()
-    drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor]
+    drag_cursors = [
+        Qt.DragMoveCursor,
+        Qt.DragCopyCursor,
+        Qt.DragLinkCursor,
+        Qt.ClosedHandCursor,
+    ]
 
     return shape in drag_cursors

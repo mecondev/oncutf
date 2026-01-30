@@ -193,7 +193,9 @@ class LayoutController:
         self.parent_window.horizontal_splitter = QSplitter(Qt.Horizontal)
         self.parent_window.vertical_splitter.addWidget(self.parent_window.horizontal_splitter)
 
-        from oncutf.ui.helpers.layout_calculators import calculate_splitter_sizes_from_ratios
+        from oncutf.ui.helpers.layout_calculators import (
+            calculate_splitter_sizes_from_ratios,
+        )
         from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         config_manager = get_app_config_manager()
@@ -250,7 +252,9 @@ class LayoutController:
         self.parent_window.browse_folder_button.setFixedHeight(24)
         self.parent_window.browse_folder_button.setFixedWidth(90)
         TooltipHelper.setup_tooltip(
-            self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO
+            self.parent_window.browse_folder_button,
+            "Browse folder (Ctrl+O)",
+            TooltipType.INFO,
         )
 
         # Add buttons aligned to right
@@ -384,7 +388,9 @@ class LayoutController:
 
         # Header setup
         self.parent_window.header = InteractiveHeader(
-            Qt.Horizontal, self.parent_window.file_table_view, parent_window=self.parent_window
+            Qt.Horizontal,
+            self.parent_window.file_table_view,
+            parent_window=self.parent_window,
         )
         self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
         if hasattr(self.parent_window.header, "setDefaultAlignment"):
@@ -617,7 +623,6 @@ class LayoutController:
 
             # Apply selection
             if not selection.isEmpty():
-
                 selection_model.select(selection, QItemSelectionModel.Select)
                 logger.debug(
                     "[LayoutController] Synced %d files to file table",
@@ -707,7 +712,9 @@ class LayoutController:
         # Add search icon
         search_icon_path = get_icons_dir() / "feather_icons" / "search_dark.svg"
         self.parent_window.search_action = QAction(
-            QIcon(str(search_icon_path)), "Search", self.parent_window.metadata_search_field
+            QIcon(str(search_icon_path)),
+            "Search",
+            self.parent_window.metadata_search_field,
         )
         self.parent_window.metadata_search_field.addAction(
             self.parent_window.search_action, QLineEdit.TrailingPosition
@@ -716,7 +723,9 @@ class LayoutController:
         # Add clear icon
         clear_icon_path = get_icons_dir() / "feather_icons" / "x_dark.svg"
         self.parent_window.clear_search_action = QAction(
-            QIcon(str(clear_icon_path)), "Clear", self.parent_window.metadata_search_field
+            QIcon(str(clear_icon_path)),
+            "Clear",
+            self.parent_window.metadata_search_field,
         )
         self.parent_window.metadata_search_field.addAction(
             self.parent_window.clear_search_action, QLineEdit.TrailingPosition
