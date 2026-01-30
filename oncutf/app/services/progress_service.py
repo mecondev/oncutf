@@ -135,6 +135,9 @@ class NullProgressDialog:
     ) -> None:
         """No-op update progress."""
 
+    def set_time_info(self, elapsed: float, estimated_total: float | None = None) -> None:
+        """No-op set time info."""
+
 
 def create_progress_dialog(
     parent: Any = None,

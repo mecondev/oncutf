@@ -131,6 +131,11 @@ class BootstrapOrchestrator:
         # Phase 6.1: Drag state port
         self.window.context.register_manager("drag_state", QtDragStateAdapter())
 
+        # Phase 6.2: Progress factory
+        from oncutf.ui.adapters.qt_progress_factory import QtProgressFactory
+
+        self.window.context.register_manager("progress_factory", QtProgressFactory())
+
         # Initialize singleton managers
         self.window.drag_manager = DragManager.get_instance()
         self.window.unified_rename_engine = QtRenameEngine()
