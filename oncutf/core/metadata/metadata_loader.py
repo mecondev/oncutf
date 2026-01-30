@@ -496,19 +496,31 @@ class MetadataLoader:
             "Loading extended metadata..." if use_extended else "Loading metadata..."
         )
 
-        # Show dialog (adapter handles smooth appearance)
+        # Calculate total size for progress tracking
+        total_size = calculate_files_total_size(needs_loading)
+        loading_dialog.start_progress_tracking(total_size)
+        
+        # Set initial count (0/N files) and first filename BEFORE showing
+        total_files = len(needs_loading)
+        loading_dialog.set_count(0, total_files)
+        loading_dialog.update_progress(
+            file_count=0, 
+            total_files=total_files, 
+            processed_bytes=0, 
+            total_bytes=total_size
+        )
+        if needs_loading:
+            loading_dialog.set_filename(needs_loading[0].filename)
+
+        # Show dialog NOW with initialized state
         loading_dialog.show()
         loading_dialog.activateWindow()
         loading_dialog.setFocus()
         loading_dialog.raise_()
 
-        # Process events to ensure dialog is visible
+        # Process events to ensure dialog is visible with initial state
         for _ in range(3):
             QApplication.processEvents()
-
-        # Calculate total size for progress tracking
-        total_size = calculate_files_total_size(needs_loading)
-        loading_dialog.start_progress_tracking(total_size)
 
         # Progress tracking
         processed_size = 0

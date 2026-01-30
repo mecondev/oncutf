@@ -257,9 +257,9 @@ class HashWorker(BaseHashWorker):
         # Hash not in cache - need to calculate
         logger.debug("[HashWorker] Calculating hash for: %s", filename)
 
-        # For large files (>100MB), use real-time progress callback
+        # For large files (>50MB), use real-time progress callback
         progress_callback = None
-        if file_size > 100_000_000:  # 100MB threshold
+        if file_size > 50_000_000:  # 50MB threshold
 
             def update_progress(bytes_processed_in_file: int) -> None:
                 """Real-time progress callback for large files."""
