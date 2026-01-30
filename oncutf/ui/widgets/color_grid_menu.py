@@ -14,14 +14,13 @@ Layout:
 └─────────────────────────┴───────┘
 """
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QColorDialog,
     QGridLayout,
     QHBoxLayout,
     QPushButton,
-    QSize,
     QToolButton,
     QVBoxLayout,
     QWidget,
