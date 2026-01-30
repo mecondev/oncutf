@@ -91,23 +91,42 @@ class ThumbnailManager(QObject):
     generation_progress = pyqtSignal(int, int)  # completed, total
     generation_error = pyqtSignal(str, str)  # file_path, error_message
 
+    @staticmethod
+    def _calculate_worker_count() -> int:
+        """Calculate optimal worker count based on CPU cores.
+
+        Returns:
+            Number of workers (min 2, max 8)
+
+        """
+        import os
+
+        cpu_count = os.cpu_count() or 2
+        # Use half of available cores, capped between 2-8
+        workers = max(2, min(8, cpu_count // 2))
+        return workers
+
     def __init__(
         self,
         db_store: ThumbnailStore,
         cache_config: ThumbnailCacheConfig | None = None,
-        max_workers: int = 2,
+        max_workers: int | None = None,
     ):
         """Initialize thumbnail manager.
 
         Args:
             db_store: Database store for cache index
             cache_config: Cache configuration (uses default if None)
-            max_workers: Number of worker threads for generation
+            max_workers: Number of worker threads (auto-calculated if None)
 
         """
         super().__init__()
 
         self._db_store = db_store
+
+        # Calculate optimal worker count if not specified
+        if max_workers is None:
+            max_workers = self._calculate_worker_count()
 
         # Initialize cache
         if cache_config is None:
@@ -457,7 +476,7 @@ class ThumbnailManager(QObject):
         }
 
     def shutdown(self) -> None:
-        """Shutdown manager and stop all workers."""
+        """Shutdown manager and stop all workers gracefully."""
         logger.info("Shutting down ThumbnailManager...")
         self._shutdown_flag = True
 
@@ -465,20 +484,28 @@ class ThumbnailManager(QObject):
         for worker in self._workers:
             worker.request_stop()
 
-        # Wait for workers to finish (with shorter timeout for faster shutdown)
+        # Give workers time to finish current tasks gracefully
         for worker in self._workers:
             if worker.isRunning():
-                if not worker.wait(1000):  # 1 second timeout (reduced from 3s)
-                    # Worker didn't finish in time, terminate it
-                    logger.warning("ThumbnailWorker did not stop in time, terminating")
-                    worker.terminate()
-                    worker.wait(500)  # Wait 500ms after terminate (reduced from 1s)
+                # First attempt: graceful wait (2 seconds)
+                if not worker.wait(2000):
+                    logger.warning("ThumbnailWorker still running after 2s, waiting longer...")
+                    # Second attempt: extended wait (3 more seconds)
+                    if not worker.wait(3000):
+                        logger.error("ThumbnailWorker did not stop gracefully, forcing quit")
+                        # Force quit the thread event loop
+                        worker.quit()
+                        if not worker.wait(1000):
+                            logger.error("ThumbnailWorker did not respond to quit(), terminating")
+                            worker.terminate()
+                            worker.wait(500)
+
                 # Disconnect signals to prevent errors during cleanup
                 try:
                     worker.thumbnail_ready.disconnect()
                     worker.generation_error.disconnect()
-                except TypeError:
-                    pass  # Signals may already be disconnected
+                except (TypeError, RuntimeError):
+                    pass  # Signals may already be disconnected or worker deleted
 
         self._workers.clear()
 
