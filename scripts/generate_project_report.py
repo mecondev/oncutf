@@ -229,6 +229,82 @@ def get_full_docstring_coverage(path: Path) -> dict:
     }
 
 
+def get_full_docstring_texts(path: Path) -> dict:
+    """Parse a Python file and return full docstring texts for module, classes and functions.
+
+    Returns a dict with keys:
+        - module_doc: str|None
+        - classes: list of {name, line, doc: str|None, methods: [{name,line,doc}]}
+        - functions: list of {name,line,doc}
+        - syntax_error: bool
+        - line_count: int
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return {
+            "line_count": 0,
+            "module_doc": None,
+            "classes": [],
+            "functions": [],
+            "syntax_error": True,
+        }
+
+    line_count = text.count("\n") + 1
+
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError:
+        return {
+            "line_count": line_count,
+            "module_doc": None,
+            "classes": [],
+            "functions": [],
+            "syntax_error": True,
+        }
+
+    module_doc = ast.get_docstring(tree)
+
+    classes = []
+    functions = []
+
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            cls_doc = ast.get_docstring(node)
+            methods = []
+            for item in node.body:
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    methods.append({
+                        "name": item.name,
+                        "line": item.lineno,
+                        "doc": ast.get_docstring(item),
+                    })
+
+            classes.append({
+                "name": node.name,
+                "line": node.lineno,
+                "doc": cls_doc,
+                "methods": methods,
+            })
+
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            functions.append({
+                "name": node.name,
+                "line": node.lineno,
+                "doc": ast.get_docstring(node),
+            })
+
+    return {
+        "line_count": line_count,
+        "module_doc": module_doc,
+        "classes": classes,
+        "functions": functions,
+        "syntax_error": False,
+    }
+
+
 # --- File Discovery --------------------------------------------------------
 
 
@@ -370,6 +446,7 @@ def generate_structure_full_report(
     recursive: bool = True,
     extra_ignored: set | None = None,
     missing_items_out: list[str] | None = None,
+    include_docstrings: bool = False,
 ) -> None:
     """Generate structure-full report: complete docstring coverage for modules, classes, functions."""
     py_files = find_python_files(project_root, recursive, extra_ignored)
@@ -391,6 +468,9 @@ def generate_structure_full_report(
         f.write("- Module-level docstrings\n")
         f.write("- Class docstrings\n")
         f.write("- Function/method docstrings\n\n")
+        if include_docstrings:
+            f.write("---\n\n")
+            f.write("**NOTE:** This run includes the full text of module/class/function docstrings below each item.\n\n")
         f.write("---\n\n")
 
         for py_file in py_files:
@@ -400,6 +480,7 @@ def generate_structure_full_report(
                 rel_path = py_file
 
             coverage = get_full_docstring_coverage(py_file)
+            texts = get_full_docstring_texts(py_file) if include_docstrings else None
             total_all += coverage["stats"]["total"]
             documented_all += coverage["stats"]["documented"]
 
@@ -409,8 +490,19 @@ def generate_structure_full_report(
                 else 100
             )
 
-            # File header
-            status = "[OK]" if file_pct == 100 else "[WARN]" if file_pct >= 80 else "[FAIL]"
+            # File header - status mapping (ordered worst -> best)
+            # FAIL  : < 50%
+            # WARNIG: 50% - 79%
+            # PARTIAL: 80% - 99%
+            # OK    : 100%
+            if file_pct == 100:
+                status = "[OK]"
+            elif file_pct >= 80:
+                status = "[PARTIAL]"
+            elif file_pct >= 50:
+                status = "[WARNIG]"
+            else:
+                status = "[FAIL]"
             f.write(f"## {status} `{rel_path}` ({coverage['line_count']} lines)\n\n")
             f.write(
                 f"**Coverage:** {coverage['stats']['documented']}/{coverage['stats']['total']} "
@@ -425,6 +517,14 @@ def generate_structure_full_report(
             if not coverage["module_doc"]:
                 f.write("- [X] Module docstring missing\n")
                 missing_items.append(f"{rel_path}:1 module")
+            else:
+                if include_docstrings and texts is not None:
+                    mod_doc = texts.get("module_doc")
+                    if mod_doc:
+                        f.write("\n**Module docstring:**\n\n")
+                        f.write("```\n")
+                        f.write(mod_doc.strip() + "\n")
+                        f.write("```\n\n")
 
             # Classes
             for cls in coverage["classes"]:
@@ -441,15 +541,47 @@ def generate_structure_full_report(
                             f"{rel_path}:{method['line']} method {cls['name']}.{method['name']}"
                         )
 
+                # If requested, include full docstrings for this class and its methods
+                if include_docstrings:
+                    texts = get_full_docstring_texts(py_file)
+                    # find matching class
+                    for tcls in texts.get("classes", []):
+                        if tcls["name"] == cls["name"]:
+                            if tcls.get("doc"):
+                                f.write("\n    **Class docstring:**\n\n")
+                                f.write("    ```\n")
+                                # indent class docstring lines for readability
+                                for line in tcls["doc"].splitlines():
+                                    f.write("    " + line + "\n")
+                                f.write("    ```\n\n")
+                            # methods
+                            for method in tcls.get("methods", []):
+                                if method.get("doc"):
+                                    f.write(f"    **Method `{method['name']}()` docstring:** (line {method['line']})\n\n")
+                                    f.write("    ```\n")
+                                    for line in method["doc"].splitlines():
+                                        f.write("    " + line + "\n")
+                                    f.write("    ```\n\n")
+
             # Top-level functions
             for func in coverage["functions"]:
                 f_status = "[+]" if func["has_doc"] else "[X]"
                 f.write(f"- {f_status} Function `{func['name']}()` (line {func['line']})\n")
                 if not func["has_doc"]:
                     missing_items.append(f"{rel_path}:{func['line']} function {func['name']}")
+                else:
+                    # If requested, include full docstring for this top-level function
+                    if include_docstrings and texts is not None:
+                        for tfunc in texts.get("functions", []):
+                            if tfunc.get("name") == func["name"] and tfunc.get("doc"):
+                                f.write("\n    **Function docstring:**\n\n")
+                                f.write("    ```\n")
+                                for line in tfunc["doc"].splitlines():
+                                    f.write("    " + line + "\n")
+                                f.write("    ```\n\n")
+                                break
 
             f.write("\n")
-
         # Summary section
         overall_pct = (documented_all / total_all * 100) if total_all else 0
         f.write("---\n\n")
@@ -668,6 +800,12 @@ Mode details:
     )
 
     parser.add_argument(
+        "--include-docstrings",
+        action="store_true",
+        help="Include full module/class/function docstrings in the report and export to docs/reports with timestamp prefix",
+    )
+
+    parser.add_argument(
         "-m",
         "--missing",
         action="store_true",
@@ -696,6 +834,12 @@ Mode details:
     else:
         output_path = project_root / DEFAULT_OUTPUT[args.mode]
 
+    # If include_docstrings requested and no custom output, export to docs/reports
+    if args.include_docstrings and not args.output:
+        output_path = project_root / "docs" / "reports" / output_path.name
+        # Ensure timestamp prefix for sorting when including docstrings
+        args.date = True
+
     # Add datetime stamp if requested (at START of filename for sorting)
     if args.date:
         timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M")
@@ -717,6 +861,7 @@ Mode details:
             recursive,
             extra_ignored,
             missing_items_out=missing_items,
+            include_docstrings=args.include_docstrings,
         )
         if missing_items:
             try:
