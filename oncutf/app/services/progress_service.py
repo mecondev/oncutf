@@ -126,6 +126,15 @@ class NullProgressDialog:
     def start_progress_tracking(self, total_size: int = 0) -> None:
         """No-op start progress tracking."""
 
+    def update_progress(
+        self,
+        file_count: int = 0,
+        total_files: int = 0,
+        processed_bytes: int = 0,
+        total_bytes: int = 0,
+    ) -> None:
+        """No-op update progress."""
+
 
 def create_progress_dialog(
     parent: Any = None,
