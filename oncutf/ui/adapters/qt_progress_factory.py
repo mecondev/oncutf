@@ -89,6 +89,7 @@ class QtProgressFactory:
         parent: Any = None,
         cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
+        use_size_based_progress: bool = True,
     ) -> ProgressDialog:
         """Create a progress dialog preconfigured for hash operations.
 
@@ -96,6 +97,7 @@ class QtProgressFactory:
             parent: Parent widget
             cancel_callback: Function to call when user cancels
             show_enhanced_info: Whether to show enhanced size/time tracking
+            use_size_based_progress: Whether to use size-based progress bar
 
         Returns:
             ProgressDialog configured for hash operations
@@ -105,4 +107,5 @@ class QtProgressFactory:
             parent=parent,
             cancel_callback=cancel_callback,
             show_enhanced_info=show_enhanced_info,
+            use_size_based_progress=use_size_based_progress,
         )
