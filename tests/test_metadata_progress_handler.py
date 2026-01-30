@@ -185,7 +185,7 @@ class TestShowDialogMethods:
         )
 
         # Accept ProgressDialog or NullProgressDialog (when no factory registered)
-        assert result is None or isinstance(result, (ProgressDialog, NullProgressDialog))
+        assert result is None or isinstance(result, ProgressDialog | NullProgressDialog)
 
     def test_show_hash_dialog_returns_dialog(self) -> None:
         """show_hash_progress_dialog should return a dialog."""
@@ -202,4 +202,4 @@ class TestShowDialogMethods:
         result = handler.show_hash_progress_dialog(files=[mock_file], cancel_callback=None)
 
         # Accept ProgressDialog or NullProgressDialog (when no factory registered)
-        assert result is None or isinstance(result, (ProgressDialog, NullProgressDialog))
+        assert result is None or isinstance(result, ProgressDialog | NullProgressDialog)

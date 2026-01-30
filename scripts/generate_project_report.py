@@ -275,7 +275,7 @@ def get_full_docstring_texts(path: Path) -> dict:
             cls_doc = ast.get_docstring(node)
             methods = []
             for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
                     methods.append({
                         "name": item.name,
                         "line": item.lineno,
@@ -289,7 +289,7 @@ def get_full_docstring_texts(path: Path) -> dict:
                 "methods": methods,
             })
 
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             functions.append({
                 "name": node.name,
                 "line": node.lineno,
@@ -517,14 +517,13 @@ def generate_structure_full_report(
             if not coverage["module_doc"]:
                 f.write("- [X] Module docstring missing\n")
                 missing_items.append(f"{rel_path}:1 module")
-            else:
-                if include_docstrings and texts is not None:
-                    mod_doc = texts.get("module_doc")
-                    if mod_doc:
-                        f.write("\n**Module docstring:**\n\n")
-                        f.write("```\n")
-                        f.write(mod_doc.strip() + "\n")
-                        f.write("```\n\n")
+            elif include_docstrings and texts is not None:
+                mod_doc = texts.get("module_doc")
+                if mod_doc:
+                    f.write("\n**Module docstring:**\n\n")
+                    f.write("```\n")
+                    f.write(mod_doc.strip() + "\n")
+                    f.write("```\n\n")
 
             # Classes
             for cls in coverage["classes"]:
@@ -569,17 +568,16 @@ def generate_structure_full_report(
                 f.write(f"- {f_status} Function `{func['name']}()` (line {func['line']})\n")
                 if not func["has_doc"]:
                     missing_items.append(f"{rel_path}:{func['line']} function {func['name']}")
-                else:
-                    # If requested, include full docstring for this top-level function
-                    if include_docstrings and texts is not None:
-                        for tfunc in texts.get("functions", []):
-                            if tfunc.get("name") == func["name"] and tfunc.get("doc"):
-                                f.write("\n    **Function docstring:**\n\n")
-                                f.write("    ```\n")
-                                for line in tfunc["doc"].splitlines():
-                                    f.write("    " + line + "\n")
-                                f.write("    ```\n\n")
-                                break
+                # If requested, include full docstring for this top-level function
+                elif include_docstrings and texts is not None:
+                    for tfunc in texts.get("functions", []):
+                        if tfunc.get("name") == func["name"] and tfunc.get("doc"):
+                            f.write("\n    **Function docstring:**\n\n")
+                            f.write("    ```\n")
+                            for line in tfunc["doc"].splitlines():
+                                f.write("    " + line + "\n")
+                            f.write("    ```\n\n")
+                            break
 
             f.write("\n")
         # Summary section

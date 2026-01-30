@@ -165,25 +165,25 @@ class HashLoadingService:
 
             # Set initial status
             dialog.set_status("Calculating hash...")
-            
+
             # Calculate total size for progress tracking
             from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
             total_size = calculate_files_total_size(files)
             dialog.start_progress_tracking(total_size)
-            
+
             # Set initial count (0/N files) and first filename BEFORE showing
             total_files = len(files)
             dialog.set_count(0, total_files)
             dialog.update_progress(file_count=0, total_files=total_files, processed_bytes=0, total_bytes=total_size)
             if files:
                 dialog.set_filename(files[0].filename)
-            
+
             # Show dialog NOW with initialized state
             dialog.show()
             dialog.activateWindow()
             dialog.setFocus()
             dialog.raise_()
-            
+
             # Force UI update to display initialized state
             from PyQt5.QtWidgets import QApplication
             QApplication.processEvents()

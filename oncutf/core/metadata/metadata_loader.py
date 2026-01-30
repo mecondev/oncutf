@@ -499,14 +499,14 @@ class MetadataLoader:
         # Calculate total size for progress tracking
         total_size = calculate_files_total_size(needs_loading)
         loading_dialog.start_progress_tracking(total_size)
-        
+
         # Set initial count (0/N files) and first filename BEFORE showing
         total_files = len(needs_loading)
         loading_dialog.set_count(0, total_files)
         loading_dialog.update_progress(
-            file_count=0, 
-            total_files=total_files, 
-            processed_bytes=0, 
+            file_count=0,
+            total_files=total_files,
+            processed_bytes=0,
             total_bytes=total_size
         )
         if needs_loading:
