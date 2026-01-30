@@ -5,7 +5,7 @@ Date: 2026-01-25
 
 AppContext - Pure Python state management without Qt dependencies.
 
-This is the Qt-free core of ApplicationContext, providing:
+This is the Qt-free core of QtAppContext, providing:
 - Centralized state storage
 - Manager registry
 - Performance tracking

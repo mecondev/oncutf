@@ -2,9 +2,9 @@
 
 Provides Qt-independent functions for core modules to show dialogs,
 progress indicators, and status messages. Delegates to UserDialogPort
-implementations registered in ApplicationContext.
+implementations registered in QtAppContext.
 
-This module breaks core→ui dependency cycles by inverting control:
+This module breaks core->ui dependency cycles by inverting control:
 - core/ imports this (app layer, no Qt)
 - ui/ provides concrete implementations via ports
 
@@ -33,7 +33,7 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     Note:
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is shown by the adapter
-        registered in ApplicationContext.
+        registered in QtAppContext.
 
     Raises:
         RuntimeError: If user_dialog adapter is not registered

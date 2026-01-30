@@ -18,11 +18,6 @@ from oncutf.app.ports.drag_state import DragStatePort
 from oncutf.app.ports.metadata import CacheStore, MetadataProvider, MetadataWriter
 from oncutf.app.ports.metadata_editing import MetadataEditPort
 from oncutf.app.ports.results_display import ResultsDisplayPort
-from oncutf.app.ports.service_interfaces import (
-    FilesystemServiceProtocol,
-    HashServiceProtocol,
-    MetadataServiceProtocol,
-)
 from oncutf.app.ports.service_registry import (
     ServiceRegistry,
     configure_default_services,
@@ -30,6 +25,11 @@ from oncutf.app.ports.service_registry import (
 )
 from oncutf.app.ports.ui_update import UIUpdatePort
 from oncutf.app.ports.user_interaction import ProgressReporter, StatusReporter, UserDialogPort
+from oncutf.domain.ports import (
+    FilesystemServiceProtocol,
+    HashServiceProtocol,
+    MetadataServiceProtocol,
+)
 
 __all__ = [
     "CacheStore",

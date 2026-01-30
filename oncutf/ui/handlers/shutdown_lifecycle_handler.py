@@ -488,9 +488,9 @@ class ShutdownLifecycleHandler:
 
             # Additional cleanup
             try:
-                from oncutf.ui.adapters.application_context import ApplicationContext
+                from oncutf.ui.adapters.qt_app_context import QtAppContext
 
-                context = ApplicationContext.get_instance()
+                context = QtAppContext.get_instance()
                 if context is not None:
                     context.cleanup()
                     logger.info("[CloseEvent] Application context cleaned up")

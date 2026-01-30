@@ -102,12 +102,12 @@ class BootstrapOrchestrator:
             MetadataStagingManager,
             set_metadata_staging_manager,
         )
-        from oncutf.ui.adapters.application_context import ApplicationContext
+        from oncutf.ui.adapters.qt_app_context import QtAppContext
         from oncutf.ui.adapters.qt_rename_engine import QtRenameEngine
         from oncutf.ui.drag.drag_manager import DragManager
 
         # Core Application Context
-        self.window.context = ApplicationContext.create_instance(parent=self.window)
+        self.window.context = QtAppContext.create_instance(parent=self.window)
 
         # Register UI adapters for dependency inversion
         from oncutf.ui.adapters.qt_conflict_resolution import QtConflictResolutionAdapter

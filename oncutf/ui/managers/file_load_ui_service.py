@@ -68,7 +68,7 @@ class FileLoadUIService:
                         os.path.dirname(item.full_path) != folder_path for item in items
                     )
 
-                    # Set folder path and recursive mode in ApplicationContext (centralized state)
+                    # Set folder path and recursive mode in QtAppContext (centralized state)
                     self.parent_window.context.set_current_folder(
                         folder_path, has_subdirectory_files
                     )

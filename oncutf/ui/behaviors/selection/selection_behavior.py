@@ -56,7 +56,7 @@ class SelectionBehavior:
         Args:
             widget: The widget to manage selection for (must implement SelectableWidget)
             selection_store: Optional SelectionStore instance. If None, will attempt
-                to get from ApplicationContext during operation.
+                to get from QtAppContext during operation.
 
         """
         self._widget = widget
@@ -79,13 +79,13 @@ class SelectionBehavior:
         """Get SelectionStore with lazy initialization fallback."""
         if self._selection_store is None:
             try:
-                from oncutf.ui.adapters.application_context import get_app_context
+                from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-                context = get_app_context()
+                context = get_qt_app_context()
                 self._selection_store = context.selection_store
             except RuntimeError:
                 logger.debug(
-                    "[SelectionBehavior] ApplicationContext not ready for SelectionStore",
+                    "[SelectionBehavior] QtAppContext not ready for SelectionStore",
                     extra={"dev_only": True},
                 )
         return self._selection_store

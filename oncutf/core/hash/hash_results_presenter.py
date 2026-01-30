@@ -53,14 +53,14 @@ class HashResultsPresenter:
 
     @property
     def results_display(self) -> ResultsDisplayPort:
-        """Lazy-load results display adapter from ApplicationContext."""
+        """Lazy-load results display adapter from QtAppContext."""
         if self._results_display is None:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._results_display = context.get_manager("results_display")
             if self._results_display is None:
-                raise RuntimeError("ResultsDisplayPort not registered in ApplicationContext")
+                raise RuntimeError("ResultsDisplayPort not registered in QtAppContext")
         return self._results_display
 
     def show_duplicate_results(self, duplicates: dict[str, list[FileItem]], scope: str) -> None:

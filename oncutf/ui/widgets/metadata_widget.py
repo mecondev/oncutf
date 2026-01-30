@@ -193,7 +193,7 @@ class MetadataWidget(QWidget):
                 files = self.parent_window.get_selected_files_ordered()
                 return files
 
-            # Try to get from ApplicationContext
+            # Try to get from QtAppContext
             context = self._get_app_context()
 
             # Try to get from FileStore
@@ -220,20 +220,20 @@ class MetadataWidget(QWidget):
         self._metadata_keys_handler.populate_metadata_keys()
 
     def _get_app_context(self):
-        """Get ApplicationContext with fallback to None."""
+        """Get QtAppContext with fallback to None."""
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
-            return get_app_context()
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+            return get_qt_app_context()
         except (ImportError, RuntimeError):
-            # ApplicationContext not available or not ready yet
+            # QtAppContext not available or not ready yet
             return None
 
     def _get_metadata_cache_via_context(self):
-        """Get metadata cache from ApplicationContext if available."""
+        """Get metadata cache from QtAppContext if available."""
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context and hasattr(context, "_metadata_cache"):
                 cache = context._metadata_cache
                 return cache

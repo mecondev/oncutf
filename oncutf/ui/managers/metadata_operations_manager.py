@@ -67,14 +67,14 @@ class MetadataOperationsManager:
 
     @property
     def metadata_edit(self) -> MetadataEditPort:
-        """Lazy-load metadata edit adapter from ApplicationContext."""
+        """Lazy-load metadata edit adapter from QtAppContext."""
         if self._metadata_edit is None:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._metadata_edit = context.get_manager("metadata_edit")
             if self._metadata_edit is None:
-                raise RuntimeError("MetadataEditPort not registered in ApplicationContext")
+                raise RuntimeError("MetadataEditPort not registered in QtAppContext")
         return self._metadata_edit
 
     # ===== Public Interface Methods =====

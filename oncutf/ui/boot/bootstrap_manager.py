@@ -51,14 +51,14 @@ class BootstrapManager:
         )
 
     def enable_selection_store_mode(self) -> None:
-        """Enable SelectionStore mode in FileTableView once ApplicationContext is ready."""
+        """Enable SelectionStore mode in FileTableView once QtAppContext is ready."""
         try:
             self.main_window.file_table_view.enable_selection_store_mode()
 
             # Connect SelectionStore signals to MainWindow handlers
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context and context.selection_store:
                 # Connect selection changed signal to existing preview update
                 context.selection_store.selection_changed.connect(
@@ -70,11 +70,11 @@ class BootstrapManager:
             else:
                 pass
 
-            # Connect ApplicationContext files_changed signal to update UI
+            # Connect QtAppContext files_changed signal to update UI
             if context:
                 context.files_changed.connect(self._on_files_changed)
                 logger.debug(
-                    "[MainWindow] Connected ApplicationContext files_changed signal",
+                    "[MainWindow] Connected QtAppContext files_changed signal",
                     extra={"dev_only": True},
                 )
 
@@ -86,7 +86,7 @@ class BootstrapManager:
             logger.warning("[MainWindow] Failed to enable SelectionStore mode: %s", e)
 
     def _on_files_changed(self, files: list[Any]) -> None:
-        """Handle files changed from ApplicationContext.
+        """Handle files changed from QtAppContext.
 
         This is called when FileStore updates its internal state (e.g., after rename/reload).
         We update the UI here - FileStore has already been updated.
@@ -97,7 +97,7 @@ class BootstrapManager:
 
         """
         from oncutf.app.services import wait_cursor
-        from oncutf.ui.adapters.application_context import get_app_context
+        from oncutf.ui.adapters.qt_app_context import get_qt_app_context
         from oncutf.ui.services.ui_state_service import restore_ui_state, save_ui_state
 
         logger.info(
@@ -111,7 +111,7 @@ class BootstrapManager:
 
         # Show wait cursor during UI update (runs in main thread - visible to user)
         with wait_cursor():
-            context = get_app_context()
+            context = get_qt_app_context()
 
             # Check if rename or metadata_save is in progress (handled by their respective managers)
             # These operations manage state restoration with knowledge of the changes

@@ -42,7 +42,7 @@ class MetadataController:
     Dependencies:
         - UnifiedMetadataManager: Core metadata loading service
         - StructuredMetadataManager: Structured metadata access
-        - ApplicationContext: Access to file store and settings
+        - AppContext: Access to file store and settings
         - MetadataExporterProtocol: Optional exporter for metadata export
     """
 

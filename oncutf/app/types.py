@@ -141,7 +141,7 @@ FilePathList = list[FilePath]
 
 @runtime_checkable
 class ManagerProtocol(Protocol):
-    """Protocol for managers that can be registered in ApplicationContext.
+    """Protocol for managers that can be registered in QtAppContext.
 
     Managers should implement cleanup for proper resource management.
     """

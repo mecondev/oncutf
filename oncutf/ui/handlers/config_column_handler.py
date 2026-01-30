@@ -98,7 +98,7 @@ class ConfigColumnHandler:
     # ========================================================================
 
     def register_managers_in_context(self):
-        """Register all managers in ApplicationContext for centralized access.
+        """Register all managers in QtAppContext for centralized access.
 
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.
@@ -148,7 +148,7 @@ class ConfigColumnHandler:
             self.main_window.context.register_manager("rename_engine", self.main_window.unified_rename_engine)
 
             logger.info(
-                "[ConfigColumnHandler] Registered %d managers in ApplicationContext",
+                "[ConfigColumnHandler] Registered %d managers in QtAppContext",
                 len(self.main_window.context.list_managers()),
                 extra={"dev_only": True},
             )

@@ -62,7 +62,7 @@ class ShortcutManager:
 
         # Clear the file table
         self.main_window.clear_file_table("Press Escape to clear, or drag folders here")
-        # Clear folder state via ApplicationContext (centralized state management)
+        # Clear folder state via QtAppContext (centralized state management)
         self.main_window.context.set_current_folder(None, False)
 
         # Restore previous sort state (maintains user preference)

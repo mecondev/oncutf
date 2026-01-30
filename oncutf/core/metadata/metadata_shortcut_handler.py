@@ -342,9 +342,9 @@ class MetadataShortcutHandler:
 
     def _get_all_files(self) -> list[FileItem]:
         """Get all files from the application context."""
-        from oncutf.app.state.context import AppContext as ApplicationContext
+        from oncutf.app.state.context import get_app_context
 
-        context = ApplicationContext()
+        context = get_app_context()
         return context.file_store.get_loaded_files()
 
     def _analyze_metadata_state(self, files: list[FileItem]) -> dict[str, Any]:

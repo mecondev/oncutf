@@ -906,12 +906,12 @@ class MetadataTreeView(QTreeView):
         self._update_file_icon_status()
 
     def _get_app_context(self):
-        """Get ApplicationContext with fallback to None."""
+        """Get QtAppContext with fallback to None."""
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
-            return get_app_context()
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+            return get_qt_app_context()
         except (ImportError, RuntimeError):
-            # ApplicationContext not available or not ready yet
+            # QtAppContext not available or not ready yet
             return None
 
     def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:

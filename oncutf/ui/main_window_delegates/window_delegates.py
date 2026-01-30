@@ -116,7 +116,7 @@ class WindowDelegates:
         return self.config_column_handler.restore_last_folder_if_available()
 
     def _register_managers_in_context(self):
-        """Register all managers in ApplicationContext for centralized access.
+        """Register all managers in QtAppContext for centralized access.
 
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.

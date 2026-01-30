@@ -8,7 +8,7 @@ Services can be registered by their protocol type and retrieved later.
 
 Usage:
     from oncutf.app.ports.service_registry import ServiceRegistry, get_service_registry
-    from oncutf.app.ports.service_interfaces import MetadataServiceProtocol
+    from oncutf.domain.ports import MetadataServiceProtocol
     from oncutf.infra.external.exiftool_client import ExifToolClient
 
     # Register a service
@@ -231,7 +231,7 @@ def configure_default_services(
         registry = get_service_registry()
 
     # Import protocols only (no infra imports here)
-    from oncutf.app.ports.service_interfaces import (
+    from oncutf.domain.ports import (
         FilesystemServiceProtocol,
         HashServiceProtocol,
         MetadataServiceProtocol,

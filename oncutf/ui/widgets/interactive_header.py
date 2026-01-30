@@ -38,11 +38,11 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-# ApplicationContext integration
+# QtAppContext integration
 try:
-    from oncutf.ui.adapters.application_context import get_app_context
+    from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 except ImportError:
-    get_app_context = None
+    get_qt_app_context = None
 
 
 class DropIndicatorWidget(QWidget):
@@ -413,18 +413,18 @@ class InteractiveHeader(QHeaderView):
                 pass  # Position is already managed by mouseMoveEvent updates
 
     def _get_app_context(self):
-        """Get ApplicationContext with fallback to None."""
-        if get_app_context is None:
+        """Get QtAppContext with fallback to None."""
+        if get_qt_app_context is None:
             return None
         try:
-            return get_app_context()
+            return get_qt_app_context()
         except RuntimeError:
-            # ApplicationContext not ready yet
+            # QtAppContext not ready yet
             return None
 
     def _get_main_window_via_context(self):
-        """Get main window via ApplicationContext with fallback to parent traversal."""
-        # Try ApplicationContext first
+        """Get main window via QtAppContext with fallback to parent traversal."""
+        # Try QtAppContext first
         context = self._get_app_context()
         if context and hasattr(context, "_main_window"):
             return context._main_window

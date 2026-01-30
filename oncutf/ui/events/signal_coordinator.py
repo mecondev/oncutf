@@ -107,11 +107,11 @@ class SignalCoordinator:
                 "[SignalCoordinator] Connected selection_store signals", extra={"dev_only": True}
             )
 
-        # Metadata refresh (try ApplicationContext or UnifiedMetadataManager)
+        # Metadata refresh (try QtAppContext or UnifiedMetadataManager)
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
-            context = get_app_context()
+            context = get_qt_app_context()
             if context and hasattr(context, "metadata_changed"):
                 context.metadata_changed.connect(
                     lambda *_: self.parent_window.refresh_metadata_widgets()
@@ -125,7 +125,7 @@ class SignalCoordinator:
                 )
         except Exception as e:
             logger.debug(
-                "[SignalCoordinator] ApplicationContext metadata_changed not available: %s",
+                "[SignalCoordinator] QtAppContext metadata_changed not available: %s",
                 e,
             )
 

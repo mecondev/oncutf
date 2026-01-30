@@ -63,14 +63,14 @@ class FileLoadManager:
 
     @property
     def drag_state(self) -> "DragStatePort":
-        """Lazy-load drag state adapter from ApplicationContext."""
+        """Lazy-load drag state adapter from QtAppContext."""
         if self._drag_state is None:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._drag_state = context.get_manager("drag_state")
             if self._drag_state is None:
-                raise RuntimeError("DragStatePort not registered in ApplicationContext")
+                raise RuntimeError("DragStatePort not registered in QtAppContext")
         return self._drag_state
 
     """Unified file loading manager with fully optimized policy:
@@ -101,7 +101,7 @@ class FileLoadManager:
             return
 
         # Store the recursive state for future reloads (if not merging)
-        # Use ApplicationContext for centralized state management
+        # Use QtAppContext for centralized state management
         if not merge_mode:
             self.parent_window.context.set_recursive_mode(recursive)
             logger.info(

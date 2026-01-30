@@ -200,9 +200,9 @@ class DataProvider:
         # Support Qt.UserRole + 1 for thumbnail pixmaps (thumbnail viewport only)
         if role == Qt.UserRole + 1:
             try:
-                from oncutf.ui.adapters.application_context import ApplicationContext
+                from oncutf.ui.adapters.qt_app_context import QtAppContext
 
-                context = ApplicationContext.get_instance()
+                context = QtAppContext.get_instance()
                 if context and context.has_manager("thumbnail"):
                     thumbnail_manager = context.get_manager("thumbnail")
                     # Request thumbnail (returns placeholder if not cached, triggers async load)

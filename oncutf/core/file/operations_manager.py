@@ -53,14 +53,14 @@ class FileOperationsManager:
 
     @property
     def conflict_resolution(self) -> ConflictResolutionPort:
-        """Lazy-load conflict resolution adapter from ApplicationContext."""
+        """Lazy-load conflict resolution adapter from QtAppContext."""
         if self._conflict_resolution is None:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._conflict_resolution = context.get_manager("conflict_resolution")
             if self._conflict_resolution is None:
-                raise RuntimeError("ConflictResolutionPort not registered in ApplicationContext")
+                raise RuntimeError("ConflictResolutionPort not registered in QtAppContext")
         return self._conflict_resolution
 
     def rename_files(

@@ -69,14 +69,14 @@ class MetadataWriter(QObject):
 
     @property
     def ui_update(self) -> UIUpdatePort:
-        """Lazy-load UI update adapter from ApplicationContext."""
+        """Lazy-load UI update adapter from QtAppContext."""
         if self._ui_update is None:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
             self._ui_update = context.get_manager("ui_update")
             if self._ui_update is None:
-                raise RuntimeError("UIUpdatePort not registered in ApplicationContext")
+                raise RuntimeError("UIUpdatePort not registered in QtAppContext")
         return self._ui_update
 
     @property

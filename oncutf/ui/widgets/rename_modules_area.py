@@ -8,7 +8,7 @@ Container widget that holds multiple RenameModuleWidget instances inside
 scrollable area and provides fixed post-processing section and global
 add/remove controls.
 Designed to scale and support future drag & drop reordering.
-Now supports ApplicationContext for optimized access patterns.
+Now supports QtAppContext for optimized access patterns.
 """
 
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
@@ -40,7 +40,7 @@ class RenameModulesArea(QWidget):
     - Maintains backward compatible API (get_all_data returns same structure)
     - Prepares for node editor by separating logic from UI
 
-    Still supports ApplicationContext for optimized access patterns while maintaining
+    Still supports QtAppContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
 
@@ -117,12 +117,12 @@ class RenameModulesArea(QWidget):
         self.scroll_direction = 0  # -1 for up, 1 for down, 0 for none
 
     def _get_app_context(self):
-        """Get ApplicationContext with fallback to None."""
+        """Get QtAppContext with fallback to None."""
         try:
-            from oncutf.ui.adapters.application_context import get_app_context
-            return get_app_context()
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+            return get_qt_app_context()
         except (ImportError, RuntimeError):
-            # ApplicationContext not available or not ready yet
+            # QtAppContext not available or not ready yet
             return None
 
     def _on_module_updated(self):
@@ -133,7 +133,7 @@ class RenameModulesArea(QWidget):
 
     def add_module(self):
         """Add a new RenameModuleWidget to the area.
-        Now uses ApplicationContext-optimized approach when available.
+        Now uses QtAppContext-optimized approach when available.
         """
         # Always pass parent_window for stability
         module = RenameModuleWidget(parent=self, parent_window=self.parent_window)

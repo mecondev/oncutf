@@ -1,9 +1,9 @@
 """Cursor management service - Application layer facade.
 
 Provides Qt-independent cursor operations for core modules. Delegates to
-CursorPort implementations registered in ApplicationContext.
+CursorPort implementations registered in QtAppContext.
 
-This module breaks core→ui dependency cycles by inverting control:
+This module breaks core->ui dependency cycles by inverting control:
 - core/ imports this (app layer, no Qt)
 - ui/ provides concrete implementations via ports
 
