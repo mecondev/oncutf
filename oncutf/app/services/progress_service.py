@@ -114,6 +114,15 @@ class NullProgressDialog:
         """Mark as cancelled."""
         self._cancelled = True
 
+    def activateWindow(self) -> None:
+        """No-op activate window."""
+
+    def setFocus(self) -> None:
+        """No-op set focus."""
+
+    def raise_(self) -> None:
+        """No-op raise window."""
+
 
 def create_progress_dialog(
     parent: Any = None,

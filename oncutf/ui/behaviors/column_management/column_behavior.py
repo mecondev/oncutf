@@ -344,7 +344,9 @@ class ColumnManagementBehavior:
                 self._shutdown_hook_registered = True
                 logger.debug("[ColumnManagement] Registered shutdown hook")
         except Exception as e:
-            logger.warning("[ColumnManagement] Failed to register shutdown hook: %s", e)
+            # Suppress warning if context not yet initialized (normal during bootstrap)
+            if "not initialized" not in str(e).lower():
+                logger.warning("[ColumnManagement] Failed to register shutdown hook: %s", e)
 
     def unregister_shutdown_hook(self) -> None:
         """Unregister shutdown hook."""
