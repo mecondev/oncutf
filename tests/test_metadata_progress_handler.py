@@ -170,6 +170,7 @@ class TestShowDialogMethods:
 
     def test_show_metadata_dialog_returns_dialog(self) -> None:
         """show_metadata_progress_dialog should return a dialog."""
+        from oncutf.app.services.progress_service import NullProgressDialog
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
         from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
@@ -183,10 +184,12 @@ class TestShowDialogMethods:
             files=[mock_file], is_extended=False, cancel_callback=None
         )
 
-        assert result is None or isinstance(result, ProgressDialog)
+        # Accept ProgressDialog or NullProgressDialog (when no factory registered)
+        assert result is None or isinstance(result, (ProgressDialog, NullProgressDialog))
 
     def test_show_hash_dialog_returns_dialog(self) -> None:
         """show_hash_progress_dialog should return a dialog."""
+        from oncutf.app.services.progress_service import NullProgressDialog
         from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
         from oncutf.ui.helpers.progress_dialog import ProgressDialog
 
@@ -198,4 +201,5 @@ class TestShowDialogMethods:
 
         result = handler.show_hash_progress_dialog(files=[mock_file], cancel_callback=None)
 
-        assert result is None or isinstance(result, ProgressDialog)
+        # Accept ProgressDialog or NullProgressDialog (when no factory registered)
+        assert result is None or isinstance(result, (ProgressDialog, NullProgressDialog))

@@ -39,10 +39,18 @@ class TestMetadataTreeStagingIntegration:
         tree.deleteLater()
 
     def test_staging_integration(self, tree_view, staging_manager):
-        # Mock get_metadata_staging_manager to return our instance
+        # Create a mock metadata service that uses our staging manager
+        mock_metadata_service = MagicMock()
+        mock_metadata_service.staging_manager = staging_manager
+
+        # Mock both get_metadata_staging_manager and get_metadata_service
+        # Note: get_metadata_service is imported inside the method, so patch at source
         with patch(
             "oncutf.core.metadata.get_metadata_staging_manager",
             return_value=staging_manager,
+        ), patch(
+            "oncutf.core.metadata.metadata_service.get_metadata_service",
+            return_value=mock_metadata_service,
         ):
 
             # Setup file item
