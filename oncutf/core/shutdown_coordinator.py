@@ -75,12 +75,12 @@ class ShutdownCoordinator(QObject):
     DEFAULT_TIMEOUTS: ClassVar[dict["ShutdownPhase", float]] = {
         ShutdownPhase.TIMERS: 0.5,
         ShutdownPhase.THREAD_POOL: 2.0,
-        ShutdownPhase.THUMBNAILS: 1.0,
+        ShutdownPhase.THUMBNAILS: 2.0,  # Increased from 1.0s (can take 1.3s+ on busy systems)
         ShutdownPhase.DATABASE: 1.0,
         ShutdownPhase.EXIFTOOL: 0.5,
         ShutdownPhase.FINALIZE: 0.5,
     }
-    # Total worst-case: 5.0 seconds
+    # Total worst-case: 6.0 seconds
 
     def __init__(self, parent: Any = None) -> None:
         """Initialize shutdown coordinator.
