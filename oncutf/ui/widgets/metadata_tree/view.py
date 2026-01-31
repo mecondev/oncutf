@@ -23,6 +23,7 @@ Author: Michael Economou
 Date: 2025-05-21
 """
 
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import (
@@ -1028,7 +1029,7 @@ class MetadataTreeView(QTreeView):
             return
 
         # Try to interpret the value as a file path
-        if os.path.exists(value):
+        if Path(value).exists():
             self.set_current_file_path(value)
             logger.debug(
                 "[MetadataTreeView] Set current file from metadata field '%s': %s",
@@ -1042,23 +1043,23 @@ class MetadataTreeView(QTreeView):
         filename = None
 
         # Check if value looks like a filename
-        if os.path.basename(value) == value and "." in value:
+        if Path(value).name == value and "." in value:
             filename = value
             # Try to get directory from current file
             if self._current_file_path:
-                file_path = os.path.dirname(self._current_file_path)
+                file_path = str(Path(self._current_file_path).parent)
 
         # Check if value looks like a directory
-        elif os.path.isdir(value):
+        elif Path(value).is_dir():
             file_path = value
             # Try to get filename from current file
             if self._current_file_path:
-                filename = os.path.basename(self._current_file_path)
+                filename = Path(self._current_file_path).name
 
         # Try to construct full path
         if file_path and filename:
-            full_path = os.path.join(file_path, filename)
-            if os.path.exists(full_path):
+            full_path = str(Path(file_path) / filename)
+            if Path(full_path).exists():
                 self.set_current_file_path(full_path)
                 logger.debug(
                     "[MetadataTreeView] Set current file from constructed path: %s",
@@ -1072,7 +1073,7 @@ class MetadataTreeView(QTreeView):
             metadata = selected_files[0].metadata
             if field in metadata:
                 potential_path = metadata[field]
-                if os.path.exists(potential_path):
+                if Path(potential_path).exists():
                     self.set_current_file_path(potential_path)
                     logger.debug(
                         "[MetadataTreeView] Set current file from metadata field '%s': %s",

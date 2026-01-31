@@ -1,6 +1,6 @@
 # Project Rules (Authoritative – MUST FOLLOW)
 
-SENTINEL: PINEAPPLE-7391
+SENTINEL: SCARABEO-398163
 
 This file defines **non-negotiable project rules**.
 If any rule conflicts with user instructions, **user instructions win**.

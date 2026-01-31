@@ -10,6 +10,7 @@ triggers custom dialogs (recursive, rejected files), and returns results for the
 """
 
 import os
+from pathlib import Path
 from typing import Literal
 
 from PyQt5.QtCore import QMimeData
@@ -27,9 +28,9 @@ def analyze_drop(paths: list[str]) -> dict:
     """Analyze the given paths from drag & drop and return information about the drop type.
     Returns a dict with keys: type, folders, files, rejected.
     """
-    folders = [p for p in paths if os.path.isdir(p)]
-    files = [p for p in paths if os.path.isfile(p)]
-    rejected = [p for p in paths if not os.path.exists(p)]
+    folders = [p for p in paths if Path(p).is_dir()]
+    files = [p for p in paths if Path(p).is_file()]
+    rejected = [p for p in paths if not Path(p).exists()]
 
     if len(folders) == 1 and not files:
         drop_type = "single_folder"
@@ -50,7 +51,7 @@ def filter_allowed_files(files: list[str]) -> tuple[list[str], list[str]]:
     allowed = []
     rejected = []
     for f in files:
-        ext = os.path.splitext(f)[1].lower().lstrip(".")
+        ext = Path(f).suffix.lower().lstrip(".")
         if ext in ALLOWED_EXTENSIONS:
             allowed.append(f)
         else:
@@ -64,7 +65,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
     """
     from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
-    folder_name = os.path.basename(folder_path)
+    folder_name = Path(folder_path).name
     message = f"Do you want to import files from all subfolders of '{folder_name}' as well?"
     return CustomMessageDialog.question(
         parent,

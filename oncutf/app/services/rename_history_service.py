@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Protocol
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -267,10 +268,10 @@ class RenameHistoryManager:
             for operation in batch.operations:
                 current_path = operation.new_path
 
-                if not os.path.exists(current_path):
+                if not Path(current_path).exists():
                     missing_files.append(operation.new_filename)
                 else:
-                    current_filename = os.path.basename(current_path)
+                    current_filename = Path(current_path).name
                     if current_filename != operation.new_filename:
                         wrong_names.append(
                             f"{current_filename} (expected {operation.new_filename})"
@@ -330,8 +331,8 @@ class RenameHistoryManager:
                         safe_case_rename,
                     )
 
-                    current_name = os.path.basename(current_path)
-                    target_name = os.path.basename(target_path)
+                    current_name = Path(current_path).name
+                    target_name = Path(target_path).name
 
                     if is_case_only_change(current_name, target_name):
                         if not safe_case_rename(current_path, target_path):
@@ -339,7 +340,7 @@ class RenameHistoryManager:
                                 f"Case-only rename failed: {current_name} -> {target_name}"
                             )
                     else:
-                        os.rename(current_path, target_path)
+                        Path(current_path).rename(target_path)
                     successful_reverts.append(operation)
 
                     logger.debug(
