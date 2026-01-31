@@ -14,6 +14,7 @@ Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 """
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -300,7 +301,7 @@ class ShortcutManager:
                 hash_value = hash_cache.get_hash(file_path, "CRC32")
                 if hash_value:
                     # Get filename from path
-                    file_name = os.path.basename(file_path)
+                    file_name = Path(file_path).name
                     hash_results[file_name] = hash_value
 
             if not hash_results:

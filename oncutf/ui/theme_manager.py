@@ -172,7 +172,7 @@ class ThemeManager(QObject):
             return ""
 
         try:
-            with open(template_path, encoding="utf-8") as f:
+            with template_path.open(encoding="utf-8") as f:
                 template = f.read()
 
             # Replace {{token}} with actual colors

@@ -10,6 +10,7 @@ for folders, files, and expand/collapse indicators.
 """
 
 import os
+from pathlib import Path
 from typing import Any, ClassVar
 
 from PyQt5.QtCore import QModelIndex, Qt
@@ -181,7 +182,7 @@ class CustomFileSystemModel(QFileSystemModel):
             return "folder"
 
         # Get file extension
-        _, ext = os.path.splitext(file_path)
+        ext = Path(file_path).suffix
         if ext.startswith("."):
             ext = ext[1:].lower()
 

@@ -21,6 +21,7 @@ is now cleanly separated into focused modules.
 import contextlib
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -453,7 +454,7 @@ class UnifiedMetadataManager(QObject):
 
         # Update modification time
         with contextlib.suppress(Exception):
-            file_item.modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
+            file_item.modified = datetime.fromtimestamp(Path(file_item.full_path).stat().st_mtime)
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)

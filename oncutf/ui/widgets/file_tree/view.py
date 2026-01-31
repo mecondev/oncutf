@@ -20,6 +20,7 @@ Features:
 """
 
 import os
+from pathlib import Path
 
 from PyQt5.QtCore import QEvent, Qt, pyqtSignal
 from PyQt5.QtGui import QKeyEvent
@@ -305,7 +306,7 @@ class FileTreeView(QTreeView):
                 selected_path = path
 
         # Keep filesystem watcher aligned with the active folder
-        if selected_path and os.path.isdir(selected_path):
+        if selected_path and Path(selected_path).is_dir():
             self._filesystem_handler.update_monitored_folder(selected_path)
 
         self.selection_changed.emit(selected_path)
