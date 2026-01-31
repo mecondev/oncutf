@@ -398,6 +398,7 @@ ignore = [
 # Legitimate Any usage (external APIs, dynamic data)
 "oncutf/core/metadata/metadata_service.py" = ["ANN401"]  # Metadata values are truly dynamic
 "oncutf/app/services/batch_service.py" = ["ANN401"]  # Generic batch operations with dynamic kwargs
+"oncutf/core/hash/base_hash_worker.py" = ["ANN401"]  # Qt parent reference
 # Tests - exclude from type annotation requirements
 "tests/**/*.py" = ["ANN"]  # Test code can remain loosely typed
 

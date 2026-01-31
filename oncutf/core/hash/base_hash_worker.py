@@ -167,7 +167,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
             Total size in bytes
 
         """
-        import os
+        from pathlib import Path
 
         total_size = 0
         files_counted = 0
@@ -180,8 +180,9 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
                 return 0
 
             try:
-                if os.path.exists(file_path) and os.path.isfile(file_path):
-                    size = os.path.getsize(file_path)
+                path = Path(file_path)
+                if path.exists() and path.is_file():
+                    size = path.stat().st_size
                     total_size += size
                     files_counted += 1
 
@@ -218,14 +219,14 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
 
         Falls back to direct storage via hash manager if batching is not available.
         """
-        import os
+        from pathlib import Path
 
         with QMutexLocker(self._mutex):
             if self._enable_batching and self._batch_manager:
                 logger.debug(
                     "[%s] Queuing hash for batch: %s",
                     self.__class__.__name__,
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                 )
                 self._batch_manager.queue_hash_store(
                     file_path=file_path,
@@ -241,7 +242,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
                 logger.debug(
                     "[%s] Storing hash directly: %s",
                     self.__class__.__name__,
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                 )
                 self._hash_manager.store_hash(file_path, hash_value, algorithm)
 
