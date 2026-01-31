@@ -16,6 +16,7 @@ import os
 import subprocess
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 # Initialize Logger
@@ -145,7 +146,7 @@ class ExifToolWrapper:
         logger.info(
             "[ExifToolWrapper] _get_metadata_with_exiftool: use_extended=%s for %s",
             use_extended,
-            os.path.basename(file_path),
+            Path(file_path).name,
         )
 
         if use_extended:
@@ -163,7 +164,7 @@ class ExifToolWrapper:
 
         file_path = normalize_path(file_path)
 
-        if not os.path.isfile(file_path):
+        if not Path(file_path).is_file():
             logger.warning("[ExifToolWrapper] File not found: %s", file_path)
             return None
 
@@ -324,7 +325,7 @@ class ExifToolWrapper:
 
         file_path = normalize_path(file_path)
 
-        if not os.path.isfile(file_path):
+        if not Path(file_path).is_file():
             logger.warning("[ExtendedReader] File does not exist: %s", file_path)
             return None
 
@@ -435,7 +436,7 @@ class ExifToolWrapper:
 
         except subprocess.TimeoutExpired:
             # Timeout is expected for large video files - log as warning, not error
-            filename = os.path.basename(file_path)
+            filename = Path(file_path).name
             logger.warning(
                 "[ExtendedReader] Timeout reading extended metadata for %s (exceeded %ss). This is normal for large files.",
                 filename,
@@ -463,7 +464,7 @@ class ExifToolWrapper:
 
         file_path_normalized = normalize_path(file_path)
 
-        if not os.path.isfile(file_path_normalized):
+        if not Path(file_path_normalized).is_file():
             logger.warning("[ExifToolWrapper] File not found for writing: %s", file_path_normalized)
             return False
 
@@ -521,7 +522,7 @@ class ExifToolWrapper:
             if result.returncode == 0:
                 logger.info(
                     "[ExifToolWrapper] Successfully wrote metadata to: %s",
-                    os.path.basename(file_path_normalized),
+                    Path(file_path_normalized).name,
                 )
                 return True
             else:
@@ -532,7 +533,7 @@ class ExifToolWrapper:
         except subprocess.TimeoutExpired:
             logger.error(
                 "[ExifToolWrapper] Timeout while writing metadata to: %s",
-                os.path.basename(file_path_normalized),
+                Path(file_path_normalized).name,
             )
             return False
         except Exception as e:

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
@@ -535,8 +536,8 @@ class MetadataLoader:
             try:
                 if hasattr(item, "size") and item.size is not None:
                     current_file_size = item.size
-                elif hasattr(item, "full_path") and os.path.exists(item.full_path):
-                    current_file_size = os.path.getsize(item.full_path)
+                elif hasattr(item, "full_path") and Path(item.full_path).exists():
+                    current_file_size = Path(item.full_path).stat().st_size
                     item.size = current_file_size
                 else:
                     current_file_size = 0
@@ -768,22 +769,22 @@ class MetadataLoader:
 
         try:
             # Get folder files for companion detection
-            folder_path = os.path.dirname(file_item.full_path)
+            folder_path = str(Path(file_item.full_path).parent)
             folder_files = []
 
             # First try to use the files being loaded (more efficient)
             if all_files:
                 folder_files = [
-                    f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path
+                    f.full_path for f in all_files if str(Path(f.full_path).parent) == folder_path
                 ]
 
             # If not enough context, scan the folder
             if len(folder_files) < 2:
                 try:
                     folder_files = [
-                        os.path.join(folder_path, f)
-                        for f in os.listdir(folder_path)
-                        if os.path.isfile(os.path.join(folder_path, f))
+                        str(Path(folder_path) / f)
+                        for f in Path(folder_path).iterdir()
+                        if (Path(folder_path) / f.name).is_file()
                     ]
                 except OSError:
                     return base_metadata
@@ -805,7 +806,7 @@ class MetadataLoader:
                 try:
                     companion_data = CompanionFilesHelper.extract_companion_metadata(companion_path)
                     if companion_data:
-                        companion_name = os.path.basename(companion_path)
+                        companion_name = Path(companion_path).name
                         for key, value in companion_data.items():
                             if key != "source":
                                 companion_key = f"Companion:{companion_name}:{key}"
