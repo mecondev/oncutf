@@ -98,11 +98,12 @@ class ParallelHashWorker(BaseHashWorker):
         if self.is_cancelled():
             return (file_path, None, 0)
 
-        filename = os.path.basename(file_path)
+        filename = Path(file_path).name
 
         # Get file size
         try:
-            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            path = Path(file_path)
+            file_size = path.stat().st_size if path.exists() else 0
         except OSError:
             file_size = 0
 
@@ -149,7 +150,7 @@ class ParallelHashWorker(BaseHashWorker):
 
             current = self._completed_files
             total = self._total_files
-            filename = os.path.basename(file_path)
+            filename = Path(file_path).name
 
             # Copy for signal emission (avoid holding mutex)
             bytes_processed = self._cumulative_processed_bytes
@@ -349,7 +350,7 @@ class ParallelHashWorker(BaseHashWorker):
         # Build list of (source_file, external_file) pairs
         file_pairs: list[tuple[str, str | None]] = []
         for file_path in file_paths:
-            filename = os.path.basename(file_path)
+            filename = Path(file_path).name
             external_file = external_path / filename
 
             if external_file.exists() and external_file.is_file():
@@ -394,7 +395,8 @@ class ParallelHashWorker(BaseHashWorker):
                     comparison_results[source_path] = result
 
                     # Update progress (approximate file size)
-                    file_size = os.path.getsize(source_path) if os.path.exists(source_path) else 0
+                    path = Path(source_path)
+                    file_size = path.stat().st_size if path.exists() else 0
                     self._update_progress(source_path, file_size)
 
                 except Exception as e:

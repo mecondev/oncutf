@@ -200,11 +200,11 @@ class HashWorker(BaseHashWorker):
             hash_value = self._hash_manager.get_cached_hash(file_path)
             if hash_value is not None:
                 self._cache_hits += 1
-                logger.debug("[HashWorker] Cache hit for: %s", os.path.basename(file_path))
+                logger.debug("[HashWorker] Cache hit for: %s", Path(file_path).name)
                 return hash_value
             else:
                 self._cache_misses += 1
-                logger.debug("[HashWorker] Cache miss for: %s", os.path.basename(file_path))
+                logger.debug("[HashWorker] Cache miss for: %s", Path(file_path).name)
                 return None
         except Exception as e:
             logger.debug("[HashWorker] Cache check failed for %s: %s", file_path, e)
@@ -222,12 +222,13 @@ class HashWorker(BaseHashWorker):
             tuple: (file_hash, file_size) or (None, file_size) if hash failed
 
         """
-        filename = os.path.basename(file_path)
+        filename = Path(file_path).name
         self.progress_updated.emit(i + 1, total_files, filename)
 
         # Get file size for progress tracking
         try:
-            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            path = Path(file_path)
+            file_size = path.stat().st_size if path.exists() else 0
         except OSError:
             file_size = 0
 
@@ -434,7 +435,7 @@ class HashWorker(BaseHashWorker):
         comparison_results: dict[str, Any] = {}
         total_files = len(file_paths)
 
-        self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
+        self.status_updated.emit(f"Comparing files with {Path(external_folder).name}...")
 
         # Reset cumulative tracking at start
         with QMutexLocker(self._mutex):
@@ -452,7 +453,7 @@ class HashWorker(BaseHashWorker):
                 self.finished_processing.emit(False)
                 return
 
-            filename = os.path.basename(file_path)
+            filename = Path(file_path).name
             current_hash, _file_size = self._process_file_with_progress(file_path, i, total_files)
 
             if current_hash is None:
