@@ -8,8 +8,8 @@ Simple integration test for hash functionality without relying on signals.
 Tests the actual fix for cumulative progress tracking.
 """
 
-import os
 import tempfile
+from pathlib import Path
 
 from oncutf.core.hash.hash_manager import HashManager
 
@@ -22,10 +22,9 @@ def test_hash_manager_basic_functionality():
         expected_sizes = []
 
         for i, size in enumerate([5000, 10000, 15000]):
-            file_path = os.path.join(temp_dir, f"test_file_{i}.txt")
-            with open(file_path, "wb") as f:
-                f.write(b"X" * size)
-            files.append(file_path)
+            p = Path(temp_dir) / f"test_file_{i}.txt"
+            p.write_bytes(b"X" * size)
+            files.append(str(p))
             expected_sizes.append(size)
 
         # Test hash calculation
@@ -52,9 +51,8 @@ def test_hash_manager_with_progress_callback():
     """Test HashManager with progress callback to simulate real usage."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a larger file to test progress tracking
-        large_file = os.path.join(temp_dir, "large_test.txt")
-        with open(large_file, "wb") as f:
-            f.write(b"Y" * 50000)  # 50KB file
+        large_file = str(Path(temp_dir) / "large_test.txt")
+        Path(large_file).write_bytes(b"Y" * 50000)  # 50KB file
 
         # Track progress updates
         progress_updates = []
@@ -89,18 +87,17 @@ def test_cumulative_size_calculation():
         files = []
 
         for i, size in enumerate(sizes):
-            file_path = os.path.join(temp_dir, f"size_test_{i}.txt")
-            with open(file_path, "wb") as f:
-                f.write(b"Z" * size)
-            files.append(file_path)
+            p = Path(temp_dir) / f"size_test_{i}.txt"
+            p.write_bytes(b"Z" * size)
+            files.append(str(p))
 
         # Calculate total size manually
         manual_total = sum(sizes)
 
-        # Calculate using os.path.getsize (what the fix uses)
+        # Calculate using Path.stat().st_size (what the fix uses)
         calculated_total = 0
         for file_path in files:
-            file_size = os.path.getsize(file_path)
+            file_size = Path(file_path).stat().st_size
             calculated_total += file_size
 
         assert calculated_total == manual_total, (
@@ -112,7 +109,7 @@ def test_cumulative_size_calculation():
         cumulative_processed = 0
 
         for file_path in files:
-            file_size = os.path.getsize(file_path)
+            file_size = Path(file_path).stat().st_size
             file_hash = hash_manager.calculate_hash(file_path)
 
             assert file_hash is not None, f"Failed to hash {file_path}"

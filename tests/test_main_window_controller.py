@@ -106,10 +106,9 @@ class TestRestoreLastSessionWorkflow:
 
         file_load, _, _ = mock_controllers
 
-        # Use os.path.join for cross-platform path
-        import os
+        from pathlib import Path
 
-        test_folder = os.path.join("test", "folder")
+        test_folder = str(Path("test") / "folder")
 
         result = controller.restore_last_session_workflow(
             last_folder=test_folder, recursive=False, load_metadata=False
