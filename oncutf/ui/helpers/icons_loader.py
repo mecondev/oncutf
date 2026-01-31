@@ -18,6 +18,7 @@ Usage:
 """
 
 import os
+from pathlib import Path
 
 from PyQt5.QtGui import QIcon, QPixmap
 
@@ -114,18 +115,18 @@ class ThemeIconLoader:
         theme = theme or self.theme
 
         # Try feather icons folder first (PNG only - no SVG support)
-        feather_png_path = os.path.join(self.base_dir, "feather_icons", f"{name}.png")
-        if os.path.exists(feather_png_path):
+        feather_png_path = str(Path(self.base_dir) / "feather_icons" / f"{name}.png")
+        if Path(feather_png_path).exists():
             return feather_png_path
 
         # Try feather icons folder (SVG)
-        feather_svg_path = os.path.join(self.base_dir, "feather_icons", f"{name}.svg")
-        if os.path.exists(feather_svg_path):
+        feather_svg_path = str(Path(self.base_dir) / "feather_icons" / f"{name}.svg")
+        if Path(feather_svg_path).exists():
             return feather_svg_path
 
         # Fall back to root icons folder (PNG only)
-        fallback_png_path = os.path.join(self.base_dir, f"{name}.png")
-        if os.path.exists(fallback_png_path):
+        fallback_png_path = str(Path(self.base_dir) / f"{name}.png")
+        if Path(fallback_png_path).exists():
             return fallback_png_path
 
         # Silently return empty string if not found (no warning spam)
@@ -196,7 +197,7 @@ class ThemeIconLoader:
 
         favicon_path = get_assets_dir() / "favicon.ico"
 
-        if os.path.exists(str(favicon_path)):
+        if favicon_path.exists():
             logger.debug("[IconLoader] Loading app icon from: %s", favicon_path)
             return QIcon(str(favicon_path))
         else:
