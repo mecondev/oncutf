@@ -10,6 +10,7 @@ Handles all file hash CRUD operations.
 import os
 import sqlite3
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -67,8 +68,8 @@ class HashStore:
                 # Get current file size
                 file_size = None
                 try:
-                    if os.path.exists(file_path):
-                        file_size = os.path.getsize(file_path)
+                    if Path(file_path).exists():
+                        file_size = Path(file_path).stat().st_size
                 except OSError:
                     pass
 
@@ -99,7 +100,7 @@ class HashStore:
                 logger.debug(
                     "[HashStore] Stored %s hash for: %s",
                     algorithm,
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                 )
             return True
 

@@ -14,6 +14,7 @@ Supports:
 """
 
 import os
+from pathlib import Path
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
@@ -50,13 +51,13 @@ def prepare_status_icons(base_dir: str | None = None) -> dict[str, str]:
     if base_dir is None:
         base_dir = str(get_icons_dir())
 
-    os.makedirs(base_dir, exist_ok=True)
+    Path(base_dir).mkdir(parents=True, exist_ok=True)
 
     for name in ICON_NAMES:
-        path = os.path.join(base_dir, f"{name}.png")
+        path = str(Path(base_dir) / f"{name}.png")
         ICON_PATHS[name] = path
 
-        if not os.path.exists(path):
+        if not Path(path).exists():
             pixmap = create_colored_icon(
                 fill_color=PREVIEW_COLORS[name],
                 shape=PREVIEW_INDICATOR_SHAPE,

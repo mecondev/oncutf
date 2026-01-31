@@ -188,7 +188,7 @@ class ThumbnailManager(QObject):
             file_path,
             size_px,
         )
-        if not os.path.exists(file_path):
+        if not Path(file_path).exists():
             logger.warning("[ThumbnailManager] File not found for thumbnail: %s", file_path)
             return self._get_placeholder()
 
@@ -218,7 +218,7 @@ class ThumbnailManager(QObject):
         """
         try:
             # Get file stats for cache key
-            stat = os.stat(file_path)
+            stat = Path(file_path).stat()
             mtime = stat.st_mtime
             size = stat.st_size
 
@@ -421,7 +421,7 @@ class ThumbnailManager(QObject):
 
         """
         try:
-            stat = os.stat(file_path)
+            stat = Path(file_path).stat()
             self._cache.invalidate(file_path, stat.st_mtime, stat.st_size)
             self._db_store.invalidate_entry(file_path)
             logger.debug("Invalidated cache for: %s", file_path)
