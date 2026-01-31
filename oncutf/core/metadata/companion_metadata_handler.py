@@ -16,6 +16,7 @@ Responsibilities:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
@@ -78,12 +79,12 @@ class CompanionMetadataHandler:
         try:
             # If no folder files provided, get them from the file's directory
             if folder_files is None:
-                folder_path = os.path.dirname(file_item.full_path)
+                folder_path = str(Path(file_item.full_path).parent)
                 try:
                     folder_files = [
-                        os.path.join(folder_path, f)
-                        for f in os.listdir(folder_path)
-                        if os.path.isfile(os.path.join(folder_path, f))
+                        str(Path(folder_path) / f)
+                        for f in Path(folder_path).iterdir()
+                        if (Path(folder_path) / f.name).is_file()
                     ]
                 except OSError:
                     folder_files = []
@@ -109,7 +110,7 @@ class CompanionMetadataHandler:
                     )
                     if companion_data:
                         # Prefix companion metadata to avoid conflicts
-                        companion_name = os.path.basename(companion_path)
+                        companion_name = Path(companion_path).name
                         for key, value in companion_data.items():
                             if key != "source":  # Skip the source indicator
                                 companion_key = f"Companion:{companion_name}:{key}"
@@ -169,22 +170,22 @@ class CompanionMetadataHandler:
 
         try:
             # Get folder files for companion detection
-            folder_path = os.path.dirname(file_item.full_path)
+            folder_path = str(Path(file_item.full_path).parent)
             folder_files = []
 
             # First try to use the files being loaded (more efficient)
             if all_files:
                 folder_files = [
-                    f.full_path for f in all_files if os.path.dirname(f.full_path) == folder_path
+                    f.full_path for f in all_files if str(Path(f.full_path).parent) == folder_path
                 ]
 
             # If not enough context, scan the folder
             if len(folder_files) < 2:
                 try:
                     folder_files = [
-                        os.path.join(folder_path, f)
-                        for f in os.listdir(folder_path)
-                        if os.path.isfile(os.path.join(folder_path, f))
+                        str(Path(folder_path) / f)
+                        for f in Path(folder_path).iterdir()
+                        if (Path(folder_path) / f.name).is_file()
                     ]
                 except OSError:
                     return base_metadata
@@ -208,7 +209,7 @@ class CompanionMetadataHandler:
                         companion_path
                     )
                     if companion_data:
-                        companion_name = os.path.basename(companion_path)
+                        companion_name = Path(companion_path).name
                         for key, value in companion_data.items():
                             if key != "source":
                                 companion_key = f"Companion:{companion_name}:{key}"

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -168,7 +169,8 @@ class UnifiedPreviewManager:
 
         for idx, file in enumerate(files):
             try:
-                _basename, extension = os.path.splitext(file.filename)
+                file_path_obj = Path(file.filename)
+                _basename, extension = file_path_obj.stem, file_path_obj.suffix
 
                 # Apply modules with availability context
                 new_fullname = self._apply_modules_with_context(
@@ -271,7 +273,8 @@ class UnifiedPreviewManager:
             The new filename (basename only, without extension).
 
         """
-        original_base_name, _ext = os.path.splitext(file_item.filename)
+        file_path_obj = Path(file_item.filename)
+        original_base_name, _ext = file_path_obj.stem, file_path_obj.suffix
         new_name_parts = []
 
         for data in modules_data:
@@ -296,7 +299,7 @@ class UnifiedPreviewManager:
                 result_filename = TextRemovalModule.apply_from_data(
                     data, file_item, index, metadata_cache
                 )
-                part, _ = os.path.splitext(result_filename)
+                part = Path(result_filename).stem
 
             elif module_type == "metadata":
                 part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
@@ -336,24 +339,24 @@ class UnifiedPreviewManager:
         elif scope_enum == CounterScope.PER_FOLDER:
             if not all_files or not file_item:
                 return global_index
-            current_folder = os.path.dirname(file_item.full_path)
+            current_folder = str(Path(file_item.full_path).parent)
             folder_index = 0
             for i, f in enumerate(all_files):
                 if i >= global_index:
                     break
-                if os.path.dirname(f.full_path) == current_folder:
+                if str(Path(f.full_path).parent) == current_folder:
                     folder_index += 1
             return folder_index
 
         elif scope_enum == CounterScope.PER_EXTENSION:
             if not all_files or not file_item:
                 return global_index
-            current_ext = os.path.splitext(file_item.filename)[1].lower()
+            current_ext = Path(file_item.filename).suffix.lower()
             ext_index = 0
             for i, f in enumerate(all_files):
                 if i >= global_index:
                     break
-                if os.path.splitext(f.filename)[1].lower() == current_ext:
+                if Path(f.filename).suffix.lower() == current_ext:
                     ext_index += 1
             return ext_index
 
@@ -418,7 +421,8 @@ def apply_rename_modules(
     UnifiedPreviewManager._apply_rename_modules instead.
     """
     # Create a minimal manager instance for standalone use
-    original_base_name, _ext = os.path.splitext(file_item.filename)
+    file_path_obj = Path(file_item.filename)
+    original_base_name, _ext = file_path_obj.stem, file_path_obj.suffix
     new_name_parts = []
 
     for data in modules_data:
@@ -437,7 +441,7 @@ def apply_rename_modules(
             result_filename = TextRemovalModule.apply_from_data(
                 data, file_item, index, metadata_cache
             )
-            part, _ = os.path.splitext(result_filename)
+            part = Path(result_filename).stem
         elif module_type == "metadata":
             part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
 
@@ -464,24 +468,24 @@ def calculate_scope_aware_index(
     elif scope_enum == CounterScope.PER_FOLDER:
         if not all_files or not file_item:
             return global_index
-        current_folder = os.path.dirname(file_item.full_path)
+        current_folder = str(Path(file_item.full_path).parent)
         folder_index = 0
         for i, f in enumerate(all_files):
             if i >= global_index:
                 break
-            if os.path.dirname(f.full_path) == current_folder:
+            if str(Path(f.full_path).parent) == current_folder:
                 folder_index += 1
         return folder_index
 
     elif scope_enum == CounterScope.PER_EXTENSION:
         if not all_files or not file_item:
             return global_index
-        current_ext = os.path.splitext(file_item.filename)[1].lower()
+        current_ext = Path(file_item.filename).suffix.lower()
         ext_index = 0
         for i, f in enumerate(all_files):
             if i >= global_index:
                 break
-            if os.path.splitext(f.filename)[1].lower() == current_ext:
+            if Path(f.filename).suffix.lower() == current_ext:
                 ext_index += 1
         return ext_index
 
