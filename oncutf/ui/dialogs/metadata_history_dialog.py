@@ -33,6 +33,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from pathlib import Path
+
 from oncutf.app.services.rename_history_service import get_rename_history_manager
 from oncutf.config import UNDO_REDO_SETTINGS
 from oncutf.core.metadata import get_metadata_command_manager
@@ -299,13 +301,8 @@ class MetadataHistoryDialog(QDialog):
                 )
 
             # Sort by timestamp (most recent first)
-            # Castfrom __future__ import annotations
-
-import logging
-import os
-from datetime import datetime
-from pathlib import Path
-from typing import TYPE_CHECKING, cast
+            # Cast timestamp to float for sorting (timestamps are numeric)
+            from typing import cast
 
             all_operations.sort(key=lambda x: cast("float", x["timestamp"]), reverse=True)
 
