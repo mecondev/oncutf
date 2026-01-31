@@ -17,6 +17,7 @@ import re
 import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from oncutf.utils.logging.logger_file_helper import add_file_handler
 
@@ -103,12 +104,12 @@ class ConfigureLogger:
         self.logger.setLevel(logging.DEBUG)  # Accept everything; handlers filter levels
 
         if not self.logger.hasHandlers():
-            os.makedirs(log_dir, exist_ok=True)
+            Path(log_dir).mkdir(parents=True, exist_ok=True)
 
             # Add timestamp to log filename for unique sessions
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_file_path = os.path.join(log_dir, f"{log_name}_{timestamp}.log")
-            debug_file_path = os.path.join(log_dir, f"{log_name}_debug_{timestamp}.log")
+            log_file_path = str(Path(log_dir) / f"{log_name}_{timestamp}.log")
+            debug_file_path = str(Path(log_dir) / f"{log_name}_debug_{timestamp}.log")
 
             # Console handler (optional)
             if console_enabled:

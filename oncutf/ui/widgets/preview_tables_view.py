@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from pathlib import Path
 
 from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
@@ -533,7 +534,7 @@ class PreviewTablesView(QWidget):
                         is_valid_filename_text,
                     )
 
-                    basename, _ = os.path.splitext(new_name)
+                    basename = str(Path(new_name).with_suffix(""))
                     if is_valid_filename_text(basename):
                         status = "valid"
                         icon_path = icon_paths.get("valid", "")
@@ -549,7 +550,7 @@ class PreviewTablesView(QWidget):
 
             # Set icon
             icon_item = QTableWidgetItem()
-            if icon_path and os.path.exists(icon_path):
+            if icon_path and Path(icon_path).exists():
                 icon_item.setIcon(QIcon(icon_path))
             self.icon_table.setItem(row, 0, icon_item)
 
@@ -585,7 +586,7 @@ class PreviewTablesView(QWidget):
 
         from oncutf.utils.naming.filename_validator import validate_filename_part
 
-        basename = os.path.splitext(new_name)[0]
+        basename = str(Path(new_name).with_suffix(""))
         is_valid, _ = validate_filename_part(basename)
 
         if not is_valid:

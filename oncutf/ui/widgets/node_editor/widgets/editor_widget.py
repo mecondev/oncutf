@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QMessageBox, QVBoxLayout, QWidget
@@ -112,7 +113,7 @@ class NodeEditorWidget(QWidget):
             Filename with asterisk if modified, or 'New Graph'.
 
         """
-        name = os.path.basename(self.filename) if self.is_filename_set() else "New Graph"
+        name = Path(self.filename).name if self.is_filename_set() else "New Graph"
         return name + ("*" if self.is_modified() else "")
 
     def get_selected_items(self) -> list[QGraphicsItem]:
@@ -184,13 +185,13 @@ class NodeEditorWidget(QWidget):
                 dump_exception(e)
                 QMessageBox.warning(
                     self,
-                    f"Error loading {os.path.basename(filename)}",
+                    f"Error loading {Path(filename).name}",
                     str(e).replace("[Errno 2]", ""),
                 )
                 return False
             except InvalidFileError as e:
                 dump_exception(e)
-                QMessageBox.warning(self, f"Error loading {os.path.basename(filename)}", str(e))
+                QMessageBox.warning(self, f"Error loading {Path(filename).name}", str(e))
                 return False
 
     def file_save(self, filename: str | None = None) -> bool:
