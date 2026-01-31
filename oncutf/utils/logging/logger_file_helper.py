@@ -13,6 +13,7 @@ add_file_handler: Attaches a rotating file handler with custom level and optiona
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 
 def add_file_handler(
@@ -34,7 +35,7 @@ def add_file_handler(
         filter_by_name (str, optional): Only log messages from loggers with this name.
 
     """
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    Path(log_path).parent.mkdir(parents=True, exist_ok=True)
 
     file_handler = RotatingFileHandler(
         log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"

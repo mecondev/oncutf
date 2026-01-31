@@ -89,7 +89,7 @@ def group_files_by_companion(
 
     for file_item in files:
         folder = Path(file_item.full_path).parent
-        basename = os.path.splitext(file_item.filename)[0]
+        basename = Path(file_item.filename).stem
         key = (folder, basename)
 
         if key not in basename_index:
@@ -103,7 +103,7 @@ def group_files_by_companion(
     for (folder, basename), group_files in basename_index.items():
         if len(group_files) > 1:
             # Check if files are companions
-            extensions = [os.path.splitext(f.filename)[1].lower() for f in group_files]
+            extensions = [Path(f.filename).suffix.lower() for f in group_files]
 
             # Look for primary + companion pattern
             is_companion_group = False
