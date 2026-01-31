@@ -6,9 +6,9 @@ Date: 2025-05-12
 This module provides functionality for the oncutf batch file renaming application.
 """
 
-import os
 import shutil
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -35,7 +35,7 @@ def temp_dir():
 
 def test_build_plan_no_conflicts(temp_dir):
     # Setup: files to rename to unique names
-    open(os.path.join(temp_dir, "a.txt"), "w").close()
+    (Path(temp_dir) / "a.txt").touch()
     files = [MockFile("a.txt")]
     pairs = [("a.txt", "b.txt")]
 
@@ -49,8 +49,8 @@ def test_build_plan_no_conflicts(temp_dir):
 
 def test_build_plan_with_conflict(temp_dir):
     # Setup: destination already exists
-    open(os.path.join(temp_dir, "a.txt"), "w").close()
-    open(os.path.join(temp_dir, "b.txt"), "w").close()
+    (Path(temp_dir) / "a.txt").touch()
+    (Path(temp_dir) / "b.txt").touch()
     files = [MockFile("a.txt")]
     pairs = [("a.txt", "b.txt")]
 
@@ -62,9 +62,8 @@ def test_build_plan_with_conflict(temp_dir):
 
 def test_execute_rename_plan(temp_dir):
     # Setup: rename a.txt -> b.txt
-    src_path = os.path.join(temp_dir, "a.txt")
-    with open(src_path, "w") as f:
-        f.write("hello")
+    src_path = Path(temp_dir) / "a.txt"
+    src_path.write_text("hello")
 
     files = [MockFile("a.txt")]
     pairs = [("a.txt", "b.txt")]
@@ -76,12 +75,12 @@ def test_execute_rename_plan(temp_dir):
     count = execute_rename_plan(plan)
 
     assert count == 1
-    assert os.path.exists(os.path.join(temp_dir, "b.txt"))
-    assert not os.path.exists(src_path)
+    assert (Path(temp_dir) / "b.txt").exists()
+    assert not src_path.exists()
 
 
 def test_execute_rename_skips_invalid_action(temp_dir):
-    open(os.path.join(temp_dir, "a.txt"), "w").close()
+    (Path(temp_dir) / "a.txt").touch()
     files = [MockFile("a.txt")]
     pairs = [("a.txt", "b.txt")]
     plan = build_rename_plan(files, pairs, temp_dir)
@@ -92,5 +91,5 @@ def test_execute_rename_skips_invalid_action(temp_dir):
     count = execute_rename_plan(plan)
 
     assert count == 0
-    assert os.path.exists(os.path.join(temp_dir, "a.txt"))
-    assert not os.path.exists(os.path.join(temp_dir, "b.txt"))
+    assert (Path(temp_dir) / "a.txt").exists()
+    assert not (Path(temp_dir) / "b.txt").exists()
