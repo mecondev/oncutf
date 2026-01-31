@@ -12,7 +12,7 @@ Run this after setting up init_logging and logger_file_helper.
 """
 
 import logging
-import os
+from pathlib import Path
 
 from oncutf.utils.logging.init_logging import init_logging
 from oncutf.utils.logging.logger_file_helper import add_file_handler
@@ -25,9 +25,9 @@ def clean_logs():
         "logs/oncutf_errors.log",
         "logs/rename.log",
     ]:
-        if os.path.exists(filename):
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write("")
+        p = Path(filename)
+        if p.exists():
+            p.write_text("", encoding="utf-8")
 
 
 # Run test logging
