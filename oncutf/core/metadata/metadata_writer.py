@@ -20,6 +20,7 @@ Uses UIUpdatePort for UI decoupling (Phase 5).
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import QObject
@@ -146,7 +147,7 @@ class MetadataWriter(QObject):
                         "[MetadataWriter] Set %s=%s for %s",
                         key_path,
                         new_value,
-                        os.path.basename(file_path),
+                        Path(file_path).name,
                     )
                     return True
 
@@ -488,7 +489,9 @@ class MetadataWriter(QObject):
 
         # Update modification time
         with contextlib.suppress(Exception):
-            file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
+            file_item.date_modified = datetime.fromtimestamp(
+                Path(file_item.full_path).stat().st_mtime
+            )
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)

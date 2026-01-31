@@ -86,7 +86,7 @@ class SemanticAliasesManager:
 
         """
         try:
-            with open(self._aliases_file, encoding="utf-8") as f:
+            with self._aliases_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Validate structure
@@ -143,7 +143,7 @@ class SemanticAliasesManager:
             self._aliases_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Write with pretty formatting
-            with open(self._aliases_file, "w", encoding="utf-8") as f:
+            with self._aliases_file.open("w", encoding="utf-8") as f:
                 json.dump(
                     aliases,
                     f,

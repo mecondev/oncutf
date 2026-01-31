@@ -16,6 +16,7 @@ Note: This is a state-only module. I/O operations are in FileLoadManager.
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -189,7 +190,7 @@ class FileStore(QObject):
         """
         folders_to_remove = []
         for folder in self._file_cache:
-            if not os.path.exists(folder):
+            if not Path(folder).exists():
                 folders_to_remove.append(folder)
 
         for folder in folders_to_remove:
@@ -212,9 +213,7 @@ class FileStore(QObject):
         initial_count = len(self._loaded_files)
 
         self._loaded_files = [
-            f
-            for f in self._loaded_files
-            if os.path.normpath(os.path.dirname(f.full_path)) != folder_norm
+            f for f in self._loaded_files if Path(f.full_path).parent != Path(folder_norm)
         ]
 
         removed_count = initial_count - len(self._loaded_files)
