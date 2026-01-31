@@ -14,6 +14,8 @@ Features:
 - Custom table widgets with resize signal handling
 """
 
+from pathlib import Path
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
@@ -26,7 +28,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from pathlib import Path
 
 from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType

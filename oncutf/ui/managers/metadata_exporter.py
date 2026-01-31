@@ -10,9 +10,9 @@ Exports metadata with proper grouping, hash information, and application brandin
 
 import json
 import os
-from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from oncutf.config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT

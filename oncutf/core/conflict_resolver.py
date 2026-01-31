@@ -9,9 +9,9 @@ Conflict Resolver - Simple but reliable conflict resolution for rename operation
 import os
 import shutil
 import time
-from pathlib import Path
 from collections import deque
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger

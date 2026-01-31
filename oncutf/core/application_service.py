@@ -250,8 +250,6 @@ class ApplicationService:
         This prevents the issue where files are renamed but FileItem objects still
         reference the old paths, causing subsequent rename operations to fail.
         """
-        import os
-
         try:
             # Build a map of old_path -> new_path from successful executions
             rename_map = {}

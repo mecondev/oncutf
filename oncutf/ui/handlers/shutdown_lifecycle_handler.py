@@ -12,10 +12,10 @@ All cleanup operations must execute in proper order to prevent data loss.
 from __future__ import annotations
 
 import contextlib
+import time
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-import time
 from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QApplication

@@ -16,8 +16,8 @@ Functions:
 
 import os
 import platform
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger

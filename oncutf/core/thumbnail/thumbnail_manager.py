@@ -99,8 +99,6 @@ class ThumbnailManager(QObject):
             Number of workers (min 2, max 8)
 
         """
-        import os
-
         cpu_count = os.cpu_count() or 2
         # Use half of available cores, capped between 2-8
         workers = max(2, min(8, cpu_count // 2))

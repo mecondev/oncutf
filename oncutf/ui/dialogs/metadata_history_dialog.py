@@ -14,6 +14,8 @@ Features:
 - Keyboard shortcuts
 """
 
+from pathlib import Path
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtWidgets import (
@@ -32,8 +34,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from pathlib import Path
 
 from oncutf.app.services.rename_history_service import get_rename_history_manager
 from oncutf.config import UNDO_REDO_SETTINGS

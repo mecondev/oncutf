@@ -18,8 +18,8 @@ Refactored 2026-01-15: Consolidated from HashWorkerCoordinator to provide
 unified callback architecture for all hash operations.
 """
 
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from PyQt5.QtCore import Qt
