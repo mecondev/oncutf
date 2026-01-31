@@ -9,6 +9,7 @@ Date: 2026-01-02
 
 import os
 import traceback
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -259,15 +260,15 @@ class TreeRenderHandler:
             filename = metadata.get("File:FileName", "")
 
             if file_path and filename:
-                full_path = os.path.join(file_path, filename)
-                if os.path.exists(full_path):
+                full_path = str(Path(file_path) / filename)
+                if Path(full_path).exists():
                     return full_path
 
             # Try alternative metadata fields
             for field in ["SourceFile", "File:FileName", "System:FileName"]:
                 if field in metadata:
                     potential_path = metadata[field]
-                    if os.path.exists(potential_path):
+                    if Path(potential_path).exists():
                         return potential_path
 
         except Exception as e:

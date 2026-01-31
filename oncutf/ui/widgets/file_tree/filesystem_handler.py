@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import platform
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -174,7 +175,7 @@ class FilesystemHandler:
                 except Exception:
                     root_path = ""
 
-            if root_path and os.path.isdir(root_path):
+            if root_path and Path(root_path).is_dir():
                 if self._filesystem_monitor.add_folder(root_path):
                     self._last_monitored_path = root_path
 
@@ -451,7 +452,7 @@ class FilesystemHandler:
                 if len(parts) >= 3:
                     # /media/username
                     user_path = "/".join(parts[:3])
-                    if os.path.isdir(user_path):
+                    if Path(user_path).is_dir():
                         paths_to_expand.add(user_path)
 
             # Also check /mnt/ for direct mounts
@@ -484,7 +485,7 @@ class FilesystemHandler:
             folder_path: New folder path to monitor
 
         """
-        if not folder_path or not os.path.isdir(folder_path) or not self._filesystem_monitor:
+        if not folder_path or not Path(folder_path).is_dir() or not self._filesystem_monitor:
             return
 
         try:

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from PyQt5.QtCore import QFile
@@ -122,10 +123,10 @@ class ThemeEngine:
             theme_name: Name of theme whose stylesheet to apply.
 
         """
-        theme_dir = os.path.dirname(__file__)
-        qss_path = os.path.join(theme_dir, theme_name, "style.qss")
+        theme_dir = Path(__file__).parent
+        qss_path = str(theme_dir / theme_name / "style.qss")
 
-        if os.path.exists(qss_path):
+        if Path(qss_path).exists():
             file = QFile(qss_path)
             if file.open(QFile.ReadOnly | QFile.Text):
                 stylesheet = str(file.readAll(), encoding="utf-8")
