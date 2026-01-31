@@ -414,7 +414,7 @@ class TestPerformance:
             # Use the internal CRC32 calculation method directly to avoid database overhead
             import zlib
 
-            with open(temp_path, "rb") as file:
+            with Path(temp_path).open("rb") as file:
                 crc32_hash = 0
                 while True:
                     chunk = file.read(65536)  # 64KB chunks
