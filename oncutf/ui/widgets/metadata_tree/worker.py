@@ -18,6 +18,7 @@ Features:
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
@@ -174,7 +175,7 @@ class MetadataWorker(QObject):
 
                 # Get file size for progress tracking
                 try:
-                    file_size = os.path.getsize(path)
+                    file_size = Path(path).stat().st_size
                     file_size_mb = file_size / (1024 * 1024)
                 except (OSError, AttributeError):
                     file_size = 0
@@ -191,8 +192,6 @@ class MetadataWorker(QObject):
                 )
 
                 try:
-                    from pathlib import Path
-
                     metadata = self.reader.extract_metadata(Path(path))
 
                     # Get previous entry using file_status_helpers
@@ -285,7 +284,7 @@ class MetadataWorker(QObject):
                     self.file_metadata_loaded.emit(path)
                     logger.debug(
                         "[Worker] Emitted file_metadata_loaded signal for: %s",
-                        os.path.basename(path),
+                        Path(path).name,
                         extra={"dev_only": True},
                     )
 

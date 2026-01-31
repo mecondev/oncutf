@@ -10,6 +10,7 @@ Extracted from event_handler_manager.py for better separation of concerns.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtWidgets import QApplication
@@ -47,7 +48,7 @@ class FileEventHandlers:
         folder_path = select_folder(
             self.parent_window,
             "Select Folder",
-            self.parent_window.current_folder_path or os.path.expanduser("~"),
+            self.parent_window.current_folder_path or str(Path.home()),
         )
 
         if folder_path:
@@ -58,7 +59,7 @@ class FileEventHandlers:
             logger.info("User selected folder: %s (%s)", folder_path, action_type)
 
             # Use controller for orchestration (proper architecture)
-            if os.path.isdir(folder_path):
+            if Path(folder_path).is_dir():
                 self.parent_window.file_load_controller.load_folder(
                     folder_path, merge_mode, recursive
                 )

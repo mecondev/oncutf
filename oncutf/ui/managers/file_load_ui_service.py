@@ -16,6 +16,7 @@ This service handles all UI updates after files are loaded:
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
 from oncutf.models.file_item import FileItem
@@ -61,11 +62,11 @@ class FileLoadUIService:
             if items and clear:
                 first_file_path = items[0].full_path
                 if first_file_path:
-                    folder_path = os.path.dirname(first_file_path)
+                    folder_path = str(Path(first_file_path).parent)
 
                     # Check if this was a recursive load by looking for files in subdirectories
                     has_subdirectory_files = any(
-                        os.path.dirname(item.full_path) != folder_path for item in items
+                        str(Path(item.full_path).parent) != folder_path for item in items
                     )
 
                     # Set folder path and recursive mode in QtAppContext (centralized state)
