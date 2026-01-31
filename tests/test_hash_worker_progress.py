@@ -8,9 +8,9 @@ Tests for HashWorker cumulative progress tracking.
 Ensures that progress never goes backwards and accumulates correctly.
 """
 
-import os
 import tempfile
 import time
+from pathlib import Path
 
 import pytest
 from PyQt5.QtCore import QCoreApplication
@@ -38,10 +38,9 @@ class TestHashWorkerProgress:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create test files
             for i, size in enumerate([10000, 20000, 30000]):
-                file_path = os.path.join(temp_dir, f"test_file_{i}.txt")
-                with open(file_path, "wb") as f:
-                    f.write(b"A" * size)
-                files.append(file_path)
+                p = Path(temp_dir) / f"test_file_{i}.txt"
+                p.write_bytes(b"A" * size)
+                files.append(str(p))
 
             total_size = 60000
 
@@ -81,11 +80,10 @@ class TestHashWorkerProgress:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a moderately large file
-            file_path = os.path.join(temp_dir, "large_file.txt")
+            p = Path(temp_dir) / "large_file.txt"
             size = 50_000_000  # 50MB
-            with open(file_path, "wb") as f:
-                f.write(b"B" * size)
-            files.append(file_path)
+            p.write_bytes(b"B" * size)
+            files.append(str(p))
 
             # Setup worker
             self.worker.setup_checksum_calculation(files)
@@ -128,15 +126,13 @@ class TestHashWorkerProgress:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create files for duplicate scanning
-            file1_path = os.path.join(temp_dir, "file1.txt")
-            file2_path = os.path.join(temp_dir, "file2.txt")
+            p1 = Path(temp_dir) / "file1.txt"
+            p2 = Path(temp_dir) / "file2.txt"
 
-            with open(file1_path, "wb") as f:
-                f.write(b"X" * 15000)
-            with open(file2_path, "wb") as f:
-                f.write(b"Y" * 10000)
+            p1.write_bytes(b"X" * 15000)
+            p2.write_bytes(b"Y" * 10000)
 
-            files = [file1_path, file2_path]
+            files = [str(p1), str(p2)]
             total_size = 25000
 
             # Setup worker for duplicate scan
@@ -176,10 +172,9 @@ class TestHashWorkerProgress:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create multiple files
             for i in range(5):
-                file_path = os.path.join(temp_dir, f"cancel_test_{i}.txt")
-                with open(file_path, "wb") as f:
-                    f.write(b"C" * 10000)
-                files.append(file_path)
+                p = Path(temp_dir) / f"cancel_test_{i}.txt"
+                p.write_bytes(b"C" * 10000)
+                files.append(str(p))
 
             total_size = 50000
 
@@ -213,10 +208,9 @@ class TestHashWorkerProgress:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create test files
             for i in range(3):
-                file_path = os.path.join(temp_dir, f"reset_test_{i}.txt")
-                with open(file_path, "wb") as f:
-                    f.write(b"D" * 5000)
-                files.append(file_path)
+                p = Path(temp_dir) / f"reset_test_{i}.txt"
+                p.write_bytes(b"D" * 5000)
+                files.append(str(p))
 
             total_size = 15000
 
