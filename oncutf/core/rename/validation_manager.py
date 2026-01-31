@@ -9,7 +9,12 @@ Author: Michael Economou
 Date: 2026-01-01
 """
 
+from __future__ import annotations
+
+import logging
 import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from oncutf.core.rename.data_classes import ValidationItem, ValidationResult
 from oncutf.core.rename.query_managers import SmartCacheManager
@@ -92,7 +97,7 @@ class UnifiedValidationManager:
         try:
             from oncutf.utils.naming.filename_validator import validate_filename_part
 
-            basename = os.path.splitext(filename)[0]
+            basename = Path(filename).stem
             is_valid, error = validate_filename_part(basename)
             return is_valid, error or ""
         except Exception as e:

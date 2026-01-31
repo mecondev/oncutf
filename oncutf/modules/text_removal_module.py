@@ -10,9 +10,11 @@ with case-sensitive or case-insensitive matching.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -390,10 +392,9 @@ class TextRemovalModule(BaseRenameModule):
             Modified filename with text removed
 
         """
-        import os
-
         original_name = file_item.filename
-        name_without_ext, ext = os.path.splitext(original_name)
+        path_obj = Path(original_name)
+        name_without_ext, ext = path_obj.stem, path_obj.suffix
 
         text_to_remove = data.get("text_to_remove", "").strip()
         if not text_to_remove:

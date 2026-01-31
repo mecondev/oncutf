@@ -9,8 +9,12 @@ text at a defined position within the filename.
 Used in the oncutf application as one of the modular renaming components.
 """
 
+from __future__ import annotations
+
 import os
-from typing import Any
+import re
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (
@@ -204,7 +208,7 @@ class SpecifiedTextModule(BaseRenameModule):
             return
 
         # Get the original filename without extension
-        original_name = os.path.splitext(self._current_file.filename)[0]
+        original_name = Path(self._current_file.filename).stem
 
         # Insert at current cursor position
         cursor_pos = self.text_input.cursorPosition()

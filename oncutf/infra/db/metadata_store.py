@@ -8,10 +8,13 @@ Handles all metadata CRUD operations including structured metadata,
 categories, fields, and color tags.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import sqlite3
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -28,7 +31,7 @@ class MetadataStore:
     def __init__(
         self,
         connection: sqlite3.Connection,
-        path_store: "PathStore",
+        path_store: PathStore,
         write_lock: threading.RLock,
     ):
         """Initialize MetadataStore with a database connection and path store.
@@ -79,7 +82,7 @@ class MetadataStore:
                 logger.debug(
                     "[MetadataStore] Stored %s metadata for: %s",
                     metadata_type,
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                 )
                 return True
 

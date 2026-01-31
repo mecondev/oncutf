@@ -183,7 +183,7 @@ class MetadataExtractor:
     def _extract_filesystem_date(self, file_path: Path, field: str) -> ExtractionResult:
         """Extract filesystem date in various formats."""
         try:
-            ts = os.path.getmtime(str(file_path))
+            ts = file_path.stat().st_mtime
             dt = datetime.fromtimestamp(ts)
 
             format_map = {

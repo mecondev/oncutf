@@ -8,8 +8,13 @@ Enhanced persistent hash cache using the improved database architecture.
 Provides improved performance and separation of concerns.
 """
 
+from __future__ import annotations
+
+import logging
 import os
 from collections import OrderedDict
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from oncutf.infra.db.database_manager import get_database_manager
 from oncutf.utils.filesystem.path_normalizer import normalize_path
@@ -71,7 +76,7 @@ class PersistentHashCache:
                 logger.debug(
                     "[PersistentHashCache] Stored %s hash for: %s",
                     algorithm,
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                 )
             return success
 
