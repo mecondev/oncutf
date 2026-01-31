@@ -9,6 +9,7 @@ Date: 2025-06-15
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import Qt
@@ -263,7 +264,7 @@ class ApplicationService:
             for file_item in files:
                 if file_item.full_path in rename_map:
                     new_path = rename_map[file_item.full_path]
-                    new_filename = os.path.basename(new_path)
+                    new_filename = Path(new_path).name
 
                     logger.debug(
                         "[ApplicationService] Updating FileItem: %s -> %s",
@@ -381,8 +382,8 @@ class ApplicationService:
 
     def prompt_file_conflict(self, target_path: str) -> str:
         """Prompt file conflict via DialogManager."""
-        old_name = os.path.basename(target_path)
-        new_name = os.path.basename(target_path)
+        old_name = Path(target_path).name
+        new_name = Path(target_path).name
         result = self.main_window.dialog_manager.prompt_file_conflict(old_name, new_name)
         return "overwrite" if result else "cancel"
 

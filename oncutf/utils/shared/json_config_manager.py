@@ -237,7 +237,7 @@ class JSONConfigManager:
                     )
                     return True
 
-                with open(self.config_file, encoding="utf-8") as f:
+                with self.config_file.open(encoding="utf-8") as f:
                     data = json.load(f)
 
                 for category_name, category in self._categories.items():
@@ -275,7 +275,7 @@ class JSONConfigManager:
                     "app_name": self.app_name,
                 }
 
-                with open(self.config_file, "w", encoding="utf-8") as f:
+                with self.config_file.open("w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
 
                 # Clear dirty flag after successful save
@@ -510,7 +510,7 @@ def load_config() -> dict[str, Any]:
         if not config_manager.config_file.exists():
             return {}
 
-        with open(config_manager.config_file, encoding="utf-8") as f:
+        with config_manager.config_file.open(encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.warning("Failed to load config: %s", e)
@@ -527,7 +527,7 @@ def save_config(config_data: dict[str, Any]) -> bool:
             shutil.copy2(config_manager.config_file, config_manager.backup_file)
 
         # Save new config
-        with open(config_manager.config_file, "w", encoding="utf-8") as f:
+        with config_manager.config_file.open("w", encoding="utf-8") as f:
             json.dump(config_data, f, indent=2, ensure_ascii=False)
 
         logger.debug("Configuration saved to %s", config_manager.config_file)

@@ -9,9 +9,10 @@ It serves as an alternative entry point to the root main.py script.
 
 import os
 import sys
+from pathlib import Path
 
 # Add parent directory (project root) to path to find main.py
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_root = str(Path(__file__).parent.parent.resolve())
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
