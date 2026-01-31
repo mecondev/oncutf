@@ -10,7 +10,7 @@ def test_fileitem_from_path_and_size(tmp_path):
 
     fi = FileItem.from_path(str(p))
     assert fi.filename == "a.txt"
-    assert fi.size == os.path.getsize(p)
+    assert fi.size == p.stat().st_size
     assert isinstance(fi.modified, datetime)
     # human readable string
     s = fi.get_human_readable_size()
