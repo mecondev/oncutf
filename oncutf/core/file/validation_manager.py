@@ -214,7 +214,7 @@ class FileValidationManager:
 
         # Adjust based on file age (older files get longer TTL)
         try:
-            file_age_days = (time.time() - os.path.getctime(file_path)) / (24 * 3600)
+            file_age_days = (time.time() - Path(file_path).stat().st_ctime) / (24 * 3600)
             if file_age_days > 365:  # Files older than 1 year
                 base_ttl = int(base_ttl * 2)
         except OSError:
@@ -229,7 +229,7 @@ class FileValidationManager:
         Balanced approach for archival applications.
         """
         try:
-            if not os.path.exists(file_path):
+            if not Path(file_path).exists():
                 return ValidationResult(
                     is_valid=False,
                     file_exists=False,
@@ -239,7 +239,7 @@ class FileValidationManager:
                 )
 
             # Get current file stats
-            stat = os.stat(file_path)
+            stat = Path(file_path).stat()
             current_mtime = stat.st_mtime
             current_size = stat.st_size
 
