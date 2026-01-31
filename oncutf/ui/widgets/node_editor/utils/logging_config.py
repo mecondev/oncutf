@@ -23,6 +23,7 @@ Date:
 import logging
 import logging.handlers
 import os
+from pathlib import Path
 from datetime import datetime
 
 
@@ -43,8 +44,8 @@ def setup_logging(log_dir: str = "logs", log_level: int = logging.INFO) -> None:
         log_level: Minimum level for console output.
 
     """
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    if not Path(log_dir).exists():
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -61,21 +62,21 @@ def setup_logging(log_dir: str = "logs", log_level: int = logging.INFO) -> None:
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
-    info_log_file = os.path.join(log_dir, f"node_editor_INFO_{timestamp}.log")
+    info_log_file = str(Path(log_dir) / f"node_editor_INFO_{timestamp}.log")
     info_file_handler = logging.FileHandler(info_log_file, encoding="utf-8")
     info_file_handler.setLevel(logging.INFO)
     info_file_handler.addFilter(lambda record: record.levelno <= logging.WARNING)
     info_file_handler.setFormatter(formatter)
     root_logger.addHandler(info_file_handler)
 
-    debug_log_file = os.path.join(log_dir, f"node_editor_DEBUG_{timestamp}.log")
+    debug_log_file = str(Path(log_dir) / f"node_editor_DEBUG_{timestamp}.log")
     debug_file_handler = logging.FileHandler(debug_log_file, encoding="utf-8")
     debug_file_handler.setLevel(logging.DEBUG)
     debug_file_handler.addFilter(lambda record: record.levelno == logging.DEBUG)
     debug_file_handler.setFormatter(formatter)
     root_logger.addHandler(debug_file_handler)
 
-    error_log_file = os.path.join(log_dir, f"node_editor_ERROR_{timestamp}.log")
+    error_log_file = str(Path(log_dir) / f"node_editor_ERROR_{timestamp}.log")
     error_file_handler = logging.FileHandler(error_log_file, encoding="utf-8")
     error_file_handler.setLevel(logging.ERROR)
     error_file_handler.setFormatter(formatter)

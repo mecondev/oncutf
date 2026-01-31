@@ -18,6 +18,7 @@ Features:
 
 import threading
 import time
+from pathlib import Path
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -506,16 +507,16 @@ class BatchOperationsManager:
                 result: Any = None
 
                 if op_type == "read":
-                    with open(file_path, "rb") as f:
+                    with Path(file_path).open("rb") as f:
                         result = f.read()
                 elif op_type == "stat":
                     import os
 
-                    result = os.stat(file_path)
+                    result = Path(file_path).stat()
                 elif op_type == "exists":
                     import os
 
-                    result = os.path.exists(file_path)
+                    result = Path(file_path).exists()
                 else:
                     result = None
 
@@ -546,7 +547,7 @@ class BatchOperationsManager:
                 data = operation.data.get("data")
 
                 if op_type == "write" and data:
-                    with open(file_path, "wb") as f:
+                    with Path(file_path).open("wb") as f:
                         f.write(data)
                 elif op_type == "copy":
                     import shutil

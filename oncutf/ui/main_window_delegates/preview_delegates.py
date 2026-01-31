@@ -4,6 +4,8 @@ Author: Michael Economou
 Date: 2026-01-10
 """
 
+from pathlib import Path
+
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 
 
@@ -71,10 +73,10 @@ class PreviewDelegates:
         icons_dir = str(get_icons_dir())
 
         return {
-            "valid": os.path.join(icons_dir, "valid.png"),
-            "invalid": os.path.join(icons_dir, "invalid.png"),
-            "unchanged": os.path.join(icons_dir, "unchanged.png"),
-            "duplicate": os.path.join(icons_dir, "duplicate.png"),
+            "valid": str(Path(icons_dir) / "valid.png"),
+            "invalid": str(Path(icons_dir) / "invalid.png"),
+            "unchanged": str(Path(icons_dir) / "unchanged.png"),
+            "duplicate": str(Path(icons_dir) / "duplicate.png"),
         }
 
     def compute_max_filename_width(self, file_list: list) -> int:
