@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import platform
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -117,14 +118,14 @@ class StateHandler:
         root = "" if platform.system() == "Windows" else "/"
 
         for path in paths:
-            if not path or not os.path.exists(path):
+            if not path or not Path(path).exists():
                 continue
 
             all_paths_to_expand.add(path)
-            parent = os.path.dirname(path)
+            parent = str(Path(path).parent)
             while parent and parent != root:
                 all_paths_to_expand.add(parent)
-                parent = os.path.dirname(parent)
+                parent = str(Path(parent).parent)
             if path:
                 all_paths_to_expand.add(root)
 
@@ -175,7 +176,7 @@ class StateHandler:
         """
         self.restore_expanded_state(expanded_paths)
 
-        if selected_path and os.path.exists(selected_path):
+        if selected_path and Path(selected_path).exists():
             self._view.select_path(selected_path)
             logger.debug(
                 "[StateHandler] Restored selection: %s",
@@ -208,16 +209,16 @@ class StateHandler:
 
         root = "" if platform.system() == "Windows" else "/"
 
-        valid_paths = [path for path in expanded_paths if path and os.path.exists(path)]
+        valid_paths = [path for path in expanded_paths if path and Path(path).exists()]
 
         # Build parent paths and sort by depth
         all_paths_to_expand: set[str] = set()
         for path in valid_paths:
             all_paths_to_expand.add(path)
-            parent = os.path.dirname(path)
+            parent = str(Path(path).parent)
             while parent and parent != root:
                 all_paths_to_expand.add(parent)
-                parent = os.path.dirname(parent)
+                parent = str(Path(parent).parent)
 
         self._pending_expand_paths = sorted(all_paths_to_expand, key=lambda p: p.count(os.sep))
         self._pending_select_path = selected_path
@@ -235,7 +236,7 @@ class StateHandler:
         """Process next batch of paths to expand (called via timer)."""
         if not self._restore_in_progress or not self._pending_expand_paths:
             self._restore_in_progress = False
-            if self._pending_select_path and os.path.exists(self._pending_select_path):
+            if self._pending_select_path and Path(self._pending_select_path).exists():
                 try:
                     self._view.select_path(self._pending_select_path)
                     logger.debug(
