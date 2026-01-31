@@ -13,6 +13,7 @@ Classes:
 """
 
 import os
+from pathlib import Path
 from datetime import datetime
 from typing import Any
 
@@ -40,7 +41,7 @@ class FileItem:
         self.path = path  # Keep for compatibility
         self.extension = extension
         self.modified = modified
-        self.filename = os.path.basename(path)  # Just the filename
+        self.filename = Path(path).name  # Just the filename
         self.name = self.filename  # Keep for compatibility
         self.size = 0  # Will be updated later if needed
         self.metadata: dict[str, Any] = {}  # Will store file metadata
@@ -74,13 +75,12 @@ class FileItem:
             FileItem instance with auto-detected properties
 
         """
-        filename = os.path.basename(file_path)
-        _, ext = os.path.splitext(filename)
-        extension = ext[1:].lower() if ext.startswith(".") else ""
+        filename = Path(file_path).name
+        extension = Path(filename).suffix[1:].lower() if Path(filename).suffix else ""
 
         # Get modification time
         try:
-            mtime = os.path.getmtime(file_path)
+            mtime = Path(file_path).stat().st_mtime
             modified = datetime.fromtimestamp(mtime)
         except (OSError, ValueError):
             modified = datetime.fromtimestamp(0)
@@ -130,9 +130,9 @@ class FileItem:
         """Attempts to determine the file size in bytes from full_path.
         Returns 0 if file is inaccessible or not found.
         """
-        if self.full_path and os.path.exists(self.full_path):
+        if self.full_path and Path(self.full_path).exists():
             try:
-                return os.path.getsize(self.full_path)
+                return Path(self.full_path).stat().st_size
             except Exception:
                 logger.warning(
                     "[FileItem] Failed to get size for %s",

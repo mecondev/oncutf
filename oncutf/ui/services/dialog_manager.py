@@ -9,6 +9,7 @@ Centralizes dialog creation, validation logic, and user confirmations.
 """
 
 import os
+from pathlib import Path
 
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget
 
@@ -61,7 +62,7 @@ class DialogManager:
         oversized = []
         for file in files:
             try:
-                size_mb = os.path.getsize(file) / (1024 * 1024)
+                size_mb = Path(file).stat().st_size / (1024 * 1024)
                 if size_mb > max_size_mb:
                     oversized.append(file)
             except OSError:
@@ -82,12 +83,12 @@ class DialogManager:
                 size_mb = f.size / (1024 * 1024)
             elif hasattr(f, "full_path"):  # FileItem object, check file system
                 try:
-                    size_mb = os.path.getsize(f.full_path) / (1024 * 1024)
+                    size_mb = Path(f.full_path).stat().st_size / (1024 * 1024)
                 except OSError:
                     continue
             elif isinstance(f, str):  # String path
                 try:
-                    size_mb = os.path.getsize(f) / (1024 * 1024)
+                    size_mb = Path(f).stat().st_size / (1024 * 1024)
                 except OSError:
                     continue
 
@@ -106,7 +107,7 @@ class DialogManager:
             if hasattr(f, "filename"):  # FileItem object
                 file_names.append(f.filename)
             else:  # String path
-                file_names.append(os.path.basename(f))
+                file_names.append(Path(f).name)
 
         file_list = "\n".join(f"- {name}" for name in file_names)
         if len(large_files) > 5:
@@ -152,16 +153,17 @@ class DialogManager:
 
     def should_skip_folder_reload(self, folder_path: str) -> bool:
         """Check if folder reload should be skipped."""
-        if not folder_path or not os.path.exists(folder_path):
+        if not folder_path or not Path(folder_path).exists():
             return True
 
         # Skip if not a directory
-        if not os.path.isdir(folder_path):
+        if not Path(folder_path).is_dir():
             return True
 
         # Skip if empty
         try:
-            if not os.listdir(folder_path):
+            files = list(Path(folder_path).iterdir())
+            if not files:
                 return True
         except OSError:
             return True
