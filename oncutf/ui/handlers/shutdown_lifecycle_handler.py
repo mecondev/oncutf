@@ -12,14 +12,11 @@ All cleanup operations must execute in proper order to prevent data loss.
 from __future__ import annotations
 
 import contextlib
-import logging
-import os
-import sys
-import time
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+import time
+from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QApplication
 
@@ -299,9 +296,7 @@ class ShutdownLifecycleHandler:
 
         """
         import faulthandler
-        import os
         import tempfile
-        import time
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         dump_path = str(Path(tempfile.gettempdir()) / f"oncutf_shutdown_hang_{timestamp}.log")
