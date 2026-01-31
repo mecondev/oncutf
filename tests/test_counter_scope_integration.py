@@ -74,7 +74,7 @@ class TestCounterScopeIntegration:
                 modules_data, idx, file, metadata_cache=None, all_files=sample_files
             )
             # Strip extension
-            basename = os.path.splitext(new_name)[0]
+            basename = Path(new_name).stem
             results.append(basename)
 
         # Should be 001, 002, 003, 004, 005 (global sequence)
@@ -97,7 +97,7 @@ class TestCounterScopeIntegration:
             new_name = apply_rename_modules(
                 modules_data, idx, file, metadata_cache=None, all_files=sample_files
             )
-            basename = os.path.splitext(new_name)[0]
+            basename = Path(new_name).stem
             results.append((basename, Path(file.full_path).parent.name))
 
         # Should be: folder_a: 001, 002, 003, folder_b: 001, 002
@@ -124,8 +124,8 @@ class TestCounterScopeIntegration:
             new_name = apply_rename_modules(
                 modules_data, idx, file, metadata_cache=None, all_files=sample_files
             )
-            basename = os.path.splitext(new_name)[0]
-            ext = os.path.splitext(file.filename)[1]
+            basename = Path(new_name).stem
+            ext = Path(file.filename).suffix
             results.append((basename, ext))
 
         # Should be: .jpg: 001, 002, .png: 001, .jpg: 003, .txt: 001
@@ -236,7 +236,7 @@ class TestCounterScopeIntegration:
             new_name = apply_rename_modules(
                 modules_data, idx, file, metadata_cache=None, all_files=sample_files
             )
-            basename = os.path.splitext(new_name)[0]
+            basename = Path(new_name).stem
             results.append(basename)
 
         # folder_a: 010, 015, 020, folder_b: 010, 015 (reset at folder boundary)
@@ -260,7 +260,7 @@ class TestCounterScopeIntegration:
             new_name = apply_rename_modules(
                 modules_data, idx, file, metadata_cache=None, all_files=sample_files
             )
-            basename = os.path.splitext(new_name)[0]
+            basename = Path(new_name).stem
             results.append(basename)
 
         # Should be: photo01, photo02, photo03 (folder_a), photo01, photo02 (folder_b - reset!)
@@ -288,7 +288,7 @@ class TestCounterScopeIntegration:
                 metadata_cache=None,
                 all_files=None,  # No files list!
             )
-            basename = os.path.splitext(new_name)[0]
+            basename = Path(new_name).stem
             results.append(basename)
 
         # Should fallback to global sequence: 001, 002, 003, 004, 005

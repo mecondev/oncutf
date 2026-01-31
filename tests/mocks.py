@@ -15,9 +15,11 @@ class MockFileItem:
 
     def __init__(self, *, filename="mockfile.mp3", date=None, metadata=None):
         self.filename = filename
+        from pathlib import Path
+
         # Use temp directory for cross-platform compatibility
-        temp_dir = tempfile.gettempdir()
+        temp_dir = Path(tempfile.gettempdir())
         # Normalize path for Windows/Linux compatibility
-        self.full_path = os.path.normpath(os.path.join(temp_dir, "mock", "path", filename))
+        self.full_path = str((temp_dir / "mock" / "path" / filename).resolve())
         self.date = date
         self.metadata = metadata or {}
