@@ -10,6 +10,7 @@ Handles all file path CRUD operations.
 import os
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -50,7 +51,7 @@ class PathStore:
             raise ValueError(f"file_path contains null byte: {file_path!r}")
 
         norm_path = self.normalize_path(file_path)
-        filename = os.path.basename(norm_path)
+        filename = Path(norm_path).name
 
         cursor = self.connection.cursor()
 
@@ -65,10 +66,10 @@ class PathStore:
         file_size = None
         modified_time = None
         try:
-            if os.path.exists(norm_path):
-                stat = os.stat(norm_path)
-                file_size = stat.st_size
-                modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            path_obj = Path(norm_path)
+            if path_obj.exists():
+                file_size = path_obj.stat().st_size
+                modified_time = datetime.fromtimestamp(path_obj.stat().st_mtime).isoformat()
         except OSError:
             pass
 
@@ -126,16 +127,16 @@ class PathStore:
         try:
             old_norm_path = self.normalize_path(old_path)
             new_norm_path = self.normalize_path(new_path)
-            new_filename = os.path.basename(new_norm_path)
+            new_filename = Path(new_norm_path).name
 
             # Get file size and modified time for the new path
             file_size = None
             modified_time = None
             try:
-                if os.path.exists(new_norm_path):
-                    stat = os.stat(new_norm_path)
-                    file_size = stat.st_size
-                    modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
+                new_path_obj = Path(new_norm_path)
+                if new_path_obj.exists():
+                    file_size = new_path_obj.stat().st_size
+                    modified_time = datetime.fromtimestamp(new_path_obj.stat().st_mtime).isoformat()
             except OSError:
                 pass
 
@@ -155,8 +156,8 @@ class PathStore:
             if cursor.rowcount > 0:
                 logger.debug(
                     "[PathStore] Updated file path: %s -> %s",
-                    os.path.basename(old_path),
-                    os.path.basename(new_path),
+                    Path(old_path).name,
+                    Path(new_path).name,
                 )
                 return True
             else:
