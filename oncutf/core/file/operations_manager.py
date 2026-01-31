@@ -12,6 +12,7 @@ Uses ConflictResolutionPort for UI decoupling (Phase 5).
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -131,7 +132,7 @@ class FileOperationsManager:
                 # Get original filename from FileItem
                 original_filename = "unknown"
                 for file_item in selected_files:
-                    if os.path.basename(file_item.full_path) != filename:
+                    if Path(file_item.full_path).name != filename:
                         # This is the conflicting file (old name != new name)
                         original_filename = file_item.filename
                         break
@@ -230,7 +231,7 @@ class FileOperationsManager:
                 renamed_count += 1
                 item = find_file_by_path(selected_files, exec_item.old_path, "full_path")
                 if item:
-                    item.filename = os.path.basename(exec_item.new_path)
+                    item.filename = Path(exec_item.new_path).name
                     item.full_path = exec_item.new_path
             elif exec_item.skip_reason:
                 logger.info(

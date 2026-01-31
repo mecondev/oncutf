@@ -14,6 +14,7 @@ Responsibilities:
 """
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
@@ -96,7 +97,7 @@ class FileLoadManager:
             extra={"dev_only": True},
         )
 
-        if not os.path.isdir(folder_path):
+        if not Path(folder_path).is_dir():
             logger.error("Path is not a directory: %s", folder_path)
             return
 
@@ -159,10 +160,10 @@ class FileLoadManager:
 
         with wait_cursor():
             for path in paths:
-                if os.path.isfile(path):
+                if Path(path).is_file():
                     if self._is_allowed_extension(path):
                         all_file_paths.append(path)
-                elif os.path.isdir(path):
+                elif Path(path).is_dir():
                     # Always recursive for import button (user selected folders deliberately)
                     folder_files = self._get_files_from_folder(path, recursive=True)
                     all_file_paths.extend(folder_files)
@@ -208,7 +209,7 @@ class FileLoadManager:
             )
             self.drag_state.force_cleanup_drag()
 
-        if os.path.isdir(path):
+        if Path(path).is_dir():
             # Use unified folder loading (will handle drag cleanup internally)
             self.load_folder(path, merge_mode=merge_mode, recursive=recursive)
         else:
@@ -246,10 +247,10 @@ class FileLoadManager:
         all_file_paths = []
 
         for path in paths:
-            if os.path.isfile(path):
+            if Path(path).is_file():
                 if self._is_allowed_extension(path):
                     all_file_paths.append(path)
-            elif os.path.isdir(path):
+            elif Path(path).is_dir():
                 # For table drops, collect files synchronously to avoid multiple dialogs
                 folder_files = self._get_files_from_folder(path, recursive)
                 all_file_paths.extend(folder_files)
@@ -298,8 +299,8 @@ class FileLoadManager:
                     for filename in filenames:
                         if self._is_allowed_extension(filename):
                             try:
-                                # Use normpath for cross-platform compatibility
-                                full_path = os.path.normpath(os.path.join(root, filename))
+                                # Use Path for cross-platform compatibility
+                                full_path = str((Path(root) / filename).resolve())
                                 file_paths.append(full_path)
                             except Exception as e:
                                 logger.warning(
@@ -311,11 +312,10 @@ class FileLoadManager:
                 logger.exception("[FileLoadManager] Error walking directory %s: %s", folder_path, e)
         else:
             try:
-                for filename in os.listdir(folder_path):
-                    if self._is_allowed_extension(filename):
-                        full_path = os.path.join(folder_path, filename)
-                        if os.path.isfile(full_path):
-                            file_paths.append(full_path)
+                for entry in Path(folder_path).iterdir():
+                    if self._is_allowed_extension(entry.name):
+                        if entry.is_file():
+                            file_paths.append(str(entry))
             except OSError as e:
                 logger.error("[FileLoadManager] Error listing directory %s: %s", folder_path, e)
 
@@ -332,7 +332,7 @@ class FileLoadManager:
 
     def _is_allowed_extension(self, path: str) -> bool:
         """Check if file has allowed extension."""
-        ext = os.path.splitext(path)[1].lower()
+        ext = Path(path).suffix.lower()
         if ext.startswith("."):
             ext = ext[1:]
         return ext in self.allowed_extensions
@@ -384,7 +384,7 @@ class FileLoadManager:
             except OSError as e:
                 logger.warning(
                     "[FileLoadManager] Could not create FileItem for %s: %s",
-                    os.path.basename(file_path),
+                    Path(file_path).name,
                     e,
                 )
                 continue
@@ -534,7 +534,7 @@ class FileLoadManager:
         # Get unique folders from loaded files
         loaded_folders = set()
         for file_item in loaded_files:
-            folder = os.path.dirname(file_item.full_path)
+            folder = str(Path(file_item.full_path).parent)
             loaded_folders.add(folder)
 
         # If specific folder given, check if it's relevant
@@ -564,7 +564,7 @@ class FileLoadManager:
         refreshed_files: list[FileItem] = []
         for folder in loaded_folders:
             # Skip folders that no longer exist (e.g., unmounted USB drives)
-            if not os.path.exists(folder):
+            if not Path(folder).exists():
                 logger.info(
                     "[FileLoadManager] Folder no longer exists, removing its files: %s",
                     folder,
