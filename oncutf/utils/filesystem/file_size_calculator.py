@@ -42,9 +42,9 @@ def calculate_files_total_size(file_items: list[Any]) -> int:
             # Handle full_path attribute
             file_path = item.full_path if hasattr(item, "full_path") else str(item)
 
-            # Get file size from filesystem (slower path)
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                size = os.path.getsize(file_path)
+            path_obj = Path(file_path)
+            if path_obj.exists() and path_obj.is_file():
+                size = path_obj.stat().st_size
                 total_size += size
                 files_checked += 1
 
@@ -95,9 +95,9 @@ def calculate_processed_size(file_items: list[Any], current_index: int) -> int:
             else:
                 file_path = str(item)
 
-            # Get file size
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                size = os.path.getsize(file_path)
+            path_obj = Path(file_path)
+            if path_obj.exists() and path_obj.is_file():
+                size = path_obj.stat().st_size
                 processed_size += size
 
         except (OSError, AttributeError) as e:

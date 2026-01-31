@@ -13,6 +13,7 @@ drag behaviors (replace/merge, shallow/recursive).
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QEvent, Qt
@@ -206,7 +207,7 @@ class DragHandler:
         # Block drag on mount points and root drives
         from oncutf.utils.filesystem.folder_counter import is_mount_point_or_root
 
-        if os.path.isdir(clicked_path) and is_mount_point_or_root(clicked_path):
+        if Path(clicked_path).is_dir() and is_mount_point_or_root(clicked_path):
             logger.warning(
                 "[DragHandler] Blocked drag on mount point/root: %s",
                 clicked_path,
@@ -235,8 +236,8 @@ class DragHandler:
         drag_manager.start_drag("file_tree")
 
         # Determine initial display info
-        is_folder = os.path.isdir(clicked_path)
-        initial_info = os.path.basename(clicked_path) if is_folder else "1 item"
+        is_folder = Path(clicked_path).is_dir()
+        initial_info = Path(clicked_path).name if is_folder else "1 item"
 
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
@@ -366,7 +367,7 @@ class DragHandler:
         self._restore_hover_after_drag()
 
         # Restore folder selection if it was lost during drag
-        if self._drag_path and os.path.isdir(self._drag_path):
+        if self._drag_path and Path(self._drag_path).is_dir():
             current_selection = self._view.get_selected_path()
             if current_selection != self._drag_path:
                 self._view.select_path(self._drag_path)
@@ -476,7 +477,7 @@ class DragHandler:
             True if path can be dragged
 
         """
-        if os.path.isdir(path):
+        if Path(path).is_dir():
             from oncutf.utils.filesystem.folder_counter import is_mount_point_or_root
 
             if is_mount_point_or_root(path):
@@ -488,7 +489,7 @@ class DragHandler:
                 return False
             return True
 
-        _, ext = os.path.splitext(path)
+        ext = Path(path).suffix
         if ext.startswith("."):
             ext = ext[1:].lower()
 

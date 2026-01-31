@@ -21,6 +21,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from oncutf.ui.widgets.node_editor.core.node import Node
 from oncutf.ui.widgets.node_editor.core.socket import LEFT_CENTER, RIGHT_CENTER
@@ -142,13 +143,13 @@ class FileReadNode(Node):
 
         try:
             # Check if file exists
-            if not os.path.exists(filepath):
+            if not Path(filepath).exists():
                 self.mark_invalid()
                 self.graphics_node.setToolTip(f"File not found: {filepath}")
                 return None
 
             # Read file with UTF-8 encoding
-            with open(filepath, encoding="utf-8") as f:
+            with Path(filepath).open(encoding="utf-8") as f:
                 contents = f.read()
 
             self.markValid()
@@ -222,12 +223,12 @@ class FileWriteNode(Node):
 
         try:
             # Create directories if needed
-            directory = os.path.dirname(filepath)
-            if directory and not os.path.exists(directory):
-                os.makedirs(directory)
+            directory = str(Path(filepath).parent)
+            if directory and not Path(directory).exists():
+                Path(directory).mkdir(parents=True)
 
             # Write file with UTF-8 encoding
-            with open(filepath, "w", encoding="utf-8") as f:
+            with Path(filepath).open("w", encoding="utf-8") as f:
                 f.write(content)
 
             self.markValid()
