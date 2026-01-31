@@ -2,7 +2,7 @@
 
 Consolidated list of all TODO items extracted from codebase.
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-31
 
 ---
 
@@ -387,6 +387,31 @@ Consolidated list of all TODO items extracted from codebase.
   - 30+ working code examples
   - Performance benchmarks
   - Troubleshooting guide and best practices
+
+#### Repository Quality Improvements - Completed 2026-01-30 to 2026-01-31
+- **Formatting Verification:** All 598 files verified as properly formatted (P0-1)
+- **Vulture Integration:** Added vulture≥2.3 to dev dependencies for dead code analysis (P0-2)
+- **Dead Code Cleanup:** Fixed 2 unused variables flagged by vulture at 100% confidence (P0-3)
+- **Import Refinement:** Verified all "unused imports" are correctly used in TYPE_CHECKING blocks (P0-4)
+- **Path Normalization:** Consolidated duplicate `normalize_path()` implementations (P1-2)
+  - `database_manager.py` now delegates to `path_store.normalize_path()`
+  - `path_store.py` uses canonical implementation from `path_normalizer.py`
+- **ApplicationContext Migration:** Migrated 13 files from deprecated `application_context.py` to `QtAppContext` (P1-3)
+  - Deleted deprecated `oncutf/ui/adapters/application_context.py`
+  - All UI components now use `get_qt_app_context()` for Qt-aware context access
+- **Code Simplification:**
+  - **format_bytes Consolidation (P2-1):** Removed duplicate `format_bytes()` implementations, now using `FileSizeFormatter` consistently
+  - **UI State Service Refactor (P2-3):** Removed redundant `ui_state_service.py` facade (-114 lines)
+    - 3 consumers updated to use `FileTableStateHelper` directly
+    - Simplified architecture by eliminating temporary facade layer
+- **TODO Documentation (P1-4):** Created comprehensive `todo_tracking.md` with 6 documented TODOs
+  - Categorized by priority (High/Medium/Low)
+  - Proposed GitHub issue titles and descriptions
+  - Ready for manual GitHub issue creation
+- **Wildcard Import Elimination:** Removed final wildcard import from `main_window.py`
+  - All `from module import *` replaced with explicit imports
+  - `RUF012` (mutable class defaults) verified active and enforcing
+- **Quality Gates:** All checks pass (ruff, mypy, pytest)
 
 ---
 
