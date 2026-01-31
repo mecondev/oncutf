@@ -18,6 +18,7 @@ Date: 2025-05-31
 
 import os
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import QRect, Qt
@@ -537,7 +538,7 @@ class DragVisualManager:
             Appropriate DragType
 
         """
-        if os.path.isdir(path):
+        if Path(path).is_dir():
             return DragType.FOLDER
         else:
             return DragType.FILE

@@ -14,6 +14,7 @@ Protocol contract:
     - Widget routes events to behavior
 """
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from PyQt5.QtCore import QEvent, QModelIndex, Qt
@@ -214,9 +215,7 @@ class DragDropBehavior:
 
         if actual_count == 1:
             drag_type = visual_manager.get_drag_type_from_path(file_paths[0])
-            import os
-
-            source_info = os.path.basename(file_paths[0])
+            source_info = Path(file_paths[0]).name
         else:
             drag_type = DragType.MULTIPLE
             source_info = f"{actual_count} files"

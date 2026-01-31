@@ -299,8 +299,13 @@ class MetadataHistoryDialog(QDialog):
                 )
 
             # Sort by timestamp (most recent first)
-            # Cast timestamp to float for sorting (timestamps are numeric)
-            from typing import cast
+            # Castfrom __future__ import annotations
+
+import logging
+import os
+from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
             all_operations.sort(key=lambda x: cast("float", x["timestamp"]), reverse=True)
 
@@ -478,9 +483,7 @@ class MetadataHistoryDialog(QDialog):
 
     def _get_file_basename(self, file_path: str) -> str:
         """Get the basename of a file path."""
-        import os
-
-        return os.path.basename(file_path) if file_path else ""
+        return Path(file_path).name if file_path else ""
 
 
 def show_metadata_history_dialog(parent: QWidget | None = None) -> None:
