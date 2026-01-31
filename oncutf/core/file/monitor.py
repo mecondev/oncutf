@@ -239,7 +239,7 @@ class FilesystemMonitor(QObject):
 
             for letter in string.ascii_uppercase:
                 drive_path = f"{letter}:\\"
-                if os.path.exists(drive_path):
+                if Path(drive_path).exists():
                     drives.add(drive_path)
 
         elif self._system == "Darwin":
