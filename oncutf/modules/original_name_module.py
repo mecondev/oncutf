@@ -8,6 +8,7 @@ Module for applying original name transformations.
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
 from oncutf.models.file_item import FileItem
@@ -48,7 +49,7 @@ class OriginalNameModule:
             str: Original filename base with optional Greeklish conversion
 
         """
-        base_name = os.path.splitext(file_item.filename)[0]
+        base_name = Path(file_item.filename).stem
         logger.debug(
             "[OriginalNameModule] Starting with: %s",
             base_name,
@@ -69,7 +70,7 @@ class OriginalNameModule:
                 "[OriginalNameModule] Empty result fallback to original filename: %s",
                 file_item.filename,
             )
-            base_name = os.path.splitext(file_item.filename)[0]
+            base_name = Path(file_item.filename).stem
 
         return base_name
 

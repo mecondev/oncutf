@@ -170,13 +170,13 @@ class ThumbnailWorker(QThread):
 
         try:
             # Validate file exists
-            if not os.path.exists(file_path):
+            if not Path(file_path).exists():
                 raise ThumbnailGenerationError(f"File not found: {file_path}")
 
             # Get file stats
-            stat = os.stat(file_path)
-            mtime = stat.st_mtime
-            size = stat.st_size
+            file_stat = Path(file_path).stat()
+            mtime = file_stat.st_mtime
+            size = file_stat.st_size
 
             # Determine file type and select provider
             ext = Path(file_path).suffix.lower()
