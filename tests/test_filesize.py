@@ -138,13 +138,13 @@ class TestFileSizeComparison(unittest.TestCase):
                     file_item = FileItem.from_path(str(file_path))
                     app_size = file_item.size
 
-                    # Python's os.path.getsize (cross-platform)
-                    python_size = os.path.getsize(str(file_path))
+                    # Python's Path.stat().st_size (cross-platform equivalent of os.path.getsize)
+                    python_size = file_path.stat().st_size
 
                     self.assertEqual(
                         app_size,
                         python_size,
-                        f"Size mismatch for {test_file}: app={app_size}, os.path.getsize={python_size}",
+                        f"Size mismatch for {test_file}: app={app_size}, Path.stat().st_size={python_size}",
                     )
 
 
