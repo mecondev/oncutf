@@ -61,7 +61,7 @@ class SmartKeySimplifier:
     # Words to preserve (boolean/negation/important)
     PRESERVE_WORDS: ClassVar[set[str]] = {"not", "is", "has", "can", "no", "yes"}
 
-    def __init__(self, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """Initialize simplifier with configuration.
 
         Args:

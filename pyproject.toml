@@ -395,6 +395,11 @@ ignore = [
 "oncutf/infra/**/*.py" = []  # No ignores for infra/ layer
 # UI layer - allow Qt patterns
 "oncutf/ui/**/*.py" = ["D100", "D101", "D102", "D103"]  # Qt widgets may skip docstrings
+# Legitimate Any usage (external APIs, dynamic data)
+"oncutf/core/metadata/metadata_service.py" = ["ANN401"]  # Metadata values are truly dynamic
+"oncutf/app/services/batch_service.py" = ["ANN401"]  # Generic batch operations with dynamic kwargs
+# Tests - exclude from type annotation requirements
+"tests/**/*.py" = ["ANN"]  # Test code can remain loosely typed
 
 [tool.ruff.lint.isort]
 force-single-line = false
