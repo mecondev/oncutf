@@ -7,10 +7,10 @@ Advanced Cache Manager - Simple but effective caching for speed and reliability.
 """
 
 import hashlib
-import os
 import pickle
 import time
 from collections import OrderedDict
+from pathlib import Path
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -78,10 +78,10 @@ class DiskCache:
     def __init__(self, cache_dir: str | None = None) -> None:
         """Initialize disk cache in the specified directory."""
         if cache_dir is None:
-            cache_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "cache")
+            cache_dir = str(Path.home() / ".oncutf" / "cache")
 
         self.cache_dir: str = cache_dir
-        os.makedirs(cache_dir, exist_ok=True)
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
         self.hits = 0
         self.misses = 0
@@ -90,23 +90,24 @@ class DiskCache:
         """Get cache file path."""
         # Use hash for safe filename
         key_hash = hashlib.md5(key.encode()).hexdigest()
-        return os.path.join(self.cache_dir, f"{key_hash}.cache")
+        return str(Path(self.cache_dir) / f"{key_hash}.cache")
 
     def get(self, key: str) -> Any | None:
         """Get value from disk cache."""
         cache_path = self._get_cache_path(key)
 
         try:
-            if os.path.exists(cache_path):
+            cache_path_obj = Path(cache_path)
+            if cache_path_obj.exists():
                 # Check if cache is still valid (24 hours)
-                if time.time() - os.path.getmtime(cache_path) < 86400:
-                    with open(cache_path, "rb") as f:
+                if time.time() - cache_path_obj.stat().st_mtime < 86400:
+                    with cache_path_obj.open("rb") as f:
                         value = pickle.load(f)
                     self.hits += 1
                     return value
                 else:
                     # Cache expired, remove it
-                    os.remove(cache_path)
+                    cache_path_obj.unlink()
         except Exception as e:
             logger.warning("[DiskCache] Error reading cache for %s: %s", key, e)
 
@@ -118,7 +119,7 @@ class DiskCache:
         cache_path = self._get_cache_path(key)
 
         try:
-            with open(cache_path, "wb") as f:
+            with Path(cache_path).open("wb") as f:
                 pickle.dump(value, f)
         except Exception as e:
             logger.warning("[DiskCache] Error writing cache for %s: %s", key, e)
@@ -126,9 +127,9 @@ class DiskCache:
     def clear(self) -> None:
         """Clear disk cache."""
         try:
-            for filename in os.listdir(self.cache_dir):
-                if filename.endswith(".cache"):
-                    os.remove(os.path.join(self.cache_dir, filename))
+            for entry in Path(self.cache_dir).iterdir():
+                if entry.suffix == ".cache":
+                    entry.unlink()
             self.hits = 0
             self.misses = 0
         except Exception as e:
@@ -143,11 +144,10 @@ class DiskCache:
         cache_files = 0
         cache_size = 0
         try:
-            for filename in os.listdir(self.cache_dir):
-                if filename.endswith(".cache"):
+            for entry in Path(self.cache_dir).iterdir():
+                if entry.suffix == ".cache":
                     cache_files += 1
-                    file_path = os.path.join(self.cache_dir, filename)
-                    cache_size += os.path.getsize(file_path)
+                    cache_size += entry.stat().st_size
         except Exception:
             pass
 
@@ -233,7 +233,7 @@ class AdvancedCacheManager:
             patterns.add(f"hash_{file_path}")
 
             # Add directory patterns
-            dir_path = os.path.dirname(file_path)
+            dir_path = str(Path(file_path).parent)
             patterns.add(f"dir_{dir_path}")
 
         # Invalidate matching cache entries
