@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 
 from PyQt5.QtCore import QPoint, QSettings, QSize
 from PyQt5.QtWidgets import (
@@ -314,7 +315,7 @@ class NodeEditorWindow(QMainWindow):
                 self.get_file_dialog_directory(),
                 self.get_file_dialog_filter(),
             )
-            if fname != "" and os.path.isfile(fname):
+            if fname != "" and Path(fname).is_file():
                 current_nodeeditor.file_load(fname)
                 self.set_title()
 

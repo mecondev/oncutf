@@ -102,7 +102,7 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
         # Make executable on Unix-like systems
         if system != "Windows":
             try:
-                os.chmod(tool_path, 0o755)
+                tool_path.chmod(0o755)
             except OSError as e:
                 logger.warning("[ExternalTools] Could not set executable bit: %s", e)
 

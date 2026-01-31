@@ -9,6 +9,7 @@ Provides helper functions for truncating, formatting, and processing text string
 """
 
 import os
+from pathlib import Path
 
 
 def elide_text(text: str, max_len: int) -> str:
@@ -70,7 +71,8 @@ def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
     if len(filename) <= max_length:
         return filename
 
-    name_part, ext_part = os.path.splitext(filename)
+    path = Path(filename)
+    name_part, ext_part = path.stem, path.suffix
 
     if ext_part and len(ext_part) < 10:
         # Preserve extension, truncate name part in the middle

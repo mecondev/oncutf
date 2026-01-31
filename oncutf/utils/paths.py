@@ -73,7 +73,7 @@ class AppPaths:
             # Windows: Use LOCALAPPDATA for app data
             base = os.environ.get("LOCALAPPDATA")
             if not base:
-                base = os.path.join(os.environ.get("USERPROFILE", ""), "AppData", "Local")
+                base = Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local"
             return Path(base) / APP_NAME
 
         elif system == "Darwin":

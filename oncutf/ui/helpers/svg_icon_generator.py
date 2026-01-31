@@ -68,7 +68,7 @@ class SVGIconGenerator:
         svg_path = self.feather_dir / f"{icon_name}.svg"
 
         try:
-            with open(svg_path, encoding="utf-8") as f:
+            with svg_path.open(encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             logger.error("[SVGIconGenerator] Feather icon not found: %s", svg_path)

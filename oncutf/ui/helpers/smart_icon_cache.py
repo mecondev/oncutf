@@ -21,6 +21,7 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import (
@@ -203,7 +204,7 @@ class SmartIconCache(QObject):
             # Try different icon loading strategies
             icon_path = self._find_icon_path(name, theme)
 
-            if icon_path and os.path.exists(icon_path):
+            if icon_path and Path(icon_path).exists():
                 # Load and scale icon
                 pixmap = QPixmap(icon_path)
                 if not pixmap.isNull():
