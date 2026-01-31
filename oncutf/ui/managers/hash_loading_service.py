@@ -18,6 +18,7 @@ Refactored 2026-01-15: Consolidated from HashWorkerCoordinator to provide
 unified callback architecture for all hash operations.
 """
 
+from pathlib import Path
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -301,7 +302,11 @@ class HashLoadingService:
         if self._on_file_hash_callback:
             import os
 
-            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            path_obj = Path(file_path)
+            try:
+                file_size = path_obj.stat().st_size if path_obj.exists() else 0
+            except (OSError, FileNotFoundError):
+                file_size = 0
             self._on_file_hash_callback(file_path, hash_value, file_size)
 
         # Progressive UI update
@@ -707,7 +712,11 @@ class HashLoadingService:
         if self._on_file_hash_callback:
             import os
 
-            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            path_obj = Path(file_path)
+            try:
+                file_size = path_obj.stat().st_size if path_obj.exists() else 0
+            except (OSError, FileNotFoundError):
+                file_size = 0
             self._on_file_hash_callback(file_path, hash_value, file_size)
 
     def _on_duplicates_result(self, duplicates: dict[str, Any]) -> None:

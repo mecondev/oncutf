@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 from oncutf.ui.widgets.node_editor.utils.helpers import dump_exception
@@ -26,21 +27,21 @@ class InvalidFileError(Exception):
 
 def read_snapshot_from_file(filename: str) -> dict[str, Any]:
     """Read a snapshot dict from disk."""
-    with open(filename) as file:
+    with Path(filename).open() as file:
         raw_data = file.read()
 
     try:
         data = json.loads(raw_data)
         if not isinstance(data, dict):
-            raise InvalidFileError(f"{os.path.basename(filename)} does not contain a JSON object")
+            raise InvalidFileError(f"{Path(filename).name} does not contain a JSON object")
         return data
     except json.JSONDecodeError:
-        raise InvalidFileError(f"{os.path.basename(filename)} is not a valid JSON file") from None
+        raise InvalidFileError(f"{Path(filename).name} is not a valid JSON file") from None
 
 
 def write_snapshot_to_file(snapshot: dict[str, Any], filename: str) -> None:
     """Write a snapshot dict to disk."""
-    with open(filename, "w") as file:
+    with Path(filename).open("w") as file:
         file.write(json.dumps(snapshot, indent=4))
 
 

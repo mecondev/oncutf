@@ -10,6 +10,7 @@ Date: 2025-12-06
 
 import os
 import time
+from pathlib import Path
 from dataclasses import dataclass
 
 from oncutf.config import ALLOWED_EXTENSIONS
@@ -79,7 +80,7 @@ def count_folder_contents(
     result = FolderCount()
 
     try:
-        if not os.path.isdir(folder_path):
+        if not Path(folder_path).is_dir():
             return result
 
         if recursive:
@@ -211,7 +212,8 @@ def _has_allowed_extension(filename: str) -> bool:
     if not ALLOWED_EXTENSIONS:
         return True  # No filter, allow all
 
-    _, ext = os.path.splitext(filename.lower())
+    path_obj = Path(filename.lower())
+    ext = path_obj.suffix
     # Remove leading dot from extension for comparison
     if ext.startswith("."):
         ext = ext[1:]
@@ -227,7 +229,7 @@ def is_mount_point_or_root(path: str) -> bool:
     - Top-level Windows drives
     - Direct children of mount directories (e.g., /mnt/disk1)
     """
-    path = os.path.abspath(path)
+    path = str(Path(path).resolve())
 
     # Check if it's a mount point (Linux/macOS)
     if os.path.ismount(path):
@@ -253,5 +255,5 @@ def is_mount_point_or_root(path: str) -> bool:
         return True
 
     # Check if path is a direct child of a mount directory (e.g., /mnt/disk1)
-    parent = os.path.dirname(path)
+    parent = str(Path(path).parent)
     return parent in mount_prefixes

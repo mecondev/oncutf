@@ -112,9 +112,13 @@ def test_on_file_hash_calculated_with_callback(hash_service):
     hash_service._on_file_hash_callback = callback
     hash_service._currently_loading = {"/test/file.txt"}
 
+    # Mock Path.stat() to return a mock stat result with st_size
+    mock_stat = Mock()
+    mock_stat.st_size = 1024
+
     with (
-        patch("os.path.exists", return_value=True),
-        patch("os.path.getsize", return_value=1024),
+        patch("oncutf.ui.managers.hash_loading_service.Path.exists", return_value=True),
+        patch("oncutf.ui.managers.hash_loading_service.Path.stat", return_value=mock_stat),
     ):
         hash_service._on_file_hash_calculated("/test/file.txt", "abc123")
 
