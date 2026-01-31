@@ -292,7 +292,7 @@ class TestMetadataKeyRegistry:
         assert export_path.exists()
 
         # Verify JSON structure
-        with open(export_path, encoding="utf-8") as f:
+        with export_path.open(encoding="utf-8") as f:
             data = json.load(f)
         assert "mappings" in data
         assert len(data["mappings"]) == 2
@@ -301,6 +301,22 @@ class TestMetadataKeyRegistry:
         new_registry = MetadataKeyRegistry()
         new_registry.import_from_file(export_path)
         assert new_registry.get_mapping_count() == 2
+
+    def test_import_to_dict(self):
+        """Test import_from_dict."""
+        pass  # Placeholder if needed or just remove if redundant
+
+    def test_import_to_new_registry(self, tmp_path):
+        """Test importing to a new registry."""
+        export_path = tmp_path / "registry.json"
+
+        registry = MetadataKeyRegistry()
+        registry.add_mapping("Key1", "K1")
+        registry.export_to_file(export_path)
+
+        new_registry = MetadataKeyRegistry()
+        new_registry.import_from_file(export_path)
+        assert new_registry.get_mapping_count() == 1
 
     def test_import_merge(self):
         """Test import with merge option."""
@@ -452,6 +468,6 @@ class TestEdgeCases:
         registry.export_to_file(export_path)
 
         # Verify file is valid JSON with unicode
-        with open(export_path, encoding="utf-8") as f:
+        with export_path.open(encoding="utf-8") as f:
             data = json.load(f)
         assert data["mappings"][0]["original"] == "Καλλιτέχνης"

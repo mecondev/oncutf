@@ -67,7 +67,7 @@ class TestSemanticAliasesManager:
                 "Another Field": ["Another:Key"],
             }
             aliases_file = tmp_path / "semantic_metadata_aliases.json"
-            with open(aliases_file, "w", encoding="utf-8") as f:
+            with aliases_file.open("w", encoding="utf-8") as f:
                 json.dump(custom_aliases, f)
 
             manager = SemanticAliasesManager()
@@ -90,7 +90,7 @@ class TestSemanticAliasesManager:
             assert manager.file_exists()
 
             # Verify file contents
-            with open(manager.get_aliases_file_path(), encoding="utf-8") as f:
+            with manager.get_aliases_file_path().open(encoding="utf-8") as f:
                 saved = json.load(f)
             assert saved == test_aliases
 
@@ -108,7 +108,7 @@ class TestSemanticAliasesManager:
 
             # Manually modify file
             modified = {"Field2": ["Key2"]}
-            with open(manager.get_aliases_file_path(), "w", encoding="utf-8") as f:
+            with manager.get_aliases_file_path().open("w", encoding="utf-8") as f:
                 json.dump(modified, f)
 
             # Reload should get modified version
@@ -248,7 +248,7 @@ class TestCorruptedFileHandling:
             # Create corrupted JSON file
             aliases_file = manager.get_aliases_file_path()
             aliases_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(aliases_file, "w", encoding="utf-8") as f:
+            with aliases_file.open("w", encoding="utf-8") as f:
                 f.write("{invalid json content")
 
             # Should return defaults and backup corrupted file
@@ -272,7 +272,7 @@ class TestCorruptedFileHandling:
             # Create file with array instead of object
             aliases_file = manager.get_aliases_file_path()
             aliases_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(aliases_file, "w", encoding="utf-8") as f:
+            with aliases_file.open("w", encoding="utf-8") as f:
                 json.dump(["not", "an", "object"], f)
 
             # Should return defaults
@@ -290,7 +290,7 @@ class TestCorruptedFileHandling:
             # Create file with string value instead of list
             aliases_file = manager.get_aliases_file_path()
             aliases_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(aliases_file, "w", encoding="utf-8") as f:
+            with aliases_file.open("w", encoding="utf-8") as f:
                 json.dump({"Field": "should be a list"}, f)
 
             # Should return defaults

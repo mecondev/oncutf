@@ -12,10 +12,12 @@ import os
 import platform
 import signal
 import sys
-from types import ModuleType
 
 # Add project root to sys.path so 'widgets', 'models', etc. can be imported
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from pathlib import Path
+from types import ModuleType
+
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 import pytest
 
