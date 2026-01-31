@@ -76,6 +76,99 @@ ruff check . --fix       # Lint with auto-fix (only when explicitly asked)
 mypy .                   # Type check (many modules have ignore_errors=true)
 ```
 
+## Quality Gates (MANDATORY) — Do not skip
+
+These checks are the project's non-negotiable safety rails.
+Any code change must be validated locally before proposing it.
+
+### Golden Rule
+- DO NOT relax rules to make checks pass (no new ignores, no "quick disable").
+- DO NOT bypass architecture boundaries.
+- Fix the code, not the tooling.
+
+### Required Tools
+Always use the project's tooling (do not invent alternatives):
+- ruff (lint + formatter)
+- mypy (type checking)
+- pytest (tests)
+- vulture (dead/unused code scan)
+- tools/audit_boundaries.py (architecture boundary enforcement)
+
+### Baseline Commands
+Run these in this exact order when finishing a change-set:
+
+```bash
+ruff format --check .
+ruff check .
+python tools/audit_boundaries.py
+mypy .
+pytest
+vulture oncutf --min-confidence 80
+When to Run Full vs Targeted Checks
+Default: run the full baseline commands above.
+
+You may run a targeted subset during development, but NEVER for the final result:
+
+If only formatting/typing changed:
+
+ruff format --check .
+
+ruff check .
+
+mypy .
+
+If only a small unit was touched:
+
+pytest -q (or pytest -q -k <pattern>)
+
+If boundaries-related files changed (imports / package moves / new modules):
+
+ALWAYS run: python tools/audit_boundaries.py (no exceptions)
+
+Final output must always pass the full baseline commands.
+
+If a Gate Fails
+Do not add new global ignores.
+
+Do not broaden exclusions.
+
+Do not modify rules to "make it green".
+
+Fix the underlying issue and re-run the failed gate.
+
+Formatting Policy
+Formatter of record: ruff format.
+
+Use ruff format . only when explicitly requested or as the final step after review.
+
+The repo must remain stable: avoid format churn not related to the change.
+
+Architecture Boundary Policy
+tools/audit_boundaries.py is authoritative.
+
+If a change introduces a boundary violation, refactor the code to comply.
+
+No new "import aggregator" modules are allowed to hide dependencies.
+
+Dead/Unused Code Policy
+Use vulture oncutf --min-confidence 80 for triage.
+
+If vulture reports a legitimate unused symbol, remove it.
+
+If it is a false positive:
+
+Prefer adding a local # noqa: <rule> or a narrow whitelist entry.
+
+Never mass-ignore warnings across the codebase.
+
+Pytest Policy
+Prefer adding/adjusting tests when behavior changes.
+
+Tests must remain deterministic and not depend on local machine state.
+
+If a test requires external tools (exiftool), use appropriate markers.
+
+
 **Test markers:** `unit`, `integration`, `gui`, `exiftool`, `slow`.
 
 ---
@@ -107,6 +200,12 @@ mypy .                   # Type check (many modules have ignore_errors=true)
 - New features: controller → core service → domain. NO new logic in `ui_managers/` or `MainWindow`.
 
 See [MIGRATION_STANCE.md](../docs/migration_stance.md) for architecture migration policy and detailed patterns.
+
+### Hard Constraints (Do Not Violate)
+- Never add new ruff ignores/exclusions without explicit user request.
+- Never weaken mypy settings to silence errors; fix types or scope with narrow overrides.
+- Never bypass `UnifiedRenameEngine` or `UnifiedMetadataManager`.
+- Never introduce new wildcard imports or import-aggregator modules.
 
 ---
 

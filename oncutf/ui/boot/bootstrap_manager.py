@@ -99,7 +99,7 @@ class BootstrapManager:
         """
         from oncutf.app.services import wait_cursor
         from oncutf.ui.adapters.qt_app_context import get_qt_app_context
-        from oncutf.ui.services.ui_state_service import restore_ui_state, save_ui_state
+        from oncutf.ui.helpers.file_table_state_helper import FileTableStateHelper
 
         logger.info(
             "[MainWindow] Files changed from context - updating UI with %d files",
@@ -154,7 +154,7 @@ class BootstrapManager:
                 logger.warning("[MainWindow] No application context available")
                 return
 
-            state = save_ui_state(self.main_window.file_table_view, context)
+            state = FileTableStateHelper.save_state(self.main_window.file_table_view, context)
 
             # 1. Clear stale selections (files may no longer exist)
             try:
@@ -214,7 +214,9 @@ class BootstrapManager:
             self.main_window.file_table_view.prepare_table(filtered_files)
 
             # 5. Restore file table state (selection, checked, scroll position)
-            restore_ui_state(self.main_window.file_table_view, context, state, delay_ms=100)
+            FileTableStateHelper.restore_state(
+                self.main_window.file_table_view, context, state, delay_ms=100
+            )
 
             # 6. Update placeholder visibility
             if files:

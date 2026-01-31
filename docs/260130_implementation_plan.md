@@ -270,11 +270,10 @@ mypy .
 pytest tests/ -q
 
 # Boundary audit
-python scripts/audit_boundaries.py
+python tools/audit_boundaries.py
 
 # Dead code check
 vulture oncutf --min-confidence 80
-```
 
 ### Manual Verification
 

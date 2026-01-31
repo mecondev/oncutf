@@ -123,8 +123,8 @@ class SelectionManager:
             return
 
         from oncutf.app.state.context import get_app_context
+        from oncutf.ui.helpers.file_table_state_helper import FileTableStateHelper
         from oncutf.ui.services.cursor_service import wait_cursor
-        from oncutf.ui.services.ui_state_service import clear_ui_state
 
         with wait_cursor():
             # Clear cache to force update
@@ -135,7 +135,7 @@ class SelectionManager:
             metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
 
             if context:
-                clear_ui_state(file_table_view, context, metadata_tree_view)
+                FileTableStateHelper.clear_all_state(file_table_view, context, metadata_tree_view)
 
             # Update labels
             if hasattr(self.parent_window, "update_files_label"):
