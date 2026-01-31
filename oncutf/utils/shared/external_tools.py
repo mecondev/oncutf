@@ -23,7 +23,6 @@ Usage:
         ffmpeg = get_tool_path(ToolName.FFMPEG)
 """
 
-import os
 import platform
 import subprocess
 from enum import Enum

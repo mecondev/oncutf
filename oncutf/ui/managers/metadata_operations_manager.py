@@ -18,7 +18,7 @@ Uses MetadataEditPort for UI decoupling (Phase 5).
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.app.services.user_interaction import (
@@ -375,7 +375,7 @@ class MetadataOperationsManager:
 
     def _get_supported_standards(self, file_path: str) -> list[str]:
         """Get supported metadata standards for a file extension."""
-        ext = os.path.splitext(file_path)[1].lower()
+        ext = Path(file_path).suffix.lower()
         image_exts = [".jpg", ".jpeg", ".png", ".tiff", ".webp", ".heic"]
         video_exts = [".mp4", ".mov", ".avi", ".mkv", ".m4v"]
 

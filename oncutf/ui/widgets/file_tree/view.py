@@ -19,7 +19,6 @@ Features:
 - Drive mount/unmount detection
 """
 
-import os
 from pathlib import Path
 
 from PyQt5.QtCore import QEvent, Qt, pyqtSignal

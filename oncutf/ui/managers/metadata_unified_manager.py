@@ -19,7 +19,6 @@ is now cleanly separated into focused modules.
 """
 
 import contextlib
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any

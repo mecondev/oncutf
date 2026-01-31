@@ -13,7 +13,6 @@ This manager centralizes keyboard shortcut handling including:
 Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 """
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 

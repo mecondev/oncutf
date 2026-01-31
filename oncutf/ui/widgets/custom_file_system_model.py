@@ -9,7 +9,6 @@ Provides consistent cross-platform appearance with professional feather icons
 for folders, files, and expand/collapse indicators.
 """
 
-import os
 from pathlib import Path
 from typing import Any, ClassVar
 
