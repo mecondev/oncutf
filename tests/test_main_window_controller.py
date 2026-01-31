@@ -96,10 +96,14 @@ class TestRestoreLastSessionWorkflow:
         assert len(result["errors"]) == 1
         assert "no longer exists" in result["errors"][0]
 
-    @patch("os.path.exists")
-    def test_successful_folder_restoration(self, mock_exists, controller, mock_controllers):
-        """Test successful folder restoration without metadata."""
-        mock_exists.return_value = True
+    @patch("oncutf.controllers.main_window_controller.Path")
+    def test_successful_folder_restoration(self, mock_path, controller, mock_controllers):
+        """Test successful folder restoration workflow."""
+        # Mock Path.exists to return True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
+
         file_load, _, _ = mock_controllers
 
         # Use os.path.join for cross-platform path
@@ -129,12 +133,14 @@ class TestRestoreLastSessionWorkflow:
         assert result["metadata_loaded"] == 0
         assert len(result["errors"]) == 0
 
-    @patch("os.path.exists")
+    @patch("oncutf.controllers.main_window_controller.Path")
     def test_successful_folder_with_metadata(
-        self, mock_exists, controller, mock_controllers, mock_app_context
+        self, mock_path, controller, mock_controllers, mock_app_context
     ):
         """Test successful folder restoration with metadata loading."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         file_load, metadata, _ = mock_controllers
 
         # Mock loaded files
@@ -168,10 +174,12 @@ class TestRestoreLastSessionWorkflow:
         assert result["metadata_loaded"] == 5
         assert len(result["errors"]) == 0
 
-    @patch("os.path.exists")
-    def test_folder_load_failure(self, mock_exists, controller, mock_controllers):
+    @patch("oncutf.controllers.main_window_controller.Path")
+    def test_folder_load_failure(self, mock_path, controller, mock_controllers):
         """Test folder load failure."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         file_load, _, _ = mock_controllers
 
         # Mock failed folder load
@@ -189,12 +197,14 @@ class TestRestoreLastSessionWorkflow:
         assert len(result["errors"]) == 1
         assert "Failed to load folder" in result["errors"][0]
 
-    @patch("os.path.exists")
+    @patch("oncutf.controllers.main_window_controller.Path")
     def test_metadata_load_failure_not_critical(
-        self, mock_exists, controller, mock_controllers, mock_app_context
+        self, mock_path, controller, mock_controllers, mock_app_context
     ):
         """Test that metadata loading failure doesn't fail the whole workflow."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         _file_load, metadata, _ = mock_controllers
 
         # Mock loaded files
@@ -219,10 +229,12 @@ class TestRestoreLastSessionWorkflow:
         # Error should be logged but not critical
         assert "Metadata load failed" in result["errors"][0]
 
-    @patch("os.path.exists")
-    def test_with_sort_configuration(self, mock_exists, controller):
+    @patch("oncutf.controllers.main_window_controller.Path")
+    def test_with_sort_configuration(self, mock_path, controller):
         """Test that sort configuration is preserved in result."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
 
         result = controller.restore_last_session_workflow(
             last_folder="/test/folder",
@@ -234,10 +246,12 @@ class TestRestoreLastSessionWorkflow:
         assert result["sort_column"] == 2
         assert result["sort_order"] == 1
 
-    @patch("os.path.exists")
-    def test_exception_during_file_load(self, mock_exists, controller, mock_controllers):
+    @patch("oncutf.controllers.main_window_controller.Path")
+    def test_exception_during_file_load(self, mock_path, controller, mock_controllers):
         """Test exception handling during file load."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         file_load, _, _ = mock_controllers
 
         # Mock exception during load
@@ -250,12 +264,14 @@ class TestRestoreLastSessionWorkflow:
         assert len(result["errors"]) == 1
         assert "Error loading folder" in result["errors"][0]
 
-    @patch("os.path.exists")
+    @patch("oncutf.controllers.main_window_controller.Path")
     def test_exception_during_metadata_load(
-        self, mock_exists, controller, mock_controllers, mock_app_context
+        self, mock_path, controller, mock_controllers, mock_app_context
     ):
         """Test exception handling during metadata load."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         _, metadata, _ = mock_controllers
 
         # Mock loaded files
@@ -275,10 +291,12 @@ class TestRestoreLastSessionWorkflow:
         assert len(result["errors"]) == 1
         assert "Error loading metadata" in result["errors"][0]
 
-    @patch("os.path.exists")
-    def test_no_files_loaded_skips_metadata(self, mock_exists, controller, mock_controllers):
+    @patch("oncutf.controllers.main_window_controller.Path")
+    def test_no_files_loaded_skips_metadata(self, mock_path, controller, mock_controllers):
         """Test that metadata loading is skipped if no files were loaded."""
-        mock_exists.return_value = True
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path.return_value = mock_path_instance
         file_load, metadata, _ = mock_controllers
 
         # Mock empty folder

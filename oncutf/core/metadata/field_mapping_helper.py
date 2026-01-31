@@ -8,6 +8,7 @@ Date: 2025-11-25
 """
 
 import os
+from pathlib import Path
 from typing import ClassVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -147,7 +148,7 @@ class MetadataFieldMappingHelper:
             File category: 'image', 'raw', 'video', 'audio', or 'unknown'
 
         """
-        ext = os.path.splitext(file_path)[1].lower()
+        ext = Path(file_path).suffix.lower()
 
         if ext in cls.IMAGE_EXTENSIONS:
             return "image"

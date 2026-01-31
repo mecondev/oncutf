@@ -15,6 +15,7 @@ Features:
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from oncutf.config import COMMAND_TYPES
@@ -94,9 +95,7 @@ class MetadataCommand(ABC):
 
     def get_file_basename(self) -> str:
         """Get the basename of the file for display."""
-        import os
-
-        return os.path.basename(self.file_path)
+        return Path(self.file_path).name
 
 
 class EditMetadataFieldCommand(MetadataCommand):

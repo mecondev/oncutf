@@ -26,6 +26,7 @@ MainWindowController coordinates complex workflows that span multiple domains.
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -144,7 +145,7 @@ class MainWindowController:
             result["success"] = True  # Not an error, just nothing to restore
             return result
 
-        if not os.path.exists(last_folder):
+        if not Path(last_folder).exists():
             error_msg = f"Last folder no longer exists: {last_folder}"
             logger.warning("[MainWindowController] %s", error_msg)
             errors.append(error_msg)
