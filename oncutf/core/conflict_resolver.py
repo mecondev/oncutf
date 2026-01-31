@@ -9,6 +9,7 @@ Conflict Resolver - Simple but reliable conflict resolution for rename operation
 import os
 import shutil
 import time
+from pathlib import Path
 from collections import deque
 from dataclasses import dataclass
 from typing import Any
@@ -85,10 +86,10 @@ class ConflictResolver:
     def __init__(self, backup_dir: str | None = None):
         """Initialize conflict resolver with backup directory and strategies."""
         if backup_dir is None:
-            backup_dir = os.path.join(os.path.expanduser("~"), ".oncutf", "backups")
+            backup_dir = str(Path.home() / ".oncutf" / "backups")
 
         self.backup_dir = backup_dir
-        os.makedirs(backup_dir, exist_ok=True)
+        Path(backup_dir).mkdir(parents=True, exist_ok=True)
 
         self.undo_stack = UndoStack()
         self.conflict_log: list[Any] = []
@@ -103,7 +104,7 @@ class ConflictResolver:
         self, old_path: str, new_path: str, strategy: str = "timestamp"
     ) -> ConflictResolution:
         """Resolve file conflict with specified strategy."""
-        if not os.path.exists(old_path):
+        if not Path(old_path).exists():
             return ConflictResolution(
                 original_path=old_path,
                 resolved_path=new_path,
@@ -114,7 +115,7 @@ class ConflictResolver:
             )
 
         # Check if conflict exists
-        if not os.path.exists(new_path):
+        if not Path(new_path).exists():
             # No conflict, proceed normally
             return self._execute_operation(old_path, new_path, "rename")
 
@@ -130,16 +131,18 @@ class ConflictResolver:
 
     def _resolve_with_timestamp(self, path: str) -> str:
         """Resolve conflict with timestamp suffix."""
-        base, ext = os.path.splitext(path)
+        path_obj = Path(path)
+        base, ext = str(path_obj.with_suffix("")), path_obj.suffix
         timestamp = int(time.time())
         return f"{base}_{timestamp}{ext}"
 
     def _resolve_with_number(self, path: str) -> str:
         """Resolve conflict with number suffix."""
-        base, ext = os.path.splitext(path)
+        path_obj = Path(path)
+        base, ext = str(path_obj.with_suffix("")), path_obj.suffix
         counter = 1
 
-        while os.path.exists(f"{base}_{counter}{ext}"):
+        while Path(f"{base}_{counter}{ext}").exists():
             counter += 1
 
         return f"{base}_{counter}{ext}"
@@ -151,7 +154,7 @@ class ConflictResolver:
     def _resolve_overwrite(self, path: str) -> str:
         """Resolve conflict with overwrite."""
         # Create backup before overwriting
-        if os.path.exists(path):
+        if Path(path).exists():
             backup_path = self._create_backup(path)
             logger.debug("[ConflictResolver] Created backup: %s", backup_path)
 
@@ -160,9 +163,9 @@ class ConflictResolver:
     def _create_backup(self, path: str) -> str:
         """Create backup of file."""
         timestamp = int(time.time())
-        filename = os.path.basename(path)
+        filename = Path(path).name
         backup_filename = f"{timestamp}_{filename}"
-        backup_path = os.path.join(self.backup_dir, backup_filename)
+        backup_path = str(Path(self.backup_dir) / backup_filename)
 
         try:
             shutil.copy2(path, backup_path)
@@ -189,7 +192,7 @@ class ConflictResolver:
 
             # Execute operation
             if operation_type == "rename":
-                os.rename(old_path, new_path)
+                Path(old_path).rename(new_path)
             elif operation_type == "copy":
                 shutil.copy2(old_path, new_path)
             elif operation_type == "move":
@@ -234,9 +237,9 @@ class ConflictResolver:
         try:
             # Reverse the operation
             if operation and operation.operation_type == "rename":
-                if os.path.exists(operation.new_path):
-                    os.rename(operation.new_path, operation.old_path)
-                elif operation.backup_path and os.path.exists(operation.backup_path):
+                if Path(operation.new_path).exists():
+                    Path(operation.new_path).rename(operation.old_path)
+                elif operation.backup_path and Path(operation.backup_path).exists():
                     # Restore from backup
                     shutil.copy2(operation.backup_path, operation.old_path)
 

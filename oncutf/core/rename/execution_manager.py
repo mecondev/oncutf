@@ -10,6 +10,7 @@ Date: 2026-01-01
 """
 
 import os
+from pathlib import Path
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -83,14 +84,14 @@ class UnifiedExecutionManager:
 
             # Validate filename
             if self.validator:
-                is_valid, error = self.validator(os.path.basename(item.new_path))
+                is_valid, error = self.validator(Path(item.new_path).name)
                 if not is_valid:
                     item.error_message = error
                     results.append(item)
                     continue
 
             # Check for conflicts
-            if os.path.exists(item.new_path):
+            if Path(item.new_path).exists():
                 item.is_conflict = True
                 resolution = self._resolve_conflict(item)
 
@@ -134,7 +135,7 @@ class UnifiedExecutionManager:
         for file, new_name in zip(files, new_names, strict=False):
             old_path = file.full_path
             old_name = file.filename
-            new_path = os.path.join(os.path.dirname(old_path), new_name)
+            new_path = str(Path(old_path).parent / new_name)
 
             # Create execution item
             item = ExecutionItem(old_path=old_path, new_path=new_path, success=False)
@@ -186,14 +187,11 @@ class UnifiedExecutionManager:
 
         try:
             # Get all files in the folder for companion detection
-            folder_path = os.path.dirname(files[0].full_path)
+            folder_path = str(Path(files[0].full_path).parent)
             folder_files = []
             try:
-                folder_files = [
-                    os.path.join(folder_path, f)
-                    for f in os.listdir(folder_path)
-                    if os.path.isfile(os.path.join(folder_path, f))
-                ]
+                folder_path_obj = Path(folder_path)
+                folder_files = [str(f) for f in folder_path_obj.iterdir() if f.is_file()]
             except OSError:
                 return companion_items
 
@@ -203,7 +201,7 @@ class UnifiedExecutionManager:
 
                 if companions:
                     # Generate companion rename pairs
-                    new_path = os.path.join(folder_path, new_name)
+                    new_path = str(Path(folder_path) / new_name)
                     companion_renames = CompanionFilesHelper.get_companion_rename_pairs(
                         file.full_path, new_path, companions
                     )
@@ -218,8 +216,8 @@ class UnifiedExecutionManager:
                         companion_items.append(companion_item)
                         logger.debug(
                             "[UnifiedExecutionManager] Added companion rename: %s -> %s",
-                            os.path.basename(old_companion_path),
-                            os.path.basename(new_companion_path),
+                            Path(old_companion_path).name,
+                            Path(new_companion_path).name,
                         )
 
         except Exception:
@@ -244,7 +242,7 @@ class UnifiedExecutionManager:
         """
         if self.conflict_callback:
             try:
-                return self.conflict_callback(None, os.path.basename(item.new_path))
+                return self.conflict_callback(None, Path(item.new_path).name)
             except Exception:
                 logger.exception("[UnifiedExecutionManager] Error in conflict callback")
                 return "skip"
@@ -263,8 +261,8 @@ class UnifiedExecutionManager:
                 safe_case_rename,
             )
 
-            old_name = os.path.basename(item.old_path)
-            new_name = os.path.basename(item.new_path)
+            old_name = Path(item.old_path).name
+            new_name = Path(item.new_path).name
 
             # Skip if no change (same name, same path)
             if old_name == new_name and item.old_path == item.new_path:
@@ -279,7 +277,7 @@ class UnifiedExecutionManager:
                 return safe_case_rename(item.old_path, item.new_path)
             else:
                 # Regular rename
-                os.rename(item.old_path, item.new_path)
+                Path(item.old_path).rename(item.new_path)
                 return True
 
         except Exception as e:
