@@ -592,10 +592,9 @@ class PreviewTablesView(QWidget):
 
         if not is_valid:
             return "invalid", "Invalid filename"
-        elif new_name in duplicates:
+        if new_name in duplicates:
             return "duplicate", "Duplicate name"
-        else:
-            return "valid", "Ready to rename"
+        return "valid", "Ready to rename"
 
     def _update_status_summary(self, stats: dict, icon_paths: dict) -> None:
         """Update status summary with statistics."""

@@ -752,22 +752,19 @@ class ProgressWidget(QWidget):
         """
         if seconds < 1:
             return "0s"
-        elif seconds < 60:
+        if seconds < 60:
             return f"{int(seconds)}s"
-        elif seconds < 3600:
+        if seconds < 3600:
             minutes = int(seconds // 60)
             remaining_seconds = int(seconds % 60)
             if remaining_seconds == 0:
                 return f"{minutes}m"
-            else:
-                return f"{minutes}m {remaining_seconds}s"
-        else:
-            hours = int(seconds // 3600)
-            remaining_minutes = int((seconds % 3600) // 60)
-            if remaining_minutes == 0:
-                return f"{hours}h"
-            else:
-                return f"{hours}h {remaining_minutes}m"
+            return f"{minutes}m {remaining_seconds}s"
+        hours = int(seconds // 3600)
+        remaining_minutes = int((seconds % 3600) // 60)
+        if remaining_minutes == 0:
+            return f"{hours}h"
+        return f"{hours}h {remaining_minutes}m"
 
     def set_size_info(self, processed_size: int, total_size: int = 0):
         """Update size information display with cumulative tracking.
@@ -815,10 +812,9 @@ class ProgressWidget(QWidget):
                 # Reset to prevent further issues
                 self.processed_size = old_processed
                 return
-            else:
-                # Regular backwards movement
-                log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
-                logger.warning(log_message)
+            # Regular backwards movement
+            log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
+            logger.warning(log_message)
 
         # Check for total size changes
         elif total_size > 0 and total_size != old_total:

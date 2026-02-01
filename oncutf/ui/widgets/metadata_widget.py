@@ -189,8 +189,7 @@ class MetadataWidget(QWidget):
         try:
             # Try to get selected files from parent window
             if self.parent_window and hasattr(self.parent_window, "get_selected_files_ordered"):
-                files = self.parent_window.get_selected_files_ordered()
-                return files
+                return self.parent_window.get_selected_files_ordered()
 
             # Try to get from QtAppContext
             context = self._get_app_context()
@@ -235,10 +234,8 @@ class MetadataWidget(QWidget):
 
             context = get_qt_app_context()
             if context and hasattr(context, "_metadata_cache"):
-                cache = context._metadata_cache
-                return cache
-            else:
-                return None
+                return context._metadata_cache
+            return None
         except Exception as e:
             logger.debug(
                 "[MetadataWidget] Error getting metadata cache: %s",
@@ -279,14 +276,13 @@ class MetadataWidget(QWidget):
                 field = "last_modified_yymmdd"  # Fallback
 
         # For hash category, ensure we only return CRC32
-        if category == "hash" and field:
-            # Only CRC32 is supported, so ensure we return it
-            if field != "hash_crc32":
-                logger.warning(
-                    "[MetadataWidget] Hash algorithm '%s' not supported, using CRC32",
-                    field,
-                )
-                field = "hash_crc32"
+        # Only CRC32 is supported, so ensure we return it
+        if category == "hash" and field and field != "hash_crc32":
+            logger.warning(
+                "[MetadataWidget] Hash algorithm '%s' not supported, using CRC32",
+                field,
+            )
+            field = "hash_crc32"
 
         # For metadata_keys category, ensure we don't return None field
         if category == "metadata_keys" and not field:
