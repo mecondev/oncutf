@@ -363,9 +363,7 @@ class MetadataFieldValidator:
         validator = MetadataFieldValidator.get_field_validator(field_name)
         if validator is None or not callable(validator):
             validator = _default_validator
-        # Normalize and ensure return is (bool, str | None)
+        # All validators must return (bool, str | None) tuple
         result = validator(value)
-        if isinstance(result, tuple):
-            return result
-        # Not a tuple, normalize to tuple format
-        return (False, "Invalid validator return type")
+        assert isinstance(result, tuple), f"Validator {field_name} returned {type(result)}, expected tuple"
+        return result
