@@ -138,13 +138,12 @@ class MathNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError, ZeroDivisionError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(10)
@@ -346,13 +345,12 @@ class PowerNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError, OverflowError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(51)
@@ -431,13 +429,12 @@ class SqrtNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(52)
@@ -510,13 +507,12 @@ class AbsNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(53)
@@ -592,13 +588,12 @@ class MinNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(54)
@@ -674,13 +669,12 @@ class MaxNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(55)
@@ -756,13 +750,12 @@ class RoundNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(56)
@@ -841,10 +834,9 @@ class ModuloNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError, ZeroDivisionError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
