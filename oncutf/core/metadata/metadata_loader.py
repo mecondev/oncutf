@@ -836,9 +836,6 @@ class MetadataLoader:
                     len(companion_metadata),
                     file_item.filename,
                 )
-
-            return enhanced_metadata
-
         except Exception:
             logger.warning(
                 "[MetadataLoader] Error enhancing metadata with companions for %s",
@@ -846,3 +843,5 @@ class MetadataLoader:
                 exc_info=True,
             )
             return base_metadata
+        else:
+            return enhanced_metadata

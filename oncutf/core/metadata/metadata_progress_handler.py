@@ -135,12 +135,11 @@ class MetadataProgressHandler:
             # Calculate total size for progress tracking
             total_size = calculate_files_total_size(files)
             dialog.start_progress_tracking(total_size)
-
-            return dialog
-
         except Exception:
             logger.exception("[MetadataProgressHandler] Error showing metadata progress dialog")
             return None
+        else:
+            return dialog
 
     def close_metadata_progress_dialog(self) -> None:
         """Close the metadata progress dialog if open."""
@@ -211,12 +210,11 @@ class MetadataProgressHandler:
             # Calculate total size
             total_size = calculate_files_total_size(files)
             dialog.start_progress_tracking(total_size)
-
-            return dialog
-
         except Exception:
             logger.exception("[MetadataProgressHandler] Error showing hash progress dialog")
             return None
+        else:
+            return dialog
 
     def close_hash_progress_dialog(self) -> None:
         """Close the hash progress dialog if open."""

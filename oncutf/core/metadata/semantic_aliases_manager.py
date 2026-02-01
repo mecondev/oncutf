@@ -101,8 +101,6 @@ class SemanticAliasesManager:
                 len(data),
                 self._aliases_file,
             )
-            return data
-
         except json.JSONDecodeError as e:
             logger.error(
                 "Failed to parse semantic aliases file: %s - %s",
@@ -112,10 +110,11 @@ class SemanticAliasesManager:
             # Backup corrupted file and return defaults
             self._backup_corrupted_file()
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
-
         except Exception as e:
             logger.exception("Error loading semantic aliases")
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
+        else:
+            return data
 
     def _create_default_file(self) -> None:
         """Create semantic aliases file with default values."""
@@ -152,11 +151,11 @@ class SemanticAliasesManager:
                 )
 
             logger.info("Saved semantic aliases to %s", self._aliases_file)
-            return True
-
         except Exception as e:
             logger.exception("Failed to save semantic aliases")
             return False
+        else:
+            return True
 
     def reload_aliases(self) -> dict[str, list[str]]:
         """Reload aliases from file (for manual edits).

@@ -103,8 +103,6 @@ class StructuredMetadataManager:
                 "[StructuredMetadataManager] No valid fields to store for %s",
                 Path(file_path).name,
             )
-            return True
-
         except Exception as e:
             logger.error(
                 "[StructuredMetadataManager] Error processing metadata for %s: %s",
@@ -112,6 +110,8 @@ class StructuredMetadataManager:
                 e,
             )
             return False
+        else:
+            return True
 
     def _format_field_value(self, field_key: str, field_value: Any) -> str:
         """Format field value according to its data type and display format.
@@ -206,9 +206,6 @@ class StructuredMetadataManager:
                     "data_type": field_data["data_type"],
                     "display_format": field_data["display_format"],
                 }
-
-            return categorized
-
         except Exception as e:
             logger.error(
                 "[StructuredMetadataManager] Error getting structured metadata for %s: %s",
@@ -216,6 +213,8 @@ class StructuredMetadataManager:
                 e,
             )
             return {}
+        else:
+            return categorized
 
     def get_field_value(self, file_path: str, field_key: str) -> str | None:
         """Get a specific field value for a file.
@@ -331,15 +330,15 @@ class StructuredMetadataManager:
                 self.refresh_caches()
                 logger.info("[StructuredMetadataManager] Added custom field '%s'", field_key)
                 return True
-
-            return False
-
         except Exception as e:
             logger.error(
                 "[StructuredMetadataManager] Error adding custom field '%s': %s",
                 field_key,
                 e,
             )
+            return False
+        else:
+            return False
             return False
 
     def update_field_value(self, file_path: str, field_key: str, new_value: str) -> bool:
@@ -382,9 +381,6 @@ class StructuredMetadataManager:
                     field_key,
                     Path(file_path).name,
                 )
-
-            return success
-
         except Exception as e:
             logger.error(
                 "[StructuredMetadataManager] Error updating field '%s': %s",
@@ -392,6 +388,8 @@ class StructuredMetadataManager:
                 e,
             )
             return False
+        else:
+            return success
 
     def search_files_by_metadata(
         self, field_key: str, _search_value: str, _search_type: str = "contains"
@@ -420,10 +418,10 @@ class StructuredMetadataManager:
             # This would require a more complex query - for now, return empty list
             # NOTE: Database search functionality tracked in TODO.md
             logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
-            return []
-
         except Exception as e:
             logger.error("[StructuredMetadataManager] Error searching by metadata: %s", e)
+            return []
+        else:
             return []
 
 

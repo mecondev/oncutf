@@ -150,11 +150,10 @@ class MetadataWriter(QObject):
                         Path(file_path).name,
                     )
                     return True
-
-            return False
-
         except Exception:
             logger.exception("[MetadataWriter] Error setting metadata value")
+            return False
+        else:
             return False
 
     def save_metadata_for_selected(self) -> None:

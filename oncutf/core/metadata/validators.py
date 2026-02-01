@@ -52,17 +52,17 @@ def validate_rotation(value: str) -> tuple[bool, str | None, str | None]:
 
         # For other values, find the closest valid value
         closest = min(valid_rotations, key=lambda x: abs(int(x) - int_value))
-        return (
-            False,
-            None,
-            f"Value {int_value} is not valid. Allowed values are: 0, 90, 180, 270. Closest value: {closest}",
-        )
-
     except (ValueError, TypeError):
         return (
             False,
             None,
             f"Value '{stripped_value}' is not valid. Allowed values are: 0, 90, 180, 270.",
+        )
+    else:
+        return (
+            False,
+            None,
+            f"Value {int_value} is not valid. Allowed values are: 0, 90, 180, 270. Closest value: {closest}",
         )
 
 

@@ -272,19 +272,19 @@ class ParallelMetadataLoader:
                     metadata["__extended__"] = True
                 elif not use_extended and "__extended__" in metadata:
                     del metadata["__extended__"]
-
-                return metadata
             logger.warning(
                 "[ParallelMetadataLoader] No metadata returned for %s",
                 item.filename,
             )
-            return {}
-
         except Exception as e:
             logger.exception(
                 "[ParallelMetadataLoader] Error loading %s",
                 item.filename,
             )
+            return {}
+        else:
+            if metadata:
+                return metadata
             return {}
 
     def _calculate_optimal_batch_size(self, total_files: int) -> int:
