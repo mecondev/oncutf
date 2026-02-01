@@ -66,7 +66,7 @@ class TooltipHandler:
             # Suppress default Qt tooltips
             return True
 
-        elif event_type == QEvent.MouseMove:
+        if event_type == QEvent.MouseMove:
             if index is None:
                 return False
             if index != self._current_index:
@@ -80,12 +80,12 @@ class TooltipHandler:
                 self.clear()
             return False
 
-        elif event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+        if event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
             # Mouse clicked - hide tooltip immediately
             self.clear()
             return False
 
-        elif event_type in (QEvent.Leave, QEvent.HoverLeave):
+        if event_type in (QEvent.Leave, QEvent.HoverLeave):
             # Mouse left viewport
             self.clear()
             return False
@@ -150,7 +150,7 @@ class TooltipHandler:
         text_lower = text.lower()
         if "no metadata" in text_lower or "no hash" in text_lower:
             return TooltipType.WARNING
-        elif "error" in text_lower or "invalid" in text_lower:
+        if "error" in text_lower or "invalid" in text_lower:
             return TooltipType.ERROR
         return TooltipType.INFO
 

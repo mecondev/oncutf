@@ -244,7 +244,7 @@ def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
         return standard_hidden
 
         # Essential level (default) - hide most technical fields
-    essential_hidden = standard_hidden | {
+    return standard_hidden | {
         # Image format technical fields
         "Compression",
         "PhotometricInterpretation",
@@ -439,7 +439,6 @@ def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
         "GPSDifferential",
     }
 
-    return essential_hidden
 
 
 def build_metadata_tree_model(
@@ -470,9 +469,6 @@ def build_metadata_tree_model(
     if extended_keys is None:
         extended_keys = set()
 
-    # No filtering - show all metadata
-    # hidden_fields = set()
-
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
     root_item = model.invisibleRootItem()
@@ -491,10 +487,9 @@ def build_metadata_tree_model(
     def group_sort_key(group_name: str) -> tuple[int, str]:
         if group_name == "File Info":
             return (0, "File Info")  # Always first
-        elif group_name == "Other":
+        if group_name == "Other":
             return (2, group_name)  # Always last
-        else:
-            return (1, group_name)  # Alphabetical order for everything else
+        return (1, group_name)  # Alphabetical order for everything else
 
     ordered_groups = sorted(grouped.keys(), key=group_sort_key)
 

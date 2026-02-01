@@ -174,8 +174,7 @@ class EventHandler:
                         self._view._selection_behavior.get_anchor_row(),
                     )
                     return True  # Prevent calling super
-                else:
-                    return True
+                return True
 
             # Handle selection based on modifiers
             if modifiers in (Qt.NoModifier, Qt.ControlModifier):
@@ -185,8 +184,7 @@ class EventHandler:
                 if anchor is not None:
                     self._view._selection_behavior.select_rows_range(anchor, index.row())
                     return True
-                else:
-                    self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
+                self._view._selection_behavior.set_anchor_row(index.row(), emit_signal=False)
 
         return False  # Call super
 
@@ -411,11 +409,13 @@ class EventHandler:
                 )
                 return True
 
-            if self._view._drag_start_pos is not None:
-                # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
-                if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
-                    self._view._drag_start_pos = None
-                    return False
+            # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
+            if (
+                self._view._drag_start_pos is not None
+                and event.modifiers() & (Qt.ControlModifier | Qt.AltModifier)
+            ):
+                self._view._drag_start_pos = None
+                return False
 
             # If drag start was cancelled (e.g., due to modifiers), skip drag detection
             if self._view._drag_start_pos is None:
@@ -488,11 +488,13 @@ class EventHandler:
             return True
 
         # Handle column management shortcuts
-        if hasattr(self._view, "_column_mgmt_behavior"):
-            if self._view._column_mgmt_behavior.handle_keyboard_shortcut(
+        if (
+            hasattr(self._view, "_column_mgmt_behavior")
+            and self._view._column_mgmt_behavior.handle_keyboard_shortcut(
                 event.key(), event.modifiers()
-            ):
-                return True
+            )
+        ):
+            return True
 
         # Skip key handling during drag
         if self._view._drag_drop_behavior.is_dragging:
