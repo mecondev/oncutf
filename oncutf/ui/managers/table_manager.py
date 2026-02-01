@@ -217,12 +217,12 @@ class TableManager:
             selected_indexes = selection_model.selectedRows()
             unique_rows = sorted(idx.row() for idx in selected_indexes)
 
-        selected_files = []
-        for row in unique_rows:
-            if 0 <= row < len(self.parent_window.file_model.files):
-                selected_files.append(self.parent_window.file_model.files[row])
+        return [
+            self.parent_window.file_model.files[row]
+            for row in unique_rows
+            if 0 <= row < len(self.parent_window.file_model.files)
+        ]
 
-        return selected_files
 
     def after_check_change(self) -> None:
         """Called after the selection state of any file is modified.

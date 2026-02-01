@@ -740,11 +740,8 @@ class Node(Serializable):
             Dictionary containing complete node configuration.
 
         """
-        inputs, outputs = [], []
-        for socket in self.inputs:
-            inputs.append(socket.serialize())
-        for socket in self.outputs:
-            outputs.append(socket.serialize())
+        inputs = [socket.serialize() for socket in self.inputs]
+        outputs = [socket.serialize() for socket in self.outputs]
         ser_content = self.content.serialize() if isinstance(self.content, Serializable) else {}
         return {
             "sid": self.sid,

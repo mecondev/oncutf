@@ -173,10 +173,11 @@ class RealTimeValidationWidget(QWidget):
 
     def _show_error_details(self, items: list):
         """Show error details."""
-        error_messages = []
-        for item in items:
-            if not item.is_valid and item.error_message:
-                error_messages.append(f"• {item.old_name}: {item.error_message}")
+        error_messages = [
+            f"• {item.old_name}: {item.error_message}"
+            for item in items
+            if not item.is_valid and item.error_message
+        ]
 
         if error_messages:
             self.error_details_label.setText("\n".join(error_messages[:3]))  # Show first 3 errors

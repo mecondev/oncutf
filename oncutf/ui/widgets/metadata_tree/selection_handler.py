@@ -93,9 +93,11 @@ class MetadataTreeSelectionHandler:
                     )
                     if selected_rows and hasattr(parent_window, "file_model"):
                         file_model = parent_window.file_model
-                        for row in selected_rows:
-                            if 0 <= row < len(file_model.files):
-                                selected_files.append(file_model.files[row])
+                        selected_files.extend(
+                            file_model.files[row]
+                            for row in selected_rows
+                            if 0 <= row < len(file_model.files)
+                        )
             except Exception as e:
                 logger.debug("[MetadataTree] Method 2 failed: %s", e, extra={"dev_only": True})
 

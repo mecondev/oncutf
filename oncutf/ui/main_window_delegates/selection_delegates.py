@@ -49,12 +49,12 @@ class SelectionDelegates:
         selected_rows_sorted = sorted(selected_rows)
 
         # Convert to FileItem objects with bounds checking
-        selected_files = []
-        for row in selected_rows_sorted:
-            if 0 <= row < len(self.file_model.files):
-                selected_files.append(self.file_model.files[row])
+        return [
+            self.file_model.files[row]
+            for row in selected_rows_sorted
+            if 0 <= row < len(self.file_model.files)
+        ]
 
-        return selected_files
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """Update preview from selection via SelectionManager."""

@@ -86,9 +86,7 @@ class SceneClipboard:
         for edge in edges_to_remove:
             sel_edges.remove(edge)
 
-        edges_final = []
-        for edge in sel_edges:
-            edges_final.append(edge.serialize())
+        edges_final = [edge.serialize() for edge in sel_edges]
 
         data = {
             "nodes": sel_nodes,

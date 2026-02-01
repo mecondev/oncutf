@@ -161,7 +161,7 @@ class TreeUiStateHandler:
 
             def count_fields(data):
                 nonlocal total_fields
-                for _key, value in data.items():
+                for value in data.values():
                     if isinstance(value, dict):
                         count_fields(value)
                     else:
