@@ -688,7 +688,7 @@ def initialize_default_metadata_schema(
                 )
 
         logger.info("[migrations] Default metadata schema initialized")
-    except Exception as e:
+    except Exception:
         logger.exception("[migrations] Error initializing default metadata schema")
         return False
     else:

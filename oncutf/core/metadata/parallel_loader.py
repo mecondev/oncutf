@@ -197,7 +197,7 @@ class ParallelMetadataLoader:
                                 extra={"dev_only": True},
                             )
 
-                        except Exception as e:
+                        except Exception:
                             logger.exception(
                                 "[ParallelMetadataLoader] Failed to load %s",
                                 item.filename,
@@ -216,7 +216,7 @@ class ParallelMetadataLoader:
                 else:
                     executor.shutdown(wait=False, cancel_futures=True)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ParallelMetadataLoader] Parallel loading failed")
 
         finally:
@@ -276,7 +276,7 @@ class ParallelMetadataLoader:
                 "[ParallelMetadataLoader] No metadata returned for %s",
                 item.filename,
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[ParallelMetadataLoader] Error loading %s",
                 item.filename,

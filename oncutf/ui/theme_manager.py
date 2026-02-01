@@ -209,7 +209,7 @@ class ThemeManager(QObject):
                 len(template),
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[ThemeManager] Error rendering QSS template")
             return ""
         else:

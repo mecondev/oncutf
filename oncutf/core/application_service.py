@@ -280,7 +280,7 @@ class ApplicationService:
                     updated_count,
                 )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ApplicationService] Error updating FileItem objects")
 
     # =====================================

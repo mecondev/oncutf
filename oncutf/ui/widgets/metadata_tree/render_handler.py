@@ -144,7 +144,7 @@ class TreeRenderHandler:
             # Trigger scroll position restore AFTER expandAll
             self.view._scroll_behavior.restore_scroll_after_expand()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[TreeRenderHandler] Unexpected error while rendering")
             self.view._ui_state_handler.clear_tree()
         finally:

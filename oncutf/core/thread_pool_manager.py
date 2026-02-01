@@ -191,7 +191,7 @@ class SmartWorkerThread(QThread):
                 # Execute task
                 self._execute_task(task)
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[SmartWorkerThread] Worker %s error", self.worker_id)
 
         logger.debug("[SmartWorkerThread] Worker %s stopped", self.worker_id)
@@ -217,7 +217,7 @@ class SmartWorkerThread(QThread):
             if task.callback:
                 try:
                     task.callback(result)
-                except Exception as e:
+                except Exception:
                     logger.exception(
                         "[SmartWorkerThread] Callback error for task %s",
                         task.task_id,
@@ -387,7 +387,7 @@ class ThreadPoolManager(QObject):
                 logger.debug("[ThreadPoolManager] Submitted task: %s", task_id)
                 return True
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ThreadPoolManager] Error submitting task %s", task_id)
             return False
 
@@ -534,7 +534,7 @@ class ThreadPoolManager(QObject):
                 # Low CPU usage, consider removing threads
                 self._resize_pool(max(stats.active_threads - 1, self.min_threads))
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ThreadPoolManager] Monitor error")
 
     def get_stats(self) -> ThreadPoolStats:

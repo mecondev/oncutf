@@ -106,7 +106,7 @@ class HashStore:
             # Suppress errors during shutdown/cancellation
             logger.debug("[HashStore] Database locked/closing during store: %s", e)
             return False
-        except Exception as e:
+        except Exception:
             logger.exception("[HashStore] Error storing hash for %s", file_path)
             return False
         else:
@@ -148,7 +148,7 @@ class HashStore:
             # These happen when the connection is being closed by another thread
             logger.debug("[HashStore] Database locked/closing for %s: %s", file_path, e)
             return None
-        except Exception as e:
+        except Exception:
             logger.exception("[HashStore] Error retrieving hash for %s", file_path)
             return None
 

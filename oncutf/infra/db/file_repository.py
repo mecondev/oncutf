@@ -72,7 +72,7 @@ class FileRepository:
             # Create folder in database
             result = self._db.add_folder(str(folder_path))
             return int(result) if result is not None else None
-        except Exception as e:
+        except Exception:
             logger.exception("Error ensuring folder exists for %s", folder_path)
             return None
 
@@ -106,7 +106,7 @@ class FileRepository:
         """
         try:
             self._db.store_file_hash(str(file_path), hash_value)
-        except Exception as e:
+        except Exception:
             logger.exception("Error storing file hash for %s", file_path)
             return False
         else:
@@ -142,7 +142,7 @@ class FileRepository:
         """
         try:
             self._db.set_color_tag(str(file_path), color)
-        except Exception as e:
+        except Exception:
             logger.exception("Error setting color tag for %s", file_path)
             return False
         else:

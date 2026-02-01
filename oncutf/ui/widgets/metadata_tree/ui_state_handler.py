@@ -134,7 +134,7 @@ class TreeUiStateHandler:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[TreeUiStateHandler] Error displaying metadata")
             self.display_placeholder("Error loading metadata")
 

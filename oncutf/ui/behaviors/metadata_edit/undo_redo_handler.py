@@ -58,7 +58,7 @@ class UndoRedoHandler:
                         "No operations to undo", success=False, auto_reset=True
                     )
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error during undo operation")
 
     def redo_metadata_operation(self) -> None:
@@ -87,7 +87,7 @@ class UndoRedoHandler:
                         "No operations to redo", success=False, auto_reset=True
                     )
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error during redo operation")
 
     def show_history_dialog(self) -> None:

@@ -116,7 +116,7 @@ class ShutdownLifecycleHandler:
 
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Failed to save configuration")
 
         # Ignore this close event - we'll handle closing ourselves
@@ -173,7 +173,7 @@ class ShutdownLifecycleHandler:
             ]
             self._shutdown_pre_cleanup_index = 0
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error starting async shutdown")
             self._emergency_quit()
         else:
@@ -198,7 +198,7 @@ class ShutdownLifecycleHandler:
                 step()
 
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Pre-cleanup step failed")
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
 
@@ -223,7 +223,7 @@ class ShutdownLifecycleHandler:
             if not started:
                 # If already in progress, re-check shortly.
                 QTimer.singleShot(50, self._shutdown_start_async_coordinator)
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error starting async shutdown")
             self._emergency_quit()
 
@@ -255,7 +255,7 @@ class ShutdownLifecycleHandler:
                 logger.info("[CloseEvent] Shutdown summary: not executed")
 
             QTimer.singleShot(0, self._shutdown_step_finalize)
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error during post-cleanup")
             self._emergency_quit()
 
@@ -326,7 +326,7 @@ class ShutdownLifecycleHandler:
 
                 # Schedule automatic stack dump(s) during shutdown.
                 faulthandler.dump_traceback_later(timeout_s, repeat=repeat, file=f, exit=False)
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Failed to open watchdog dump file")
 
             def _cancel_noop() -> None:
@@ -374,7 +374,7 @@ class ShutdownLifecycleHandler:
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error completing shutdown")
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
@@ -393,7 +393,7 @@ class ShutdownLifecycleHandler:
             self._pre_cleanup_cleanup_dialogs()
             self._pre_cleanup_cleanup_metadata_thread()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error in pre-coordinator cleanup")
 
     def _pre_cleanup_stop_periodic_backups(self) -> None:
@@ -440,10 +440,10 @@ class ShutdownLifecycleHandler:
                         "[CloseEvent] Configuration saved to disk immediately (result: %s)",
                         result,
                     )
-                except Exception as save_error:
+                except Exception:
                     logger.exception("[CloseEvent] Failed to save config immediately")
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[CloseEvent] Failed to save window config")
         else:
             logger.warning("[CloseEvent] window_config_manager not available")
@@ -530,7 +530,7 @@ class ShutdownLifecycleHandler:
             except Exception as ctx_error:
                 logger.warning("[CloseEvent] Context cleanup failed: %s", ctx_error)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[CloseEvent] Error in post-coordinator cleanup")
 
     # ============================================================================
@@ -700,5 +700,5 @@ class ShutdownLifecycleHandler:
 
             logger.info("[MainWindow] Shutdown components registered successfully")
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MainWindow] Error registering shutdown components")

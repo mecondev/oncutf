@@ -6,7 +6,7 @@
 
 - **Project:** PyQt5 desktop app for batch file renaming with EXIF/metadata support.
 - **Architecture:** 4-tier MVC (UI → Controllers → Core Services → Data Layer).
-- **Status:** Phase 7 (Final Polish) — 592+ tests, controllers complete.
+- **Status:** Active development; run `pytest -q` for current test count.
 - Prefer **stable, extendable** solutions over "clever" ones.
 
 ## Naming & Branding (IMPORTANT)
@@ -31,8 +31,10 @@
 ## Architecture (where to look first)
 
 ```
-main.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
+main.py → oncutf/boot/app_factory.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
 ```
+
+Boot layer is split across `oncutf/boot/` and `oncutf/ui/boot/`. Check both for wiring/DI.
 
 **Controllers** (`oncutf/controllers/`): UI-agnostic orchestration layer:
 - `file_load_controller.py` — file loading, drag & drop, directory scanning
@@ -41,10 +43,17 @@ main.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
 - `main_window_controller.py` — high-level multi-service orchestration
 
 **Core services** (`oncutf/core/`): Business logic:
-- `application_context.py` — singleton app state, manager registry
-- `unified_rename_engine.py` — rename orchestration (never bypass this)
-- `unified_metadata_manager.py` — metadata loading with caching
-- `persistent_hash_cache.py`, `backup_manager.py` — SQLite persistence
+- `application_service.py` — application service facade
+- `rename/unified_rename_engine.py` — rename orchestration (never bypass this)
+- `metadata/metadata_service.py` — metadata service entry point
+- `metadata/metadata_loader.py`, `metadata/metadata_cache_service.py` — loading + caching
+- `backup_manager.py` — SQLite persistence
+
+**App state** (`oncutf/app/state/`):
+- `context.py` — application state/manager registry
+
+**Infra cache** (`oncutf/infra/cache/`):
+- `persistent_hash_cache.py` — SQLite hash persistence
 
 **Rename modules** (`oncutf/modules/`): Pure composable name fragment generators.
 
@@ -60,7 +69,7 @@ main.py → oncutf/ui/main_window.py → oncutf/controllers/ → oncutf/core/
 from oncutf.utils.cursor_helper import wait_cursor      # not QApplication.setOverrideCursor()
 from oncutf.utils.logger_factory import get_cached_logger  # not logging.getLogger()
 from oncutf.ui.widgets.custom_message_dialog import CustomMessageDialog  # not QMessageBox
-from oncutf.utils.path_normalizer import normalize_path  # cross-platform paths
+from oncutf.utils.filesystem.path_normalizer import normalize_path  # cross-platform paths
 ```
 
 ---
@@ -187,24 +196,24 @@ If a test requires external tools (exiftool), use appropriate markers.
 
 | Domain | Canonical | Legacy/Supporting |
 |--------|-----------|-------------------|
-| **Rename Pipeline** | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
-| **Column Management** | `UnifiedColumnService` (`core/ui_managers/column_service.py`) | `ColumnManager` (adapter), `models/file_table/column_manager.py` (model-level) |
+| **Rename Pipeline** | `UnifiedRenameEngine` (`core/rename/unified_rename_engine.py`) | `utils/naming/*` (helpers only) |
+| **Column Management** | `UnifiedColumnService` (`ui/managers/column_service.py`) | `ColumnManager` (adapter), `models/file_table/column_manager.py` (model-level) |
 | **UI Components** | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
-| **Metadata Loading** | `UnifiedMetadataManager` | `MetadataController` (orchestration) |
+| **Metadata Loading** | `core/metadata/metadata_service.py` + `metadata_loader.py` + `metadata_cache_service.py` | `MetadataController` (orchestration), `ui/managers/metadata_unified_manager.py` (UI facade) |
 | **File Loading** | `FileLoadController` | `FileLoadManager` (legacy) |
 
 **Rules:**
 - All rename operations MUST go through `UnifiedRenameEngine`.
 - New UI code uses **Behaviors**, NOT Mixins.
-- New column logic goes in `UnifiedColumnService`.
-- New features: controller → core service → domain. NO new logic in `ui_managers/` or `MainWindow`.
+- New column logic goes in `UnifiedColumnService` (`ui/managers/column_service.py`).
+- New features: controller → core service → domain. NO new logic in `ui/managers/` or `MainWindow`.
 
 See [PROJECT_RULES.md](../PROJECT_RULES.md) for policy and detailed patterns.
 
 ### Hard Constraints (Do Not Violate)
 - Never add new ruff ignores/exclusions without explicit user request.
 - Never weaken mypy settings to silence errors; fix types or scope with narrow overrides.
-- Never bypass `UnifiedRenameEngine` or `UnifiedMetadataManager`.
+- Never bypass `UnifiedRenameEngine` or the core metadata services (`metadata_service.py` / `metadata_loader.py` / `metadata_cache_service.py`).
 - Never introduce new wildcard imports or import-aggregator modules.
 
 ---

@@ -47,7 +47,7 @@ class StructuredMetadataManager:
                 len(self._field_cache),
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[StructuredMetadataManager] Error loading caches")
 
     def refresh_caches(self) -> None:
@@ -103,7 +103,7 @@ class StructuredMetadataManager:
                 "[StructuredMetadataManager] No valid fields to store for %s",
                 Path(file_path).name,
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error processing metadata for %s",
                 file_path,
@@ -165,7 +165,7 @@ class StructuredMetadataManager:
             # Default to string
             return str(field_value)
 
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error formatting field '%s'",
                 field_key,
@@ -204,7 +204,7 @@ class StructuredMetadataManager:
                     "data_type": field_data["data_type"],
                     "display_format": field_data["display_format"],
                 }
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error getting structured metadata for %s",
                 file_path,
@@ -258,7 +258,7 @@ class StructuredMetadataManager:
                 return self.db_manager.get_metadata_fields(category_info["id"])
             return self.db_manager.get_metadata_fields()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[StructuredMetadataManager] Error getting available fields")
             return []
 
@@ -271,7 +271,7 @@ class StructuredMetadataManager:
         """
         try:
             return self.db_manager.get_metadata_categories()
-        except Exception as e:
+        except Exception:
             logger.exception("[StructuredMetadataManager] Error getting available categories")
             return []
 
@@ -327,7 +327,7 @@ class StructuredMetadataManager:
                 self.refresh_caches()
                 logger.info("[StructuredMetadataManager] Added custom field '%s'", field_key)
                 return True
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error adding custom field '%s'",
                 field_key,
@@ -377,7 +377,7 @@ class StructuredMetadataManager:
                     field_key,
                     Path(file_path).name,
                 )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error updating field '%s'",
                 field_key,
@@ -413,7 +413,7 @@ class StructuredMetadataManager:
             # This would require a more complex query - for now, return empty list
             # NOTE: Database search functionality tracked in TODO.md
             logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
-        except Exception as e:
+        except Exception:
             logger.exception("[StructuredMetadataManager] Error searching by metadata")
             return []
         else:

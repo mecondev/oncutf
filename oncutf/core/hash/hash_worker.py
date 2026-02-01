@@ -186,7 +186,7 @@ class HashWorker(BaseHashWorker):
                         stats.total_time_saved,
                     )
 
-                except Exception as e:
+                except Exception:
                     logger.exception("[HashWorker] Error flushing batch operations")
 
     def _check_cache_before_calculation(self, file_path: str) -> str | None:

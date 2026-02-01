@@ -534,7 +534,7 @@ class ExifToolWrapper:
                 Path(file_path_normalized).name,
             )
             return False
-        except Exception as e:
+        except Exception:
             logger.exception("[ExifToolWrapper] Exception while writing metadata")
             return False
         else:
@@ -616,7 +616,7 @@ class ExifToolWrapper:
                 else:
                     return
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ExifToolWrapper] Error during shutdown")
             # Force kill as last resort
             try:

@@ -164,7 +164,7 @@ class PathStore:
                 "[PathStore] No record found to update for: %s",
                 old_path,
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[PathStore] Error updating file path from %s to %s",
                 old_path,

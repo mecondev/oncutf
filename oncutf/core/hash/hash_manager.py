@@ -177,10 +177,10 @@ class HashManager:
         except PermissionError:
             logger.exception("[HashManager] Permission denied accessing file: %s", file_path)
             return None
-        except OSError as e:
+        except OSError:
             logger.exception("[HashManager] OS error reading file %s", file_path)
             return None
-        except Exception as e:
+        except Exception:
             logger.exception("[HashManager] Unexpected error hashing file %s", file_path)
             return None
         else:
@@ -241,7 +241,7 @@ class HashManager:
                         )
 
             logger.info("[HashManager] Compared %d files between folders", files_processed)
-        except Exception as e:
+        except Exception:
             logger.exception("[HashManager] Error comparing folders")
             return {}
         else:
@@ -273,7 +273,7 @@ class HashManager:
                         hash_to_files[file_hash] = []
                     hash_to_files[file_hash].append(file_item)
                     processed_count += 1
-            except Exception as e:
+            except Exception:
                 logger.exception("[HashManager] Error processing file %s", file_item.filename)
 
         # Filter to only return groups with duplicates
@@ -318,7 +318,7 @@ class HashManager:
                         hash_to_paths[file_hash] = []
                     hash_to_paths[file_hash].append(file_path)
                     processed_count += 1
-            except Exception as e:
+            except Exception:
                 logger.exception("[HashManager] Error processing file %s", file_path)
 
         # Filter to only return groups with duplicates

@@ -291,7 +291,7 @@ class CounterModule(BaseRenameModule):
                 scope,
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[CounterModule] Failed to apply counter logic")
             return "####"
         else:

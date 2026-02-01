@@ -294,7 +294,7 @@ class MetadataTreeView(QTreeView):
                 "[MetadataTree] Controller initialized (layered architecture)",
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataTree] Failed to initialize controller")
             self._controller = None
 

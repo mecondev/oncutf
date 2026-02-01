@@ -73,7 +73,7 @@ class WindowConfigManager:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Failed to load window configuration")
             # If config loading fails, still set smart defaults
             logger.info("[Config] Exception occurred, applying smart defaults as fallback")
@@ -289,7 +289,7 @@ class WindowConfigManager:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Failed to save window configuration")
 
     def _set_smart_default_geometry(self) -> None:
@@ -362,7 +362,7 @@ class WindowConfigManager:
                 y,
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Failed to set smart default geometry")
             # Ultimate fallback
             self.main_window.setGeometry(100, 100, 1200, 800)
@@ -492,7 +492,7 @@ class WindowConfigManager:
 
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Failed to apply loaded configuration")
 
     def handle_window_state_change(self) -> None:
@@ -510,7 +510,7 @@ class WindowConfigManager:
                 logger.debug("[Config] Window restored to normal state")
                 self._refresh_file_table_for_window_change()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Error handling window state change")
 
     def _refresh_file_table_for_window_change(self) -> None:
@@ -536,7 +536,7 @@ class WindowConfigManager:
 
                 get_timer_manager().schedule(refresh, delay=100, timer_type=TimerType.GENERIC)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Error refreshing file table for window change")
 
     def center_window(self) -> None:
@@ -559,7 +559,7 @@ class WindowConfigManager:
             self.main_window.move(x, y)
             logger.info("[Config] Window centered at (%d, %d)", x, y)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[Config] Error centering window")
 
     def get_last_folder_from_config(self) -> str:

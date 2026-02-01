@@ -367,7 +367,7 @@ class FileLoadController:
             # Use table manager to clear the file table
             self._table_manager.clear_file_table()
             logger.info("[FileLoadController] Files cleared successfully")
-        except Exception as e:
+        except Exception:
             logger.exception("[FileLoadController] Error clearing files")
             return False
         else:
@@ -394,7 +394,7 @@ class FileLoadController:
                 count,
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[FileLoadController] Error getting file count")
             return 0
         else:

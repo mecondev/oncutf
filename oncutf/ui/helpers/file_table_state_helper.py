@@ -254,7 +254,7 @@ class FileTableStateHelper:
                 # Update viewport to reflect changes
                 file_table_view.viewport().update()
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[StateHelper] Error restoring state")
 
         # Schedule restoration with delay
@@ -365,7 +365,7 @@ class FileTableStateHelper:
             # Update viewport to reflect changes
             file_table_view.viewport().update()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[StateHelper] Error in sync state restoration")
 
     @staticmethod
@@ -426,5 +426,5 @@ class FileTableStateHelper:
                 # Update viewport
                 file_table_view.viewport().update()
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[StateHelper] Error clearing state")

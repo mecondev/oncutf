@@ -148,13 +148,13 @@ class BackupManager(QObject):
                     try:
                         old_backup.unlink()
                         logger.info("[BackupManager] Removed old backup: %s", old_backup)
-                    except Exception as e:
+                    except Exception:
                         logger.exception(
                             "[BackupManager] Failed to remove old backup %s",
                             old_backup,
                         )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[BackupManager] Error during backup cleanup")
 
     def start_periodic_backups(self) -> None:
@@ -260,7 +260,7 @@ class BackupManager(QObject):
 
             # Sort by modification time (newest first)
             backup_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        except Exception as e:
+        except Exception:
             logger.exception("[BackupManager] Error getting backup files")
             return []
         else:

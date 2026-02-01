@@ -235,7 +235,7 @@ class ThumbnailDiskCache:
                 logger.debug("[ThumbnailDiskCache] Saved: %s", cache_key[:16])
             else:
                 logger.warning("[ThumbnailDiskCache] Failed to save: %s", cache_key[:16])
-        except Exception as e:
+        except Exception:
             logger.exception("[ThumbnailDiskCache] Error saving thumbnail: %s", cache_path)
             return False
         else:
@@ -278,7 +278,7 @@ class ThumbnailDiskCache:
                 cache_file.unlink()
                 count += 1
             logger.info("[ThumbnailDiskCache] Cleared %d files", count)
-        except Exception as e:
+        except Exception:
             logger.exception("[ThumbnailDiskCache] Error clearing cache")
 
         return count

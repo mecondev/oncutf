@@ -288,7 +288,7 @@ class MetadataWorker(QObject):
                         extra={"dev_only": True},
                     )
 
-                except Exception as e:
+                except Exception:
                     logger.exception(
                         "[Worker] Exception while reading metadata for %s", path
                     )

@@ -162,7 +162,7 @@ class RenameManager:
 
                 logger.info("[RenameManager] Starting safe post-rename workflow")
                 self._execute_post_rename_workflow_safe(new_checked_paths, new_selected_paths)
-            except Exception as e:
+            except Exception:
                 logger.exception(
                     "[RenameManager] Error in post-rename workflow",
                 )
@@ -304,7 +304,7 @@ class RenameManager:
                     else:
                         logger.debug("[RenameManager] No pending_completion_dialog attribute found")
 
-                except Exception as e:
+                except Exception:
                     logger.exception(
                         "[RenameManager] Error in state restoration",
                     )
@@ -396,7 +396,7 @@ class RenameManager:
                 consolidate=False,
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[RenameManager] Critical error in post-rename workflow",
             )

@@ -124,7 +124,7 @@ class EventHandler:
                                 "File tree refreshed", success=True, auto_reset=True
                             )
 
-                except Exception as e:
+                except Exception:
                     logger.exception("[EventHandler] Error refreshing tree view")
             else:
                 logger.debug(

@@ -131,7 +131,7 @@ class DiskCache:
                     entry.unlink()
             self.hits = 0
             self.misses = 0
-        except Exception as e:
+        except Exception:
             logger.exception("[DiskCache] Error clearing cache")
 
     def get_stats(self) -> dict[str, Any]:

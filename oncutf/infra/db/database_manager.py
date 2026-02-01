@@ -87,7 +87,7 @@ class DatabaseManager:
                     if shm_path.exists():
                         shm_path.unlink()
                     logger.info("[DatabaseManager] Database files deleted for fresh start")
-                except Exception as e:
+                except Exception:
                     logger.exception("[DatabaseManager] Failed to delete database")
 
             # Also reset JSON config to avoid stale references
@@ -98,7 +98,7 @@ class DatabaseManager:
                 if config_path.exists():
                     config_path.unlink()
                     logger.info("[DatabaseManager] Config file deleted for fresh start")
-            except Exception as e:
+            except Exception:
                 logger.exception("[DatabaseManager] Failed to delete config")
 
             # Also clean thumbnail cache to ensure fresh start
@@ -112,7 +112,7 @@ class DatabaseManager:
                     shutil.rmtree(thumbnails_dir)
                     thumbnails_dir.mkdir(parents=True, exist_ok=True)
                     logger.info("[DatabaseManager] Thumbnail cache cleared for fresh start")
-            except Exception as e:
+            except Exception:
                 logger.exception("[DatabaseManager] Failed to clear thumbnail cache")
 
             _FRESH_START_DONE = True
@@ -451,7 +451,7 @@ class DatabaseManager:
             try:
                 self._conn.close()
                 logger.debug("[DatabaseManager] Connection closed", extra={"dev_only": True})
-            except Exception as e:
+            except Exception:
                 logger.exception("[DatabaseManager] Error closing connection")
 
     # ====================================================================

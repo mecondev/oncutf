@@ -398,7 +398,7 @@ class FileTableModel(QAbstractTableModel):
                 len(file_paths),
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[FileTableModel] Failed to load manual order")
 
     def _clear_manual_order_db(self) -> None:
@@ -420,7 +420,7 @@ class FileTableModel(QAbstractTableModel):
                 self._current_folder_path,
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[FileTableModel] Failed to clear manual order")
 
     def save_manual_order(self) -> None:
@@ -448,7 +448,7 @@ class FileTableModel(QAbstractTableModel):
                 len(file_paths),
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[FileTableModel] Failed to save manual order")
 
     def set_current_folder(self, folder_path: str) -> None:

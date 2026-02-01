@@ -135,7 +135,7 @@ class MetadataExporter:
                 return self._export_markdown(files, output_dir, scope)
             return self._export_json(files, output_dir, scope)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataExporter] Export failed")
             return False
 

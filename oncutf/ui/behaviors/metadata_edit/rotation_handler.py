@@ -89,7 +89,7 @@ class RotationHandler:
                     self._widget.value_edited.emit(
                         key_path, "0", str(current_value) if current_value else ""
                     )
-            except Exception as e:
+            except Exception:
                 logger.exception(
                     "Failed to set rotation via UnifiedMetadataManager",
                 )

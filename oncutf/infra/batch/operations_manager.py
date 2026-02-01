@@ -301,7 +301,7 @@ class BatchOperationsManager:
                 if operation.callback:
                     try:
                         operation.callback(success=False, error=e)
-                    except Exception as callback_error:
+                    except Exception:
                         logger.exception("[BatchOps] Callback error")
         finally:
             # Clear the batch
@@ -364,7 +364,7 @@ class BatchOperationsManager:
                 if hasattr(cache, "commit_batch"):
                     cache.commit_batch()
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[BatchOps] Metadata batch failed")
                 if hasattr(cache, "rollback_batch"):
                     cache.rollback_batch()
@@ -421,7 +421,7 @@ class BatchOperationsManager:
             if hasattr(cache, "commit_batch"):
                 cache.commit_batch()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[BatchOps] Hash batch failed")
             if hasattr(cache, "rollback_batch"):
                 cache.rollback_batch()
@@ -468,7 +468,7 @@ class BatchOperationsManager:
                             if operation.callback:
                                 operation.callback(success=False, error=e)
 
-            except Exception as e:
+            except Exception:
                 logger.exception("[BatchOps] DB batch failed for %s", query_type)
 
         logger.debug("[BatchOps] DB batch: %d/%d successful", success_count, len(operations))

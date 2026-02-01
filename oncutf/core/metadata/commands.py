@@ -147,7 +147,7 @@ class EditMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[EditMetadataFieldCommand] Failed to execute: %s", self.field_path)
-        except Exception as e:
+        except Exception:
             logger.exception("[EditMetadataFieldCommand] Error executing")
             return False
         else:
@@ -171,7 +171,7 @@ class EditMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[EditMetadataFieldCommand] Failed to undo: %s", self.field_path)
-        except Exception as e:
+        except Exception:
             logger.exception("[EditMetadataFieldCommand] Error undoing")
             return False
         else:
@@ -235,7 +235,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
             # Update file icon status
             self.metadata_tree_view._cache_behavior.update_file_icon_status()
-        except Exception as e:
+        except Exception:
             logger.exception("[EditMetadataFieldCommand] Error updating metadata field")
             return False
         else:
@@ -296,7 +296,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[ResetMetadataFieldCommand] Failed to execute: %s", self.field_path)
-        except Exception as e:
+        except Exception:
             logger.exception("[ResetMetadataFieldCommand] Error executing")
             return False
         else:
@@ -320,7 +320,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[ResetMetadataFieldCommand] Failed to undo: %s", self.field_path)
-        except Exception as e:
+        except Exception:
             logger.exception("[ResetMetadataFieldCommand] Error undoing")
             return False
         else:
@@ -359,7 +359,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
             # Update file icon status
             self.metadata_tree_view._cache_behavior.update_file_icon_status()
-        except Exception as e:
+        except Exception:
             logger.exception("[ResetMetadataFieldCommand] Error resetting metadata field")
             return False
         else:
@@ -401,7 +401,7 @@ class SaveMetadataCommand(MetadataCommand):
             self.executed = True
             self.undone = False
             logger.debug("[SaveMetadataCommand] Executed: saved %d files", len(self.file_paths))
-        except Exception as e:
+        except Exception:
             logger.exception("[SaveMetadataCommand] Error executing")
             return False
         else:
@@ -421,7 +421,7 @@ class SaveMetadataCommand(MetadataCommand):
             )
 
             self.undone = True
-        except Exception as e:
+        except Exception:
             logger.exception("[SaveMetadataCommand] Error undoing")
             return False
         else:
@@ -482,7 +482,7 @@ class BatchMetadataCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[BatchMetadataCommand] No commands executed successfully")
-        except Exception as e:
+        except Exception:
             logger.exception("[BatchMetadataCommand] Error executing batch")
             return False
         else:
@@ -514,7 +514,7 @@ class BatchMetadataCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[BatchMetadataCommand] No commands undone successfully")
-        except Exception as e:
+        except Exception:
             logger.exception("[BatchMetadataCommand] Error undoing batch")
             return False
         else:

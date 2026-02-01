@@ -203,7 +203,7 @@ class MetadataTreeSearchHandler:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataTreeSearchHandler] Error updating search suggestions")
 
     def _collect_suggestions_from_tree_model(self, model, suggestions: set) -> None:

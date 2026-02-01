@@ -105,7 +105,7 @@ class MetadataCommandManager(QObject):
             self._emit_state_signals()
 
             logger.debug("[MetadataCommandManager] Executed: %s", command.get_description())
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataCommandManager] Error executing command")
             return False
         else:
@@ -144,7 +144,7 @@ class MetadataCommandManager(QObject):
                 "[MetadataCommandManager] Failed to undo: %s",
                 command.get_description(),
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataCommandManager] Error undoing command")
             return False
         else:
@@ -180,7 +180,7 @@ class MetadataCommandManager(QObject):
                 "[MetadataCommandManager] Failed to redo: %s",
                 command.get_description(),
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataCommandManager] Error redoing command")
             return False
         else:

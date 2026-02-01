@@ -78,7 +78,7 @@ class PersistentHashCache:
                     algorithm,
                     Path(file_path).name,
                 )
-        except Exception as e:
+        except Exception:
             logger.exception("[PersistentHashCache] Error storing hash for %s", file_path)
             return False
         else:
@@ -110,7 +110,7 @@ class PersistentHashCache:
 
                 return hash_value
 
-        except Exception as e:
+        except Exception:
             logger.exception("[PersistentHashCache] Error loading hash for %s", file_path)
 
         return None
@@ -127,7 +127,7 @@ class PersistentHashCache:
         # Check database
         try:
             return self._db_manager.has_hash(norm_path, algorithm)
-        except Exception as e:
+        except Exception:
             logger.exception("[PersistentHashCache] Error checking hash for %s", file_path)
             return False
 

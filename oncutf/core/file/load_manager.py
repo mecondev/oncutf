@@ -308,7 +308,7 @@ class FileLoadManager:
                                     filename,
                                     e,
                                 )
-            except Exception as e:
+            except Exception:
                 logger.exception("[FileLoadManager] Error walking directory %s", folder_path)
         else:
             try:
@@ -317,7 +317,7 @@ class FileLoadManager:
                     for entry in Path(folder_path).iterdir()
                     if self._is_allowed_extension(entry.name) and entry.is_file()
                 )
-            except OSError as e:
+            except OSError:
                 logger.exception("[FileLoadManager] Error listing directory %s", folder_path)
 
         if sorted_output:
@@ -462,7 +462,7 @@ class FileLoadManager:
             try:
                 file_item = FileItem.from_path(path)
                 file_items.append(file_item)
-            except Exception as e:
+            except Exception:
                 logger.exception("Error creating FileItem for %s", path)
 
         if not file_items:
@@ -577,7 +577,7 @@ class FileLoadManager:
                     folder, use_cache=False, file_store=file_store
                 )
                 refreshed_files.extend(folder_files)
-            except Exception as e:
+            except Exception:
                 logger.exception("[FileLoadManager] Error refreshing folder %s", folder)
 
         # Update FileStore state

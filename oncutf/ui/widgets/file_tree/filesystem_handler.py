@@ -275,7 +275,7 @@ class FilesystemHandler:
                     "[FilesystemHandler] Model refreshed after directory change",
                     extra={"dev_only": True},
                 )
-            except Exception as e:
+            except Exception:
                 logger.exception("[FilesystemHandler] Model refresh error")
             finally:
                 self._refresh_in_progress = False
@@ -413,7 +413,7 @@ class FilesystemHandler:
 
             schedule_ui_update(restore_and_expand, delay=100)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[FilesystemHandler] Error recreating model")
             from oncutf.utils.shared.timer_manager import schedule_ui_update
 

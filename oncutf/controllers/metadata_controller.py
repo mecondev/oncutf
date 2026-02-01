@@ -452,7 +452,7 @@ class MetadataController:
                 "[MetadataController] get_common_fields not supported for %d files",
                 len(selected_files),
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataController] Failed to get common fields")
             return []
         else:

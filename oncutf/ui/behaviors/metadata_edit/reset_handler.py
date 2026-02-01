@@ -95,7 +95,7 @@ class ResetHandler:
                     "Reset %s to original value via UnifiedMetadataManager",
                     key_path,
                 )
-            except Exception as e:
+            except Exception:
                 logger.exception(
                     "Failed to reset value via UnifiedMetadataManager",
                 )

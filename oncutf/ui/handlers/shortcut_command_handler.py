@@ -274,7 +274,7 @@ class ShortcutCommandHandler:
                         "Auto-color failed", success=False, auto_reset=True
                     )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ShortcutCommandHandler] AUTO_COLOR: Error during auto-color")
             if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(

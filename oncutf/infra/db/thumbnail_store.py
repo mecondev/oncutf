@@ -177,7 +177,7 @@ class ThumbnailStore:
                 Path(file_path).name,
                 cache_filename,
             )
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Rollback to prevent "cannot commit - no transaction is active" errors
             with contextlib.suppress(sqlite3.Error):
                 self._connection.rollback()
@@ -215,7 +215,7 @@ class ThumbnailStore:
             deleted = cursor.rowcount > 0
             if deleted:
                 logger.debug("[ThumbnailStore] Invalidated entry: %s", Path(file_path).name)
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to invalidate entry")
             return False
         else:
@@ -256,7 +256,7 @@ class ThumbnailStore:
                 len(file_paths),
                 Path(folder_path).name,
             )
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             logger.exception("[ThumbnailStore] Failed to decode file_paths JSON")
             return None
         else:
@@ -292,7 +292,7 @@ class ThumbnailStore:
                 len(file_paths),
                 Path(folder_path).name,
             )
-        except (sqlite3.Error, TypeError) as e:
+        except (sqlite3.Error, TypeError):
             logger.exception("[ThumbnailStore] Failed to save folder order")
             return False
         else:
@@ -326,7 +326,7 @@ class ThumbnailStore:
                     "[ThumbnailStore] Cleared manual order for: %s",
                     Path(folder_path).name,
                 )
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to clear folder order")
             return False
         else:
@@ -374,7 +374,7 @@ class ThumbnailStore:
                     cache_deleted,
                     order_deleted,
                 )
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to cleanup orphaned entries")
             return 0
         else:
@@ -411,7 +411,7 @@ class ThumbnailStore:
             }
 
             logger.debug("[ThumbnailStore] Cache stats: %s", stats)
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to get cache stats")
             return {"total_entries": 0, "total_folders": 0, "total_manual_orders": 0}
         else:

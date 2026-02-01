@@ -210,7 +210,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
             self._active_menu.show()
             logger.info("[ColorColumnDelegate] Menu.show() called - menu should be visible now")
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ColorColumnDelegate] ERROR creating/showing menu")
 
     def _set_files_color(self, model, rows, color):

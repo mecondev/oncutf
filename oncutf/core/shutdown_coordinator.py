@@ -342,7 +342,7 @@ class ShutdownCoordinator(QObject):
             self._async_index += 1
             QTimer.singleShot(0, self._execute_next_phase_async)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[ShutdownCoordinator] Async shutdown error")
             self._async_overall_success = False
             self.shutdown_completed.emit(False)

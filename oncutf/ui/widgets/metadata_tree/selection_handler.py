@@ -151,7 +151,7 @@ class MetadataTreeSelectionHandler:
                     extra={"dev_only": True},
                 )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataTree] Error updating from parent selection")
             self._view.show_empty_state("Error loading metadata")
 
@@ -238,7 +238,7 @@ class MetadataTreeSelectionHandler:
                     extra={"dev_only": True},
                 )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MetadataTree] Error in smart display")
             self._view.show_empty_state("Error loading metadata")
 

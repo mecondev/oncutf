@@ -42,7 +42,7 @@ class MetadataTreeCacheHandler:
                 "[MetadataTreeView] UnifiedMetadataManager initialized via MetadataService",
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[MetadataTreeView] Failed to initialize UnifiedMetadataManager"
             )

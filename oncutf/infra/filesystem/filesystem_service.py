@@ -75,7 +75,7 @@ class FilesystemService:
             try:
                 target_dir.mkdir(parents=True, exist_ok=True)
                 logger.debug("Created target directory: %s", target_dir)
-            except OSError as e:
+            except OSError:
                 logger.exception("Failed to create target directory %s", target_dir)
                 return False
 
@@ -85,14 +85,14 @@ class FilesystemService:
             try:
                 shutil.copy2(target, backup_path)
                 logger.debug("Created backup: %s", backup_path)
-            except OSError as e:
+            except OSError:
                 logger.exception("Failed to create backup")
                 return False
 
         try:
             source.rename(target)
             logger.debug("Renamed %s -> %s", source.name, target.name)
-        except OSError as e:
+        except OSError:
             logger.exception("Failed to rename %s to %s", source, target)
             return False
         else:
@@ -157,7 +157,7 @@ class FilesystemService:
                 "parent": str(path.parent),
                 "full_path": str(path.absolute()),
             }
-        except OSError as e:
+        except OSError:
             logger.exception("Error getting file info for %s", path)
             return {}
 
@@ -185,14 +185,14 @@ class FilesystemService:
         if not target_dir.exists():
             try:
                 target_dir.mkdir(parents=True, exist_ok=True)
-            except OSError as e:
+            except OSError:
                 logger.exception("Failed to create target directory %s", target_dir)
                 return False
 
         try:
             shutil.copy2(source, target)
             logger.debug("Copied %s -> %s", source, target)
-        except OSError as e:
+        except OSError:
             logger.exception("Failed to copy %s to %s", source, target)
             return False
         else:
@@ -219,7 +219,7 @@ class FilesystemService:
         try:
             path.unlink()
             logger.debug("Deleted file: %s", path)
-        except OSError as e:
+        except OSError:
             logger.exception("Failed to delete %s", path)
             return False
         else:
@@ -254,7 +254,7 @@ class FilesystemService:
             if recursive:
                 return list(path.rglob(pattern))
             return list(path.glob(pattern))
-        except OSError as e:
+        except OSError:
             logger.exception("Error listing directory %s", path)
             return []
 
@@ -272,7 +272,7 @@ class FilesystemService:
             if path.is_file():
                 path = path.parent
             usage = shutil.disk_usage(path)
-        except OSError as e:
+        except OSError:
             logger.exception("Error getting free space for %s", path)
             return -1
         else:

@@ -266,7 +266,7 @@ class MemoryManager(QObject):
                 hit_rate=0.0,  # Will be calculated from individual caches
                 miss_rate=0.0,
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[MemoryManager] Error getting memory stats")
             return MemoryStats(0, 0, 0, 0, 0, 0, 0, 0)
 
@@ -301,7 +301,7 @@ class MemoryManager(QObject):
                     cleaned_entries,
                 )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[MemoryManager] Error during cleanup")
 
     def _cleanup_caches(self) -> int:
@@ -315,14 +315,14 @@ class MemoryManager(QObject):
                 cleaned = self._cleanup_cache_object(cache_obj, current_time)
                 total_cleaned += cleaned
                 logger.debug("[MemoryManager] Cleaned %d entries from %s", cleaned, cache_name)
-            except Exception as e:
+            except Exception:
                 logger.exception("[MemoryManager] Error cleaning cache %s", cache_name)
 
         # Call cleanup callbacks
         for callback in self._cleanup_callbacks:
             try:
                 callback()
-            except Exception as e:
+            except Exception:
                 logger.exception("[MemoryManager] Error in cleanup callback")
 
         return total_cleaned

@@ -153,7 +153,7 @@ class RenameHistoryManager:
                 logger.error("[RenameHistoryManager] Failed to record rename batch")
                 operation_result = ""
 
-        except Exception as e:
+        except Exception:
             logger.exception("[RenameHistoryManager] Error recording rename batch")
             return ""
         else:
@@ -192,7 +192,7 @@ class RenameHistoryManager:
                 for op in operations
             ]
 
-        except Exception as e:
+        except Exception:
             logger.exception("[RenameHistoryManager] Error retrieving recent operations")
             return []
 
@@ -241,7 +241,7 @@ class RenameHistoryManager:
                 timestamp=timestamp,
             )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[RenameHistoryManager] Error retrieving operation details")
             return None
 
@@ -402,7 +402,7 @@ class RenameHistoryManager:
             # For now, we rely on the general cleanup
             return self._db_manager.cleanup_orphaned_records()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[RenameHistoryManager] Error during history cleanup")
             return 0
 
@@ -423,7 +423,7 @@ class RenameHistoryManager:
                 "database_stats": db_stats,
             }
 
-        except Exception as e:
+        except Exception:
             logger.exception("[RenameHistoryManager] Error getting history stats")
             return {}
 

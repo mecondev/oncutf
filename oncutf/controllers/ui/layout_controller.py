@@ -491,7 +491,7 @@ class LayoutController:
             else:
                 logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
 
-        except Exception as e:
+        except Exception:
             logger.exception("[LayoutController] Error switching viewport")
 
     def _setup_selection_sync(self) -> None:
@@ -556,7 +556,7 @@ class LayoutController:
                 len(selected_rows),
                 extra={"dev_only": True},
             )
-        except Exception as e:
+        except Exception:
             logger.exception("[LayoutController] Error handling thumbnail selection")
 
     def _sync_selection_to_viewport(self) -> None:
@@ -582,7 +582,7 @@ class LayoutController:
             else:
                 self.parent_window.thumbnail_viewport.clear_selection()
 
-        except Exception as e:
+        except Exception:
             logger.exception("[LayoutController] Error syncing selection to viewport")
 
     def _sync_selection_to_table(self) -> None:
@@ -629,7 +629,7 @@ class LayoutController:
                     len(selected_files),
                 )
 
-        except Exception as e:
+        except Exception:
             logger.exception("[LayoutController] Error syncing selection to table")
 
     def _setup_right_panel(self) -> None:

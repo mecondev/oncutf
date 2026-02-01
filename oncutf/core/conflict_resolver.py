@@ -169,7 +169,7 @@ class ConflictResolver:
 
         try:
             shutil.copy2(path, backup_path)
-        except Exception as e:
+        except Exception:
             logger.exception("[ConflictResolver] Failed to create backup")
             return ""
         else:
