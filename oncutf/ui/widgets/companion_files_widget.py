@@ -251,8 +251,8 @@ class CompanionFilesWidget(QWidget):
                 "to access the current folder path and file list.",
             )
 
-        except Exception as e:
-            logger.error("[CompanionFilesWidget] Error detecting companion files: %s", e)
+        except Exception:
+            logger.exception("[CompanionFilesWidget] Error detecting companion files")
 
     def _reset_to_defaults(self):
         """Reset settings to default values."""

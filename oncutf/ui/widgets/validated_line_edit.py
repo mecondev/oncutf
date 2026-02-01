@@ -102,8 +102,8 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
             else:
                 super().insertFromMimeData(source)
 
-        except Exception as e:
-            logger.error("[ValidatedLineEdit] Error in insertFromMimeData: %s", e)
+        except Exception:
+            logger.exception("[ValidatedLineEdit] Error in insertFromMimeData")
             super().insertFromMimeData(source)
 
     def _on_text_changed(self, text: str) -> None:

@@ -678,12 +678,11 @@ class FileTableView(QTableView):
                         (time.time() - t0) * 1000,
                         extra={"dev_only": True},
                     )
-            except Exception as e:
+            except Exception:
                 QApplication.restoreOverrideCursor()
-                logger.error(
-                    "[DROP-TIMING] Exception at +%.3fms: %s",
+                logger.exception(
+                    "[DROP-TIMING] Exception at +%.3fms",
                     (time.time() - t0) * 1000,
-                    e,
                 )
                 raise
 

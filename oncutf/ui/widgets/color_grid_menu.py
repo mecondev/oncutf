@@ -233,8 +233,8 @@ class ColorGridMenu(QWidget):
                 logger.warning("[ColorGridMenu] Failed to load color picker image")
                 picker_btn.setText("Picker")
 
-        except Exception as e:
-            logger.error("[ColorGridMenu] Error loading picker image: %s", e)
+        except Exception:
+            logger.exception("[ColorGridMenu] Error loading picker image")
             picker_btn.setText("Picker")
 
         picker_btn.clicked.connect(self._open_color_picker)

@@ -101,8 +101,8 @@ class RenameConflictResolver(QObject):
             logger.warning("Unknown conflict resolution strategy: %s", strategy)
             return self._skip_conflict(original_path, target_path)
 
-        except Exception as e:
-            logger.error("Error resolving conflict: %s", e)
+        except Exception:
+            logger.exception("Error resolving conflict")
             return self._skip_conflict(original_path, target_path)
 
     def _skip_conflict(self, original_path: str, target_path: str) -> str:

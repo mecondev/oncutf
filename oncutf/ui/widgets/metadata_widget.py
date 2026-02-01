@@ -481,8 +481,8 @@ class MetadataWidget(QWidget):
                 logger.error("[MetadataWidget] Could not find main window for metadata loading")
                 self._hash_dialog_active = False
 
-        except Exception as e:
-            logger.error("[MetadataWidget] Error loading metadata: %s", e)
+        except Exception:
+            logger.exception("[MetadataWidget] Error loading metadata")
             self._hash_dialog_active = False
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):

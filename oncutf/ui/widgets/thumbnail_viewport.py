@@ -539,8 +539,8 @@ class ThumbnailViewportWidget(QWidget):
                 subprocess.run(["xdg-open", str(folder_path)], check=False)
 
             logger.info("[ThumbnailViewport] Revealed file: %s", file_path)
-        except Exception as e:
-            logger.error("[ThumbnailViewport] Failed to reveal file: %s", e)
+        except Exception:
+            logger.exception("[ThumbnailViewport] Failed to reveal file")
 
     def _open_file_location(self) -> None:
         """Open containing folder of selected file(s)."""

@@ -132,8 +132,8 @@ class StylingHandler:
 
             self.widget.category_combo.setStyleSheet(css)
 
-        except Exception as e:
-            logger.error("[MetadataWidget] Error applying combo theme styling: %s", e)
+        except Exception:
+            logger.exception("[MetadataWidget] Error applying combo theme styling")
 
     def apply_disabled_category_styling(self) -> None:
         """Apply disabled styling to the category combo box.

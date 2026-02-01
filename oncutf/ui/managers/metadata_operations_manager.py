@@ -315,8 +315,8 @@ class MetadataOperationsManager:
                 len(files_to_modify),
             )
 
-        except ImportError as e:
-            logger.error("[MetadataEdit] Failed to import MetadataEditDialog: %s", e)
+        except ImportError:
+            logger.exception("[MetadataEdit] Failed to import MetadataEditDialog")
             from oncutf.app.services import show_error_message
 
             show_error_message(
