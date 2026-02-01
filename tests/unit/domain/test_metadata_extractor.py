@@ -23,7 +23,7 @@ def temp_file():
     yield Path(temp_path)
 
     # Cleanup
-    if os.path.exists(temp_path):
+    if Path(temp_path).exists():
         Path(temp_path).unlink()
 
 

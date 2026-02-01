@@ -106,7 +106,7 @@ class MetadataService:
             Dictionary of metadata key-value pairs
 
         """
-        # TODO: Implement when UnifiedMetadataManager API is finalized
+        # TODO: Implement when UnifiedMetadataManager API is finalized (see: https://github.com/mecondev/oncutf/issues/3#issue-3880448979)
         # return self.unified_manager.get_metadata(file_path)
         return {}
 
@@ -121,7 +121,7 @@ class MetadataService:
             Field value or None if not found
 
         """
-        # TODO: Implement when UnifiedMetadataManager API is finalized
+        # TODO: Implement when UnifiedMetadataManager API is finalized (see: https://github.com/mecondev/oncutf/issues/3#issue-3880448979)
         # return self.unified_manager.get_field(file_path, key)
         return None
 

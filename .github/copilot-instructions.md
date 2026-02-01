@@ -199,7 +199,7 @@ If a test requires external tools (exiftool), use appropriate markers.
 - New column logic goes in `UnifiedColumnService`.
 - New features: controller → core service → domain. NO new logic in `ui_managers/` or `MainWindow`.
 
-See [MIGRATION_STANCE.md](../docs/migration_stance.md) for architecture migration policy and detailed patterns.
+See [PROJECT_RULES.md](../PROJECT_RULES.md) for policy and detailed patterns.
 
 ### Hard Constraints (Do Not Violate)
 - Never add new ruff ignores/exclusions without explicit user request.

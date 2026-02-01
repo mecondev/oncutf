@@ -55,7 +55,7 @@ class BatchService:
             Results dictionary with success/failure info
 
         """
-        # TODO: Implement when BatchOperationsManager API is defined
+        # TODO: Implement when BatchOperationsManager API is defined (see: https://github.com/mecondev/oncutf/issues/1#issue-3880442485)
         return {"success": False, "error": "Not yet implemented"}
 
     def get_operation_status(self, operation_id: str) -> dict[str, Any]:
@@ -68,7 +68,7 @@ class BatchService:
             Status dictionary
 
         """
-        # TODO: Implement when BatchOperationsManager API is defined
+        # TODO: Implement when BatchOperationsManager API is defined (see: https://github.com/mecondev/oncutf/issues/1#issue-3880442485)
         return {"success": False, "error": "Not yet implemented"}
 
 

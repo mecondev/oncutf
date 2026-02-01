@@ -442,7 +442,7 @@ class ThumbnailViewportWidget(QWidget):
 
         menu.addSeparator()
 
-        # File operations (TODO: integrate with existing context menu handlers)
+        # File operations (TODO: integrate with existing context menu handlers, see: https://github.com/mecondev/oncutf/issues/2#issue-3880446702)
         menu.addAction("Open File Location", self._open_file_location)
         menu.addAction("Refresh", self._refresh)
 
@@ -477,7 +477,7 @@ class ThumbnailViewportWidget(QWidget):
 
     def _open_file_location(self) -> None:
         """Open file location in system file manager."""
-        # TODO: Integrate with existing file operations
+        # TODO: Integrate with existing file operations (see: https://github.com/mecondev/oncutf/issues/2#issue-3880446702)
         logger.warning("[ThumbnailViewport] Open file location not yet implemented")
 
     def _refresh(self) -> None:

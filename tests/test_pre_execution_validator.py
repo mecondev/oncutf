@@ -20,6 +20,10 @@ from oncutf.models.validation_result import ValidationIssueType
 
 
 class TestPreExecutionValidator:
+    @pytest.fixture
+    def validator(self):
+        """Fixture for PreExecutionValidator instance (default: no hash check)."""
+        return PreExecutionValidator(check_hash=False)
     """Test pre-execution file validation."""
 
     @pytest.fixture

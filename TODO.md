@@ -9,11 +9,13 @@ Consolidated list of all TODO items extracted from codebase.
 ## High Priority Features
 
 ### 1. Thumbnails Layout System
+
 **Status:** In Progress (Phase 3 - UI Layer)  
 **Priority:** High  
 **Description:** Implement thumbnail view mode for visual file browsing alongside the current table view.
 
 **Current Progress:**
+
 - ✅ Phase 1: Core Infrastructure (ThumbnailCache, Providers, DB migrations)
 - ✅ Phase 2: ThumbnailManager & Workers (background generation)
 - ⏳ Phase 3: UI Layer (ThumbnailDelegate, ThumbnailViewportWidget, Lasso Selection)
@@ -23,6 +25,7 @@ Consolidated list of all TODO items extracted from codebase.
 **See:** [thumbnail_viewport_implementation_plan.md](docs/thumbnail_viewport_implementation_plan.md)
 
 **Deferred Features (Post-MVP):**
+
 - **Video Preview Dialog:** Frame-by-frame video preview with custom frame picker
   - Playback controls (play, pause, seek)
   - Frame stepping (arrow keys)
@@ -30,6 +33,7 @@ Consolidated list of all TODO items extracted from codebase.
   - Estimated effort: 3-5 days
 
 **Benefits:**
+
 - Easier visual file identification
 - Better UX for photographers/video editors
 - Industry-standard feature (like Lightroom, Bridge)
@@ -37,16 +41,19 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 2. Node Editor Implementation
+
 **Status:** Foundation Ready  
 **Priority:** High  
 **Description:** Visual node-based rename pipeline editor as alternative to linear module list.
 
 **Current Foundation:**
+
 - `ModuleOrchestrator` designed for node editor integration
 - Architecture documented in [migration_stance.md](docs/migration_stance.md#node-editor-architecture-future)
 - Controllers ready for graph-based workflow
 
 **Implementation Plan:**
+
 1. **Phase 1: Core Graph Model** (oncutf/core/rename_graph/)
    - Graph data structures (nodes, edges, sockets)
    - Graph validation and cycle detection
@@ -67,6 +74,7 @@ Consolidated list of all TODO items extracted from codebase.
    - Preview integration
 
 **Benefits:**
+
 - Visual pipeline construction
 - Better understanding of complex rename workflows
 - Conditional branching support (future)
@@ -77,16 +85,19 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 3. Dockable Widgets System
+
 **Status:** Not Started  
 **Priority:** High  
 **Description:** Implement docking/undocking system for main application panels (file table, metadata panel, preview, etc.).
 
 **Current State:**
+
 - Fixed layout with splitters
 - No ability to detach panels into separate windows
 - Limited customization for multi-monitor setups
 
 **Proposed Features:**
+
 - **Dockable Panels:** All main widgets can be docked/undocked
   - File Table
   - Metadata Panel (tree view)
@@ -101,6 +112,7 @@ Consolidated list of all TODO items extracted from codebase.
 - **Reset to Default:** One-click layout restoration
 
 **Technical Considerations:**
+
 - Use QDockWidget for dock-able panels
 - Store dock state in session database (hybrid config system)
 - Handle window close events for floating panels
@@ -108,12 +120,14 @@ Consolidated list of all TODO items extracted from codebase.
 - Support both docked and floating modes simultaneously
 
 **Benefits:**
+
 - Flexible workspace customization
 - Better multi-monitor workflow
 - Industry-standard UI pattern (like Photoshop, Blender, VS Code)
 - Power user feature for complex workflows
 
 **Integration Points:**
+
 - oncutf/ui/main_window.py - Convert splitter layout to dock system
 - oncutf/core/session_state_manager.py - Persist dock geometry and state
 - oncutf/ui/widgets/* - Wrap panels in QDockWidget containers
@@ -122,6 +136,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 4. Metadata Database Search Functionality
+
 **Status:** Planned  
 **Priority:** Low  
 **Description:** Implement full-text search across metadata database for finding files by metadata values.
@@ -129,16 +144,19 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/core/metadata/structured_manager.py#L418](oncutf/core/metadata/structured_manager.py#L418)
 
 **Current behavior:**
+
 - Search method exists but returns empty list
 - No database query implementation
 
 **Desired behavior:**
+
 - Search metadata fields (EXIF, XMP, IPTC) by value
 - Support wildcards and regex patterns
 - Return matching file paths
 - Integrate with file table filtering
 
 **Technical notes:**
+
 - Requires SQL query building for metadata JSON column
 - May need SQLite JSON functions (json_extract)
 - Consider performance implications for large databases
@@ -149,6 +167,7 @@ Consolidated list of all TODO items extracted from codebase.
 ## Architecture/Refactoring Tasks
 
 ### 5. Backup Store Extraction
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Extract rename history methods from DatabaseManager to BackupStore for better separation of concerns.
@@ -156,6 +175,7 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/core/database/backup_store.py#L35](oncutf/core/database/backup_store.py#L35)
 
 **Methods to extract:**
+
 - `store_rename_operation`
 - `get_rename_history`
 - `get_rename_operations_by_id`
@@ -163,6 +183,7 @@ Consolidated list of all TODO items extracted from codebase.
 - `clear_rename_history`
 
 **Technical notes:**
+
 - Part of database split plan
 - Improves modularity of database layer
 - BackupStore already has basic structure
@@ -173,6 +194,7 @@ Consolidated list of all TODO items extracted from codebase.
 ## Development/Testing Tasks
 
 ### 6. Rename Preview Profiling
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Complete profiling implementation for rename preview performance testing.
@@ -180,10 +202,12 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [scripts/profile_performance.py#L173](scripts/profile_performance.py#L173)
 
 **Current behavior:**
+
 - Profiling script exists but rename preview section is stubbed
 - Prints warning message instead of running profile
 
 **Desired behavior:**
+
 - Load sample files (various sizes and types)
 - Trigger rename preview with different module combinations
 - Measure time for preview generation
@@ -191,6 +215,7 @@ Consolidated list of all TODO items extracted from codebase.
 - Generate performance report
 
 **Technical notes:**
+
 - Should use test fixtures or example files
 - Need to simulate different file counts (10, 100, 1000+)
 - Profile both with and without metadata caching
@@ -201,6 +226,7 @@ Consolidated list of all TODO items extracted from codebase.
 ## Node Editor Implementation (Foundation)
 
 ### 7. Module-to-Graph Conversion
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement conversion from linear module list to node graph representation.
@@ -208,11 +234,13 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/controllers/rename_graph_controller.py#L196](oncutf/controllers/rename_graph_controller.py#L196)
 
 **Implementation steps:**
+
 1. Create appropriate nodes for each module
 2. Connect nodes in sequence
 3. Add OutputNode at end
 
 **Technical notes:**
+
 - Part of future Node Editor feature (see migration_stance.md)
 - Foundation already exists in ModuleOrchestrator
 - Should preserve existing linear UI
@@ -220,6 +248,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 8. Graph-to-Module Conversion
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement conversion from node graph back to linear module list.
@@ -227,11 +256,13 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/controllers/rename_graph_controller.py#L212](oncutf/controllers/rename_graph_controller.py#L212)
 
 **Implementation steps:**
+
 1. Traverse graph in execution order
 2. Convert each node to module config
 3. Return list compatible with existing system
 
 **Technical notes:**
+
 - Required for bidirectional editing (linear ↔ graph)
 - Should use topological sort from graph_model
 - Output must be compatible with get_all_data() format
@@ -239,6 +270,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 9. Node Factory Implementation
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Create node instances by type name using NodeRegistry.
@@ -246,6 +278,7 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/controllers/rename_graph_controller.py#L232](oncutf/controllers/rename_graph_controller.py#L232)
 
 **Technical notes:**
+
 - Use node_editor NodeRegistry to create nodes
 - Should support all module types (counter, original_name, etc.)
 - Part of node creation workflow
@@ -253,6 +286,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 10. Edge Creation Implementation
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement node connection logic for graph building.
@@ -260,6 +294,7 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/controllers/rename_graph_controller.py#L255](oncutf/controllers/rename_graph_controller.py#L255)
 
 **Technical notes:**
+
 - Validate socket compatibility before connecting
 - Should use GraphValidator for connection rules
 - Part of interactive graph editing
@@ -267,6 +302,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 11. Graph Cycle Detection
+
 **Status:** Not Started  
 **Priority:** Medium  
 **Description:** Implement proper cycle detection using Depth-First Search for graph validation.
@@ -274,14 +310,17 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/core/rename_graph/graph_validator.py#L138](oncutf/core/rename_graph/graph_validator.py#L138)
 
 **Current behavior:**
+
 - Placeholder returns empty list (assumes no cycles)
 
 **Desired behavior:**
+
 - DFS-based cycle detection
 - Return list of error messages with cycle details
 - Prevent invalid graph execution
 
 **Technical notes:**
+
 - Critical for graph validation
 - Should detect all cycles, not just first one
 - Consider performance with large graphs
@@ -289,6 +328,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 12. Graph Topological Sort
+
 **Status:** Not Started  
 **Priority:** Medium  
 **Description:** Implement topological sort for proper node execution order.
@@ -296,14 +336,17 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/core/rename_graph/graph_model.py#L152](oncutf/core/rename_graph/graph_model.py#L152)
 
 **Current behavior:**
+
 - Returns nodes as-is (insertion order)
 
 **Desired behavior:**
+
 - Kahn's algorithm or DFS-based topological sort
 - Order nodes for execution (dependencies first)
 - Handle multiple valid orderings
 
 **Technical notes:**
+
 - Required for correct graph execution
 - Should work with cycle detection
 - Consider caching for performance
@@ -311,6 +354,7 @@ Consolidated list of all TODO items extracted from codebase.
 ---
 
 ### 13. Graph Deserialization
+
 **Status:** Not Started  
 **Priority:** Low  
 **Description:** Implement loading of saved graph configurations from dict representation.
@@ -318,14 +362,17 @@ Consolidated list of all TODO items extracted from codebase.
 **Location:** [oncutf/core/rename_graph/graph_model.py#L177](oncutf/core/rename_graph/graph_model.py#L177)
 
 **Current behavior:**
+
 - Placeholder returns True without loading
 
 **Desired behavior:**
+
 - Reconstruct graph from serialized dict
 - Restore nodes, edges, and metadata
 - Validate deserialized graph
 
 **Technical notes:**
+
 - Counterpart to serialize() method
 - Should handle version compatibility
 - Part of graph persistence system
@@ -337,6 +384,7 @@ Consolidated list of all TODO items extracted from codebase.
 ### Phase 7 (Final Polish) - Completed 2025-12-04 to 2026-01-11
 
 #### Sort Column Persistence - Completed 2026-01-15
+
 - **Full session persistence:** Sort column and order now save/restore across app restarts
 - **Clear table preserves state:** Escape key clears files but remembers sort preference
 - **5 integration tests:** Comprehensive test coverage for save/load/clear workflows
@@ -344,6 +392,7 @@ Consolidated list of all TODO items extracted from codebase.
 - **Test file:** tests/integration/test_sort_column_persistence.py
 
 #### Performance Optimizations
+
 - **Startup Optimization:** 31% faster application startup (1426ms → 989ms)
   - Lazy-loaded ExifToolWrapper in UnifiedMetadataManager (12% improvement)
   - Lazy-loaded CompanionFilesHelper in UnifiedMetadataManager (21% improvement)
@@ -357,6 +406,7 @@ Consolidated list of all TODO items extracted from codebase.
   - Created docs/PERFORMANCE_BASELINE.md
 
 #### Architecture Improvements
+
 - **MainWindowController:** High-level multi-service orchestration completed
   - Coordinates FileLoad, Metadata, and Rename controllers
   - Session restoration and graceful shutdown workflows
@@ -367,6 +417,7 @@ Consolidated list of all TODO items extracted from codebase.
   - Created widgets/mixins/ package
 
 #### Features
+
 - **Companion Files System:** Complete implementation
   - Sony XML metadata files support
   - XMP sidecar files for RAW images
@@ -375,13 +426,15 @@ Consolidated list of all TODO items extracted from codebase.
   - Metadata integration and enhancement
 
 #### Code Quality
+
 - **Test Coverage:** 1006 comprehensive tests across all modules
-- **Logging Standardization:** All modules use get_cached_logger(__name__)
+- **Logging Standardization:** All modules use get_cached_logger(**name**)
 - **Deprecation System:** @deprecated decorator with migration guidance
 - **Type Safety:** Added TypedDicts and Literal types
 - **Windows Crash Fix:** Fixed application exit hang
 
 #### Documentation
+
 - **Cache Strategy Documentation:** 2500+ lines comprehensive guide
   - Complete guide for all cache managers
   - 30+ working code examples
@@ -389,6 +442,7 @@ Consolidated list of all TODO items extracted from codebase.
   - Troubleshooting guide and best practices
 
 #### Repository Quality Improvements - Completed 2026-01-30 to 2026-01-31
+
 - **Formatting Verification:** All 598 files verified as properly formatted (P0-1)
 - **Vulture Integration:** Added vulture≥2.3 to dev dependencies for dead code analysis (P0-2)
 - **Dead Code Cleanup:** Fixed 2 unused variables flagged by vulture at 100% confidence (P0-3)
@@ -438,4 +492,3 @@ Consolidated list of all TODO items extracted from codebase.
 - No critical or blocking TODOs identified
 - All items are feature enhancements, not bugs
 - Node Editor has solid architectural foundation ready (see migration_stance.md)
-
