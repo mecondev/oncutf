@@ -170,7 +170,7 @@ class ConflictResolver:
         try:
             shutil.copy2(path, backup_path)
         except Exception as e:
-            logger.error("[ConflictResolver] Failed to create backup: %s", e)
+            logger.exception("[ConflictResolver] Failed to create backup")
             return ""
         else:
             return backup_path
@@ -217,7 +217,7 @@ class ConflictResolver:
             error_msg = str(e)
             operation.error_message = error_msg
 
-            logger.error("[ConflictResolver] Operation failed: %s", error_msg)
+            logger.exception("[ConflictResolver] Operation failed: %s", error_msg)
 
             return ConflictResolution(
                 original_path=old_path,
@@ -265,7 +265,7 @@ class ConflictResolver:
             )
 
         except Exception as e:
-            logger.error("[ConflictResolver] Undo failed: %s", e)
+            logger.exception("[ConflictResolver] Undo failed")
             return ConflictResolution(
                 original_path=operation.new_path if operation else "",
                 resolved_path=operation.old_path if operation else "",

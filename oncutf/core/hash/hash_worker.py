@@ -187,7 +187,7 @@ class HashWorker(BaseHashWorker):
                     )
 
                 except Exception as e:
-                    logger.error("[HashWorker] Error flushing batch operations: %s", e)
+                    logger.exception("[HashWorker] Error flushing batch operations")
 
     def _check_cache_before_calculation(self, file_path: str) -> str | None:
         """Check if hash exists in cache before calculating.

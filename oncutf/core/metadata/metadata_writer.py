@@ -181,7 +181,7 @@ class MetadataWriter(QObject):
         try:
             staging_manager = self.parent_window.context.get_manager("metadata_staging")
         except KeyError:
-            logger.error("[MetadataWriter] MetadataStagingManager not found")
+            logger.exception("[MetadataWriter] MetadataStagingManager not found")
             return
 
         # Collect staged changes for selected files
@@ -224,7 +224,7 @@ class MetadataWriter(QObject):
         try:
             staging_manager = self.parent_window.context.get_manager("metadata_staging")
         except KeyError:
-            logger.error("[MetadataWriter] MetadataStagingManager not found")
+            logger.exception("[MetadataWriter] MetadataStagingManager not found")
             return
 
         # Get all staged changes

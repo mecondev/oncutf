@@ -333,7 +333,7 @@ class FileValidationManager:
                     return dict(row)
 
         except Exception as e:
-            logger.error("[FileValidationManager] Error searching for moved file: %s", e)
+            logger.exception("[FileValidationManager] Error searching for moved file")
 
         return None
 
@@ -526,7 +526,7 @@ class FileValidationManager:
             logger.debug("Cleaning up stale cache entries", extra={"dev_only": True})
             # Implementation would go here - currently just a placeholder
         except Exception as e:
-            logger.error("Error cleaning up stale cache entries: %s", e)
+            logger.exception("Error cleaning up stale cache entries")
 
     def get_validation_stats(self) -> dict[str, Any]:
         """Get validation manager statistics."""
@@ -543,7 +543,7 @@ class FileValidationManager:
             }
 
         except Exception as e:
-            logger.error("[FileValidationManager] Error getting stats: %s", e)
+            logger.exception("[FileValidationManager] Error getting stats")
             return {}
 
 

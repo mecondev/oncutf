@@ -102,10 +102,9 @@ class SemanticAliasesManager:
                 self._aliases_file,
             )
         except json.JSONDecodeError as e:
-            logger.error(
-                "Failed to parse semantic aliases file: %s - %s",
+            logger.exception(
+                "Failed to parse semantic aliases file: %s",
                 self._aliases_file,
-                e,
             )
             # Backup corrupted file and return defaults
             self._backup_corrupted_file()
@@ -184,7 +183,7 @@ class SemanticAliasesManager:
             shutil.copy2(self._aliases_file, backup_path)
             logger.warning("Backed up corrupted aliases file to %s", backup_path)
         except Exception as e:
-            logger.error("Failed to backup corrupted file: %s", e)
+            logger.exception("Failed to backup corrupted file")
 
     def get_aliases_file_path(self) -> Path:
         """Get path to semantic aliases file.

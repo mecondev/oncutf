@@ -168,7 +168,7 @@ class FileOperationsManager:
                         "[Rename] 'rename' action not fully implemented, using 'overwrite'"
                     )
             except Exception as e:
-                logger.error("[Rename] Error in conflict callback: %s", e)
+                logger.exception("[Rename] Error in conflict callback")
                 return "skip"
             else:
                 return action
@@ -278,7 +278,7 @@ class FileOperationsManager:
                     ):
                         QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
                 except Exception as e:
-                    logger.error("[FileOperationsManager] Error showing completion dialog: %s", e)
+                    logger.exception("[FileOperationsManager] Error showing completion dialog")
 
             # Store the dialog function in the parent window for later execution
             if hasattr(self.parent_window, "pending_completion_dialog"):

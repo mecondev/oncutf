@@ -164,7 +164,7 @@ class PreExecutionValidator:
 
         except Exception as e:
             # Unexpected errors
-            logger.error("Unexpected error checking file lock for %s: %s", file_path, e)
+            logger.exception("Unexpected error checking file lock for %s", file_path)
             return ValidationIssue(
                 file=file_item,
                 issue_type=ValidationIssueType.INACCESSIBLE,

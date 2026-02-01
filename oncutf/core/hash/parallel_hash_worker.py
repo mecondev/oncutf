@@ -223,7 +223,7 @@ class ParallelHashWorker(BaseHashWorker):
                         stats.total_time_saved,
                     )
                 except Exception as e:
-                    logger.error("[ParallelHashWorker] Error flushing batches: %s", e)
+                    logger.exception("[ParallelHashWorker] Error flushing batches")
 
     def _calculate_checksums_parallel(self, file_paths: list[str]) -> None:
         """Calculate checksums using parallel workers."""

@@ -132,7 +132,7 @@ class DiskCache:
             self.hits = 0
             self.misses = 0
         except Exception as e:
-            logger.error("[DiskCache] Error clearing cache: %s", e)
+            logger.exception("[DiskCache] Error clearing cache")
 
     def get_stats(self) -> dict[str, Any]:
         """Get disk cache statistics."""

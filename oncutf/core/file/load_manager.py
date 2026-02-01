@@ -318,7 +318,7 @@ class FileLoadManager:
                     if self._is_allowed_extension(entry.name) and entry.is_file()
                 )
             except OSError as e:
-                logger.error("[FileLoadManager] Error listing directory %s: %s", folder_path, e)
+                logger.exception("[FileLoadManager] Error listing directory %s", folder_path)
 
         if sorted_output:
             file_paths.sort()
