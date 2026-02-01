@@ -84,17 +84,23 @@ class SemanticAliasesManager:
             ValueError: If file is corrupted or invalid JSON
 
         """
+        def _raise_invalid_structure() -> None:
+            raise TypeError("Aliases file must contain a JSON object")
+
+        def _raise_invalid_alias(key: str) -> None:
+            raise TypeError(f"Alias '{key}' must map to a list of keys")
+
         try:
             with self._aliases_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Validate structure
             if not isinstance(data, dict):
-                raise TypeError("Aliases file must contain a JSON object")
+                _raise_invalid_structure()
 
             for key, value in data.items():
                 if not isinstance(value, list):
-                    raise TypeError(f"Alias '{key}' must map to a list of keys")
+                    _raise_invalid_alias(key)
 
             logger.debug(
                 "Loaded %d semantic aliases from %s",

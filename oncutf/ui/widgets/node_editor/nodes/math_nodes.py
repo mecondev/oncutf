@@ -819,12 +819,15 @@ class ModuloNode(Node):
             self.graphics_node.setToolTip("Connect all inputs")
             return None
 
+        def _raise_modulo_by_zero() -> None:
+            raise ZeroDivisionError("Modulo by zero")
+
         try:
             val1 = float(i1.eval())
             val2 = float(i2.eval())
 
             if val2 == 0:
-                raise ZeroDivisionError("Modulo by zero")
+                _raise_modulo_by_zero()
 
             self.value = val1 % val2
 

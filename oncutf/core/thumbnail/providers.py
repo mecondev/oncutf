@@ -197,6 +197,9 @@ class ImageThumbnailProvider(ThumbnailProvider):
             ThumbnailGenerationError: If RAW processing fails
 
         """
+        def _raise_raw_pixmap_failed() -> None:
+            raise ThumbnailGenerationError(f"Failed to create pixmap from RAW: {file_path}")
+
         try:
             import rawpy
         except ImportError as e:
@@ -304,7 +307,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
                         )
                         return pixmap
 
-                raise ThumbnailGenerationError(f"Failed to create pixmap from RAW: {file_path}")
+                _raise_raw_pixmap_failed()
 
         except rawpy.LibRawError as e:
             raise ThumbnailGenerationError(f"RAW processing error for {file_path}: {e}") from e

@@ -289,6 +289,9 @@ class ColumnManager:
         """Handle removing a single column efficiently."""
         logger.debug("[ColumnManager] Removing single column: %s", removed_column)
 
+        def _raise_column_not_found() -> None:
+            raise ValueError(f"Column '{removed_column}' not found in current visible columns")
+
         try:
             # Find where this column currently is
             if removed_column in self._visible_columns:
@@ -327,7 +330,7 @@ class ColumnManager:
                     "[ColumnManager] Column '%s' not found in current visible columns",
                     removed_column,
                 )
-                raise ValueError(f"Column '{removed_column}' not found in current visible columns")
+                _raise_column_not_found()
 
         except Exception:
             logger.exception("[ColumnManager] Error in _handle_single_column_removal")

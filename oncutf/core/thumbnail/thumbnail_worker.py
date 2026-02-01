@@ -168,10 +168,19 @@ class ThumbnailWorker(QThread):
         file_path = request.file_path
         size_px = request.size_px
 
+        def _raise_file_not_found() -> None:
+            raise ThumbnailGenerationError(f"File not found: {file_path}")
+
+        def _raise_unsupported_type() -> None:
+            raise ThumbnailGenerationError(f"Unsupported file type: {ext} for {file_path}")
+
+        def _raise_null_pixmap() -> None:
+            raise ThumbnailGenerationError(f"Generated null pixmap for {file_path}")
+
         try:
             # Validate file exists
             if not Path(file_path).exists():
-                raise ThumbnailGenerationError(f"File not found: {file_path}")
+                _raise_file_not_found()
 
             # Get file stats
             file_stat = Path(file_path).stat()
@@ -188,7 +197,7 @@ class ThumbnailWorker(QThread):
                 provider = self._video_provider
                 video_frame_time = None  # Will be set by provider
             else:
-                raise ThumbnailGenerationError(f"Unsupported file type: {ext} for {file_path}")
+                _raise_unsupported_type()
 
             # Check again before expensive operation
             if self._stop_requested:
@@ -205,7 +214,7 @@ class ThumbnailWorker(QThread):
                 return
 
             if pixmap.isNull():
-                raise ThumbnailGenerationError(f"Generated null pixmap for {file_path}")
+                _raise_null_pixmap()
 
             # Save to disk cache
             cache_filename = self._cache.generate_cache_key(file_path, mtime, size)

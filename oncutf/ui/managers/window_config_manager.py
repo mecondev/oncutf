@@ -294,16 +294,22 @@ class WindowConfigManager:
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
+        def _raise_no_qapp() -> None:
+            raise RuntimeError("No QApplication instance found")
+
+        def _raise_no_screen() -> None:
+            raise RuntimeError("No primary screen found")
+
         try:
             # Use modern QScreen API instead of deprecated QDesktopWidget
             app = QApplication.instance()
             if not app:
-                raise RuntimeError("No QApplication instance found")
+                _raise_no_qapp()
 
             # Get the primary screen using modern API
             primary_screen = app.primaryScreen()
             if not primary_screen:
-                raise RuntimeError("No primary screen found")
+                _raise_no_screen()
 
             # Get screen geometry (available area excluding taskbars, docks, etc.)
             screen_geometry = primary_screen.availableGeometry()

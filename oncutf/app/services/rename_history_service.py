@@ -306,6 +306,11 @@ class RenameHistoryManager:
             Tuple of (success, message, files_processed)
 
         """
+        def _raise_case_rename_failed(current_name: str, target_name: str) -> None:
+            raise OSError(
+                f"Case-only rename failed: {current_name} -> {target_name}"
+            )
+
         try:
             # Check if operation can be undone
             can_undo, reason = self.can_undo_operation(operation_id)
@@ -337,9 +342,7 @@ class RenameHistoryManager:
 
                     if is_case_only_change(current_name, target_name):
                         if not safe_case_rename(current_path, target_path):
-                            raise OSError(
-                                f"Case-only rename failed: {current_name} -> {target_name}"
-                            )
+                            _raise_case_rename_failed(current_name, target_name)
                     else:
                         Path(current_path).rename(target_path)
                     successful_reverts.append(operation)
