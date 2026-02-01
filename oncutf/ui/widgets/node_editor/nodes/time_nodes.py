@@ -70,9 +70,9 @@ class FormatDateNode(Node):
         - formatted (str): Formatted date/time string
 
     Format Examples:
-        "%Y-%m-%d" -> "2024-12-12"
-        "%Y-%m-%d %H:%M:%S" -> "2024-12-12 15:30:45"
-        "%B %d, %Y" -> "December 12, 2024"
+        "%Y-%m-%d" -> "2024-12-31"
+        "%Y-%m-%d %H:%M:%S" -> "2024-12-31 15:30:45"
+        "%B %d, %Y" -> "December 31, 2024"
     """
 
     op_code = 101
@@ -119,10 +119,11 @@ class FormatDateNode(Node):
             dt = datetime.fromtimestamp(timestamp)
             result = dt.strftime(format_str)
             self.markValid()
-            return result
         except (ValueError, OSError):
             self.mark_invalid()
             return None
+        else:
+            return result
 
 
 @NodeRegistry.register(102)
@@ -181,10 +182,11 @@ class ParseDateNode(Node):
             dt = datetime.strptime(date_string, format_str)
             result = dt.timestamp()
             self.markValid()
-            return result
         except ValueError:
             self.mark_invalid()
             return None
+        else:
+            return result
 
 
 @NodeRegistry.register(103)

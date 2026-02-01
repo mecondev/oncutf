@@ -115,13 +115,12 @@ class ConcatenateNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(41)
@@ -202,13 +201,12 @@ class FormatNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError, KeyError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Format error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(42)
@@ -283,13 +281,12 @@ class LengthNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (TypeError, AttributeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Cannot get length: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(43)
@@ -367,13 +364,12 @@ class SubstringNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError, IndexError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Substring error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(44)
@@ -453,10 +449,9 @@ class SplitNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Split error: {e!s}")
             return None
+        else:
+            return self.value

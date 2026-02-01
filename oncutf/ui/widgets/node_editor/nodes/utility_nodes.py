@@ -146,13 +146,12 @@ class ConstantNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
     def serialize(self):
         """Serialize node state.
@@ -260,13 +259,12 @@ class PrintNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(82)
@@ -426,13 +424,12 @@ class ClampNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(84)
@@ -513,10 +510,9 @@ class RandomNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
