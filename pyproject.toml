@@ -82,7 +82,7 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 # mypy configuration
 # --------------------------
-# UPDATED 2026-01-23: Stricter checking for new architecture (app/domain/infra)
+# Stricter checking for new architecture (app/domain/infra)
 # Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
 # Tier 1-2 modules are fully strict. See overrides below for module categorization.
 [tool.mypy]
@@ -98,7 +98,7 @@ pretty = true
 exclude = '(^|/)(backups|\.cache|temp|reports|scripts|tools|examples)(/|$)|oncutf/ui/resources_rc\.py|oncutf/resources_rc\.py'
 check_untyped_defs = true
 
-# NEW: Stricter defaults for all modules (2026-01-23)
+# Stricter defaults for all modules
 disallow_untyped_defs = false  # Enable gradually per tier
 disallow_any_unimported = false
 disallow_any_expr = false
@@ -122,7 +122,7 @@ ignore_errors = true
 # ============================================================
 # Tier 1 — New Architecture (app/domain/infra) — PRAGMATIC STRICT
 # HIGHEST quality bar - these are the foundation layers
-# Phase E Part 6: Enable strict flags (mypy --strict equivalent, minus disallow_any_explicit/expr)
+# Enable strict flags (mypy --strict equivalent, minus disallow_any_explicit/expr)
 # NOTE: disallow_any_explicit/expr are intentionally omitted because:
 # - Metadata domain legitimately uses dict[str, Any] for EXIF data (intrinsically untyped)
 # - Validators need Callable[[Any], ...] for runtime validation of arbitrary data
@@ -145,7 +145,7 @@ disallow_any_generics = true
 warn_return_any = true
 no_implicit_reexport = true
 strict_optional = true
-# Phase E Part 6: Additional strict flags (pragmatic subset)
+# Additional strict flags (pragmatic subset)
 disallow_any_unimported = true
 disallow_any_decorated = true
 disallow_incomplete_defs = true
@@ -155,13 +155,12 @@ disallow_untyped_decorators = true
 # ============================================================
 # Tier 2 — Controllers / Services (legacy) — GRADUAL STRICT
 # Focus areas for reducing error count
-# Phase E Part 4: Enable disallow_untyped_defs for controllers (2026-01-25)
+# Enforce disallow_untyped_defs for controllers
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
     "oncutf.controllers.*",
     "oncutf.services.*",
-    "oncutf.modules.*",
     "oncutf.metadata.*",
     "oncutf.models.*",
     "oncutf.core.*"
@@ -169,8 +168,13 @@ module = [
 ignore_errors = false
 disallow_any_generics = true
 disallow_subclassing_any = true
-disallow_untyped_defs = true  # Phase E Part 4: Enforce typed functions
-warn_return_any = false  # Too noisy for now, enable later
+disallow_untyped_defs = true  # Enforce typed functions
+warn_return_any = true  # Stricter return type checking
+no_implicit_reexport = true  # Require explicit __all__ for re-exports
+strict_optional = true  # Stricter None checking
+disable_error_code = [
+    "no-any-return"  # Core layer interacts with database/metadata (untyped data)
+]
 
 # ============================================================
 # Tier 3 — Qt / UI / glue code (targeted error suppression)
@@ -186,6 +190,7 @@ module = [
     "oncutf.core.drag.*",
     "oncutf.core.events.*",
     "oncutf.core.selection.*",
+    "oncutf.core.modifier_handler",
     "oncutf.core.pyqt_imports",
 
     # Qt-heavy core modules (added 2026-01-19)
@@ -202,14 +207,14 @@ module = [
     "oncutf.controllers.module_drag_drop_manager",
     "oncutf.controllers.header_interaction_controller",
 
-    # Qt-heavy models (added 2026-01-19)
+    # Qt-heavy models
     "oncutf.models.file_table.*",
     "oncutf.models.results_table_model",
 
-    # Qt-heavy modules (added 2026-01-19)
+    # Qt-heavy modules
     "oncutf.modules.*",
 
-    # Main entry point (added 2026-01-19)
+    # Main entry point
     "main",
 
     # utils: UI/Qt glue ONLY (whitelist) - updated paths for new structure
@@ -234,8 +239,8 @@ module = [
     "oncutf.utils.metadata.exiftool_adapter"
 ]
 ignore_errors = false
-# NOTE: Only Qt-stub-specific errors remain disabled (2026-01-25)
-# Removed: index (now enforced - 0 errors), unused-ignore (type:ignore cleanup complete)
+# NOTE: Only Qt-stub-specific errors remain disabled
+# Removed: index (now enforced), unused-ignore (type:ignore cleanup complete)
 disable_error_code = [
     "attr-defined",       # Qt dynamic attributes (e.g. Qt.AlignCenter)
     "call-arg",           # Qt signal/slot argument mismatches
@@ -253,23 +258,6 @@ disable_error_code = [
 ]
 
 # ============================================================
-# Tier 4 — Legacy flat modules (temporary tolerance)
-# ============================================================
-[[tool.mypy.overrides]]
-module = [
-    "oncutf.application",
-    "oncutf.main",
-    "oncutf.__main__",
-    "oncutf.core.signal_coordinator",
-    "oncutf.ui.services.utility_manager",
-    "oncutf.ui.services.dialog_manager",
-    "oncutf.core.event_handler_manager",
-    "oncutf.core.file_load_manager",
-    "oncutf.core.modifier_handler"
-]
-ignore_errors = true
-
-# ============================================================
 # Tests — Relaxed checking
 # ============================================================
 [[tool.mypy.overrides]]
@@ -285,6 +273,8 @@ disallow_untyped_defs = false
 target-version = "py312"
 line-length = 100
 fix = false
+respect-gitignore = true
+show-fixes = true
 exclude = [
     ".git",
     "__pycache__",
@@ -305,30 +295,42 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "N",   # pep8-naming
-    "UP",  # pyupgrade
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
-    "RUF", # ruff-specific rules
-    "ANN", # flake8-annotations (type hints on public APIs) - GRADUAL
-    "PTH", # flake8-use-pathlib (prefer pathlib over os.path) - GRADUAL
-    "D",   # pydocstyle (docstring conventions)
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+    "ANN",  # flake8-annotations (type hints on public APIs) - GRADUAL
+    "PTH",  # flake8-use-pathlib (prefer pathlib over os.path)
+    "D",    # pydocstyle (docstring conventions)
+    "PERF", # perflint (performance anti-patterns)
+    "RET",  # flake8-return (return statement improvements)
+    "ERA",  # eradicate (commented-out code)
+    "TRY",  # tryceratops (exception handling best practices)
+    "PIE",  # flake8-pie (misc lints)
+    "T20",  # flake8-print (avoid print statements)
+    "RSE",  # flake8-raise (exception raising improvements)
 ]
-# UPDATED 2026-01-23: Reduced ignores - only keep truly necessary ones
+# Further reduced ignores - stricter enforcement
 ignore = [
     # Core ignores (pre-existing)
     "E501",   # line too long - handled by formatter
     "N802",   # function name should be lowercase (Qt methods)
     "F401",   # imported but unused (re-exports in __init__.py)
-    "B008",   # do not perform function calls in argument defaults
-    "B904",   # raise-without-from-inside-except
     "N803",   # argument name should be lowercase (Qt arguments)
     "N806",   # variable in function should be lowercase (Qt variables)
+    
+    # Exception handling (gradual adoption)
+    "TRY003", # avoid-specifying-long-messages-outside-exception-class (100+ violations)
+    "TRY400", # error-instead-of-exception (legacy code pattern)
+    
+    # Print statements (allowed in scripts/debug)
+    "T201",   # print-found (intentional in CLI/debug contexts)
     
     # Docstring rules (gradual adoption)
     "D100",   # missing docstring in public module
@@ -341,9 +343,8 @@ ignore = [
     "D213",   # multi-line-summary-second-line (conflicts with D212)
     "D401",   # imperative-mood (200+ violations, widespread in legacy code)
     "D205",   # missing-blank-line-after-summary (100+ violations)
-    "SIM102", # collapsible-if (50+ violations, better for readability sometimes)
     
-    # ANN rules - Gradual adoption (added 2026-01-30)
+    # ANN rules - Gradual adoption
     "ANN001", # missing-type-function-argument (427 violations)
     "ANN002", # missing-type-args (8 violations)
     "ANN003", # missing-type-kwargs (10 violations)
