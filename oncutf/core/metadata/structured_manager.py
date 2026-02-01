@@ -48,7 +48,7 @@ class StructuredMetadataManager:
             )
 
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error loading caches: %s", e)
+            logger.exception("[StructuredMetadataManager] Error loading caches")
 
     def refresh_caches(self) -> None:
         """Refresh the internal caches."""
@@ -104,10 +104,9 @@ class StructuredMetadataManager:
                 Path(file_path).name,
             )
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error processing metadata for %s: %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error processing metadata for %s",
                 file_path,
-                e,
             )
             return False
         else:
@@ -167,10 +166,9 @@ class StructuredMetadataManager:
             return str(field_value)
 
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error formatting field '%s': %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error formatting field '%s'",
                 field_key,
-                e,
             )
             return str(field_value)
 
@@ -207,10 +205,9 @@ class StructuredMetadataManager:
                     "display_format": field_data["display_format"],
                 }
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error getting structured metadata for %s: %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error getting structured metadata for %s",
                 file_path,
-                e,
             )
             return {}
         else:
@@ -233,8 +230,8 @@ class StructuredMetadataManager:
             return field_data["value"] if field_data else None
 
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error getting field '%s' for %s: %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error getting field '%s' for %s",
                 field_key,
                 file_path,
                 e,
@@ -262,7 +259,7 @@ class StructuredMetadataManager:
             return self.db_manager.get_metadata_fields()
 
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error getting available fields: %s", e)
+            logger.exception("[StructuredMetadataManager] Error getting available fields")
             return []
 
     def get_available_categories(self) -> list[dict[str, Any]]:
@@ -275,7 +272,7 @@ class StructuredMetadataManager:
         try:
             return self.db_manager.get_metadata_categories()
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error getting available categories: %s", e)
+            logger.exception("[StructuredMetadataManager] Error getting available categories")
             return []
 
     def add_custom_field(
@@ -331,10 +328,9 @@ class StructuredMetadataManager:
                 logger.info("[StructuredMetadataManager] Added custom field '%s'", field_key)
                 return True
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error adding custom field '%s': %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error adding custom field '%s'",
                 field_key,
-                e,
             )
             return False
         else:
@@ -382,10 +378,9 @@ class StructuredMetadataManager:
                     Path(file_path).name,
                 )
         except Exception as e:
-            logger.error(
-                "[StructuredMetadataManager] Error updating field '%s': %s",
+            logger.exception(
+                "[StructuredMetadataManager] Error updating field '%s'",
                 field_key,
-                e,
             )
             return False
         else:
@@ -419,7 +414,7 @@ class StructuredMetadataManager:
             # NOTE: Database search functionality tracked in TODO.md
             logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
         except Exception as e:
-            logger.error("[StructuredMetadataManager] Error searching by metadata: %s", e)
+            logger.exception("[StructuredMetadataManager] Error searching by metadata")
             return []
         else:
             return []

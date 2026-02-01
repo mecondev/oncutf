@@ -175,13 +175,13 @@ class HashManager:
             else:
                 self._hash_cache[cache_key] = hash_result
         except PermissionError:
-            logger.error("[HashManager] Permission denied accessing file: %s", file_path)
+            logger.exception("[HashManager] Permission denied accessing file: %s", file_path)
             return None
         except OSError as e:
-            logger.error("[HashManager] OS error reading file %s: %s", file_path, e)
+            logger.exception("[HashManager] OS error reading file %s", file_path)
             return None
         except Exception as e:
-            logger.error("[HashManager] Unexpected error hashing file %s: %s", file_path, e)
+            logger.exception("[HashManager] Unexpected error hashing file %s", file_path)
             return None
         else:
             return hash_result
@@ -242,7 +242,7 @@ class HashManager:
 
             logger.info("[HashManager] Compared %d files between folders", files_processed)
         except Exception as e:
-            logger.error("[HashManager] Error comparing folders: %s", e)
+            logger.exception("[HashManager] Error comparing folders")
             return {}
         else:
             return result
@@ -274,7 +274,7 @@ class HashManager:
                     hash_to_files[file_hash].append(file_item)
                     processed_count += 1
             except Exception as e:
-                logger.error("[HashManager] Error processing file %s: %s", file_item.filename, e)
+                logger.exception("[HashManager] Error processing file %s", file_item.filename)
 
         # Filter to only return groups with duplicates
         duplicates = {
@@ -319,7 +319,7 @@ class HashManager:
                     hash_to_paths[file_hash].append(file_path)
                     processed_count += 1
             except Exception as e:
-                logger.error("[HashManager] Error processing file %s: %s", file_path, e)
+                logger.exception("[HashManager] Error processing file %s", file_path)
 
         # Filter to only return groups with duplicates
         duplicates = {

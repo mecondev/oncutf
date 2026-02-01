@@ -143,7 +143,7 @@ class FilesystemMonitor(QObject):
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error("[FilesystemMonitor] Failed to watch %s: %s", normalized_path, e)
+            logger.exception("[FilesystemMonitor] Failed to watch %s", normalized_path)
             return False
         else:
             return True
@@ -171,7 +171,7 @@ class FilesystemMonitor(QObject):
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error("[FilesystemMonitor] Failed to unwatch %s: %s", normalized_path, e)
+            logger.exception("[FilesystemMonitor] Failed to unwatch %s", normalized_path)
             return False
         else:
             return True
@@ -338,7 +338,7 @@ class FilesystemMonitor(QObject):
                 try:
                     self._on_drive_change_callback(sorted(current_drives))
                 except Exception as e:
-                    logger.error("[FilesystemMonitor] Drive callback error: %s", e)
+                    logger.exception("[FilesystemMonitor] Drive callback error")
 
     def _on_directory_changed(self, path: str) -> None:
         """Handle directory changed signal (debounced).
@@ -391,14 +391,14 @@ class FilesystemMonitor(QObject):
                 try:
                     self._on_folder_change_callback(path)
                 except Exception as e:
-                    logger.error("[FilesystemMonitor] Folder callback error: %s", e)
+                    logger.exception("[FilesystemMonitor] Folder callback error")
 
             # Auto-refresh FileStore if available
             if self.file_store:
                 try:
                     self._refresh_filestore_for_path(path)
                 except Exception as e:
-                    logger.error("[FilesystemMonitor] FileStore refresh error: %s", e)
+                    logger.exception("[FilesystemMonitor] FileStore refresh error")
 
         self._pending_changes.clear()
 
