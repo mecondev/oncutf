@@ -90,8 +90,8 @@ class MetadataStore:
             # Suppress errors during shutdown/cancellation
             logger.debug("[MetadataStore] Database locked/closing during store: %s", e)
             return False
-        except Exception as e:
-            logger.error("[MetadataStore] Error storing metadata for %s: %s", file_path, e)
+        except Exception:
+            logger.exception("[MetadataStore] Error storing metadata for %s", file_path)
             return False
 
     def batch_store_metadata(
@@ -136,11 +136,10 @@ class MetadataStore:
                     )
                     success_count += 1
 
-                except Exception as e:
-                    logger.error(
-                        "[MetadataStore] Error in batch storing metadata for %s: %s",
+                except Exception:
+                    logger.exception(
+                        "[MetadataStore] Error in batch storing metadata for %s",
                         file_path,
-                        e,
                     )
                     continue
 
@@ -152,8 +151,8 @@ class MetadataStore:
                 success_count,
                 len(metadata_items),
             )
-        except Exception as e:
-            logger.error("[MetadataStore] Error in batch store metadata: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error in batch store metadata")
             return 0
         else:
             return success_count
@@ -196,8 +195,8 @@ class MetadataStore:
             # Suppress errors during shutdown/cancellation
             logger.debug("[MetadataStore] Database locked/closing for %s: %s", file_path, e)
             return None
-        except Exception as e:
-            logger.error("[MetadataStore] Error retrieving metadata for %s: %s", file_path, e)
+        except Exception:
+            logger.exception("[MetadataStore] Error retrieving metadata for %s", file_path)
             return None
 
     def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
@@ -261,8 +260,8 @@ class MetadataStore:
                     metadata["__modified__"] = True
 
                 results[file_path] = metadata
-        except Exception as e:
-            logger.error("[MetadataStore] Error in batch metadata retrieval: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error in batch metadata retrieval")
             return dict.fromkeys(file_paths)
         else:
             return results
@@ -294,8 +293,8 @@ class MetadataStore:
                 """,
                     (path_id,),
                 )
-        except Exception as e:
-            logger.error("[MetadataStore] Error checking metadata for %s: %s", file_path, e)
+        except Exception:
+            logger.exception("[MetadataStore] Error checking metadata for %s", file_path)
             return False
         else:
             return cursor.fetchone() is not None
@@ -319,11 +318,10 @@ class MetadataStore:
                 (category_name, display_name, description, sort_order),
             )
             self.connection.commit()
-        except Exception as e:
-            logger.error(
-                "[MetadataStore] Error creating metadata category '%s': %s",
+        except Exception:
+            logger.exception(
+                "[MetadataStore] Error creating metadata category '%s'",
                 category_name,
-                e,
             )
             return None
         else:
@@ -341,8 +339,8 @@ class MetadataStore:
                 """
             )
             return [dict(row) for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error("[MetadataStore] Error getting metadata categories: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error getting metadata categories")
             return []
 
     def create_metadata_field(
@@ -378,8 +376,8 @@ class MetadataStore:
                 ),
             )
             self.connection.commit()
-        except Exception as e:
-            logger.error("[MetadataStore] Error creating metadata field '%s': %s", field_key, e)
+        except Exception:
+            logger.exception("[MetadataStore] Error creating metadata field '%s'", field_key)
             return None
         else:
             return cursor.lastrowid
@@ -413,8 +411,8 @@ class MetadataStore:
                     ORDER BY c.sort_order, f.sort_order, f.field_name
                     """
                 )
-        except Exception as e:
-            logger.error("[MetadataStore] Error getting metadata fields: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error getting metadata fields")
             return []
         else:
             return [dict(row) for row in cursor.fetchall()]
@@ -435,8 +433,8 @@ class MetadataStore:
                 (field_key,),
             )
             row = cursor.fetchone()
-        except Exception as e:
-            logger.error("[MetadataStore] Error getting metadata field '%s': %s", field_key, e)
+        except Exception:
+            logger.exception("[MetadataStore] Error getting metadata field '%s'", field_key)
             return None
         else:
             return dict(row) if row else None
@@ -464,11 +462,10 @@ class MetadataStore:
                 (path_id, field_info["id"], field_value),
             )
             self.connection.commit()
-        except Exception as e:
-            logger.error(
-                "[MetadataStore] Error storing structured metadata for %s: %s",
+        except Exception:
+            logger.exception(
+                "[MetadataStore] Error storing structured metadata for %s",
                 file_path,
-                e,
             )
             return False
         else:
@@ -526,11 +523,10 @@ class MetadataStore:
                 "[MetadataStore] Batch stored %d structured metadata fields",
                 len(valid_data),
             )
-        except Exception as e:
-            logger.error(
-                "[MetadataStore] Error in batch store structured metadata for %s: %s",
+        except Exception:
+            logger.exception(
+                "[MetadataStore] Error in batch store structured metadata for %s",
                 file_path,
-                e,
             )
             return 0
         else:
@@ -568,11 +564,10 @@ class MetadataStore:
                     "category_name": row["category_name"],
                     "category_display_name": row["category_display_name"],
                 }
-        except Exception as e:
-            logger.error(
-                "[MetadataStore] Error getting structured metadata for %s: %s",
+        except Exception:
+            logger.exception(
+                "[MetadataStore] Error getting structured metadata for %s",
                 file_path,
-                e,
             )
             return {}
         else:
@@ -611,8 +606,8 @@ class MetadataStore:
             self.connection.commit()
 
             logger.debug("[MetadataStore] Set color_tag=%s for: %s", color_hex, file_path)
-        except Exception as e:
-            logger.error("[MetadataStore] Error setting color tag: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error setting color tag")
             return False
         else:
             return True
@@ -643,8 +638,8 @@ class MetadataStore:
 
             if row and row["color_tag"]:
                 color_tag: str = row["color_tag"]
-        except Exception as e:
-            logger.error("[MetadataStore] Error getting color tag: %s", e)
+        except Exception:
+            logger.exception("[MetadataStore] Error getting color tag")
             return "none"
         else:
             if row and row["color_tag"]:
