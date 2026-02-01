@@ -152,14 +152,13 @@ class MetadataFieldMappingHelper:
 
         if ext in cls.IMAGE_EXTENSIONS:
             return "image"
-        elif ext in cls.RAW_EXTENSIONS:
+        if ext in cls.RAW_EXTENSIONS:
             return "raw"
-        elif ext in cls.VIDEO_EXTENSIONS:
+        if ext in cls.VIDEO_EXTENSIONS:
             return "video"
-        elif ext in cls.AUDIO_EXTENSIONS:
+        if ext in cls.AUDIO_EXTENSIONS:
             return "audio"
-        else:
-            return "unknown"
+        return "unknown"
 
     @classmethod
     def get_write_field_name(cls, generic_field: str, file_path: str) -> str | None:

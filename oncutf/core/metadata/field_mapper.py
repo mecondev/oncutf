@@ -219,21 +219,19 @@ class MetadataFieldMapper:
         # Field-specific formatting
         if field_key == "rotation":
             return cls._format_rotation_value(value_str)
-        elif field_key == "duration":
+        if field_key == "duration":
             return cls._format_duration_value(value_str)
-        elif field_key in ["aperture", "iso", "shutter_speed"]:
+        if field_key in ["aperture", "iso", "shutter_speed"]:
             return cls._format_camera_setting_value(field_key, value_str)
-        elif field_key in ["device_model", "device_manufacturer"]:
+        if field_key in ["device_model", "device_manufacturer"]:
             return cls._format_device_value(value_str)
-        elif field_key in ["video_fps", "video_avg_bitrate"]:
+        if field_key in ["video_fps", "video_avg_bitrate"]:
             return cls._format_video_value(field_key, value_str)
-        elif field_key in ["target_umid", "file_hash", "device_serial_no"]:
+        if field_key in ["target_umid", "file_hash", "device_serial_no"]:
             # Keep full value for long identifiers; let the view elide visually
-            cleaned = " ".join(value_str.split())
-            return cleaned
-        else:
-            # Default formatting - limit length and clean up
-            return cls._format_default_value(value_str)
+            return " ".join(value_str.split())
+        # Default formatting - limit length and clean up
+        return cls._format_default_value(value_str)
 
     @classmethod
     def _format_rotation_value(cls, value: str) -> str:
@@ -251,11 +249,11 @@ class MetadataFieldMapper:
         # Handle text-based orientation values
         if "horizontal" in value_lower and "normal" in value_lower:
             return "0°"
-        elif "rotate" in value_lower and "90" in value_lower:
+        if "rotate" in value_lower and "90" in value_lower:
             return "90°"
-        elif "rotate" in value_lower and "180" in value_lower:
+        if "rotate" in value_lower and "180" in value_lower:
             return "180°"
-        elif "rotate" in value_lower and "270" in value_lower:
+        if "rotate" in value_lower and "270" in value_lower:
             return "270°"
 
         # Handle numeric values
@@ -263,8 +261,7 @@ class MetadataFieldMapper:
             numeric_value = float(value)
             if numeric_value == int(numeric_value):  # Whole number
                 return f"{int(numeric_value)}°"
-            else:
-                return f"{numeric_value:.1f}°"
+            return f"{numeric_value:.1f}°"
         except ValueError:
             pass
 
@@ -303,14 +300,13 @@ class MetadataFieldMapper:
                     # Format compactly
                     if total_seconds < 60:
                         return f"{total_seconds:.1f}s"
-                    elif total_seconds < 3600:
+                    if total_seconds < 3600:
                         mins = int(total_seconds // 60)
                         secs = int(total_seconds % 60)
                         return f"{mins}:{secs:02d}"
-                    else:
-                        hours = int(total_seconds // 3600)
-                        mins = int((total_seconds % 3600) // 60)
-                        return f"{hours}h{mins}m"
+                    hours = int(total_seconds // 3600)
+                    mins = int((total_seconds % 3600) // 60)
+                    return f"{hours}h{mins}m"
                 except ValueError:
                     pass
 
@@ -319,14 +315,13 @@ class MetadataFieldMapper:
             seconds = float(value_clean)
             if seconds < 60:
                 return f"{seconds:.1f}s"
-            elif seconds < 3600:
+            if seconds < 3600:
                 mins = int(seconds // 60)
                 secs = int(seconds % 60)
                 return f"{mins}:{secs:02d}"
-            else:
-                hours = int(seconds // 3600)
-                mins = int((seconds % 3600) // 60)
-                return f"{hours}h{mins}m"
+            hours = int(seconds // 3600)
+            mins = int((seconds % 3600) // 60)
+            return f"{hours}h{mins}m"
         except ValueError:
             pass
 
@@ -367,10 +362,9 @@ class MetadataFieldMapper:
                 numeric = float(value)
                 if numeric >= 1:
                     return f"{numeric:.1f}s"
-                else:
-                    # Convert to fraction
-                    denominator = int(1 / numeric)
-                    return f"1/{denominator}"
+                # Convert to fraction
+                denominator = int(1 / numeric)
+                return f"1/{denominator}"
             except ValueError:
                 return value[:10]
 
@@ -409,10 +403,9 @@ class MetadataFieldMapper:
                 bitrate = int(float(value))
                 if bitrate >= 1000000:
                     return f"{bitrate // 1000000} Mbps"
-                elif bitrate >= 1000:
+                if bitrate >= 1000:
                     return f"{bitrate // 1000} kbps"
-                else:
-                    return f"{bitrate} bps"
+                return f"{bitrate} bps"
             except ValueError:
                 return value[:10]
 

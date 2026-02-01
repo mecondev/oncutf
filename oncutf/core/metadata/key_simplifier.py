@@ -117,9 +117,7 @@ class SmartKeySimplifier:
             simplified[key] = result if result else key
 
         # Resolve collisions
-        simplified = self._resolve_collisions(simplified)
-
-        return simplified
+        return self._resolve_collisions(simplified)
 
     def _preprocess_key(self, key: str) -> str:
         """Preprocess key: decode, normalize, clean.
@@ -144,9 +142,7 @@ class SmartKeySimplifier:
         key = key.strip().rstrip(".,;")
 
         # Normalize multiple spaces
-        key = re.sub(r"\s+", " ", key)
-
-        return key
+        return re.sub(r"\s+", " ", key)
 
     def _tokenize(self, text: str) -> list[str]:
         """Tokenize text into segments.
@@ -358,10 +354,9 @@ class SmartKeySimplifier:
         """
         if original_length > 60:
             return min(4, self.max_segments + 1)
-        elif original_length > 40:
+        if original_length > 40:
             return self.max_segments
-        else:
-            return max(2, self.max_segments - 1)
+        return max(2, self.max_segments - 1)
 
     def _resolve_collisions(self, simplified: dict[str, str]) -> dict[str, str]:
         """Resolve collisions where multiple keys map to same simplified name.
