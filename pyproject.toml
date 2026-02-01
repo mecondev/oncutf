@@ -351,8 +351,6 @@ ignore = [
     "ANN001", # missing-type-function-argument (427 violations)
     "ANN002", # missing-type-args (8 violations)
     "ANN003", # missing-type-kwargs (10 violations)
-    "ANN101", # missing-type-self (never annotate self in methods)
-    "ANN102", # missing-type-cls (never annotate cls in classmethods)
     "ANN201", # missing-return-type-undocumented-public-function (247 violations)
     "ANN202", # missing-return-type-private-function (161 violations)
     "ANN204", # missing-return-type-special-method (173 violations)
