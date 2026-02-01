@@ -312,9 +312,11 @@ class FileLoadManager:
                 logger.exception("[FileLoadManager] Error walking directory %s: %s", folder_path, e)
         else:
             try:
-                for entry in Path(folder_path).iterdir():
-                    if self._is_allowed_extension(entry.name) and entry.is_file():
-                        file_paths.append(str(entry))
+                file_paths.extend(
+                    str(entry)
+                    for entry in Path(folder_path).iterdir()
+                    if self._is_allowed_extension(entry.name) and entry.is_file()
+                )
             except OSError as e:
                 logger.error("[FileLoadManager] Error listing directory %s: %s", folder_path, e)
 
