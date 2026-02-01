@@ -275,7 +275,7 @@ class FileLoadController:
     def handle_drop(
         self,
         paths: list[str],
-        modifiers: "Qt.KeyboardModifiers" | None = None,
+        modifiers: Qt.KeyboardModifiers | None = None,
     ) -> dict[str, Any]:
         """Handle file/folder drop with keyboard modifiers.
 
