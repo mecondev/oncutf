@@ -363,11 +363,15 @@ class HashLoadingService:
 
     def _cleanup_hash_worker(self) -> None:
         """Clean up hash worker."""
+        if (
+            hasattr(self, "_hash_worker")
+            and self._hash_worker
+            and self._hash_worker.isRunning()
+            and not self._hash_worker.wait(3000)
+        ):
+            self._hash_worker.terminate()
+            self._hash_worker.wait(1000)
         if hasattr(self, "_hash_worker") and self._hash_worker:
-            if self._hash_worker.isRunning():
-                if not self._hash_worker.wait(3000):
-                    self._hash_worker.terminate()
-                    self._hash_worker.wait(1000)
             self._hash_worker.deleteLater()
             self._hash_worker = None
 
@@ -763,9 +767,12 @@ class HashLoadingService:
 
         """
         # Refresh file table icons
-        if hasattr(self.parent_window, "file_model") and self.parent_window.file_model:
-            if hasattr(self.parent_window.file_model, "refresh_icons"):
-                self.parent_window.file_model.refresh_icons()
+        if (
+            hasattr(self.parent_window, "file_model")
+            and self.parent_window.file_model
+            and hasattr(self.parent_window.file_model, "refresh_icons")
+        ):
+            self.parent_window.file_model.refresh_icons()
 
         # Notify preview manager
         if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:

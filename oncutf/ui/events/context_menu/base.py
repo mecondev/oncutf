@@ -73,11 +73,13 @@ class ContextMenuHandlers:
 
         # Check if right-click was on color column - skip context menu for color column
         index = self.parent_window.file_table_view.indexAt(position)
-        if index.isValid():
+        if (
+            index.isValid()
+            and hasattr(self.parent_window.file_model, "_column_mapping")
+        ):
             # Get column key from model
-            if hasattr(self.parent_window.file_model, "_column_mapping"):
-                column_key = self.parent_window.file_model._column_mapping.get(index.column())
-                if column_key == "color":
+            column_key = self.parent_window.file_model._column_mapping.get(index.column())
+            if column_key == "color":
                     # Color column handles its own right-click menu via ColorColumnDelegate
                     logger.debug(
                         "[ContextMenu] Skipping context menu for color column",
