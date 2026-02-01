@@ -70,8 +70,8 @@ class InterFonts:
                 else:
                     logger.error("Failed to load font %s from %s", font_key, resource_path)
 
-        except Exception as e:
-            logger.error("Failed to load Inter fonts from resources: %s", e)
+        except Exception:
+            logger.exception("Failed to load Inter fonts from resources")
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
         """Get a QFont for specific use case with DPI scaling.
@@ -252,8 +252,8 @@ class JetBrainsFonts:
             else:
                 logger.error("Failed to load any JetBrains Mono fonts")
 
-        except Exception as e:
-            logger.error("Failed to load JetBrains Mono fonts: %s", str(e))
+        except Exception:
+            logger.exception("Failed to load JetBrains Mono fonts")
 
     def get_font(self, style: str = "regular", size: int = 10) -> QFont:
         """Get a QFont instance for JetBrains Mono.

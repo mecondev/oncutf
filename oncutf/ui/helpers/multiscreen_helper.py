@@ -188,13 +188,13 @@ def ensure_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = Non
     """
     try:
         position_dialog_relative_to_parent(dialog, parent)
-    except Exception as e:
-        logger.error("Error positioning dialog: %s", e)
+    except Exception:
+        logger.exception("Error positioning dialog")
         # Fallback to simple centering
         try:
             center_dialog_on_parent_screen(dialog, parent)
-        except Exception as e2:
-            logger.error("Error in fallback positioning: %s", e2)
+        except Exception:
+            logger.exception("Error in fallback positioning")
             # Final fallback - just move to a safe position
             dialog.move(100, 100)
 

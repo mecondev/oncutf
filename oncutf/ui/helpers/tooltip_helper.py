@@ -411,8 +411,8 @@ class TooltipHelper:
             else:
                 cls._show_temporary_tooltip(widget, message, tooltip_type, duration)
 
-        except Exception as e:
-            logger.error("[TooltipHelper] Failed to show tooltip: %s", e)
+        except Exception:
+            logger.exception("[TooltipHelper] Failed to show tooltip")
 
     @classmethod
     def _show_temporary_tooltip(
@@ -497,8 +497,8 @@ class TooltipHelper:
             widget_id = id(widget)
             if widget_id in cls._persistent_tooltips:
                 del cls._persistent_tooltips[widget_id]
-        except Exception as e:
-            logger.error("[TooltipHelper] Failed to show persistent tooltip: %s", e)
+        except Exception:
+            logger.exception("[TooltipHelper] Failed to show persistent tooltip")
 
     @classmethod
     def setup_tooltip(

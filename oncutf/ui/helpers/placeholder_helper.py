@@ -127,8 +127,8 @@ class PlaceholderHelper:
             else:
                 logger.warning("[PlaceholderHelper] Could not load icon: %s", icon_path)
 
-        except Exception as e:
-            logger.error("[PlaceholderHelper] Error loading icon: %s", e)
+        except Exception:
+            logger.exception("[PlaceholderHelper] Error loading icon")
 
         self._icon_loaded = True
 
@@ -157,8 +157,8 @@ class PlaceholderHelper:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error("[PlaceholderHelper] Error applying styling: %s", e)
+        except Exception:
+            logger.exception("[PlaceholderHelper] Error applying styling")
             # Fallback styling
             self.placeholder_label.setStyleSheet("background-color: #181818;")
 
