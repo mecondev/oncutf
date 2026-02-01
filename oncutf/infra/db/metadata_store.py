@@ -15,7 +15,7 @@ import os
 import sqlite3
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -640,5 +640,5 @@ class MetadataStore:
             return "none"
         else:
             if row and row["color_tag"]:
-                return row["color_tag"]
+                return cast(str, row["color_tag"])
             return "none"

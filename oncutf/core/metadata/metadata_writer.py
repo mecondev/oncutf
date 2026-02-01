@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PyQt5.QtCore import QObject
 
@@ -460,7 +460,7 @@ class MetadataWriter(QObject):
 
         for key, value in all_modified_metadata.items():
             if normalize_path(key) == normalized:
-                return value
+                return cast(dict[str, Any], value)
 
         # Not found
         return {}

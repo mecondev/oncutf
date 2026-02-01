@@ -15,7 +15,7 @@ Responsibilities:
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PyQt5.QtCore import Qt
 
@@ -378,7 +378,7 @@ class FileLoadManager:
                     folder_path,
                     len(cached_files),
                 )
-                return cached_files
+                return cast(list[FileItem], cached_files)
 
         # Scan folder using unified scanning method (I/O operation)
         file_paths = self._get_files_from_folder(folder_path, recursive=False, sorted_output=True)

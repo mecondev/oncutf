@@ -275,10 +275,11 @@ class MetadataFieldValidator:
                         False,
                         f"Rotation must be exactly {valid_rot}°. Use one of: 0°, 90°, 180°, 270°",
                     )
+            else:
+                return False, "Rotation must be one of: 0°, 90°, 180°, 270°"
+
         except ValueError:
             return False, "Rotation must be a valid number (0, 90, 180, or 270)"
-        else:
-            return False, "Rotation must be one of: 0°, 90°, 180°, 270°"
 
     @staticmethod
     def parse_keywords(value: Any) -> list[str]:
