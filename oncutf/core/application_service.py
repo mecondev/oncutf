@@ -51,10 +51,9 @@ class ApplicationService:
             "splitter_manager",
         ]
 
-        missing_managers = []
-        for manager in required_managers:
-            if not hasattr(self.main_window, manager):
-                missing_managers.append(manager)
+        missing_managers = [
+            manager for manager in required_managers if not hasattr(self.main_window, manager)
+        ]
 
         if missing_managers:
             logger.warning("[ApplicationService] Missing managers: %s", missing_managers)
@@ -121,7 +120,7 @@ class ApplicationService:
         selected_files = self.main_window.get_selected_files_ordered()
         if not selected_files:
             logger.info("[ApplicationService] No files selected for hash calculation")
-            return
+            return None
 
         # Check which files need hash calculation
         hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(selected_files)
@@ -142,7 +141,7 @@ class ApplicationService:
                 "Hash Calculation",
                 message,
             )
-            return
+            return None
 
         return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(
             selected_files
@@ -155,7 +154,7 @@ class ApplicationService:
         )
         if not all_files:
             logger.info("[ApplicationService] No files available for hash calculation")
-            return
+            return None
 
         # Check which files need hash calculation
         hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(all_files)
@@ -170,7 +169,7 @@ class ApplicationService:
                 f"All {len(all_files)} file(s) already have checksums calculated.",
                 details=hash_analysis["selected_tooltip"],
             )
-            return
+            return None
 
         return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(all_files)
 

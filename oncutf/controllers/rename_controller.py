@@ -397,7 +397,7 @@ class RenameController:
                         "skipped_count": len(file_items),
                         "errors": [validation_result.get_summary()],
                     }
-                elif user_decision == "refresh":
+                if user_decision == "refresh":
                     logger.info("[RenameController] User requested preview refresh")
                     return {
                         "success": False,
@@ -407,7 +407,7 @@ class RenameController:
                         "errors": ["Preview refresh requested"],
                         "refresh_requested": True,
                     }
-                elif user_decision == "skip":
+                if user_decision == "skip":
                     logger.info(
                         "[RenameController] User chose to skip %d problematic files",
                         len(validation_result.issues),
