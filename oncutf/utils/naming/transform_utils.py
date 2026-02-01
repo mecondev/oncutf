@@ -192,9 +192,8 @@ def apply_transform(name: str, transform: str) -> str:
         result = re.sub(r"-+", "-", result)  # Multiple - → single -
 
         # Step 3: Strip any remaining leading/trailing spaces (shouldn't be any, but safety)
-        result = result.strip()
+        return result.strip()
 
-        return result
 
     if transform == "space":
         # Find first and last non-space character
@@ -220,8 +219,7 @@ def apply_transform(name: str, transform: str) -> str:
         body_result = re.sub(r"[_\-]+", " ", body)
 
         # Combine
-        result = f"{leading_result}{body_result}{trailing_result}".strip()
-        return result
+        return f"{leading_result}{body_result}{trailing_result}".strip()
 
     if transform == "greeklish":
         return to_greeklish(name)

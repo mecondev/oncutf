@@ -174,10 +174,9 @@ class Socket(Serializable):
             Tuple of (x, y) position relative to parent node.
 
         """
-        result = self.node.get_socket_position(
+        return self.node.get_socket_position(
             self.index, self.position, self.count_on_this_node_side
         )
-        return result
 
     def has_any_edge(self) -> bool:
         """Check if socket has any connected edges.

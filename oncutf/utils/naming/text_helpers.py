@@ -80,15 +80,13 @@ def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
             # Split the name part and add "..." in the middle
             name_start = available_length // 2
             name_end = available_length - name_start
-            truncated_name = name_part[:name_start] + "..." + name_part[-name_end:] + ext_part
-            return truncated_name
+            return name_part[:name_start] + "..." + name_part[-name_end:] + ext_part
 
     # Fallback: truncate in the middle without extension consideration
     if len(filename) > max_length:
         start_len = (max_length - 3) // 2  # 3 for "..."
         end_len = max_length - 3 - start_len
-        truncated_name = filename[:start_len] + "..." + filename[-end_len:]
-        return truncated_name
+        return filename[:start_len] + "..." + filename[-end_len:]
 
     return filename
 

@@ -841,7 +841,6 @@ class Node(Serializable):
             dump_exception(e)
 
         if isinstance(self.content, Serializable):
-            res = self.content.deserialize(data["content"], hashmap)
-            return res
+            return self.content.deserialize(data["content"], hashmap)
 
         return True

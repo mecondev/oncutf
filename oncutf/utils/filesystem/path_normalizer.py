@@ -52,6 +52,5 @@ def normalize_path(file_path: str | Path) -> str:
         normalized = os.path.normpath(str(file_path))
 
     # Ensure forward slashes for consistency in caching
-    normalized = normalized.replace("\\", "/")
+    return normalized.replace("\\", "/")
 
-    return normalized
