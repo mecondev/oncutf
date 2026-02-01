@@ -304,7 +304,7 @@ class TestMetadataKeyRegistry:
 
     def test_import_to_dict(self):
         """Test import_from_dict."""
-        pass  # Placeholder if needed or just remove if redundant
+        # Placeholder if needed or just remove if redundant
 
     def test_import_to_new_registry(self, tmp_path):
         """Test importing to a new registry."""

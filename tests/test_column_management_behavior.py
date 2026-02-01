@@ -70,7 +70,7 @@ class TableViewWithBehavior(QTableView):
 
     def _get_main_window(self):
         """Mock: return None for testing."""
-        return None
+        return
 
     def _load_column_width(self, section):
         """Mock: load column width from config."""
@@ -497,7 +497,7 @@ class TestConfigurationSchema:
 
     def test_config_has_required_fields(self, mock_config):
         """Test config has all required fields."""
-        for _col_name, col_config in mock_config["columns"].items():
+        for col_config in mock_config["columns"].values():
             assert "width" in col_config
             assert "visible" in col_config
             assert isinstance(col_config["width"], int)
@@ -505,7 +505,7 @@ class TestConfigurationSchema:
 
     def test_config_width_is_positive(self, mock_config):
         """Test all configured widths are positive."""
-        for _col_name, col_config in mock_config["columns"].items():
+        for col_config in mock_config["columns"].values():
             assert col_config["width"] > 0
 
     def test_config_column_order_present(self, mock_config):

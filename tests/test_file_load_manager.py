@@ -83,8 +83,7 @@ def manager(mock_parent_window, mock_drag_state):
     from oncutf.core.file.load_manager import FileLoadManager
 
     # Inject mock drag_state to avoid ApplicationContext dependency
-    mgr = FileLoadManager(mock_parent_window, drag_state=mock_drag_state)
-    return mgr
+    return FileLoadManager(mock_parent_window, drag_state=mock_drag_state)
 
 
 class TestFileLoadManagerInit:

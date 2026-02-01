@@ -105,7 +105,7 @@ class TestRenameIntegration:
         def mock_find_file(path):
             if path == "/test/folder/file1.txt":
                 return file1
-            elif path == "/test/folder/file2.txt":
+            if path == "/test/folder/file2.txt":
                 return file2
             return None
 
