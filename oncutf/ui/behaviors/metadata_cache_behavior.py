@@ -157,7 +157,7 @@ class MetadataCacheBehavior:
         if len(parts) == 1:
             # Top-level key
             return metadata.get(parts[0])
-        elif len(parts) == 2:
+        if len(parts) == 2:
             # Nested key (group/key)
             group, key = parts
             if group in metadata and isinstance(metadata[group], dict):
@@ -348,9 +348,12 @@ class MetadataCacheBehavior:
         elif len(parts) == 2:
             # Nested key (group/key)
             group, key = parts
-            if group in file_item.metadata and isinstance(file_item.metadata[group], dict):
-                if key in file_item.metadata[group]:
-                    del file_item.metadata[group][key]
+            if (
+                group in file_item.metadata
+                and isinstance(file_item.metadata[group], dict)
+                and key in file_item.metadata[group]
+            ):
+                del file_item.metadata[group][key]
 
     # =====================================
     # Icon Status Updates

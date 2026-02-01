@@ -511,8 +511,7 @@ class DragVisualManager:
         # Special handling for metadata drops (file_table -> metadata_tree)
         if self._drag_source == "file_table":
             # For metadata drops, only Shift matters (ignore Ctrl)
-            result = ModifierState.SHIFT if is_shift else ModifierState.NORMAL
-            return result
+            return ModifierState.SHIFT if is_shift else ModifierState.NORMAL
 
         # Normal drag operations (file/folder drops)
         # Check for Shift+Ctrl combination first (highest priority)
@@ -539,8 +538,7 @@ class DragVisualManager:
         """
         if Path(path).is_dir():
             return DragType.FOLDER
-        else:
-            return DragType.FILE
+        return DragType.FILE
 
     def is_valid_drop_target(self, widget: QWidget, drag_source: str) -> bool:
         """Check if widget is a valid drop target for the given drag source.
@@ -568,9 +566,8 @@ class DragVisualManager:
                     return True
 
             # FileTableView can only drop on MetadataTreeView
-            elif drag_source == "file_table":
-                if widget_class == "MetadataTreeView":
-                    return True
+            elif drag_source == "file_table" and widget_class == "MetadataTreeView":
+                return True
 
             # Move to parent widget
             current_widget = current_widget.parent()

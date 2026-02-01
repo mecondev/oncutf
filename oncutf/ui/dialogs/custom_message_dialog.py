@@ -442,7 +442,6 @@ class CustomMessageDialog(QDialog):
         dlg = CustomMessageDialog(
             "Please Wait", message, buttons=None, parent=parent, show_progress=True
         )
-        # dlg.setModal(True)
         dlg.show()
         dlg.raise_()
         dlg.activateWindow()

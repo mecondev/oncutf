@@ -186,10 +186,6 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Draw metadata/hash indicators (two circles, top-left)
         self._draw_metadata_indicators(painter, frame_rect, file_item)
 
-        # Draw color flag indicator (if set) - DEPRECATED, kept for compatibility
-        # if file_item.color and file_item.color.lower() != "none":
-        #     self._draw_color_flag(painter, frame_rect, file_item.color)
-
         # Draw video duration badge (if video)
         duration = getattr(file_item, "duration", None)
         if duration:

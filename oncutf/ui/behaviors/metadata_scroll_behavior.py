@@ -146,10 +146,9 @@ class MetadataScrollBehavior:
             return
 
         # Remove any existing equivalent paths first
-        keys_to_remove = []
-        for existing_path in path_dict:
-            if paths_equal(path, existing_path):
-                keys_to_remove.append(existing_path)
+        keys_to_remove = [
+            existing_path for existing_path in path_dict if paths_equal(path, existing_path)
+        ]
 
         for key in keys_to_remove:
             del path_dict[key]
@@ -172,12 +171,11 @@ class MetadataScrollBehavior:
             return False
 
         removed = False
-        keys_to_remove = []
 
         # Find all equivalent paths
-        for existing_path in path_dict:
-            if paths_equal(path, existing_path):
-                keys_to_remove.append(existing_path)
+        keys_to_remove = [
+            existing_path for existing_path in path_dict if paths_equal(path, existing_path)
+        ]
 
         # Remove them
         for key in keys_to_remove:

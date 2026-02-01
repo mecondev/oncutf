@@ -108,12 +108,11 @@ class ValidationIssuesDialog(QDialog):
                 f"{len(result.issues)} file(s) have critical issues.<br><br>"
                 "Please resolve these issues or skip affected files."
             )
-        else:
-            return (
-                f"<b>Warning:</b> {len(result.issues)} file(s) have been modified "
-                "since preview.<br><br>"
-                "You can continue, but results may differ from preview."
-            )
+        return (
+            f"<b>Warning:</b> {len(result.issues)} file(s) have been modified "
+            "since preview.<br><br>"
+            "You can continue, but results may differ from preview."
+        )
 
     def _populate_issues_list(self, list_widget: QListWidget) -> None:
         """Populate issues list widget.

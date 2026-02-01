@@ -175,8 +175,7 @@ class MetadataEditDialog(QDialog):
 
         # Then checkboxes (if multi-file mode)
         if self.is_multi_file:
-            for checkbox in self.checkboxes.values():
-                tab_widgets.append(checkbox)
+            tab_widgets.extend(self.checkboxes.values())
 
         # Set tab order
         for i in range(len(tab_widgets) - 1):
@@ -282,14 +281,13 @@ class MetadataEditDialog(QDialog):
             "rw2",
         ]:
             return "Images"
-        elif ext in ["mp4", "avi", "mov", "mkv", "wmv", "flv", "m4v", "webm"]:
+        if ext in ["mp4", "avi", "mov", "mkv", "wmv", "flv", "m4v", "webm"]:
             return "Videos"
-        elif ext in ["mp3", "wav", "flac", "aac", "m4a", "ogg", "opus"]:
+        if ext in ["mp3", "wav", "flac", "aac", "m4a", "ogg", "opus"]:
             return "Audio"
-        elif ext in ["pdf", "doc", "docx", "txt"]:
+        if ext in ["pdf", "doc", "docx", "txt"]:
             return "Documents"
-        else:
-            return "Other"
+        return "Other"
 
     def _create_input_field(self):
         """Create the input field using validated input widgets."""
@@ -336,17 +334,15 @@ class MetadataEditDialog(QDialog):
                     if modifiers & Qt.ShiftModifier:
                         # Shift+Enter: Insert new line (default behavior)
                         return False  # Let QTextEdit handle it
-                    else:
-                        # Enter: Accept dialog
-                        self._validate_and_accept()
-                        return True  # Event handled
-                else:
-                    # For single line fields (QLineEdit): Enter always accepts
+                    # Enter: Accept dialog
                     self._validate_and_accept()
                     return True  # Event handled
+                # For single line fields (QLineEdit): Enter always accepts
+                self._validate_and_accept()
+                return True  # Event handled
 
             # Handle Escape key
-            elif event.key() == Qt.Key_Escape:
+            if event.key() == Qt.Key_Escape:
                 self.reject()
                 return True  # Event handled
 
@@ -368,15 +364,17 @@ class MetadataEditDialog(QDialog):
 
     def _on_validation_state_changed(self, is_valid: bool) -> None:
         """Handle validation state changes from the input widget."""
-        if not is_valid:
+        if (
+            not is_valid
+            and hasattr(self.input_field, "get_validation_error_message")
+        ):
             # Get error message from the input widget
-            if hasattr(self.input_field, "get_validation_error_message"):
-                error_message = self.input_field.get_validation_error_message()
-                if error_message:
-                    self.info_label.setText(f"Error: {error_message}")
-                    theme = get_theme_manager()
-                    self._apply_info_label_style(theme.get_color("error"))
-                    return
+            error_message = self.input_field.get_validation_error_message()
+            if error_message:
+                self.info_label.setText(f"Error: {error_message}")
+                theme = get_theme_manager()
+                self._apply_info_label_style(theme.get_color("error"))
+                return
 
         # Reset to normal validation info if valid
         self._update_validation_info()
@@ -400,15 +398,18 @@ class MetadataEditDialog(QDialog):
         value = self.input_field.text()
 
         # Check if the input widget is valid
-        if hasattr(self.input_field, "is_valid") and not self.input_field.is_valid():
+        if (
+            hasattr(self.input_field, "is_valid")
+            and not self.input_field.is_valid()
+            and hasattr(self.input_field, "get_validation_error_message")
+        ):
             # Get error message from the input widget
-            if hasattr(self.input_field, "get_validation_error_message"):
-                error_message = self.input_field.get_validation_error_message()
-                if error_message:
-                    self.info_label.setText(f"Error: {error_message}")
-                    theme = get_theme_manager()
-                    self._apply_info_label_style(theme.get_color("error"))
-                    return
+            error_message = self.input_field.get_validation_error_message()
+            if error_message:
+                self.info_label.setText(f"Error: {error_message}")
+                theme = get_theme_manager()
+                self._apply_info_label_style(theme.get_color("error"))
+                return
 
         # Additional validation using ValidationService
         is_valid, error_message = get_validation_service().validate_field(self.field_name, value)
