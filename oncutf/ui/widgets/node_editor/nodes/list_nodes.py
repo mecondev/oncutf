@@ -79,14 +79,13 @@ class CreateListNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("CreateListNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(91)
@@ -192,14 +191,13 @@ class GetItemNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("GetItemNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(92)
@@ -273,14 +271,13 @@ class ListLengthNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("ListLengthNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(93)
@@ -368,14 +365,13 @@ class AppendNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("AppendNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(94)
@@ -458,11 +454,10 @@ class JoinNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("JoinNode eval error: %s", e)
             return None
+        else:
+            return self.value

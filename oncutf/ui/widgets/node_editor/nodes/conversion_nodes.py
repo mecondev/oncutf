@@ -85,14 +85,13 @@ class ToStringNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("ToStringNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(71)
@@ -178,9 +177,6 @@ class ToNumberNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except ValueError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Invalid number format: {e}")
@@ -191,6 +187,8 @@ class ToNumberNode(Node):
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("ToNumberNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(72)
@@ -268,14 +266,13 @@ class ToBoolNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("ToBoolNode eval error: %s", e)
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(73)
@@ -363,9 +360,6 @@ class ToIntNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except ValueError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Invalid integer format: {e}")
@@ -376,3 +370,5 @@ class ToIntNode(Node):
             self.graphics_node.setToolTip(f"Error: {e}")
             logger.error("ToIntNode eval error: %s", e)
             return None
+        else:
+            return self.value
