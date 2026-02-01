@@ -93,8 +93,7 @@ class HashResultsPresenter:
 
         for i, (hash_val, files) in enumerate(duplicates.items(), 1):
             message_lines.append(f"Group {i} ({len(files)} files):")
-            for file_item in files:
-                message_lines.append(f"  • {file_item.filename}")
+            message_lines.extend(f"  • {file_item.filename}" for file_item in files)
             message_lines.append(f"  Hash: {hash_val[:16]}...")
             message_lines.append("")
 

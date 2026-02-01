@@ -149,9 +149,8 @@ class RenameHistoryManager:
                     len(renames),
                 )
                 return operation_id
-            else:
-                logger.error("[RenameHistoryManager] Failed to record rename batch")
-                return ""
+            logger.error("[RenameHistoryManager] Failed to record rename batch")
+            return ""
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error recording rename batch: %s", e)
@@ -179,19 +178,16 @@ class RenameHistoryManager:
             operations = self._db_manager.get_rename_history(limit)
 
             # Format for UI display
-            formatted_operations = []
-            for op in operations:
-                formatted_operations.append(
-                    {
-                        "operation_id": op["operation_id"],
-                        "timestamp": op["operation_time"],
-                        "file_count": op["file_count"],
-                        "operation_type": op["operation_type"],
-                        "display_text": f"Renamed {op['file_count']} file(s) - {op['operation_time'][:19].replace('T', ' ')}",
-                    }
-                )
-
-            return formatted_operations
+            return [
+                {
+                    "operation_id": op["operation_id"],
+                    "timestamp": op["operation_time"],
+                    "file_count": op["file_count"],
+                    "operation_type": op["operation_type"],
+                    "display_text": f"Renamed {op['file_count']} file(s) - {op['operation_time'][:19].replace('T', ' ')}",
+                }
+                for op in operations
+            ]
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error retrieving recent operations: %s", e)
@@ -377,9 +373,8 @@ class RenameHistoryManager:
                 failed_names = [op.new_filename for op, _ in failed_reverts[:3]]
                 message = f"Undid {success_count}/{total_files} files. Failed: {', '.join(failed_names)}{'...' if len(failed_reverts) > 3 else ''}"
                 return success_count > 0, message, success_count
-            else:
-                message = f"Successfully undid rename operation for {success_count} files"
-                return True, message, success_count
+            message = f"Successfully undid rename operation for {success_count} files"
+            return True, message, success_count
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error during undo operation: %s", e)

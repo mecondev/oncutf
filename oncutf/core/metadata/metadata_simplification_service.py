@@ -240,10 +240,7 @@ class MetadataSimplificationService:
         specific_fields = []
 
         # Collect all semantic aliases that resolve to available keys
-        for (
-            semantic_name,
-            _original_keys_list,
-        ) in self._registry._semantic_index.items():
+        for semantic_name in self._registry._semantic_index:
             resolved = self._registry.resolve_key_with_fallback(semantic_name, available_keys)
             if resolved:
                 value = original_metadata.get(resolved)
