@@ -229,12 +229,11 @@ class StructuredMetadataManager:
             field_data = structured_data.get(field_key)
             return field_data["value"] if field_data else None
 
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "[StructuredMetadataManager] Error getting field '%s' for %s",
                 field_key,
                 file_path,
-                e,
             )
             return None
 

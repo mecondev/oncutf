@@ -93,7 +93,7 @@ class ShutdownLifecycleHandler:
                             )
                     else:
                         logger.warning("[CloseEvent] MetadataManager not available for saving")
-                except Exception:
+                except Exception as save_error:
                     logger.exception("[CloseEvent] Failed to save metadata before closing")
                     # Show error but continue closing anyway
                     from oncutf.ui.dialogs.custom_message_dialog import (
@@ -103,7 +103,7 @@ class ShutdownLifecycleHandler:
                     CustomMessageDialog.information(
                         self.main_window,
                         "Save Error",
-                        f"Failed to save metadata changes:\n{e}\n\nClosing anyway.",
+                        f"Failed to save metadata changes:\n{save_error}\n\nClosing anyway.",
                     )
             # If reply == "close_without_saving", we just continue with closing
 
