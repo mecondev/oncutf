@@ -82,9 +82,11 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # --------------------------
 # mypy configuration
 # --------------------------
-# Stricter checking for new architecture (app/domain/infra)
-# Qt/UI errors are suppressed via disable_error_code in Tier 3 overrides.
-# Tier 1-2 modules are fully strict. See overrides below for module categorization.
+# STRICT type checking for new architecture (app/domain/infra)
+# Tier 1: Full --strict mode (app/domain/infra)
+# Tier 2: Pragmatic strict (controllers/core/models) - disallow_untyped_defs + warn_return_any
+# Tier 3: Qt/UI with targeted suppression via disable_error_code
+# All tiers: check_untyped_defs, strict_equality, warn_unreachable enabled globally
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
@@ -98,13 +100,14 @@ pretty = true
 exclude = '(^|/)(backups|\.cache|temp|reports|scripts|tools|examples)(/|$)|oncutf/ui/resources_rc\.py|oncutf/resources_rc\.py'
 check_untyped_defs = true
 
+
 # Stricter defaults for all modules
 disallow_untyped_defs = false  # Enable gradually per tier
 disallow_any_unimported = false
 disallow_any_expr = false
 disallow_any_decorated = false
 disallow_any_explicit = false
-warn_return_any = false  # Enable in Tier 1 only
+warn_return_any = false  # Enabled only for Tier 1 (app/domain/infra)
 
 [[tool.mypy.overrides]]
 module = "oncutf.*"
@@ -151,6 +154,7 @@ disallow_any_decorated = true
 disallow_incomplete_defs = true
 disallow_untyped_calls = true
 disallow_untyped_decorators = true
+extra_checks = true
 
 # ============================================================
 # Tier 2 — Controllers / Services (legacy) — GRADUAL STRICT
@@ -170,6 +174,7 @@ disallow_untyped_defs = true  # Enforce typed functions
 warn_return_any = true  # Stricter return type checking
 no_implicit_reexport = true  # Require explicit __all__ for re-exports
 strict_optional = true  # Stricter None checking
+disallow_incomplete_defs = true
 
 # ============================================================
 # Tier 3 — Qt / UI / glue code (targeted error suppression)
@@ -308,6 +313,8 @@ select = [
     "PIE",  # flake8-pie (misc lints)
     "T20",  # flake8-print (avoid print statements)
     "RSE",  # flake8-raise (exception raising improvements)
+    "FBT",  # flake8-boolean-trap (boolean parameters)
+    "ARG",  # flake8-unused-arguments
 ]
 # Further reduced ignores - stricter enforcement
 ignore = [
@@ -320,7 +327,6 @@ ignore = [
     
     # Exception handling (gradual adoption)
     "TRY003", # avoid-specifying-long-messages-outside-exception-class (100+ violations)
-    "TRY400", # error-instead-of-exception (legacy code pattern)
     
     # Print statements (allowed in scripts/debug)
     "T201",   # print-found (intentional in CLI/debug contexts)
@@ -347,6 +353,18 @@ ignore = [
     "ANN205", # missing-return-type-static-method (1 violation)
     "ANN206", # missing-return-type-class-method (2 violations)
     "ANN401", # any-type (397 violations) - will enable selectively
+    
+    # Boolean trap (gradual adoption)
+    "FBT001", # boolean-positional-arg-in-function-definition
+    "FBT002", # boolean-default-value-in-function-definition
+    "FBT003", # boolean-positional-value-in-function-call
+    
+    # Unused arguments (gradual adoption - many Qt overrides)
+    "ARG001", # unused-function-argument
+    "ARG002", # unused-method-argument
+    "ARG003", # unused-class-method-argument
+    "ARG004", # unused-static-method-argument
+    "ARG005", # unused-lambda-argument
 ]
 
 # Per-file ignores for scripts and utilities
