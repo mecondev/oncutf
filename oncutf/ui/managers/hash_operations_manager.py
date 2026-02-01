@@ -401,13 +401,16 @@ class HashOperationsManager:
 
         """
         # Refresh file table icons to show new hash status
-        if hasattr(self.parent_window, "file_model") and self.parent_window.file_model:
-            if hasattr(self.parent_window.file_model, "refresh_icons"):
-                self.parent_window.file_model.refresh_icons()
-                logger.debug(
-                    "[HashManager] Refreshed file table icons after hash operation",
-                    extra={"dev_only": True},
-                )
+        if (
+            hasattr(self.parent_window, "file_model")
+            and self.parent_window.file_model
+            and hasattr(self.parent_window.file_model, "refresh_icons")
+        ):
+            self.parent_window.file_model.refresh_icons()
+            logger.debug(
+                "[HashManager] Refreshed file table icons after hash operation",
+                extra={"dev_only": True},
+            )
 
         # Notify preview manager about hash calculation completion
         if hasattr(self.parent_window, "preview_manager") and self.parent_window.preview_manager:

@@ -512,13 +512,16 @@ class UnifiedMetadataManager(QObject):
         if not hasattr(self.parent_window, "metadata_tree_view"):
             return
         tree = self.parent_window.metadata_tree_view
-        if hasattr(tree, "_current_file_path") and tree._current_file_path == file_item.full_path:
-            if hasattr(self.parent_window, "metadata_cache"):
-                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if entry and hasattr(entry, "data"):
-                    display_data = dict(entry.data)
-                    display_data["FileName"] = file_item.filename
-                    tree.display_metadata(display_data, context="after_save")
+        if (
+            hasattr(tree, "_current_file_path")
+            and tree._current_file_path == file_item.full_path
+            and hasattr(self.parent_window, "metadata_cache")
+        ):
+            entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if entry and hasattr(entry, "data"):
+                display_data = dict(entry.data)
+                display_data["FileName"] = file_item.filename
+                tree.display_metadata(display_data, context="after_save")
 
     def _show_save_results(
         self,

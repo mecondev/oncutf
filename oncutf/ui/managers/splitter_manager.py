@@ -267,12 +267,14 @@ class SplitterManager:
         This is useful when splitter movements affect column layouts.
         """
         # For file table, use the original sophisticated logic
-        if hasattr(self.parent_window, "file_table_view"):
+        if (
+            hasattr(self.parent_window, "file_table_view")
+            and hasattr(self.parent_window, "horizontal_splitter")
+        ):
             # Use existing splitter logic for column sizing (original implementation)
-            if hasattr(self.parent_window, "horizontal_splitter"):
-                sizes = self.parent_window.horizontal_splitter.sizes()
-                self.parent_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
-                logger.debug("[SplitterManager] Triggered original file table column adjustment")
+            sizes = self.parent_window.horizontal_splitter.sizes()
+            self.parent_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
+            logger.debug("[SplitterManager] Triggered original file table column adjustment")
 
         # Use ColumnManager for other table views that don't have sophisticated logic
         if hasattr(self.parent_window, "column_manager"):
