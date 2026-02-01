@@ -99,12 +99,11 @@ class StructuredMetadataManager:
                     Path(file_path).name,
                 )
                 return stored_count > 0
-            else:
-                logger.debug(
-                    "[StructuredMetadataManager] No valid fields to store for %s",
-                    Path(file_path).name,
-                )
-                return True
+            logger.debug(
+                "[StructuredMetadataManager] No valid fields to store for %s",
+                Path(file_path).name,
+            )
+            return True
 
         except Exception as e:
             logger.error(
@@ -131,44 +130,41 @@ class StructuredMetadataManager:
                 return str(field_value)
 
             data_type = field_info.get("data_type", "text")
-            # display_format = field_info.get('display_format')
 
             # Handle different data types
             if data_type == "number":
                 if isinstance(field_value, int | float):
                     return str(field_value)
-                else:
-                    # Try to extract number from string
-                    import re
+                # Try to extract number from string
+                import re
 
-                    match = re.search(r"[\d.]+", str(field_value))
-                    if match:
-                        return match.group()
-                    return str(field_value)
+                match = re.search(r"[\d.]+", str(field_value))
+                if match:
+                    return match.group()
+                return str(field_value)
 
-            elif data_type == "size":
+            if data_type == "size":
                 # Handle file size formatting
                 if isinstance(field_value, int | float):
                     return str(int(field_value))
                 return str(field_value)
 
-            elif data_type == "datetime":
+            if data_type == "datetime":
                 # Handle datetime formatting
                 return str(field_value)
 
-            elif data_type == "duration":
+            if data_type == "duration":
                 # Handle duration formatting
                 return str(field_value)
 
-            elif data_type == "coordinate":
+            if data_type == "coordinate":
                 # Handle GPS coordinate formatting
                 if isinstance(field_value, int | float):
                     return f"{field_value:.6f}"
                 return str(field_value)
 
-            else:
-                # Default to string
-                return str(field_value)
+            # Default to string
+            return str(field_value)
 
         except Exception as e:
             logger.error(
@@ -264,8 +260,7 @@ class StructuredMetadataManager:
                     return []
 
                 return self.db_manager.get_metadata_fields(category_info["id"])
-            else:
-                return self.db_manager.get_metadata_fields()
+            return self.db_manager.get_metadata_fields()
 
         except Exception as e:
             logger.error("[StructuredMetadataManager] Error getting available fields: %s", e)

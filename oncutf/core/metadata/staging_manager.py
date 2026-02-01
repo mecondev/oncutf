@@ -39,7 +39,6 @@ class MetadataStagingManager(QObject):
     def __init__(self, parent: Any = None) -> None:
         """Initialize the staging manager with empty change tracking."""
         super().__init__(parent)
-        # Structure: { normalized_file_path: { key: value } }
         self._staged_changes: dict[str, dict[str, str]] = {}
         logger.debug("MetadataStagingManager initialized", extra={"dev_only": True})
 

@@ -275,12 +275,11 @@ class ParallelMetadataLoader:
                     del metadata["__extended__"]
 
                 return metadata
-            else:
-                logger.warning(
-                    "[ParallelMetadataLoader] No metadata returned for %s",
-                    item.filename,
-                )
-                return {}
+            logger.warning(
+                "[ParallelMetadataLoader] No metadata returned for %s",
+                item.filename,
+            )
+            return {}
 
         except Exception as e:
             logger.exception(
@@ -305,12 +304,11 @@ class ParallelMetadataLoader:
         """
         if total_files <= 10:
             return 1  # Process individually for immediate feedback
-        elif total_files <= 50:
+        if total_files <= 50:
             return 5  # Small batches for good balance
-        elif total_files <= 200:
+        if total_files <= 200:
             return 10  # Medium batches
-        else:
-            return 20  # Large batches for efficiency
+        return 20  # Large batches for efficiency
 
     def cancel(self) -> None:
         """Cancel ongoing metadata loading."""

@@ -69,9 +69,8 @@ class SemanticAliasesManager:
                 )
                 self._create_default_file()
                 return self._load_from_file()
-            else:
-                logger.warning("Semantic aliases file not found: %s", self._aliases_file)
-                return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
+            logger.warning("Semantic aliases file not found: %s", self._aliases_file)
+            return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
         return self._load_from_file()
 
