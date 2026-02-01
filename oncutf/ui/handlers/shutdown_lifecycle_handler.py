@@ -71,7 +71,7 @@ class ShutdownLifecycleHandler:
                 # User wants to cancel closing
                 event.ignore()
                 return
-            elif reply == "save_and_close":
+            if reply == "save_and_close":
                 # User wants to save changes before closing
                 try:
                     # Save all modified metadata with exit save flag

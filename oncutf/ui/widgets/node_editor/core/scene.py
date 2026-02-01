@@ -593,7 +593,4 @@ class Scene(Serializable):
 
         """
         # Placeholder for future migrations
-        # Example:
-        # if from_version < "1.0.0":
-        #     data = self._migrate_0_9_to_1_0(data)
         return data

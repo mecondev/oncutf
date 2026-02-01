@@ -345,8 +345,7 @@ class ToIntNode(Node):
             elif isinstance(input_value, int):
                 self.value = input_value
             elif isinstance(input_value, float):
-                # Truncate (not round)
-                self.value = int(input_value)
+                self.value = int(input_value)  # Truncate (not round)
             elif isinstance(input_value, str):
                 # Try to parse string
                 self.value = int(input_value)

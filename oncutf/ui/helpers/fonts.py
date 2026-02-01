@@ -114,9 +114,8 @@ class InterFonts:
                 font.setItalic(True)
 
             return font
-        else:
-            logger.warning("Font key '%s' not loaded, using system default", font_key)
-            return QFont("Arial", scaled_size)
+        logger.warning("Font key '%s' not loaded, using system default", font_key)
+        return QFont("Arial", scaled_size)
 
     def get_css_weight(self, use_case: str) -> int:
         """Get CSS font-weight value for use case."""
@@ -149,8 +148,7 @@ class InterFonts:
 
         if font_key in self.font_families:
             return self.font_families[font_key]
-        else:
-            return "Arial"  # Fallback
+        return "Arial"  # Fallback
 
     def create_stylesheet_fonts(self) -> str:
         """Create CSS stylesheet with font definitions."""
@@ -330,6 +328,5 @@ def get_default_ui_font(size: int = 10, style: str = "regular") -> QFont:
 
     if DEFAULT_UI_FONT == "jetbrains":
         return get_jetbrains_font(style=style, size=adjusted_size)
-    else:
-        # Default to Inter
-        return get_inter_font(use_case="body", size=adjusted_size)
+    # Default to Inter
+    return get_inter_font(use_case="body", size=adjusted_size)

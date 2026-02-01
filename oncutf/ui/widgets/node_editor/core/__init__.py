@@ -57,7 +57,6 @@ def _init_graphics_classes():
 
 # NOTE: Graphics classes are initialized lazily on first use
 # to avoid circular import issues at module initialization time
-# _init_graphics_classes()
 
 __all__ = [
     "EDGE_TYPE_BEZIER",

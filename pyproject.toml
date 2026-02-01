@@ -377,8 +377,8 @@ ignore = [
 "oncutf/core/file/operations_manager.py" = ["ANN401"]  # Qt parent, dynamic cache, callback
 "oncutf/core/file/load_manager.py" = ["ANN401"]  # Qt parent, FileStore duck typing
 "oncutf/core/cache/advanced_cache_manager.py" = ["ANN401"]  # Generic cache values
-# Tests - exclude from type annotation requirements
-"tests/**/*.py" = ["ANN"]  # Test code can remain loosely typed
+# Tests - exclude from type annotation requirements and ERA001 (commented-out code)
+"tests/**/*.py" = ["ANN", "ERA001"]  # Test code can remain loosely typed, may include documented code examples
 
 [tool.ruff.lint.isort]
 force-single-line = false

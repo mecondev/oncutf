@@ -117,16 +117,15 @@ class DragZoneValidator:
                     extra={"dev_only": True},
                 )
                 return
-            else:
-                # Returned to initial widget after leaving - now show as INVALID
-                cls._set_cursor_state(DropZoneState.INVALID)
-                logger.debug(
-                    "%s INVALID zone (returned to initial after leaving): %s",
-                    log_prefix,
-                    widget_class_name,
-                    extra={"dev_only": True},
-                )
-                return
+            # Returned to initial widget after leaving - now show as INVALID
+            cls._set_cursor_state(DropZoneState.INVALID)
+            logger.debug(
+                "%s INVALID zone (returned to initial after leaving): %s",
+                log_prefix,
+                widget_class_name,
+                extra={"dev_only": True},
+            )
+            return
 
         # Normal validation logic for non-initial widgets
         rules = cls.ZONE_RULES.get(drag_source, {})
@@ -184,10 +183,9 @@ class DragZoneValidator:
 
         if widget_class_name in rules["valid"]:
             return True
-        elif widget_class_name in rules["invalid"]:
+        if widget_class_name in rules["invalid"]:
             return False
-        else:
-            return None
+        return None
 
     @classmethod
     def _set_cursor_state(cls, state: DropZoneState) -> None:

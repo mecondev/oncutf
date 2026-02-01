@@ -436,8 +436,6 @@ class MetadataTreeView(QTreeView):
             # Update header visibility after mode configuration
             self._view_config.update_header_visibility()
 
-    # _apply_scroll_position_immediately (implemented in mixin)
-
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content. Delegates to view config."""
         return self._view_config.detect_placeholder_mode(model)

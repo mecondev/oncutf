@@ -66,9 +66,6 @@ class RenameModulesArea(QWidget):
         main_layout.setContentsMargins(6, 2, 6, 2)  # Reduced bottom margin from 6 to 2
         main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
-        # No spacing at the top for testing - direct alignment with preview labels
-        # main_layout.addSpacing(0)  # Commented out for zero spacing
-
         # Scrollable module container
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("rename_modules_scroll")

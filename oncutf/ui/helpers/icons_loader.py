@@ -200,9 +200,8 @@ class ThemeIconLoader:
         if favicon_path.exists():
             logger.debug("[IconLoader] Loading app icon from: %s", favicon_path)
             return QIcon(str(favicon_path))
-        else:
-            logger.warning("[IconLoader] App icon not found at: %s", favicon_path)
-            return QIcon()
+        logger.warning("[IconLoader] App icon not found at: %s", favicon_path)
+        return QIcon()
 
 
 # Create a singleton instance for global use

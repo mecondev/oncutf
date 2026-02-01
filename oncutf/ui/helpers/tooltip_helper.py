@@ -212,7 +212,7 @@ class ActionTooltipFilter(QObject):
             # Suppress default Qt tooltips
             return True
 
-        elif event.type() == QEvent.MouseMove:
+        if event.type() == QEvent.MouseMove:
             # Find action under mouse
             action = self.menu.actionAt(event.pos())
 
@@ -300,7 +300,7 @@ class ItemTooltipFilter(QObject):
             # Suppress default Qt tooltips
             return True
 
-        elif event.type() == QEvent.MouseMove:
+        if event.type() == QEvent.MouseMove:
             # Find item under mouse
             if isinstance(self.widget, QListWidget):
                 item = self.widget.itemAt(event.pos())
@@ -814,10 +814,9 @@ class TreeViewTooltipFilter(QObject):
                         return False
                 # Tooltip already showing for this row - do nothing, let it stay
                 return True  # Event handled
-            else:
-                # No tooltip for this item - clear any existing tooltips
-                TooltipHelper.clear_tooltips_for_widget(self.view_widget)
-                self._last_row = None
+            # No tooltip for this item - clear any existing tooltips
+            TooltipHelper.clear_tooltips_for_widget(self.view_widget)
+            self._last_row = None
 
             return False
 
