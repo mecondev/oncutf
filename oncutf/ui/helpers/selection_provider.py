@@ -121,7 +121,7 @@ class SelectionProvider:
             app_service = parent_window.application_service
             if ordered and hasattr(app_service, "get_selected_files_ordered"):
                 return app_service.get_selected_files_ordered()
-            elif hasattr(app_service, "get_selected_files"):
+            if hasattr(app_service, "get_selected_files"):
                 return app_service.get_selected_files()
         return None
 
@@ -169,8 +169,7 @@ class SelectionProvider:
             return None
 
         # Get checked files
-        checked_files = [f for f in file_model.files if f.checked]
-        return checked_files
+        return [f for f in file_model.files if f.checked]
 
     @classmethod
     def get_selected_rows(cls, parent_window: Any) -> set[int]:

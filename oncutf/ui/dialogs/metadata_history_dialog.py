@@ -269,36 +269,36 @@ class MetadataHistoryDialog(QDialog):
             all_operations = []
 
             # Add metadata commands
-            for cmd in metadata_commands:
-                all_operations.append(
-                    {
-                        "timestamp": cmd["timestamp"],
-                        "operation": cmd["description"],
-                        "file": self._get_file_basename(cmd["file_path"]),
-                        "status": (
-                            "Can Undo"
-                            if cmd["can_undo"]
-                            else "Can Redo"
-                            if cmd["can_redo"]
-                            else "Done"
-                        ),
-                        "type": "metadata",
-                        "data": cmd,
-                    }
-                )
+            all_operations.extend(
+                {
+                    "timestamp": cmd["timestamp"],
+                    "operation": cmd["description"],
+                    "file": self._get_file_basename(cmd["file_path"]),
+                    "status": (
+                        "Can Undo"
+                        if cmd["can_undo"]
+                        else "Can Redo"
+                        if cmd["can_redo"]
+                        else "Done"
+                    ),
+                    "type": "metadata",
+                    "data": cmd,
+                }
+                for cmd in metadata_commands
+            )
 
             # Add rename operations
-            for op in rename_operations:
-                all_operations.append(
-                    {
-                        "timestamp": op["timestamp"],
-                        "operation": op["display_text"],
-                        "file": f"{op['file_count']} files",
-                        "status": "Rename Operation",
-                        "type": "rename",
-                        "data": op,
-                    }
-                )
+            all_operations.extend(
+                {
+                    "timestamp": op["timestamp"],
+                    "operation": op["display_text"],
+                    "file": f"{op['file_count']} files",
+                    "status": "Rename Operation",
+                    "type": "rename",
+                    "data": op,
+                }
+                for op in rename_operations
+            )
 
             # Sort by timestamp (most recent first)
             # Cast timestamp to float for sorting (timestamps are numeric)

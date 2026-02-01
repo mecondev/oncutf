@@ -53,7 +53,6 @@ def inject_font_family(qss_string: str, widget_type: str | None = None) -> str:
 
     """
     # Replace common Inter font chain
-    result = qss_string.replace(
+    return qss_string.replace(
         '"Inter", "Segoe UI", Arial, sans-serif', get_font_family_css(widget_type)
     )
-    return result

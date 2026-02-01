@@ -17,9 +17,6 @@ from PyQt5.QtCore import QMimeData
 
 from oncutf.config import ALLOWED_EXTENSIONS
 
-# Custom dialogs will be imported when connected
-# from oncutf.ui.widgets.custommsg_dialog import show_recursive_dialog, show_rejected_dialog
-
 
 DropType = Literal["single_folder", "multiple_folders", "files", "mixed", "unknown"]
 

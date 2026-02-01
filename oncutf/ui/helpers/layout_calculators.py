@@ -103,9 +103,7 @@ def calculate_dynamic_filename_width(
     """
     fixed_total = sum(fixed_column_widths.values())
     available = panel_width - fixed_total - reserved_space
-    width = max(available, min_width)
-
-    return width
+    return max(available, min_width)
 
 
 def get_metadata_tree_widths_from_ratios(
