@@ -83,7 +83,7 @@ class SessionStateStore:
                 self.connection.commit()
                 logger.debug("[SessionStateStore] Table ensured")
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to create table: %s", e)
+            logger.exception("[SessionStateStore] Failed to create table")
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get session state value by key.
@@ -116,7 +116,7 @@ class SessionStateStore:
             if value_type == "bool":
                 return value.lower() == "true"
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to get key '%s': %s", key, e)
+            logger.exception("[SessionStateStore] Failed to get key '%s'", key)
             return default
         except (json.JSONDecodeError, ValueError) as e:
             logger.warning("[SessionStateStore] Failed to deserialize '%s': %s", key, e)
@@ -173,10 +173,10 @@ class SessionStateStore:
                 value_type,
             )
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to set key '%s': %s", key, e)
+            logger.exception("[SessionStateStore] Failed to set key '%s'", key)
             return False
         except TypeError as e:
-            logger.error("[SessionStateStore] Failed to serialize '%s': %s", key, e)
+            logger.exception("[SessionStateStore] Failed to serialize '%s'", key)
             return False
         else:
             return True
@@ -201,7 +201,7 @@ class SessionStateStore:
             if deleted:
                 logger.debug("[SessionStateStore] Deleted key '%s'", key)
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to delete key '%s': %s", key, e)
+            logger.exception("[SessionStateStore] Failed to delete key '%s'", key)
             return False
         else:
             return deleted
@@ -234,7 +234,7 @@ class SessionStateStore:
                     result[key] = value
 
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to get all: %s", e)
+            logger.exception("[SessionStateStore] Failed to get all")
 
         return result
 
@@ -284,7 +284,7 @@ class SessionStateStore:
 
             logger.debug("[SessionStateStore] Set %d keys atomically", len(data))
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to set_many: %s", e)
+            logger.exception("[SessionStateStore] Failed to set_many")
             return False
         else:
             return True
@@ -304,7 +304,7 @@ class SessionStateStore:
 
             logger.info("[SessionStateStore] Cleared all session state")
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to clear: %s", e)
+            logger.exception("[SessionStateStore] Failed to clear")
             return False
         else:
             return True
@@ -325,5 +325,5 @@ class SessionStateStore:
             return cursor.fetchone() is not None
 
         except sqlite3.Error as e:
-            logger.error("[SessionStateStore] Failed to check key '%s': %s", key, e)
+            logger.exception("[SessionStateStore] Failed to check key '%s'", key)
             return False

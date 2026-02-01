@@ -295,14 +295,14 @@ class BatchOperationsManager:
             )
 
         except Exception as e:
-            logger.error("[BatchOps] Error flushing %s: %s", batch_type, e)
+            logger.exception("[BatchOps] Error flushing %s", batch_type)
             # Execute callbacks with error
             for operation in batch:
                 if operation.callback:
                     try:
                         operation.callback(success=False, error=e)
                     except Exception as callback_error:
-                        logger.error("[BatchOps] Callback error: %s", callback_error)
+                        logger.exception("[BatchOps] Callback error")
         finally:
             # Clear the batch
             self._batches[batch_type].clear()
@@ -353,10 +353,9 @@ class BatchOperationsManager:
                             operation.callback(success=True)
 
                     except Exception as e:
-                        logger.error(
-                            "[BatchOps] Metadata set failed for %s: %s",
+                        logger.exception(
+                            "[BatchOps] Metadata set failed for %s",
                             operation.key,
-                            e,
                         )
                         if operation.callback:
                             operation.callback(success=False, error=e)
@@ -366,7 +365,7 @@ class BatchOperationsManager:
                     cache.commit_batch()
 
             except Exception as e:
-                logger.error("[BatchOps] Metadata batch failed: %s", e)
+                logger.exception("[BatchOps] Metadata batch failed")
                 if hasattr(cache, "rollback_batch"):
                     cache.rollback_batch()
 
@@ -414,7 +413,7 @@ class BatchOperationsManager:
                         operation.callback(success=True)
 
                 except Exception as e:
-                    logger.error("[BatchOps] Hash store failed for %s: %s", operation.key, e)
+                    logger.exception("[BatchOps] Hash store failed for %s", operation.key)
                     if operation.callback:
                         operation.callback(success=False, error=e)
 
@@ -423,7 +422,7 @@ class BatchOperationsManager:
                 cache.commit_batch()
 
         except Exception as e:
-            logger.error("[BatchOps] Hash batch failed: %s", e)
+            logger.exception("[BatchOps] Hash batch failed")
             if hasattr(cache, "rollback_batch"):
                 cache.rollback_batch()
 
@@ -465,12 +464,12 @@ class BatchOperationsManager:
                                 operation.callback(success=True, result=result)
 
                         except Exception as e:
-                            logger.error("[BatchOps] DB query failed: %s: %s", query, e)
+                            logger.exception("[BatchOps] DB query failed: %s", query)
                             if operation.callback:
                                 operation.callback(success=False, error=e)
 
             except Exception as e:
-                logger.error("[BatchOps] DB batch failed for %s: %s", query_type, e)
+                logger.exception("[BatchOps] DB batch failed for %s", query_type)
 
         logger.debug("[BatchOps] DB batch: %d/%d successful", success_count, len(operations))
 
@@ -525,7 +524,7 @@ class BatchOperationsManager:
                     operation.callback(success=True, result=result)
 
             except Exception as e:
-                logger.error("[BatchOps] File read failed for %s: %s", operation.key, e)
+                logger.exception("[BatchOps] File read failed for %s", operation.key)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
@@ -563,7 +562,7 @@ class BatchOperationsManager:
                     operation.callback(success=True)
 
             except Exception as e:
-                logger.error("[BatchOps] File write failed for %s: %s", operation.key, e)
+                logger.exception("[BatchOps] File write failed for %s", operation.key)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
@@ -587,7 +586,7 @@ class BatchOperationsManager:
                     operation.callback(success=True)
 
             except Exception as e:
-                logger.error("[BatchOps] Cache operation failed for %s: %s", operation.key, e)
+                logger.exception("[BatchOps] Cache operation failed for %s", operation.key)
                 if operation.callback:
                     operation.callback(success=False, error=e)
 
