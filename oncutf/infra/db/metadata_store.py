@@ -643,6 +643,5 @@ class MetadataStore:
             return "none"
         else:
             if row and row["color_tag"]:
-                color_tag: str = row["color_tag"]
-                return color_tag
+                return row["color_tag"]
             return "none"

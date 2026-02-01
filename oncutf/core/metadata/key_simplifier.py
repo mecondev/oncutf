@@ -353,10 +353,10 @@ class SmartKeySimplifier:
 
         """
         if original_length > 60:
-            return min(4, self.max_segments + 1)
+            return int(min(4, self.max_segments + 1))
         if original_length > 40:
-            return self.max_segments
-        return max(2, self.max_segments - 1)
+            return int(self.max_segments)
+        return int(max(2, self.max_segments - 1))
 
     def _resolve_collisions(self, simplified: dict[str, str]) -> dict[str, str]:
         """Resolve collisions where multiple keys map to same simplified name.

@@ -504,7 +504,6 @@ class RenameController:
                 and state.preview_result.has_changes
                 and not (state.validation_result and state.validation_result.has_errors)
             )
-            return False
 
     def get_current_state(self) -> Any | None:
         """Get current rename state.

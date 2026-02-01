@@ -10,6 +10,7 @@ Date: 2026-01-15
 
 import json
 from pathlib import Path
+from typing import cast
 
 from oncutf.core.metadata.metadata_key_registry import MetadataKeyRegistry
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -119,7 +120,7 @@ class SemanticAliasesManager:
             logger.exception("Error loading semantic aliases")
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
         else:
-            return data
+            return cast(dict[str, list[str]], data)
 
     def _create_default_file(self) -> None:
         """Create semantic aliases file with default values."""
