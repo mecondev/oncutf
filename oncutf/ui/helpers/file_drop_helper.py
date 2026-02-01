@@ -17,7 +17,6 @@ from PyQt5.QtCore import QMimeData
 
 from oncutf.config import ALLOWED_EXTENSIONS
 
-
 DropType = Literal["single_folder", "multiple_folders", "files", "mixed", "unknown"]
 
 
