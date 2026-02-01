@@ -24,6 +24,12 @@ class DriveSortProxyModel(QSortFilterProxyModel):
     """Proxy model that enforces drive ordering on Windows root."""
 
     def __init__(self, parent=None) -> None:
+        """Initialize drive sort proxy model.
+
+        Args:
+            parent: Parent widget
+
+        """
         super().__init__(parent)
         self.setDynamicSortFilter(True)
         self.setSortCaseSensitivity(Qt.CaseInsensitive)

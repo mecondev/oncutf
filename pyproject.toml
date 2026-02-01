@@ -339,12 +339,12 @@ ignore = [
     "T201",   # print-found (intentional in CLI/debug contexts)
 
     # Docstring rules (gradual adoption)
-    "D100",   # missing docstring in public module
-    "D101",   # missing docstring in public class
-    "D102",   # missing docstring in public method
-    "D103",   # missing docstring in public function
-    "D104",   # missing docstring in public package
-    "D107",   # missing docstring in __init__
+    # D100 removed - enabled (was violations, now 0)
+    # D101 removed - enabled (was violations, now 0)
+    # D102 removed - enabled (was violations, now 0)
+    # D103 removed - enabled (was 1 violation, now 0)
+    # D104 removed - enabled (was violations, now 0)
+    # D107 removed - enabled (was 1 violation, now 0)
     "D203",   # 1 blank line required before class docstring (conflicts with D211)
     "D213",   # multi-line-summary-second-line (conflicts with D212)
     "D401",   # imperative-mood (200+ violations, widespread in legacy code)

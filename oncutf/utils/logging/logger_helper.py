@@ -131,4 +131,13 @@ try:
 except ImportError:
     # Fallback if logger_factory not available
     def get_cached_logger(name: str | None = None) -> logging.Logger:
+        """Fallback logger getter when logger_factory is not available.
+
+        Args:
+            name: Logger name
+
+        Returns:
+            Logger instance
+
+        """
         return get_logger(name)
