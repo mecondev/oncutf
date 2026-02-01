@@ -130,12 +130,7 @@ class ColumnVisibilityManager:
         # Get order from column service
         all_columns = self._service.get_all_columns()
 
-        visible = []
-        for key in all_columns:
-            if self._visible_columns.get(key, False):
-                visible.append(key)
-
-        return visible
+        return [key for key in all_columns if self._visible_columns.get(key, False)]
 
     def add_column(self, column_key: str) -> None:
         """Add a column to the visible set.

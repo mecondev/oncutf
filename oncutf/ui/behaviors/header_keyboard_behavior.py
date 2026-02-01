@@ -50,15 +50,17 @@ class HeaderKeyboardBehavior(QObject):
             True if event was handled, False otherwise
 
         """
-        if event.type() == QEvent.KeyPress and isinstance(event, QKeyEvent):
-            # Check for Ctrl+Left or Ctrl+Right
-            if event.modifiers() == Qt.ControlModifier:
-                if event.key() in (Qt.Key_Left, Qt.Key_Right):
-                    # Handle the shortcut
-                    handled = self._handle_column_move_shortcut(event)
-                    if handled:
-                        event.accept()
-                        return True
+        if (
+            event.type() == QEvent.KeyPress
+            and isinstance(event, QKeyEvent)
+            and event.modifiers() == Qt.ControlModifier
+            and event.key() in (Qt.Key_Left, Qt.Key_Right)
+        ):
+            # Handle the shortcut
+            handled = self._handle_column_move_shortcut(event)
+            if handled:
+                event.accept()
+                return True
 
         # Pass event to parent's event filter
         return super().eventFilter(obj, event)
@@ -94,12 +96,11 @@ class HeaderKeyboardBehavior(QObject):
                 self._header.moveSection(focused_visual, focused_visual - 1)
                 logger.info("[HEADER_KEYBOARD] Moved column left via Ctrl+Left")
                 return True
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key_Right and focused_visual < self._header.count() - 1:
             # Move right (increase visual index)
-            if focused_visual < self._header.count() - 1:
-                self._header.moveSection(focused_visual, focused_visual + 1)
-                logger.info("[HEADER_KEYBOARD] Moved column right via Ctrl+Right")
-                return True
+            self._header.moveSection(focused_visual, focused_visual + 1)
+            logger.info("[HEADER_KEYBOARD] Moved column right via Ctrl+Right")
+            return True
 
         return False
 

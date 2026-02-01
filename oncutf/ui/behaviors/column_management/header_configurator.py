@@ -76,7 +76,6 @@ class HeaderConfigurator:
         except Exception:
             pass
 
-        # Default: unlocked (movable)
         return False
 
     def _load_column_order(self) -> list[str] | None:

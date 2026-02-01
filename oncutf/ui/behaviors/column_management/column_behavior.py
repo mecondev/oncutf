@@ -324,7 +324,7 @@ class ColumnManagementBehavior:
                 # Ctrl+Shift+T: Reset column widths to default
                 self.reset_column_widths_to_defaults()
                 return True
-            elif modifiers == Qt.ControlModifier:
+            if modifiers == Qt.ControlModifier:
                 # Ctrl+T: Auto-fit columns to content
                 self.auto_fit_columns_to_content()
                 return True
