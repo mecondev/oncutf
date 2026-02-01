@@ -174,9 +174,19 @@ class JSONConfigManager:
     def __init__(self, app_name: str = "app", config_dir: str | None = None):
         """Initialize configuration manager with app name and config directory."""
         self.app_name = app_name
-        self.config_dir = Path(config_dir or self._get_default_config_dir())
-        self.config_file = self.config_dir / "config.json"
-        self.backup_file = self.config_dir / "config.json.bak"
+
+        # Use AppPaths to get correct config file location
+        from oncutf.utils.paths import AppPaths
+
+        if config_dir:
+            self.config_dir = Path(config_dir)
+            self.config_file = self.config_dir / "config.json"
+        else:
+            # Use canonical path from AppPaths
+            self.config_file = AppPaths.get_config_path()
+            self.config_dir = self.config_file.parent
+
+        self.backup_file = self.config_file.with_suffix(".json.bak")
 
         self._lock = threading.RLock()
         self._categories: dict[str, ConfigCategory[Any]] = {}
@@ -237,8 +247,23 @@ class JSONConfigManager:
                     )
                     return True
 
+                # Check if file is empty before attempting to parse
+                if self.config_file.stat().st_size == 0:
+                    logger.warning(
+                        "[JSONConfigManager] Config file is empty, using defaults",
+                        extra={"dev_only": True},
+                    )
+                    return True
+
                 with self.config_file.open(encoding="utf-8") as f:
                     data = json.load(f)
+
+                # Validate loaded data is a dictionary
+                if not isinstance(data, dict):
+                    logger.warning(
+                        "[JSONConfigManager] Config file contains invalid data type, using defaults"
+                    )
+                    return True
 
                 for category_name, category in self._categories.items():
                     if category_name in data:
@@ -333,9 +358,11 @@ class JSONConfigManager:
         """Force immediate save (used on app/dialog close).
 
         Args:
+        ----
             force: If True, always save. If False, only save if dirty.
 
         Returns:
+        -------
             True if save successful, False otherwise
 
         """
@@ -372,11 +399,13 @@ class JSONConfigManager:
         """Get value from cache, fallback to category.
 
         Args:
+        ----
             category_name: Category name
             key: Setting key
             default: Default value if not found
 
         Returns:
+        -------
             Cached value or category value or default
 
         """
@@ -398,6 +427,7 @@ class JSONConfigManager:
         """Set value in cache and mark dirty.
 
         Args:
+        ----
             category_name: Category name
             key: Setting key
             value: Value to set
