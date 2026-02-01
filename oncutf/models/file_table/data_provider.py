@@ -90,25 +90,24 @@ class DataProvider:
         if role == Qt.DisplayRole:
             if column_key == "filename":
                 return str(file.filename)
-            elif column_key == "color":
+            if column_key == "color":
                 # Color column shows no text, only icon
                 return ""
-            elif column_key == "file_size":
+            if column_key == "file_size":
                 return str(file.get_human_readable_size())
-            elif column_key == "type":
+            if column_key == "type":
                 return str(file.extension)
-            elif column_key == "modified":
+            if column_key == "modified":
                 if isinstance(file.modified, datetime):
                     return file.modified.strftime("%Y-%m-%d %H:%M:%S")
                 # file.modified may be str in edge cases
                 return str(file.modified)
-            elif column_key == "file_hash":
+            if column_key == "file_hash":
                 return self.icon_manager.get_hash_value(file.full_path)
             # For metadata columns, try to get from metadata cache
-            else:
-                return self._get_metadata_value(file, column_key)
+            return self._get_metadata_value(file, column_key)
 
-        elif role == Qt.DecorationRole:
+        if role == Qt.DecorationRole:
             # Show color swatch for color column
             if column_key == "color":
                 color_value = getattr(file, "color", "none")
@@ -117,7 +116,7 @@ class DataProvider:
                 return QVariant()
             return QVariant()
 
-        elif role == Qt.TextAlignmentRole:
+        if role == Qt.TextAlignmentRole:
             # Get alignment from UnifiedColumnService
             from oncutf.ui.managers import get_column_service
 
@@ -149,8 +148,7 @@ class DataProvider:
                     # Use centralized metadata field mapper
                     from oncutf.core.metadata.field_mapper import MetadataFieldMapper
 
-                    value = MetadataFieldMapper.get_metadata_value(entry.data, column_key)
-                    return value
+                    return MetadataFieldMapper.get_metadata_value(entry.data, column_key)
             except Exception:
                 logger.debug(
                     "Error accessing metadata cache for %s",
@@ -206,8 +204,7 @@ class DataProvider:
                 if context and context.has_manager("thumbnail"):
                     thumbnail_manager = context.get_manager("thumbnail")
                     # Request thumbnail (returns placeholder if not cached, triggers async load)
-                    pixmap = thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
-                    return pixmap
+                    return thumbnail_manager.get_thumbnail(file.full_path, size_px=128)
             except Exception as e:
                 logger.debug(
                     "[DataProvider] Thumbnail request failed: %s",

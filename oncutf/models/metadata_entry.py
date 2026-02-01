@@ -127,9 +127,8 @@ class MetadataEntry:
                 and isinstance(self.data[group], dict)
                 and key in self.data[group]
             )
-        else:
-            # Top-level field
-            return field_key in self.data
+        # Top-level field
+        return field_key in self.data
 
     def get_field(self, field_key: str, default: Any = None) -> Any:
         """Get metadata field value.
@@ -150,9 +149,8 @@ class MetadataEntry:
             if group in self.data and isinstance(self.data[group], dict):
                 return self.data[group].get(key, default)
             return default
-        else:
-            # Top-level field
-            return self.data.get(field_key, default)
+        # Top-level field
+        return self.data.get(field_key, default)
 
     def set_field(self, field_key: str, value: Any) -> None:
         """Set metadata field value and mark as modified.
@@ -202,10 +200,13 @@ class MetadataEntry:
             parts = field_key.split("/", 1)
             group, key = parts[0], parts[1]
 
-            if group in self.data and isinstance(self.data[group], dict):
-                if key in self.data[group]:
-                    del self.data[group][key]
-                    removed = True
+            if (
+                group in self.data
+                and isinstance(self.data[group], dict)
+                and key in self.data[group]
+            ):
+                del self.data[group][key]
+                removed = True
         # Top-level field
         elif field_key in self.data:
             del self.data[field_key]

@@ -385,9 +385,7 @@ class FileTableModel(QAbstractTableModel):
             ordered_files = []
 
             # Add files in DB order
-            for path in file_paths:
-                if path in file_map:
-                    ordered_files.append(file_map[path])
+            ordered_files.extend(file_map[path] for path in file_paths if path in file_map)
 
             # Add any files not in DB order (new files)
             for file in self.files:

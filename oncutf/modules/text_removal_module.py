@@ -332,8 +332,10 @@ class TextRemovalModule(BaseRenameModule):
                     start = idx + len(pattern)
             else:
                 regex_pattern = re.escape(pattern)
-                for match in re.finditer(regex_pattern, text, flags=re.IGNORECASE):
-                    matches.append(TextRemovalMatch(match.start(), match.end(), match.group()))
+                matches.extend(
+                    TextRemovalMatch(match.start(), match.end(), match.group())
+                    for match in re.finditer(regex_pattern, text, flags=re.IGNORECASE)
+                )
 
         return matches
 

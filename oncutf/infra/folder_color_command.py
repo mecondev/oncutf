@@ -253,10 +253,8 @@ class AutoColorByFolderCommand(MetadataCommand):
             List of filenames with existing colors (for warning dialog)
 
         """
-        files_with_colors: list[str] = []
-
-        for file_item in self.file_items:
-            if file_item.color != "none":
-                files_with_colors.append(file_item.filename)
-
-        return files_with_colors
+        return [
+            file_item.filename
+            for file_item in self.file_items
+            if file_item.color != "none"
+        ]

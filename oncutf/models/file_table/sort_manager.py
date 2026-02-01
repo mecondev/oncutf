@@ -63,17 +63,17 @@ class SortManager:
         # Sort based on column key
         if column_key == "filename":
             return sorted(files, key=lambda f: f.filename.lower(), reverse=reverse)
-        elif column_key == "file_size":
+        if column_key == "file_size":
             return sorted(
                 files,
                 key=lambda f: f.size if hasattr(f, "size") else 0,
                 reverse=reverse,
             )
-        elif column_key == "type":
+        if column_key == "type":
             return sorted(files, key=lambda f: f.extension.lower(), reverse=reverse)
-        elif column_key == "modified":
+        if column_key == "modified":
             return sorted(files, key=lambda f: f.modified, reverse=reverse)
-        elif column_key == "file_hash":
+        if column_key == "file_hash":
             if self._get_hash_value:
                 return sorted(
                     files,
@@ -81,20 +81,19 @@ class SortManager:
                     reverse=reverse,
                 )
             return files
-        elif column_key == "color":
+        if column_key == "color":
             # Sort by color: "none" first, then alphabetically by hex value
             return sorted(
                 files,
                 key=lambda f: (f.color != "none", f.color.lower()),
                 reverse=reverse,
             )
-        else:
-            # For metadata columns, sort by the metadata value
-            return sorted(
-                files,
-                key=lambda f: self.get_metadata_sort_key(f, column_key),
-                reverse=reverse,
-            )
+        # For metadata columns, sort by the metadata value
+        return sorted(
+            files,
+            key=lambda f: self.get_metadata_sort_key(f, column_key),
+            reverse=reverse,
+        )
 
     def get_metadata_sort_key(self, file: "FileItem", column_key: str) -> Any:
         """Get sort key for a file based on metadata column.
@@ -132,8 +131,7 @@ class SortManager:
                             if "x" in str(found_value):
                                 width = str(found_value).split("x")[0]
                                 return int(width)
-                            else:
-                                return int(found_value)
+                            return int(found_value)
                         except (ValueError, TypeError):
                             return 0
                     # For numeric values, try to convert to int/float for proper sorting
@@ -148,8 +146,7 @@ class SortManager:
                             numeric_str = str(found_value).split()[0]  # Take first word
                             if "." in numeric_str:
                                 return float(numeric_str)
-                            else:
-                                return int(numeric_str)
+                            return int(numeric_str)
                         except (ValueError, TypeError):
                             return 0
                     else:
@@ -164,5 +161,4 @@ class SortManager:
             "image_size",
         ]:
             return 0  # Default numeric value for numeric columns
-        else:
-            return ""  # Default string value for text columns
+        return ""  # Default string value for text columns
