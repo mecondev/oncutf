@@ -160,8 +160,6 @@ disallow_untyped_decorators = true
 [[tool.mypy.overrides]]
 module = [
     "oncutf.controllers.*",
-    "oncutf.services.*",
-    "oncutf.metadata.*",
     "oncutf.models.*",
     "oncutf.core.*"
 ]
@@ -183,8 +181,6 @@ disable_error_code = [
 [[tool.mypy.overrides]]
 module = [
     "oncutf.ui.*",
-    "oncutf.views.*",
-    "oncutf.widgets.*",
     "oncutf.core.ui_managers.*",
     "oncutf.core.initialization.*",
     "oncutf.core.drag.*",
@@ -193,14 +189,14 @@ module = [
     "oncutf.core.modifier_handler",
     "oncutf.core.pyqt_imports",
 
-    # Qt-heavy core modules (added 2026-01-19)
+    # Qt-heavy core modules
     "oncutf.core.metadata.*",
     "oncutf.core.file.load_manager",
     "oncutf.core.hash.hash_operations_manager",
     "oncutf.core.thumbnail.*",
     "oncutf.core.application_service",
 
-    # Qt-heavy controllers (added 2026-01-19)
+    # Qt-heavy controllers
     "oncutf.controllers.ui.layout_controller",
     "oncutf.controllers.ui.window_setup_controller",
     "oncutf.controllers.ui.signal_controller",
