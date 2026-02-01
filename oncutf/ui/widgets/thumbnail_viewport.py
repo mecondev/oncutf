@@ -282,7 +282,7 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # Lasso selection (left button on empty space, no modifiers for now)
-            elif event.button() == Qt.LeftButton:
+            if event.button() == Qt.LeftButton:
                 index = self._list_view.indexAt(event.pos())
                 # Start lasso only if clicking on empty space
                 if not index.isValid():
@@ -305,7 +305,7 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # Lasso selection
-            elif self._rubber_band and self._rubber_band.isVisible() and self._rubber_band_origin:
+            if self._rubber_band and self._rubber_band.isVisible() and self._rubber_band_origin:
                 # Update rubber band geometry
                 self._rubber_band.setGeometry(
                     QRect(self._rubber_band_origin, event.pos()).normalized()
@@ -316,7 +316,7 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # Handle hover for tooltips (when not panning or lasso selecting)
-            elif not self._is_panning:
+            if not self._is_panning:
                 index = self._list_view.indexAt(event.pos())
                 if index.isValid() and index != self._tooltip_index:
                     # New item hovered
@@ -336,7 +336,7 @@ class ThumbnailViewportWidget(QWidget):
                 return True
 
             # End lasso
-            elif (
+            if (
                 event.button() == Qt.LeftButton
                 and self._rubber_band
                 and self._rubber_band.isVisible()

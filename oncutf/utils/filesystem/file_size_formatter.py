@@ -168,12 +168,12 @@ class FileSizeFormatter:
         if system == "Windows":
             # Windows typically uses binary units with legacy labels
             return cls(use_binary=True, use_locale=True, use_legacy_labels=True)
-        elif system == "Darwin":  # macOS
+        if system == "Darwin":  # macOS
             # macOS Finder uses decimal units
             return cls(use_binary=False, use_locale=True, use_legacy_labels=True)
-        else:  # Linux and other Unix-like
-            # Most Linux file managers use decimal units now
-            return cls(use_binary=False, use_locale=True, use_legacy_labels=True)
+        # Linux and other Unix-like
+        # Most Linux file managers use decimal units now
+        return cls(use_binary=False, use_locale=True, use_legacy_labels=True)
 
     @classmethod
     def get_traditional_formatter(cls) -> "FileSizeFormatter":

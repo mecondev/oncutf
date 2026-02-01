@@ -92,15 +92,14 @@ class RenameConflictResolver(QObject):
         try:
             if strategy == ConflictResolutionStrategy.SKIP:
                 return self._skip_conflict(original_path, target_path)
-            elif strategy == ConflictResolutionStrategy.OVERWRITE:
+            if strategy == ConflictResolutionStrategy.OVERWRITE:
                 return self._overwrite_conflict(original_path, target_path)
-            elif strategy == ConflictResolutionStrategy.RENAME_WITH_SUFFIX:
+            if strategy == ConflictResolutionStrategy.RENAME_WITH_SUFFIX:
                 return self._rename_with_suffix(original_path, target_path)
-            elif strategy == ConflictResolutionStrategy.ASK_USER:
+            if strategy == ConflictResolutionStrategy.ASK_USER:
                 return self._ask_user_for_resolution(original_path, target_path)
-            else:
-                logger.warning("Unknown conflict resolution strategy: %s", strategy)
-                return self._skip_conflict(original_path, target_path)
+            logger.warning("Unknown conflict resolution strategy: %s", strategy)
+            return self._skip_conflict(original_path, target_path)
 
         except Exception as e:
             logger.error("Error resolving conflict: %s", e)
