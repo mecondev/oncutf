@@ -308,8 +308,14 @@ class MetadataLoader:
 
         return needs_loading, skipped_count
 
-    def _handle_all_cached(self, items: list[FileItem], metadata_tree_view: Any) -> None:
-        """Handle case where all items are already cached."""
+    def _handle_all_cached(self, items: list[FileItem], _metadata_tree_view: Any) -> None:
+        """Handle case where all items are already cached.
+
+        Args:
+            items: List of file items
+            _metadata_tree_view: Tree view reference (unused - display handled via model)
+
+        """
         # Update file table icons to show metadata icons
         if self._parent_window and hasattr(self._parent_window, "file_model"):
             self._parent_window.file_model.refresh_icons()
@@ -398,14 +404,14 @@ class MetadataLoader:
     # =========================================================================
 
     def _load_single_file_metadata(
-        self, item: FileItem, use_extended: bool, metadata_tree_view: Any
+        self, item: FileItem, use_extended: bool, _metadata_tree_view: Any
     ) -> None:
         """Load metadata for a single file with wait_cursor (immediate, no dialog).
 
         Args:
             item: The FileItem to load metadata for
             use_extended: Whether to use extended metadata
-            metadata_tree_view: Reference to metadata tree view for display
+            _metadata_tree_view: Reference to metadata tree view (unused - display handled via model)
 
         """
         from oncutf.app.services import wait_cursor
@@ -466,7 +472,7 @@ class MetadataLoader:
         self,
         needs_loading: list[FileItem],
         use_extended: bool,
-        metadata_tree_view: Any,
+        _metadata_tree_view: Any,
         source: str,
         on_finished: Callable[[], None] | None = None,
     ) -> None:

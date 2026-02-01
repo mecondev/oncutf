@@ -511,13 +511,13 @@ class LayoutController:
 
         logger.debug("[LayoutController] Selection sync configured between views")
 
-    def _on_file_table_selection_changed(self, selected_rows: list[int]) -> None:
+    def _on_file_table_selection_changed(self, _selected_rows: list[int]) -> None:
         """Handle FileTable selection change.
 
         Syncs selection to ThumbnailViewport only if thumbnail view is currently active.
 
         Args:
-            selected_rows: List of selected row indices
+            _selected_rows: List of selected row indices (unused - sync happens via model)
 
         """
         # Only sync if thumbnail view is active

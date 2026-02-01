@@ -66,8 +66,14 @@ class ApplicationService:
     # File Operations
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, force: bool = False) -> None:
-        """Load files from folder via FileLoadController."""
+    def load_files_from_folder(self, folder_path: str, _force: bool = False) -> None:
+        """Load files from folder via FileLoadController.
+
+        Args:
+            folder_path: Path to folder to load
+            _force: Reserved for future use (currently unused)
+
+        """
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)
         logger.info(
@@ -248,12 +254,18 @@ class ApplicationService:
             )
 
     def _update_file_items_after_rename(
-        self, files: list[FileItem], new_names: list[str], execution_result: Any
+        self, files: list[FileItem], _new_names: list[str], execution_result: Any
     ) -> None:
         """Update FileItem objects with new paths after successful rename.
 
         This prevents the issue where files are renamed but FileItem objects still
         reference the old paths, causing subsequent rename operations to fail.
+
+        Args:
+            files: List of FileItem objects
+            _new_names: Expected new names (unused - extracted from execution_result)
+            execution_result: Result from rename execution containing actual mappings
+
         """
         try:
             # Build a map of old_path -> new_path from successful executions

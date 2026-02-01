@@ -202,12 +202,12 @@ class ThumbnailManager(QObject):
 
         return self._get_placeholder()
 
-    def _check_cache(self, file_path: str, size_px: int) -> QPixmap | None:
+    def _check_cache(self, file_path: str, _size_px: int) -> QPixmap | None:
         """Check cache for existing thumbnail.
 
         Args:
             file_path: Absolute path to source file
-            size_px: Requested thumbnail size
+            _size_px: Requested thumbnail size (unused - cache uses normalized path)
 
         Returns:
             QPixmap if cached, None otherwise
