@@ -457,8 +457,8 @@ class MetadataCacheBehavior:
                 "No metadata found for %s",
                 file_item.filename,
             )
-            return None
-
         except Exception:
             logger.exception("Error in fallback metadata loading")
+            return None
+        else:
             return None

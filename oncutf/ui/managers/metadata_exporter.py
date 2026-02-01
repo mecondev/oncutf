@@ -176,11 +176,11 @@ class MetadataExporter:
                 logger.debug("[MetadataExporter] Exported JSON for: %s", source_filename)
 
             logger.info("[MetadataExporter] JSON export completed: %d files", exported_count)
-            return exported_count > 0
-
         except Exception as e:
             logger.error("[MetadataExporter] JSON export failed: %s", e)
             return False
+        else:
+            return exported_count > 0
 
     def _export_markdown(self, files: list[Any], output_dir: str, _scope: str) -> bool:
         """Export metadata in Markdown format - one file per source file."""
@@ -250,11 +250,11 @@ class MetadataExporter:
                 logger.debug("[MetadataExporter] Exported Markdown for: %s", source_filename)
 
             logger.info("[MetadataExporter] Markdown export completed: %d files", exported_count)
-            return exported_count > 0
-
         except Exception as e:
             logger.error("[MetadataExporter] Markdown export failed: %s", e)
             return False
+        else:
+            return exported_count > 0
 
     def _prepare_file_data(self, file_item: Any) -> dict[str, Any] | None:
         """Prepare file data for export including metadata grouping and hash info.
@@ -293,12 +293,11 @@ class MetadataExporter:
             grouped_metadata = self._group_metadata(metadata)
             if grouped_metadata:
                 file_data["metadata_groups"] = grouped_metadata
-
-            return file_data
-
         except Exception as e:
             logger.error("[MetadataExporter] Error preparing file data: %s", e)
             return None
+        else:
+            return file_data
 
     def _get_hash_info(self, file_item: Any) -> dict[str, str] | None:
         """Get hash information for a file if available."""
@@ -321,11 +320,10 @@ class MetadataExporter:
                         return {"algorithm": "CRC32", "value": hash_value}
                 except Exception as e:
                     logger.debug("[MetadataExporter] HashManager error: %s", e)
-
-            return None
-
         except Exception as e:
             logger.debug("[MetadataExporter] Could not get hash info: %s", e)
+            return None
+        else:
             return None
 
     def _get_metadata_for_file(self, file_item: Any) -> dict[str, Any] | None:
@@ -344,11 +342,10 @@ class MetadataExporter:
             # Fallback to file item metadata if no cache available
             if hasattr(file_item, "metadata") and file_item.metadata:
                 return file_item.metadata
-
-            return None
-
         except Exception as e:
             logger.debug("[MetadataExporter] Could not get metadata: %s", e)
+            return None
+        else:
             return None
 
     def _group_metadata(self, metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:

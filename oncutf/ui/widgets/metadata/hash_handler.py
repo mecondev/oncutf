@@ -92,8 +92,6 @@ class HashHandler:
                 # Some files need hash calculation
                 return True
             # All files have hashes - but combo still disabled
-            return True
-
         except Exception as e:
             logger.error("[HashHandler] Error in populate_hash_options: %s", e)
             # On error, disable hash option
@@ -104,6 +102,8 @@ class HashHandler:
             # Apply disabled styling to show text in gray
             self._widget._styling_handler.apply_disabled_combo_styling()
             return False
+        else:
+            return True
 
     def calculate_hashes_for_files(self, files_needing_hash):
         """Calculate hashes for the given file paths.

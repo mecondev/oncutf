@@ -520,12 +520,11 @@ class DragDropBehavior:
                         len(current_selection),
                         extra={"dev_only": True},
                     )
-
-            return True
-
         except Exception as e:
             logger.error("[DragDropBehavior] Error initiating metadata load: %s", e)
             return False
+        else:
+            return True
 
     def _get_parent_with_metadata_tree(self):
         """Find parent window with metadata_tree_view attribute."""

@@ -95,12 +95,12 @@ class ResetHandler:
                     "Reset %s to original value via UnifiedMetadataManager",
                     key_path,
                 )
-
-                return
             except Exception as e:
                 logger.exception(
                     "Failed to reset value via UnifiedMetadataManager",
                 )
+            else:
+                return
 
         # Fallback to manual method
         self._fallback_reset_value(key_path, original_value)

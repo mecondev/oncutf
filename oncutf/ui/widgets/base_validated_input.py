@@ -165,12 +165,11 @@ class BaseValidatedInput:
                     event.text(),
                 )
                 return False  # Block the character
-
-            return True  # Allow the character
-
         except Exception:
             logger.exception("[BaseValidatedInput] Error in handle_key_press_validation")
             return True  # Allow on error to prevent blocking valid input
+        else:
+            return True  # Allow the character
 
     def handle_paste_validation(self, text: str) -> str:
         """Handle paste operations with validation and cleaning.
@@ -196,12 +195,11 @@ class BaseValidatedInput:
                     "[BaseValidatedInput] Cleaned paste content. Removed: %s",
                     removed_chars,
                 )
-
-            return cleaned_text
-
         except Exception:
             logger.exception("[BaseValidatedInput] Error in handle_paste_validation")
             return text  # Return original text on error
+        else:
+            return cleaned_text
 
     def update_validation_state(self, text: str) -> None:
         """Update validation state and visual styling based on current text.

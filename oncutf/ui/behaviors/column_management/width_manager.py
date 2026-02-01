@@ -132,11 +132,11 @@ class ColumnWidthManager:
                 width,
                 panel_width,
             )
-            return width
-
         except Exception as e:
             logger.warning("Error calculating dynamic filename width: %s", e)
             return 300
+        else:
+            return width
 
     def ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on content type.
@@ -214,10 +214,10 @@ class ColumnWidthManager:
                     )
 
                     self._pending_column_changes.clear()
-                    return
-
                 except Exception as e:
                     logger.warning("Failed to save to main config: %s", e)
+                else:
+                    return
 
             # Fallback
             from oncutf.utils.shared.json_config_manager import load_config, save_config

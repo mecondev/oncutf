@@ -366,11 +366,10 @@ class MetadataOperationsManager:
                     value = file_item.metadata.get(standard)
                     if value:
                         return str(value)
-
-            return ""
-
         except Exception as e:
             logger.debug("[MetadataEdit] Error getting current %s value: %s", field_name, e)
+            return ""
+        else:
             return ""
 
     def _get_supported_standards(self, file_path: str) -> list[str]:
@@ -520,15 +519,14 @@ class MetadataOperationsManager:
                     file_item.filename,
                 )
                 return priorities[0]
-
-            return None
-
         except Exception as e:
             logger.debug(
                 "[FieldStandard] Error getting preferred standard for %s: %s",
                 field_name,
                 e,
             )
+            return None
+        else:
             return None
 
     # ===== Helper Methods =====

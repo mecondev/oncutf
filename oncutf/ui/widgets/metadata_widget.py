@@ -235,13 +235,15 @@ class MetadataWidget(QWidget):
             context = get_qt_app_context()
             if context and hasattr(context, "_metadata_cache"):
                 return context._metadata_cache
-            return None
         except Exception as e:
             logger.debug(
                 "[MetadataWidget] Error getting metadata cache: %s",
                 e,
                 extra={"dev_only": True},
             )
+            return None
+        else:
+            return None
             return None
 
     def get_available_metadata_keys(self) -> set[str]:

@@ -89,12 +89,12 @@ class RotationHandler:
                     self._widget.value_edited.emit(
                         key_path, "0", str(current_value) if current_value else ""
                     )
-
-                return
             except Exception as e:
                 logger.exception(
                     "Failed to set rotation via UnifiedMetadataManager",
                 )
+            else:
+                return
 
         # Fallback to manual method via behavior (allows test mocking)
         self._behavior._fallback_set_rotation_to_zero(
