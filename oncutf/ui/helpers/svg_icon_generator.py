@@ -71,10 +71,10 @@ class SVGIconGenerator:
             with svg_path.open(encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
-            logger.error("[SVGIconGenerator] Feather icon not found: %s", svg_path)
+            logger.exception("[SVGIconGenerator] Feather icon not found: %s", svg_path)
             return None
-        except Exception as e:
-            logger.error("[SVGIconGenerator] Error reading SVG: %s", e)
+        except Exception:
+            logger.exception("[SVGIconGenerator] Error reading SVG")
             return None
 
     def _colorize_svg(self, svg_content: str, color: str) -> str:
@@ -169,8 +169,8 @@ class SVGIconGenerator:
             painter.setRenderHint(QPainter.Antialiasing)
             renderer.render(painter)
             painter.end()
-        except Exception as e:
-            logger.error("[SVGIconGenerator] Error rendering SVG: %s", e)
+        except Exception:
+            logger.exception("[SVGIconGenerator] Error rendering SVG")
             return self._create_fallback_pixmap(size)
         else:
             return pixmap

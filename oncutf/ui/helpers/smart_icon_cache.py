@@ -227,8 +227,8 @@ class SmartIconCache(QObject):
             logger.warning("[SmartIconCache] Icon not found: %s", name)
             return QIcon()
 
-        except Exception as e:
-            logger.error("[SmartIconCache] Error loading icon %s: %s", name, e)
+        except Exception:
+            logger.exception("[SmartIconCache] Error loading icon %s", name)
             return QIcon()
 
     def _find_icon_path(self, name: str, theme: str) -> str | None:
@@ -274,8 +274,8 @@ class SmartIconCache(QObject):
             # Check if eviction is needed
             self._evict_if_needed()
 
-        except Exception as e:
-            logger.error("[SmartIconCache] Error storing icon %s: %s", cache_key, e)
+        except Exception:
+            logger.exception("[SmartIconCache] Error storing icon %s", cache_key)
 
     def _estimate_icon_memory_size(self, _icon: QIcon, size: QSize) -> int:
         """Estimate memory size of an icon."""
@@ -403,8 +403,8 @@ class SmartIconCache(QObject):
                         len(keys_to_remove),
                     )
 
-        except Exception as e:
-            logger.error("[SmartIconCache] Error during cleanup: %s", e)
+        except Exception:
+            logger.exception("[SmartIconCache] Error during cleanup")
 
     def clear(self) -> None:
         """Clear all cached icons."""
