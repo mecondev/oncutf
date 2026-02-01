@@ -24,6 +24,7 @@ class TestPreExecutionValidator:
     def validator(self):
         """Fixture for PreExecutionValidator instance (default: no hash check)."""
         return PreExecutionValidator(check_hash=False)
+
     """Test pre-execution file validation."""
 
     @pytest.fixture

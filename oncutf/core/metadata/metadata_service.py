@@ -106,9 +106,7 @@ class MetadataService:
             Dictionary of metadata key-value pairs
 
         """
-        # TODO: Implement when UnifiedMetadataManager API is finalized (see: https://github.com/mecondev/oncutf/issues/3#issue-3880448979)
-        # return self.unified_manager.get_metadata(file_path)
-        return {}
+        return self.unified_manager.get_structured_metadata(file_path)
 
     def get_field(self, file_path: str, key: str) -> Any:
         """Get specific metadata field value.
@@ -121,9 +119,7 @@ class MetadataService:
             Field value or None if not found
 
         """
-        # TODO: Implement when UnifiedMetadataManager API is finalized (see: https://github.com/mecondev/oncutf/issues/3#issue-3880448979)
-        # return self.unified_manager.get_field(file_path, key)
-        return None
+        return self.unified_manager.get_field_value(file_path, key)
 
     # Command Creation (factory methods)
     def create_edit_command(
