@@ -329,19 +329,21 @@ class QDMGraphicsView(QGraphicsView):
 
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
 
-        if hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None:
-            if is_shift_pressed(event):
-                event.ignore()
-                fake_event = QMouseEvent(
-                    QEvent.MouseButtonPress,
-                    event.localPos(),
-                    event.screenPos(),
-                    Qt.LeftButton,
-                    event.buttons() | Qt.LeftButton,
-                    event.modifiers() | Qt.ControlModifier,
-                )
-                super().mousePressEvent(fake_event)
-                return
+        if (
+            (hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None)
+            and is_shift_pressed(event)
+        ):
+            event.ignore()
+            fake_event = QMouseEvent(
+                QEvent.MouseButtonPress,
+                event.localPos(),
+                event.screenPos(),
+                Qt.LeftButton,
+                event.buttons() | Qt.LeftButton,
+                event.modifiers() | Qt.ControlModifier,
+            )
+            super().mousePressEvent(fake_event)
+            return
 
         if hasattr(item, "node") and self.mode == MODE_NOOP:
             self.mode = MODE_NODE_DRAG
@@ -382,8 +384,7 @@ class QDMGraphicsView(QGraphicsView):
                 super().mouseReleaseEvent(fake_event)
                 QApplication.setOverrideCursor(Qt.CrossCursor)
                 return
-            else:
-                self.rubberBandDraggingRectangle = True
+            self.rubberBandDraggingRectangle = True
 
         super().mousePressEvent(event)
 
@@ -403,37 +404,37 @@ class QDMGraphicsView(QGraphicsView):
         item = self.getItemAtClick(event)
 
         try:
-            if hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None:
-                if is_shift_pressed(event):
-                    event.ignore()
-                    fake_event = QMouseEvent(
-                        event.type(),
-                        event.localPos(),
-                        event.screenPos(),
-                        Qt.LeftButton,
-                        Qt.NoButton,
-                        event.modifiers() | Qt.ControlModifier,
-                    )
-                    super().mouseReleaseEvent(fake_event)
+            if (
+                (hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None)
+                and is_shift_pressed(event)
+            ):
+                event.ignore()
+                fake_event = QMouseEvent(
+                    event.type(),
+                    event.localPos(),
+                    event.screenPos(),
+                    Qt.LeftButton,
+                    Qt.NoButton,
+                    event.modifiers() | Qt.ControlModifier,
+                )
+                super().mouseReleaseEvent(fake_event)
+                return
+
+            if self.mode == MODE_EDGE_DRAG and self.distanceBetweenClickAndReleaseIsOff(event):
+                if self.is_snapping_enabled(event):
+                    item = self.snapping.getSnappedSocketItem(event)
+
+                res = self.dragging.edge_drag_end(item)
+                if res:
                     return
-
-            if self.mode == MODE_EDGE_DRAG:
-                if self.distanceBetweenClickAndReleaseIsOff(event):
-                    if self.is_snapping_enabled(event):
-                        item = self.snapping.getSnappedSocketItem(event)
-
-                    res = self.dragging.edge_drag_end(item)
-                    if res:
-                        return
 
             if self.mode == MODE_EDGES_REROUTING:
                 if self.is_snapping_enabled(event):
                     item = self.snapping.getSnappedSocketItem(event)
 
-                if not EDGE_REROUTING_UE:
-                    if not self.rerouting.first_mb_release:
-                        self.rerouting.first_mb_release = True
-                        return
+                if not EDGE_REROUTING_UE and not self.rerouting.first_mb_release:
+                    self.rerouting.first_mb_release = True
+                    return
 
                 self.rerouting.stop_rerouting(
                     item.socket if isinstance(item, QDMGraphicsSocket) else None
@@ -620,8 +621,7 @@ class QDMGraphicsView(QGraphicsView):
 
         """
         pos = event.pos()
-        obj = self.itemAt(pos)
-        return obj
+        return self.itemAt(pos)
 
     def distanceBetweenClickAndReleaseIsOff(self, event: QMouseEvent) -> bool:
         """Check if release position exceeds drag threshold.

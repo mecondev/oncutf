@@ -261,10 +261,7 @@ class NodeEditorWindow(QMainWindow):
 
         if res == QMessageBox.Save:
             return self.on_file_save()
-        elif res == QMessageBox.Cancel:
-            return False
-
-        return True
+        return res != QMessageBox.Cancel
 
     def on_scene_pos_changed(self, x: int, y: int) -> None:
         """Update status bar with mouse position.

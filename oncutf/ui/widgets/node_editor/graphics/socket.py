@@ -88,7 +88,7 @@ class QDMGraphicsSocket(QGraphicsItem):
             if 0 <= key < len(theme.socket_colors):
                 return theme.socket_colors[key]
             return theme.socket_colors[0]
-        elif isinstance(key, str):
+        if isinstance(key, str):
             return QColor(key)
         return Qt.GlobalColor.transparent
 
