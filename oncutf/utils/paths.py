@@ -76,16 +76,15 @@ class AppPaths:
                 base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local")
             return Path(base) / APP_NAME
 
-        elif system == "Darwin":
+        if system == "Darwin":
             # macOS: Use Application Support
             return Path.home() / "Library" / "Application Support" / APP_NAME
 
-        else:
-            # Linux and others: Use XDG_DATA_HOME or ~/.local/share
-            xdg_data = os.environ.get("XDG_DATA_HOME")
-            if xdg_data:
-                return Path(xdg_data) / APP_NAME
-            return Path.home() / ".local" / "share" / APP_NAME
+        # Linux and others: Use XDG_DATA_HOME or ~/.local/share
+        xdg_data = os.environ.get("XDG_DATA_HOME")
+        if xdg_data:
+            return Path(xdg_data) / APP_NAME
+        return Path.home() / ".local" / "share" / APP_NAME
 
     @classmethod
     def get_user_data_dir(cls) -> Path:
@@ -211,10 +210,9 @@ class AppPaths:
         system = platform.system()
         if system == "Windows":
             return "windows"
-        elif system == "Darwin":
+        if system == "Darwin":
             return "macos"
-        else:
-            return "linux"
+        return "linux"
 
     @classmethod
     def reset(cls) -> None:

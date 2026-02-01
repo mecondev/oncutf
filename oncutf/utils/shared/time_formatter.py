@@ -88,8 +88,7 @@ class TimeTracker:
 
         # Estimate total time
         if rate > 0:
-            total_time_estimate = 100 / rate
-            return total_time_estimate
+            return 100 / rate
 
         return None
 
@@ -125,10 +124,9 @@ def format_duration(seconds: float) -> str:
 
     if hours > 0:
         return f"{hours}:{minutes:02d}':{secs:02d}''"
-    elif minutes > 0:
+    if minutes > 0:
         return f"{minutes}':{secs:02d}''"
-    else:
-        return f"{secs}''"
+    return f"{secs}''"
 
 
 def format_time_range(elapsed: float, estimated_total: float | None = None) -> str:
@@ -147,8 +145,7 @@ def format_time_range(elapsed: float, estimated_total: float | None = None) -> s
     if estimated_total is not None and estimated_total > 0:
         total_str = format_duration(estimated_total)
         return f"{elapsed_str}/{total_str}"
-    else:
-        return elapsed_str
+    return elapsed_str
 
 
 class ProgressEstimator:
@@ -205,8 +202,7 @@ class ProgressEstimator:
 
         if self.total_size > 0:
             return f"{processed_str}/{total_str}"
-        else:
-            return processed_str
+        return processed_str
 
     def get_time_info(self) -> tuple[float, float | None]:
         """Get time information.
