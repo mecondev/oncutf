@@ -165,8 +165,7 @@ class SmartCacheManager:
             result, timestamp = self._preview_cache[key]
             if time.time() - timestamp < self._cache_ttl:
                 return result
-            else:
-                del self._preview_cache[key]
+            del self._preview_cache[key]
         return None
 
     def cache_preview(self, key: str, result: PreviewResult) -> None:
@@ -182,8 +181,7 @@ class SmartCacheManager:
             result, timestamp = self._validation_cache[key]
             if time.time() - timestamp < self._cache_ttl:
                 return result
-            else:
-                del self._validation_cache[key]
+            del self._validation_cache[key]
         return None
 
     def cache_validation(self, key: str, result: ValidationResult) -> None:

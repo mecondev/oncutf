@@ -244,10 +244,11 @@ class UnifiedPreviewManager:
                     # Check if file has hash
                     if not hash_availability.get(file.full_path, False):
                         return "missing_hash"
-                elif category == "metadata_keys":
+                elif category == "metadata_keys" and not metadata_availability.get(
+                    file.full_path, False
+                ):
                     # Check if file has metadata
-                    if not metadata_availability.get(file.full_path, False):
-                        return "missing_metadata"
+                    return "missing_metadata"
 
         # Apply modules normally with full file list for scope-aware counters
         return self._apply_rename_modules(modules_data, index, file, metadata_cache, all_files)
@@ -336,7 +337,7 @@ class UnifiedPreviewManager:
         if scope_enum == CounterScope.GLOBAL:
             return global_index
 
-        elif scope_enum == CounterScope.PER_FOLDER:
+        if scope_enum == CounterScope.PER_FOLDER:
             if not all_files or not file_item:
                 return global_index
             current_folder = str(Path(file_item.full_path).parent)
@@ -348,7 +349,7 @@ class UnifiedPreviewManager:
                     folder_index += 1
             return folder_index
 
-        elif scope_enum == CounterScope.PER_EXTENSION:
+        if scope_enum == CounterScope.PER_EXTENSION:
             if not all_files or not file_item:
                 return global_index
             current_ext = Path(file_item.filename).suffix.lower()
@@ -360,20 +361,20 @@ class UnifiedPreviewManager:
                     ext_index += 1
             return ext_index
 
-        else:  # CounterScope.PER_FILEGROUP
-            if not all_files or not file_item:
-                return global_index
-            from oncutf.utils.filesystem.file_grouper import (
-                calculate_filegroup_counter_index,
-            )
+        # CounterScope.PER_FILEGROUP
+        if not all_files or not file_item:
+            return global_index
+        from oncutf.utils.filesystem.file_grouper import (
+            calculate_filegroup_counter_index,
+        )
 
-            try:
-                return calculate_filegroup_counter_index(
-                    file_item, all_files, global_index, groups=None
-                )
-            except Exception as e:
-                logger.warning("[PreviewManager] Error calculating filegroup index: %s", e)
-                return global_index
+        try:
+            return calculate_filegroup_counter_index(
+                file_item, all_files, global_index, groups=None
+            )
+        except Exception as e:
+            logger.warning("[PreviewManager] Error calculating filegroup index: %s", e)
+            return global_index
 
     def _strip_extension_from_fullname(self, fullname: str, extension: str) -> str:
         """Strip extension from fullname if present."""
@@ -465,7 +466,7 @@ def calculate_scope_aware_index(
     if scope_enum == CounterScope.GLOBAL:
         return global_index
 
-    elif scope_enum == CounterScope.PER_FOLDER:
+    if scope_enum == CounterScope.PER_FOLDER:
         if not all_files or not file_item:
             return global_index
         current_folder = str(Path(file_item.full_path).parent)
@@ -477,7 +478,7 @@ def calculate_scope_aware_index(
                 folder_index += 1
         return folder_index
 
-    elif scope_enum == CounterScope.PER_EXTENSION:
+    if scope_enum == CounterScope.PER_EXTENSION:
         if not all_files or not file_item:
             return global_index
         current_ext = Path(file_item.filename).suffix.lower()
@@ -489,16 +490,16 @@ def calculate_scope_aware_index(
                 ext_index += 1
         return ext_index
 
-    else:  # CounterScope.PER_FILEGROUP
-        if not all_files or not file_item:
-            return global_index
-        from oncutf.utils.filesystem.file_grouper import (
-            calculate_filegroup_counter_index,
-        )
+    # CounterScope.PER_FILEGROUP
+    if not all_files or not file_item:
+        return global_index
+    from oncutf.utils.filesystem.file_grouper import (
+        calculate_filegroup_counter_index,
+    )
 
-        try:
-            return calculate_filegroup_counter_index(
-                file_item, all_files, global_index, groups=None
-            )
-        except Exception:
-            return global_index
+    try:
+        return calculate_filegroup_counter_index(
+            file_item, all_files, global_index, groups=None
+        )
+    except Exception:
+        return global_index
