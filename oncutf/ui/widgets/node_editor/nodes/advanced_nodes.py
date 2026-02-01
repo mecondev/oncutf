@@ -87,11 +87,12 @@ class RegexMatchNode(Node):
             result = bool(re.search(pattern, text))
             self.markValid()
             self.graphics_node.setToolTip("")
-            return result
         except re.error as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Invalid regex pattern: {e}")
             return None
+        else:
+            return result
 
 
 @NodeRegistry.register(111)
@@ -154,7 +155,6 @@ class FileReadNode(Node):
 
             self.markValid()
             self.graphics_node.setToolTip("")
-            return contents
         except OSError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"File read error: {e}")
@@ -163,6 +163,8 @@ class FileReadNode(Node):
             self.mark_invalid()
             self.graphics_node.setToolTip("File encoding error (not UTF-8)")
             return None
+        else:
+            return contents
 
 
 @NodeRegistry.register(112)
@@ -233,7 +235,6 @@ class FileWriteNode(Node):
 
             self.markValid()
             self.graphics_node.setToolTip("")
-            return True
         except OSError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"File write error: {e}")
@@ -242,6 +243,8 @@ class FileWriteNode(Node):
             self.mark_invalid()
             self.graphics_node.setToolTip("Permission denied")
             return False
+        else:
+            return True
 
 
 @NodeRegistry.register(113)
@@ -318,7 +321,6 @@ class HttpRequestNode(Node):
 
             self.markValid()
             self.graphics_node.setToolTip("")
-            return body
         except urllib.error.HTTPError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"HTTP Error: {e.code} {e.reason}")
@@ -335,3 +337,5 @@ class HttpRequestNode(Node):
             self.mark_invalid()
             self.graphics_node.setToolTip("Request timed out")
             return None
+        else:
+            return body

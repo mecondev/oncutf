@@ -647,10 +647,11 @@ class Node(Serializable):
                 return None
             connecting_edge = input_socket.edges[0]
             other_socket = connecting_edge.get_other_socket(self.inputs[index])
-            return other_socket.node
         except Exception as e:
             dump_exception(e)
             return None
+        else:
+            return other_socket.node
 
     def get_input_with_socket(self, index: int = 0) -> tuple["Node | None", "Socket | None"]:
         """Get node and socket connected to specified input.
@@ -670,10 +671,11 @@ class Node(Serializable):
                 return None, None
             connecting_edge = input_socket.edges[0]
             other_socket = connecting_edge.get_other_socket(self.inputs[index])
-            return other_socket.node, other_socket
         except Exception as e:
             dump_exception(e)
             return None, None
+        else:
+            return other_socket.node, other_socket
 
     def get_input_with_socket_index(self, index: int = 0) -> tuple["Node | None", int | None]:
         """Get node and output socket index connected to specified input.
@@ -688,12 +690,13 @@ class Node(Serializable):
         try:
             edge = self.inputs[index].edges[0]
             socket = edge.get_other_socket(self.inputs[index])
-            return socket.node, socket.index
         except IndexError:
             return None, None
         except Exception as e:
             dump_exception(e)
             return None, None
+        else:
+            return socket.node, socket.index
 
     def get_inputs(self, index: int = 0) -> list["Node"]:
         """Get all nodes connected to specified input socket.
