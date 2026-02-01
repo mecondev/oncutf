@@ -133,8 +133,7 @@ class MetadataExporter:
 
             if format_type == "markdown":
                 return self._export_markdown(files, output_dir, scope)
-            else:  # json (default)
-                return self._export_json(files, output_dir, scope)
+            return self._export_json(files, output_dir, scope)
 
         except Exception as e:
             logger.exception("[MetadataExporter] Export failed: %s", e)

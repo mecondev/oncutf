@@ -378,12 +378,11 @@ class UnifiedColumnService:
         # Simple heuristic based on column key
         if "date" in column_key.lower() or "time" in column_key.lower():
             return "datetime"
-        elif column_key in ("filesize", "size"):
+        if column_key in ("filesize", "size"):
             return "filesize"
-        elif column_key in ("width", "height", "duration"):
+        if column_key in ("width", "height", "duration"):
             return "numeric"
-        else:
-            return "text"
+        return "text"
 
     def get_recommended_width_for_content_type(
         self, content_type: str, current_width: int, min_width: int
@@ -403,14 +402,13 @@ class UnifiedColumnService:
         if content_type == "datetime":
             return max(current_width, 180)
         # Filesize needs moderate space
-        elif content_type == "filesize":
+        if content_type == "filesize":
             return max(current_width, 100)
         # Numeric needs less space
-        elif content_type == "numeric":
+        if content_type == "numeric":
             return max(current_width, 80)
         # Text columns use current width
-        else:
-            return max(current_width, min_width)
+        return max(current_width, min_width)
 
     def validate_column_width(self, column_key: str, width: int) -> int:
         """Validate and adjust column width within acceptable bounds.

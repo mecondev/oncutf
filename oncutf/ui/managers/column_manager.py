@@ -145,7 +145,7 @@ class ColumnManager:
         """
         if isinstance(table_view, QTableView):
             return table_view.horizontalHeader()
-        elif isinstance(table_view, QTreeView):
+        if isinstance(table_view, QTreeView):
             return table_view.header()
         return None
 
