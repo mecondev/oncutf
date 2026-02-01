@@ -275,7 +275,7 @@ class FileLoadController:
     def handle_drop(
         self,
         paths: list[str],
-        modifiers: "Qt.KeyboardModifiers" = Qt.KeyboardModifiers(),
+        modifiers: "Qt.KeyboardModifiers" | None = None,
     ) -> dict[str, Any]:
         """Handle file/folder drop with keyboard modifiers.
 
@@ -287,6 +287,9 @@ class FileLoadController:
             Dictionary with success status
 
         """
+        if modifiers is None:
+            modifiers = Qt.KeyboardModifiers()
+
         import time
 
         t0 = time.time()

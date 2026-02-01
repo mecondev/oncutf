@@ -175,11 +175,14 @@ class FileLoadManager:
     def load_single_item_from_drop(
         self,
         path: str,
-        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
+        modifiers: Qt.KeyboardModifiers | None = None,
     ) -> None:
         """Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
+        if modifiers is None:
+            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+
         logger.info(
             "[FileLoadManager] load_single_item_from_drop: %s",
             path,
@@ -226,11 +229,14 @@ class FileLoadManager:
     def load_files_from_dropped_items(
         self,
         paths: list[str],
-        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
+        modifiers: Qt.KeyboardModifiers | None = None,
     ) -> None:
         """Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.
         """
+        if modifiers is None:
+            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+
         if not paths:
             logger.info("[Drop] No files dropped in table.")
             return

@@ -202,8 +202,11 @@ class CustomFileSystemModel(QFileSystemModel):
         # For all other roles, use default behavior
         return super().data(index, role)
 
-    def hasChildren(self, parent: QModelIndex = QModelIndex()) -> bool:
+    def hasChildren(self, parent: QModelIndex | None = None) -> bool:
         """Override to ensure proper expand/collapse behavior with optimized checking."""
+        if parent is None:
+            parent = QModelIndex()
+
         if not parent.isValid():
             return True
 
@@ -215,7 +218,7 @@ class CustomFileSystemModel(QFileSystemModel):
 
         return False
 
-    def refresh(self, index: QModelIndex = QModelIndex()) -> None:
+    def refresh(self, index: QModelIndex | None = None) -> None:
         """Refresh the file system model to detect new/removed drives.
 
         This method updates the model by clearing and reloading file system data,
@@ -225,6 +228,9 @@ class CustomFileSystemModel(QFileSystemModel):
             index: The model index to refresh (default: root)
 
         """
+        if index is None:
+            index = QModelIndex()
+
         try:
             # If no index provided, refresh the root (all drives)
             if not index.isValid():

@@ -125,11 +125,11 @@ class FileTableModel(QAbstractTableModel):
 
     # ==================== Qt Model Interface (delegated) ====================
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex | None = None) -> int:
         """Return the number of columns."""
         return self._data_provider.column_count()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex | None = None) -> int:
         """Return the number of rows (files) in the model."""
         return self._data_provider.row_count()
 

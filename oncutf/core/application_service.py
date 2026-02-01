@@ -87,9 +87,12 @@ class ApplicationService:
     def load_single_item_from_drop(
         self,
         path: str,
-        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers(Qt.NoModifier),
+        modifiers: Qt.KeyboardModifiers | None = None,
     ) -> None:
         """Load single item from drop via FileLoadController."""
+        if modifiers is None:
+            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+
         import time
 
         from oncutf.utils.logging.logger_factory import get_cached_logger

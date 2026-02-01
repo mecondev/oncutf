@@ -240,7 +240,7 @@ def get_open_file_name_on_parent_screen(
     caption: str = "Open File",
     directory: str = "",
     filter: str = "",
-    options: QFileDialog.Options = QFileDialog.Options(),
+    options: QFileDialog.Options | None = None,
 ) -> tuple[str, str]:
     """Show a file selection dialog positioned on the same screen as the parent.
 
@@ -255,6 +255,9 @@ def get_open_file_name_on_parent_screen(
         Tuple of (selected_file_path, selected_filter)
 
     """
+    if options is None:
+        options = QFileDialog.Options()
+
     dialog = QFileDialog(parent, caption, directory, filter)
     dialog.setFileMode(QFileDialog.ExistingFile)
     dialog.setOptions(options)
@@ -277,7 +280,7 @@ def get_save_file_name_on_parent_screen(
     caption: str = "Save File",
     directory: str = "",
     filter: str = "",
-    options: QFileDialog.Options = QFileDialog.Options(),
+    options: QFileDialog.Options | None = None,
 ) -> tuple[str, str]:
     """Show a save file dialog positioned on the same screen as the parent.
 
@@ -292,6 +295,9 @@ def get_save_file_name_on_parent_screen(
         Tuple of (selected_file_path, selected_filter)
 
     """
+    if options is None:
+        options = QFileDialog.Options()
+
     dialog = QFileDialog(parent, caption, directory, filter)
     dialog.setFileMode(QFileDialog.AnyFile)
     dialog.setAcceptMode(QFileDialog.AcceptSave)
