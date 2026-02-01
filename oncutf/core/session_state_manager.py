@@ -67,9 +67,7 @@ class SessionStateManager:
         """Get current sort column index."""
         return cast(
             int,
-            self.db_manager.get_session_state(
-                "sort_column", SESSION_STATE_DEFAULTS["sort_column"]
-            ),
+            self.db_manager.get_session_state("sort_column", SESSION_STATE_DEFAULTS["sort_column"]),
         )
 
     def set_sort_column(self, column: int) -> bool:
@@ -107,9 +105,7 @@ class SessionStateManager:
         """Get last opened folder path."""
         return cast(
             str,
-            self.db_manager.get_session_state(
-                "last_folder", SESSION_STATE_DEFAULTS["last_folder"]
-            ),
+            self.db_manager.get_session_state("last_folder", SESSION_STATE_DEFAULTS["last_folder"]),
         )
 
     def set_last_folder(self, folder: str) -> bool:
@@ -231,12 +227,9 @@ class SessionStateManager:
             ),
         )
 
-
     def set_metadata_tree_column_widths(self, widths: dict[str, int]) -> bool:
         """Set metadata tree column widths."""
-        return cast(
-            bool, self.db_manager.set_session_state("metadata_tree_column_widths", widths)
-        )
+        return cast(bool, self.db_manager.set_session_state("metadata_tree_column_widths", widths))
 
     # ====================================================================
     # Bulk Operations

@@ -344,7 +344,6 @@ class ThemeManager(QObject):
                 }}
             """
 
-
     def apply_complete_theme(self, app: Any, main_window: Any = None) -> None:
         """Apply complete theming to the entire application.
 

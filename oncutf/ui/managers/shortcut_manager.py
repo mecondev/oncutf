@@ -212,9 +212,7 @@ class ShortcutManager:
             logger.info("[MainWindow] RENAME_HISTORY: Rename history dialog shown successfully")
 
         except Exception:
-            logger.exception(
-                "[MainWindow] RENAME_HISTORY: Error showing rename history dialog"
-            )
+            logger.exception("[MainWindow] RENAME_HISTORY: Error showing rename history dialog")
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):

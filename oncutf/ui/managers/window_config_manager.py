@@ -294,6 +294,7 @@ class WindowConfigManager:
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
+
         def _raise_no_qapp() -> None:
             raise RuntimeError("No QApplication instance found")
 

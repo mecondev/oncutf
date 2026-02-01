@@ -197,6 +197,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
             ThumbnailGenerationError: If RAW processing fails
 
         """
+
         def _raise_raw_pixmap_failed() -> NoReturn:
             raise ThumbnailGenerationError(f"Failed to create pixmap from RAW: {file_path}")
 

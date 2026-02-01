@@ -43,9 +43,7 @@ class MetadataTreeCacheHandler:
                 extra={"dev_only": True},
             )
         except Exception:
-            logger.exception(
-                "[MetadataTreeView] Failed to initialize UnifiedMetadataManager"
-            )
+            logger.exception("[MetadataTreeView] Failed to initialize UnifiedMetadataManager")
             self._view._direct_loader = None
 
     def get_direct_loader(self):

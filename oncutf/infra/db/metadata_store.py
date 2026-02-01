@@ -635,9 +635,6 @@ class MetadataStore:
                 (path_id,),
             )
             row = cursor.fetchone()
-
-            if row and row["color_tag"]:
-                color_tag: str = row["color_tag"]
         except Exception:
             logger.exception("[MetadataStore] Error getting color tag")
             return "none"

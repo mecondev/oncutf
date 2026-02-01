@@ -85,6 +85,7 @@ class SemanticAliasesManager:
             ValueError: If file is corrupted or invalid JSON
 
         """
+
         def _raise_invalid_structure() -> None:
             raise TypeError("Aliases file must contain a JSON object")
 
