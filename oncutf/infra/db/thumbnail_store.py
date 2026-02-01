@@ -61,9 +61,10 @@ class ThumbnailStore:
         try:
             # Try to execute a simple query
             self._connection.execute("SELECT 1")
-            return True
         except (sqlite3.ProgrammingError, AttributeError):
             return False
+        else:
+            return True
 
     def get_cached_entry(self, file_path: str, mtime: float) -> dict[str, Any] | None:
         """Retrieve cached thumbnail metadata for a file.
@@ -176,8 +177,6 @@ class ThumbnailStore:
                 Path(file_path).name,
                 cache_filename,
             )
-            return True
-
         except sqlite3.Error as e:
             # Rollback to prevent "cannot commit - no transaction is active" errors
             with contextlib.suppress(sqlite3.Error):
@@ -189,6 +188,8 @@ class ThumbnailStore:
                 e,
             )
             return False
+        else:
+            return True
 
     def invalidate_entry(self, file_path: str) -> bool:
         """Remove cached thumbnail metadata for a file.
@@ -215,11 +216,11 @@ class ThumbnailStore:
             deleted = cursor.rowcount > 0
             if deleted:
                 logger.debug("[ThumbnailStore] Invalidated entry: %s", Path(file_path).name)
-            return deleted
-
         except sqlite3.Error as e:
             logger.error("[ThumbnailStore] Failed to invalidate entry: %s", e)
             return False
+        else:
+            return deleted
 
     def get_folder_order(self, folder_path: str) -> list[str] | None:
         """Retrieve manual file order for a folder.
@@ -256,11 +257,11 @@ class ThumbnailStore:
                 len(file_paths),
                 Path(folder_path).name,
             )
-            return file_paths
-
         except json.JSONDecodeError as e:
             logger.error("[ThumbnailStore] Failed to decode file_paths JSON: %s", e)
             return None
+        else:
+            return file_paths
 
     def save_folder_order(self, folder_path: str, file_paths: list[str]) -> bool:
         """Save manual file order for a folder.
@@ -292,11 +293,11 @@ class ThumbnailStore:
                 len(file_paths),
                 Path(folder_path).name,
             )
-            return True
-
         except (sqlite3.Error, TypeError) as e:
             logger.error("[ThumbnailStore] Failed to save folder order: %s", e)
             return False
+        else:
+            return True
 
     def clear_folder_order(self, folder_path: str) -> bool:
         """Clear manual order for a folder (return to automatic sort).
@@ -326,11 +327,11 @@ class ThumbnailStore:
                     "[ThumbnailStore] Cleared manual order for: %s",
                     Path(folder_path).name,
                 )
-            return deleted
-
         except sqlite3.Error as e:
             logger.error("[ThumbnailStore] Failed to clear folder order: %s", e)
             return False
+        else:
+            return deleted
 
     def cleanup_orphaned_entries(self, valid_folder_paths: list[str]) -> int:
         """Remove cache entries for folders that no longer exist.
@@ -374,12 +375,11 @@ class ThumbnailStore:
                     cache_deleted,
                     order_deleted,
                 )
-
-            return total_deleted
-
         except sqlite3.Error as e:
             logger.error("[ThumbnailStore] Failed to cleanup orphaned entries: %s", e)
             return 0
+        else:
+            return total_deleted
 
     def get_cache_stats(self) -> dict[str, int]:
         """Get statistics about thumbnail cache usage.
@@ -412,8 +412,8 @@ class ThumbnailStore:
             }
 
             logger.debug("[ThumbnailStore] Cache stats: %s", stats)
-            return stats
-
         except sqlite3.Error as e:
             logger.error("[ThumbnailStore] Failed to get cache stats: %s", e)
             return {"total_entries": 0, "total_folders": 0, "total_manual_orders": 0}
+        else:
+            return stats
