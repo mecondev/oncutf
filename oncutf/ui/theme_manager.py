@@ -70,7 +70,7 @@ class ThemeManager(QObject):
                 extra={"dev_only": True},
             )
         except ImportError:
-            logger.error("[ThemeManager] Failed to load THEME_TOKENS from config")
+            logger.exception("[ThemeManager] Failed to load THEME_TOKENS from config")
             self._theme_tokens = {}
 
     def get_current_theme(self) -> str:
@@ -316,8 +316,8 @@ class ThemeManager(QObject):
             hover = self.get_color("selected")
             border = self.get_color("border")
             disabled = self.get_color("disabled_text")
-        except Exception as e:
-            logger.error("[ThemeManager] Error generating context menu stylesheet: %s", e)
+        except Exception:
+            logger.exception("[ThemeManager] Error generating context menu stylesheet")
             return ""
         else:
             return f"""

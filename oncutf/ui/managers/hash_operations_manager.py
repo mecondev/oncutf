@@ -213,7 +213,7 @@ class HashOperationsManager:
             )
 
         except Exception as e:
-            logger.error("[HashManager] Error setting up external comparison: %s", e)
+            logger.exception("[HashManager] Error setting up external comparison")
             show_info_message(
                 self.parent_window,
                 "Error",
@@ -277,7 +277,7 @@ class HashOperationsManager:
             self._results_presenter.show_hash_results(wrapped_results)
 
         except Exception as e:
-            logger.error("[HashManager] Error calculating checksum: %s", e)
+            logger.exception("[HashManager] Error calculating checksum")
             show_info_message(self.parent_window, "Error", f"Failed to calculate checksum: {e!s}")
 
     # ===== Worker Callbacks =====

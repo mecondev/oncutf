@@ -176,8 +176,8 @@ class FinalTransformContainer(QWidget):
 
             self.rename_engine = QtRenameEngine()
             logger.debug("[FinalTransformContainer] QtRenameEngine initialized")
-        except Exception as e:
-            logger.error("[FinalTransformContainer] Error initializing QtRenameEngine: %s", e)
+        except Exception:
+            logger.exception("[FinalTransformContainer] Error initializing QtRenameEngine")
 
     def _schedule_central_preview_update(self):
         """Schedule central preview update with delay."""
@@ -193,8 +193,8 @@ class FinalTransformContainer(QWidget):
                 # Clear cache to force fresh preview
                 self.rename_engine.clear_cache()
                 logger.debug("[FinalTransformContainer] Central preview update triggered")
-        except Exception as e:
-            logger.error("[FinalTransformContainer] Error in central preview update: %s", e)
+        except Exception:
+            logger.exception("[FinalTransformContainer] Error in central preview update")
 
     def trigger_preview_update(self):
         """Public method to trigger preview update."""

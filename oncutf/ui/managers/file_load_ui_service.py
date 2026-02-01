@@ -95,8 +95,8 @@ class FileLoadUIService:
                 # Small file sets: load immediately
                 self._load_files_immediate(items, clear=clear)
 
-        except Exception as e:
-            logger.error("[FileLoadUIService] Error updating model and UI: %s", e)
+        except Exception:
+            logger.exception("[FileLoadUIService] Error updating model and UI")
 
     def _load_files_immediate(self, items: list[FileItem], clear: bool = True) -> None:
         """Load files immediately for small file sets.
@@ -197,8 +197,8 @@ class FileLoadUIService:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error("[FileLoadUIService] Error refreshing UI: %s", e)
+        except Exception:
+            logger.exception("[FileLoadUIService] Error refreshing UI")
 
     def _update_file_table_placeholder(self, total_files: int) -> None:
         """Update file table placeholder visibility."""

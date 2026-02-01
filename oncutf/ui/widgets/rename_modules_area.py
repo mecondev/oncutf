@@ -281,8 +281,8 @@ class RenameModulesArea(QWidget):
 
             self.rename_engine = QtRenameEngine()
             logger.debug("[RenameModulesArea] QtRenameEngine initialized")
-        except Exception as e:
-            logger.error("[RenameModulesArea] Error initializing QtRenameEngine: %s", e)
+        except Exception:
+            logger.exception("[RenameModulesArea] Error initializing QtRenameEngine")
 
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
@@ -301,8 +301,8 @@ class RenameModulesArea(QWidget):
                 # Clear cache to force fresh preview
                 self.rename_engine.clear_cache()
                 logger.debug("[RenameModulesArea] Central preview update triggered")
-        except Exception as e:
-            logger.error("[RenameModulesArea] Error in central preview update: %s", e)
+        except Exception:
+            logger.exception("[RenameModulesArea] Error in central preview update")
 
     def trigger_preview_update(self):
         """Public method to trigger preview update."""

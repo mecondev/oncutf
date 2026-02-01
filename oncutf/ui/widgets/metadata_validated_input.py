@@ -106,8 +106,8 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
             else:
                 super().insertFromMimeData(source)
 
-        except Exception as e:
-            logger.error("[MetadataValidatedLineEdit] Error in insertFromMimeData: %s", e)
+        except Exception:
+            logger.exception("[MetadataValidatedLineEdit] Error in insertFromMimeData")
             super().insertFromMimeData(source)
 
     def _on_text_changed(self, text: str) -> None:
@@ -230,8 +230,8 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
             else:
                 super().insertFromMimeData(source)
 
-        except Exception as e:
-            logger.error("[MetadataValidatedTextEdit] Error in insertFromMimeData: %s", e)
+        except Exception:
+            logger.exception("[MetadataValidatedTextEdit] Error in insertFromMimeData")
             super().insertFromMimeData(source)
 
     def _on_text_changed(self) -> None:
