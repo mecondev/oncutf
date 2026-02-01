@@ -367,5 +367,5 @@ class MetadataFieldValidator:
         result = validator(value)
         if isinstance(result, tuple):
             return result
-        # Not a tuple, normalize to tuple format - function returns earlier for all paths
-        # Dead code removed per mypy unreachable analysis
+        # Not a tuple, normalize to tuple format
+        return (False, "Invalid validator return type")

@@ -176,12 +176,11 @@ class BatchOperationsManager:
             # Check if we should replace an existing operation (same key)
             existing_ops = self._batches[batch_type]
             for i, existing_op in enumerate(existing_ops):
-                if existing_op.key == operation.key:
+                if existing_op.key == operation.key and operation.priority <= existing_op.priority:
                     # Replace with newer operation (higher priority wins)
-                    if operation.priority <= existing_op.priority:
-                        existing_ops[i] = operation
-                        logger.debug("[BatchOps] Replaced operation: %s", operation.key)
-                        return
+                    existing_ops[i] = operation
+                    logger.debug("[BatchOps] Replaced operation: %s", operation.key)
+                    return
 
             # Add new operation
             self._batches[batch_type].append(operation)

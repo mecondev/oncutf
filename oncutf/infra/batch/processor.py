@@ -218,17 +218,15 @@ class BatchProcessorFactory:
         kwargs_any = cast("dict[str, Any]", kwargs)
         if processor_type == "smart":
             return SmartBatchProcessor(**kwargs_any)
-        else:
-            return BatchProcessor(**kwargs_any)
+        return BatchProcessor(**kwargs_any)
 
     @staticmethod
     def get_optimal_config(item_count: int, _item_type: str = "file") -> dict[str, Any]:
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}
-        elif item_count < 1000:
+        if item_count < 1000:
             return {"batch_size": 100, "max_workers": 4}
-        elif item_count < 10000:
+        if item_count < 10000:
             return {"batch_size": 200, "max_workers": 6}
-        else:
-            return {"batch_size": 500, "max_workers": 8}
+        return {"batch_size": 500, "max_workers": 8}

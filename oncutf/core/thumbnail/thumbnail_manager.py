@@ -101,8 +101,7 @@ class ThumbnailManager(QObject):
         """
         cpu_count = os.cpu_count() or 2
         # Use half of available cores, capped between 2-8
-        workers = max(2, min(8, cpu_count // 2))
-        return workers
+        return max(2, min(8, cpu_count // 2))
 
     def __init__(
         self,

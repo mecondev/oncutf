@@ -575,8 +575,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
         ]
 
         # Return unique times only
-        all_times = [primary_time] + [t for t in fallback_times if t != primary_time]
-        return all_times
+        return [primary_time] + [t for t in fallback_times if t != primary_time]
 
     def _extract_frame(self, file_path: str, timestamp: float) -> QPixmap:
         """Extract single frame from video at timestamp using FFmpeg.
