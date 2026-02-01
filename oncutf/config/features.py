@@ -57,6 +57,10 @@ EXIFTOOL_TIMEOUT_BATCH_PER_FILE = 0.5
 USE_PARALLEL_HASH_WORKER = True
 PARALLEL_HASH_MAX_WORKERS = None  # Auto-detect optimal count
 
+# Maximum memory cache size for hash storage (LRU eviction)
+# Hash values are small (~100B each), so 2000 entries ≈ 200KB
+MAX_HASH_MEMORY_CACHE_SIZE = 2000
+
 # =====================================
 # FILE HANDLING LIMITS
 # =====================================

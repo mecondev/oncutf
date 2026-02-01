@@ -83,7 +83,8 @@ class ApplicationService:
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Prepare folder load via FileLoadManager."""
         return cast(
-            list[str], self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear)
+            list[str],
+            self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear),
         )
 
     def load_single_item_from_drop(

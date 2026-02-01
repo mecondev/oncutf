@@ -365,5 +365,7 @@ class MetadataFieldValidator:
             validator = _default_validator
         # All validators must return (bool, str | None) tuple
         result = validator(value)
-        assert isinstance(result, tuple), f"Validator {field_name} returned {type(result)}, expected tuple"
+        assert isinstance(result, tuple), (
+            f"Validator {field_name} returned {type(result)}, expected tuple"
+        )
         return result

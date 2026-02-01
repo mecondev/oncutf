@@ -16,16 +16,12 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from oncutf.config import MAX_HASH_MEMORY_CACHE_SIZE
 from oncutf.infra.db.database_manager import get_database_manager
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
-
-# Maximum memory cache size to prevent unbounded growth
-# Increased from 1000 to 2000 for better hit rate
-# Hash values are small (~100B each), so 2000 entries = ~200KB
-MAX_MEMORY_CACHE_SIZE = 2000
 
 
 class PersistentHashCache:
@@ -66,7 +62,7 @@ class PersistentHashCache:
         self._memory_cache[cache_key] = hash_value
 
         # Enforce cache size limit (LRU eviction)
-        while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+        while len(self._memory_cache) > MAX_HASH_MEMORY_CACHE_SIZE:
             self._memory_cache.popitem(last=False)  # Remove oldest
 
         # Persist to database
@@ -105,7 +101,7 @@ class PersistentHashCache:
                 self._memory_cache[cache_key] = hash_value
 
                 # Enforce cache size limit
-                while len(self._memory_cache) > MAX_MEMORY_CACHE_SIZE:
+                while len(self._memory_cache) > MAX_HASH_MEMORY_CACHE_SIZE:
                     self._memory_cache.popitem(last=False)  # Remove oldest
 
                 return hash_value
