@@ -90,11 +90,11 @@ class SemanticAliasesManager:
 
             # Validate structure
             if not isinstance(data, dict):
-                raise ValueError("Aliases file must contain a JSON object")
+                raise TypeError("Aliases file must contain a JSON object")
 
             for key, value in data.items():
                 if not isinstance(value, list):
-                    raise ValueError(f"Alias '{key}' must map to a list of keys")
+                    raise TypeError(f"Alias '{key}' must map to a list of keys")
 
             logger.debug(
                 "Loaded %d semantic aliases from %s",

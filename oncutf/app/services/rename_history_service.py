@@ -337,7 +337,7 @@ class RenameHistoryManager:
 
                     if is_case_only_change(current_name, target_name):
                         if not safe_case_rename(current_path, target_path):
-                            raise Exception(
+                            raise OSError(
                                 f"Case-only rename failed: {current_name} -> {target_name}"
                             )
                     else:
