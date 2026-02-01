@@ -330,9 +330,8 @@ class QDMGraphicsView(QGraphicsView):
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
 
         if (
-            (hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None)
-            and is_shift_pressed(event)
-        ):
+            hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None
+        ) and is_shift_pressed(event):
             event.ignore()
             fake_event = QMouseEvent(
                 QEvent.MouseButtonPress,
@@ -405,9 +404,8 @@ class QDMGraphicsView(QGraphicsView):
 
         try:
             if (
-                (hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None)
-                and is_shift_pressed(event)
-            ):
+                hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None
+            ) and is_shift_pressed(event):
                 event.ignore()
                 fake_event = QMouseEvent(
                     event.type(),

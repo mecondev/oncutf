@@ -571,8 +571,8 @@ class ExifToolWrapper:
                         logger.debug(
                             "[ExifToolWrapper] Expected error during graceful close: %s",
                             e,
-                                extra={"dev_only": True},
-                            )
+                            extra={"dev_only": True},
+                        )
 
                 # Always close stdin best-effort (even on fast close).
                 with contextlib.suppress(BrokenPipeError, OSError, ValueError, AttributeError):

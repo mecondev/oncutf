@@ -166,10 +166,7 @@ class FileTableView(QTableView):
                 self.table_view = table_view
 
             def eventFilter(self, obj, event):
-                if (
-                    event.type() == QEvent.Enter
-                    and hasattr(self.table_view, "_hover_handler")
-                ):
+                if event.type() == QEvent.Enter and hasattr(self.table_view, "_hover_handler"):
                     self.table_view._hover_handler.clear_hover()
                 return False
 

@@ -440,7 +440,6 @@ def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
     }
 
 
-
 def build_metadata_tree_model(
     metadata: dict[str, Any],
     modified_keys: set[str] | None = None,

@@ -313,9 +313,8 @@ class FileLoadUIService:
             enabled: Whether to enable the search field
 
         """
-        if (
-            hasattr(self.parent_window, "metadata_tree_view")
-            and hasattr(self.parent_window.metadata_tree_view, "_update_search_field_state")
+        if hasattr(self.parent_window, "metadata_tree_view") and hasattr(
+            self.parent_window.metadata_tree_view, "_update_search_field_state"
         ):
             self.parent_window.metadata_tree_view._update_search_field_state(enabled)
             logger.debug(

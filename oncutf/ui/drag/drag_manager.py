@@ -265,26 +265,26 @@ class DragManager(QObject):
         if event_type == QEvent.KeyPress and hasattr(event, "key"):
             key = event.key()
             if key == Qt.Key_Escape:
+                logger.debug(
+                    "[DragManager] Escape key pressed during drag",
+                    extra={"dev_only": True},
+                )
+
+                # Check if ProgressDialog is active
+                from oncutf.ui.services.active_dialogs import (
+                    has_active_progress_dialogs,
+                )
+
+                if has_active_progress_dialogs():
                     logger.debug(
-                        "[DragManager] Escape key pressed during drag",
+                        "[DragManager] ProgressDialog is active, allowing it to handle ESC",
                         extra={"dev_only": True},
                     )
+                    return False  # Let dialog handle ESC
 
-                    # Check if ProgressDialog is active
-                    from oncutf.ui.services.active_dialogs import (
-                        has_active_progress_dialogs,
-                    )
-
-                    if has_active_progress_dialogs():
-                        logger.debug(
-                            "[DragManager] ProgressDialog is active, allowing it to handle ESC",
-                            extra={"dev_only": True},
-                        )
-                        return False  # Let dialog handle ESC
-
-                    # Force cleanup on ESC
-                    self.force_cleanup()
-                    return True  # Event handled
+                # Force cleanup on ESC
+                self.force_cleanup()
+                return True  # Event handled
 
         # Mouse release - check after a delay
         if event_type == QEvent.MouseButtonRelease:
@@ -300,11 +300,11 @@ class DragManager(QObject):
 
             elapsed = time.time() - self._drag_start_time
             if elapsed > 3.0:  # Only cleanup after 3 seconds
-                    logger.debug(
-                        "[DragManager] Window deactivated after long drag",
-                        extra={"dev_only": True},
-                    )
-                    schedule_drag_cleanup(self.force_cleanup, 500)
+                logger.debug(
+                    "[DragManager] Window deactivated after long drag",
+                    extra={"dev_only": True},
+                )
+                schedule_drag_cleanup(self.force_cleanup, 500)
 
         return False
 
@@ -316,11 +316,11 @@ class DragManager(QObject):
 
             elapsed = time.time() - self._drag_start_time
             if elapsed > 2.0:  # Only cleanup long-running drags
-                    logger.debug(
-                        "[DragManager] Long drag still active after mouse release",
-                        extra={"dev_only": True},
-                    )
-                    self._perform_cleanup()
+                logger.debug(
+                    "[DragManager] Long drag still active after mouse release",
+                    extra={"dev_only": True},
+                )
+                self._perform_cleanup()
 
 
 # Global convenience functions

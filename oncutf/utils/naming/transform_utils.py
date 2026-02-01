@@ -194,7 +194,6 @@ def apply_transform(name: str, transform: str) -> str:
         # Step 3: Strip any remaining leading/trailing spaces (shouldn't be any, but safety)
         return result.strip()
 
-
     if transform == "space":
         # Find first and last non-space character
         m_first = re.search(r"[^\s]", name)

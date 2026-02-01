@@ -55,7 +55,6 @@ class SelectionDelegates:
             if 0 <= row < len(self.file_model.files)
         ]
 
-
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """Update preview from selection via SelectionManager."""
         self.selection_manager.update_preview_from_selection(selected_rows)

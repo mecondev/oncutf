@@ -275,11 +275,7 @@ class MetadataHistoryDialog(QDialog):
                     "operation": cmd["description"],
                     "file": self._get_file_basename(cmd["file_path"]),
                     "status": (
-                        "Can Undo"
-                        if cmd["can_undo"]
-                        else "Can Redo"
-                        if cmd["can_redo"]
-                        else "Done"
+                        "Can Undo" if cmd["can_undo"] else "Can Redo" if cmd["can_redo"] else "Done"
                     ),
                     "type": "metadata",
                     "data": cmd,

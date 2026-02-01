@@ -364,10 +364,7 @@ class MetadataEditDialog(QDialog):
 
     def _on_validation_state_changed(self, is_valid: bool) -> None:
         """Handle validation state changes from the input widget."""
-        if (
-            not is_valid
-            and hasattr(self.input_field, "get_validation_error_message")
-        ):
+        if not is_valid and hasattr(self.input_field, "get_validation_error_message"):
             # Get error message from the input widget
             error_message = self.input_field.get_validation_error_message()
             if error_message:

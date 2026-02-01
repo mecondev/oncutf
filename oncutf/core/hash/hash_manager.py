@@ -380,11 +380,11 @@ class HashManager:
         # Memory cache only
         return {
             "cache_type": "memory",
-                "memory_entries": len(self._hash_cache),
-                "cache_hits": 0,  # Not tracked in memory-only mode
-                "cache_misses": 0,  # Not tracked in memory-only mode
-                "hit_rate_percent": 0.0,
-            }
+            "memory_entries": len(self._hash_cache),
+            "cache_hits": 0,  # Not tracked in memory-only mode
+            "cache_misses": 0,  # Not tracked in memory-only mode
+            "hit_rate_percent": 0.0,
+        }
 
     def clear_cache(self) -> None:
         """Clear hash cache (memory and/or persistent)."""

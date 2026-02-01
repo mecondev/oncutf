@@ -410,9 +410,8 @@ class EventHandler:
                 return True
 
             # Don't allow drag with Ctrl/Alt modifiers (only Shift is allowed)
-            if (
-                self._view._drag_start_pos is not None
-                and event.modifiers() & (Qt.ControlModifier | Qt.AltModifier)
+            if self._view._drag_start_pos is not None and event.modifiers() & (
+                Qt.ControlModifier | Qt.AltModifier
             ):
                 self._view._drag_start_pos = None
                 return False
@@ -488,11 +487,10 @@ class EventHandler:
             return True
 
         # Handle column management shortcuts
-        if (
-            hasattr(self._view, "_column_mgmt_behavior")
-            and self._view._column_mgmt_behavior.handle_keyboard_shortcut(
-                event.key(), event.modifiers()
-            )
+        if hasattr(
+            self._view, "_column_mgmt_behavior"
+        ) and self._view._column_mgmt_behavior.handle_keyboard_shortcut(
+            event.key(), event.modifiers()
         ):
             return True
 

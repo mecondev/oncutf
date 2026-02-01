@@ -188,9 +188,7 @@ class FileStore(QObject):
             bool: True if any folders were invalidated
 
         """
-        folders_to_remove = [
-            folder for folder in self._file_cache if not Path(folder).exists()
-        ]
+        folders_to_remove = [folder for folder in self._file_cache if not Path(folder).exists()]
 
         for folder in folders_to_remove:
             del self._file_cache[folder]

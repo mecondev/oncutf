@@ -223,7 +223,6 @@ class TableManager:
             if 0 <= row < len(self.parent_window.file_model.files)
         ]
 
-
     def after_check_change(self) -> None:
         """Called after the selection state of any file is modified.
 

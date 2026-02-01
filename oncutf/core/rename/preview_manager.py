@@ -498,8 +498,6 @@ def calculate_scope_aware_index(
     )
 
     try:
-        return calculate_filegroup_counter_index(
-            file_item, all_files, global_index, groups=None
-        )
+        return calculate_filegroup_counter_index(file_item, all_files, global_index, groups=None)
     except Exception:
         return global_index

@@ -267,9 +267,8 @@ class SplitterManager:
         This is useful when splitter movements affect column layouts.
         """
         # For file table, use the original sophisticated logic
-        if (
-            hasattr(self.parent_window, "file_table_view")
-            and hasattr(self.parent_window, "horizontal_splitter")
+        if hasattr(self.parent_window, "file_table_view") and hasattr(
+            self.parent_window, "horizontal_splitter"
         ):
             # Use existing splitter logic for column sizing (original implementation)
             sizes = self.parent_window.horizontal_splitter.sizes()

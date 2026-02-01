@@ -183,9 +183,7 @@ class PersistentHashCache:
 
     def get_files_with_hash(self, file_paths: list[str], algorithm: str = "CRC32") -> list[str]:
         """Get all files from the list that have a hash stored."""
-        return [
-            file_path for file_path in file_paths if self.has_hash(file_path, algorithm)
-        ]
+        return [file_path for file_path in file_paths if self.has_hash(file_path, algorithm)]
 
     def get_files_with_hash_batch(
         self, file_paths: list[str], algorithm: str = "CRC32"
