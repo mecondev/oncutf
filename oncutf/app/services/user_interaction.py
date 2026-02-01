@@ -22,20 +22,23 @@ if TYPE_CHECKING:
     from oncutf.app.ports import UserDialogPort
 
 
-def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
+def show_info_message(_parent: QWidget | None, title: str, message: str) -> None:
     """Show information dialog using registered adapter.
 
     Args:
-        parent: Parent widget (may be None) - currently unused, kept for API compatibility
+    ----
+        _parent: Parent widget (may be None) - currently unused, kept for API compatibility
         title: Dialog title
         message: Message to display
 
     Note:
+    ----
         This function is a bridge - core modules can call it without
         importing Qt directly. The actual dialog is shown by the adapter
         registered in QtAppContext.
 
     Raises:
+    ------
         RuntimeError: If user_dialog adapter is not registered
 
     """
@@ -52,15 +55,17 @@ def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     adapter.show_info(title, message)
 
 
-def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
+def show_error_message(_parent: QWidget | None, title: str, message: str) -> None:
     """Show error dialog using registered adapter.
 
     Args:
-        parent: Parent widget (may be None) - currently unused, kept for API compatibility
+    ----
+        _parent: Parent widget (may be None) - currently unused, kept for API compatibility
         title: Dialog title
         message: Error message to display
 
     Raises:
+    ------
         RuntimeError: If user_dialog adapter is not registered
 
     """
@@ -77,15 +82,17 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
     adapter.show_error(title, message)
 
 
-def show_warning_message(parent: QWidget | None, title: str, message: str) -> None:
+def show_warning_message(_parent: QWidget | None, title: str, message: str) -> None:
     """Show warning dialog using registered adapter.
 
     Args:
-        parent: Parent widget (may be None) - currently unused, kept for API compatibility
+    ----
+        _parent: Parent widget (may be None) - currently unused, kept for API compatibility
         title: Dialog title
         message: Warning message to display
 
     Raises:
+    ------
         RuntimeError: If user_dialog adapter is not registered
 
     """
@@ -102,18 +109,21 @@ def show_warning_message(parent: QWidget | None, title: str, message: str) -> No
     adapter.show_warning(title, message)
 
 
-def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
+def show_question_message(_parent: QWidget | None, title: str, message: str) -> bool:
     """Show yes/no question dialog using registered adapter.
 
     Args:
-        parent: Parent widget (may be None) - currently unused, kept for API compatibility
+    ----
+        _parent: Parent widget (may be None) - currently unused, kept for API compatibility
         title: Dialog title
         message: Question to ask
 
     Returns:
+    -------
         True if user clicked Yes, False otherwise
 
     Raises:
+    ------
         RuntimeError: If user_dialog adapter is not registered
 
     """
@@ -134,9 +144,11 @@ def get_dialog_adapter() -> UserDialogPort | None:
     """Get the registered UserDialogPort adapter.
 
     Returns:
+    -------
         The registered adapter or None if not registered yet.
 
     Note:
+    ----
         This is for advanced use cases where you need the adapter directly.
         Most code should use show_info_message(), show_error_message(), etc.
 

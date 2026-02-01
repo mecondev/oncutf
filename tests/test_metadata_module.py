@@ -12,7 +12,7 @@ from tests.mocks import MockFileItem
 
 
 # Clear metadata cache before each test to avoid interference
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     from oncutf.core.metadata.metadata_extractor import MetadataExtractor
 
     MetadataExtractor().clear_cache()

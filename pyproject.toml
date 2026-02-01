@@ -320,6 +320,9 @@ select = [
     "FBT",  # flake8-boolean-trap (boolean parameters)
     "ARG",  # flake8-unused-arguments
 ]
+
+# Treat underscore-prefixed params as intentionally unused
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Further reduced ignores - stricter enforcement
 ignore = [
     # Core ignores (pre-existing)
@@ -358,14 +361,14 @@ ignore = [
     "ANN206", # missing-return-type-class-method (2 violations)
     "ANN401", # any-type (397 violations) - will enable selectively
 
-    # Boolean trap (gradual adoption)
+    # Boolean trap (enforced in core/controllers/app, ignored in ui)
     "FBT001", # boolean-positional-arg-in-function-definition
     "FBT002", # boolean-default-value-in-function-definition
     "FBT003", # boolean-positional-value-in-function-call
 
-    # Unused arguments (gradual adoption - many Qt overrides)
-    "ARG001", # unused-function-argument
-    "ARG002", # unused-method-argument
+    # Unused arguments (ARG001 enabled for functions, others gradual)
+    # ARG001 removed - enabled to catch unused function args (use _ prefix for intentional)
+    "ARG002", # unused-method-argument (Qt overrides)
     "ARG003", # unused-class-method-argument
     "ARG004", # unused-static-method-argument
     "ARG005", # unused-lambda-argument
@@ -387,8 +390,8 @@ ignore = [
 "oncutf/app/**/*.py" = []  # No ignores for app/ layer
 "oncutf/domain/**/*.py" = []  # No ignores for domain/ layer
 "oncutf/infra/**/*.py" = []  # No ignores for infra/ layer
-# UI layer - allow Qt patterns
-"oncutf/ui/**/*.py" = ["D100", "D101", "D102", "D103"]  # Qt widgets may skip docstrings
+# UI layer - allow Qt patterns and boolean flags
+"oncutf/ui/**/*.py" = ["FBT001", "FBT002", "FBT003", "D100", "D101", "D102", "D103"]  # Boolean flags + docstrings OK in UI glue code
 # Legitimate Any usage (external APIs, dynamic data)
 "oncutf/core/metadata/metadata_service.py" = ["ANN401"]  # Metadata values are truly dynamic
 "oncutf/app/services/batch_service.py" = ["ANN401"]  # Generic batch operations with dynamic kwargs

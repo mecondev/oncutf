@@ -58,19 +58,19 @@ def test_progress_updates_correctly(qtbot) -> None:
     assert dlg.progress_bar.maximum() == 10
 
 
-def test_dialog_question_response_yes(qtbot, monkeypatch) -> None:
+def test_dialog_question_response_yes(qtbot, monkeypatch) -> None:  # noqa: ARG001
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Yes"))
     result = CustomMessageDialog.question(QWidget(), "Test", "Do you confirm?", "Yes", "No")
     assert result is True
 
 
-def test_dialog_question_response_no(qtbot, monkeypatch) -> None:
+def test_dialog_question_response_no(qtbot, monkeypatch) -> None:  # noqa: ARG001
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "No"))
     result = CustomMessageDialog.question(QWidget(), "Test", "Do you confirm?", "Yes", "No")
     assert result is False
 
 
-def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:
+def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:  # noqa: ARG001
     captured = {}
 
     def fake_exec(self):
@@ -82,7 +82,7 @@ def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:
     assert captured["message"] == "Everything is OK."
 
 
-def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
+def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:  # noqa: ARG001
     monkeypatch.setattr(
         CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Skip")
     )
@@ -90,7 +90,7 @@ def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
     assert result == "skip"
 
 
-def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:
+def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:  # noqa: ARG001
     monkeypatch.setattr(
         CustomMessageDialog,
         "exec_",

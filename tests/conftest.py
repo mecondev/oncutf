@@ -235,7 +235,7 @@ def qt_cleanup(qapp):
             pass
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     """Cleanup after all tests.
 
     CRITICAL: This must restore os.name BEFORE returning control to pytest/VS Code,
