@@ -151,9 +151,8 @@ class PreExecutionValidator:
                     message=f"File is locked (open in another program): {file_item.name}",
                     technical_details=str(e),
                 )
-            else:
-                # On Unix, permission error was already caught
-                return None
+            # On Unix, permission error was already caught
+            return None
 
         except OSError as e:
             # Other OS errors (e.g., file is a directory, device error)

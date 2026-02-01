@@ -99,12 +99,12 @@ class UnifiedExecutionManager:
                     item.skip_reason = "conflict_skipped"
                     results.append(item)
                     continue
-                elif resolution == "skip_all":
+                if resolution == "skip_all":
                     skip_all = True
                     item.skip_reason = "conflict_skip_all"
                     results.append(item)
                     continue
-                elif resolution == "overwrite":
+                if resolution == "overwrite":
                     item.conflict_resolved = True
                 else:
                     # Cancel
@@ -275,10 +275,9 @@ class UnifiedExecutionManager:
             # Use safe case rename for case-only changes
             if is_case_only_change(old_name, new_name):
                 return safe_case_rename(item.old_path, item.new_path)
-            else:
-                # Regular rename
-                Path(item.old_path).rename(item.new_path)
-                return True
+            # Regular rename
+            Path(item.old_path).rename(item.new_path)
+            return True
 
         except Exception as e:
             item.error_message = str(e)

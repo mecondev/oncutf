@@ -43,12 +43,11 @@ def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> tuple[ModifierAction, s
 
     if is_ctrl and is_shift:
         return ModifierAction.MERGE_RECURSIVE, "Merge + Recursive"
-    elif is_ctrl:
+    if is_ctrl:
         return ModifierAction.REPLACE_RECURSIVE, "Replace + Recursive"
-    elif is_shift:
+    if is_shift:
         return ModifierAction.MERGE_SHALLOW, "Merge + Shallow"
-    else:
-        return ModifierAction.REPLACE_SHALLOW, "Replace + Shallow"
+    return ModifierAction.REPLACE_SHALLOW, "Replace + Shallow"
 
 
 def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
@@ -63,12 +62,12 @@ def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
     """
     if action == ModifierAction.MERGE_RECURSIVE:
         return True, True  # merge=True, recursive=True
-    elif action == ModifierAction.REPLACE_RECURSIVE:
+    if action == ModifierAction.REPLACE_RECURSIVE:
         return False, True  # merge=False, recursive=True
-    elif action == ModifierAction.MERGE_SHALLOW:
+    if action == ModifierAction.MERGE_SHALLOW:
         return True, False  # merge=True, recursive=False
-    else:  # REPLACE_SHALLOW
-        return False, False  # merge=False, recursive=False
+    # REPLACE_SHALLOW
+    return False, False  # merge=False, recursive=False
 
 
 def decode_modifiers_to_flags(

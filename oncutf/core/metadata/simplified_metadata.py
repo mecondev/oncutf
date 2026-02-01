@@ -69,7 +69,7 @@ class SimplifiedMetadata:
         simplified_dict = self._simplifier.simplify_keys(original_keys)
 
         # Build bidirectional mappings
-        for original_key, _value in self._original_metadata.items():
+        for original_key in self._original_metadata:
             simplified_key = simplified_dict.get(original_key, original_key)
             self._original_to_simplified[original_key] = simplified_key
             self._simplified_to_original[simplified_key] = original_key

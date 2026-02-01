@@ -247,9 +247,11 @@ class MetadataWriter(QObject):
             # Create a map of normalized path -> file item for fast lookup
             path_map = {normalize_path(f.full_path): f for f in file_model.files}
 
-            for staged_path in all_staged_changes:
-                if staged_path in path_map:
-                    files_to_save.append(path_map[staged_path])
+            files_to_save.extend(
+                path_map[staged_path]
+                for staged_path in all_staged_changes
+                if staged_path in path_map
+            )
 
         if not files_to_save:
             logger.info("[MetadataWriter] No files with staged metadata found in current view")
@@ -459,8 +461,7 @@ class MetadataWriter(QObject):
 
         for key, value in all_modified_metadata.items():
             if normalize_path(key) == normalized:
-                result = value
-                return result
+                return value
 
         # Not found
         return {}
@@ -547,13 +548,16 @@ class MetadataWriter(QObject):
         if not hasattr(self.parent_window, "metadata_tree_view"):
             return
         tree = self.parent_window.metadata_tree_view
-        if hasattr(tree, "_current_file_path") and tree._current_file_path == file_item.full_path:
-            if hasattr(self.parent_window, "metadata_cache"):
-                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if entry and hasattr(entry, "data"):
-                    display_data = dict(entry.data)
-                    display_data["FileName"] = file_item.filename
-                    tree.display_metadata(display_data, context="after_save")
+        if (
+            hasattr(tree, "_current_file_path")
+            and tree._current_file_path == file_item.full_path
+            and hasattr(self.parent_window, "metadata_cache")
+        ):
+            entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if entry and hasattr(entry, "data"):
+                display_data = dict(entry.data)
+                display_data["FileName"] = file_item.filename
+                tree.display_metadata(display_data, context="after_save")
 
     def _update_file_icon(self, file_item: Any) -> None:
         """Update the info icon in column 0 for a file after save.
