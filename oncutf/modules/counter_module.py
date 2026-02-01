@@ -291,10 +291,11 @@ class CounterModule(BaseRenameModule):
                 scope,
                 extra={"dev_only": True},
             )
-            return result
         except Exception as e:
             logger.exception("[CounterModule] Failed to apply counter logic")
             return "####"
+        else:
+            return result
 
     @staticmethod
     def is_effective_data(_data: dict[str, Any]) -> bool:
