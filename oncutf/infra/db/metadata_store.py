@@ -152,11 +152,11 @@ class MetadataStore:
                 success_count,
                 len(metadata_items),
             )
-            return success_count
-
         except Exception as e:
             logger.error("[MetadataStore] Error in batch store metadata: %s", e)
             return 0
+        else:
+            return success_count
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Retrieve metadata for a file."""
@@ -261,12 +261,11 @@ class MetadataStore:
                     metadata["__modified__"] = True
 
                 results[file_path] = metadata
-
-            return results
-
         except Exception as e:
             logger.error("[MetadataStore] Error in batch metadata retrieval: %s", e)
             return dict.fromkeys(file_paths)
+        else:
+            return results
 
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         """Check if file has metadata stored."""
@@ -295,12 +294,11 @@ class MetadataStore:
                 """,
                     (path_id,),
                 )
-
-            return cursor.fetchone() is not None
-
         except Exception as e:
             logger.error("[MetadataStore] Error checking metadata for %s: %s", file_path, e)
             return False
+        else:
+            return cursor.fetchone() is not None
 
     def create_metadata_category(
         self,
@@ -321,7 +319,6 @@ class MetadataStore:
                 (category_name, display_name, description, sort_order),
             )
             self.connection.commit()
-            return cursor.lastrowid
         except Exception as e:
             logger.error(
                 "[MetadataStore] Error creating metadata category '%s': %s",
@@ -329,6 +326,8 @@ class MetadataStore:
                 e,
             )
             return None
+        else:
+            return cursor.lastrowid
 
     def get_metadata_categories(self) -> list[dict[str, Any]]:
         """Get all metadata categories ordered by sort_order."""
@@ -379,10 +378,11 @@ class MetadataStore:
                 ),
             )
             self.connection.commit()
-            return cursor.lastrowid
         except Exception as e:
             logger.error("[MetadataStore] Error creating metadata field '%s': %s", field_key, e)
             return None
+        else:
+            return cursor.lastrowid
 
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
@@ -413,11 +413,11 @@ class MetadataStore:
                     ORDER BY c.sort_order, f.sort_order, f.field_name
                     """
                 )
-
-            return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
             logger.error("[MetadataStore] Error getting metadata fields: %s", e)
             return []
+        else:
+            return [dict(row) for row in cursor.fetchall()]
 
     def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
         """Get a metadata field by its key."""
@@ -435,10 +435,11 @@ class MetadataStore:
                 (field_key,),
             )
             row = cursor.fetchone()
-            return dict(row) if row else None
         except Exception as e:
             logger.error("[MetadataStore] Error getting metadata field '%s': %s", field_key, e)
             return None
+        else:
+            return dict(row) if row else None
 
     def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
         """Store structured metadata for a file."""
@@ -463,8 +464,6 @@ class MetadataStore:
                 (path_id, field_info["id"], field_value),
             )
             self.connection.commit()
-            return True
-
         except Exception as e:
             logger.error(
                 "[MetadataStore] Error storing structured metadata for %s: %s",
@@ -472,6 +471,8 @@ class MetadataStore:
                 e,
             )
             return False
+        else:
+            return True
 
     def batch_store_structured_metadata(
         self, file_path: str, field_data: list[tuple[str, str]]
@@ -525,8 +526,6 @@ class MetadataStore:
                 "[MetadataStore] Batch stored %d structured metadata fields",
                 len(valid_data),
             )
-            return len(valid_data)
-
         except Exception as e:
             logger.error(
                 "[MetadataStore] Error in batch store structured metadata for %s: %s",
@@ -534,6 +533,8 @@ class MetadataStore:
                 e,
             )
             return 0
+        else:
+            return len(valid_data)
 
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
@@ -567,9 +568,6 @@ class MetadataStore:
                     "category_name": row["category_name"],
                     "category_display_name": row["category_display_name"],
                 }
-
-            return result
-
         except Exception as e:
             logger.error(
                 "[MetadataStore] Error getting structured metadata for %s: %s",
@@ -577,6 +575,8 @@ class MetadataStore:
                 e,
             )
             return {}
+        else:
+            return result
 
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
         """Set color tag for a file.
@@ -611,11 +611,11 @@ class MetadataStore:
             self.connection.commit()
 
             logger.debug("[MetadataStore] Set color_tag=%s for: %s", color_hex, file_path)
-            return True
-
         except Exception as e:
             logger.error("[MetadataStore] Error setting color tag: %s", e)
             return False
+        else:
+            return True
 
     def get_color_tag(self, file_path: str) -> str:
         """Get color tag for a file.
@@ -643,9 +643,11 @@ class MetadataStore:
 
             if row and row["color_tag"]:
                 color_tag: str = row["color_tag"]
-                return color_tag
-            return "none"
-
         except Exception as e:
             logger.error("[MetadataStore] Error getting color tag: %s", e)
+            return "none"
+        else:
+            if row and row["color_tag"]:
+                color_tag: str = row["color_tag"]
+                return color_tag
             return "none"
