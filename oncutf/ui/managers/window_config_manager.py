@@ -74,7 +74,7 @@ class WindowConfigManager:
             )
 
         except Exception as e:
-            logger.error("[Config] Failed to load window configuration: %s", e)
+            logger.exception("[Config] Failed to load window configuration")
             # If config loading fails, still set smart defaults
             logger.info("[Config] Exception occurred, applying smart defaults as fallback")
             self._set_smart_default_geometry()
@@ -290,7 +290,7 @@ class WindowConfigManager:
             )
 
         except Exception as e:
-            logger.error("[Config] Failed to save window configuration: %s", e)
+            logger.exception("[Config] Failed to save window configuration")
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
@@ -363,7 +363,7 @@ class WindowConfigManager:
             )
 
         except Exception as e:
-            logger.error("[Config] Failed to set smart default geometry: %s", e)
+            logger.exception("[Config] Failed to set smart default geometry")
             # Ultimate fallback
             self.main_window.setGeometry(100, 100, 1200, 800)
 
@@ -493,7 +493,7 @@ class WindowConfigManager:
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 
         except Exception as e:
-            logger.error("[Config] Failed to apply loaded configuration: %s", e)
+            logger.exception("[Config] Failed to apply loaded configuration")
 
     def handle_window_state_change(self) -> None:
         """Handle window state changes (maximize, minimize, restore)."""
@@ -511,7 +511,7 @@ class WindowConfigManager:
                 self._refresh_file_table_for_window_change()
 
         except Exception as e:
-            logger.error("[Config] Error handling window state change: %s", e)
+            logger.exception("[Config] Error handling window state change")
 
     def _refresh_file_table_for_window_change(self) -> None:
         """Refresh file table layout after window state changes."""
@@ -537,7 +537,7 @@ class WindowConfigManager:
                 get_timer_manager().schedule(refresh, delay=100, timer_type=TimerType.GENERIC)
 
         except Exception as e:
-            logger.error("[Config] Error refreshing file table for window change: %s", e)
+            logger.exception("[Config] Error refreshing file table for window change")
 
     def center_window(self) -> None:
         """Center the window on the primary screen."""
@@ -560,7 +560,7 @@ class WindowConfigManager:
             logger.info("[Config] Window centered at (%d, %d)", x, y)
 
         except Exception as e:
-            logger.error("[Config] Error centering window: %s", e)
+            logger.exception("[Config] Error centering window")
 
     def get_last_folder_from_config(self) -> str:
         """Get the last folder path from configuration."""

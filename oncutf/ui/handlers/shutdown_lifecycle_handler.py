@@ -93,8 +93,8 @@ class ShutdownLifecycleHandler:
                             )
                     else:
                         logger.warning("[CloseEvent] MetadataManager not available for saving")
-                except Exception as e:
-                    logger.error("[CloseEvent] Failed to save metadata before closing: %s", e)
+                except Exception:
+                    logger.exception("[CloseEvent] Failed to save metadata before closing")
                     # Show error but continue closing anyway
                     from oncutf.ui.dialogs.custom_message_dialog import (
                         CustomMessageDialog,
@@ -117,7 +117,7 @@ class ShutdownLifecycleHandler:
             get_app_config_manager().save_immediate()
             logger.info("[CloseEvent] Configuration saved immediately before shutdown")
         except Exception as e:
-            logger.error("[CloseEvent] Failed to save configuration: %s", e)
+            logger.exception("[CloseEvent] Failed to save configuration")
 
         # Ignore this close event - we'll handle closing ourselves
         event.ignore()
@@ -375,7 +375,7 @@ class ShutdownLifecycleHandler:
                 QApplication.quit()
 
         except Exception as e:
-            logger.error("[CloseEvent] Error completing shutdown: %s", e)
+            logger.exception("[CloseEvent] Error completing shutdown")
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 
@@ -394,7 +394,7 @@ class ShutdownLifecycleHandler:
             self._pre_cleanup_cleanup_metadata_thread()
 
         except Exception as e:
-            logger.error("[CloseEvent] Error in pre-coordinator cleanup: %s", e)
+            logger.exception("[CloseEvent] Error in pre-coordinator cleanup")
 
     def _pre_cleanup_stop_periodic_backups(self) -> None:
         """Stop periodic backup timer to avoid blocking UI during shutdown."""
@@ -441,10 +441,10 @@ class ShutdownLifecycleHandler:
                         result,
                     )
                 except Exception as save_error:
-                    logger.error("[CloseEvent] Failed to save config immediately: %s", save_error)
+                    logger.exception("[CloseEvent] Failed to save config immediately")
 
             except Exception as e:
-                logger.error("[CloseEvent] Failed to save window config: %s", e)
+                logger.exception("[CloseEvent] Failed to save window config")
         else:
             logger.warning("[CloseEvent] window_config_manager not available")
 
@@ -531,7 +531,7 @@ class ShutdownLifecycleHandler:
                 logger.warning("[CloseEvent] Context cleanup failed: %s", ctx_error)
 
         except Exception as e:
-            logger.error("[CloseEvent] Error in post-coordinator cleanup: %s", e)
+            logger.exception("[CloseEvent] Error in post-coordinator cleanup")
 
     # ============================================================================
     # UNSAVED CHANGES CHECK
@@ -701,4 +701,4 @@ class ShutdownLifecycleHandler:
             logger.info("[MainWindow] Shutdown components registered successfully")
 
         except Exception as e:
-            logger.error("[MainWindow] Error registering shutdown components: %s", e)
+            logger.exception("[MainWindow] Error registering shutdown components")
