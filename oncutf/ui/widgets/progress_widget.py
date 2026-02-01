@@ -82,6 +82,7 @@ class ProgressWidget(QWidget):
         """Initialize the progress widget.
 
         Args:
+        ----
             parent: Parent widget
             bar_color: Progress bar color (defaults to theme accent)
             bar_bg_color: Progress bar background color (defaults to theme background_lighter)
@@ -346,6 +347,7 @@ class ProgressWidget(QWidget):
         """Set progress based on data volume (bytes processed).
 
         Args:
+        ----
             processed_bytes: Number of bytes processed so far
             total_bytes: Total number of bytes to process
 
@@ -392,6 +394,7 @@ class ProgressWidget(QWidget):
         """Set status text with intelligent truncation for long messages.
 
         Args:
+        ----
             text: Status message to display
 
         """
@@ -453,6 +456,7 @@ class ProgressWidget(QWidget):
         """Set progress calculation mode.
 
         Args:
+        ----
             mode: Either "count" (file count based) or "size" (byte size based)
 
         """
@@ -529,6 +533,7 @@ class ProgressWidget(QWidget):
         based on the current progress_mode setting.
 
         Args:
+        ----
             file_count: Current number of files processed
             total_files: Total number of files to process
             processed_bytes: Current bytes processed (cumulative)
@@ -725,9 +730,11 @@ class ProgressWidget(QWidget):
         """Format time in HH:MM:SS format for consistent display.
 
         Args:
+        ----
             seconds: Time in seconds
 
         Returns:
+        -------
             Formatted time string (e.g., "00:01:30", "01:23:45")
 
         """
@@ -775,6 +782,7 @@ class ProgressWidget(QWidget):
         Added 64-bit integer support and overflow protection for large files (>24GB).
 
         Args:
+        ----
             processed_size: Cumulative bytes processed (always increasing, 64-bit)
             total_size: Total bytes to process (optional, uses stored value if 0, 64-bit)
 
@@ -859,6 +867,7 @@ class ProgressWidget(QWidget):
         """Manually set time information in HH:MM:SS format.
 
         Args:
+        ----
             elapsed: Elapsed time in seconds
             estimated_total: Estimated total time in seconds (optional)
 
@@ -909,12 +918,12 @@ class ProgressWidget(QWidget):
 
 
 # Simplified factory functions - only keep the essential ones
-def create_basic_progress_widget(parent=None, **kwargs):
+def create_basic_progress_widget(parent=None, **kwargs: object):
     """Create a basic progress widget (no enhanced tracking)."""
     return ProgressWidget(parent, show_size_info=False, show_time_info=False, **kwargs)
 
 
-def create_size_based_progress_widget(parent=None, **kwargs):
+def create_size_based_progress_widget(parent=None, **kwargs: object):
     """Create a progress widget with size-based progress bar and full tracking."""
     return ProgressWidget(
         parent, show_size_info=True, show_time_info=True, progress_mode="size", **kwargs

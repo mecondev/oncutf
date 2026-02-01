@@ -478,8 +478,8 @@ class Scene(Serializable):
         data: dict,
         hashmap: dict | None = None,
         restore_id: bool = True,
-        *args,
-        **kwargs,
+        *args: object,
+        **kwargs: object,
     ) -> bool:
         """Restore scene state from serialized dictionary.
 
@@ -571,8 +571,8 @@ class Scene(Serializable):
         data: dict,
         hashmap: dict | None = None,
         restore_id: bool = True,
-        *args,
-        **kwargs,
+        *args: object,
+        **kwargs: object,
     ) -> bool:
         """Backward-compatible alias for :meth:`deserialize_snapshot`."""
         return self.deserialize_snapshot(

@@ -38,6 +38,7 @@ class DateTimeEditDialog(QDialog):
         """Initialize the DateTime edit dialog.
 
         Args:
+        ----
             parent: Parent widget
             selected_files: List of file paths (str or Path)
             date_type: "modified" or "created" - which date to edit
@@ -304,15 +305,17 @@ class DateTimeEditDialog(QDialog):
         super().accept()
 
     @classmethod
-    def get_datetime_edit_choice(cls, parent, selected_files, date_type="modified"):
+    def get_datetime_edit_choice(cls, parent, selected_files, date_type="modified") -> tuple:
         """Factory method to show dialog and return selected files + datetime.
 
         Args:
+        ----
             parent: Parent widget
             selected_files: List of file paths
             date_type: "modified" or "created"
 
         Returns:
+        -------
             Tuple of (selected_files, new_datetime) or (None, None) if cancelled
 
         """

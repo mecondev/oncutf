@@ -137,7 +137,7 @@ class GraphicsEdgePathBezier(GraphicsEdgePathBase):
 class GraphicsEdgePathSquare(GraphicsEdgePathBase):
     """Square-cornered path with three line segments."""
 
-    def __init__(self, *args, handle_weight: float = 0.5, **kwargs):
+    def __init__(self, *args: object, handle_weight: float = 0.5, **kwargs: object):
         """Initialize square path calculator.
 
         Args:

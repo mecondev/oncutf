@@ -164,7 +164,7 @@ class ConstantNode(Node):
         res["value"] = self.content.edit.text()
         return res
 
-    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):
+    def deserialize(self, data, hashmap=None, restore_id=True, *args: object, **kwargs: object):
         """Deserialize node state.
 
         Args:
@@ -324,7 +324,7 @@ class CommentNode(Node):
         res["comment"] = self.content.edit.toPlainText()
         return res
 
-    def deserialize(self, data, hashmap=None, restore_id=True, *args, **kwargs):
+    def deserialize(self, data, hashmap=None, restore_id=True, *args: object, **kwargs: object):
         """Deserialize node state.
 
         Args:

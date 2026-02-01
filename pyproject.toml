@@ -352,13 +352,13 @@ ignore = [
 
     # ANN rules - Gradual adoption
     "ANN001", # missing-type-function-argument (427 violations)
-    "ANN002", # missing-type-args (8 violations)
-    "ANN003", # missing-type-kwargs (10 violations)
+    # ANN002 removed - enabled (was 8 violations, now 0)
+    # ANN003 removed - enabled (was 10 violations, now 0)
     "ANN201", # missing-return-type-undocumented-public-function (247 violations)
     "ANN202", # missing-return-type-private-function (161 violations)
     "ANN204", # missing-return-type-special-method (173 violations)
-    "ANN205", # missing-return-type-static-method (1 violation)
-    "ANN206", # missing-return-type-class-method (2 violations)
+    # ANN205 removed - enabled (was 1 violation, now 0)
+    # ANN206 removed - enabled (was 2 violations, now 0)
     "ANN401", # any-type (397 violations) - will enable selectively
 
     # Boolean trap (enforced in core/controllers/app, ignored in ui)

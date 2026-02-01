@@ -761,8 +761,8 @@ class Node(Serializable):
         data: dict,
         hashmap: dict | None = None,
         restore_id: bool = True,
-        *_args,
-        **_kwargs,
+        *_args: object,
+        **_kwargs: object,
     ) -> bool:
         """Restore node state from serialized dictionary.
 

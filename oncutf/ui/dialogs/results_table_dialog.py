@@ -426,7 +426,7 @@ class ResultsTableDialog(QDialog):
         parent,
         hash_results: dict,
         was_cancelled: bool = False,
-    ):
+    ) -> None:
         """Factory method to show hash/checksum results."""
         if not hash_results:
             return

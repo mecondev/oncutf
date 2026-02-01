@@ -496,10 +496,11 @@ class MetadataEditDialog(QDialog):
     @staticmethod
     def edit_metadata_field(
         parent, selected_files, metadata_cache, field_name: str, current_value: str = ""
-    ):
+    ) -> tuple:
         """Static method to show metadata edit dialog and return results.
 
         Args:
+        ----
             parent: Parent widget
             selected_files: List of FileItem objects
             metadata_cache: Metadata cache instance
@@ -507,6 +508,7 @@ class MetadataEditDialog(QDialog):
             current_value: Current value (for single file editing)
 
         Returns:
+        -------
             Tuple of (success: bool, value: str, files_to_modify: List)
 
         """

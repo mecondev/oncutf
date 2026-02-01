@@ -402,8 +402,8 @@ class Edge(Serializable):
         data: dict,
         hashmap: dict | None = None,
         restore_id: bool = True,
-        *_args,
-        **_kwargs,
+        *_args: object,
+        **_kwargs: object,
     ) -> bool:
         """Restore edge state from serialized dictionary.
 

@@ -99,7 +99,7 @@ class SceneClipboard:
 
         return data
 
-    def deserialize_from_clipboard(self, data: dict, *args, **kwargs) -> None:
+    def deserialize_from_clipboard(self, data: dict, *args: object, **kwargs: object) -> None:
         """Paste clipboard data into the scene.
 
         Creates new nodes and edges from serialized data, positioning
