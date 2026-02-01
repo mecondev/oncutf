@@ -160,12 +160,11 @@ class PathStore:
                     Path(new_path).name,
                 )
                 return True
-            else:
-                logger.debug(
-                    "[PathStore] No record found to update for: %s",
-                    old_path,
-                )
-                return False
+            logger.debug(
+                "[PathStore] No record found to update for: %s",
+                old_path,
+            )
+            return False
 
         except Exception as e:
             logger.error(

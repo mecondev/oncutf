@@ -132,8 +132,7 @@ class ExifToolWrapper:
 
         """
         try:
-            result = self._get_metadata_with_exiftool(file_path, use_extended)
-            return result
+            return self._get_metadata_with_exiftool(file_path, use_extended)
 
         except Exception as e:
             logger.error("[ExifToolWrapper] Error getting metadata for %s: %s", file_path, e)
@@ -230,9 +229,8 @@ class ExifToolWrapper:
             if isinstance(data, list) and len(data) > 0:
                 result = data[0]
                 return dict(result) if isinstance(result, dict) else None
-            else:
-                logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
-                return None
+            logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
+            return None
 
         except json.JSONDecodeError as e:
             logger.error("[ExifToolWrapper] JSON decode error: %s", e)
@@ -301,12 +299,11 @@ class ExifToolWrapper:
                     extra={"dev_only": True},
                 )
                 return list(data)
-            else:
-                logger.warning(
-                    "[ExifToolWrapper] Batch metadata failed with code %d",
-                    result.returncode,
-                )
-                return [{} for _ in file_paths]
+            logger.warning(
+                "[ExifToolWrapper] Batch metadata failed with code %d",
+                result.returncode,
+            )
+            return [{} for _ in file_paths]
 
         except json.JSONDecodeError as e:
             logger.error("[ExifToolWrapper] JSON decode error in batch metadata: %s", e)
@@ -525,10 +522,9 @@ class ExifToolWrapper:
                     Path(file_path_normalized).name,
                 )
                 return True
-            else:
-                logger.error("[ExifToolWrapper] Failed to write metadata: %s", result.stderr)
-                logger.error("[ExifToolWrapper] Command was: %s", " ".join(cmd))
-                return False
+            logger.error("[ExifToolWrapper] Failed to write metadata: %s", result.stderr)
+            logger.error("[ExifToolWrapper] Command was: %s", " ".join(cmd))
+            return False
 
         except subprocess.TimeoutExpired:
             logger.error(
@@ -567,15 +563,14 @@ class ExifToolWrapper:
 
         try:
             with self.lock:  # Ensure thread-safe shutdown
-                if try_graceful:
-                    if proc.stdin and not proc.stdin.closed:
-                        try:
-                            proc.stdin.write("-stay_open\nFalse\n")
-                            proc.stdin.flush()
-                        except (BrokenPipeError, OSError, ValueError) as e:
-                            logger.debug(
-                                "[ExifToolWrapper] Expected error during graceful close: %s",
-                                e,
+                if try_graceful and proc.stdin and not proc.stdin.closed:
+                    try:
+                        proc.stdin.write("-stay_open\nFalse\n")
+                        proc.stdin.flush()
+                    except (BrokenPipeError, OSError, ValueError) as e:
+                        logger.debug(
+                            "[ExifToolWrapper] Expected error during graceful close: %s",
+                            e,
                                 extra={"dev_only": True},
                             )
 

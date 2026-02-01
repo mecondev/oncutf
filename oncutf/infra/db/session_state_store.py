@@ -109,14 +109,13 @@ class SessionStateStore:
             # Deserialize based on type
             if value_type == "json":
                 return json.loads(value)
-            elif value_type == "int":
+            if value_type == "int":
                 return int(value)
-            elif value_type == "float":
+            if value_type == "float":
                 return float(value)
-            elif value_type == "bool":
+            if value_type == "bool":
                 return value.lower() == "true"
-            else:
-                return value
+            return value
 
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to get key '%s': %s", key, e)

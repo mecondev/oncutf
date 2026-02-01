@@ -250,8 +250,7 @@ class FilesystemService:
         try:
             if recursive:
                 return list(path.rglob(pattern))
-            else:
-                return list(path.glob(pattern))
+            return list(path.glob(pattern))
         except OSError as e:
             logger.error("Error listing directory %s: %s", path, e)
             return []

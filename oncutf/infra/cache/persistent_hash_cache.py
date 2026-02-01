@@ -183,13 +183,9 @@ class PersistentHashCache:
 
     def get_files_with_hash(self, file_paths: list[str], algorithm: str = "CRC32") -> list[str]:
         """Get all files from the list that have a hash stored."""
-        files_with_hash = []
-
-        for file_path in file_paths:
-            if self.has_hash(file_path, algorithm):
-                files_with_hash.append(file_path)
-
-        return files_with_hash
+        return [
+            file_path for file_path in file_paths if self.has_hash(file_path, algorithm)
+        ]
 
     def get_files_with_hash_batch(
         self, file_paths: list[str], algorithm: str = "CRC32"
@@ -199,9 +195,8 @@ class PersistentHashCache:
             # Use database manager for batch query if available
             if hasattr(self._db_manager, "get_files_with_hash_batch"):
                 return self._db_manager.get_files_with_hash_batch(file_paths, algorithm)
-            else:
-                # Fallback to individual checking
-                return self.get_files_with_hash(file_paths, algorithm)
+            # Fallback to individual checking
+            return self.get_files_with_hash(file_paths, algorithm)
         except Exception as e:
             logger.warning(
                 "[PersistentHashCache] Batch query failed, falling back to individual checks: %s",
