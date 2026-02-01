@@ -1,7 +1,7 @@
 # Implementation Plan: Repository Quality Improvements
 
-**Date**: 2026-01-30  
-**Status**: Ready for Implementation  
+**Date**: 2026-01-30
+**Status**: Ready for Implementation
 **Effort**: ~4-6 hours total across P0-P2 phases
 
 ---
@@ -55,7 +55,7 @@ ruff format --check .
 **Risk**: None  
 **Status**: ✅ **COMPLETED** - vulture>=2.3 added to pyproject.toml
 
-✅ Added `"vulture>=2.3"` to `[project.optional-dependencies.dev]`  
+✅ Added `"vulture>=2.3"` to `[project.optional-dependencies.dev]`
 ✅ Installed successfully with `pip install -e .[dev]`
 
 ---
@@ -193,8 +193,8 @@ from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 
 ### P1-4: Convert Stale TODOs to GitHub Issues ✅ COMPLETED
 
-**Effort**: 10 minutes  
-**Risk**: None  
+**Effort**: 10 minutes
+**Risk**: None
 **Status**: ✅ **COMPLETED** on 2026-02-01
 
 **GitHub Issues Created:**
@@ -320,6 +320,7 @@ python tools/audit_boundaries.py
 
 # Dead code check
 vulture oncutf --min-confidence 80
+```
 
 ### Manual Verification
 
