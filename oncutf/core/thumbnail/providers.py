@@ -20,7 +20,7 @@ Note: VideoThumbnailProvider requires FFmpeg installed on system.
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, NoReturn
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
@@ -197,7 +197,7 @@ class ImageThumbnailProvider(ThumbnailProvider):
             ThumbnailGenerationError: If RAW processing fails
 
         """
-        def _raise_raw_pixmap_failed() -> None:
+        def _raise_raw_pixmap_failed() -> NoReturn:
             raise ThumbnailGenerationError(f"Failed to create pixmap from RAW: {file_path}")
 
         try:
