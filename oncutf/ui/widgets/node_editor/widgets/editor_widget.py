@@ -180,7 +180,6 @@ class NodeEditorWidget(QWidget):
                 self.filename = filename
                 self.scene.history.clear()
                 self.scene.history.store_initial_history_stamp()
-                return True
             except FileNotFoundError as e:
                 dump_exception(e)
                 QMessageBox.warning(
@@ -193,6 +192,8 @@ class NodeEditorWidget(QWidget):
                 dump_exception(e)
                 QMessageBox.warning(self, f"Error loading {Path(filename).name}", str(e))
                 return False
+            else:
+                return True
 
     def file_save(self, filename: str | None = None) -> bool:
         """Save graph to JSON file.

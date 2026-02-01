@@ -84,8 +84,6 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
             return True
         # On Unix-like systems, case-sensitive filesystems should work with direct rename
         Path(src_path).rename(dst_path)
-        return True
-
     except Exception as e:
         logger.error("Failed to perform case rename from %s to %s: %s", src_path, dst_path, e)
 
@@ -103,6 +101,8 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
             logger.error("Failed to cleanup after case rename failure: %s", cleanup_error)
 
         return False
+    else:
+        return True
 
 
 def build_rename_plan(

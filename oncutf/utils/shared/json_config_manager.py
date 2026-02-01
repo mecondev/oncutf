@@ -248,11 +248,11 @@ class JSONConfigManager:
                     "[JSONConfigManager] Configuration loaded successfully",
                     extra={"dev_only": True},
                 )
-                return True
-
             except Exception as e:
                 logger.error("[JSONConfigManager] Failed to load configuration: %s", e)
                 return False
+            else:
+                return True
 
     def save(self, create_backup: bool = True) -> bool:
         """Save configuration to JSON file."""
@@ -281,11 +281,11 @@ class JSONConfigManager:
                 # Clear dirty flag after successful save
                 self._dirty = False
                 logger.debug("[JSONConfigManager] Configuration saved successfully")
-                return True
-
             except Exception as e:
                 logger.error("[JSONConfigManager] Failed to save configuration: %s", e)
                 return False
+            else:
+                return True
 
     def _schedule_auto_save(self) -> None:
         """Schedule auto-save using timer_manager (debounced)."""
@@ -531,8 +531,8 @@ def save_config(config_data: dict[str, Any]) -> bool:
             json.dump(config_data, f, indent=2, ensure_ascii=False)
 
         logger.debug("Configuration saved to %s", config_manager.config_file)
-        return True
-
     except Exception as e:
         logger.error("Failed to save config: %s", e)
         return False
+    else:
+        return True

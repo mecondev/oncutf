@@ -215,9 +215,10 @@ def is_tool_available(tool_name: ToolName, prefer_bundled: bool = True) -> bool:
     """
     try:
         get_tool_path(tool_name, prefer_bundled=prefer_bundled)
-        return True
     except FileNotFoundError:
         return False
+    else:
+        return True
 
 
 def _get_download_url(tool_name: ToolName) -> str:

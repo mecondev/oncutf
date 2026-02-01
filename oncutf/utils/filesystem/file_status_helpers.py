@@ -216,8 +216,6 @@ def set_metadata_value(file_path: str | Path, key_path: str, new_value: Any) -> 
 
         # Update the metadata in cache
         set_metadata_for_file(file_path, metadata, modified=True)
-        return True
-
     except Exception as e:
         logger.error(
             "[FileStatusHelpers] Error setting metadata value for %s: %s",
@@ -225,6 +223,8 @@ def set_metadata_value(file_path: str | Path, key_path: str, new_value: Any) -> 
             e,
         )
         return False
+    else:
+        return True
 
 
 # --- Hash helpers ---

@@ -34,9 +34,10 @@ def read_snapshot_from_file(filename: str) -> dict[str, Any]:
         data = json.loads(raw_data)
         if not isinstance(data, dict):
             raise InvalidFileError(f"{Path(filename).name} does not contain a JSON object")
-        return data
     except json.JSONDecodeError:
         raise InvalidFileError(f"{Path(filename).name} is not a valid JSON file") from None
+    else:
+        return data
 
 
 def write_snapshot_to_file(snapshot: dict[str, Any], filename: str) -> None:
