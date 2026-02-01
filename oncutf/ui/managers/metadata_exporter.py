@@ -176,8 +176,8 @@ class MetadataExporter:
                 logger.debug("[MetadataExporter] Exported JSON for: %s", source_filename)
 
             logger.info("[MetadataExporter] JSON export completed: %d files", exported_count)
-        except Exception as e:
-            logger.error("[MetadataExporter] JSON export failed: %s", e)
+        except Exception:
+            logger.exception("[MetadataExporter] JSON export failed")
             return False
         else:
             return exported_count > 0
@@ -250,8 +250,8 @@ class MetadataExporter:
                 logger.debug("[MetadataExporter] Exported Markdown for: %s", source_filename)
 
             logger.info("[MetadataExporter] Markdown export completed: %d files", exported_count)
-        except Exception as e:
-            logger.error("[MetadataExporter] Markdown export failed: %s", e)
+        except Exception:
+            logger.exception("[MetadataExporter] Markdown export failed")
             return False
         else:
             return exported_count > 0
@@ -293,8 +293,8 @@ class MetadataExporter:
             grouped_metadata = self._group_metadata(metadata)
             if grouped_metadata:
                 file_data["metadata_groups"] = grouped_metadata
-        except Exception as e:
-            logger.error("[MetadataExporter] Error preparing file data: %s", e)
+        except Exception:
+            logger.exception("[MetadataExporter] Error preparing file data")
             return None
         else:
             return file_data

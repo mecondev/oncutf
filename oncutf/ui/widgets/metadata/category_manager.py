@@ -69,8 +69,8 @@ class CategoryManager:
 
             logger.debug("Category change completed for: %s", current_data)
 
-        except Exception as e:
-            logger.error("Error in _on_category_changed: %s", e)
+        except Exception:
+            logger.exception("Error in _on_category_changed")
 
     def update_options(self) -> None:
         """Update options combo box based on selected category."""
@@ -231,8 +231,8 @@ class CategoryManager:
         try:
             file_paths = [file_item.full_path for file_item in selected_files]
             return any(batch_metadata_status(file_paths).values())
-        except Exception as e:
-            logger.error("[MetadataWidget] Error checking metadata availability: %s", e)
+        except Exception:
+            logger.exception("[MetadataWidget] Error checking metadata availability")
             return False
 
     def _check_calculation_requirements(self, category: str) -> None:
@@ -258,8 +258,8 @@ class CategoryManager:
             elif category == "metadata_keys":
                 self._check_metadata_calculation_requirements(selected_files)
 
-        except Exception as e:
-            logger.error("[MetadataWidget] Error checking calculation requirements: %s", e)
+        except Exception:
+            logger.exception("[MetadataWidget] Error checking calculation requirements")
             self.widget._hash_dialog_active = False
 
     def _check_metadata_calculation_requirements(self, selected_files) -> None:

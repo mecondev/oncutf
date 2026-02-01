@@ -145,11 +145,10 @@ class CustomFileSystemModel(QFileSystemModel):
                         "[CustomFileSystemModel] Failed to load icon: %s",
                         icon_name,
                     )
-            except Exception as e:
-                logger.error(
-                    "[CustomFileSystemModel] Error loading icon %s: %s",
+            except Exception:
+                logger.exception(
+                    "[CustomFileSystemModel] Error loading icon %s",
                     icon_name,
-                    e,
                 )
 
     def _get_cached_icon(self, icon_name: str) -> QIcon:
@@ -163,11 +162,10 @@ class CustomFileSystemModel(QFileSystemModel):
                     # Fallback to default file icon
                     icon = self._icon_cache.get("file", QIcon())
                     self._icon_cache[icon_name] = icon
-            except Exception as e:
-                logger.error(
-                    "[CustomFileSystemModel] Error loading icon %s: %s",
+            except Exception:
+                logger.exception(
+                    "[CustomFileSystemModel] Error loading icon %s",
                     icon_name,
-                    e,
                 )
                 # Fallback to default file icon
                 icon = self._icon_cache.get("file", QIcon())
@@ -268,5 +266,5 @@ class CustomFileSystemModel(QFileSystemModel):
                     extra={"dev_only": True},
                 )
 
-        except Exception as e:
-            logger.error("[CustomFileSystemModel] Error refreshing model: %s", e)
+        except Exception:
+            logger.exception("[CustomFileSystemModel] Error refreshing model")

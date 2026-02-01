@@ -87,8 +87,8 @@ class RenameManager:
                 metadata_cache=self.main_window.metadata_cache,
                 current_folder_path=self.main_window.context.get_current_folder(),
             )
-        except Exception as e:
-            logger.error("[RenameManager] Critical error during rename: %s", e)
+        except Exception:
+            logger.exception("[RenameManager] Critical error during rename")
             self._restore_wait_cursor()
             return
 
@@ -463,8 +463,8 @@ class RenameManager:
                     )
                     continue
 
-        except Exception as e:
-            logger.error("[RenameManager] Error in _restore_checked_state_safe: %s", e)
+        except Exception:
+            logger.exception("[RenameManager] Error in _restore_checked_state_safe")
 
         return restored_count
 
@@ -522,8 +522,8 @@ class RenameManager:
             # Update entire viewport
             file_table_view.viewport().update()
 
-        except Exception as e:
-            logger.error("[RenameManager] Error in _update_info_icons_safe: %s", e)
+        except Exception:
+            logger.exception("[RenameManager] Error in _update_info_icons_safe")
 
     def _update_info_icons(self) -> None:
         """Force update info icons in column 0 after rename."""
