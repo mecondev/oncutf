@@ -351,7 +351,7 @@ ignore = [
 
 # Per-file ignores for scripts and utilities
 [tool.ruff.lint.per-file-ignores]
-"main.py" = ["E402"]  # Intentional sys.path setup before imports
+"main.py" = ["E402", "TRY300"]  # Intentional sys.path setup before imports; false positive on return after try/except
 "oncutf/__main__.py" = ["E402"]  # Entry point with sys.path setup
 "tests/manual/*.py" = ["E402"]  # Manual test scripts are entry points
 "tests/*.py" = ["D", "SIM117"]  # Test-specific ignores (T201/ARG/PLR families not selected)
