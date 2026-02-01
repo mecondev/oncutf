@@ -64,8 +64,7 @@ class HashManager:
 
         if self._use_persistent_cache:
             return self._persistent_cache.has_hash(cache_key)
-        else:
-            return cache_key in self._hash_cache
+        return cache_key in self._hash_cache
 
     def get_cached_hash(self, file_path: str | Path) -> str | None:
         """Get hash from cache without calculating it.
@@ -85,8 +84,7 @@ class HashManager:
 
         if self._use_persistent_cache:
             return self._persistent_cache.get_hash(cache_key)
-        else:
-            return self._hash_cache.get(cache_key)
+        return self._hash_cache.get(cache_key)
 
     def calculate_hash(
         self,
@@ -379,10 +377,9 @@ class HashManager:
                 "cache_misses": persistent_stats.get("cache_misses", 0),
                 "hit_rate_percent": persistent_stats.get("hit_rate_percent", 0.0),
             }
-        else:
-            # Memory cache only
-            return {
-                "cache_type": "memory",
+        # Memory cache only
+        return {
+            "cache_type": "memory",
                 "memory_entries": len(self._hash_cache),
                 "cache_hits": 0,  # Not tracked in memory-only mode
                 "cache_misses": 0,  # Not tracked in memory-only mode

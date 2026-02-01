@@ -202,10 +202,9 @@ class HashWorker(BaseHashWorker):
                 self._cache_hits += 1
                 logger.debug("[HashWorker] Cache hit for: %s", Path(file_path).name)
                 return hash_value
-            else:
-                self._cache_misses += 1
-                logger.debug("[HashWorker] Cache miss for: %s", Path(file_path).name)
-                return None
+            self._cache_misses += 1
+            logger.debug("[HashWorker] Cache miss for: %s", Path(file_path).name)
+            return None
         except Exception as e:
             logger.debug("[HashWorker] Cache check failed for %s: %s", file_path, e)
             self._cache_misses += 1

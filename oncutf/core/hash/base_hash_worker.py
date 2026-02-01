@@ -139,7 +139,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
             logger.debug("[%s] Total size set to: %d bytes", self.__class__.__name__, total_size)
 
     # =========================================================================
-    # Cancellation (Common)
+    # Cancellation API
     # =========================================================================
 
     def cancel(self) -> None:

@@ -105,9 +105,8 @@ class DiskCache:
                         value = pickle.load(f)
                     self.hits += 1
                     return value
-                else:
-                    # Cache expired, remove it
-                    cache_path_obj.unlink()
+                # Cache expired, remove it
+                cache_path_obj.unlink()
         except Exception as e:
             logger.warning("[DiskCache] Error reading cache for %s: %s", key, e)
 

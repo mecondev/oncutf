@@ -98,9 +98,8 @@ class LRUCache:
                 self._cache.move_to_end(key)
                 self._hits += 1
                 return entry.data
-            else:
-                self._misses += 1
-                return None
+            self._misses += 1
+            return None
 
     def set(self, key: str, value: Any, size_bytes: int = 0) -> None:
         """Set item in cache."""
@@ -251,7 +250,7 @@ class MemoryManager(QObject):
             cache_memory_mb = 0.0
             cache_entries = 0
 
-            for _cache_name, cache_obj in self._registered_caches.items():
+            for cache_obj in self._registered_caches.values():
                 if hasattr(cache_obj, "get_memory_usage_mb"):
                     cache_memory_mb += cache_obj.get_memory_usage_mb()
                 if hasattr(cache_obj, "__len__"):
@@ -347,9 +346,8 @@ class MemoryManager(QObject):
                         should_remove = True
 
                 # Check access count
-                if hasattr(entry, "access_count"):
-                    if entry.access_count < self.min_access_count:
-                        should_remove = True
+                if hasattr(entry, "access_count") and entry.access_count < self.min_access_count:
+                    should_remove = True
 
                 if should_remove:
                     keys_to_remove.append(key)

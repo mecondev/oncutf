@@ -243,7 +243,7 @@ class FilesystemMonitor(QObject):
                     drives.add(drive_path)
 
         elif self._system == "Darwin":
-            # macOS: Check /Volumes
+            # macOS: mount points in /Volumes
             volumes_path = Path("/Volumes")
             if volumes_path.exists():
                 for volume in volumes_path.iterdir():

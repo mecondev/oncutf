@@ -253,16 +253,15 @@ class ConflictResolver:
                     backup_created=False,
                     success=True,
                 )
-            else:
-                # Should not happen if can_undo() was true, but for safety
-                return ConflictResolution(
-                    original_path="",
-                    resolved_path="",
-                    resolution_type="undo_error",
-                    backup_created=False,
-                    success=False,
-                    error_message="No operation to undo or operation was None",
-                )
+            # Should not happen if can_undo() was true, but for safety
+            return ConflictResolution(
+                original_path="",
+                resolved_path="",
+                resolution_type="undo_error",
+                backup_created=False,
+                success=False,
+                error_message="No operation to undo or operation was None",
+            )
 
         except Exception as e:
             logger.error("[ConflictResolver] Undo failed: %s", e)
