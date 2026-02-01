@@ -10,7 +10,7 @@ Date: 2026-01-01
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem

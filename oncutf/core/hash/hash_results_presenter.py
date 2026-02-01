@@ -11,7 +11,7 @@ Uses ResultsDisplayPort for UI decoupling (Phase 5).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
@@ -58,7 +58,7 @@ class HashResultsPresenter:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
-            self._results_display = context.get_manager("results_display")
+            self._results_display = cast("ResultsDisplayPort", context.get_manager("results_display"))
             if self._results_display is None:
                 raise RuntimeError("ResultsDisplayPort not registered in QtAppContext")
         return self._results_display

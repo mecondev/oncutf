@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from oncutf.app.ports.conflict_resolution import ConflictResolutionPort
@@ -59,7 +59,7 @@ class FileOperationsManager:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
-            self._conflict_resolution = context.get_manager("conflict_resolution")
+            self._conflict_resolution = cast("ConflictResolutionPort", context.get_manager("conflict_resolution"))
             if self._conflict_resolution is None:
                 raise RuntimeError("ConflictResolutionPort not registered in QtAppContext")
         return self._conflict_resolution

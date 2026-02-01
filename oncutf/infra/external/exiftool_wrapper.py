@@ -19,8 +19,12 @@ import time
 from pathlib import Path
 from typing import Any
 
-# Initialize Logger
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+# Type alias for exiftool metadata (untyped JSON data)
+MetadataDict = dict[str, Any]
+
+logger = get_cached_logger(__name__)
 
 logger = get_cached_logger(__name__)
 
@@ -219,7 +223,7 @@ class ExifToolWrapper:
             return None
 
     @staticmethod
-    def _parse_json_output(output: str) -> dict[str, Any] | None:
+    def _parse_json_output(output: str) -> MetadataDict | None:
         """Parse exiftool JSON output and return metadata dictionary."""
         try:
             if not output.strip():
