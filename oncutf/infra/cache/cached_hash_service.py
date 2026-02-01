@@ -81,9 +81,10 @@ class CachedHashService:
                 algorithm,
                 extra={"dev_only": True},
             )
-            return ""
         except Exception as e:
             logger.warning("Error getting cached hash for %s: %s", path, e)
+            return ""
+        else:
             return ""
 
     def compute_hashes_batch(

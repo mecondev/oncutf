@@ -172,7 +172,6 @@ class PersistentMetadataCache:
                 metadata_keys,
                 extra={"dev_only": True},
             )
-            return metadata or {}
         except Exception as e:
             logger.error(
                 "[PersistentMetadataCache] Error getting metadata for %s: %s",
@@ -180,6 +179,8 @@ class PersistentMetadataCache:
                 e,
             )
             return {}
+        else:
+            return metadata or {}
 
     def get_entry(self, path: str) -> MetadataEntry | None:
         """Get the MetadataEntry for a file if available."""
@@ -309,7 +310,6 @@ class PersistentMetadataCache:
                 result,
                 extra={"dev_only": True},
             )
-            return result
         except Exception as e:
             logger.error(
                 "[PersistentMetadataCache] Error checking metadata for %s: %s",
@@ -317,6 +317,8 @@ class PersistentMetadataCache:
                 e,
             )
             return False
+        else:
+            return result
 
     def add(self, file_path: str, metadata: dict[str, Any], is_extended: bool = False) -> None:
         """Add metadata (alias for set for backward compatibility).

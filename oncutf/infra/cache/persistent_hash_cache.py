@@ -78,11 +78,11 @@ class PersistentHashCache:
                     algorithm,
                     Path(file_path).name,
                 )
-            return success
-
         except Exception as e:
             logger.error("[PersistentHashCache] Error storing hash for %s: %s", file_path, e)
             return False
+        else:
+            return success
 
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Retrieve hash for a file, checking memory cache first."""
