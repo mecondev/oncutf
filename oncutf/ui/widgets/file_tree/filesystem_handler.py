@@ -175,9 +175,12 @@ class FilesystemHandler:
                 except Exception:
                     root_path = ""
 
-            if root_path and Path(root_path).is_dir():
-                if self._filesystem_monitor.add_folder(root_path):
-                    self._last_monitored_path = root_path
+            if (
+                root_path
+                and Path(root_path).is_dir()
+                and self._filesystem_monitor.add_folder(root_path)
+            ):
+                self._last_monitored_path = root_path
 
             logger.info("[FilesystemHandler] Filesystem monitor started")
 

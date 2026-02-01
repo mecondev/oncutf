@@ -331,16 +331,19 @@ class DragHandler:
                     valid_drop = True
                     break
 
-                if hasattr(parent, "parent") and parent.parent():
-                    if visual_manager.is_valid_drop_target(parent.parent(), "file_tree"):
-                        logger.debug(
-                            "[DragHandler] Valid drop target found via viewport: %s",
-                            parent.parent().__class__.__name__,
-                            extra={"dev_only": True},
-                        )
-                        self._handle_drop_on_table()
-                        valid_drop = True
-                        break
+                if (
+                    hasattr(parent, "parent")
+                    and parent.parent()
+                    and visual_manager.is_valid_drop_target(parent.parent(), "file_tree")
+                ):
+                    logger.debug(
+                        "[DragHandler] Valid drop target found via viewport: %s",
+                        parent.parent().__class__.__name__,
+                        extra={"dev_only": True},
+                    )
+                    self._handle_drop_on_table()
+                    valid_drop = True
+                    break
 
                 if parent.__class__.__name__ in ["FileTreeView", "MetadataTreeView"]:
                     logger.debug(

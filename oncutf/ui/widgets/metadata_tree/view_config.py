@@ -136,14 +136,17 @@ class MetadataTreeViewConfig:
             current_key = view.columnWidth(0)
             current_value = view.columnWidth(1)
             # Save if widths are valid (not placeholder widths)
-            if current_key > 0 and current_value > 0:
+            if (
+                current_key > 0
+                and current_value > 0
                 # Don't overwrite runtime widths with placeholder widths (140, 250)
-                if (
+                and (
                     current_key != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"]
                     or current_value != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"]
-                ):
-                    self._runtime_widths["key"] = current_key
-                    self._runtime_widths["value"] = current_value
+                )
+            ):
+                self._runtime_widths["key"] = current_key
+                self._runtime_widths["value"] = current_value
 
         # Use batch updates to prevent flickering
         view.setUpdatesEnabled(False)

@@ -502,9 +502,8 @@ class InteractiveHeader(QHeaderView):
             return
 
         if (event.buttons() & Qt.LeftButton) and self._pressed_index >= 0:
-            if not self._drag_active:
-                if (event.pos() - self._press_pos).manhattanLength() > 4:
-                    self._drag_active = True
+            if not self._drag_active and (event.pos() - self._press_pos).manhattanLength() > 4:
+                self._drag_active = True
 
             if self._drag_active:
                 self._update_drop_indicator(event.pos().x())

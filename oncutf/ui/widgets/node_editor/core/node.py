@@ -250,14 +250,13 @@ class Node(Serializable):
             reset: If True, remove existing sockets before creating new.
 
         """
-        if reset:
+        if reset and hasattr(self, "inputs") and hasattr(self, "outputs"):
             # Clear old sockets
-            if hasattr(self, "inputs") and hasattr(self, "outputs"):
-                # Remove graphics sockets from scene
-                for socket in self.inputs + self.outputs:
-                    self.scene.graphics_scene.removeItem(socket.graphics_socket)
-                self.inputs = []
-                self.outputs = []
+            # Remove graphics sockets from scene
+            for socket in self.inputs + self.outputs:
+                self.scene.graphics_scene.removeItem(socket.graphics_socket)
+            self.inputs = []
+            self.outputs = []
 
         # Create new input sockets
         for counter, item in enumerate(inputs):

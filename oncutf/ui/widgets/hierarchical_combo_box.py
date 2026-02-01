@@ -113,14 +113,13 @@ class HierarchicalComboBox(QComboBox):
         """Filter events to prevent popup from reopening during closing (timed)."""
         if obj == self and self._closing_popup:
             event_type = event.type()
-            if event_type == QEvent.MouseButtonPress:
-                # Block only immediate press events on combobox while timed blocker active
-                if not self.view().isVisible():
-                    logger.debug(
-                        "[HierarchicalComboBox] Blocked mouse press during popup timed closing",
-                        extra={"dev_only": True},
-                    )
-                    return True  # Block the event
+            # Block only immediate press events on combobox while timed blocker active
+            if event_type == QEvent.MouseButtonPress and not self.view().isVisible():
+                logger.debug(
+                    "[HierarchicalComboBox] Blocked mouse press during popup timed closing",
+                    extra={"dev_only": True},
+                )
+                return True  # Block the event
         return super().eventFilter(obj, event)
 
     def _on_item_pressed(self, index) -> None:
