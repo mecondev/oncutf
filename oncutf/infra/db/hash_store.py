@@ -102,8 +102,6 @@ class HashStore:
                     algorithm,
                     Path(file_path).name,
                 )
-            return True
-
         except sqlite3.OperationalError as e:
             # Suppress errors during shutdown/cancellation
             logger.debug("[HashStore] Database locked/closing during store: %s", e)
@@ -111,6 +109,8 @@ class HashStore:
         except Exception as e:
             logger.error("[HashStore] Error storing hash for %s: %s", file_path, e)
             return False
+        else:
+            return True
 
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Retrieve file hash."""

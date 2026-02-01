@@ -106,10 +106,11 @@ class FileRepository:
         """
         try:
             self._db.store_file_hash(str(file_path), hash_value)
-            return True
         except Exception as e:
             logger.error("Error storing file hash for %s: %s", file_path, e)
             return False
+        else:
+            return True
 
     def get_color_tag(self, file_path: str | Path) -> str:
         """Get color tag for a file.
@@ -141,10 +142,11 @@ class FileRepository:
         """
         try:
             self._db.set_color_tag(str(file_path), color)
-            return True
         except Exception as e:
             logger.error("Error setting color tag for %s: %s", file_path, e)
             return False
+        else:
+            return True
 
 
 # Global instance (singleton pattern)
