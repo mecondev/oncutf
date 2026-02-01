@@ -92,10 +92,11 @@ class FilesystemService:
         try:
             source.rename(target)
             logger.debug("Renamed %s -> %s", source.name, target.name)
-            return True
         except OSError as e:
             logger.error("Failed to rename %s to %s: %s", source, target, e)
             return False
+        else:
+            return True
 
     def file_exists(self, path: Path) -> bool:
         """Check if a file exists.
@@ -191,10 +192,11 @@ class FilesystemService:
         try:
             shutil.copy2(source, target)
             logger.debug("Copied %s -> %s", source, target)
-            return True
         except OSError as e:
             logger.error("Failed to copy %s to %s: %s", source, target, e)
             return False
+        else:
+            return True
 
     def delete_file(self, path: Path) -> bool:
         """Delete a file.
@@ -217,10 +219,11 @@ class FilesystemService:
         try:
             path.unlink()
             logger.debug("Deleted file: %s", path)
-            return True
         except OSError as e:
             logger.error("Failed to delete %s: %s", path, e)
             return False
+        else:
+            return True
 
     def list_directory(
         self,
@@ -269,10 +272,11 @@ class FilesystemService:
             if path.is_file():
                 path = path.parent
             usage = shutil.disk_usage(path)
-            return usage.free
         except OSError as e:
             logger.error("Error getting free space for %s: %s", path, e)
             return -1
+        else:
+            return usage.free
 
     def _create_backup_path(self, path: Path) -> Path:
         """Create a unique backup path for a file.

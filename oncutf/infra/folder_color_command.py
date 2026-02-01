@@ -136,11 +136,12 @@ class AutoColorByFolderCommand(MetadataCommand):
                 len(self.new_colors),
                 len(self.folder_colors),
             )
-            return True
 
         except Exception:
             logger.exception("[AutoColorByFolder] Failed to execute auto-color")
             return False
+        else:
+            return True
 
     def undo(self) -> bool:
         """Undo auto-color operation."""
@@ -160,11 +161,12 @@ class AutoColorByFolderCommand(MetadataCommand):
                 "[AutoColorByFolder] Undone auto-color for %d files",
                 len(self.previous_colors),
             )
-            return True
 
         except Exception:
             logger.exception("[AutoColorByFolder] Failed to undo auto-color")
             return False
+        else:
+            return True
 
     def redo(self) -> bool:
         """Redo auto-color operation."""
@@ -184,11 +186,12 @@ class AutoColorByFolderCommand(MetadataCommand):
                 "[AutoColorByFolder] Redone auto-color for %d files",
                 len(self.new_colors),
             )
-            return True
 
         except Exception:
             logger.exception("[AutoColorByFolder] Failed to redo auto-color")
             return False
+        else:
+            return True
 
     def get_description(self) -> str:
         """Get command description."""

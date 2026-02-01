@@ -70,10 +70,13 @@ class DatabaseService:
         try:
             if hasattr(db_manager, "set_file_color"):
                 result = db_manager.set_file_color(file_path, color_hex)
-                return bool(result) if result is not None else False
-            return False
+                success = bool(result) if result is not None else False
+            else:
+                success = False
         except Exception:
             return False
+        else:
+            return success
 
     def get_file_color(self, file_path: str) -> str | None:
         """Get color for a file.
@@ -92,10 +95,13 @@ class DatabaseService:
         try:
             if hasattr(db_manager, "get_file_color"):
                 result = db_manager.get_file_color(file_path)
-                return str(result) if result is not None else None
-            return None
+                color = str(result) if result is not None else None
+            else:
+                color = None
         except Exception:
             return None
+        else:
+            return color
 
     def get_files_by_color(self, color_hex: str) -> list[str]:
         """Get all files with a specific color.
@@ -113,10 +119,13 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "get_files_by_color"):
-                return cast("list[str]", db_manager.get_files_by_color(color_hex))
-            return []
+                files = cast("list[str]", db_manager.get_files_by_color(color_hex))
+            else:
+                files = []
         except Exception:
             return []
+        else:
+            return files
 
     def execute_query(self, query: str, params: tuple[Any, ...] | None = None) -> Any:
         """Execute a database query.
@@ -135,10 +144,13 @@ class DatabaseService:
 
         try:
             if hasattr(db_manager, "execute_query"):
-                return db_manager.execute_query(query, params)
-            return None
+                result = db_manager.execute_query(query, params)
+            else:
+                result = None
         except Exception:
             return None
+        else:
+            return result
 
 
 # Singleton instance

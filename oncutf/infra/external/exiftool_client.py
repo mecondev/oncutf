@@ -106,10 +106,11 @@ class ExifToolClient:
         try:
             wrapper = self._ensure_wrapper()
             result = wrapper.get_metadata(str(path), use_extended=self._use_extended)
-            return result if result else {}
         except Exception as e:
             logger.error("Error extracting metadata from %s: %s", path, e)
             return {}
+        else:
+            return result if result else {}
 
     def extract_batch(self, paths: list[Path]) -> dict[str, dict[str, Any]]:
         """Extract metadata from multiple files (batch operation).

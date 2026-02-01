@@ -148,13 +148,16 @@ class RenameHistoryManager:
                     operation_id[:8],
                     len(renames),
                 )
-                return operation_id
-            logger.error("[RenameHistoryManager] Failed to record rename batch")
-            return ""
+                operation_result = operation_id
+            else:
+                logger.error("[RenameHistoryManager] Failed to record rename batch")
+                operation_result = ""
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error recording rename batch: %s", e)
             return ""
+        else:
+            return operation_result
 
     def get_recent_operations(self, limit: int = 20) -> list[dict[str, Any]]:
         """Get recent rename operations for undo menu.
@@ -285,11 +288,13 @@ class RenameHistoryManager:
                     f"Files have been renamed again: {', '.join(wrong_names[:2])}{'...' if len(wrong_names) > 2 else ''}",
                 )
 
-            return True, ""
+            result = (True, "")
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error checking undo capability: %s", e)
             return False, f"Error checking operation: {e!s}"
+        else:
+            return result
 
     def undo_operation(self, operation_id: str) -> tuple[bool, str, int]:
         """Undo a rename operation by reverting all files to their original names.
@@ -372,13 +377,16 @@ class RenameHistoryManager:
             if failed_reverts:
                 failed_names = [op.new_filename for op, _ in failed_reverts[:3]]
                 message = f"Undid {success_count}/{total_files} files. Failed: {', '.join(failed_names)}{'...' if len(failed_reverts) > 3 else ''}"
-                return success_count > 0, message, success_count
-            message = f"Successfully undid rename operation for {success_count} files"
-            return True, message, success_count
+                result = (success_count > 0, message, success_count)
+            else:
+                message = f"Successfully undid rename operation for {success_count} files"
+                result = (True, message, success_count)
 
         except Exception as e:
             logger.error("[RenameHistoryManager] Error during undo operation: %s", e)
             return False, f"Undo failed: {e!s}", 0
+        else:
+            return result
 
     def cleanup_old_history(self, _days_to_keep: int = 30) -> int:
         """Clean up old rename history records.
