@@ -286,7 +286,7 @@ class TimerManager(QObject):
                     extra={"dev_only": True},
                 )
             except Exception as e:
-                logger.error("[TimerManager] Error executing timer '%s': %s", timer_id, e)
+                logger.exception("[TimerManager] Error executing timer '%s'", timer_id)
                 self._last_error = f"Timer {timer_id}: {e}"
                 self._failed_callbacks += 1
 

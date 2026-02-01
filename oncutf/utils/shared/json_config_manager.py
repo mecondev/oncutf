@@ -249,7 +249,7 @@ class JSONConfigManager:
                     extra={"dev_only": True},
                 )
             except Exception as e:
-                logger.error("[JSONConfigManager] Failed to load configuration: %s", e)
+                logger.exception("[JSONConfigManager] Failed to load configuration")
                 return False
             else:
                 return True
@@ -282,7 +282,7 @@ class JSONConfigManager:
                 self._dirty = False
                 logger.debug("[JSONConfigManager] Configuration saved successfully")
             except Exception as e:
-                logger.error("[JSONConfigManager] Failed to save configuration: %s", e)
+                logger.exception("[JSONConfigManager] Failed to save configuration")
                 return False
             else:
                 return True
@@ -532,7 +532,7 @@ def save_config(config_data: dict[str, Any]) -> bool:
 
         logger.debug("Configuration saved to %s", config_manager.config_file)
     except Exception as e:
-        logger.error("Failed to save config: %s", e)
+        logger.exception("Failed to save config")
         return False
     else:
         return True

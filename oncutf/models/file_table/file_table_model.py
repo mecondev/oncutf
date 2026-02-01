@@ -399,7 +399,7 @@ class FileTableModel(QAbstractTableModel):
             )
 
         except Exception as e:
-            logger.error("[FileTableModel] Failed to load manual order: %s", e)
+            logger.exception("[FileTableModel] Failed to load manual order")
 
     def _clear_manual_order_db(self) -> None:
         """Clear manual order from database when switching to sorted mode."""
@@ -421,7 +421,7 @@ class FileTableModel(QAbstractTableModel):
             )
 
         except Exception as e:
-            logger.error("[FileTableModel] Failed to clear manual order: %s", e)
+            logger.exception("[FileTableModel] Failed to clear manual order")
 
     def save_manual_order(self) -> None:
         """Save current file order to database (for manual mode).
@@ -449,7 +449,7 @@ class FileTableModel(QAbstractTableModel):
             )
 
         except Exception as e:
-            logger.error("[FileTableModel] Failed to save manual order: %s", e)
+            logger.exception("[FileTableModel] Failed to save manual order")
 
     def set_current_folder(self, folder_path: str) -> None:
         """Set current folder path for order persistence.

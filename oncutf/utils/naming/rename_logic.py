@@ -85,7 +85,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
         # On Unix-like systems, case-sensitive filesystems should work with direct rename
         Path(src_path).rename(dst_path)
     except Exception as e:
-        logger.error("Failed to perform case rename from %s to %s: %s", src_path, dst_path, e)
+        logger.exception("Failed to perform case rename from %s to %s", src_path, dst_path)
 
         # Cleanup: if we created a temp file but failed, try to restore original
         try:
@@ -98,7 +98,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
                 Path(temp_path).rename(src_path)
                 logger.info("Restored original file after failed case rename: %s", src_path)
         except Exception as cleanup_error:
-            logger.error("Failed to cleanup after case rename failure: %s", cleanup_error)
+            logger.exception("Failed to cleanup after case rename failure")
 
         return False
     else:
@@ -223,7 +223,7 @@ def execute_rename_plan(plan: list[dict[str, Any]]) -> int:
                 Path(entry["src_path"]).rename(entry["dst_path"])
                 success_count += 1
         except Exception as e:
-            logger.error("Failed to rename %s -> %s: %s", entry["src"], entry["dst"], e)
+            logger.exception("Failed to rename %s -> %s", entry["src"], entry["dst"])
 
     return success_count
 

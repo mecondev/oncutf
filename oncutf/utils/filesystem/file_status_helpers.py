@@ -33,9 +33,8 @@ try:
         extra={"dev_only": True},
     )
 except Exception as e:
-    logger.error(
-        "[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: %s",
-        e,
+    logger.exception(
+        "[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache",
     )
     raise
 
@@ -47,7 +46,7 @@ try:
         extra={"dev_only": True},
     )
 except Exception as e:
-    logger.error("[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: %s", e)
+    logger.exception("[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache")
     raise
 
 
@@ -217,10 +216,9 @@ def set_metadata_value(file_path: str | Path, key_path: str, new_value: Any) -> 
         # Update the metadata in cache
         set_metadata_for_file(file_path, metadata, modified=True)
     except Exception as e:
-        logger.error(
-            "[FileStatusHelpers] Error setting metadata value for %s: %s",
+        logger.exception(
+            "[FileStatusHelpers] Error setting metadata value for %s",
             file_path,
-            e,
         )
         return False
     else:
