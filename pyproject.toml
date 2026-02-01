@@ -7,7 +7,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-license = "MIT"
+license = { text = "MIT" }
 keywords = ["file-renamer", "batch-rename", "exif", "metadata", "photography", "pyqt5"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -395,7 +395,7 @@ line-ending = "auto"
 # Pytest
 # --------------------------
 [tool.pytest.ini_options]
-minversion = "6.0"
+minversion = "8.0"
 addopts = "-ra -q --tb=short --strict-markers --strict-config"
 testpaths = ["tests"]
 qt_api = "pyqt5"
