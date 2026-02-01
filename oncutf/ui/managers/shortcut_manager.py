@@ -123,8 +123,8 @@ class ShortcutManager:
                         "No operations to undo", success=False, auto_reset=True
                     )
 
-        except Exception as e:
-            logger.error("[MainWindow] UNDO: Error during undo operation: %s", e)
+        except Exception:
+            logger.exception("[MainWindow] UNDO: Error during undo operation")
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -165,8 +165,8 @@ class ShortcutManager:
                         "No operations to redo", success=False, auto_reset=True
                     )
 
-        except Exception as e:
-            logger.error("[MainWindow] REDO: Error during redo operation: %s", e)
+        except Exception:
+            logger.exception("[MainWindow] REDO: Error during redo operation")
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -188,8 +188,8 @@ class ShortcutManager:
 
             logger.info("[MainWindow] HISTORY: History dialog shown successfully")
 
-        except Exception as e:
-            logger.error("[MainWindow] HISTORY: Error showing history dialog: %s", e)
+        except Exception:
+            logger.exception("[MainWindow] HISTORY: Error showing history dialog")
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):
@@ -211,10 +211,9 @@ class ShortcutManager:
 
             logger.info("[MainWindow] RENAME_HISTORY: Rename history dialog shown successfully")
 
-        except Exception as e:
-            logger.error(
-                "[MainWindow] RENAME_HISTORY: Error showing rename history dialog: %s",
-                e,
+        except Exception:
+            logger.exception(
+                "[MainWindow] RENAME_HISTORY: Error showing rename history dialog"
             )
 
             # Show error message
@@ -359,8 +358,8 @@ class ShortcutManager:
                 len(selected_files),
             )
 
-        except Exception as e:
-            logger.error("[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: %s", e)
+        except Exception:
+            logger.exception("[MainWindow] RESULTS_HASH_LIST: Error showing results dialog")
 
             # Show error message
             if hasattr(self.main_window, "status_manager"):

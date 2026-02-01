@@ -88,7 +88,7 @@ class ToStringNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("ToStringNode eval error: %s", e)
+            logger.exception("ToStringNode eval error")
             return None
         else:
             return self.value
@@ -180,12 +180,12 @@ class ToNumberNode(Node):
         except ValueError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Invalid number format: {e}")
-            logger.error("ToNumberNode conversion error: %s", e)
+            logger.exception("ToNumberNode conversion error")
             return None
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("ToNumberNode eval error: %s", e)
+            logger.exception("ToNumberNode eval error")
             return None
         else:
             return self.value
@@ -269,7 +269,7 @@ class ToBoolNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("ToBoolNode eval error: %s", e)
+            logger.exception("ToBoolNode eval error")
             return None
         else:
             return self.value
@@ -363,12 +363,12 @@ class ToIntNode(Node):
         except ValueError as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Invalid integer format: {e}")
-            logger.error("ToIntNode conversion error: %s", e)
+            logger.exception("ToIntNode conversion error")
             return None
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("ToIntNode eval error: %s", e)
+            logger.exception("ToIntNode eval error")
             return None
         else:
             return self.value

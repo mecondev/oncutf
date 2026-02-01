@@ -82,7 +82,7 @@ class CreateListNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("CreateListNode eval error: %s", e)
+            logger.exception("CreateListNode eval error")
             return None
         else:
             return self.value
@@ -194,7 +194,7 @@ class GetItemNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("GetItemNode eval error: %s", e)
+            logger.exception("GetItemNode eval error")
             return None
         else:
             return self.value
@@ -274,7 +274,7 @@ class ListLengthNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("ListLengthNode eval error: %s", e)
+            logger.exception("ListLengthNode eval error")
             return None
         else:
             return self.value
@@ -368,7 +368,7 @@ class AppendNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("AppendNode eval error: %s", e)
+            logger.exception("AppendNode eval error")
             return None
         else:
             return self.value
@@ -457,7 +457,7 @@ class JoinNode(Node):
         except Exception as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e}")
-            logger.error("JoinNode eval error: %s", e)
+            logger.exception("JoinNode eval error")
             return None
         else:
             return self.value
