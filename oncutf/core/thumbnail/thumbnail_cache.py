@@ -210,11 +210,11 @@ class ThumbnailDiskCache:
                 return None
 
             logger.debug("[ThumbnailDiskCache] Cache HIT: %s", cache_key[:16])
-            return pixmap
-
         except Exception as e:
             logger.warning("[ThumbnailDiskCache] Error loading thumbnail: %s - %s", cache_path, e)
             return None
+        else:
+            return pixmap
 
     def put(self, cache_key: str, pixmap: QPixmap) -> bool:
         """Save thumbnail to disk cache.
@@ -235,11 +235,11 @@ class ThumbnailDiskCache:
                 logger.debug("[ThumbnailDiskCache] Saved: %s", cache_key[:16])
             else:
                 logger.warning("[ThumbnailDiskCache] Failed to save: %s", cache_key[:16])
-            return success
-
         except Exception as e:
             logger.error("[ThumbnailDiskCache] Error saving thumbnail: %s - %s", cache_path, e)
             return False
+        else:
+            return success
 
     def remove(self, cache_key: str) -> bool:
         """Remove thumbnail from disk cache.
@@ -259,11 +259,11 @@ class ThumbnailDiskCache:
         try:
             cache_path.unlink()
             logger.debug("[ThumbnailDiskCache] Removed: %s", cache_key[:16])
-            return True
-
         except Exception as e:
             logger.warning("[ThumbnailDiskCache] Error removing thumbnail: %s - %s", cache_path, e)
             return False
+        else:
+            return True
 
     def clear(self) -> int:
         """Clear all thumbnails from disk cache.

@@ -214,13 +214,12 @@ class PerformanceDecorator:
 
                 # End timing with success
                 self.monitor.end_operation(self.operation_name, file_count, True)
-
-                return result
-
             except Exception as e:
                 # End timing with error
                 self.monitor.end_operation(self.operation_name, 0, False, str(e))
                 raise
+            else:
+                return result
 
         return wrapper
 

@@ -139,8 +139,6 @@ class PreExecutionValidator:
             if file_path.is_file():
                 with file_path.open("r+b"):
                     pass  # Successfully opened for writing
-            return None
-
         except PermissionError as e:
             # File is locked or permission denied
             if self._is_windows:
@@ -173,6 +171,8 @@ class PreExecutionValidator:
                 message=f"Error accessing file: {file_item.name}",
                 technical_details=str(e),
             )
+        else:
+            return None
 
     def _check_file_hash(self, file_path: Path, file_item: FileItem) -> ValidationIssue | None:
         """Check if file hash matches cached value.

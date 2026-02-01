@@ -60,12 +60,11 @@ class BatchQueryManager:
             for file in files:
                 if file.full_path:
                     result[file.full_path] = file.full_path in files_with_hash
-
-            return result
-
         except Exception:
             logger.exception("[BatchQueryManager] Error getting hash availability")
             return {}
+        else:
+            return result
 
     def get_metadata_availability(self, files: list["FileItem"]) -> dict[str, bool]:
         """Return a mapping of file path -> whether structured metadata is
@@ -107,11 +106,11 @@ class BatchQueryManager:
                 result,
                 extra={"dev_only": True},
             )
-            return result
-
         except Exception:
             logger.exception("[BatchQueryManager] Error getting metadata availability")
             return {}
+        else:
+            return result
 
     def _file_has_metadata(self, file_path: str, metadata_cache: Any) -> bool:
         """Return True if the given file path has non-internal metadata.
@@ -132,13 +131,14 @@ class BatchQueryManager:
                         if not k.startswith("_") and k not in {"path", "filename"}
                     }
                     return len(metadata_fields) > 0
-            return False
         except Exception:
             logger.debug(
                 "[BatchQueryManager] Error checking metadata for %s",
                 file_path,
                 exc_info=True,
             )
+            return False
+        else:
             return False
 
 

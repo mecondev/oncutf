@@ -99,6 +99,7 @@ class UnifiedValidationManager:
 
             basename = Path(filename).stem
             is_valid, error = validate_filename_part(basename)
-            return is_valid, error or ""
         except Exception as e:
             return False, f"Validation error: {e}"
+        else:
+            return is_valid, error or ""

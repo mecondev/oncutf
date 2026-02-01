@@ -466,9 +466,10 @@ class ShutdownCoordinator(QObject):
             if hasattr(self._timer_manager, "cleanup_all"):
                 cancelled = self._timer_manager.cleanup_all()
                 logger.debug("[ShutdownCoordinator] Cleaned up %d timers", cancelled)
-            return True, None
         except Exception as e:
             return False, f"Timer shutdown failed: {e}"
+        else:
+            return True, None
 
     def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
         """Shutdown thread pool manager with defensive cleanup."""
@@ -492,11 +493,11 @@ class ShutdownCoordinator(QObject):
                 except TypeError:
                     # Backward compatibility if signature doesn't accept kwargs
                     self._thread_pool_manager.shutdown()
-
-            return True, None
         except Exception as e:
             logger.exception("Thread pool shutdown failed")
             return False, f"Thread pool shutdown failed: {e}"
+        else:
+            return True, None
 
     def _shutdown_thumbnails(self) -> tuple[bool, str | None]:
         """Shutdown thumbnail manager (must run before database)."""
@@ -532,8 +533,6 @@ class ShutdownCoordinator(QObject):
                 daemon=True,
                 name="FFmpegForceCleanup",
             ).start()
-
-            return True, None
         except Exception as e:
             logger.exception("Thumbnail manager shutdown failed")
             # Even on error, try force cleanup
@@ -549,6 +548,8 @@ class ShutdownCoordinator(QObject):
             except Exception:
                 pass
             return False, f"Thumbnail manager shutdown failed: {e}"
+        else:
+            return True, None
 
     def _shutdown_database(self) -> tuple[bool, str | None]:
         """Shutdown database manager with proper connection closure."""
@@ -570,11 +571,11 @@ class ShutdownCoordinator(QObject):
                 with contextlib.suppress(Exception):
                     if hasattr(self._database_manager, "commit"):
                         self._database_manager.commit()
-
-            return True, None
         except Exception as e:
             logger.exception("Database shutdown failed")
             return False, f"Database shutdown failed: {e}"
+        else:
+            return True, None
 
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
         """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
@@ -627,8 +628,6 @@ class ShutdownCoordinator(QObject):
                 daemon=True,
                 name="ExifToolForceCleanup",
             ).start()
-
-            return True, None
         except Exception as e:
             logger.exception("ExifTool shutdown failed")
             # Even on error, try force cleanup one more time
@@ -644,15 +643,18 @@ class ShutdownCoordinator(QObject):
             except Exception:
                 pass
             return False, f"ExifTool shutdown failed: {e}"
+        else:
+            return True, None
 
     def _shutdown_finalize(self) -> tuple[bool, str | None]:
         """Finalize shutdown - cleanup any remaining resources."""
         try:
             # Any final cleanup operations can go here
             logger.debug("[ShutdownCoordinator] Finalization complete")
-            return True, None
         except Exception as e:
             return False, f"Finalization failed: {e}"
+        else:
+            return True, None
 
     def get_results(self) -> list[ShutdownResult]:
         """Get results from last shutdown execution.

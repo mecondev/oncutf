@@ -539,8 +539,6 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 duration,
                 Path(file_path).name,
             )
-            return duration
-
         except (
             subprocess.CalledProcessError,
             ValueError,
@@ -548,6 +546,8 @@ class VideoThumbnailProvider(ThumbnailProvider):
         ) as e:
             logger.warning("[VideoThumbnailProvider] Failed to get duration: %s", e)
             return None
+        else:
+            return duration
 
     def _calculate_frame_times(self, duration: float) -> list[float]:
         """Calculate optimal frame extraction timestamps with fallbacks.
@@ -644,11 +644,10 @@ class VideoThumbnailProvider(ThumbnailProvider):
             pixmap = QPixmap.fromImage(scaled_image)
             if pixmap.isNull():
                 raise ThumbnailGenerationError("Failed to create pixmap from frame")
-
-            return pixmap
-
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
             raise ThumbnailGenerationError(f"FFmpeg extraction failed: {e}") from e
+        else:
+            return pixmap
 
     def _is_valid_frame(self, pixmap: QPixmap) -> bool:
         """Check if frame meets quality thresholds (not too dark/flat).

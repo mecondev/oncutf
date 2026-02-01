@@ -277,8 +277,6 @@ class UnifiedExecutionManager:
                 return safe_case_rename(item.old_path, item.new_path)
             # Regular rename
             Path(item.old_path).rename(item.new_path)
-            return True
-
         except Exception as e:
             item.error_message = str(e)
             logger.exception(
@@ -286,3 +284,5 @@ class UnifiedExecutionManager:
                 item.old_path,
             )
             return False
+        else:
+            return True
