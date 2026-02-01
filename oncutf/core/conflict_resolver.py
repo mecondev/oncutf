@@ -169,10 +169,11 @@ class ConflictResolver:
 
         try:
             shutil.copy2(path, backup_path)
-            return backup_path
         except Exception as e:
             logger.error("[ConflictResolver] Failed to create backup: %s", e)
             return ""
+        else:
+            return backup_path
 
     def _execute_operation(
         self, old_path: str, new_path: str, operation_type: str

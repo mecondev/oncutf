@@ -131,14 +131,13 @@ class ParallelHashWorker(BaseHashWorker):
             if hash_value is not None:
                 # Store hash (will use batch if enabled)
                 self._store_hash_optimized(file_path, hash_value, "crc32")
-
-            return (file_path, hash_value, file_size)
-
         except Exception as e:
             logger.warning("[ParallelHashWorker] Error processing %s: %s", filename, e)
             with QMutexLocker(self._mutex):
                 self._errors.append((file_path, str(e)))
             return (file_path, None, file_size)
+        else:
+            return (file_path, hash_value, file_size)
 
     # Note: _store_hash_optimized is inherited from BaseHashWorker
 

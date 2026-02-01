@@ -174,9 +174,6 @@ class HashManager:
                 self._persistent_cache.store_hash(cache_key, hash_result)
             else:
                 self._hash_cache[cache_key] = hash_result
-
-            return hash_result
-
         except PermissionError:
             logger.error("[HashManager] Permission denied accessing file: %s", file_path)
             return None
@@ -186,6 +183,8 @@ class HashManager:
         except Exception as e:
             logger.error("[HashManager] Unexpected error hashing file %s: %s", file_path, e)
             return None
+        else:
+            return hash_result
 
     def compare_folders(
         self, folder1: str | Path, folder2: str | Path
@@ -242,11 +241,11 @@ class HashManager:
                         )
 
             logger.info("[HashManager] Compared %d files between folders", files_processed)
-            return result
-
         except Exception as e:
             logger.error("[HashManager] Error comparing folders: %s", e)
             return {}
+        else:
+            return result
 
     def find_duplicates_in_list(self, file_items: list[FileItem]) -> dict[str, list[FileItem]]:
         """Find duplicate files in a list of FileItem objects based on CRC32 hash.

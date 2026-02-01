@@ -204,10 +204,11 @@ class HashWorker(BaseHashWorker):
                 return hash_value
             self._cache_misses += 1
             logger.debug("[HashWorker] Cache miss for: %s", Path(file_path).name)
-            return None
         except Exception as e:
             logger.debug("[HashWorker] Cache check failed for %s: %s", file_path, e)
             self._cache_misses += 1
+            return None
+        else:
             return None
 
     def _process_file_with_progress(

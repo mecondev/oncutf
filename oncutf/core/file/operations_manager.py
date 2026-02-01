@@ -167,12 +167,11 @@ class FileOperationsManager:
                     logger.warning(
                         "[Rename] 'rename' action not fully implemented, using 'overwrite'"
                     )
-
-                return action
-
             except Exception as e:
                 logger.error("[Rename] Error in conflict callback: %s", e)
                 return "skip"
+            else:
+                return action
 
         # Get UnifiedRenameEngine from parent window
         if not self.parent_window or not hasattr(self.parent_window, "unified_rename_engine"):

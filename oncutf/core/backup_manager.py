@@ -261,12 +261,11 @@ class BackupManager(QObject):
 
             # Sort by modification time (newest first)
             backup_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-
-            return backup_files
-
         except Exception as e:
             logger.error("[BackupManager] Error getting backup files: %s", e)
             return []
+        else:
+            return backup_files
 
     def get_status(self) -> dict[str, object]:
         """Get current backup manager status.

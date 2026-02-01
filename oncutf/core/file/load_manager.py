@@ -432,12 +432,11 @@ class FileLoadManager:
                     companion_count,
                     len(filtered_files),
                 )
-
-            return filtered_files
-
         except Exception as e:
             logger.warning("[FileLoadManager] Error filtering companion files: %s", e)
             return file_paths
+        else:
+            return filtered_files
 
     def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
         """Update UI with loaded files.

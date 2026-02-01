@@ -142,11 +142,11 @@ class FilesystemMonitor(QObject):
                 normalized_path,
                 extra={"dev_only": True},
             )
-            return True
-
         except Exception as e:
             logger.error("[FilesystemMonitor] Failed to watch %s: %s", normalized_path, e)
             return False
+        else:
+            return True
 
     def remove_folder(self, folder_path: str) -> bool:
         """Remove folder from monitoring.
@@ -170,11 +170,11 @@ class FilesystemMonitor(QObject):
                 normalized_path,
                 extra={"dev_only": True},
             )
-            return True
-
         except Exception as e:
             logger.error("[FilesystemMonitor] Failed to unwatch %s: %s", normalized_path, e)
             return False
+        else:
+            return True
 
     def clear_folders(self) -> None:
         """Clear all monitored folders."""
