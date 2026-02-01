@@ -6,9 +6,11 @@ Date: 2026-01-05
 
 from typing import TYPE_CHECKING, Protocol
 
+from PyQt5.QtCore import QAbstractItemModel
+from PyQt5.QtWidgets import QHeaderView, QWidget
+
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
-    from PyQt5.QtWidgets import QAbstractItemModel, QHeaderView, QWidget
 
 
 class ColumnManageableWidget(Protocol):
@@ -18,11 +20,11 @@ class ColumnManageableWidget(Protocol):
     column management functionality.
     """
 
-    def horizontalHeader(self) -> "QHeaderView":
+    def horizontalHeader(self) -> QHeaderView:
         """Return the horizontal header."""
         ...
 
-    def model(self) -> "QAbstractItemModel":
+    def model(self) -> QAbstractItemModel:
         """Return the data model."""
         ...
 
@@ -34,7 +36,7 @@ class ColumnManageableWidget(Protocol):
         """Get width of a column."""
         ...
 
-    def viewport(self) -> "QWidget":
+    def viewport(self) -> QWidget:
         """Return the viewport widget."""
         ...
 

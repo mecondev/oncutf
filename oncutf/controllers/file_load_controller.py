@@ -24,11 +24,11 @@ from typing import TYPE_CHECKING, Any, Optional
 from PyQt5.QtCore import Qt
 
 from oncutf.config import ALLOWED_EXTENSIONS
+from oncutf.controllers.protocols import TableManagerProtocol
 
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext as ApplicationContext
     from oncutf.app.state.file_store import FileStore
-    from oncutf.controllers.protocols import TableManagerProtocol
     from oncutf.core.file.load_manager import FileLoadManager
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,8 @@ class FileLoadController:
     - Coordination between multiple services
     - State management (recursive mode, merge mode)
 
-    Attributes:
+    Attributes
+    ----------
         _file_load_manager: Manager handling low-level file operations
         _file_store: Store maintaining loaded file state
         _table_manager: Manager for table UI updates
@@ -60,12 +61,13 @@ class FileLoadController:
         self,
         file_load_manager: Optional["FileLoadManager"] = None,
         file_store: Optional["FileStore"] = None,
-        table_manager: Optional["TableManagerProtocol"] = None,
+        table_manager: TableManagerProtocol | None = None,
         context: Optional["ApplicationContext"] = None,
     ) -> None:
         """Initialize FileLoadController.
 
         Args:
+        ----
             file_load_manager: Manager for file loading operations (injected)
             file_store: Store for maintaining file state (injected)
             table_manager: Manager for table UI updates (injected)
@@ -99,10 +101,12 @@ class FileLoadController:
         4. Collecting and returning results
 
         Args:
+        ----
             paths: List of file paths as strings
             clear: Whether to clear existing files before loading
 
         Returns:
+        -------
             Dictionary containing:
                 - success (bool): Whether operation succeeded overall
                 - loaded_count (int): Number of files successfully loaded
@@ -209,11 +213,13 @@ class FileLoadController:
         """Load all files from a folder with optional recursion.
 
         Args:
+        ----
             folder_path: Path to folder to load
             merge_mode: If True, merge with existing files; if False, clear first
             recursive: If True, scan subdirectories recursively
 
         Returns:
+        -------
             Dictionary with success status and loaded count
 
         """
@@ -280,10 +286,12 @@ class FileLoadController:
         """Handle file/folder drop with keyboard modifiers.
 
         Args:
+        ----
             paths: List of dropped paths (files or folders)
             modifiers: Keyboard modifiers during drop (Ctrl, Shift, etc.)
 
         Returns:
+        -------
             Dictionary with success status
 
         """
@@ -356,7 +364,8 @@ class FileLoadController:
     def clear_files(self) -> bool:
         """Clear all loaded files.
 
-        Returns:
+        Returns
+        -------
             True if files were cleared successfully
 
         """
@@ -379,7 +388,8 @@ class FileLoadController:
     def get_loaded_file_count(self) -> int:
         """Get count of currently loaded files.
 
-        Returns:
+        Returns
+        -------
             Number of loaded files
 
         """
@@ -406,7 +416,8 @@ class FileLoadController:
     def is_recursive_mode(self) -> bool:
         """Check if recursive mode is enabled.
 
-        Returns:
+        Returns
+        -------
             True if recursive mode is active
 
         """
@@ -422,6 +433,7 @@ class FileLoadController:
         """Set recursive mode for future folder loads.
 
         Args:
+        ----
             recursive: Whether to enable recursive scanning
 
         """

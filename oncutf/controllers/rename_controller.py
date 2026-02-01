@@ -22,12 +22,10 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext as ApplicationContext
     from oncutf.app.state.file_store import FileStore
-    from oncutf.controllers.protocols import (
-        RenameManagerProtocol,
-        ValidationDialogProtocol,
-    )
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
+
+from oncutf.controllers.protocols import RenameManagerProtocol, ValidationDialogProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +44,8 @@ class RenameController:
     - State management across rename stages
     - Post-rename workflow orchestration
 
-    Attributes:
+    Attributes
+    ----------
         _unified_rename_engine: Engine for preview/validation/execution
         _rename_manager: Manager for rename execution and post-rename workflow
         _file_store: Store maintaining loaded file state
@@ -57,14 +56,15 @@ class RenameController:
     def __init__(
         self,
         unified_rename_engine: Optional["UnifiedRenameEngine"] = None,
-        rename_manager: Optional["RenameManagerProtocol"] = None,
+        rename_manager: RenameManagerProtocol | None = None,
         file_store: Optional["FileStore"] = None,
         context: Optional["ApplicationContext"] = None,
-        validation_dialog: Optional["ValidationDialogProtocol"] = None,
+        validation_dialog: ValidationDialogProtocol | None = None,
     ) -> None:
         """Initialize RenameController.
 
         Args:
+        ----
             unified_rename_engine: Engine for rename operations (injected)
             rename_manager: Manager for rename execution (injected)
             file_store: Store for maintaining file state (injected)
@@ -111,12 +111,14 @@ class RenameController:
         4. Returning structured result
 
         Args:
+        ----
             file_items: List of FileItem objects to preview
             modules_data: Module configuration for rename
             post_transform: Final transform settings
             metadata_cache: Metadata cache for module execution
 
         Returns:
+        -------
             dict: {
                 'success': bool,
                 'name_pairs': List[Tuple[str, str]],  # (old, new) pairs
@@ -194,9 +196,11 @@ class RenameController:
         4. Returning validation results
 
         Args:
+        ----
             preview_pairs: List of (old_name, new_name) tuples
 
         Returns:
+        -------
             dict: {
                 'success': bool,
                 'has_errors': bool,
@@ -287,6 +291,7 @@ class RenameController:
         5. Trigger post-rename workflow (reload, restore state)
 
         Args:
+        ----
             file_items: List of FileItem objects to rename
             modules_data: Module configuration for rename
             post_transform: Final transform settings
@@ -294,6 +299,7 @@ class RenameController:
             current_folder: Current folder path for post-rename reload
 
         Returns:
+        -------
             dict: {
                 'success': bool,
                 'renamed_count': int,
@@ -486,7 +492,8 @@ class RenameController:
     def has_pending_changes(self) -> bool:
         """Check if there are pending rename changes.
 
-        Returns:
+        Returns
+        -------
             bool: True if preview has changes that can be executed
 
         """
@@ -508,7 +515,8 @@ class RenameController:
     def get_current_state(self) -> Any | None:
         """Get current rename state.
 
-        Returns:
+        Returns
+        -------
             Optional[RenameState]: Current state or None if not available
 
         """
@@ -539,9 +547,11 @@ class RenameController:
         """Handle validation issues by delegating to validation dialog handler.
 
         Args:
+        ----
             validation_result: ValidationResult with issues
 
         Returns:
+        -------
             str: User decision ("skip", "cancel", or "refresh")
 
         """

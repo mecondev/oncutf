@@ -16,13 +16,12 @@ Date:
 
 from typing import TYPE_CHECKING
 
+from PyQt5.QtGui import QFocusEvent
 from PyQt5.QtWidgets import QLabel, QTextEdit, QVBoxLayout, QWidget
 
 from oncutf.ui.widgets.node_editor.core.serializable import Serializable
 
 if TYPE_CHECKING:
-    from PyQt5.QtGui import QFocusEvent
-
     from oncutf.ui.widgets.node_editor.core.node import Node
 
 
@@ -114,7 +113,7 @@ class QDMTextEdit(QTextEdit):
     so view shortcuts are properly disabled during text input.
     """
 
-    def focusInEvent(self, event: "QFocusEvent") -> None:
+    def focusInEvent(self, event: QFocusEvent) -> None:
         """Signal editing start when widget gains focus.
 
         Args:
@@ -124,7 +123,7 @@ class QDMTextEdit(QTextEdit):
         self.parentWidget().set_editing_flag(True)
         super().focusInEvent(event)
 
-    def focusOutEvent(self, event: "QFocusEvent") -> None:
+    def focusOutEvent(self, event: QFocusEvent) -> None:
         """Signal editing end when widget loses focus.
 
         Args:
