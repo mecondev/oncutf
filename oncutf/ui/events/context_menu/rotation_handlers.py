@@ -105,8 +105,8 @@ class RotationHandlers:
             logger.info("[BulkRotation] Processing %d files", len(final_files))
             self._apply_bulk_rotation(final_files)
 
-        except ImportError as e:
-            logger.error("[BulkRotation] Failed to import BulkRotationDialog: %s", e)
+        except ImportError:
+            logger.exception("[BulkRotation] Failed to import BulkRotationDialog")
             from oncutf.app.services import show_error_message
 
             show_error_message(
@@ -195,7 +195,7 @@ class RotationHandlers:
             try:
                 staging_manager = self.parent_window.context.get_manager("metadata_staging")
             except KeyError:
-                logger.error("[BulkRotation] MetadataStagingManager not found")
+                logger.exception("[BulkRotation] MetadataStagingManager not found")
                 return
 
             modified_count = 0

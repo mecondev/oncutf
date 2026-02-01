@@ -114,8 +114,8 @@ class ColumnVisibilityManager:
             visible_columns = self.get_visible_columns_list()
             logger.info("Saved column visibility config: %s", visible_columns)
 
-        except Exception as e:
-            logger.error("Failed to save column visibility config: %s", e)
+        except Exception:
+            logger.exception("Failed to save column visibility config")
 
     def get_visible_columns_list(self) -> list[str]:
         """Get list of currently visible column keys.
@@ -249,8 +249,8 @@ class ColumnVisibilityManager:
                 if hasattr(model, "update_visible_columns"):
                     model.update_visible_columns(view_visible)
 
-        except Exception as e:
-            logger.error("[ColumnSync] Error syncing columns: %s", e)
+        except Exception:
+            logger.exception("[ColumnSync] Error syncing columns")
 
     @property
     def visible_columns(self) -> dict[str, bool]:

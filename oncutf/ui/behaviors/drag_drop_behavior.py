@@ -482,8 +482,8 @@ class DragDropBehavior:
             if not file_items:
                 logger.warning("[DragDropBehavior] No valid file items for metadata tree drop")
                 return False
-        except (AttributeError, IndexError) as e:
-            logger.error("[DragDropBehavior] Error getting selected files: %s", e)
+        except (AttributeError, IndexError):
+            logger.exception("[DragDropBehavior] Error getting selected files")
             return False
 
         # Get modifiers
@@ -520,8 +520,8 @@ class DragDropBehavior:
                         len(current_selection),
                         extra={"dev_only": True},
                     )
-        except Exception as e:
-            logger.error("[DragDropBehavior] Error initiating metadata load: %s", e)
+        except Exception:
+            logger.exception("[DragDropBehavior] Error initiating metadata load")
             return False
         else:
             return True
