@@ -442,8 +442,21 @@ class ThumbnailViewportWidget(QWidget):
 
         menu.addSeparator()
 
-        # File operations (TODO: integrate with existing context menu handlers, see: https://github.com/mecondev/oncutf/issues/2#issue-3880446702)
-        menu.addAction("Open File Location", self._open_file_location)
+        # File operations
+        selected_files = self.get_selected_files()
+        if selected_files:
+            if len(selected_files) == 1:
+                menu.addAction("Open File", self._open_file)
+                menu.addAction("Reveal in File Manager", self._reveal_in_file_manager)
+            menu.addAction(
+                f"Open Folder ({len(selected_files)} file(s) selected)",
+                self._open_file_location,
+            )
+        else:
+            action = menu.addAction("No files selected")
+            action.setEnabled(False)
+
+        menu.addSeparator()
         menu.addAction("Refresh", self._refresh)
 
         # Show menu
@@ -475,10 +488,83 @@ class ThumbnailViewportWidget(QWidget):
         # Update local UI state
         self.set_order_mode("manual")
 
+    def _open_file(self) -> None:
+        """Open selected file with default application."""
+        from pathlib import Path
+
+        from PyQt5.QtCore import QUrl
+        from PyQt5.QtGui import QDesktopServices
+
+        selected_files = self.get_selected_files()
+        if not selected_files:
+            logger.warning("[ThumbnailViewport] No file selected for opening")
+            return
+
+        file_path = selected_files[0]
+        if not Path(file_path).exists():
+            logger.error("[ThumbnailViewport] File does not exist: %s", file_path)
+            return
+
+        success = QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
+        if success:
+            logger.info("[ThumbnailViewport] Opened file: %s", file_path)
+        else:
+            logger.error("[ThumbnailViewport] Failed to open file: %s", file_path)
+
+    def _reveal_in_file_manager(self) -> None:
+        """Reveal selected file in system file manager."""
+        import platform
+        import subprocess
+        from pathlib import Path
+
+        selected_files = self.get_selected_files()
+        if not selected_files:
+            logger.warning("[ThumbnailViewport] No file selected for revealing")
+            return
+
+        file_path = Path(selected_files[0])
+        if not file_path.exists():
+            logger.error("[ThumbnailViewport] File does not exist: %s", file_path)
+            return
+
+        system = platform.system()
+        try:
+            if system == "Windows":
+                subprocess.run(["explorer", "/select,", str(file_path)], check=False)
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", "-R", str(file_path)], check=False)
+            else:  # Linux and others
+                # Open the containing folder (most file managers don't support reveal)
+                folder_path = file_path.parent
+                subprocess.run(["xdg-open", str(folder_path)], check=False)
+
+            logger.info("[ThumbnailViewport] Revealed file: %s", file_path)
+        except Exception as e:
+            logger.error("[ThumbnailViewport] Failed to reveal file: %s", e)
+
     def _open_file_location(self) -> None:
-        """Open file location in system file manager."""
-        # TODO: Integrate with existing file operations (see: https://github.com/mecondev/oncutf/issues/2#issue-3880446702)
-        logger.warning("[ThumbnailViewport] Open file location not yet implemented")
+        """Open containing folder of selected file(s)."""
+        from pathlib import Path
+
+        from PyQt5.QtCore import QUrl
+        from PyQt5.QtGui import QDesktopServices
+
+        selected_files = self.get_selected_files()
+        if not selected_files:
+            logger.warning("[ThumbnailViewport] No files selected for folder opening")
+            return
+
+        # Get folder from first selected file
+        folder_path = Path(selected_files[0]).parent
+        if not folder_path.exists():
+            logger.error("[ThumbnailViewport] Folder does not exist: %s", folder_path)
+            return
+
+        success = QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder_path)))
+        if success:
+            logger.info("[ThumbnailViewport] Opened folder: %s", folder_path)
+        else:
+            logger.error("[ThumbnailViewport] Failed to open folder: %s", folder_path)
 
     def _refresh(self) -> None:
         """Refresh the viewport."""
