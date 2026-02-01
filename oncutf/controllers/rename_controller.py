@@ -551,7 +551,7 @@ class RenameController:
             try:
                 return self._validation_dialog.show_validation_issues(validation_result)
             except Exception as e:
-                logger.error("[RenameController] Error with validation dialog: %s", str(e))
+                logger.exception("[RenameController] Error with validation dialog")
                 return "cancel"
 
         # Fallback: cancel if no handler available

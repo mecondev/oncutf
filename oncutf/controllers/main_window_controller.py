@@ -175,7 +175,7 @@ class MainWindowController:
 
         except Exception as e:
             error_msg = f"Error loading folder: {e}"
-            logger.error("[MainWindowController] %s", error_msg)
+            logger.exception("[MainWindowController] %s", error_msg)
             errors.append(error_msg)
             result["success"] = False
             return result
@@ -292,7 +292,7 @@ class MainWindowController:
                 logger.info("[Shutdown] Configuration saved")
             except Exception as e:
                 error_msg = f"Failed to save configuration: {e}"
-                logger.error("[Shutdown] %s", error_msg)
+                logger.exception("[Shutdown] %s", error_msg)
                 result["errors"].append(error_msg)
 
             # Step 2: Create database backup (20%)
@@ -374,7 +374,7 @@ class MainWindowController:
                     )
                 except Exception as e:
                     error_msg = f"ShutdownCoordinator failed: {e}"
-                    logger.error("[Shutdown] %s", error_msg)
+                    logger.exception("[Shutdown] %s", error_msg)
                     result["errors"].append(error_msg)
 
             # Determine overall success

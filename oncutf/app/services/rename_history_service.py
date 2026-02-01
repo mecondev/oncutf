@@ -154,7 +154,7 @@ class RenameHistoryManager:
                 operation_result = ""
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error recording rename batch: %s", e)
+            logger.exception("[RenameHistoryManager] Error recording rename batch")
             return ""
         else:
             return operation_result
@@ -193,7 +193,7 @@ class RenameHistoryManager:
             ]
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error retrieving recent operations: %s", e)
+            logger.exception("[RenameHistoryManager] Error retrieving recent operations")
             return []
 
     def get_operation_details(self, operation_id: str) -> RenameBatch | None:
@@ -242,7 +242,7 @@ class RenameHistoryManager:
             )
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error retrieving operation details: %s", e)
+            logger.exception("[RenameHistoryManager] Error retrieving operation details")
             return None
 
     def can_undo_operation(self, operation_id: str) -> tuple[bool, str]:
@@ -291,7 +291,7 @@ class RenameHistoryManager:
             result = (True, "")
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error checking undo capability: %s", e)
+            logger.exception("[RenameHistoryManager] Error checking undo capability")
             return False, f"Error checking operation: {e!s}"
         else:
             return result
@@ -352,10 +352,9 @@ class RenameHistoryManager:
 
                 except OSError as e:
                     failed_reverts.append((operation, str(e)))
-                    logger.error(
-                        "[RenameHistoryManager] Failed to revert %s: %s",
+                    logger.exception(
+                        "[RenameHistoryManager] Failed to revert %s",
                         operation.new_filename,
-                        e,
                     )
 
             # Record the undo operation
@@ -383,7 +382,7 @@ class RenameHistoryManager:
                 result = (True, message, success_count)
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error during undo operation: %s", e)
+            logger.exception("[RenameHistoryManager] Error during undo operation")
             return False, f"Undo failed: {e!s}", 0
         else:
             return result
@@ -404,7 +403,7 @@ class RenameHistoryManager:
             return self._db_manager.cleanup_orphaned_records()
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error during history cleanup: %s", e)
+            logger.exception("[RenameHistoryManager] Error during history cleanup")
             return 0
 
     def get_history_stats(self) -> dict[str, Any]:
@@ -425,7 +424,7 @@ class RenameHistoryManager:
             }
 
         except Exception as e:
-            logger.error("[RenameHistoryManager] Error getting history stats: %s", e)
+            logger.exception("[RenameHistoryManager] Error getting history stats")
             return {}
 
 

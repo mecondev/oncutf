@@ -557,7 +557,7 @@ class LayoutController:
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error("[LayoutController] Error handling thumbnail selection: %s", e)
+            logger.exception("[LayoutController] Error handling thumbnail selection")
 
     def _sync_selection_to_viewport(self) -> None:
         """Sync current FileTable selection to ThumbnailViewport."""
@@ -583,7 +583,7 @@ class LayoutController:
                 self.parent_window.thumbnail_viewport.clear_selection()
 
         except Exception as e:
-            logger.error("[LayoutController] Error syncing selection to viewport: %s", e)
+            logger.exception("[LayoutController] Error syncing selection to viewport")
 
     def _sync_selection_to_table(self) -> None:
         """Sync current ThumbnailViewport selection to FileTable."""
@@ -630,7 +630,7 @@ class LayoutController:
                 )
 
         except Exception as e:
-            logger.error("[LayoutController] Error syncing selection to table: %s", e)
+            logger.exception("[LayoutController] Error syncing selection to table")
 
     def _setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""

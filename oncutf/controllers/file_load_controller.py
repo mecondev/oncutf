@@ -395,7 +395,7 @@ class FileLoadController:
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.error("[FileLoadController] Error getting file count: %s", str(e))
+            logger.exception("[FileLoadController] Error getting file count")
             return 0
         else:
             return count
