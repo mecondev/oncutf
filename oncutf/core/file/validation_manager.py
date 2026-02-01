@@ -518,9 +518,7 @@ class FileValidationManager:
         time_by_size = total_size_bytes / rate["bytes_per_sec"]
 
         # Use the larger estimate (bottleneck) with minimum time
-        estimated_time = max(time_by_files, time_by_size, 1.0)
-
-        return estimated_time
+        return max(time_by_files, time_by_size, 1.0)
 
     def cleanup_stale_cache_entries(self, _max_age_days: int = 30) -> None:
         """Clean up stale cache entries older than specified days."""

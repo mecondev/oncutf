@@ -2,11 +2,40 @@
 
 Consolidated list of all TODO items extracted from codebase.
 
-**Last Updated:** 2026-01-31
+**Last Updated:** 2026-02-01
 
 ---
 
 ## High Priority Features
+
+### 0. Icon System Migration
+
+**Status:** Not Started  
+**Priority:** High  
+**Description:** Migrate application icons from Feather icons to Google Material Design icons.
+
+**Current State:**
+
+- Using Feather icon set
+- Icons need refresh for better consistency and broader coverage
+
+**New Icon Location:**
+
+- Path: `/mnt/data_1/edu/Tools/Google_material_design_icons/material_symbols_outlined_flat`
+- Format: Google Material Design Icons (outlined variant)
+
+**Tasks:**
+
+1. Audit current Feather icon usage across codebase
+2. Map Feather icons to Material Design equivalents
+3. Update icon service/loader to support new icon path
+4. Test all UI components with new icons
+5. Verify icon scaling and rendering quality
+6. Update icon documentation
+
+**Estimated Effort:** 1-2 days
+
+---
 
 ### 1. Thumbnails Layout System
 

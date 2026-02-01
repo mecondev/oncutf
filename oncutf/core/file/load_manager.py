@@ -313,9 +313,8 @@ class FileLoadManager:
         else:
             try:
                 for entry in Path(folder_path).iterdir():
-                    if self._is_allowed_extension(entry.name):
-                        if entry.is_file():
-                            file_paths.append(str(entry))
+                    if self._is_allowed_extension(entry.name) and entry.is_file():
+                        file_paths.append(str(entry))
             except OSError as e:
                 logger.error("[FileLoadManager] Error listing directory %s: %s", folder_path, e)
 
