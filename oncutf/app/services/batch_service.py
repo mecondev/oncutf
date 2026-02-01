@@ -141,13 +141,13 @@ class BatchService:
                         ),
                     },
                 }
-            else:
-                pending = self.batch_manager.get_pending_operations()
-                return {
-                    "success": True,
-                    "operation_type": operation_id,
-                    "pending_count": pending.get(operation_id, 0),
-                }
+
+            pending = self.batch_manager.get_pending_operations()
+            return {
+                "success": True,
+                "operation_type": operation_id,
+                "pending_count": pending.get(operation_id, 0),
+            }
 
         except Exception as e:
             return {"success": False, "error": str(e)}

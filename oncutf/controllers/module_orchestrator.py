@@ -214,13 +214,11 @@ class ModuleOrchestrator:
             logger.warning("[ModuleOrchestrator] Unknown module type: %s", original_name)
             return {}
 
-        instance = {
+        return {
             "type": name,
             "descriptor": descriptor,
             "config": config or {},
         }
-
-        return instance
 
     def add_module(self, name: str, config: dict[str, Any] | None = None) -> int:
         """Add a module to the pipeline.

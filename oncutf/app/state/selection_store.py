@@ -105,9 +105,7 @@ class SelectionStore(QObject):
         if rows == self._selected_rows and not force_emit:
             return  # No change
 
-        # old_count = len(self._selected_rows)
         self._selected_rows = rows.copy()
-        # new_count = len(self._selected_rows)
 
         self._last_operation_time = time.time()
 
@@ -130,10 +128,9 @@ class SelectionStore(QObject):
         self._selected_rows.update(rows)
         new_count = len(self._selected_rows)
 
-        if new_count != old_count:
-            # OPTIMIZED: Use debounced signal emission
-            if emit_signal:
-                self._schedule_selection_signal()
+        # OPTIMIZED: Use debounced signal emission
+        if new_count != old_count and emit_signal:
+            self._schedule_selection_signal()
 
     def remove_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """Remove rows from current selection.
@@ -150,10 +147,9 @@ class SelectionStore(QObject):
         self._selected_rows.difference_update(rows)
         new_count = len(self._selected_rows)
 
-        if new_count != old_count:
-            # OPTIMIZED: Use debounced signal emission
-            if emit_signal:
-                self._schedule_selection_signal()
+        # OPTIMIZED: Use debounced signal emission
+        if new_count != old_count and emit_signal:
+            self._schedule_selection_signal()
 
     def clear_selection(self, *, emit_signal: bool = True) -> None:
         """Clear all selected rows.

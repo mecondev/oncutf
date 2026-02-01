@@ -170,9 +170,6 @@ disallow_untyped_defs = true  # Enforce typed functions
 warn_return_any = true  # Stricter return type checking
 no_implicit_reexport = true  # Require explicit __all__ for re-exports
 strict_optional = true  # Stricter None checking
-disable_error_code = [
-    "no-any-return"  # Core layer interacts with database/metadata (untyped data)
-]
 
 # ============================================================
 # Tier 3 — Qt / UI / glue code (targeted error suppression)
