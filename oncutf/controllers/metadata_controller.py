@@ -282,13 +282,12 @@ class MetadataController:
             # Get TableManager from ApplicationContext manager registry
             table_manager = cast("Any", self._app_context.get_manager("table"))
             table_manager.restore_fileitem_metadata_from_cache()
-
-            return {"success": True, "errors": []}
-
         except Exception as e:
             error_msg = f"Failed to restore metadata from cache: {e}"
             logger.exception("[MetadataController] %s", error_msg)
             return {"success": False, "errors": [error_msg]}
+        else:
+            return {"success": True, "errors": []}
 
     # -------------------------------------------------------------------------
     # Metadata Export
@@ -360,9 +359,6 @@ class MetadataController:
                     "[MetadataController] Export failed: %s",
                     result.get("errors", []),
                 )
-
-            return result
-
         except Exception as e:
             error_msg = f"Failed to export metadata: {e}"
             logger.exception("[MetadataController] %s", error_msg)
@@ -372,6 +368,8 @@ class MetadataController:
                 "output_path": output_path,
                 "errors": [error_msg],
             }
+        else:
+            return result
 
     # -------------------------------------------------------------------------
     # State Queries
@@ -454,9 +452,8 @@ class MetadataController:
                 "[MetadataController] get_common_fields not supported for %d files",
                 len(selected_files),
             )
-
-            return []
-
         except Exception as e:
             logger.exception("[MetadataController] Failed to get common fields")
+            return []
+        else:
             return []

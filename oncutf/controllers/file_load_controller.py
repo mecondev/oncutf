@@ -186,20 +186,19 @@ class FileLoadController:
             loaded_count = len(valid_files)  # Assume all loaded successfully
 
             logger.info("[FileLoadController] Successfully loaded %d files", loaded_count)
-
-            return {
-                "success": True,
-                "loaded_count": loaded_count,
-                "errors": errors,
-                "skipped": skipped,
-            }
-
         except Exception as e:
             logger.exception("[FileLoadController] Error during file loading")
             errors.append(f"Loading error: {e!s}")
             return {
                 "success": False,
                 "loaded_count": 0,
+                "errors": errors,
+                "skipped": skipped,
+            }
+        else:
+            return {
+                "success": True,
+                "loaded_count": loaded_count,
                 "errors": errors,
                 "skipped": skipped,
             }
@@ -259,15 +258,19 @@ class FileLoadController:
             self._file_load_manager.load_folder(folder_path, merge_mode, recursive)
 
             logger.info("[FileLoadController] Folder loaded successfully")
+        except Exception as e:
+            logger.exception("[FileLoadController] Error loading folder")
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "errors": [str(e)],
+            }
+        else:
             return {
                 "success": True,
                 "loaded_count": -1,
                 "errors": [],
             }  # Count not available yet
-
-        except Exception as e:
-            logger.exception("[FileLoadController] Error loading folder")
-            return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
     def handle_drop(
         self,
@@ -325,11 +328,11 @@ class FileLoadController:
                 extra={"dev_only": True},
             )
             logger.info("[FileLoadController] Drop handled successfully")
-            return {"success": True, "errors": []}
-
         except Exception as e:
             logger.exception("[FileLoadController] Error handling drop")
             return {"success": False, "errors": [str(e)]}
+        else:
+            return {"success": True, "errors": []}
         finally:
             # Ensure wait cursor is restored
             from PyQt5.QtWidgets import QApplication
@@ -364,11 +367,11 @@ class FileLoadController:
             # Use table manager to clear the file table
             self._table_manager.clear_file_table()
             logger.info("[FileLoadController] Files cleared successfully")
-            return True
-
         except Exception as e:
             logger.exception("[FileLoadController] Error clearing files")
             return False
+        else:
+            return True
 
     def get_loaded_file_count(self) -> int:
         """Get count of currently loaded files.
@@ -391,10 +394,11 @@ class FileLoadController:
                 count,
                 extra={"dev_only": True},
             )
-            return count
         except Exception as e:
             logger.error("[FileLoadController] Error getting file count: %s", str(e))
             return 0
+        else:
+            return count
 
     def is_recursive_mode(self) -> bool:
         """Check if recursive mode is enabled.

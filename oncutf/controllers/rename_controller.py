@@ -168,14 +168,6 @@ class RenameController:
                 has_changes,
                 extra={"dev_only": True},
             )
-
-            return {
-                "success": True,
-                "name_pairs": name_pairs,
-                "has_changes": has_changes,
-                "errors": [],
-            }
-
         except Exception as e:
             logger.exception("[RenameController] Error generating preview")
             return {
@@ -183,6 +175,13 @@ class RenameController:
                 "name_pairs": [],
                 "has_changes": False,
                 "errors": [f"Preview generation failed: {e!s}"],
+            }
+        else:
+            return {
+                "success": True,
+                "name_pairs": name_pairs,
+                "has_changes": has_changes,
+                "errors": [],
             }
 
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> dict[str, Any]:
@@ -242,18 +241,6 @@ class RenameController:
                 validation_result.unchanged_count,
                 extra={"dev_only": True},
             )
-
-            return {
-                "success": True,
-                "has_errors": validation_result.has_errors,
-                "valid_count": validation_result.valid_count,
-                "invalid_count": validation_result.invalid_count,
-                "duplicate_count": validation_result.duplicate_count,
-                "unchanged_count": validation_result.unchanged_count,
-                "validation_items": validation_result.items,
-                "errors": [],
-            }
-
         except Exception as e:
             logger.exception("[RenameController] Error validating preview")
             return {
@@ -265,6 +252,17 @@ class RenameController:
                 "unchanged_count": 0,
                 "validation_items": [],
                 "errors": [f"Validation failed: {e!s}"],
+            }
+        else:
+            return {
+                "success": True,
+                "has_errors": validation_result.has_errors,
+                "valid_count": validation_result.valid_count,
+                "invalid_count": validation_result.invalid_count,
+                "duplicate_count": validation_result.duplicate_count,
+                "unchanged_count": validation_result.unchanged_count,
+                "validation_items": validation_result.items,
+                "errors": [],
             }
 
     # -------------------------------------------------------------------------
@@ -497,13 +495,15 @@ class RenameController:
 
         try:
             state = self._unified_rename_engine.state_manager.get_state()
+        except Exception as e:
+            logger.warning("[RenameController] Error checking pending changes: %s", str(e))
+            return False
+        else:
             return (
                 state.preview_result is not None
                 and state.preview_result.has_changes
                 and not (state.validation_result and state.validation_result.has_errors)
             )
-        except Exception as e:
-            logger.warning("[RenameController] Error checking pending changes: %s", str(e))
             return False
 
     def get_current_state(self) -> Any | None:
