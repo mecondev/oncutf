@@ -195,7 +195,7 @@ class FileLoadController:
             }
 
         except Exception as e:
-            logger.exception("[FileLoadController] Error during file loading: %s", str(e))
+            logger.exception("[FileLoadController] Error during file loading")
             errors.append(f"Loading error: {e!s}")
             return {
                 "success": False,
@@ -266,10 +266,7 @@ class FileLoadController:
             }  # Count not available yet
 
         except Exception as e:
-            logger.exception(
-                "[FileLoadController] Error loading folder: %s",
-                str(e),
-            )
+            logger.exception("[FileLoadController] Error loading folder")
             return {"success": False, "loaded_count": 0, "errors": [str(e)]}
 
     def handle_drop(
@@ -331,10 +328,7 @@ class FileLoadController:
             return {"success": True, "errors": []}
 
         except Exception as e:
-            logger.exception(
-                "[FileLoadController] Error handling drop: %s",
-                str(e),
-            )
+            logger.exception("[FileLoadController] Error handling drop")
             return {"success": False, "errors": [str(e)]}
         finally:
             # Ensure wait cursor is restored
@@ -373,10 +367,7 @@ class FileLoadController:
             return True
 
         except Exception as e:
-            logger.exception(
-                "[FileLoadController] Error clearing files: %s",
-                str(e),
-            )
+            logger.exception("[FileLoadController] Error clearing files")
             return False
 
     def get_loaded_file_count(self) -> int:

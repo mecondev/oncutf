@@ -114,7 +114,7 @@ class SemanticAliasesManager:
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
         except Exception as e:
-            logger.exception("Error loading semantic aliases: %s", e)
+            logger.exception("Error loading semantic aliases")
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
 
     def _create_default_file(self) -> None:
@@ -155,7 +155,7 @@ class SemanticAliasesManager:
             return True
 
         except Exception as e:
-            logger.exception("Failed to save semantic aliases: %s", e)
+            logger.exception("Failed to save semantic aliases")
             return False
 
     def reload_aliases(self) -> dict[str, list[str]]:

@@ -276,7 +276,7 @@ class FilesystemHandler:
                     extra={"dev_only": True},
                 )
             except Exception as e:
-                logger.exception("[FilesystemHandler] Model refresh error: %s", e)
+                logger.exception("[FilesystemHandler] Model refresh error")
             finally:
                 self._refresh_in_progress = False
 
@@ -414,7 +414,7 @@ class FilesystemHandler:
             schedule_ui_update(restore_and_expand, delay=100)
 
         except Exception as e:
-            logger.exception("[FilesystemHandler] Error recreating model: %s", e)
+            logger.exception("[FilesystemHandler] Error recreating model")
             from oncutf.utils.shared.timer_manager import schedule_ui_update
 
             schedule_ui_update(

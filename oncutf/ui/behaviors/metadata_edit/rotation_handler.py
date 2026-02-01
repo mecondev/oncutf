@@ -93,8 +93,7 @@ class RotationHandler:
                 return
             except Exception as e:
                 logger.exception(
-                    "Failed to set rotation via UnifiedMetadataManager: %s",
-                    e,
+                    "Failed to set rotation via UnifiedMetadataManager",
                 )
 
         # Fallback to manual method via behavior (allows test mocking)

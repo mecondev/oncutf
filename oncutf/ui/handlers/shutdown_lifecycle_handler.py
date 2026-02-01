@@ -176,7 +176,7 @@ class ShutdownLifecycleHandler:
             return
 
         except Exception as e:
-            logger.exception("[CloseEvent] Error starting async shutdown: %s", e)
+            logger.exception("[CloseEvent] Error starting async shutdown")
             self._emergency_quit()
 
     def _shutdown_run_pre_cleanup_step(self) -> None:
@@ -199,7 +199,7 @@ class ShutdownLifecycleHandler:
 
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
         except Exception as e:
-            logger.exception("[CloseEvent] Pre-cleanup step failed: %s", e)
+            logger.exception("[CloseEvent] Pre-cleanup step failed")
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
 
     def _shutdown_start_async_coordinator(self) -> None:
@@ -224,7 +224,7 @@ class ShutdownLifecycleHandler:
                 # If already in progress, re-check shortly.
                 QTimer.singleShot(50, self._shutdown_start_async_coordinator)
         except Exception as e:
-            logger.exception("[CloseEvent] Error starting async shutdown: %s", e)
+            logger.exception("[CloseEvent] Error starting async shutdown")
             self._emergency_quit()
 
     def _on_coordinator_shutdown_completed(self, success: bool) -> None:
@@ -256,7 +256,7 @@ class ShutdownLifecycleHandler:
 
             QTimer.singleShot(0, self._shutdown_step_finalize)
         except Exception as e:
-            logger.exception("[CloseEvent] Error during post-cleanup: %s", e)
+            logger.exception("[CloseEvent] Error during post-cleanup")
             self._emergency_quit()
 
     def _shutdown_step_finalize(self) -> None:
@@ -327,7 +327,7 @@ class ShutdownLifecycleHandler:
                 # Schedule automatic stack dump(s) during shutdown.
                 faulthandler.dump_traceback_later(timeout_s, repeat=repeat, file=f, exit=False)
         except Exception as e:
-            logger.exception("[CloseEvent] Failed to open watchdog dump file: %s", e)
+            logger.exception("[CloseEvent] Failed to open watchdog dump file")
 
             def _cancel_noop() -> None:
                 return

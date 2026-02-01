@@ -125,7 +125,7 @@ class EventHandler:
                             )
 
                 except Exception as e:
-                    logger.exception("[EventHandler] Error refreshing tree view: %s", e)
+                    logger.exception("[EventHandler] Error refreshing tree view")
             else:
                 logger.debug(
                     "[EventHandler] No model or model does not support refresh",

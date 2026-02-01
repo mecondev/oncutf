@@ -343,7 +343,7 @@ class ShutdownCoordinator(QObject):
             QTimer.singleShot(0, self._execute_next_phase_async)
 
         except Exception as e:
-            logger.exception("[ShutdownCoordinator] Async shutdown error: %s", e)
+            logger.exception("[ShutdownCoordinator] Async shutdown error")
             self._async_overall_success = False
             self.shutdown_completed.emit(False)
             self._shutdown_in_progress = False
@@ -495,7 +495,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.exception("Thread pool shutdown failed: %s", e)
+            logger.exception("Thread pool shutdown failed")
             return False, f"Thread pool shutdown failed: {e}"
 
     def _shutdown_thumbnails(self) -> tuple[bool, str | None]:
@@ -535,7 +535,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.exception("Thumbnail manager shutdown failed: %s", e)
+            logger.exception("Thumbnail manager shutdown failed")
             # Even on error, try force cleanup
             try:
                 from oncutf.core.thumbnail.providers import VideoThumbnailProvider
@@ -573,7 +573,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.exception("Database shutdown failed: %s", e)
+            logger.exception("Database shutdown failed")
             return False, f"Database shutdown failed: {e}"
 
     def _shutdown_exiftool(self) -> tuple[bool, str | None]:
@@ -630,7 +630,7 @@ class ShutdownCoordinator(QObject):
 
             return True, None
         except Exception as e:
-            logger.exception("ExifTool shutdown failed: %s", e)
+            logger.exception("ExifTool shutdown failed")
             # Even on error, try force cleanup one more time
             try:
                 from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper

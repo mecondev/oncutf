@@ -145,7 +145,7 @@ class TreeRenderHandler:
             self.view._scroll_behavior.restore_scroll_after_expand()
 
         except Exception as e:
-            logger.exception("[TreeRenderHandler] Unexpected error while rendering: %s", e)
+            logger.exception("[TreeRenderHandler] Unexpected error while rendering")
             self.view._ui_state_handler.clear_tree()
         finally:
             # ALWAYS release rebuild lock, even on error

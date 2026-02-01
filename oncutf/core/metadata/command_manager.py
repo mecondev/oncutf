@@ -108,7 +108,7 @@ class MetadataCommandManager(QObject):
             return True
 
         except Exception as e:
-            logger.exception("[MetadataCommandManager] Error executing command: %s", e)
+            logger.exception("[MetadataCommandManager] Error executing command")
             return False
 
     def undo(self) -> bool:
@@ -147,7 +147,7 @@ class MetadataCommandManager(QObject):
             return False
 
         except Exception as e:
-            logger.exception("[MetadataCommandManager] Error undoing command: %s", e)
+            logger.exception("[MetadataCommandManager] Error undoing command")
             return False
 
     def redo(self) -> bool:
@@ -183,7 +183,7 @@ class MetadataCommandManager(QObject):
             return False
 
         except Exception as e:
-            logger.exception("[MetadataCommandManager] Error redoing command: %s", e)
+            logger.exception("[MetadataCommandManager] Error redoing command")
             return False
 
     def can_undo(self) -> bool:

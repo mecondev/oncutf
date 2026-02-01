@@ -152,7 +152,7 @@ class MetadataTreeSelectionHandler:
                 )
 
         except Exception as e:
-            logger.exception("[MetadataTree] Error updating from parent selection: %s", e)
+            logger.exception("[MetadataTree] Error updating from parent selection")
             self._view.show_empty_state("Error loading metadata")
 
     def refresh_metadata_from_selection(self) -> None:
@@ -239,7 +239,7 @@ class MetadataTreeSelectionHandler:
                 )
 
         except Exception as e:
-            logger.exception("[MetadataTree] Error in smart display: %s", e)
+            logger.exception("[MetadataTree] Error in smart display")
             self._view.show_empty_state("Error loading metadata")
 
         # Update header visibility after smart display

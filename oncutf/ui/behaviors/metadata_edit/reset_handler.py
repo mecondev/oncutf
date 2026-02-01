@@ -99,8 +99,7 @@ class ResetHandler:
                 return
             except Exception as e:
                 logger.exception(
-                    "Failed to reset value via UnifiedMetadataManager: %s",
-                    e,
+                    "Failed to reset value via UnifiedMetadataManager",
                 )
 
         # Fallback to manual method

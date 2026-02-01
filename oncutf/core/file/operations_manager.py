@@ -197,7 +197,7 @@ class FileOperationsManager:
             )
             new_names = [new_name for _, new_name in preview_result.name_pairs]
         except Exception as e:
-            logger.exception("[Rename] Error generating preview: %s", e)
+            logger.exception("[Rename] Error generating preview")
             if self.parent_window and hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.finish_operation(
                     operation_id,
@@ -215,7 +215,7 @@ class FileOperationsManager:
                 validator=validate_filename_part,
             )
         except Exception as e:
-            logger.exception("[Rename] Error executing rename: %s", e)
+            logger.exception("[Rename] Error executing rename")
             if self.parent_window and hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.finish_operation(
                     operation_id,

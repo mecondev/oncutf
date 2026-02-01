@@ -136,7 +136,7 @@ class MetadataExporter:
             return self._export_json(files, output_dir, scope)
 
         except Exception as e:
-            logger.exception("[MetadataExporter] Export failed: %s", e)
+            logger.exception("[MetadataExporter] Export failed")
             return False
 
     def _export_json(self, files: list[Any], output_dir: str, _scope: str) -> bool:

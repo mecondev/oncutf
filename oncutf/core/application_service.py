@@ -236,7 +236,7 @@ class ApplicationService:
                 self.main_window.file_load_manager.reload_current_folder()
 
         except Exception as e:
-            logger.exception("[ApplicationService] Error in RenameController rename: %s", e)
+            logger.exception("[ApplicationService] Error in RenameController rename")
             self.main_window.status_manager.set_validation_status(
                 f"Rename error: {e!s}", validation_type="error", auto_reset=True
             )
@@ -281,7 +281,7 @@ class ApplicationService:
                 )
 
         except Exception as e:
-            logger.exception("[ApplicationService] Error updating FileItem objects: %s", e)
+            logger.exception("[ApplicationService] Error updating FileItem objects")
 
     # =====================================
     # Validation & Dialog Operations (with business logic)

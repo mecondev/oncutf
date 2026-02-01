@@ -322,8 +322,7 @@ class FilesystemMonitor(QObject):
                         )
                 except Exception as e:
                     logger.exception(
-                        "[FilesystemMonitor] Error refreshing FileStore after unmount: %s",
-                        e,
+                        "[FilesystemMonitor] Error refreshing FileStore after unmount",
                     )
             else:
                 logger.warning(

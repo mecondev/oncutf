@@ -533,7 +533,7 @@ class ExifToolWrapper:
             )
             return False
         except Exception as e:
-            logger.exception("[ExifToolWrapper] Exception while writing metadata: %s", e)
+            logger.exception("[ExifToolWrapper] Exception while writing metadata")
             return False
 
     def close(
@@ -611,7 +611,7 @@ class ExifToolWrapper:
                         proc.wait(timeout=kill_wait_s)
 
         except Exception as e:
-            logger.exception("[ExifToolWrapper] Error during shutdown: %s", e)
+            logger.exception("[ExifToolWrapper] Error during shutdown")
             # Force kill as last resort
             try:
                 if proc and proc.poll() is None:

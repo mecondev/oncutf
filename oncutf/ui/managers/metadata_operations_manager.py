@@ -245,7 +245,7 @@ class MetadataOperationsManager:
                 )
 
         except Exception as e:
-            logger.exception("[EventHandler] Export error: %s", e)
+            logger.exception("[EventHandler] Export error")
             show_error_message(
                 self.parent_window,
                 "Export Error",
@@ -325,7 +325,7 @@ class MetadataOperationsManager:
                 "Metadata editing dialog is not available. Please check the installation.",
             )
         except Exception as e:
-            logger.exception("[MetadataEdit] Unexpected error during %s editing: %s", field_name, e)
+            logger.exception("[MetadataEdit] Unexpected error during %s editing", field_name)
             from oncutf.app.services import show_error_message
 
             show_error_message(

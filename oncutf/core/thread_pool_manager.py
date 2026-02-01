@@ -192,7 +192,7 @@ class SmartWorkerThread(QThread):
                 self._execute_task(task)
 
             except Exception as e:
-                logger.exception("[SmartWorkerThread] Worker %s error: %s", self.worker_id, e)
+                logger.exception("[SmartWorkerThread] Worker %s error", self.worker_id)
 
         logger.debug("[SmartWorkerThread] Worker %s stopped", self.worker_id)
 
@@ -219,9 +219,8 @@ class SmartWorkerThread(QThread):
                     task.callback(result)
                 except Exception as e:
                     logger.exception(
-                        "[SmartWorkerThread] Callback error for task %s: %s",
+                        "[SmartWorkerThread] Callback error for task %s",
                         task.task_id,
-                        e,
                     )
 
             # Emit completion signal
@@ -233,7 +232,7 @@ class SmartWorkerThread(QThread):
 
             # Emit failure signal
             self.task_failed.emit(task.task_id, str(e))
-            logger.exception("[SmartWorkerThread] Task %s failed: %s", task.task_id, e)
+            logger.exception("[SmartWorkerThread] Task %s failed", task.task_id)
 
             # Track error in manager (will be set via signal connection)
             # Note: Manager should connect to task_failed signal to update its health state
@@ -389,7 +388,7 @@ class ThreadPoolManager(QObject):
                 return True
 
         except Exception as e:
-            logger.exception("[ThreadPoolManager] Error submitting task %s: %s", task_id, e)
+            logger.exception("[ThreadPoolManager] Error submitting task %s", task_id)
             return False
 
     def _check_pool_resize(self) -> None:
@@ -536,7 +535,7 @@ class ThreadPoolManager(QObject):
                 self._resize_pool(max(stats.active_threads - 1, self.min_threads))
 
         except Exception as e:
-            logger.exception("[ThreadPoolManager] Monitor error: %s", e)
+            logger.exception("[ThreadPoolManager] Monitor error")
 
     def get_stats(self) -> ThreadPoolStats:
         """Get thread pool statistics."""

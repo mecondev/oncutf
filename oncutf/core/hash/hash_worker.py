@@ -161,7 +161,7 @@ class HashWorker(BaseHashWorker):
                 self._calculate_checksums(file_paths)
 
         except Exception as e:
-            logger.exception("[HashWorker] Unexpected error: %s", e)
+            logger.exception("[HashWorker] Unexpected error")
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
         finally:

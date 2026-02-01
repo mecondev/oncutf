@@ -293,7 +293,7 @@ class CounterModule(BaseRenameModule):
             )
             return result
         except Exception as e:
-            logger.exception("[CounterModule] Failed to apply counter logic: %s", e)
+            logger.exception("[CounterModule] Failed to apply counter logic")
             return "####"
 
     @staticmethod

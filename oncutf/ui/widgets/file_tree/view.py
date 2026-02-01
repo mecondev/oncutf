@@ -231,7 +231,7 @@ class FileTreeView(QTreeView):
             self._filesystem_handler.cleanup()
             logger.debug("[FileTreeView] Cleanup completed", extra={"dev_only": True})
         except Exception as e:
-            logger.exception("[FileTreeView] Error during cleanup: %s", e)
+            logger.exception("[FileTreeView] Error during cleanup")
 
         super().closeEvent(event)
 

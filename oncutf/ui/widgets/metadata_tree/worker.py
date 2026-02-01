@@ -290,7 +290,7 @@ class MetadataWorker(QObject):
 
                 except Exception as e:
                     logger.exception(
-                        "[Worker] Exception while reading metadata for %s: %s", path, e
+                        "[Worker] Exception while reading metadata for %s", path
                     )
                     metadata = {}
 

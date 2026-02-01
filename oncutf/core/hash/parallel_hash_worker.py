@@ -202,7 +202,7 @@ class ParallelHashWorker(BaseHashWorker):
                 self._calculate_checksums_parallel(file_paths)
 
         except Exception as e:
-            logger.exception("[ParallelHashWorker] Unexpected error: %s", e)
+            logger.exception("[ParallelHashWorker] Unexpected error")
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
         finally:

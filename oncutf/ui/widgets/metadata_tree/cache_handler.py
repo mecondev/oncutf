@@ -44,7 +44,7 @@ class MetadataTreeCacheHandler:
             )
         except Exception as e:
             logger.exception(
-                "[MetadataTreeView] Failed to initialize UnifiedMetadataManager: %s", e
+                "[MetadataTreeView] Failed to initialize UnifiedMetadataManager"
             )
             self._view._direct_loader = None
 

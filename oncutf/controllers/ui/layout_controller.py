@@ -492,7 +492,7 @@ class LayoutController:
                 logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
 
         except Exception as e:
-            logger.exception("[LayoutController] Error switching viewport: %s", e)
+            logger.exception("[LayoutController] Error switching viewport")
 
     def _setup_selection_sync(self) -> None:
         """Setup bidirectional selection synchronization between FileTable and ThumbnailViewport.

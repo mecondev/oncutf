@@ -115,7 +115,7 @@ class RotationHandlers:
                 "Bulk rotation dialog is not available. Please check the installation.",
             )
         except Exception as e:
-            logger.exception("[BulkRotation] Unexpected error: %s", e)
+            logger.exception("[BulkRotation] Unexpected error")
             from oncutf.app.services import show_error_message
 
             show_error_message(
@@ -332,7 +332,7 @@ class RotationHandlers:
                     )
 
         except Exception as e:
-            logger.exception("[BulkRotation] Error applying rotation: %s", e)
+            logger.exception("[BulkRotation] Error applying rotation")
             from oncutf.app.services import show_error_message
 
             show_error_message(

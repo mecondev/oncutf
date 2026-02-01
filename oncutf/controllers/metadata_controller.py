@@ -458,8 +458,5 @@ class MetadataController:
             return []
 
         except Exception as e:
-            logger.exception(
-                "[MetadataController] Failed to get common fields: %s",
-                str(e),
-            )
+            logger.exception("[MetadataController] Failed to get common fields")
             return []

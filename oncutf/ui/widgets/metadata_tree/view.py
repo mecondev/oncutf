@@ -295,7 +295,7 @@ class MetadataTreeView(QTreeView):
                 extra={"dev_only": True},
             )
         except Exception as e:
-            logger.exception("[MetadataTree] Failed to initialize controller: %s", e)
+            logger.exception("[MetadataTree] Failed to initialize controller")
             self._controller = None
 
     def wheelEvent(self, event) -> None:

@@ -199,9 +199,8 @@ class ParallelMetadataLoader:
 
                         except Exception as e:
                             logger.exception(
-                                "[ParallelMetadataLoader] Failed to load %s: %s",
+                                "[ParallelMetadataLoader] Failed to load %s",
                                 item.filename,
-                                e,
                             )
                             # Store empty metadata on error
                             results[item.full_path] = (item, {})
@@ -218,7 +217,7 @@ class ParallelMetadataLoader:
                     executor.shutdown(wait=False, cancel_futures=True)
 
         except Exception as e:
-            logger.exception("[ParallelMetadataLoader] Parallel loading failed: %s", e)
+            logger.exception("[ParallelMetadataLoader] Parallel loading failed")
 
         finally:
             # Call completion callback
@@ -283,9 +282,8 @@ class ParallelMetadataLoader:
 
         except Exception as e:
             logger.exception(
-                "[ParallelMetadataLoader] Error loading %s: %s",
+                "[ParallelMetadataLoader] Error loading %s",
                 item.filename,
-                e,
             )
             return {}
 

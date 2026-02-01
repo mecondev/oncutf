@@ -68,13 +68,13 @@ class BatchProcessor:
                     results.extend(batch_result)
                     successful_batches += 1
                 except Exception as e:
-                    logger.exception("[BatchProcessor] Batch failed: %s", e)
+                    logger.exception("[BatchProcessor] Batch failed")
                     failed_batches += 1
                     # Add original items as fallback
                     results.extend(batch)
 
         except Exception as e:
-            logger.exception("[BatchProcessor] Processing failed: %s", e)
+            logger.exception("[BatchProcessor] Processing failed")
             # Return original items as fallback
             results = items
 

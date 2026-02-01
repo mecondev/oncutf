@@ -255,7 +255,7 @@ class FileTableStateHelper:
                 file_table_view.viewport().update()
 
             except Exception as e:
-                logger.exception("[StateHelper] Error restoring state: %s", e)
+                logger.exception("[StateHelper] Error restoring state")
 
         # Schedule restoration with delay
         get_timer_manager().schedule(
@@ -366,7 +366,7 @@ class FileTableStateHelper:
             file_table_view.viewport().update()
 
         except Exception as e:
-            logger.exception("[StateHelper] Error in sync state restoration: %s", e)
+            logger.exception("[StateHelper] Error in sync state restoration")
 
     @staticmethod
     def clear_all_state(
@@ -427,4 +427,4 @@ class FileTableStateHelper:
                 file_table_view.viewport().update()
 
             except Exception as e:
-                logger.exception("[StateHelper] Error clearing state: %s", e)
+                logger.exception("[StateHelper] Error clearing state")

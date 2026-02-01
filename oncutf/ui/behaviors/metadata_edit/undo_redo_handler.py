@@ -59,7 +59,7 @@ class UndoRedoHandler:
                     )
 
         except Exception as e:
-            logger.exception("Error during undo operation: %s", e)
+            logger.exception("Error during undo operation")
 
     def redo_metadata_operation(self) -> None:
         """Redo the last undone metadata operation from context menu."""
@@ -88,7 +88,7 @@ class UndoRedoHandler:
                     )
 
         except Exception as e:
-            logger.exception("Error during redo operation: %s", e)
+            logger.exception("Error during redo operation")
 
     def show_history_dialog(self) -> None:
         """Show metadata history dialog."""

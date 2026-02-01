@@ -65,7 +65,7 @@ class ExifToolClient:
                 self._wrapper = ExifToolWrapper()
                 logger.debug("ExifToolWrapper initialized")
             except Exception as e:
-                logger.exception("Failed to initialize ExifToolWrapper: %s", e)
+                logger.exception("Failed to initialize ExifToolWrapper")
                 raise RuntimeError("ExifTool not available") from e
         return self._wrapper
 

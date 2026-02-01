@@ -164,8 +164,7 @@ class RenameManager:
                 self._execute_post_rename_workflow_safe(new_checked_paths, new_selected_paths)
             except Exception as e:
                 logger.exception(
-                    "[RenameManager] Error in post-rename workflow: %s",
-                    e,
+                    "[RenameManager] Error in post-rename workflow",
                 )
                 self._restore_wait_cursor()
                 # Fallback: just show a simple status message
@@ -307,8 +306,7 @@ class RenameManager:
 
                 except Exception as e:
                     logger.exception(
-                        "[RenameManager] Error in state restoration: %s",
-                        e,
+                        "[RenameManager] Error in state restoration",
                     )
 
             # Debounced restore: wait until FileStore.files_loaded stops firing.
@@ -400,8 +398,7 @@ class RenameManager:
 
         except Exception as e:
             logger.exception(
-                "[RenameManager] Critical error in post-rename workflow: %s",
-                e,
+                "[RenameManager] Critical error in post-rename workflow",
             )
 
     def _execute_post_rename_workflow(self, checked_paths: set[str]) -> None:

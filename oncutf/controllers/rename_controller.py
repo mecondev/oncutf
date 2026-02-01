@@ -177,7 +177,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception("[RenameController] Error generating preview: %s", str(e))
+            logger.exception("[RenameController] Error generating preview")
             return {
                 "success": False,
                 "name_pairs": [],
@@ -255,7 +255,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception("[RenameController] Error validating preview: %s", str(e))
+            logger.exception("[RenameController] Error validating preview")
             return {
                 "success": False,
                 "has_errors": True,
@@ -472,7 +472,7 @@ class RenameController:
             }
 
         except Exception as e:
-            logger.exception("[RenameController] Error executing rename: %s", str(e))
+            logger.exception("[RenameController] Error executing rename")
             return {
                 "success": False,
                 "renamed_count": 0,

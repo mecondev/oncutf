@@ -135,7 +135,7 @@ class TreeUiStateHandler:
             )
 
         except Exception as e:
-            logger.exception("[TreeUiStateHandler] Error displaying metadata: %s", e)
+            logger.exception("[TreeUiStateHandler] Error displaying metadata")
             self.display_placeholder("Error loading metadata")
 
         # Update header visibility after metadata display
