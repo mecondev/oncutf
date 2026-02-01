@@ -150,10 +150,10 @@ def pyqt5_available():
     """Fixture to check PyQt5 availability."""
     try:
         import PyQt5
-
-        return True
     except ImportError:
         return False
+    else:
+        return True
 
 
 @pytest.fixture
