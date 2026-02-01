@@ -170,12 +170,47 @@ class BatchOperationsManagerProtocol(Protocol):
         """Queue an operation for batch processing."""
         ...
 
+    def queue_metadata_set(
+        self,
+        file_path: str,
+        metadata: dict[str, Any],
+        is_extended: bool = False,
+    ) -> None:
+        """Queue a metadata cache set operation for batching."""
+        ...
+
+    def queue_hash_store(
+        self,
+        file_path: str,
+        hash_value: str,
+        algorithm: str = "crc32",
+    ) -> None:
+        """Queue a hash cache store operation for batching."""
+        ...
+
+    def queue_file_operation(
+        self,
+        file_path: str,
+        operation: str,
+        data: Any = None,
+    ) -> None:
+        """Queue a file I/O operation for batching."""
+        ...
+
     def flush(self) -> dict[str, Any]:
         """Flush all queued operations and return results."""
         ...
 
+    def flush_all(self) -> dict[str, int]:
+        """Flush all pending batches immediately."""
+        ...
+
     def get_stats(self) -> dict[str, Any]:
         """Get batch operation statistics."""
+        ...
+
+    def get_pending_operations(self) -> dict[str, int]:
+        """Get count of pending operations by type."""
         ...
 
 

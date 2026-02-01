@@ -48,28 +48,109 @@ class BatchService:
 
         Args:
             files: List of file paths
-            operation: Operation to perform
+            operation: Operation to perform ('metadata_set', 'hash_store', etc.)
             **kwargs: Additional operation parameters
 
         Returns:
             Results dictionary with success/failure info
 
         """
-        # TODO: Implement when BatchOperationsManager API is defined (see: https://github.com/mecondev/oncutf/issues/1#issue-3880442485)
-        return {"success": False, "error": "Not yet implemented"}
+        if not self.batch_manager:
+            return {"success": False, "error": "Batch manager not initialized"}
+
+        try:
+            # Queue operations based on operation type
+            if operation == "metadata_set":
+                metadata = kwargs.get("metadata", {})
+                is_extended = kwargs.get("is_extended", False)
+                for file_path in files:
+                    self.batch_manager.queue_metadata_set(file_path, metadata, is_extended)
+
+            elif operation == "hash_store":
+                hash_value = kwargs.get("hash_value", "")
+                algorithm = kwargs.get("algorithm", "crc32")
+                for file_path in files:
+                    self.batch_manager.queue_hash_store(file_path, hash_value, algorithm)
+
+            elif operation == "file_io":
+                io_operation = kwargs.get("io_operation", "read")
+                for file_path in files:
+                    self.batch_manager.queue_file_operation(file_path, io_operation, kwargs)
+
+            else:
+                return {"success": False, "error": f"Unknown operation: {operation}"}
+
+            # Flush if requested
+            if kwargs.get("flush", False):
+                flush_results = self.batch_manager.flush_all()
+                return {"success": True, "flushed": flush_results}
+
+            return {"success": True, "queued": len(files)}
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def get_operation_status(self, operation_id: str) -> dict[str, Any]:
-        """Get status of a batch operation.
+        """Get status of batch operations.
 
         Args:
-            operation_id: ID of the operation
+            operation_id: ID of the operation type to query
+                         (e.g., 'metadata_set', 'hash_store', 'all')
 
         Returns:
-            Status dictionary
+            Status dictionary with pending operations and statistics
 
         """
-        # TODO: Implement when BatchOperationsManager API is defined (see: https://github.com/mecondev/oncutf/issues/1#issue-3880442485)
-        return {"success": False, "error": "Not yet implemented"}
+        if not self.batch_manager:
+            return {"success": False, "error": "Batch manager not initialized"}
+
+        try:
+            if operation_id == "all":
+                pending = self.batch_manager.get_pending_operations()
+                stats_obj = self.batch_manager.get_stats()
+                # Convert stats object to dict for JSON serialization
+                return {
+                    "success": True,
+                    "pending_operations": pending,
+                    "total_pending": sum(pending.values()),
+                    "stats": {
+                        "total_operations": (
+                            stats_obj.total_operations
+                            if hasattr(stats_obj, "total_operations")
+                            else stats_obj.get("total_operations", 0)
+                        ),
+                        "batched_operations": (
+                            stats_obj.batched_operations
+                            if hasattr(stats_obj, "batched_operations")
+                            else stats_obj.get("batched_operations", 0)
+                        ),
+                        "batch_flushes": (
+                            stats_obj.batch_flushes
+                            if hasattr(stats_obj, "batch_flushes")
+                            else stats_obj.get("batch_flushes", 0)
+                        ),
+                        "average_batch_size": (
+                            stats_obj.average_batch_size
+                            if hasattr(stats_obj, "average_batch_size")
+                            else stats_obj.get("average_batch_size", 0.0)
+                        ),
+                        "total_time_saved": (
+                            stats_obj.total_time_saved
+                            if hasattr(stats_obj, "total_time_saved")
+                            else stats_obj.get("total_time_saved", 0.0)
+                        ),
+                    },
+                }
+            else:
+                pending = self.batch_manager.get_pending_operations()
+                return {
+                    "success": True,
+                    "operation_type": operation_id,
+                    "pending_count": pending.get(operation_id, 0),
+                }
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 
 # Singleton instance
