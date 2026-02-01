@@ -92,8 +92,8 @@ class HashHandler:
                 # Some files need hash calculation
                 return True
             # All files have hashes - but combo still disabled
-        except Exception as e:
-            logger.error("[HashHandler] Error in populate_hash_options: %s", e)
+        except Exception:
+            logger.exception("[HashHandler] Error in populate_hash_options")
             # On error, disable hash option
             self._widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
 
@@ -151,8 +151,8 @@ class HashHandler:
                 logger.error("[HashHandler] Could not find main window for hash calculation")
                 self._widget._hash_dialog_active = False
 
-        except Exception as e:
-            logger.error("[HashHandler] Error calculating hashes: %s", e)
+        except Exception:
+            logger.exception("[HashHandler] Error calculating hashes")
             self._widget._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def check_hash_calculation_requirements(self, selected_files) -> None:
@@ -196,8 +196,8 @@ class HashHandler:
         try:
             file_paths = [file_item.full_path for file_item in selected_files]
             return any(batch_hash_status(file_paths).values())
-        except Exception as e:
-            logger.error("[HashHandler] Error checking hash availability: %s", e)
+        except Exception:
+            logger.exception("[HashHandler] Error checking hash availability")
             return False
 
     def _get_supported_hash_algorithms(self) -> set:
@@ -269,10 +269,9 @@ class HashHandler:
                 )
                 # Don't disable combo - let it show original names for files without hash/metadata
 
-        except Exception as e:
-            logger.error(
-                "[HashHandler] Error showing %s calculation dialog: %s",
+        except Exception:
+            logger.exception(
+                "[HashHandler] Error showing %s calculation dialog",
                 calculation_type,
-                e,
             )
             self._widget._hash_dialog_active = False

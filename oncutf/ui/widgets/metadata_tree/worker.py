@@ -336,8 +336,8 @@ class MetadataWorker(QObject):
                         stats.total_time_saved,
                     )
 
-                except Exception as e:
-                    logger.error("[Worker] Error flushing batch operations: %s", e)
+                except Exception:
+                    logger.exception("[Worker] Error flushing batch operations")
 
                     # Fallback: save operations individually
                     logger.warning("[Worker] Falling back to individual metadata saves")
@@ -348,11 +348,10 @@ class MetadataWorker(QObject):
                                 op["metadata"],
                                 is_extended=op["is_extended"],
                             )
-                        except Exception as fallback_error:
-                            logger.error(
-                                "[Worker] Fallback save failed for %s: %s",
+                        except Exception:
+                            logger.exception(
+                                "[Worker] Fallback save failed for %s",
                                 op["path"],
-                                fallback_error,
                             )
 
             elapsed_total = time.time() - start_total
@@ -389,5 +388,5 @@ class MetadataWorker(QObject):
             logger.info("[Worker] Flushing batch operations due to cancellation")
             try:
                 self._batch_manager.flush_batch_type("metadata_set")
-            except Exception as e:
-                logger.error("[Worker] Error flushing on cancellation: %s", e)
+            except Exception:
+                logger.exception("[Worker] Error flushing on cancellation")
