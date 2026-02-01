@@ -165,11 +165,10 @@ class PathStore:
                 old_path,
             )
         except Exception as e:
-            logger.error(
-                "[PathStore] Error updating file path from %s to %s: %s",
+            logger.exception(
+                "[PathStore] Error updating file path from %s to %s",
                 old_path,
                 new_path,
-                e,
             )
             return False
         else:

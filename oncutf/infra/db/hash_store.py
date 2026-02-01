@@ -107,7 +107,7 @@ class HashStore:
             logger.debug("[HashStore] Database locked/closing during store: %s", e)
             return False
         except Exception as e:
-            logger.error("[HashStore] Error storing hash for %s: %s", file_path, e)
+            logger.exception("[HashStore] Error storing hash for %s", file_path)
             return False
         else:
             return True
@@ -149,7 +149,7 @@ class HashStore:
             logger.debug("[HashStore] Database locked/closing for %s: %s", file_path, e)
             return None
         except Exception as e:
-            logger.error("[HashStore] Error retrieving hash for %s: %s", file_path, e)
+            logger.exception("[HashStore] Error retrieving hash for %s", file_path)
             return None
 
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:

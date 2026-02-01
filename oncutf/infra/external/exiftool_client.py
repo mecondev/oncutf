@@ -107,7 +107,7 @@ class ExifToolClient:
             wrapper = self._ensure_wrapper()
             result = wrapper.get_metadata(str(path), use_extended=self._use_extended)
         except Exception as e:
-            logger.error("Error extracting metadata from %s: %s", path, e)
+            logger.exception("Error extracting metadata from %s", path)
             return {}
         else:
             return result if result else {}
@@ -142,7 +142,7 @@ class ExifToolClient:
             return {str(path): results.get(str(path), {}) for path in paths}
 
         except Exception as e:
-            logger.error("Error in batch metadata extraction: %s", e)
+            logger.exception("Error in batch metadata extraction")
             return {}
 
     def load_metadata(self, path: Path) -> dict[str, Any]:
@@ -217,7 +217,7 @@ class ExifToolClient:
             return bool(result)
 
         except Exception as e:
-            logger.error("Error writing metadata to %s: %s", path, e)
+            logger.exception("Error writing metadata to %s", path)
             return False
 
     def close(self) -> None:
