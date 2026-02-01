@@ -51,8 +51,8 @@ class ValidationDialogAdapter:
                 return "skip"
             if result_code == ValidationIssuesDialog.REFRESH_PREVIEW:
                 return "refresh"
-            return "cancel"
-
         except Exception as e:
             logger.error("[ValidationDialogAdapter] Error showing dialog: %s", str(e))
+            return "cancel"
+        else:
             return "cancel"

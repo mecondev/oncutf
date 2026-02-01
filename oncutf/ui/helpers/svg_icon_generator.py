@@ -169,12 +169,11 @@ class SVGIconGenerator:
             painter.setRenderHint(QPainter.Antialiasing)
             renderer.render(painter)
             painter.end()
-
-            return pixmap
-
         except Exception as e:
             logger.error("[SVGIconGenerator] Error rendering SVG: %s", e)
             return self._create_fallback_pixmap(size)
+        else:
+            return pixmap
 
     def _create_fallback_pixmap(self, size: int) -> QPixmap:
         """Create a fallback pixmap when SVG generation fails.

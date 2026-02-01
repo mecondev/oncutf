@@ -209,11 +209,11 @@ class ThemeManager(QObject):
                 len(template),
                 extra={"dev_only": True},
             )
-            return template
-
         except Exception as e:
             logger.exception("[ThemeManager] Error rendering QSS template")
             return ""
+        else:
+            return template
 
     def apply_theme(self, app: Any) -> None:
         """Apply current theme to QApplication.
@@ -316,7 +316,10 @@ class ThemeManager(QObject):
             hover = self.get_color("selected")
             border = self.get_color("border")
             disabled = self.get_color("disabled_text")
-
+        except Exception as e:
+            logger.error("[ThemeManager] Error generating context menu stylesheet: %s", e)
+            return ""
+        else:
             return f"""
                 QMenu {{
                     background-color: {bg};
@@ -340,9 +343,7 @@ class ThemeManager(QObject):
                     margin: 4px 8px;
                 }}
             """
-        except KeyError:
-            logger.warning("[ThemeManager] Failed to generate context menu stylesheet")
-            return ""
+
 
     def apply_complete_theme(self, app: Any, main_window: Any = None) -> None:
         """Apply complete theming to the entire application.

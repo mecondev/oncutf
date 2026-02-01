@@ -194,13 +194,14 @@ class SelectionProvider:
             try:
                 result = parent_window.selection_store.get_selected_rows()
                 cls._cached_selected_rows = result
-                return result
             except Exception as e:
                 logger.debug(
                     "[SelectionProvider] SelectionStore failed: %s",
                     e,
                     extra={"dev_only": True},
                 )
+            else:
+                return result
 
         # Fallback: use selection model
         if hasattr(parent_window, "file_table_view"):

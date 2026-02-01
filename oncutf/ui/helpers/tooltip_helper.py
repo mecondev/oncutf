@@ -691,10 +691,10 @@ class TooltipHelper:
                 position.setY(position.y() - tooltip_size.height() - 30)  # Show above widget
             if position.y() < screen_geometry.top():
                 position.setY(screen_geometry.top())
-
-            return position
         except Exception as e:
             logger.debug("[TooltipHelper] Could not adjust position to screen: %s", e)
+            return position
+        else:
             return position
 
 

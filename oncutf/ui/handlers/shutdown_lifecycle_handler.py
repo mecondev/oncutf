@@ -173,11 +173,11 @@ class ShutdownLifecycleHandler:
             ]
             self._shutdown_pre_cleanup_index = 0
             QTimer.singleShot(0, self._shutdown_run_pre_cleanup_step)
-            return
-
         except Exception as e:
             logger.exception("[CloseEvent] Error starting async shutdown")
             self._emergency_quit()
+        else:
+            return
 
     def _shutdown_run_pre_cleanup_step(self) -> None:
         """Execute one pre-cleanup step per Qt tick."""
@@ -579,12 +579,11 @@ class ShutdownLifecycleHandler:
                             file_path,
                             list(modifications.keys()),
                         )
-
-            return has_modifications
-
         except Exception as e:
             logger.warning("[CloseEvent] Error checking for unsaved changes: %s", e)
             return False
+        else:
+            return has_modifications
 
     # ============================================================================
     # BACKGROUND CLEANUP
