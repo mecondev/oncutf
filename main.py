@@ -122,8 +122,8 @@ def global_exception_handler(exc_type, exc_value, exc_tb) -> None:
     # Attempt cleanup
     try:
         cleanup_on_exit()
-    except Exception as cleanup_error:
-        logger.exception("Error during exception cleanup: %s", cleanup_error)
+    except Exception:
+        logger.exception("Error during exception cleanup")
 
 
 # Install global exception handler
@@ -131,7 +131,7 @@ sys.excepthook = global_exception_handler
 
 
 def main() -> int:
-    """Entry point for the Batch File Renamer application.
+    """Entry point for the oncutf application.
 
     Initializes logging, creates a Qt application and stylesheet, creates a
     MainWindow and shows it, and enters the application's main loop.
@@ -348,8 +348,8 @@ def main() -> int:
                     worker_thread.quit()
                     worker_thread.wait(1000)  # Wait max 1 second
 
-                except Exception as e:
-                    logger.exception("[Init] Error creating MainWindow: %s", e)
+                except Exception:
+                    logger.exception("[Init] Error creating MainWindow")
                     splash.close()
                     raise
 
@@ -389,8 +389,8 @@ def main() -> int:
                 timer_type=TimerType.GENERIC,
             )
 
-        except Exception as e:
-            logger.exception("Error creating splash screen: %s", e)
+        except Exception:
+            logger.exception("Error creating splash screen")
             # Fallback: Initialize app without splash
             app.restoreOverrideCursor()
             window = MainWindow()
@@ -460,8 +460,8 @@ def main() -> int:
 
         return exit_code
 
-    except Exception as e:
-        logger.exception("Fatal error in main: %s", str(e))
+    except Exception:
+        logger.exception("Fatal error in main")
         # Emergency cleanup on crash
         try:
             from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
