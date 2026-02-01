@@ -54,16 +54,17 @@ class DragCleanupManager:
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
 
         # Check if header is doing a column drag - let it handle ESC first
-        if hasattr(self.main_window, "header") and self.main_window.header:
-            if (
-                hasattr(self.main_window.header, "_drag_active")
-                and self.main_window.header._drag_active
-            ):
-                logger.info("[MainWindow] FORCE CLEANUP: Column drag active - delegating to header")
-                # Create a synthetic ESC key event and send it to the header
-                key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
-                self.main_window.header.keyPressEvent(key_event)
-                return
+        if (
+            hasattr(self.main_window, "header")
+            and self.main_window.header
+            and hasattr(self.main_window.header, "_drag_active")
+            and self.main_window.header._drag_active
+        ):
+            logger.info("[MainWindow] FORCE CLEANUP: Column drag active - delegating to header")
+            # Create a synthetic ESC key event and send it to the header
+            key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
+            self.main_window.header.keyPressEvent(key_event)
+            return
 
         drag_manager = DragManager.get_instance()
 
@@ -117,13 +118,15 @@ class DragCleanupManager:
     def _cleanup_widget_drag_states(self) -> None:
         """Clean up internal drag states in all widgets (lightweight version)."""
         # Only clean essential drag state, let widgets handle their own cleanup
-        if hasattr(self.main_window, "folder_tree"):
-            if hasattr(self.main_window.folder_tree, "_dragging"):
-                self.main_window.folder_tree._dragging = False
+        if hasattr(self.main_window, "folder_tree") and hasattr(
+            self.main_window.folder_tree, "_dragging"
+        ):
+            self.main_window.folder_tree._dragging = False
 
-        if hasattr(self.main_window, "file_table_view"):
-            if hasattr(self.main_window.file_table_view, "_drag_start_pos"):
-                self.main_window.file_table_view._drag_start_pos = None
+        if hasattr(self.main_window, "file_table_view") and hasattr(
+            self.main_window.file_table_view, "_drag_start_pos"
+        ):
+            self.main_window.file_table_view._drag_start_pos = None
 
         logger.debug("[DragCleanupManager] Widget drag states cleaned")
 

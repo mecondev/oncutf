@@ -262,10 +262,9 @@ class DragManager(QObject):
         event_type = event.type()
 
         # Key events - only Escape terminates drag
-        if event_type == QEvent.KeyPress:
-            if hasattr(event, "key"):
-                key = event.key()
-                if key == Qt.Key_Escape:
+        if event_type == QEvent.KeyPress and hasattr(event, "key"):
+            key = event.key()
+            if key == Qt.Key_Escape:
                     logger.debug(
                         "[DragManager] Escape key pressed during drag",
                         extra={"dev_only": True},
@@ -293,12 +292,14 @@ class DragManager(QObject):
             schedule_drag_cleanup(self._check_and_cleanup, 200)
 
         # Window focus events - only after significant time
-        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):
-            if self._drag_start_time:
-                import time
+        if (
+            event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate)
+            and self._drag_start_time
+        ):
+            import time
 
-                elapsed = time.time() - self._drag_start_time
-                if elapsed > 3.0:  # Only cleanup after 3 seconds
+            elapsed = time.time() - self._drag_start_time
+            if elapsed > 3.0:  # Only cleanup after 3 seconds
                     logger.debug(
                         "[DragManager] Window deactivated after long drag",
                         extra={"dev_only": True},
@@ -309,13 +310,12 @@ class DragManager(QObject):
 
     def _check_and_cleanup(self) -> None:
         """Check if drag is still active and cleanup if needed."""
-        if self._drag_active:
+        if self._drag_active and self._drag_start_time:
             # Check if it's been long enough to consider it stuck
-            if self._drag_start_time:
-                import time
+            import time
 
-                elapsed = time.time() - self._drag_start_time
-                if elapsed > 2.0:  # Only cleanup long-running drags
+            elapsed = time.time() - self._drag_start_time
+            if elapsed > 2.0:  # Only cleanup long-running drags
                     logger.debug(
                         "[DragManager] Long drag still active after mouse release",
                         extra={"dev_only": True},

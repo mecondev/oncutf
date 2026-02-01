@@ -309,13 +309,14 @@ class RenameHistoryDialog(QDialog):
                 CustomMessageDialog.information(self, "Undo Complete", message)
 
                 # Refresh the parent window if available
-                if hasattr(self.parent_window, "load_files_from_folder") and hasattr(
-                    self.parent_window, "current_folder_path"
+                if (
+                    hasattr(self.parent_window, "load_files_from_folder")
+                    and hasattr(self.parent_window, "current_folder_path")
+                    and self.parent_window.current_folder_path
                 ):
-                    if self.parent_window.current_folder_path:
-                        self.parent_window.load_files_from_folder(
-                            self.parent_window.current_folder_path
-                        )
+                    self.parent_window.load_files_from_folder(
+                        self.parent_window.current_folder_path
+                    )
 
                 # Refresh history list
                 self._load_history()
