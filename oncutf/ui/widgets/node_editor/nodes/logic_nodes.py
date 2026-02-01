@@ -131,13 +131,12 @@ class CompareNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(20)
@@ -394,13 +393,12 @@ class IfNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 # =============================================================================
@@ -481,13 +479,12 @@ class AndNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(61)
@@ -563,13 +560,12 @@ class OrNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(62)
@@ -642,13 +638,12 @@ class NotNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
 
 
 @NodeRegistry.register(63)
@@ -725,10 +720,9 @@ class XorNode(Node):
 
             self.mark_descendants_dirty()
             self.eval_children()
-
-            return self.value
-
         except (ValueError, TypeError) as e:
             self.mark_invalid()
             self.graphics_node.setToolTip(f"Error: {e!s}")
             return None
+        else:
+            return self.value
