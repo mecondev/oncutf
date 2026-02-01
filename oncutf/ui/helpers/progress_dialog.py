@@ -254,8 +254,8 @@ class ProgressDialog(QDialog):
         if self.cancel_callback:
             try:
                 self.cancel_callback()
-            except Exception as e:
-                logger.error("[ProgressDialog] Error in cancel callback: %s", e)
+            except Exception:
+                logger.exception("[ProgressDialog] Error in cancel callback")
 
         # Restore cursors
         self._restore_cursors()

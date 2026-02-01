@@ -186,5 +186,5 @@ class ConfigColumnHandler:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error("[ConfigColumnHandler] Error registering managers in context: %s", e)
+        except Exception:
+            logger.exception("[ConfigColumnHandler] Error registering managers in context")

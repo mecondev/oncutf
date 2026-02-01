@@ -116,8 +116,8 @@ class ShortcutCommandHandler:
 
             dialog = MetadataHistoryDialog(self.main_window)
             dialog.exec_()
-        except Exception as e:
-            logger.error("[ShortcutCommandHandler] Error showing command history dialog: %s", e)
+        except Exception:
+            logger.exception("[ShortcutCommandHandler] Error showing command history dialog")
             logger.info(
                 "[ShortcutCommandHandler] Unified command history not yet fully implemented"
             )

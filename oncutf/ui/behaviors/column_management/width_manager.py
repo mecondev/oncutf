@@ -238,8 +238,8 @@ class ColumnWidthManager:
 
             self._pending_column_changes.clear()
 
-        except Exception as e:
-            logger.error("Failed to save pending column changes: %s", e)
+        except Exception:
+            logger.exception("Failed to save pending column changes")
         finally:
             self._config_save_timer = None
 

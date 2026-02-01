@@ -256,8 +256,8 @@ def get_menu_icon_path(icon_name: str) -> str:
 
         # Log warning if neither found
         logger.warning("Icon not found: %s", icon_name)
-    except Exception as e:
-        logger.error("Error getting icon path for '%s': %s", icon_name, e)
+    except Exception:
+        logger.exception("Error getting icon path for '%s'", icon_name)
         # Return empty string as fallback
         return ""
     else:

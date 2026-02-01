@@ -134,7 +134,7 @@ class BootstrapWorker(QObject):
 
         except Exception as e:
             error_msg = f"Initialization failed: {e}"
-            logger.error("[InitWorker] %s\n%s", error_msg, traceback.format_exc())
+            logger.exception("[InitWorker] %s", error_msg)
             self.error.emit(error_msg)
 
     def _load_fonts(self) -> None:

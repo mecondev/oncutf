@@ -136,8 +136,8 @@ class MetadataSignalHandler:
                 logger.debug("[MainWindow] Unified preview update triggered")
             else:
                 logger.warning("[MainWindow] UnifiedRenameEngine not available")
-        except Exception as e:
-            logger.error("[MainWindow] Error in unified preview update: %s", e)
+        except Exception:
+            logger.exception("[MainWindow] Error in unified preview update")
 
     def update_active_metadata_widget_options(self):
         """Find the active MetadataWidget and call trigger_update_options and emit_if_changed (for selection change)."""

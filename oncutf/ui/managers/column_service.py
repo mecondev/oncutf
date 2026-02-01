@@ -362,8 +362,8 @@ class UnifiedColumnService:
             # Invalidate cache
             self._user_settings_cache = None
 
-        except Exception as e:
-            logger.error("[UnifiedColumnService] Failed to save user settings: %s", e)
+        except Exception:
+            logger.exception("[UnifiedColumnService] Failed to save user settings")
 
     def analyze_column_content_type(self, column_key: str) -> str:
         """Analyze column content type for width recommendations.

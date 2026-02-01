@@ -107,8 +107,8 @@ class DPIHelper:
                 extra={"dev_only": True},
             )
 
-        except Exception as e:
-            logger.error("[DPI] Error calculating scaling: %s", e)
+        except Exception:
+            logger.exception("[DPI] Error calculating scaling")
             self.dpi_scale = 1.0
             self.font_scale = 1.0
 
