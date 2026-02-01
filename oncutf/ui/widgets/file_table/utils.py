@@ -92,7 +92,7 @@ def get_metadata_tree(view: FileTableView):
     while parent:
         if hasattr(parent, "metadata_tree"):
             return parent.metadata_tree
-        elif hasattr(parent, "metadata_tree_view"):
+        if hasattr(parent, "metadata_tree_view"):
             return parent.metadata_tree_view
         parent = parent.parent()
     return None

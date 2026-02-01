@@ -91,9 +91,8 @@ class HashHandler:
             if files_needing_hash:
                 # Some files need hash calculation
                 return True
-            else:
-                # All files have hashes - but combo still disabled
-                return True
+            # All files have hashes - but combo still disabled
+            return True
 
         except Exception as e:
             logger.error("[HashHandler] Error in populate_hash_options: %s", e)

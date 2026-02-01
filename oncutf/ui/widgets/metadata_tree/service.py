@@ -350,10 +350,9 @@ class MetadataTreeService:
         def group_sort_key(group_name: str) -> tuple[int, str]:
             if group_name == "File Info":
                 return (0, "File Info")
-            elif group_name == "Other":
+            if group_name == "Other":
                 return (2, group_name)
-            else:
-                return (1, group_name)
+            return (1, group_name)
 
         ordered_groups = sorted(grouped.keys(), key=group_sort_key)
 
@@ -425,10 +424,9 @@ class MetadataTreeService:
         # Determine status
         if is_modified:
             return FieldStatus.MODIFIED
-        elif is_extended:
+        if is_extended:
             return FieldStatus.EXTENDED
-        else:
-            return FieldStatus.NORMAL
+        return FieldStatus.NORMAL
 
     def _prepare_display_data(
         self,
@@ -536,9 +534,12 @@ class MetadataTreeService:
         # Remove empty groups (except those with modifications)
         empty_groups = []
         for group_name, group_data in display_data.items():
-            if isinstance(group_data, dict) and len(group_data) == 0:
-                if group_name not in groups_with_modifications:
-                    empty_groups.append(group_name)
+            if (
+                isinstance(group_data, dict)
+                and len(group_data) == 0
+                and group_name not in groups_with_modifications
+            ):
+                empty_groups.append(group_name)
 
         for group_name in empty_groups:
             display_data.pop(group_name, None)
@@ -596,7 +597,7 @@ class MetadataTreeService:
 
         def count_fields(data: dict) -> None:
             nonlocal total_fields
-            for _key, value in data.items():
+            for value in data.values():
                 if isinstance(value, dict):
                     count_fields(value)
                 else:
