@@ -88,7 +88,7 @@ class DatabaseManager:
                         shm_path.unlink()
                     logger.info("[DatabaseManager] Database files deleted for fresh start")
                 except Exception as e:
-                    logger.error("[DatabaseManager] Failed to delete database: %s", e)
+                    logger.exception("[DatabaseManager] Failed to delete database")
 
             # Also reset JSON config to avoid stale references
             try:
@@ -99,7 +99,7 @@ class DatabaseManager:
                     config_path.unlink()
                     logger.info("[DatabaseManager] Config file deleted for fresh start")
             except Exception as e:
-                logger.error("[DatabaseManager] Failed to delete config: %s", e)
+                logger.exception("[DatabaseManager] Failed to delete config")
 
             # Also clean thumbnail cache to ensure fresh start
             try:
@@ -113,7 +113,7 @@ class DatabaseManager:
                     thumbnails_dir.mkdir(parents=True, exist_ok=True)
                     logger.info("[DatabaseManager] Thumbnail cache cleared for fresh start")
             except Exception as e:
-                logger.error("[DatabaseManager] Failed to clear thumbnail cache: %s", e)
+                logger.exception("[DatabaseManager] Failed to clear thumbnail cache")
 
             _FRESH_START_DONE = True
         # Thread safety lock for concurrent access from parallel workers
@@ -452,7 +452,7 @@ class DatabaseManager:
                 self._conn.close()
                 logger.debug("[DatabaseManager] Connection closed", extra={"dev_only": True})
             except Exception as e:
-                logger.error("[DatabaseManager] Error closing connection: %s", e)
+                logger.exception("[DatabaseManager] Error closing connection")
 
     # ====================================================================
     # ThumbnailStore delegation (6 methods)
