@@ -137,9 +137,6 @@ class CompanionMetadataHandler:
                     file_item.filename,
                     len(companion_metadata),
                 )
-
-            return enhanced_metadata
-
         except Exception:
             logger.warning(
                 "[CompanionMetadataHandler] Error getting enhanced metadata for %s",
@@ -147,6 +144,8 @@ class CompanionMetadataHandler:
                 exc_info=True,
             )
             return base_metadata
+        else:
+            return enhanced_metadata
 
     def enhance_metadata_with_companions(
         self,
@@ -236,9 +235,6 @@ class CompanionMetadataHandler:
                     len(companion_metadata),
                     file_item.filename,
                 )
-
-            return enhanced_metadata
-
         except Exception:
             logger.warning(
                 "[CompanionMetadataHandler] Error enhancing metadata with companions for %s",
@@ -246,3 +242,5 @@ class CompanionMetadataHandler:
                 exc_info=True,
             )
             return base_metadata
+        else:
+            return enhanced_metadata

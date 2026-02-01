@@ -212,15 +212,6 @@ class FieldCompatibilityChecker:
 
             metadata = cache_entry.data
 
-            # Check if any supported field exists
-            for field in supported_fields:
-                if field in metadata:
-                    return True
-
-            # Check file type compatibility
-            file_type_support = self.get_file_type_field_support(file_item, metadata)
-            return field_name in file_type_support
-
         except Exception as e:
             logger.debug(
                 "[FieldSupport] Error checking %s: %s",
@@ -228,6 +219,20 @@ class FieldCompatibilityChecker:
                 e,
             )
             return False
+        else:
+            result = False
+            # Check if any supported field exists
+            for field in supported_fields:
+                if field in metadata:
+                    result = True
+                    break
+
+            if not result:
+                # Check file type compatibility
+                file_type_support = self.get_file_type_field_support(file_item, metadata)
+                result = field_name in file_type_support
+
+            return result
 
     def get_file_type_field_support(
         self, file_item: FileItem, metadata: dict[str, Any]
@@ -260,11 +265,11 @@ class FieldCompatibilityChecker:
             elif is_document:
                 supported_fields.update({"Author", "Copyright"})
 
-            return supported_fields
-
         except Exception as e:
             logger.debug("[FileTypeSupport] Error: %s", e)
             return {"Title", "Description", "Keywords"}
+        else:
+            return supported_fields
 
     def is_image_file(self, file_item: FileItem, metadata: dict[str, Any]) -> bool:
         """Check if file is an image based on metadata and extension."""

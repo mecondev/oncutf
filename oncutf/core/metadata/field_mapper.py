@@ -260,10 +260,13 @@ class MetadataFieldMapper:
         try:
             numeric_value = float(value)
             if numeric_value == int(numeric_value):  # Whole number
-                return f"{int(numeric_value)}°"
-            return f"{numeric_value:.1f}°"
+                formatted = f"{int(numeric_value)}°"
+            else:
+                formatted = f"{numeric_value:.1f}°"
         except ValueError:
             pass
+        else:
+            return formatted
 
         # Fallback - return as is but limit length
         return value[:10]
@@ -299,31 +302,37 @@ class MetadataFieldMapper:
 
                     # Format compactly
                     if total_seconds < 60:
-                        return f"{total_seconds:.1f}s"
-                    if total_seconds < 3600:
+                        result = f"{total_seconds:.1f}s"
+                    elif total_seconds < 3600:
                         mins = int(total_seconds // 60)
                         secs = int(total_seconds % 60)
-                        return f"{mins}:{secs:02d}"
-                    hours = int(total_seconds // 3600)
-                    mins = int((total_seconds % 3600) // 60)
-                    return f"{hours}h{mins}m"
+                        result = f"{mins}:{secs:02d}"
+                    else:
+                        hours = int(total_seconds // 3600)
+                        mins = int((total_seconds % 3600) // 60)
+                        result = f"{hours}h{mins}m"
                 except ValueError:
                     pass
+                else:
+                    return result
 
         # Handle numeric seconds
         try:
             seconds = float(value_clean)
             if seconds < 60:
-                return f"{seconds:.1f}s"
-            if seconds < 3600:
+                result = f"{seconds:.1f}s"
+            elif seconds < 3600:
                 mins = int(seconds // 60)
                 secs = int(seconds % 60)
-                return f"{mins}:{secs:02d}"
-            hours = int(seconds // 3600)
-            mins = int((seconds % 3600) // 60)
-            return f"{hours}h{mins}m"
+                result = f"{mins}:{secs:02d}"
+            else:
+                hours = int(seconds // 3600)
+                mins = int((seconds % 3600) // 60)
+                result = f"{hours}h{mins}m"
         except ValueError:
             pass
+        else:
+            return result
 
         # Fallback - return original value, truncated
         return value[:10]
@@ -342,17 +351,19 @@ class MetadataFieldMapper:
             # Add f/ prefix for aperture values
             try:
                 numeric = float(value)
-                return f"f/{numeric:.1f}"
             except ValueError:
                 return value[:8]
+            else:
+                return f"f/{numeric:.1f}"
 
         elif field_key == "iso":
             # Add ISO prefix for ISO values
             try:
                 numeric = int(float(value))
-                return f"ISO {numeric}"
             except ValueError:
                 return value[:8]
+            else:
+                return f"ISO {numeric}"
 
         elif field_key == "shutter_speed":
             # Format shutter speed
@@ -361,12 +372,15 @@ class MetadataFieldMapper:
             try:
                 numeric = float(value)
                 if numeric >= 1:
-                    return f"{numeric:.1f}s"
-                # Convert to fraction
-                denominator = int(1 / numeric)
-                return f"1/{denominator}"
+                    result = f"{numeric:.1f}s"
+                else:
+                    # Convert to fraction
+                    denominator = int(1 / numeric)
+                    result = f"1/{denominator}"
             except ValueError:
                 return value[:10]
+            else:
+                return result
 
         return value[:10]
 
@@ -394,20 +408,24 @@ class MetadataFieldMapper:
         if field_key == "video_fps":
             try:
                 fps = float(value)
-                return f"{fps:.0f} fps"
             except ValueError:
                 return value[:8]
+            else:
+                return f"{fps:.0f} fps"
 
         elif field_key == "video_avg_bitrate":
             try:
                 bitrate = int(float(value))
                 if bitrate >= 1000000:
-                    return f"{bitrate // 1000000} Mbps"
-                if bitrate >= 1000:
-                    return f"{bitrate // 1000} kbps"
-                return f"{bitrate} bps"
+                    result = f"{bitrate // 1000000} Mbps"
+                elif bitrate >= 1000:
+                    result = f"{bitrate // 1000} kbps"
+                else:
+                    result = f"{bitrate} bps"
             except ValueError:
                 return value[:10]
+            else:
+                return result
 
         return value[:10]
 
