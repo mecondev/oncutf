@@ -115,14 +115,14 @@ class SessionStateStore:
                 return float(value)
             if value_type == "bool":
                 return value.lower() == "true"
-            return value
-
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to get key '%s': %s", key, e)
             return default
         except (json.JSONDecodeError, ValueError) as e:
             logger.warning("[SessionStateStore] Failed to deserialize '%s': %s", key, e)
             return default
+        else:
+            return value
 
     def set(self, key: str, value: Any) -> bool:
         """Set session state value.
@@ -172,14 +172,14 @@ class SessionStateStore:
                 serialized[:50] + "..." if len(serialized) > 50 else serialized,
                 value_type,
             )
-            return True
-
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to set key '%s': %s", key, e)
             return False
         except TypeError as e:
             logger.error("[SessionStateStore] Failed to serialize '%s': %s", key, e)
             return False
+        else:
+            return True
 
     def delete(self, key: str) -> bool:
         """Delete session state value.
@@ -200,11 +200,11 @@ class SessionStateStore:
 
             if deleted:
                 logger.debug("[SessionStateStore] Deleted key '%s'", key)
-            return deleted
-
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to delete key '%s': %s", key, e)
             return False
+        else:
+            return deleted
 
     def get_all(self) -> dict[str, Any]:
         """Get all session state values.
@@ -283,11 +283,11 @@ class SessionStateStore:
                 self.connection.commit()
 
             logger.debug("[SessionStateStore] Set %d keys atomically", len(data))
-            return True
-
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to set_many: %s", e)
             return False
+        else:
+            return True
 
     def clear(self) -> bool:
         """Clear all session state values.
@@ -303,11 +303,11 @@ class SessionStateStore:
                 self.connection.commit()
 
             logger.info("[SessionStateStore] Cleared all session state")
-            return True
-
         except sqlite3.Error as e:
             logger.error("[SessionStateStore] Failed to clear: %s", e)
             return False
+        else:
+            return True
 
     def exists(self, key: str) -> bool:
         """Check if a key exists in session state.
