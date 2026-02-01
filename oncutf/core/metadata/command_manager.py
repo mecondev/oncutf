@@ -138,14 +138,13 @@ class MetadataCommandManager(QObject):
 
                 logger.debug("[MetadataCommandManager] Undone: %s", command.get_description())
                 return True
-            else:
-                # If undo failed, put command back
-                self._undo_stack.append(command)
-                logger.warning(
-                    "[MetadataCommandManager] Failed to undo: %s",
-                    command.get_description(),
-                )
-                return False
+            # If undo failed, put command back
+            self._undo_stack.append(command)
+            logger.warning(
+                "[MetadataCommandManager] Failed to undo: %s",
+                command.get_description(),
+            )
+            return False
 
         except Exception as e:
             logger.exception("[MetadataCommandManager] Error undoing command: %s", e)
@@ -175,14 +174,13 @@ class MetadataCommandManager(QObject):
 
                 logger.debug("[MetadataCommandManager] Redone: %s", command.get_description())
                 return True
-            else:
-                # If redo failed, put command back
-                self._redo_stack.append(command)
-                logger.warning(
-                    "[MetadataCommandManager] Failed to redo: %s",
-                    command.get_description(),
-                )
-                return False
+            # If redo failed, put command back
+            self._redo_stack.append(command)
+            logger.warning(
+                "[MetadataCommandManager] Failed to redo: %s",
+                command.get_description(),
+            )
+            return False
 
         except Exception as e:
             logger.exception("[MetadataCommandManager] Error redoing command: %s", e)

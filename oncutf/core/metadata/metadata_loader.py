@@ -163,9 +163,8 @@ class MetadataLoader:
         """
         if file_count == 1:
             return "single_file_wait_cursor"
-        else:
-            # Use progress dialog for 2+ files (parallel loading with progress)
-            return "multiple_files_dialog"
+        # Use progress dialog for 2+ files (parallel loading with progress)
+        return "multiple_files_dialog"
 
     # =========================================================================
     # Main Loading Entry Point
@@ -292,14 +291,18 @@ class MetadataLoader:
                 and cache_entry.data
             )
 
-            if has_valid_cache and cache_entry is not None:
-                # Already has extended - never downgrade
-                if (
-                    cache_entry.is_extended and not use_extended
-                ) or cache_entry.is_extended == use_extended:
-                    skipped_count += 1
-                    continue
-                # else: Need upgrade from fast to extended - add to needs_loading
+            # Already has extended - never downgrade
+            if (
+                has_valid_cache
+                and cache_entry is not None
+                and (
+                    (cache_entry.is_extended and not use_extended)
+                    or cache_entry.is_extended == use_extended
+                )
+            ):
+                skipped_count += 1
+                continue
+            # else: Need upgrade from fast to extended - add to needs_loading
 
             needs_loading.append(item)
 

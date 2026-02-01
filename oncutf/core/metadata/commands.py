@@ -146,9 +146,8 @@ class EditMetadataFieldCommand(MetadataCommand):
                     self.new_value,
                 )
                 return True
-            else:
-                logger.warning("[EditMetadataFieldCommand] Failed to execute: %s", self.field_path)
-                return False
+            logger.warning("[EditMetadataFieldCommand] Failed to execute: %s", self.field_path)
+            return False
 
         except Exception as e:
             logger.exception("[EditMetadataFieldCommand] Error executing: %s", e)
@@ -171,9 +170,8 @@ class EditMetadataFieldCommand(MetadataCommand):
                     self.old_value,
                 )
                 return True
-            else:
-                logger.warning("[EditMetadataFieldCommand] Failed to undo: %s", self.field_path)
-                return False
+            logger.warning("[EditMetadataFieldCommand] Failed to undo: %s", self.field_path)
+            return False
 
         except Exception as e:
             logger.exception("[EditMetadataFieldCommand] Error undoing: %s", e)
@@ -298,9 +296,8 @@ class ResetMetadataFieldCommand(MetadataCommand):
                     self.original_value,
                 )
                 return True
-            else:
-                logger.warning("[ResetMetadataFieldCommand] Failed to execute: %s", self.field_path)
-                return False
+            logger.warning("[ResetMetadataFieldCommand] Failed to execute: %s", self.field_path)
+            return False
 
         except Exception as e:
             logger.exception("[ResetMetadataFieldCommand] Error executing: %s", e)
@@ -323,9 +320,8 @@ class ResetMetadataFieldCommand(MetadataCommand):
                     self.current_value,
                 )
                 return True
-            else:
-                logger.warning("[ResetMetadataFieldCommand] Failed to undo: %s", self.field_path)
-                return False
+            logger.warning("[ResetMetadataFieldCommand] Failed to undo: %s", self.field_path)
+            return False
 
         except Exception as e:
             logger.exception("[ResetMetadataFieldCommand] Error undoing: %s", e)
@@ -438,8 +434,7 @@ class SaveMetadataCommand(MetadataCommand):
         count = len(self.file_paths)
         if count == 1:
             return f"Save metadata: {self.get_file_basename()}"
-        else:
-            return f"Save metadata: {count} files"
+        return f"Save metadata: {count} files"
 
     def get_command_type(self) -> str:
         """Get command type."""
@@ -488,9 +483,8 @@ class BatchMetadataCommand(MetadataCommand):
                     len(self.commands),
                 )
                 return True
-            else:
-                logger.warning("[BatchMetadataCommand] No commands executed successfully")
-                return False
+            logger.warning("[BatchMetadataCommand] No commands executed successfully")
+            return False
 
         except Exception as e:
             logger.exception("[BatchMetadataCommand] Error executing batch: %s", e)
@@ -521,9 +515,8 @@ class BatchMetadataCommand(MetadataCommand):
                     len(self.commands),
                 )
                 return True
-            else:
-                logger.warning("[BatchMetadataCommand] No commands undone successfully")
-                return False
+            logger.warning("[BatchMetadataCommand] No commands undone successfully")
+            return False
 
         except Exception as e:
             logger.exception("[BatchMetadataCommand] Error undoing batch: %s", e)
@@ -537,8 +530,7 @@ class BatchMetadataCommand(MetadataCommand):
         count = len(self.commands)
         if count == 1:
             return self.commands[0].get_description()
-        else:
-            return f"Batch operation: {count} commands"
+        return f"Batch operation: {count} commands"
 
     def get_command_type(self) -> str:
         """Get command type."""
