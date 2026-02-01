@@ -147,10 +147,10 @@ class EditMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[EditMetadataFieldCommand] Failed to execute: %s", self.field_path)
-            return False
-
         except Exception as e:
             logger.exception("[EditMetadataFieldCommand] Error executing")
+            return False
+        else:
             return False
 
     def undo(self) -> bool:
@@ -171,10 +171,10 @@ class EditMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[EditMetadataFieldCommand] Failed to undo: %s", self.field_path)
-            return False
-
         except Exception as e:
             logger.exception("[EditMetadataFieldCommand] Error undoing")
+            return False
+        else:
             return False
 
     def _update_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -235,12 +235,11 @@ class EditMetadataFieldCommand(MetadataCommand):
 
             # Update file icon status
             self.metadata_tree_view._cache_behavior.update_file_icon_status()
-
-            return True
-
         except Exception as e:
             logger.exception("[EditMetadataFieldCommand] Error updating metadata field")
             return False
+        else:
+            return True
 
     def get_description(self) -> str:
         """Get description of the edit command."""
@@ -297,10 +296,10 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[ResetMetadataFieldCommand] Failed to execute: %s", self.field_path)
-            return False
-
         except Exception as e:
             logger.exception("[ResetMetadataFieldCommand] Error executing")
+            return False
+        else:
             return False
 
     def undo(self) -> bool:
@@ -321,10 +320,10 @@ class ResetMetadataFieldCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[ResetMetadataFieldCommand] Failed to undo: %s", self.field_path)
-            return False
-
         except Exception as e:
             logger.exception("[ResetMetadataFieldCommand] Error undoing")
+            return False
+        else:
             return False
 
     def _reset_metadata_field(self, field_path: str, value: Any) -> bool:
@@ -360,12 +359,11 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
             # Update file icon status
             self.metadata_tree_view._cache_behavior.update_file_icon_status()
-
-            return True
-
         except Exception as e:
             logger.exception("[ResetMetadataFieldCommand] Error resetting metadata field")
             return False
+        else:
+            return True
 
     def get_description(self) -> str:
         """Get description of the reset command."""
@@ -403,11 +401,11 @@ class SaveMetadataCommand(MetadataCommand):
             self.executed = True
             self.undone = False
             logger.debug("[SaveMetadataCommand] Executed: saved %d files", len(self.file_paths))
-            return True
-
         except Exception as e:
             logger.exception("[SaveMetadataCommand] Error executing")
             return False
+        else:
+            return True
 
     def undo(self) -> bool:
         """Undo the metadata save."""
@@ -423,11 +421,11 @@ class SaveMetadataCommand(MetadataCommand):
             )
 
             self.undone = True
-            return True
-
         except Exception as e:
             logger.exception("[SaveMetadataCommand] Error undoing")
             return False
+        else:
+            return True
 
     def get_description(self) -> str:
         """Get description of the save command."""
@@ -484,10 +482,10 @@ class BatchMetadataCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[BatchMetadataCommand] No commands executed successfully")
-            return False
-
         except Exception as e:
             logger.exception("[BatchMetadataCommand] Error executing batch")
+            return False
+        else:
             return False
 
     def undo(self) -> bool:
@@ -516,10 +514,10 @@ class BatchMetadataCommand(MetadataCommand):
                 )
                 return True
             logger.warning("[BatchMetadataCommand] No commands undone successfully")
-            return False
-
         except Exception as e:
             logger.exception("[BatchMetadataCommand] Error undoing batch")
+            return False
+        else:
             return False
 
     def get_description(self) -> str:
