@@ -45,15 +45,14 @@ class FolderCount:
         if self.folders == 0 and self.files == 0:
             # Empty folder
             return "0 items"
-        elif self.folders == 0:
+        if self.folders == 0:
             # No subfolders, only files
             return f"{self.files} {'item' if self.files == 1 else 'items'}"
-        elif self.files == 0:
+        if self.files == 0:
             # Only subfolders, no files
             return f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / 0 items"
-        else:
-            # Both folders and files
-            return f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / {self.files} {'item' if self.files == 1 else 'items'}"
+        # Both folders and files
+        return f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / {self.files} {'item' if self.files == 1 else 'items'}"
 
 
 def count_folder_contents(
@@ -242,10 +241,9 @@ def is_mount_point_or_root(path: str) -> bool:
     # Windows: Check for drive roots (C:\\, D:\\, etc.)
     import platform
 
-    if platform.system() == "Windows":
-        # Match X:\\ or X:/ pattern
-        if len(path) <= 3 and path[1:3] in (":\\", ":/"):
-            return True
+    # Match X:\\ or X:/ pattern
+    if platform.system() == "Windows" and len(path) <= 3 and path[1:3] in (":\\", ":/"):
+        return True
 
     # Linux/macOS: Check common mount directories AND their direct children
     mount_prefixes = ("/mnt", "/media", "/Volumes")

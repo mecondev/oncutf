@@ -151,9 +151,8 @@ def get_metadata_value(file_path: str | Path, key_path: str, default: Any = None
             else:
                 return default
         return value
-    else:
-        # Simple key
-        return metadata.get(key_path, default)
+    # Simple key
+    return metadata.get(key_path, default)
 
 
 def set_metadata_value(file_path: str | Path, key_path: str, new_value: Any) -> bool:

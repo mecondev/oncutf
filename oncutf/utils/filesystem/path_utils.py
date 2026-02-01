@@ -251,8 +251,7 @@ def paths_equal(path1: str, path2: str) -> bool:
     # Simple string comparison after normalization
     if ":" in norm1 or ":" in norm2:  # Likely Windows paths
         return norm1.lower() == norm2.lower()
-    else:
-        return norm1 == norm2
+    return norm1 == norm2
 
 
 def find_file_by_path[T](
