@@ -36,10 +36,14 @@ dev = [
     "pytest-qt>=4.4.0",
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.1",
+    "hypothesis>=6.100.0",
     "ruff>=0.3.0",
     "mypy>=1.8.0",
     "PyQt5-stubs>=5.15.6.0",
-    "vulture>=2.3,<3"
+    "vulture>=2.3,<3",
+    "pre-commit>=3.6.0",
+    "py-spy>=0.3.14",
+    "scalene>=1.5.0",
 ]
 test = [
     "pytest>=8.3.5",
@@ -324,13 +328,13 @@ ignore = [
     "F401",   # imported but unused (re-exports in __init__.py)
     "N803",   # argument name should be lowercase (Qt arguments)
     "N806",   # variable in function should be lowercase (Qt variables)
-    
+
     # Exception handling (gradual adoption)
     "TRY003", # avoid-specifying-long-messages-outside-exception-class (100+ violations)
-    
+
     # Print statements (allowed in scripts/debug)
     "T201",   # print-found (intentional in CLI/debug contexts)
-    
+
     # Docstring rules (gradual adoption)
     "D100",   # missing docstring in public module
     "D101",   # missing docstring in public class
@@ -342,23 +346,25 @@ ignore = [
     "D213",   # multi-line-summary-second-line (conflicts with D212)
     "D401",   # imperative-mood (200+ violations, widespread in legacy code)
     "D205",   # missing-blank-line-after-summary (100+ violations)
-    
+
     # ANN rules - Gradual adoption
     "ANN001", # missing-type-function-argument (427 violations)
     "ANN002", # missing-type-args (8 violations)
     "ANN003", # missing-type-kwargs (10 violations)
+    "ANN101", # missing-type-self (never annotate self in methods)
+    "ANN102", # missing-type-cls (never annotate cls in classmethods)
     "ANN201", # missing-return-type-undocumented-public-function (247 violations)
     "ANN202", # missing-return-type-private-function (161 violations)
     "ANN204", # missing-return-type-special-method (173 violations)
     "ANN205", # missing-return-type-static-method (1 violation)
     "ANN206", # missing-return-type-class-method (2 violations)
     "ANN401", # any-type (397 violations) - will enable selectively
-    
+
     # Boolean trap (gradual adoption)
     "FBT001", # boolean-positional-arg-in-function-definition
     "FBT002", # boolean-default-value-in-function-definition
     "FBT003", # boolean-positional-value-in-function-call
-    
+
     # Unused arguments (gradual adoption - many Qt overrides)
     "ARG001", # unused-function-argument
     "ARG002", # unused-method-argument

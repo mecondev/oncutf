@@ -1,9 +1,17 @@
+# Pre-commit hooks for oncutf
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+# Update hooks: pre-commit autoupdate
+
 repos:
+  # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.md$|\.txt$'
       - id: end-of-file-fixer
+        exclude: '\.md$|\.txt$|htmlcov/.*'
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
@@ -11,32 +19,53 @@ repos:
       - id: check-docstring-first
       - id: check-json
       - id: check-toml
+      - id: mixed-line-ending
+        args: [--fix=lf]
 
+  # Ruff - linting and formatting (replaces black)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.0
     hooks:
       - id: ruff
         args: [--fix]
+        name: ruff lint with auto-fix
       - id: ruff-format
+        name: ruff format
 
-  - repo: https://github.com/psf/black
-    rev: 24.2.0
-    hooks:
-      - id: black
+  # MyPy - type checking (disabled - too slow for pre-commit, run manually)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       name: mypy type check
+  #       args: [--config-file=pyproject.toml, --no-error-summary, --no-pretty, .]
+  #       additional_dependencies:
+  #         - PyQt5-stubs>=5.15.6.0
+  #         - types-Pillow
+  #       exclude: ^(backups|temp|reports|tests)/
+  #       pass_filenames: false
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-Pillow]
-        exclude: ^(backups|temp|reports)/
-
+  # Architecture boundaries enforcement
   - repo: local
     hooks:
-      - id: pytest-check
-        name: pytest
-        entry: pytest
+      - id: audit-boundaries
+        name: architecture boundary audit
+        entry: python tools/audit_boundaries.py
         language: system
         pass_filenames: false
         always_run: true
-        stages: [manual]
+
+# Global settings
+default_language_version:
+  python: python3.12
+
+# Exclude generated/external files
+exclude: |
+  (?x)(
+    /(\.git|\.venv|__pycache__|build|dist|htmlcov|temp|backups|reports)/|
+    .*_rc\.py$|
+    /node_editor/
+  )
+
+# Fail fast - stop after first failure
+fail_fast: false

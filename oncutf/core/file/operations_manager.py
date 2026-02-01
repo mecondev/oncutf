@@ -44,6 +44,7 @@ class FileOperationsManager:
         """Initialize FileOperationsManager.
 
         Args:
+        ----
             parent_window: Reference to main window
             conflict_resolution: Port for conflict resolution dialogs (injected)
 
@@ -59,7 +60,9 @@ class FileOperationsManager:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
-            self._conflict_resolution = cast("ConflictResolutionPort", context.get_manager("conflict_resolution"))
+            self._conflict_resolution = cast(
+                "ConflictResolutionPort", context.get_manager("conflict_resolution")
+            )
             if self._conflict_resolution is None:
                 raise RuntimeError("ConflictResolutionPort not registered in QtAppContext")
         return self._conflict_resolution
@@ -115,10 +118,12 @@ class FileOperationsManager:
             """Resolve conflicts with user interaction via dialog.
 
             Args:
+            ----
                 _parent: Parent window (unused, we use self.parent_window)
                 filename: Target filename that conflicts
 
             Returns:
+            -------
                 str: One of "skip", "overwrite", "rename", "skip_all", "cancel"
 
             """

@@ -44,6 +44,7 @@ class HashResultsPresenter:
         """Initialize the results presenter.
 
         Args:
+        ----
             parent_window: Reference to the main window for status updates
             results_display: Port for showing results dialogs (injected)
 
@@ -58,7 +59,9 @@ class HashResultsPresenter:
             from oncutf.app.state.context import get_app_context
 
             context = get_app_context()
-            self._results_display = cast("ResultsDisplayPort", context.get_manager("results_display"))
+            self._results_display = cast(
+                "ResultsDisplayPort", context.get_manager("results_display")
+            )
             if self._results_display is None:
                 raise RuntimeError("ResultsDisplayPort not registered in QtAppContext")
         return self._results_display
@@ -67,6 +70,7 @@ class HashResultsPresenter:
         """Show duplicate detection results to the user.
 
         Args:
+        ----
             duplicates: Dictionary with hash as key and list of duplicate FileItem objects as value
             scope: Either "selected" or "all" for display purposes
 
@@ -120,6 +124,7 @@ class HashResultsPresenter:
         """Show external folder comparison results to the user.
 
         Args:
+        ----
             results: Dictionary with comparison results
             external_folder: Path to the external folder that was compared
 
@@ -194,6 +199,7 @@ class HashResultsPresenter:
         """Show checksum calculation results to the user.
 
         Args:
+        ----
             hash_results: Dictionary with filename as key and hash data as value
             was_cancelled: Whether the operation was cancelled (for partial results)
 
