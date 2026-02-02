@@ -177,6 +177,7 @@ notes/
 *.draft.*
 .cache/
 reports/
+!docs/reports/
 .continue
 *.swp
 *.swo
