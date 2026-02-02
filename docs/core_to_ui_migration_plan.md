@@ -4,7 +4,7 @@
 
 This plan outlines the migration of UI-coupled modules from `oncutf/core/` to appropriate locations in `oncutf/ui/`. The goal is to enforce proper architectural boundaries.
 
-**Current violations:** 27 core→ui imports (down from 41)  
+**Current violations:** 27 core→ui imports (down from 41)
 **Target:** <10 runtime violations (TYPE_CHECKING imports acceptable)
 
 ---
@@ -13,7 +13,7 @@ This plan outlines the migration of UI-coupled modules from `oncutf/core/` to ap
 
 ### Files to Move
 
-```
+```text
 core/ui_managers/                  → ui/managers/
 ├── __init__.py                    → __init__.py
 ├── column_manager.py              → column_manager.py (adapter only)
@@ -26,6 +26,7 @@ core/ui_managers/                  → ui/managers/
 ### Impact Analysis
 
 **Files importing from core/ui_managers/:**
+
 ```bash
 $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
 # Result: ~15 files
@@ -40,11 +41,13 @@ $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
 **Migration Steps:**
 
 1. **Create target directory:**
+
    ```bash
    mkdir -p oncutf/ui/managers
    ```
 
 2. **Move files with git:**
+
    ```bash
    git mv oncutf/core/ui_managers/__init__.py oncutf/ui/managers/__init__.py
    git mv oncutf/core/ui_managers/column_service.py oncutf/ui/managers/column_service.py
@@ -52,6 +55,7 @@ $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
    ```
 
 3. **Update imports (bulk operation):**
+
    ```python
    # Before:
    from oncutf.core.ui_managers.column_service import UnifiedColumnService
@@ -61,6 +65,7 @@ $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
    ```
 
 4. **Update __init__.py exports:**
+
    ```python
    # oncutf/ui/managers/__init__.py
    from oncutf.ui.managers.column_service import UnifiedColumnService, get_column_service
@@ -81,7 +86,7 @@ $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
 
 ### Files to Move
 
-```
+```text
 core/initialization/               → ui/boot/
 ├── __init__.py                    → __init__.py
 ├── initialization_orchestrator.py → bootstrap_orchestrator.py (rename)
@@ -92,7 +97,8 @@ core/initialization/               → ui/boot/
 ### Impact Analysis
 
 **Files importing from core/initialization/:**
-```
+
+```text
 - ui/main_window.py (primary consumer)
 - main.py (application entry point)
 ```
@@ -100,11 +106,13 @@ core/initialization/               → ui/boot/
 **Migration Steps:**
 
 1. **Create target directory:**
+
    ```bash
    mkdir -p oncutf/ui/boot
    ```
 
 2. **Move and rename files:**
+
    ```bash
    git mv oncutf/core/initialization/initialization_orchestrator.py \
            oncutf/ui/boot/bootstrap_orchestrator.py
@@ -112,6 +120,7 @@ core/initialization/               → ui/boot/
    ```
 
 3. **Update imports:**
+
    ```python
    # Before:
    from oncutf.core.initialization.initialization_orchestrator import InitializationOrchestrator
@@ -145,14 +154,14 @@ core/initialization/               → ui/boot/
 
 ### Files to Analyze
 
-```
+```text
 core/event_handler_manager.py      → ui/events/event_coordinator.py
 core/signal_coordinator.py         → ui/events/signal_coordinator.py
 ```
 
 ### Current Architecture
 
-```
+```text
 event_handler_manager.py (core)
 ├── Delegates to: FileEventHandlers (core/events/)
 ├── Delegates to: UIEventHandlers (core/events/)
@@ -163,7 +172,7 @@ event_handler_manager.py (core)
 
 ### Proposed Architecture
 
-```
+```text
 ui/events/event_coordinator.py
 ├── Coordinates: FileEventHandlers (keep in core/events/)
 ├── Coordinates: UIEventHandlers (keep in core/events/)
@@ -173,17 +182,20 @@ ui/events/event_coordinator.py
 **Migration Steps:**
 
 1. **Move event_handler_manager.py:**
+
    ```bash
    git mv oncutf/core/event_handler_manager.py \
            oncutf/ui/events/event_coordinator.py
    ```
 
 2. **Update class name:**
+
    ```python
    # EventHandlerManager → EventCoordinator
    ```
 
 3. **Update imports in main_window.py:**
+
    ```python
    # Before:
    from oncutf.core.event_handler_manager import EventHandlerManager
@@ -193,6 +205,7 @@ ui/events/event_coordinator.py
    ```
 
 4. **Move signal_coordinator.py:**
+
    ```bash
    git mv oncutf/core/signal_coordinator.py \
            oncutf/ui/events/signal_coordinator.py
@@ -219,7 +232,7 @@ ui/events/event_coordinator.py
 
 ### Current Structure
 
-```
+```text
 core/drag/
 ├── drag_manager.py           (some UI coupling)
 ├── drag_visual_manager.py    (heavy UI coupling)
@@ -261,24 +274,27 @@ Instead of moving these, create protocol-based ports:
 ### Dialogs Without Ports
 
 1. **ResultsTableDialog** (hash_results_presenter.py)
+
    ```python
    # Create: app/ports/results_display.py
    class ResultsDisplayPort(Protocol):
-       def show_hash_results(self, results: dict, was_cancelled: bool) -> None: ...
+      def show_hash_results(self, results: dict, was_cancelled: bool) -> None: ...
    ```
 
 2. **ConflictResolutionDialog** (file/operations_manager.py)
+
    ```python
    # Create: app/ports/conflict_resolution.py
    class ConflictResolutionPort(Protocol):
-       def resolve_conflict(self, old: str, new: str) -> tuple[str, bool]: ...
+      def resolve_conflict(self, old: str, new: str) -> tuple[str, bool]: ...
    ```
 
 3. **MetadataEditDialog** (metadata/operations_manager.py)
+
    ```python
    # Create: app/ports/metadata_editing.py
    class MetadataEditPort(Protocol):
-       def edit_field(self, field: str, files: list, current: str) -> tuple[bool, str, list]: ...
+      def edit_field(self, field: str, files: list, current: str) -> tuple[bool, str, list]: ...
    ```
 
 4. **StyledComboBox** (metadata/operations_manager.py)
@@ -286,10 +302,11 @@ Instead of moving these, create protocol-based ports:
    - **OR:** Pass pre-styled widget from UI to core
 
 5. **update_info_icon()** helper (metadata_writer.py)
+
    ```python
    # Create: app/ports/ui_update.py
    class UIUpdatePort(Protocol):
-       def update_file_icon(self, file_path: str) -> None: ...
+      def update_file_icon(self, file_path: str) -> None: ...
    ```
 
 **Estimated effort:** 3-4 hours (all ports)
@@ -352,12 +369,14 @@ Instead of moving these, create protocol-based ports:
 Before each phase:
 
 1. **Backup current state:**
+
    ```bash
    git commit -am "Checkpoint before [PHASE] migration"
    git tag pre-[PHASE]-migration
    ```
 
 2. **Run full test suite:**
+
    ```bash
    pytest -v
    ruff check .
@@ -365,11 +384,13 @@ Before each phase:
    ```
 
 3. **Document current import graph:**
+
    ```bash
    grep -r "from oncutf\.core\.[TARGET]" oncutf/ --include="*.py" > /tmp/imports_before.txt
    ```
 
 4. **Create migration branch:**
+
    ```bash
    git checkout -b refactor/2026-01-26/[PHASE]-migration
    ```
@@ -381,12 +402,14 @@ Before each phase:
 After each phase:
 
 1. **Verify all imports updated:**
+
    ```bash
    grep -r "from oncutf\.core\.[OLD_PATH]" oncutf/ --include="*.py"
    # Should return 0 results
    ```
 
 2. **Run quality gates:**
+
    ```bash
    ruff check .
    mypy .
@@ -511,4 +534,3 @@ git cherry-pick [COMMIT_BEFORE_MIGRATION]
 ✅ No functionality regressions  
 ✅ Documentation updated  
 ✅ Git history clean (no merge commits without --no-ff)
-

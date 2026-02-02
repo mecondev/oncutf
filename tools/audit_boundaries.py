@@ -31,7 +31,8 @@ import json
 import os
 import re
 import sys
-from dataclasses import dataclass
+from collections import defaultdict, deque
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -251,6 +252,7 @@ class RuleViolation:
     lineno: int
     rule: str
     severity: str = "error"  # error, warning
+    chain: list[str] = field(default_factory=list)  # Dependency chain for transitive violations
 
 
 def check_forbidden_external(
@@ -397,15 +399,95 @@ def build_reports(repo_root: Path, package: str) -> list[FileReport]:
     return reports
 
 
+def find_transitive_qt_dependencies(
+    reports: list[FileReport],
+    package: str,
+) -> dict[str, list[str]]:
+    """Find all files that transitively depend on Qt.
+
+    Returns: dict mapping file_path -> dependency_chain showing how Qt is reached.
+    """
+    # Build module -> file mapping
+    module_to_file: dict[str, str] = {}
+    for rep in reports:
+        # Convert file path to module name
+        try:
+            rel_path = Path(rep.path).relative_to(Path.cwd() / package)
+            module_parts = list(rel_path.parts)
+            if module_parts[-1] == "__init__.py":
+                module_parts = module_parts[:-1]
+            elif module_parts[-1].endswith(".py"):
+                module_parts[-1] = module_parts[-1][:-3]
+            module_name = package + "." + ".".join(module_parts) if module_parts else package
+            module_to_file[module_name] = rep.path
+        except ValueError:
+            pass
+
+    # Find files with direct Qt imports
+    qt_prefixes = {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"}
+    direct_qt_files: set[str] = set()
+    for rep in reports:
+        for imp in rep.imports:
+            if any(imp.module == qt or imp.module.startswith(qt + ".") for qt in qt_prefixes):
+                direct_qt_files.add(rep.path)
+                break
+
+    # Build reverse graph: module -> files that import it
+    importers: dict[str, set[str]] = defaultdict(set)
+    for rep in reports:
+        for imp in rep.imports:
+            importers[imp.module].add(rep.path)
+
+    # BFS to find transitive dependencies
+    transitive_qt: dict[str, list[str]] = {}
+
+    # Start with direct Qt importers
+    for qt_file in direct_qt_files:
+        transitive_qt[qt_file] = [qt_file, "Qt"]
+
+    # Propagate Qt taint backwards through the dependency graph
+    queue: deque[tuple[str, list[str]]] = deque()
+    for qt_file in direct_qt_files:
+        queue.append((qt_file, [qt_file, "Qt"]))
+
+    visited: set[str] = set(direct_qt_files)
+
+    while queue:
+        current_file, chain = queue.popleft()
+
+        # Find module name for current file
+        current_module = None
+        for mod, fpath in module_to_file.items():
+            if fpath == current_file:
+                current_module = mod
+                break
+
+        if not current_module:
+            continue
+
+        # Find all files that import this module
+        for importer_file in importers.get(current_module, []):
+            if importer_file not in visited:
+                visited.add(importer_file)
+                new_chain = [importer_file, *chain]
+                transitive_qt[importer_file] = new_chain
+                queue.append((importer_file, new_chain))
+
+    return transitive_qt
+
+
 def find_violations(
     reports: Iterable[FileReport],
     package: str,
     strict_ui_core: bool,
     check_external: bool = True,
+    check_transitive: bool = True,
 ) -> list[RuleViolation]:
     """Find boundary violations based on the rule matrix."""
     violations: list[RuleViolation] = []
-    for rep in reports:
+    reports_list = list(reports)
+
+    for rep in reports_list:
         for imp in rep.imports:
             imp_layer = infer_imported_layer(imp.module, package)
 
@@ -431,6 +513,33 @@ def find_violations(
                 )
                 if ext_violation:
                     violations.append(ext_violation)
+
+    # Check transitive Qt dependencies
+    if check_transitive and check_external:
+        transitive_qt = find_transitive_qt_dependencies(reports_list, package)
+
+        for rep in reports_list:
+            # Check if this layer should be Qt-free
+            if rep.layer not in FORBIDDEN_EXTERNAL_IMPORTS:
+                continue
+
+            # Check if this file transitively depends on Qt
+            if rep.path in transitive_qt:
+                chain = transitive_qt[rep.path]
+                # Only report if this is NOT a direct import (those are already reported)
+                if len(chain) > 2:  # file -> intermediate -> Qt
+                    violations.append(
+                        RuleViolation(
+                            file=rep.path,
+                            file_layer=rep.layer,
+                            imported="Qt (transitive)",
+                            imported_layer="external_qt",
+                            lineno=0,
+                            rule=f"{rep.layer}_must_not_import_qt_transitive",
+                            severity="warning",
+                            chain=chain,
+                        )
+                    )
 
     return violations
 
@@ -495,8 +604,17 @@ def print_human_report(
 
         print("Top violations (file:line -> import):")
         for v in violations[:max_items]:
+            chain_info = ""
+            if v.chain:
+                # Show shortened chain
+                chain_display = " -> ".join(
+                    [Path(p).name if not p.startswith("Qt") else p for p in v.chain[:4]]
+                )
+                if len(v.chain) > 4:
+                    chain_display += " -> ..."
+                chain_info = f" [chain: {chain_display}]"
             print(
-                f"  - {v.file}:{v.lineno} [{v.file_layer} -> {v.imported_layer}] {v.imported} ({v.rule})"
+                f"  - {v.file}:{v.lineno} [{v.file_layer} -> {v.imported_layer}] {v.imported} ({v.rule}){chain_info}"
             )
         if len(violations) > max_items:
             print(f"  ... ({len(violations) - max_items} more)")
@@ -544,6 +662,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Disable checking for forbidden external imports (Qt in pure layers).",
     )
+    parser.add_argument(
+        "--no-transitive",
+        action="store_true",
+        help="Disable checking for transitive Qt dependencies.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -559,6 +682,7 @@ def main(argv: list[str] | None = None) -> int:
         args.package,
         strict_ui_core=args.strict_ui_core,
         check_external=not args.no_external_check,
+        check_transitive=not args.no_transitive,
     )
 
     violations.sort(key=lambda v: (v.rule, v.file, v.lineno))

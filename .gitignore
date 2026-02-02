@@ -110,6 +110,9 @@ htmlcov/
 *.ipynb
 .ipynb_checkpoints/
 
+# Codex local config
+oncutf/.codex/
+
 # =======================================
 # IDEs / Editor folders
 # =======================================
