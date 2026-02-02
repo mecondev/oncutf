@@ -273,6 +273,23 @@ class JSONConfigManager:
                     "[JSONConfigManager] Configuration loaded successfully",
                     extra={"dev_only": True},
                 )
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    "[JSONConfigManager] Corrupted JSON config file (line %d, col %d): %s - deleting and using defaults",
+                    e.lineno,
+                    e.colno,
+                    e.msg,
+                )
+                # Delete corrupted file so it can be regenerated
+                try:
+                    self.config_file.unlink()
+                    logger.info("[JSONConfigManager] Corrupted config file deleted")
+                except Exception as delete_error:
+                    logger.warning(
+                        "[JSONConfigManager] Could not delete corrupted config: %s",
+                        delete_error,
+                    )
+                return True  # Continue with defaults
             except Exception:
                 logger.exception("[JSONConfigManager] Failed to load configuration")
                 return False
