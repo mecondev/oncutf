@@ -2,15 +2,45 @@
 
 ## Executive Summary
 
-The `oncutf/core/` layer currently has **40 PyQt5 imports** that violate architectural boundaries.
+**UPDATED 2026-02-03:** Enhanced audit tool now detects **transitive Qt dependencies**.
+
+**Actual Qt contamination:**
+
+- **Core layer:** 34 direct + 13 transitive = **47 total violations**
+- **App layer:** 3 direct + 6 transitive = **9 total violations**
+- **Grand total:** 56 violations (was 37 with only direct checking)
+
 The core layer should be pure business logic, testable without Qt dependencies.
+The app layer (use cases) should also be Qt-free for testability.
 
-## Current State
+## Current State (2026-02-03)
 
-audit_boundaries.py results:
+audit_boundaries.py results with `--transitive` enabled:
 
-- core_must_not_import_qt: 40 violations
-- app_must_not_import_qt: 3 violations
+```
+Violations by rule:
+  - core_must_not_import_qt                       34
+  - core_must_not_import_qt_transitive            13
+  - app_must_not_import_qt_transitive             6
+  - app_must_not_import_qt                        3
+```
+
+### Key Transitive Leaks
+
+**Core layer:**
+
+- `counter_module.py` → Qt (affects rename engine)
+- `timer_manager.py` → Qt (affects streaming loader)
+- `base_worker.py` → Qt (contaminates core/**init**)
+- `operations_manager.py` → Qt (contaminates core/file/)
+
+**App layer:**
+
+- `selection_store.py` → Qt (contaminates entire app.state)
+- `file_store.py` → Qt (contaminates app.services)
+- `user_interaction.py` → Qt (contaminates app.services)
+
+Full report: [docs/reports/qt_transitive_dependencies_20260203.txt](reports/qt_transitive_dependencies_20260203.txt)
 
 ## Violation Categories
 
@@ -105,9 +135,9 @@ Create proper infrastructure layer for Qt-dependent code.
 
 **Files to create:**
 
-oncutf/infra/workers/__init__.py
+oncutf/infra/workers/**init**.py
 oncutf/infra/workers/base_worker.py      # from core/base_worker.py
-oncutf/infra/threading/__init__.py
+oncutf/infra/threading/**init**.py
 oncutf/infra/threading/pool_manager.py   # from core/thread_pool_manager.py
 oncutf/domain/protocols/progress.py      # Abstract progress protocol
 oncutf/domain/protocols/worker.py        # Abstract worker protocol
