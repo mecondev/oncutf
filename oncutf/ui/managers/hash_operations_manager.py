@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 from oncutf.app.services.user_interaction import show_info_message
 from oncutf.config import STATUS_COLORS
-from oncutf.core.hash.hash_results_presenter import HashResultsPresenter
+from oncutf.ui.dialogs.hash_results_dialog import HashResultsPresenter
 from oncutf.utils.filesystem.file_status_helpers import has_hash
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

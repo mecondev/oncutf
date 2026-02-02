@@ -7,6 +7,9 @@ Handles the presentation of hash operation results to the user through dialogs a
 Separated from business logic for better maintainability.
 
 Uses ResultsDisplayPort for UI decoupling (Phase 5).
+
+NOTE: Moved from core/hash/hash_results_presenter.py (2026-02-02)
+This is a pure UI component and belongs in the UI layer.
 """
 
 from __future__ import annotations
