@@ -59,7 +59,7 @@ $ grep -r "from oncutf\.core\.ui_managers" oncutf/ --include="*.py" | wc -l
    ```python
    # Before:
    from oncutf.core.ui_managers.column_service import UnifiedColumnService
-   
+
    # After:
    from oncutf.ui.managers.column_service import UnifiedColumnService
    ```
@@ -124,7 +124,7 @@ core/initialization/               → ui/boot/
    ```python
    # Before:
    from oncutf.core.initialization.initialization_orchestrator import InitializationOrchestrator
-   
+
    # After:
    from oncutf.ui.boot.bootstrap_orchestrator import BootstrapOrchestrator
    ```
@@ -140,12 +140,12 @@ core/initialization/               → ui/boot/
 
 **Estimated effort:** 2-3 hours
 
-**Status:** ✅ **COMPLETE** (2026-01-26)
+**Status:** OK **COMPLETE** (2026-01-26)
 - Commits: eb2bff24 (implementation), 3f08c83a (docs), b3b34830 (cleanup)
 - All files moved to ui/boot/, classes renamed to Bootstrap*
 - Entry points updated: main.py, main_window.py
 - Backward compatibility aliases removed (clean architecture)
-- Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
+- Quality gates: ruff OK | mypy OK (554 files) | pytest OK (1154 passed)
 - Result: All initialization violations eliminated
 
 ---
@@ -199,7 +199,7 @@ ui/events/event_coordinator.py
    ```python
    # Before:
    from oncutf.core.event_handler_manager import EventHandlerManager
-   
+
    # After:
    from oncutf.ui.events.event_coordinator import EventCoordinator
    ```
@@ -218,12 +218,12 @@ ui/events/event_coordinator.py
 
 **Estimated effort:** 1 hour
 
-**Status:** ✅ **COMPLETE** (2026-01-26)
+**Status:** OK **COMPLETE** (2026-01-26)
 - Commit: c3bd2c2b (implementation)
 - Files moved: event_handler_manager.py → event_coordinator.py, signal_coordinator.py
 - Class renamed: EventHandlerManager → EventCoordinator
 - Updated: bootstrap_orchestrator.py, event_delegates.py, file_operation_delegates.py, test_hash_manager.py
-- Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
+- Quality gates: ruff OK (1 fixed) | mypy OK (9 files) | pytest OK (1154 passed)
 - Result: All event/signal coordination violations eliminated
 
 ---
@@ -258,11 +258,11 @@ Move entire drag directory to ui/drag/ since all components have UI coupling.
 
 **Estimated effort:** 1 hour
 
-**Status:** ✅ **COMPLETE** (2026-01-26)
+**Status:** OK **COMPLETE** (2026-01-26)
 - Commit: efc8994c (implementation)
 - Files moved: All drag managers to ui/drag/
 - Updated: 5 external files + 4 internal cross-references
-- Quality gates: ruff ✅ (4 fixed) | mypy ✅ (4 files) | pytest ✅ (1154 passed)
+- Quality gates: ruff OK (4 fixed) | mypy OK (4 files) | pytest OK (1154 passed)
 - Result: All drag violations eliminated
 
 ---
@@ -316,7 +316,7 @@ Instead of moving these, create protocol-based ports:
 ## Migration Timeline
 
 ### Week 1 (Immediate)
-- [x] **Day 1-2:** Phase 1 - UI Managers Migration ✅ COMPLETED 2026-01-26
+- [x] **Day 1-2:** Phase 1 - UI Managers Migration OK COMPLETED 2026-01-26
   - Moved: core/ui_managers/ → ui/managers/ (9 files)
   - Updated: 13 files with import path changes
   - Created: FileLoadUIPort + adapter for remaining violation
@@ -325,7 +325,7 @@ Instead of moving these, create protocol-based ports:
   - All core→ui.managers violations eliminated (except initialization_orchestrator)
 
 ### Week 2 (High Priority)
-- [x] **Day 3-4:** Phase 2 - Initialization Bootstrap ✅ COMPLETED 2026-01-26
+- [x] **Day 3-4:** Phase 2 - Initialization Bootstrap OK COMPLETED 2026-01-26
   - Moved: core/initialization/ → ui/boot/ (4 files)
   - Renamed: Initialization* → Bootstrap* (3 classes)
   - Updated: 2 entry points (main.py, main_window.py)
@@ -333,7 +333,7 @@ Instead of moving these, create protocol-based ports:
   - Violations: 18 → 18 (initialization violations eliminated, same total)
   - Commit: eb2bff24
 
-- [x] **Day 5:** Phase 3 - Event Coordination ✅ COMPLETED 2026-01-26
+- [x] **Day 5:** Phase 3 - Event Coordination OK COMPLETED 2026-01-26
   - Moved: core/event_handler_manager.py → ui/events/
   - Moved: core/signal_coordinator.py → ui/events/
   - Updated: 8 files with import path changes
@@ -341,13 +341,13 @@ Instead of moving these, create protocol-based ports:
   - Commit: c3bd2c2b
 
 ### Week 3 (Medium Priority)
-- [x] **Day 6:** Phase 4 - Drag Managers ✅ COMPLETED 2026-01-26
+- [x] **Day 6:** Phase 4 - Drag Managers OK COMPLETED 2026-01-26
   - Moved: core/drag/ → ui/drag/ (4 files)
   - Updated: 9 files with import path changes
   - Violations: 16 → 11 (-31%)
   - Commit: efc8994c
 
-- [x] **Day 7:** Phase 5 - Create Ports ✅ COMPLETED 2026-01-26
+- [x] **Day 7:** Phase 5 - Create Ports OK COMPLETED 2026-01-26
   - Created 4 port protocols:
     - ResultsDisplayPort (hash results presentation)
     - ConflictResolutionPort (file conflict resolution)
@@ -429,13 +429,13 @@ After each phase:
    - Moved: core/[PATH] → ui/[PATH]
    - Updated: [N] import statements
    - Impact: [DESCRIPTION]
-   
+
    Violations: [OLD_COUNT] → [NEW_COUNT]
-   
+
    Quality gates:
-   ✅ ruff check: All passed
-   ✅ mypy: Success
-   ✅ pytest: [PASSED]/[TOTAL] passed
+   OK ruff check: All passed
+   OK mypy: Success
+   OK pytest: [PASSED]/[TOTAL] passed
    "
    ```
 
@@ -454,8 +454,8 @@ After all migrations:
 
 **core→ui violations:**
 - Before Phase 1: 27
-- After Phase 1: 18 (-33%) ✅
-- After Phase 2: 18 (initialization eliminated, node_editor false positives) ✅
+- After Phase 1: 18 (-33%) OK
+- After Phase 2: 18 (initialization eliminated, node_editor false positives) OK
 - Target Phase 3: ~15 (-3 from event/signal)
 - Target Phase 5: ~10 (-5 from ports)
 
@@ -465,32 +465,32 @@ After all migrations:
 - TYPE_CHECKING imports (6) - these are fine
 - application_context.py backward compat (2) - temporary
 
-**Target achieved:** <10 runtime violations ✅
+**Target achieved:** <10 runtime violations OK
 
 **Phase Completion Status:**
-- Phase 1 (UI Managers): ✅ Complete (37a5a216, 8b4d4fed, 3565b762, bb948b33, 1da83558)
-- Phase 2 (Initialization Bootstrap): ✅ Complete (eb2bff24, 3f08c83a, b3b34830)
+- Phase 1 (UI Managers): OK Complete (37a5a216, 8b4d4fed, 3565b762, bb948b33, 1da83558)
+- Phase 2 (Initialization Bootstrap): OK Complete (eb2bff24, 3f08c83a, b3b34830)
   - Clean architecture: No backward compatibility layer
-  - Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
-- Phase 3 (Event/Signal Coordination): ✅ Complete (c3bd2c2b, d73fafd4)
+  - Quality gates: ruff OK | mypy OK (554 files) | pytest OK (1154 passed)
+- Phase 3 (Event/Signal Coordination): OK Complete (c3bd2c2b, d73fafd4)
   - EventHandlerManager → EventCoordinator, moved to ui/events/
   - SignalCoordinator moved to ui/events/
-  - Quality gates: ruff ✅ (1 fixed) | mypy ✅ (9 files) | pytest ✅ (1154 passed)
-- Phase 4 (Drag Managers): ✅ Complete (efc8994c, 6340b254)
+  - Quality gates: ruff OK (1 fixed) | mypy OK (9 files) | pytest OK (1154 passed)
+- Phase 4 (Drag Managers): OK Complete (efc8994c, 6340b254)
   - Moved: core/drag/ → ui/drag/ (4 files)
   - Updated: 9 files with import paths
-  - Quality gates: ruff ✅ | mypy ✅ (554 files) | pytest ✅ (1154 passed)
-- Phase 5 (Specialized Dialog Ports): ✅ Complete (00c19f10)
+  - Quality gates: ruff OK | mypy OK (554 files) | pytest OK (1154 passed)
+- Phase 5 (Specialized Dialog Ports): OK Complete (00c19f10)
   - Created 4 port protocols + 4 Qt adapters
   - Updated 4 core files with dependency injection
   - All adapters registered in ApplicationContext
-  - Quality gates: ruff ✅ | mypy ✅ (562 files) | pytest ✅ (1154 passed)
-  - **Target achieved:** <10 runtime violations ✅
-- Phase 4 (Drag Managers): ✅ Complete (efc8994c)
+  - Quality gates: ruff OK | mypy OK (562 files) | pytest OK (1154 passed)
+  - **Target achieved:** <10 runtime violations OK
+- Phase 4 (Drag Managers): OK Complete (efc8994c)
   - All drag managers moved to ui/drag/
   - 9 files updated with new imports
-  - Quality gates: ruff ✅ (4 fixed) | mypy ✅ (4 files) | pytest ✅ (1154 passed)
-- Phase 5 (Specialized Dialogs): 📋 Planned
+  - Quality gates: ruff OK (4 fixed) | mypy OK (4 files) | pytest OK (1154 passed)
+- Phase 5 (Specialized Dialogs): PLANNED Planned
 
 ---
 
@@ -527,10 +527,10 @@ git cherry-pick [COMMIT_BEFORE_MIGRATION]
 
 ## Success Criteria
 
-✅ All tests passing (1154+ tests)  
-✅ Ruff: 0 violations  
-✅ Mypy: 0 errors in migrated modules  
-✅ Core→UI violations: <10 runtime imports  
-✅ No functionality regressions  
-✅ Documentation updated  
-✅ Git history clean (no merge commits without --no-ff)
+- OK All tests passing (1154+ tests)
+- OK Ruff: 0 violations
+- OK Mypy: 0 errors in migrated modules
+- OK Core→UI violations: <10 runtime imports
+- OK No functionality regressions
+- OK Documentation updated
+- OK Git history clean (no merge commits without --no-ff)

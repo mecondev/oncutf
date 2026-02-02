@@ -40,7 +40,7 @@ Violations by rule:
 - `file_store.py` → Qt (contaminates app.services)
 - `user_interaction.py` → Qt (contaminates app.services)
 
-Full report: [docs/reports/qt_transitive_dependencies_20260203.txt](reports/qt_transitive_dependencies_20260203.txt)
+To generate current report: `python tools/audit_boundaries.py --package oncutf`
 
 ## Violation Categories
 
