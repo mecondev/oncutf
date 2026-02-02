@@ -19,15 +19,14 @@ import os
 from pathlib import Path
 from typing import Any
 
-from PyQt5.QtCore import QObject, pyqtSignal
-
 from oncutf.models.file_item import FileItem
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-class FileStore(QObject):
+class FileStore(Observable):
     """Centralized STATE management for loaded files.
 
     This class maintains the single source of truth for:
@@ -43,13 +42,13 @@ class FileStore(QObject):
     """
 
     # Signals for file operations
-    files_loaded = pyqtSignal(list)  # Emitted when files are loaded
-    folder_changed = pyqtSignal(str)  # Emitted when current folder changes
-    files_filtered = pyqtSignal(list)  # Emitted when files are filtered
+    files_loaded = Signal(list)  # Emitted when files are loaded
+    folder_changed = Signal(str)  # Emitted when current folder changes
+    files_filtered = Signal(list)  # Emitted when files are filtered
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self) -> None:
         """Initialize the file store with empty state."""
-        super().__init__(parent)
+        super().__init__()
 
         # Current state
         self._current_folder: str | None = None

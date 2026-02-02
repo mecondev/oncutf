@@ -8,23 +8,22 @@ This module provides centralized selection and checked state management,
 eliminating the need for scattered parent_window traversals and improving performance.
 Features:
 - Unified selection and checked state tracking
-- Event-driven updates via Qt signals
+- Event-driven updates via Observable signals
 - Performance optimizations for large file sets
 - Automatic synchronization between selection and checked states
 """
 
+import threading
 import time
 from typing import Any
 
-from PyQt5.QtCore import QObject, pyqtSignal
-
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 logger = get_cached_logger(__name__)
 
 
-class SelectionStore(QObject):
+class SelectionStore(Observable):
     """Centralized selection and checked state manager.
 
     Handles all selection-related logic previously scattered across
@@ -39,17 +38,17 @@ class SelectionStore(QObject):
     """
 
     # Signals for state changes
-    selection_changed = pyqtSignal(list)  # Emitted when selected rows change
-    checked_changed = pyqtSignal(list)  # Emitted when checked rows change
-    anchor_changed = pyqtSignal(int)  # Emitted when anchor row changes
+    selection_changed = Signal(list)  # Emitted when selected rows change
+    checked_changed = Signal(list)  # Emitted when checked rows change
+    anchor_changed = Signal(int)  # Emitted when anchor row changes
 
     # Combined signals for coordinated updates
-    selection_sync_requested = pyqtSignal()  # Request sync from selection to checked
-    checked_sync_requested = pyqtSignal()  # Request sync from checked to selection
+    selection_sync_requested = Signal()  # Request sync from selection to checked
+    checked_sync_requested = Signal()  # Request sync from checked to selection
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self) -> None:
         """Initialize the selection store with empty selection state."""
-        super().__init__(parent)
+        super().__init__()
 
         # Core selection state
         self._selected_rows: set[int] = set()
@@ -65,8 +64,9 @@ class SelectionStore(QObject):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
-        # Debounce timer ID (managed by TimerManager for better responsiveness)
-        self._update_timer_id: str | None = None
+        # Debounce timer (pure Python threading.Timer for Qt-free impl)
+        self._update_timer: threading.Timer | None = None
+        self._timer_lock = threading.Lock()
 
         # Pending signal emissions (for debouncing)
         self._pending_selection_signal = False
@@ -424,22 +424,29 @@ class SelectionStore(QObject):
 
     def _schedule_selection_signal(self) -> None:
         """Schedule selection_changed signal emission with debouncing."""
-        self._pending_selection_signal = True
-        if not self._update_timer_id:
-            # Schedule with 15ms debounce for UI updates (via TimerManager)
-            self._update_timer_id = schedule_ui_update(self._emit_deferred_signals, delay=15)
+        self._schedule_debounced_emit()
 
     def _schedule_checked_signal(self) -> None:
         """Schedule checked_changed signal emission with debouncing."""
         self._pending_checked_signal = True
-        if not self._update_timer_id:
-            # Schedule with 15ms debounce for UI updates (via TimerManager)
-            self._update_timer_id = schedule_ui_update(self._emit_deferred_signals, delay=15)
+        self._schedule_debounced_emit()
+
+    def _schedule_debounced_emit(self) -> None:
+        """Schedule debounced signal emission using threading.Timer."""
+        with self._timer_lock:
+            # Cancel existing timer if any
+            if self._update_timer is not None:
+                self._update_timer.cancel()
+
+            # Create new timer (15ms debounce)
+            self._update_timer = threading.Timer(0.015, self._emit_deferred_signals)
+            self._update_timer.start()
 
     def _emit_deferred_signals(self) -> None:
         """Emit pending signals after debounce timer."""
-        # Reset timer ID
-        self._update_timer_id = None
+        with self._timer_lock:
+            self._update_timer = None
+
         if self._pending_selection_signal:
             self.selection_changed.emit(list(self._selected_rows))
             self._pending_selection_signal = False
