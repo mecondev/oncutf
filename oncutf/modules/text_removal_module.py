@@ -28,9 +28,9 @@ from PyQt5.QtWidgets import (
 from typing_extensions import deprecated
 
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.ui.helpers.timer_manager import cancel_timer, schedule_preview_update
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 
 logger = get_cached_logger(__name__)
 
