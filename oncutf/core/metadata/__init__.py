@@ -40,7 +40,6 @@ from oncutf.core.metadata.field_compatibility import (
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
 from oncutf.core.metadata.metadata_loader import MetadataLoader
 from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
-from oncutf.core.metadata.metadata_shortcut_handler import MetadataShortcutHandler
 from oncutf.core.metadata.metadata_writer import MetadataWriter
 from oncutf.core.metadata.staging_manager import (
     MetadataStagingManager,
@@ -50,6 +49,9 @@ from oncutf.core.metadata.staging_manager import (
 from oncutf.core.metadata.unified_metadata_protocol import (
     UnifiedMetadataManagerProtocol,
 )
+
+# NOTE: MetadataShortcutHandler moved to oncutf.ui.handlers.metadata_shortcuts (2026-02-02)
+# Import directly from ui.handlers if needed, do not import from core.metadata
 
 __all__ = [
     "BatchMetadataCommand",
@@ -61,7 +63,6 @@ __all__ = [
     "MetadataCommandManager",
     "MetadataLoader",
     "MetadataProgressHandler",
-    "MetadataShortcutHandler",
     "MetadataStagingManager",
     "MetadataWriter",
     "ResetMetadataFieldCommand",

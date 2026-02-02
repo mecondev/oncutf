@@ -27,7 +27,7 @@ class TestModifierDetection:
 
     def test_no_modifier_skips_metadata(self) -> None:
         """No modifiers should skip metadata loading."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -45,7 +45,7 @@ class TestModifierDetection:
 
     def test_ctrl_only_loads_fast_metadata(self) -> None:
         """Ctrl modifier should load fast metadata."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -63,7 +63,7 @@ class TestModifierDetection:
 
     def test_ctrl_shift_loads_extended_metadata(self) -> None:
         """Ctrl+Shift should load extended metadata."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -79,7 +79,7 @@ class TestModifierDetection:
 
     def test_shift_only_skips_metadata(self) -> None:
         """Shift alone (without Ctrl) should skip metadata."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -102,7 +102,7 @@ class TestShouldUseExtendedMetadata:
 
     def test_returns_true_for_ctrl_shift(self) -> None:
         """Should return True when Ctrl+Shift are both held."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -117,7 +117,7 @@ class TestShouldUseExtendedMetadata:
 
     def test_returns_false_for_ctrl_only(self) -> None:
         """Should return False when only Ctrl is held."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -132,7 +132,7 @@ class TestShouldUseExtendedMetadata:
 
     def test_returns_false_for_no_modifiers(self) -> None:
         """Should return False when no modifiers are held."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -151,7 +151,7 @@ class TestShortcutMethods:
 
     def test_shortcut_load_metadata_no_window_returns_early(self) -> None:
         """shortcut_load_metadata should return early with no parent window."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -168,7 +168,7 @@ class TestShortcutMethods:
 
     def test_shortcut_load_extended_no_window_returns_early(self) -> None:
         """shortcut_load_extended_metadata should return early with no parent window."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -185,7 +185,7 @@ class TestShortcutMethods:
 
     def test_shortcut_load_extended_blocked_when_running(self) -> None:
         """Extended metadata should be blocked if task is already running."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -208,7 +208,7 @@ class TestParentWindowProperty:
 
     def test_uses_own_parent_window_first(self) -> None:
         """Should use own parent_window if set."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 
@@ -224,7 +224,7 @@ class TestParentWindowProperty:
 
     def test_falls_back_to_manager_window(self) -> None:
         """Should fall back to manager's parent_window if own is None."""
-        from oncutf.core.metadata.metadata_shortcut_handler import (
+        from oncutf.ui.handlers.metadata_shortcuts import (
             MetadataShortcutHandler,
         )
 

@@ -1,10 +1,13 @@
-"""Module: metadata_shortcut_handler.py.
+"""Module: metadata_shortcuts.py.
 
 Author: Michael Economou
 Date: 2025-12-21
 
 Keyboard shortcut handler for metadata operations.
 Extracted from unified_metadata_manager.py for better separation of concerns.
+
+NOTE: Moved from core/metadata/metadata_shortcut_handler.py (2026-02-02)
+This is a UI component handling keyboard shortcuts and belongs in the UI layer.
 
 Responsibilities:
 - Handle keyboard shortcuts for metadata loading (M, Ctrl+M, Shift+M, etc.)
