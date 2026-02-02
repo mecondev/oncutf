@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
 from oncutf.config import ICON_SIZES
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
+from oncutf.modules.logic.counter_logic import CounterLogic
 from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
@@ -250,6 +251,8 @@ class CounterModule(BaseRenameModule):
     ) -> str:
         """Applies counter-based formatting using the given config and index.
 
+        Delegates to CounterLogic for the actual implementation.
+
         Parameters
         ----------
         data : dict
@@ -275,33 +278,13 @@ class CounterModule(BaseRenameModule):
             The stringified counter value with proper padding.
 
         """
-        try:
-            start = int(data.get("start", 1))
-            step = int(data.get("step", 1))
-            padding = int(data.get("padding", 4))
-            scope = data.get("scope", CounterScope.PER_FOLDER.value)
-
-            value = start + index * step
-            result = f"{value:0{padding}d}"
-            logger.debug(
-                "[CounterModule] index: %d, value: %d, padded: %s, scope: %s",
-                index,
-                value,
-                result,
-                scope,
-                extra={"dev_only": True},
-            )
-        except Exception:
-            logger.exception("[CounterModule] Failed to apply counter logic")
-            return "####"
-        else:
-            return result
+        return CounterLogic.apply_from_data(data, _file_item, index, _metadata_cache)
 
     @staticmethod
     def is_effective_data(_data: dict[str, Any]) -> bool:
         """Check if counter module data is effective (always True).
 
-        Counter module is always active regardless of configuration.
+        Delegates to CounterLogic.
 
         Args:
             _data: Module configuration dictionary (unused)
@@ -310,4 +293,4 @@ class CounterModule(BaseRenameModule):
             Always True
 
         """
-        return True
+        return CounterLogic.is_effective_data(_data)

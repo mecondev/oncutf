@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 from oncutf.core.rename.data_classes import PreviewResult
 from oncutf.models.counter_scope import CounterScope
-from oncutf.modules.counter_module import CounterModule
+from oncutf.modules.logic.counter_logic import CounterLogic
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.modules.original_name_module import OriginalNameModule
 from oncutf.modules.specified_text_module import SpecifiedTextModule
@@ -36,7 +36,7 @@ logger = get_cached_logger(__name__)
 # Module type mapping for rename operations
 MODULE_TYPE_MAP = {
     "specified_text": SpecifiedTextModule,
-    "counter": CounterModule,
+    "counter": CounterLogic,
     "metadata": MetadataModule,
     "original_name": OriginalNameModule,
     "remove_text_from_original_name": TextRemovalModule,
@@ -288,7 +288,7 @@ class UnifiedPreviewManager:
                 counter_index = self._calculate_scope_aware_index(
                     scope, index, file_item, all_files
                 )
-                part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
+                part = CounterLogic.apply_from_data(data, file_item, counter_index, metadata_cache)
 
             elif module_type == "specified_text":
                 part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
@@ -433,7 +433,7 @@ def apply_rename_modules(
         if module_type == "counter":
             scope = data.get("scope", CounterScope.PER_FOLDER.value)
             counter_index = calculate_scope_aware_index(scope, index, file_item, all_files)
-            part = CounterModule.apply_from_data(data, file_item, counter_index, metadata_cache)
+            part = CounterLogic.apply_from_data(data, file_item, counter_index, metadata_cache)
         elif module_type == "specified_text":
             part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
         elif module_type == "original_name":
