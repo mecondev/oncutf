@@ -97,6 +97,9 @@ class ThumbnailViewportWidget(QWidget):
         self._is_panning = False
         self._pan_start_pos: QPoint | None = None
 
+        # Thumbnail loading progress
+        self._thumbnail_progress: tuple[int, int] | None = None  # (completed, total)
+
         # Tooltip state
         self._tooltip_timer_id: int | None = None
         self._tooltip_index: QModelIndex | None = None
@@ -120,7 +123,7 @@ class ThumbnailViewportWidget(QWidget):
         self._list_view = QListView(self)
         self._list_view.setViewMode(QListView.IconMode)
         self._list_view.setResizeMode(QListView.Adjust)
-        self._list_view.setSpacing(10)
+        self._list_view.setSpacing(16)
         self._list_view.setUniformItemSizes(True)  # Performance optimization
         self._list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._list_view.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -157,12 +160,98 @@ class ThumbnailViewportWidget(QWidget):
 
         layout.addWidget(self._list_view)
 
+        # Create status bar at the bottom
+        self._status_bar = self._create_status_bar()
+        layout.addWidget(self._status_bar)
+
         # Setup placeholder for empty state
         # Note: Parent is self._list_view since placeholder_helper uses viewport()
         self.placeholder_helper = create_placeholder_helper(
             self._list_view, "thumbnail_viewport", text="No files loaded", icon_size=160
         )
         # Show placeholder initially if model is empty
+        self._update_placeholder_visibility()
+
+    def _create_status_bar(self) -> QWidget:
+        """Create the status bar widget with label and zoom slider.
+
+        Returns:
+            QWidget containing status label and zoom slider
+
+        """
+        from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSlider
+
+        from oncutf.ui.theme_manager import get_theme_manager
+
+        status_widget = QWidget(self)
+        status_widget.setFixedHeight(28)  # Small height as requested
+
+        # Apply theme styling
+        theme = get_theme_manager()
+        bg_color = theme.get_color("table_background")
+        border_color = theme.get_color("border")
+        text_color = theme.get_color("text")
+        status_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {bg_color};
+                border-top: 1px solid {border_color};
+            }}
+            QLabel {{
+                color: {text_color};
+                padding: 0px 8px;
+            }}
+        """)
+
+        layout = QHBoxLayout(status_widget)
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(8)
+
+        # Status label (left side)
+        self._status_label = QLabel("Ready")
+        layout.addWidget(self._status_label)
+
+        # Spacer
+        layout.addStretch()
+
+        # Zoom label
+        zoom_label = QLabel("Zoom:")
+        layout.addWidget(zoom_label)
+
+        # Zoom slider (right side)
+        self._zoom_slider = QSlider(Qt.Horizontal)
+        self._zoom_slider.setMinimum(self.MIN_THUMBNAIL_SIZE)
+        self._zoom_slider.setMaximum(self.MAX_THUMBNAIL_SIZE)
+        self._zoom_slider.setValue(self._thumbnail_size)
+        self._zoom_slider.setSingleStep(self.ZOOM_STEP)
+        self._zoom_slider.setPageStep(self.ZOOM_STEP * 2)
+        self._zoom_slider.setFixedWidth(120)
+        self._zoom_slider.setToolTip(f"Zoom: {self._thumbnail_size}px")
+
+        # Connect slider to zoom change
+        self._zoom_slider.valueChanged.connect(self._on_zoom_slider_changed)
+
+        layout.addWidget(self._zoom_slider)
+
+        return status_widget
+
+    def _on_zoom_slider_changed(self, value: int) -> None:
+        """Handle zoom slider value change.
+
+        Args:
+            value: New slider value (thumbnail size)
+
+        """
+        # Round to nearest ZOOM_STEP
+        rounded_value = round(value / self.ZOOM_STEP) * self.ZOOM_STEP
+        if rounded_value != value:
+            self._zoom_slider.setValue(rounded_value)
+            return
+
+        # Update thumbnail size
+        self.set_thumbnail_size(rounded_value)
+
+        # Update tooltip
+        self._zoom_slider.setToolTip(f"Zoom: {rounded_value}px")
         self._update_placeholder_visibility()
 
     def _connect_signals(self) -> None:
@@ -179,6 +268,9 @@ class ThumbnailViewportWidget(QWidget):
         self._model.rowsRemoved.connect(self._update_placeholder_visibility)
         self._model.modelReset.connect(self._update_placeholder_visibility)
 
+        # Model data changes (for metadata/hash indicator updates)
+        self._model.dataChanged.connect(self._on_model_data_changed)
+
         # Selection changes - emit for rename preview sync
         self._list_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
 
@@ -190,7 +282,8 @@ class ThumbnailViewportWidget(QWidget):
             if context and context.has_manager("thumbnail"):
                 thumbnail_manager = context.get_manager("thumbnail")
                 thumbnail_manager.thumbnail_ready.connect(self._on_thumbnail_ready)
-                logger.debug("[ThumbnailViewport] Connected to thumbnail_ready signal")
+                thumbnail_manager.generation_progress.connect(self._on_thumbnail_progress)
+                logger.debug("[ThumbnailViewport] Connected to thumbnail signals")
         except Exception as e:
             logger.warning("[ThumbnailViewport] Could not connect to ThumbnailManager: %s", e)
 
@@ -228,6 +321,17 @@ class ThumbnailViewportWidget(QWidget):
         if size != self._thumbnail_size:
             self._thumbnail_size = size
             self._delegate.set_thumbnail_size(size)
+
+            # Update zoom slider if it exists (without triggering valueChanged signal)
+            if hasattr(self, "_zoom_slider"):
+                self._zoom_slider.blockSignals(True)
+                self._zoom_slider.setValue(size)
+                self._zoom_slider.setToolTip(f"Zoom: {size}px")
+                self._zoom_slider.blockSignals(False)
+
+            # Update status label
+            if hasattr(self, "_status_label"):
+                self._update_status_label()
 
             # Force layout update
             self._list_view.scheduleDelayedItemsLayout()
@@ -281,7 +385,12 @@ class ThumbnailViewportWidget(QWidget):
                 self._list_view.viewport().setCursor(Qt.ClosedHandCursor)
                 return True
 
-            # Lasso selection (left button on empty space, no modifiers for now)
+            # Right-click should NOT select items (only show context menu)
+            if event.button() == Qt.RightButton:
+                # Don't change selection on right-click
+                return False  # Let context menu handler deal with it
+
+            # Lasso selection (left button on empty space)
             if event.button() == Qt.LeftButton:
                 index = self._list_view.indexAt(event.pos())
                 # Start lasso only if clicking on empty space
@@ -408,6 +517,9 @@ class ThumbnailViewportWidget(QWidget):
         selected_indexes = selection_model.selectedIndexes()
         selected_rows = sorted({index.row() for index in selected_indexes})
 
+        # Update status label
+        self._update_status_label()
+
         # Emit signal for rename preview and other listeners
         self.selection_changed.emit(selected_rows)
         logger.debug(
@@ -418,6 +530,28 @@ class ThumbnailViewportWidget(QWidget):
 
     def _on_context_menu(self, position: QPoint) -> None:
         """Show context menu for thumbnail operations.
+
+        Uses unified context menu handler (same as file table).
+
+        Args:
+            position: Click position in widget coordinates
+
+        """
+        # Use unified context menu handler from parent window
+        if hasattr(self, "_parent_window") and self._parent_window:
+            try:
+                # Delegate to the same handler used by file table
+                self._parent_window.handle_table_context_menu(position)
+            except Exception as e:
+                logger.warning("Error showing unified context menu: %s", e)
+                # Fallback to simplified menu if unified handler fails
+                self._show_fallback_context_menu(position)
+        else:
+            # No parent window - use fallback
+            self._show_fallback_context_menu(position)
+
+    def _show_fallback_context_menu(self, position: QPoint) -> None:
+        """Show fallback context menu if unified handler not available.
 
         Args:
             position: Click position in widget coordinates
@@ -442,6 +576,13 @@ class ThumbnailViewportWidget(QWidget):
 
         menu.addSeparator()
 
+        # Zoom controls
+        menu.addAction("Zoom In", self.zoom_in)
+        menu.addAction("Zoom Out", self.zoom_out)
+        menu.addAction("Reset Zoom", self.reset_zoom)
+
+        menu.addSeparator()
+
         # File operations
         selected_files = self.get_selected_files()
         if selected_files:
@@ -461,6 +602,17 @@ class ThumbnailViewportWidget(QWidget):
 
         # Show menu
         menu.exec_(self._list_view.viewport().mapToGlobal(position))
+
+    def _on_thumbnail_progress(self, completed: int, total: int) -> None:
+        """Handle thumbnail loading progress updates.
+
+        Args:
+            completed: Number of thumbnails loaded
+            total: Total number of thumbnails to load
+
+        """
+        self._thumbnail_progress = (completed, total)
+        self._update_status_label()
 
     def _sort_by(self, key: str, reverse: bool) -> None:
         """Sort files by key and switch to sorted mode.
@@ -662,8 +814,46 @@ class ThumbnailViewportWidget(QWidget):
             self.files_reordered.emit()
             logger.debug("[ThumbnailViewport] Manual order saved to DB")
 
-        # Update placeholder visibility after layout changes
+        # Update placeholder visibility and status label after layout changes
         self._update_placeholder_visibility()
+        self._update_status_label()
+
+    def _update_status_label(self) -> None:
+        """Update the status label with thumbnail loading progress.
+
+        Thread-safe: checks if widget exists and is valid before updating.
+        """
+        if not hasattr(self, "_status_label") or not self._status_label:
+            return
+
+        # Additional safety check - ensure widget hasn't been deleted
+        try:
+            from PyQt5.sip import isdeleted
+
+            if isdeleted(self._status_label):
+                return
+        except (ImportError, RuntimeError):
+            pass
+
+        try:
+            # Show thumbnail loading progress if available
+            if hasattr(self, "_thumbnail_progress") and self._thumbnail_progress:
+                completed, total = self._thumbnail_progress
+                if completed < total:
+                    status_text = f"Loading thumbnails: {completed}/{total}"
+                else:
+                    status_text = "Ready"
+            else:
+                status_text = "Ready"
+
+            self._status_label.setText(status_text)
+        except (RuntimeError, AttributeError) as e:
+            # Widget was deleted or model is invalid - silently ignore
+            logger.debug(
+                "[ThumbnailViewport] Could not update status label: %s",
+                e,
+                extra={"dev_only": True},
+            )
 
     def _update_placeholder_visibility(self) -> None:
         """Update placeholder visibility based on model row count."""
@@ -682,6 +872,9 @@ class ThumbnailViewportWidget(QWidget):
         else:
             self.placeholder_helper.hide()
             logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
+
+        # Update status label
+        self._update_status_label()
 
     def _clear_pending_thumbnail_requests(self) -> None:
         """Clear pending thumbnail requests from ThumbnailManager.
@@ -737,6 +930,31 @@ class ThumbnailViewportWidget(QWidget):
                 return
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations
+
+    def _on_model_data_changed(
+        self, top_left: "QModelIndex", bottom_right: "QModelIndex", roles: list[int] | None = None
+    ) -> None:
+        """Handle model data changes (e.g., metadata/hash status updates).
+
+        Updates the view for changed items to reflect new indicator states.
+
+        Args:
+            top_left: Top-left index of changed range
+            bottom_right: Bottom-right index of changed range
+            roles: List of changed roles (optional)
+
+        """
+        # Update all items in the changed range
+        for row in range(top_left.row(), bottom_right.row() + 1):
+            index = self._model.index(row, 0)
+            if index.isValid():
+                self._list_view.update(index)
+
+        logger.debug(
+            "[ThumbnailViewport] Updated %d items after model data change",
+            bottom_right.row() - top_left.row() + 1,
+            extra={"dev_only": True},
+        )
 
     # ========== Tooltip Helpers ==========
 

@@ -58,8 +58,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
     # Layout constants (in pixels)
     FRAME_BORDER_WIDTH = 3
     FRAME_PADDING = 8  # Space between frame and thumbnail
-    FILENAME_HEIGHT = 40  # Space below thumbnail for filename
-    FILENAME_MARGIN = 8  # Vertical margin above filename
+    FILENAME_HEIGHT = 30  # Space below thumbnail for filename
+    FILENAME_MARGIN = 4  # Vertical margin above filename
 
     # Metadata/Hash indicators (2 circles in top corners)
     INDICATOR_CIRCLE_SIZE = 12  # Diameter of each circle
@@ -253,10 +253,12 @@ class ThumbnailDelegate(QStyledItemDelegate):
         is_selected: bool,
         is_hover: bool,
     ) -> None:
-        """Draw the thumbnail frame border with optional color tinting.
+        """Draw the thumbnail frame border with file color background.
 
-        If file has a color flag set, the frame border and background are tinted
-        with that color. Otherwise, standard theme colors are used.
+        Border: Always #777777
+        Background: File color if set, otherwise white
+        - Unselected: 50% opacity
+        - Selected: 85% opacity
 
         Args:
             painter: QPainter
@@ -266,45 +268,31 @@ class ThumbnailDelegate(QStyledItemDelegate):
             is_hover: Whether item is hovered
 
         """
-        # Check if file has a color flag
+        # Get file color or default to white
         has_color = file_item.color and file_item.color.lower() != "none"
 
         if has_color:
-            # Parse color flag
-            color = QColor(file_item.color)
-            if not color.isValid():
-                color = self.FRAME_COLOR_NORMAL
-
-            # Use color flag for border (slightly brighter on hover/selection)
-            if is_selected:
-                # Brighten color for selection
-                border_color = color.lighter(120)
-            elif is_hover:
-                # Slightly brighten for hover
-                border_color = color.lighter(110)
-            else:
-                border_color = color
-
-            # Background tint (10% opacity of color flag)
-            bg_color = QColor(color)
-            bg_color.setAlpha(25)  # ~10% opacity
+            # Use file color for background
+            bg_color = QColor(file_item.color)
+            if not bg_color.isValid():
+                bg_color = QColor(Qt.white)
         else:
-            # No color flag - use standard theme colors
-            if is_selected:
-                border_color = self.FRAME_COLOR_SELECTED
-            elif is_hover:
-                border_color = self.FRAME_COLOR_HOVER
-            else:
-                border_color = self.FRAME_COLOR_NORMAL
+            # No color - use white
+            bg_color = QColor(Qt.white)
 
-            bg_color = Qt.white
+        # Set opacity based on selection state
+        if is_selected:
+            bg_color.setAlpha(217)  # 85% opacity (217/255)
+        else:
+            bg_color.setAlpha(128)  # 50% opacity (128/255)
 
-        # Draw background fill
+        # Draw background fill with opacity
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(bg_color))
         painter.drawRect(frame_rect)
 
-        # Draw border
+        # Draw border - always #777777
+        border_color = QColor("#777777")
         pen = QPen(border_color, self.FRAME_BORDER_WIDTH)
         painter.setPen(pen)
         painter.setBrush(Qt.NoBrush)
@@ -351,8 +339,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             file_item: File item (for extension/type info)
 
         """
-        # Draw background
-        painter.fillRect(thumbnail_rect, self.PLACEHOLDER_BACKGROUND)
+        # No background - let frame color show through
 
         # Draw text (file extension or "Loading...")
         painter.setPen(self.PLACEHOLDER_TEXT)
@@ -579,13 +566,13 @@ class ThumbnailDelegate(QStyledItemDelegate):
             is_selected: Whether item is selected
 
         """
-        # Set text color (black normally, white if selected)
-        text_color = Qt.white if is_selected else Qt.black
+        # Set text color (always dark gray for readability)
+        text_color = QColor("#333333")
         painter.setPen(text_color)
 
         # Use smaller font for filename
         font = painter.font()
-        font.setPointSize(9)
+        font.setPointSize(8)
         painter.setFont(font)
 
         # Draw text with word wrap and elision
