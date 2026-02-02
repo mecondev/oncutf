@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Boundary audit for the OnCutF repo (path-based layers).
+"""Boundary audit for the OnCutF repo (path-based layers).
 
 Repo-specific notes
 -------------------
@@ -41,6 +40,20 @@ if TYPE_CHECKING:
 
 TYPE_IGNORE_RE = re.compile(r"#\s*type:\s*ignore(\[[^\]]+\])?")
 
+# External libraries that should NOT be imported in certain layers.
+# Keys are layer names, values are sets of forbidden module prefixes.
+FORBIDDEN_EXTERNAL_IMPORTS: dict[str, set[str]] = {
+    # Pure business logic layers - no Qt/GUI dependencies
+    "domain": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
+    "app": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
+    # Core should be Qt-free for testability (but currently has violations)
+    "core": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
+}
+
+# Allowed Qt imports in core (temporary whitelist during migration).
+# Add relative paths here to suppress violations during incremental migration.
+CORE_QT_WHITELIST: set[str] = set()
+
 
 # -----------------------------
 # Layer classification (repo-specific)
@@ -69,8 +82,7 @@ EXTERNAL = "external"
 
 
 def classify_layer(py_file: Path, package_dir: Path) -> str:
-    """
-    Classify a Python file into a layer based on its path relative to package_dir.
+    """Classify a Python file into a layer based on its path relative to package_dir.
 
     This is intentionally simple and transparent. The special handling below matches
     your repo layout:
@@ -139,12 +151,12 @@ class ImportRef:
 
 
 def iter_imports(py_file: Path) -> Iterator[ImportRef]:
-    """
-    Yield all syntactic import references in a Python file.
+    """Yield all syntactic import references in a Python file.
 
     Notes:
     - Captures `import X` and `from X import Y`.
     - Does not capture dynamic imports (importlib, __import__).
+
     """
     try:
         source = py_file.read_text(encoding="utf-8")
@@ -162,9 +174,8 @@ def iter_imports(py_file: Path) -> Iterator[ImportRef]:
             for alias in node.names:
                 if alias.name:
                     yield ImportRef(module=alias.name, lineno=node.lineno, kind="import")
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                yield ImportRef(module=node.module, lineno=node.lineno, kind="from")
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            yield ImportRef(module=node.module, lineno=node.lineno, kind="from")
 
 
 def count_type_ignores(py_file: Path) -> int:
@@ -182,8 +193,7 @@ def count_type_ignores(py_file: Path) -> int:
 
 
 def infer_imported_layer(module: str, package: str) -> str:
-    """
-    Infer the layer of an imported module within our package namespace.
+    """Infer the layer of an imported module within our package namespace.
 
     Because your repo has mixed trees (utils/ui and controllers/ui), we infer:
     - oncutf.utils.ui.*         -> utils_ui
@@ -200,7 +210,7 @@ def infer_imported_layer(module: str, package: str) -> str:
     if len(parts) == 1:
         return "unknown"
 
-    # parts[0] == package
+    # Check for special sub-packages first (utils/ui, controllers/ui)
     if len(parts) >= 3 and parts[1] == "utils" and parts[2] == "ui":
         return "utils_ui"
     if len(parts) >= 3 and parts[1] == "controllers" and parts[2] == "ui":
@@ -240,11 +250,48 @@ class RuleViolation:
     imported_layer: str
     lineno: int
     rule: str
+    severity: str = "error"  # error, warning
+
+
+def check_forbidden_external(
+    file_path: str,
+    file_layer: str,
+    module: str,
+    lineno: int,
+) -> RuleViolation | None:
+    """Check if an external import is forbidden for this layer.
+
+    Returns a RuleViolation if the import violates layer purity rules.
+    """
+    forbidden = FORBIDDEN_EXTERNAL_IMPORTS.get(file_layer)
+    if not forbidden:
+        return None
+
+    # Check if module starts with any forbidden prefix
+    for prefix in forbidden:
+        if module == prefix or module.startswith(prefix + "."):
+            # Check whitelist for core layer (temporary migration aid)
+            if file_layer == "core":
+                # Normalize path for comparison
+                rel_path = file_path.replace("\\", "/")
+                if any(wl in rel_path for wl in CORE_QT_WHITELIST):
+                    return None
+
+            return RuleViolation(
+                file=file_path,
+                file_layer=file_layer,
+                imported=module,
+                imported_layer="external_qt",
+                lineno=lineno,
+                rule=f"{file_layer}_must_not_import_qt",
+                severity="error",
+            )
+
+    return None
 
 
 def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> str | None:
-    """
-    Return a rule name if the import is forbidden; otherwise None.
+    """Return a rule name if the import is forbidden; otherwise None.
 
     Philosophy (matching your goals):
     - boot is composition root: can import EVERYTHING (no violations)
@@ -271,25 +318,23 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
     ui_side = {"ui", "controllers_ui", "utils_ui"}
 
     # domain purity (boot is also forbidden for domain)
-    if file_layer == "domain":
-        if imported_layer in ui_side | {"app", "infra", "core", "controllers", "utils", "boot"}:
-            return "domain_must_be_pure"
+    if file_layer == "domain" and imported_layer in ui_side | {
+        "app", "infra", "core", "controllers", "utils", "boot"
+    }:
+        return "domain_must_be_pure"
 
     # app must not depend on UI or concrete infra/core/boot
     # (app should be testable without knowing boot exists)
-    if file_layer == "app":
-        if imported_layer in ui_side | {"infra", "core", "boot"}:
-            return "app_must_not_depend_on_ui_infra_core"
+    if file_layer == "app" and imported_layer in ui_side | {"infra", "core", "boot"}:
+        return "app_must_not_depend_on_ui_infra_core"
 
     # infra must not depend on UI or app/controllers/boot (keep infra concrete + isolated)
-    if file_layer == "infra":
-        if imported_layer in ui_side | {"app", "controllers", "boot"}:
-            return "infra_must_not_depend_on_ui_app_controllers"
+    if file_layer == "infra" and imported_layer in ui_side | {"app", "controllers", "boot"}:
+        return "infra_must_not_depend_on_ui_app_controllers"
 
     # core must not import ui
-    if file_layer == "core":
-        if imported_layer in ui_side:
-            return "core_must_not_import_ui"
+    if file_layer == "core" and imported_layer in ui_side:
+        return "core_must_not_import_ui"
 
     # ui must not import infra directly (should go through boot)
     if file_layer in ui_side:
@@ -299,9 +344,8 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
             return "ui_must_not_import_core"
 
     # controllers (non-ui) ideally should not import ui
-    if file_layer == "controllers":
-        if imported_layer in ui_side:
-            return "controllers_must_not_import_ui"
+    if file_layer == "controllers" and imported_layer in ui_side:
+        return "controllers_must_not_import_ui"
 
     return None
 
@@ -313,6 +357,8 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
 
 @dataclass
 class FileReport:
+    """Analysis report for a single Python file."""
+
     path: str
     layer: str
     imports: list[ImportRef]
@@ -355,12 +401,15 @@ def find_violations(
     reports: Iterable[FileReport],
     package: str,
     strict_ui_core: bool,
+    check_external: bool = True,
 ) -> list[RuleViolation]:
     """Find boundary violations based on the rule matrix."""
     violations: list[RuleViolation] = []
     for rep in reports:
         for imp in rep.imports:
             imp_layer = infer_imported_layer(imp.module, package)
+
+            # Check internal layer violations
             rule = is_forbidden(rep.layer, imp_layer, strict_ui_core=strict_ui_core)
             if rule:
                 violations.append(
@@ -373,6 +422,16 @@ def find_violations(
                         rule=rule,
                     )
                 )
+                continue
+
+            # Check forbidden external imports (Qt in pure layers)
+            if check_external and imp_layer == EXTERNAL:
+                ext_violation = check_forbidden_external(
+                    rep.path, rep.layer, imp.module, imp.lineno
+                )
+                if ext_violation:
+                    violations.append(ext_violation)
+
     return violations
 
 
@@ -480,6 +539,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="If enabled, flags ui -> core imports as violations (stricter mode).",
     )
+    parser.add_argument(
+        "--no-external-check",
+        action="store_true",
+        help="Disable checking for forbidden external imports (Qt in pure layers).",
+    )
 
     args = parser.parse_args(argv)
 
@@ -490,7 +554,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     reports = build_reports(repo_root, args.package)
-    violations = find_violations(reports, args.package, strict_ui_core=args.strict_ui_core)
+    violations = find_violations(
+        reports,
+        args.package,
+        strict_ui_core=args.strict_ui_core,
+        check_external=not args.no_external_check,
+    )
 
     violations.sort(key=lambda v: (v.rule, v.file, v.lineno))
 
@@ -503,7 +572,7 @@ def main(argv: list[str] | None = None) -> int:
             "summary": summarize(reports, violations),
             "violations": [v.__dict__ for v in violations],
             "type_ignores": [
-                {"file": r.path, "layer": r.layer, "count": r.type_ignores}
+                {"draft": r.path, "layer": r.layer, "count": r.type_ignores}
                 for r in reports
                 if r.type_ignores
             ],

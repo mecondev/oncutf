@@ -78,7 +78,7 @@ class WindowConfig(ConfigCategory[Any]):
                 "lower_section": [868, 867],
             },
             "metadata_tree_column_ratios": {
-                "key": 0.30,
+                "tag": 0.30,
                 "value": 0.70,
             },
             "file_table_fixed_columns": {
@@ -119,7 +119,7 @@ class FileHashConfig(ConfigCategory[Any]):
         """Add or update file hash entry."""
         hashes = self.get("hashes", {})
         hashes[filepath] = {
-            "hash": hash_value,
+            "tag": hash_value,
             "timestamp": datetime.now().isoformat(),
             "size": file_size,
         }

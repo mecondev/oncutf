@@ -136,7 +136,7 @@ class TreeNodeData:
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            "key": self.key,
+            "tag": self.key,
             "value": self.value,
             "display_key": self.display_key,
             "node_type": self.node_type.value,
@@ -153,7 +153,7 @@ class TreeNodeData:
         """Create from dictionary."""
         children = [cls.from_dict(c) for c in data.get("children", [])]
         return cls(
-            key=data["key"],
+            key=data["tag"],
             value=data.get("value", ""),
             display_key=data.get("display_key", ""),
             node_type=NodeType(data.get("node_type", "field")),

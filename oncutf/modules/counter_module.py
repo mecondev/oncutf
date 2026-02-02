@@ -124,8 +124,8 @@ class CounterModule(BaseRenameModule):
 
         btn_minus = QPushButton()
         btn_plus = QPushButton()
-        btn_minus.setIcon(get_menu_icon("minus"))
-        btn_plus.setIcon(get_menu_icon("plus"))
+        btn_minus.setIcon(get_menu_icon("remove"))
+        btn_plus.setIcon(get_menu_icon("add"))
         btn_minus.setFixedSize(button_size, button_size)
         btn_plus.setFixedSize(button_size, button_size)
         btn_minus.setIconSize(

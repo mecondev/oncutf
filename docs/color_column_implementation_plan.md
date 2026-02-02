@@ -12,16 +12,17 @@ Implement color indicators in the new "color" column with SVG-based icons and co
 ## Current Status [COMPLETE]
 
 ### Already Completed
+
 1. **Column Configuration** - Added to `config.py`:
    - Index 0 (leftmost column)
    - 50px fixed width, center aligned
    - Non-resizable (`resizable: False`)
    - Visible by default, removable
-   
+
 2. **Serialization Support** - Automatic via existing system:
    - `file_table_column_widths` (width persistence)
    - `file_table_columns` (visibility persistence)
-   
+
 3. **Header Context Menu** - Automatic alphabetical inclusion
 
 ---
@@ -31,6 +32,7 @@ Implement color indicators in the new "color" column with SVG-based icons and co
 ### 1.1 Examine Existing Icon System
 
 Current metadata status icons (left column in screenshot):
+
 - **System:** SVG-based via `SVGIconGenerator` class
 - **Location:** `oncutf/utils/svg_icon_generator.py`
 - **Base icons:** Feather icon set in `resources/icons/feather_icons/`
@@ -38,6 +40,7 @@ Current metadata status icons (left column in screenshot):
 - **Colors:** Defined in `config.py` → `METADATA_ICON_COLORS`
 
 **Current metadata icons use:**
+
 ```python
 ICON_MAPPINGS = {
     "basic": "info",
@@ -52,6 +55,7 @@ ICON_MAPPINGS = {
 ### 1.2 Color Palette Definition
 
 **Add to `config.py`:**
+
 ```python
 # Color column palette (for file tagging/organization)
 # 32 colors arranged in 4 rows x 8 columns + custom picker + none
@@ -73,6 +77,7 @@ COLOR_PICKER_IMAGE = "resources/images/color_range.jpg"
 ```
 
 **Rationale:**
+
 - 32 Material Design colors for rich palette
 - Grid layout (4 rows x 8 cols) matching screenshot
 - Custom color picker via OS dialog
@@ -123,6 +128,7 @@ if __name__ == "__main__":
 ```
 
 **Run:**
+
 ```bash
 python scripts/generate_color_icons.py
 ```
@@ -136,6 +142,7 @@ python scripts/generate_color_icons.py
 **Location:** Where file data is stored (need to identify exact model)
 
 **Add field:**
+
 ```python
 {
     "path": "/path/to/file.jpg",
@@ -150,6 +157,7 @@ python scripts/generate_color_icons.py
 **Find:** File model that handles `data()` for table display
 
 **Add DecorationRole for color column:**
+
 ```python
 if role == Qt.DecorationRole and column_key == "color":
     file_color = file_data.get("color", "none")
@@ -161,10 +169,12 @@ if role == Qt.DecorationRole and column_key == "color":
 ### 2.3 Persistence in Database
 
 **Add to database schema:**
+
 - Table: `file_metadata` or similar
 - Column: `color_tag TEXT DEFAULT 'none'`
 
 **Migration:**
+
 ```sql
 ALTER TABLE file_metadata ADD COLUMN color_tag TEXT DEFAULT 'none';
 ```
@@ -366,6 +376,7 @@ def load_color_icon(color_key: str) -> QIcon:
 ## Phase 5: Testing & Polish ✨
 
 ### 5.1 Test Cases
+
 - [ ] Color icons display correctly in column
 - [ ] Context menu shows all colors with icons
 - [ ] Color selection persists across sessions
@@ -374,6 +385,7 @@ def load_color_icon(color_key: str) -> QIcon:
 - [ ] Color filters work (future feature)
 
 ### 5.2 UI Polish
+
 - [ ] Tooltip on color cell: "Right-click to set color"
 - [ ] Visual feedback when hovering over color cell
 - [ ] Keyboard shortcut for color menu (Ctrl+K?)
@@ -385,11 +397,13 @@ def load_color_icon(color_key: str) -> QIcon:
 Instead of generating separate SVG files, we can **reuse the SVG colorization system**:
 
 **Advantages:**
+
 - No new files needed
 - Consistent with metadata icon system
 - Dynamic color changes possible
 
 **Implementation:**
+
 ```python
 # In svg_icon_generator.py
 COLOR_ICON_MAPPINGS = {
@@ -416,6 +430,7 @@ def generate_color_icon(color_key: str) -> QPixmap:
 **Complexity:** Medium  
 **Estimated Time:** 3-4 hours  
 **Key Files:**
+
 1. `config.py` - Color palette definition
 2. `svg_icon_generator.py` - Color icon generation
 3. `file_model.py` - Color property storage
@@ -423,12 +438,14 @@ def generate_color_icon(color_key: str) -> QPixmap:
 5. `icons_loader.py` - Icon caching
 
 **Dependencies:**
+
 - Existing SVG icon system [OK]
 - Feather `square.svg` icon [OK]
 - Database schema update ⚠️
 - File model color property ⚠️
 
 **Next Steps:**
+
 1. Review plan with user
 2. Decide: Generate SVG files OR use dynamic colorization?
 3. Identify correct file model location

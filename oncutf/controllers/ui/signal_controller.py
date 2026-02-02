@@ -268,13 +268,13 @@ class SignalController:
         menu.setStyleSheet(menu_qss)
 
         undo_action = QAction("Undo", menu)
-        undo_action.setIcon(get_menu_icon("rotate-ccw"))
+        undo_action.setIcon(get_menu_icon("undo"))
         undo_action.triggered.connect(line_edit.undo)
         undo_action.setEnabled(line_edit.isUndoAvailable())
         menu.addAction(undo_action)
 
         redo_action = QAction("Redo", menu)
-        redo_action.setIcon(get_menu_icon("rotate-cw"))
+        redo_action.setIcon(get_menu_icon("redo"))
         redo_action.triggered.connect(line_edit.redo)
         redo_action.setEnabled(line_edit.isRedoAvailable())
         menu.addAction(redo_action)
@@ -282,26 +282,26 @@ class SignalController:
         menu.addSeparator()
 
         cut_action = QAction("Cut", menu)
-        cut_action.setIcon(get_menu_icon("scissors"))
+        cut_action.setIcon(get_menu_icon("content_cut"))
         cut_action.triggered.connect(line_edit.cut)
         cut_action.setEnabled(line_edit.hasSelectedText())
         menu.addAction(cut_action)
 
         copy_action = QAction("Copy", menu)
-        copy_action.setIcon(get_menu_icon("copy"))
+        copy_action.setIcon(get_menu_icon("content_copy"))
         copy_action.triggered.connect(line_edit.copy)
         copy_action.setEnabled(line_edit.hasSelectedText())
         menu.addAction(copy_action)
 
         paste_action = QAction("Paste", menu)
-        paste_action.setIcon(get_menu_icon("clipboard"))
+        paste_action.setIcon(get_menu_icon("content_paste"))
         paste_action.triggered.connect(line_edit.paste)
         menu.addAction(paste_action)
 
         menu.addSeparator()
 
         select_all_action = QAction("Select All", menu)
-        select_all_action.setIcon(get_menu_icon("check-square"))
+        select_all_action.setIcon(get_menu_icon("check_box"))
         select_all_action.triggered.connect(line_edit.selectAll)
         select_all_action.setEnabled(bool(line_edit.text()))
         menu.addAction(select_all_action)

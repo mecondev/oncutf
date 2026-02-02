@@ -483,7 +483,7 @@ class BatchOperationsManager:
             op_type = op.data["operation_type"]
             if op_type in ["read", "stat", "exists"]:
                 read_ops.append(op)
-            elif op_type in ["write", "copy", "move"]:
+            elif op_type in ["write", "content_copy", "move"]:
                 write_ops.append(op)
 
         # Process read operations (can be parallelized)
@@ -547,7 +547,7 @@ class BatchOperationsManager:
                 if op_type == "write" and data:
                     with Path(file_path).open("wb") as f:
                         f.write(data)
-                elif op_type == "copy":
+                elif op_type == "content_copy":
                     import shutil
 
                     shutil.copy2(file_path, data)  # data = destination

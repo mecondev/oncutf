@@ -185,7 +185,7 @@ class PreExecutionValidator:
             ValidationIssue if hash changed, None otherwise
 
         """
-        if not hasattr(file_item, "hash") or not file_item.hash:
+        if not file_item.hash_value:
             # No cached hash available
             return None
 
@@ -196,12 +196,12 @@ class PreExecutionValidator:
             hash_manager = HashManager()
             current_hash = hash_manager.calculate_hash(str(file_path))
 
-            if current_hash and current_hash != file_item.hash:
+            if current_hash and current_hash != file_item.hash_value:
                 return ValidationIssue(
                     file=file_item,
                     issue_type=ValidationIssueType.MODIFIED,
                     message=f"File modified since preview: {file_item.name}",
-                    technical_details=f"Expected: {file_item.hash[:8]}..., Got: {current_hash[:8]}...",
+                    technical_details=f"Expected: {file_item.hash_value[:8]}..., Got: {current_hash[:8]}...",
                 )
 
         except Exception as e:

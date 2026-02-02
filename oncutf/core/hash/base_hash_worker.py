@@ -235,7 +235,7 @@ class BaseHashWorker(QThread, metaclass=QThreadABCMeta):
                     priority=10,
                 )
                 self._batch_operations.append(
-                    {"path": file_path, "hash": hash_value, "algorithm": algorithm}
+                    {"path": file_path, "tag": hash_value, "algorithm": algorithm}
                 )
             elif self._hash_manager:
                 # Fallback to direct storage

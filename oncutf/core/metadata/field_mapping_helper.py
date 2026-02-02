@@ -67,45 +67,45 @@ class MetadataFieldMappingHelper:
         "Rotation": {
             "image": "EXIF:Orientation",  # JPEG, TIFF use EXIF:Orientation
             "raw": "EXIF:Orientation",  # RAW files use EXIF:Orientation
-            "video": "Rotation",  # Video files use generic Rotation
+            "movie": "Rotation",  # Video files use generic Rotation
             "audio": None,  # Audio doesn't support rotation
         },
         # Descriptive metadata
         "Title": {
             "image": "EXIF:ImageDescription",  # Images use EXIF:ImageDescription
             "raw": "EXIF:ImageDescription",  # RAW files use EXIF:ImageDescription
-            "video": "XMP:Title",  # Videos prefer XMP:Title
+            "movie": "XMP:Title",  # Videos prefer XMP:Title
             "audio": "TIT2",  # Audio uses ID3 tags
         },
         "Artist": {
             "image": "EXIF:Artist",  # Images use EXIF:Artist
             "raw": "EXIF:Artist",  # RAW files use EXIF:Artist
-            "video": "XMP:Creator",  # Videos use XMP:Creator
+            "movie": "XMP:Creator",  # Videos use XMP:Creator
             "audio": "TPE1",  # Audio uses ID3 TPE1
         },
         "Description": {
             "image": "EXIF:ImageDescription",  # Images use EXIF:ImageDescription
             "raw": "EXIF:ImageDescription",  # RAW files use EXIF:ImageDescription
-            "video": "XMP:Description",  # Videos use XMP:Description
+            "movie": "XMP:Description",  # Videos use XMP:Description
             "audio": "COMM",  # Audio uses ID3 COMM
         },
         "Keywords": {
             "image": "IPTC:Keywords",  # Images use IPTC:Keywords
             "raw": "IPTC:Keywords",  # RAW files use IPTC:Keywords
-            "video": "XMP:Keywords",  # Videos use XMP:Keywords
+            "movie": "XMP:Keywords",  # Videos use XMP:Keywords
             "audio": None,  # Audio doesn't typically support keywords
         },
         "Copyright": {
             "image": "EXIF:Copyright",  # Images use EXIF:Copyright
             "raw": "EXIF:Copyright",  # RAW files use EXIF:Copyright
-            "video": "XMP:Rights",  # Videos use XMP:Rights
+            "movie": "XMP:Rights",  # Videos use XMP:Rights
             "audio": "TCOP",  # Audio uses ID3 TCOP
         },
         # Technical metadata (usually read-only, but some can be modified)
         "ISO": {
             "image": "EXIF:ISO",  # Images use EXIF:ISO
             "raw": "EXIF:ISO",  # RAW files use EXIF:ISO
-            "video": None,  # Videos don't typically have ISO
+            "movie": None,  # Videos don't typically have ISO
             "audio": None,  # Audio doesn't have ISO
         },
     }
@@ -127,7 +127,7 @@ class MetadataFieldMappingHelper:
                 "180": "Rotate 180",
                 "270": "Rotate 270 CW",
             },
-            "video": {
+            "movie": {
                 # Videos use numeric degrees directly
                 "0": "0",
                 "90": "90",
@@ -145,7 +145,7 @@ class MetadataFieldMappingHelper:
             file_path: Path to the file
 
         Returns:
-            File category: 'image', 'raw', 'video', 'audio', or 'unknown'
+            File category: 'image', 'raw', 'movie', 'audio', or 'unknown'
 
         """
         ext = Path(file_path).suffix.lower()
@@ -155,7 +155,7 @@ class MetadataFieldMappingHelper:
         if ext in cls.RAW_EXTENSIONS:
             return "raw"
         if ext in cls.VIDEO_EXTENSIONS:
-            return "video"
+            return "movie"
         if ext in cls.AUDIO_EXTENSIONS:
             return "audio"
         return "unknown"

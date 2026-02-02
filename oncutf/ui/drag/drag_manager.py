@@ -262,7 +262,7 @@ class DragManager(QObject):
         event_type = event.type()
 
         # Key events - only Escape terminates drag
-        if event_type == QEvent.KeyPress and hasattr(event, "key"):
+        if event_type == QEvent.KeyPress and hasattr(event, "tag"):
             key = event.key()
             if key == Qt.Key_Escape:
                 logger.debug(

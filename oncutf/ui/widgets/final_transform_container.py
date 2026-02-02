@@ -91,7 +91,7 @@ class FinalTransformContainer(QWidget):
         # Create buttons separately for each row
         # Add button
         self.add_button = QPushButton()
-        self.add_button.setIcon(get_menu_icon("plus"))
+        self.add_button.setIcon(get_menu_icon("add"))
         self.add_button.setFixedSize(30, 30)
         self.add_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.add_button.clicked.connect(self.add_module_requested.emit)
@@ -100,7 +100,7 @@ class FinalTransformContainer(QWidget):
 
         # Remove button
         self.remove_button = QPushButton()
-        self.remove_button.setIcon(get_menu_icon("minus"))
+        self.remove_button.setIcon(get_menu_icon("remove"))
         self.remove_button.setFixedSize(30, 30)
         self.remove_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
@@ -224,7 +224,7 @@ class FinalTransformContainer(QWidget):
             # Re-enable tooltip when button is enabled
             TooltipHelper.setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
             # Set normal icon
-            self.remove_button.setIcon(get_menu_icon("minus"))
+            self.remove_button.setIcon(get_menu_icon("remove"))
         else:
             # Clear tooltip when button is disabled
             TooltipHelper.clear_tooltips_for_widget(self.remove_button)
@@ -234,7 +234,7 @@ class FinalTransformContainer(QWidget):
             from PyQt5.QtGui import QPainter, QPixmap
 
             # Get the original icon
-            original_icon = get_menu_icon("minus")
+            original_icon = get_menu_icon("remove")
             original_pixmap = original_icon.pixmap(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"])
 
             # Create a new pixmap with reduced opacity
@@ -262,8 +262,8 @@ class GreeklishToggle(QLabel):
         """Initialize toggle with icons and default unchecked state."""
         super().__init__(parent)
         self._checked = False
-        self._icon_left = get_menu_icon("toggle-left")
-        self._icon_right = get_menu_icon("toggle-right")
+        self._icon_left = get_menu_icon("toggle_off")
+        self._icon_right = get_menu_icon("toggle_on")
         self.setCursor(Qt.PointingHandCursor)
         self.setFixedSize(28, 28)  # Slightly larger for padding
         self.setAlignment(Qt.AlignCenter)

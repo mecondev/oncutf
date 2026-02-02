@@ -41,7 +41,7 @@ logger = get_cached_logger(__name__)
 class DragType(Enum):
     """Types of items being dragged."""
 
-    FILE = "file"
+    FILE = "draft"
     FOLDER = "folder"
     MULTIPLE = "multiple"
 
@@ -226,21 +226,21 @@ class DragVisualManager:
         """Create cursor for current state."""
         # Choose base icon based on drag type
         if self._drag_type == DragType.FILE:
-            base_icon = "file"
+            base_icon = "draft"
         elif self._drag_type == DragType.FOLDER:
             base_icon = "folder"
         else:  # MULTIPLE
-            base_icon = "copy"
+            base_icon = "content_copy"
 
         # Check if dragging to metadata tree
         is_metadata_drop = self._drag_source is not None and self._drag_source == "file_table"
 
         # Choose action icons based on context
         if is_metadata_drop:
-            action_icons = ["x"] if self._drop_zone_state == DropZoneState.INVALID else ["info"]
+            action_icons = ["close"] if self._drop_zone_state == DropZoneState.INVALID else ["info"]
         # Normal file/folder drops
         elif self._drop_zone_state == DropZoneState.INVALID:
-            action_icons = ["x"]
+            action_icons = ["close"]
         elif self._drop_zone_state == DropZoneState.VALID:
             # For files, ignore recursive modifiers (no subdirectories)
             if self._drag_type == DragType.FILE:
@@ -249,22 +249,22 @@ class DragVisualManager:
                     ModifierState.CTRL_SHIFT,
                 ]:
                     action_icons = (
-                        ["plus", "layers"]
+                        ["add", "stacks"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else ["plus"]
+                        else ["add"]
                     )
                 else:
                     action_icons = []  # Replace + Shallow (no icon)
             else:
                 # For folders and multiple items
                 action_icons = (
-                    ["plus"]
+                    ["add"]
                     if self._modifier_state == ModifierState.SHIFT
                     else (
-                        ["layers"]
+                        ["stacks"]
                         if self._modifier_state == ModifierState.CTRL
                         else (
-                            ["plus", "layers"]
+                            ["add", "stacks"]
                             if self._modifier_state == ModifierState.CTRL_SHIFT
                             else []
                         )
@@ -272,19 +272,19 @@ class DragVisualManager:
                 )
         elif self._drag_type == DragType.FILE:
             action_icons = (
-                ["plus", "layers"]
+                ["add", "stacks"]
                 if self._modifier_state == ModifierState.CTRL_SHIFT
-                else (["plus"] if self._modifier_state == ModifierState.SHIFT else [])
+                else (["add"] if self._modifier_state == ModifierState.SHIFT else [])
             )
         else:
             action_icons = (
-                ["plus"]
+                ["add"]
                 if self._modifier_state == ModifierState.SHIFT
                 else (
-                    ["layers"]
+                    ["stacks"]
                     if self._modifier_state == ModifierState.CTRL
                     else (
-                        ["plus", "layers"]
+                        ["add", "stacks"]
                         if self._modifier_state == ModifierState.CTRL_SHIFT
                         else []
                     )
@@ -298,7 +298,7 @@ class DragVisualManager:
 
         Args:
             base_icon: Name of base icon (file/folder/copy)
-            action_icons: List of action icon names (e.g., ["plus", "layers"])
+            action_icons: List of action icon names (e.g., ["add", "stacks"])
 
         """
         # Calculate dimensions
@@ -371,7 +371,7 @@ class DragVisualManager:
                 icon_pixmap = icon.pixmap(icon_size, icon_size)
 
                 # Apply color overlays for visual feedback
-                if icon_name == "x":
+                if icon_name == "close":
                     # Red for invalid zones
                     colored_pixmap = QPixmap(icon_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
@@ -581,7 +581,7 @@ class DragVisualManager:
     def get_status_icon(self, state: DropZoneState) -> QIcon:
         """Get icon for drop zone state."""
         icon_map = {
-            DropZoneState.VALID: "check-circle",
+            DropZoneState.VALID: "check_circle",
             DropZoneState.INVALID: "x-circle",
             DropZoneState.NEUTRAL: "target",
         }
@@ -593,7 +593,7 @@ class DragVisualManager:
         """Get icon for modifier state."""
         icon_map = {
             ModifierState.NORMAL: "check",
-            ModifierState.SHIFT: "plus",
+            ModifierState.SHIFT: "add",
             ModifierState.CTRL: "arrow-down",
             ModifierState.CTRL_SHIFT: "plus-circle",
         }

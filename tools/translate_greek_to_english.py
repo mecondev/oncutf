@@ -535,7 +535,7 @@ def process_files(files: list[Path], translator: TranslationClient, dry_run: boo
     total_changes = 0
 
     # Process files with progress bar
-    for filepath in tqdm(files, desc="Processing files", unit="file"):
+    for filepath in tqdm(files, desc="Processing files", unit="draft"):
         files_scanned += 1
 
         # Process based on extension
@@ -628,7 +628,7 @@ def scan_repository(
     total_changes = 0
 
     # Process files with progress bar
-    for filepath in tqdm(files_to_process, desc="Processing files", unit="file"):
+    for filepath in tqdm(files_to_process, desc="Processing files", unit="draft"):
         files_scanned += 1
         relative_path = filepath.relative_to(root)
 

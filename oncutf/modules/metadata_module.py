@@ -193,7 +193,7 @@ class MetadataModule:
         category = data.get("category", "file_dates")
 
         # For hash category, check if field is a valid hash type
-        if category == "hash":
+        if category == "tag":
             return bool(field and field.startswith("hash_"))
 
         # For other categories, any field is effective

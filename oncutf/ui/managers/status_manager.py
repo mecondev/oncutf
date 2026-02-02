@@ -45,7 +45,7 @@ class StatusCategory(Enum):
     GENERAL = "general"
     FILE_OPERATIONS = "file_ops"
     METADATA = "metadata"
-    HASH = "hash"
+    HASH = "tag"
     RENAME = "rename"
     SELECTION = "selection"
     VALIDATION = "validation"
@@ -393,9 +393,9 @@ class StatusManager:
                 if final_message:
                     category_map = {
                         "metadata": StatusCategory.METADATA,
-                        "hash": StatusCategory.HASH,
+                        "tag": StatusCategory.HASH,
                         "rename": StatusCategory.RENAME,
-                        "file": StatusCategory.FILE_OPERATIONS,
+                        "draft": StatusCategory.FILE_OPERATIONS,
                     }
 
                     category = category_map.get(context["type"], StatusCategory.GENERAL)

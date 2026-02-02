@@ -42,7 +42,7 @@ class TestPreExecutionValidator:
     def file_item(self, temp_file):
         """Create a FileItem for testing."""
         item = FileItem.from_path(temp_file)
-        item.hash = "test_hash_123"
+        item.hash_value = "test_hash_123"
         return item
 
     # ... (skipping unchanged code)
@@ -86,7 +86,7 @@ class TestPreExecutionValidator:
         # Mock hash calculation to return matching hash
         with patch(
             "oncutf.core.hash.hash_manager.HashManager.calculate_hash",
-            return_value=file_item.hash,
+            return_value=file_item.hash_value,
         ):
             result = validator.validate([file_item])
 

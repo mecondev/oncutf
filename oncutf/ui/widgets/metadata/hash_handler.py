@@ -176,7 +176,7 @@ class HashHandler:
                 extra={"dev_only": True},
             )
             self._widget._hash_dialog_active = True
-            self.show_calculation_dialog(files_needing_hash, "hash")
+            self.show_calculation_dialog(files_needing_hash, "tag")
         else:
             logger.debug(
                 "[HashHandler] All files have hashes - no dialog needed",
@@ -215,7 +215,7 @@ class HashHandler:
 
         Args:
             files_needing_calculation: List of file paths needing calculation
-            calculation_type: Type of calculation ("hash" or "metadata")
+            calculation_type: Type of calculation ("tag" or "metadata")
 
         """
         try:
@@ -224,7 +224,7 @@ class HashHandler:
             # Create dialog message based on calculation type
             file_count = len(files_needing_calculation)
 
-            if calculation_type == "hash":
+            if calculation_type == "tag":
                 message = f"{file_count} out of {len(self._widget._get_selected_files())} selected files do not have hash.\n\nWould you like to calculate hash for all files now?\n\nThis will allow you to use hash values in your filename transformations."
                 title = "Hash Calculation Required"
                 yes_text = "Calculate Hash"
@@ -255,7 +255,7 @@ class HashHandler:
                     calculation_type,
                     extra={"dev_only": True},
                 )
-                if calculation_type == "hash":
+                if calculation_type == "tag":
                     self.calculate_hashes_for_files(files_needing_calculation)
                 else:
                     # Delegate to widget for metadata loading

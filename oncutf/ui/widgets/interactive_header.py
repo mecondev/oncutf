@@ -749,9 +749,9 @@ class InteractiveHeader(QHeaderView):
                 from oncutf.ui.helpers.icons_loader import get_menu_icon
 
                 sort_asc = QAction("Sort Ascending", self)
-                sort_asc.setIcon(get_menu_icon("chevron-down"))
+                sort_asc.setIcon(get_menu_icon("keyboard_arrow_down"))
                 sort_desc = QAction("Sort Descending", self)
-                sort_desc.setIcon(get_menu_icon("chevron-up"))
+                sort_desc.setIcon(get_menu_icon("keyboard_arrow_up"))
             except ImportError:
                 sort_asc = QAction("Sort Ascending", self)
                 sort_desc = QAction("Sort Descending", self)
@@ -814,10 +814,10 @@ class InteractiveHeader(QHeaderView):
             # Use toggle switch icons: toggle-left (off/locked), toggle-right (on/unlocked)
             if is_locked:
                 lock_action = QAction("Unlock Columns", menu)
-                lock_action.setIcon(get_menu_icon("toggle-left"))  # Off = Locked
+                lock_action.setIcon(get_menu_icon("toggle_off"))  # Off = Locked
             else:
                 lock_action = QAction("Lock Columns", menu)
-                lock_action.setIcon(get_menu_icon("toggle-right"))  # On = Unlocked
+                lock_action.setIcon(get_menu_icon("toggle_on"))  # On = Unlocked
 
             lock_action.triggered.connect(self._toggle_columns_lock)
             menu.addAction(lock_action)

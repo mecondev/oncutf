@@ -145,7 +145,7 @@ class MetadataTreeViewConfig:
                     or current_value != METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"]
                 )
             ):
-                self._runtime_widths["key"] = current_key
+                self._runtime_widths["tag"] = current_key
                 self._runtime_widths["value"] = current_value
 
         # Use batch updates to prevent flickering
@@ -240,7 +240,7 @@ class MetadataTreeViewConfig:
             # Clear invalid runtime widths (from Qt default initialization)
             # Only keep runtime widths if they represent a reasonable ratio (20-40% for key)
             if self._runtime_widths:
-                key_w = self._runtime_widths.get("key", 0)
+                key_w = self._runtime_widths.get("tag", 0)
                 value_w = self._runtime_widths.get("value", 0)
                 if key_w > 0 and value_w > 0:
                     ratio = key_w / (key_w + value_w)
@@ -257,7 +257,7 @@ class MetadataTreeViewConfig:
             # Get or calculate column widths using ratio-based system
             # Clear invalid runtime widths (from placeholder/Qt defaults)
             if self._runtime_widths:
-                key = self._runtime_widths.get("key", 0)
+                key = self._runtime_widths.get("tag", 0)
                 value = self._runtime_widths.get("value", 0)
                 total = key + value
                 if total > 0:
@@ -274,7 +274,7 @@ class MetadataTreeViewConfig:
             # Get or calculate column widths using ratio-based system
             if self._runtime_widths:
                 # Use runtime widths (preserved across file selection changes)
-                key_width = self._runtime_widths["key"]
+                key_width = self._runtime_widths["tag"]
                 value_width = self._runtime_widths["value"]
                 logger.info(
                     "[MetadataTree] Using runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
@@ -287,9 +287,9 @@ class MetadataTreeViewConfig:
                 # Check for saved widths in config/database
                 saved_widths = self._get_saved_column_widths()
                 if saved_widths:
-                    key_width = saved_widths["key"]
+                    key_width = saved_widths["tag"]
                     value_width = saved_widths["value"]
-                    self._runtime_widths["key"] = key_width
+                    self._runtime_widths["tag"] = key_width
                     self._runtime_widths["value"] = value_width
                     logger.info(
                         "[MetadataTree] Using saved widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
@@ -310,8 +310,14 @@ class MetadataTreeViewConfig:
                     config_manager = get_app_config_manager()
                     window_config = config_manager.get_category("window")
                     ratios = window_config.get(
-                        "metadata_tree_column_ratios", {"key": 0.30, "value": 0.70}
+                        "metadata_tree_column_ratios", {"tag": 0.30, "value": 0.70}
                     )
+
+                    # Ensure ratios has required keys (migration from old configs)
+                    if "tag" not in ratios:
+                        ratios["tag"] = 0.30
+                    if "value" not in ratios:
+                        ratios["value"] = 0.70
 
                     # Add extra pixels to force horizontal scrollbar when content is wide
                     # This makes total width exceed viewport, allowing scroll
@@ -320,16 +326,20 @@ class MetadataTreeViewConfig:
                     panel_width = viewport_width + extra_width_for_scrollbar
 
                     min_widths = {
-                        "key": METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"],
+                        "tag": METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"],
                         "value": METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"],
                     }
-                    max_widths = {"key": METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"]}
+                    max_widths = {"tag": METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"]}
 
                     calculated_widths = get_metadata_tree_widths_from_ratios(
                         panel_width, ratios, min_widths, max_widths
                     )
-                    key_width = calculated_widths["key"]
-                    value_width = calculated_widths["value"]
+                    key_width = calculated_widths.get(
+                        "tag", METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"]
+                    )
+                    value_width = calculated_widths.get(
+                        "value", METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"]
+                    )
 
                     # Log width calculations for debugging
                     actual_ratio_key = (
@@ -351,7 +361,7 @@ class MetadataTreeViewConfig:
                         value_width,
                         actual_ratio_value * 100,
                         key_width + value_width,
-                        ratios["key"] * 100,
+                        ratios["tag"] * 100,
                         ratios["value"] * 100,
                     )
 
@@ -436,7 +446,7 @@ class MetadataTreeViewConfig:
         view = self._tree_view
 
         # Update runtime widths (preserved across file selection changes)
-        column_key = "key" if logical_index == 0 else "value"
+        column_key = "tag" if logical_index == 0 else "value"
         self._runtime_widths[column_key] = new_size
 
         # Save to config (mark dirty for auto-save)

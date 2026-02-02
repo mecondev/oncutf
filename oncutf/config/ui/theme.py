@@ -225,6 +225,6 @@ METADATA_ICON_COLORS = {
     "loaded": "#51cf66",
     "modified": "#fffd9c",
     "partial": "#ffd139",
-    "hash": "#ce93d8",
+    "tag": "#ce93d8",
     "none": "#404040",
 }

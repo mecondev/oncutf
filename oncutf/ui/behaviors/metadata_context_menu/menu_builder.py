@@ -201,7 +201,7 @@ class MenuBuilder:
 
         # Reset action
         reset_action = QAction("Reset Value", menu)
-        reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        reset_action.setIcon(self._get_menu_icon("undo"))
         reset_action.triggered.connect(lambda: self._widget._edit_behavior.reset_value(key_path))
         reset_action.setEnabled(
             not has_multiple_selection and is_editable_field and has_modifications
@@ -229,7 +229,7 @@ class MenuBuilder:
             return
 
         set_zero_action = QAction("Set Rotation to 0", menu)
-        set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        set_zero_action.setIcon(self._get_menu_icon("undo"))
         set_zero_action.triggered.connect(
             lambda: self._widget._edit_behavior.set_rotation_to_zero(key_path)
         )
@@ -261,7 +261,7 @@ class MenuBuilder:
 
         """
         history_menu = QMenu("History", menu)
-        history_menu.setIcon(self._get_menu_icon("clock"))
+        history_menu.setIcon(self._get_menu_icon("schedule"))
 
         # Check if undo/redo are available and get descriptions
         try:
@@ -282,14 +282,14 @@ class MenuBuilder:
         # Undo action with operation description
         undo_text = f"Undo: {undo_desc}\tCtrl+Z" if undo_desc else "Undo\tCtrl+Z"
         undo_action = QAction(undo_text, history_menu)
-        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        undo_action.setIcon(self._get_menu_icon("undo"))
         undo_action.setEnabled(can_undo)
         undo_action.triggered.connect(self._widget._edit_behavior._undo_metadata_operation)
 
         # Redo action with operation description
         redo_text = f"Redo: {redo_desc}\tCtrl+Shift+Z" if redo_desc else "Redo\tCtrl+Shift+Z"
         redo_action = QAction(redo_text, history_menu)
-        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
+        redo_action.setIcon(self._get_menu_icon("redo"))
         redo_action.setEnabled(can_redo)
         redo_action.triggered.connect(self._widget._edit_behavior._redo_metadata_operation)
 
@@ -315,7 +315,7 @@ class MenuBuilder:
 
         """
         copy_action = QAction("Copy", menu)
-        copy_action.setIcon(self._get_menu_icon("copy"))
+        copy_action.setIcon(self._get_menu_icon("content_copy"))
         copy_action.triggered.connect(lambda: self._widget._edit_behavior.copy_value(value))
         copy_action.setEnabled(bool(value))
         menu.addAction(copy_action)

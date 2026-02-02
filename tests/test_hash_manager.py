@@ -274,7 +274,7 @@ class TestHashManager:
             # Just verify the method doesn't crash
         else:
             # Fallback mode
-            manager._hash_cache = {"test": "hash"}
+            manager._hash_cache = {"test": "tag"}
             manager.clear_cache()
             assert manager._hash_cache == {}
 

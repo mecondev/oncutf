@@ -60,7 +60,7 @@ class FileStatusHelpers:
 
         Args:
             files: List of files to check (None for all files)
-            check_type: 'metadata' or 'hash'
+            check_type: 'metadata' or 'tag'
             extended: For metadata checks, whether to check for extended metadata
             scope: 'selected' or 'all' (used when files is None)
 
@@ -94,7 +94,7 @@ class FileStatusHelpers:
                     has_status = self._file_has_metadata_type(
                         file_item, extended=False
                     ) or self._file_has_metadata_type(file_item, extended=True)
-            elif check_type == "hash":
+            elif check_type == "tag":
                 has_status = self._file_has_hash(file_item)
             else:
                 has_status = False
@@ -129,7 +129,7 @@ class FileStatusHelpers:
         self, files: list[FileItem] | None = None, scope: str = "selected"
     ) -> list[FileItem]:
         """Get list of files that don't have hash values."""
-        status = self.check_files_status(files=files, check_type="hash", scope=scope)
+        status = self.check_files_status(files=files, check_type="tag", scope=scope)
         result: list[FileItem] = status["files_without_status"]
         return result
 

@@ -272,7 +272,7 @@ class HashOperationsManager:
             # Show results after cursor is restored
             # Wrap flat dict into nested structure expected by results presenter
             wrapped_results: dict[str, dict[str, str]] = {
-                path: {"hash": hash_val} for path, hash_val in hash_results.items()
+                path: {"tag": hash_val} for path, hash_val in hash_results.items()
             }
             self._results_presenter.show_hash_results(wrapped_results)
 

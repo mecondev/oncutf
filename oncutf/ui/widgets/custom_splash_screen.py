@@ -131,7 +131,7 @@ class CustomSplashScreen(QSplashScreen):
                 geometry = window_config.get("geometry")
                 if geometry:
                     # Calculate center of the saved main window position
-                    main_window_center_x = geometry["x"] + geometry["width"] // 2
+                    main_window_center_x = geometry["close"] + geometry["width"] // 2
                     main_window_center_y = geometry["y"] + geometry["height"] // 2
 
                     # Find which screen contains the main window center point

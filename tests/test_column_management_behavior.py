@@ -116,7 +116,7 @@ def table_view():
 def mock_config():
     """Mock configuration."""
     return {
-        "columns": {
+        "view_column": {
             "path": {"width": 300, "visible": True},
             "size": {"width": 100, "visible": True},
             "type": {"width": 80, "visible": True},
@@ -497,7 +497,7 @@ class TestConfigurationSchema:
 
     def test_config_has_required_fields(self, mock_config):
         """Test config has all required fields."""
-        for col_config in mock_config["columns"].values():
+        for col_config in mock_config["view_column"].values():
             assert "width" in col_config
             assert "visible" in col_config
             assert isinstance(col_config["width"], int)
@@ -505,7 +505,7 @@ class TestConfigurationSchema:
 
     def test_config_width_is_positive(self, mock_config):
         """Test all configured widths are positive."""
-        for col_config in mock_config["columns"].values():
+        for col_config in mock_config["view_column"].values():
             assert col_config["width"] > 0
 
     def test_config_column_order_present(self, mock_config):
@@ -513,7 +513,7 @@ class TestConfigurationSchema:
         mock_config["column_order"] = ["path", "size", "type", "date"]
 
         assert "column_order" in mock_config
-        assert len(mock_config["column_order"]) == len(mock_config["columns"])
+        assert len(mock_config["column_order"]) == len(mock_config["view_column"])
 
 
 # ==========================================

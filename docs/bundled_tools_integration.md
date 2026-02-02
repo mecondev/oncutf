@@ -23,17 +23,15 @@ Documentation for bundled exiftool/ffmpeg integration with PyInstaller support.
 
 ### Tool Resolution Priority
 
-```
 1. Bundled binaries (bin/<platform>/)
    ↓ (if not found)
 2. System PATH
    ↓ (if not found)
 3. FileNotFoundError
-```
 
 ### File Structure
 
-```
+```tree
 oncutf/
 ├── bin/
 │   ├── linux/
@@ -69,6 +67,7 @@ oncutf/
 **File:** `oncutf/utils/shared/exiftool_wrapper.py`
 
 **Changes:**
+
 ```python
 def __init__(self) -> None:
     # OLD: Hardcoded "exiftool"
@@ -83,6 +82,7 @@ def __init__(self) -> None:
 ```
 
 **All subprocess calls updated:**
+
 - `_get_metadata_fast()` → uses `self._exiftool_path`
 - `_get_metadata_extended()` → uses `self._exiftool_path`
 - `get_metadata_batch()` → uses `self._exiftool_path`
@@ -93,6 +93,7 @@ def __init__(self) -> None:
 **File:** `oncutf/core/thumbnail/providers.py`
 
 **Changes:**
+
 ```python
 def __init__(self, max_size: int = 256, ffmpeg_path: str | None = None):
     # OLD: Hardcoded "ffmpeg"
@@ -195,6 +196,7 @@ a = Analysis(
 ```
 
 **At runtime:**
+
 - PyInstaller extracts binaries to `sys._MEIPASS/bin/linux/`
 - `AppPaths.get_bundled_tools_dir()` returns `_MEIPASS/bin`
 - `get_tool_path()` finds bundled binaries automatically
@@ -305,8 +307,8 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ### For Linux Installer
 
-- [ ] Download exiftool from https://exiftool.org/
-- [ ] Download ffmpeg from https://ffmpeg.org/download.html
+- [ ] Download exiftool from <https://exiftool.org/>
+- [ ] Download ffmpeg from <https://ffmpeg.org/download.html>
 - [ ] Copy to `bin/linux/`
 - [ ] Make executable: `chmod +x bin/linux/{exiftool,ffmpeg}`
 - [ ] Test: `python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.EXIFTOOL))"`
@@ -316,7 +318,7 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ### For Windows Installer
 
-- [ ] Download `exiftool.exe` from https://exiftool.org/
+- [ ] Download `exiftool.exe` from <https://exiftool.org/>
 - [ ] Download `ffmpeg.exe` static build
 - [ ] Copy to `bin/windows/`
 - [ ] Update `oncutf.spec` datas list
@@ -337,11 +339,13 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 ## License Compliance
 
 ### ExifTool
+
 - **License:** GPL / Artistic License
 - **Requirement:** Include `bin/LICENSE-exiftool.txt`
 - **Attribution:** Required in About dialog
 
 ### FFmpeg
+
 - **License:** LGPL / GPL (depends on build)
 - **Requirement:** Include `bin/LICENSE-ffmpeg.txt`
 - **Attribution:** Required in About dialog
@@ -363,6 +367,7 @@ def __init__(self, ffmpeg_path: str = "ffmpeg"):
 ```
 
 **Problems:**
+
 - Relied on system PATH
 - No bundled binary support
 - Failed on systems without exiftool/ffmpeg installed
@@ -384,6 +389,7 @@ def __init__(self, ffmpeg_path: str | None = None):
 ```
 
 **Benefits:**
+
 - ✅ Bundled binaries preferred
 - ✅ System PATH fallback
 - ✅ PyInstaller compatible

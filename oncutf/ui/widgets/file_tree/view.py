@@ -192,8 +192,8 @@ class FileTreeView(QTreeView):
             from oncutf.ui.helpers.icons_loader import get_menu_icon
 
             try:
-                _closed_icon = get_menu_icon("chevron-right")
-                _open_icon = get_menu_icon("chevron-down")
+                _closed_icon = get_menu_icon("keyboard_arrow_right")
+                _open_icon = get_menu_icon("keyboard_arrow_down")
             except Exception:
                 logger.debug(
                     "[FileTreeView] Custom branch icons not found, using Qt defaults",

@@ -152,7 +152,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Original Name action (always visible, enabled only if we have a current file)
         original_name_action = QAction("Original Name", menu)
-        original_name_action.setIcon(get_menu_icon("file"))
+        original_name_action.setIcon(get_menu_icon("draft"))
         original_name_action.triggered.connect(self._insert_original_name)
         original_name_action.setEnabled(self._current_file is not None)
         menu.addAction(original_name_action)
@@ -160,13 +160,13 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Standard editing actions
         undo_action = QAction("Undo", menu)
-        undo_action.setIcon(get_menu_icon("rotate-ccw"))
+        undo_action.setIcon(get_menu_icon("undo"))
         undo_action.triggered.connect(self.text_input.undo)
         undo_action.setEnabled(self.text_input.isUndoAvailable())
         menu.addAction(undo_action)
 
         redo_action = QAction("Redo", menu)
-        redo_action.setIcon(get_menu_icon("rotate-cw"))
+        redo_action.setIcon(get_menu_icon("redo"))
         redo_action.triggered.connect(self.text_input.redo)
         redo_action.setEnabled(self.text_input.isRedoAvailable())
         menu.addAction(redo_action)
@@ -174,26 +174,26 @@ class SpecifiedTextModule(BaseRenameModule):
         menu.addSeparator()
 
         cut_action = QAction("Cut", menu)
-        cut_action.setIcon(get_menu_icon("scissors"))
+        cut_action.setIcon(get_menu_icon("content_cut"))
         cut_action.triggered.connect(self.text_input.cut)
         cut_action.setEnabled(self.text_input.hasSelectedText())
         menu.addAction(cut_action)
 
         copy_action = QAction("Copy", menu)
-        copy_action.setIcon(get_menu_icon("copy"))
+        copy_action.setIcon(get_menu_icon("content_copy"))
         copy_action.triggered.connect(self.text_input.copy)
         copy_action.setEnabled(self.text_input.hasSelectedText())
         menu.addAction(copy_action)
 
         paste_action = QAction("Paste", menu)
-        paste_action.setIcon(get_menu_icon("clipboard"))  # Using clipboard as paste icon
+        paste_action.setIcon(get_menu_icon("content_paste"))  # Using clipboard as paste icon
         paste_action.triggered.connect(self.text_input.paste)
         menu.addAction(paste_action)
 
         menu.addSeparator()
 
         select_all_action = QAction("Select All", menu)
-        select_all_action.setIcon(get_menu_icon("check-square"))
+        select_all_action.setIcon(get_menu_icon("check_box"))
         select_all_action.triggered.connect(self.text_input.selectAll)
         select_all_action.setEnabled(bool(self.text_input.text()))
         menu.addAction(select_all_action)

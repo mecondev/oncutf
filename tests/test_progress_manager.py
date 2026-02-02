@@ -32,7 +32,7 @@ class TestProgressManager:
         """Test creating a hash progress manager."""
         manager = create_hash_progress_manager()
 
-        assert manager.operation_type == "hash"
+        assert manager.operation_type == "tag"
         assert manager.progress_widget is not None
         assert manager.progress_widget.progress_mode == "size"
         assert manager.progress_widget.show_size_info is True

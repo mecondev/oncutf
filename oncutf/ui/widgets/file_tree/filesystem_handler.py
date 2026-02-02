@@ -330,7 +330,7 @@ class FilesystemHandler:
         name_filters = (
             old_source_model.nameFilters() if hasattr(old_source_model, "nameFilters") else []
         )
-        file_filter = old_source_model.filter() if hasattr(old_source_model, "filter") else None
+        file_filter = old_source_model.filter() if hasattr(old_source_model, "filter_alt") else None
 
         try:
             # Set refresh flag to prevent recursive calls

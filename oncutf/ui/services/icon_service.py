@@ -14,7 +14,7 @@ Usage:
     icons = load_preview_status_icons()
 
     # In context menus
-    icon = get_menu_icon("file")
+    icon = get_menu_icon("draft")
 """
 
 from typing import TYPE_CHECKING
@@ -79,7 +79,7 @@ def create_colored_icon(
 
     Args:
         fill_color: Fill color in hex (e.g. "#ff0000").
-        shape: "circle" or "square". Default is "circle".
+        shape: "circle" or "check_box_outline_blank". Default is "circle".
         size_x: Width of the shape. Default is 10.
         size_y: Height of the shape. Default is 10.
         border_color: Optional border color in hex (e.g. "#ffffff").

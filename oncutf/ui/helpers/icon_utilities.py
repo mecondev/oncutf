@@ -34,7 +34,7 @@ def create_colored_icon(
 
     Args:
         fill_color (str): Fill color in hex (e.g. "#ff0000").
-        shape (str): "circle" or "square". Default is "circle".
+        shape (str): "circle" or "check_box_outline_blank". Default is "circle".
         size_x (int): Width of the shape. Default is 10.
         size_y (int): Height of the shape. Default is 10.
         border_color (str): Optional border color in hex (e.g. "#ffffff").
@@ -59,7 +59,7 @@ def create_colored_icon(
 
     painter.setBrush(QColor(fill_color))
 
-    if shape == "square":
+    if shape == "check_box_outline_blank":
         painter.drawRect(0, 0, size_x, size_y)
     else:
         painter.drawEllipse(0, 0, size_x, size_y)

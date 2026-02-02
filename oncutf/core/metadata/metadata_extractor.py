@@ -35,7 +35,7 @@ class ExtractionResult:
     """Result of metadata extraction operation."""
 
     value: str
-    source: str  # 'filesystem', 'exif', 'hash', 'fallback'
+    source: str  # 'filesystem', 'exif', 'tag', 'fallback'
     raw_value: Any = None
     field: str = ""
     category: str = ""
@@ -120,7 +120,7 @@ class MetadataExtractor:
         Args:
             file_path: Path to the file
             field: Field to extract (e.g., 'last_modified_iso', 'hash_crc32')
-            category: Category of extraction ('file_dates', 'hash', 'metadata_keys')
+            category: Category of extraction ('file_dates', 'tag', 'metadata_keys')
             metadata: Pre-loaded metadata dict (optional)
 
         Returns:
@@ -165,7 +165,7 @@ class MetadataExtractor:
 
         if category == "file_dates":
             result = self._extract_filesystem_date(file_path, field)
-        elif category == "hash":
+        elif category == "tag":
             result = self._extract_hash(file_path, field)
         elif category == "metadata_keys":
             result = self._extract_metadata_field(file_path, field, metadata or {})
@@ -227,7 +227,7 @@ class MetadataExtractor:
         Requires hash_service to be available (via injection or ServiceRegistry).
         """
         if not field.startswith("hash_"):
-            return ExtractionResult(value="invalid", source="error", field=field, category="hash")
+            return ExtractionResult(value="invalid", source="error", field=field, category="tag")
 
         if self._hash_service is None:
             logger.warning("No hash_service available for hash extraction")
@@ -236,7 +236,7 @@ class MetadataExtractor:
                 source="fallback",
                 raw_value=None,
                 field=field,
-                category="hash",
+                category="tag",
             )
 
         try:
@@ -246,10 +246,10 @@ class MetadataExtractor:
             if hash_value:
                 return ExtractionResult(
                     value=hash_value,
-                    source="hash",
+                    source="tag",
                     raw_value=hash_value,
                     field=field,
-                    category="hash",
+                    category="tag",
                 )
 
             # Fallback to filename if hash computation failed
@@ -258,7 +258,7 @@ class MetadataExtractor:
                 source="fallback",
                 raw_value=None,
                 field=field,
-                category="hash",
+                category="tag",
             )
 
         except Exception as e:
@@ -268,7 +268,7 @@ class MetadataExtractor:
                 source="fallback",
                 raw_value=None,
                 field=field,
-                category="hash",
+                category="tag",
             )
 
     def _extract_metadata_field(
@@ -436,7 +436,7 @@ class MetadataExtractor:
         """Get list of available fields for a category.
 
         Args:
-            category: Category ('file_dates', 'hash', 'metadata_keys')
+            category: Category ('file_dates', 'tag', 'metadata_keys')
 
         Returns:
             List of field names
@@ -454,7 +454,7 @@ class MetadataExtractor:
                 "last_modified_eu_time",
                 "last_modified_compact",
             ],
-            "hash": ["hash_crc32"],
+            "tag": ["hash_crc32"],
             "metadata_keys": [
                 "creation_date",
                 "date",

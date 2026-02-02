@@ -273,7 +273,7 @@ class MetadataHistoryDialog(QDialog):
                 {
                     "timestamp": cmd["timestamp"],
                     "operation": cmd["description"],
-                    "file": self._get_file_basename(cmd["file_path"]),
+                    "draft": self._get_file_basename(cmd["file_path"]),
                     "status": (
                         "Can Undo" if cmd["can_undo"] else "Can Redo" if cmd["can_redo"] else "Done"
                     ),
@@ -288,7 +288,7 @@ class MetadataHistoryDialog(QDialog):
                 {
                     "timestamp": op["timestamp"],
                     "operation": op["display_text"],
-                    "file": f"{op['file_count']} files",
+                    "draft": f"{op['file_count']} files",
                     "status": "Rename Operation",
                     "type": "rename",
                     "data": op,
@@ -322,7 +322,7 @@ class MetadataHistoryDialog(QDialog):
                 self.operations_table.setItem(row, 1, op_item)
 
                 # File
-                file_item = QTableWidgetItem(operation["file"])
+                file_item = QTableWidgetItem(operation["draft"])
                 self.operations_table.setItem(row, 2, file_item)
 
                 # Status

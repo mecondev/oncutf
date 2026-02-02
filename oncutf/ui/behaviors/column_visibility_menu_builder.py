@@ -84,7 +84,7 @@ class ColumnVisibilityMenuBuilder:
 
             # Create submenu
             columns_menu = QMenu("Show Columns", parent_menu)
-            columns_menu.setIcon(get_menu_icon("columns"))
+            columns_menu.setIcon(get_menu_icon("view_column"))
 
             # Get current visible columns
             visible_columns_list = (
@@ -187,9 +187,9 @@ class ColumnVisibilityMenuBuilder:
 
                 # Set icon based on visibility
                 if is_visible:
-                    action.setIcon(get_menu_icon("toggle-right"))
+                    action.setIcon(get_menu_icon("toggle_on"))
                 else:
-                    action.setIcon(get_menu_icon("toggle-left"))
+                    action.setIcon(get_menu_icon("toggle_off"))
 
                 # Connect toggle action
                 action.triggered.connect(

@@ -123,7 +123,7 @@ class MetadataTreeService:
         key_lower = key.lower()
 
         # File-related metadata
-        if key_lower.startswith("file") or key_lower in {
+        if key_lower.startswith("draft") or key_lower in {
             "rotation",
             "directory",
             "sourcefile",
@@ -199,7 +199,7 @@ class MetadataTreeService:
         if any(
             term in key_lower
             for term in [
-                "video",
+                "movie",
                 "frame",
                 "codec",
                 "bitrate",

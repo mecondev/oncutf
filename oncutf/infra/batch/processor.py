@@ -221,7 +221,7 @@ class BatchProcessorFactory:
         return BatchProcessor(**kwargs_any)
 
     @staticmethod
-    def get_optimal_config(item_count: int, _item_type: str = "file") -> dict[str, Any]:
+    def get_optimal_config(item_count: int, _item_type: str = "draft") -> dict[str, Any]:
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}

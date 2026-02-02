@@ -61,7 +61,7 @@ class CategoryManager:
                 self.widget._styling_handler.apply_normal_combo_styling()
 
             # Check calculation requirements
-            if current_data in ["hash", "metadata_keys"]:
+            if current_data in ["tag", "metadata_keys"]:
                 self._check_calculation_requirements(current_data)
 
             # Force UI update
@@ -81,7 +81,7 @@ class CategoryManager:
 
         if category == "file_dates":
             self.populate_file_dates()
-        elif category == "hash":
+        elif category == "tag":
             success = self.widget._hash_handler.populate_hash_options()
             if not success:
                 # If hash population fails, try again with schedule
@@ -146,7 +146,7 @@ class CategoryManager:
             self.widget.category_model.appendRow(item1)
 
             item2 = QStandardItem("Hash")
-            item2.setData("hash", Qt.UserRole)
+            item2.setData("tag", Qt.UserRole)
             self.widget.category_model.appendRow(item2)
 
             item3 = QStandardItem("EXIF/Metadata")
@@ -174,7 +174,7 @@ class CategoryManager:
             self.widget._styling_handler.apply_category_styling()
 
             # If current category is hash and is disabled, apply disabled styling
-            if self.widget.category_combo.currentData() == "hash":
+            if self.widget.category_combo.currentData() == "tag":
                 self.widget.options_combo.clear()
                 self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                 self.widget.options_combo.setEnabled(False)
@@ -198,7 +198,7 @@ class CategoryManager:
                 hash_item.setForeground(QColor(theme.get_color("text_muted")))
 
                 # If current category is hash and is disabled, apply disabled styling
-                if self.widget.category_combo.currentData() == "hash":
+                if self.widget.category_combo.currentData() == "tag":
                     self.widget.options_combo.clear()
                     self.widget.options_combo.populate_from_metadata_groups(HASH_OPTIONS_DATA)
                     self.widget.options_combo.setEnabled(False)
@@ -253,7 +253,7 @@ class CategoryManager:
                 )
                 return
 
-            if category == "hash":
+            if category == "tag":
                 self.widget._hash_handler.check_hash_calculation_requirements(selected_files)
             elif category == "metadata_keys":
                 self._check_metadata_calculation_requirements(selected_files)

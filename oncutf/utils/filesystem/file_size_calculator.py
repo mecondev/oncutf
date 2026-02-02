@@ -162,7 +162,7 @@ def estimate_operation_time(
     Args:
         file_count: Number of files
         total_size: Total size in bytes
-        operation_type: Type of operation ("metadata", "hash", "rename", etc.)
+        operation_type: Type of operation ("metadata", "tag", "rename", etc.)
 
     Returns:
         Estimated time in seconds
@@ -175,7 +175,7 @@ def estimate_operation_time(
             "files_per_sec": 3,
             "bytes_per_sec": 20 * 1024 * 1024,
         },  # 20MB/s
-        "hash": {"files_per_sec": 5, "bytes_per_sec": 100 * 1024 * 1024},  # 100MB/s
+        "tag": {"files_per_sec": 5, "bytes_per_sec": 100 * 1024 * 1024},  # 100MB/s
         "rename": {"files_per_sec": 50, "bytes_per_sec": 500 * 1024 * 1024},  # 500MB/s
         "file_loading": {
             "files_per_sec": 100,

@@ -152,10 +152,10 @@ class TestMetadataTreeViewLogic:
 
         # Mock the tree item creation without GUI
         def create_tree_item(key, value):
-            return {"key": key, "value": str(value), "type": type(value).__name__}
+            return {"tag": key, "value": str(value), "type": type(value).__name__}
 
         text_item = create_tree_item("Camera Make", "Canon")
-        assert text_item["key"] == "Camera Make"
+        assert text_item["tag"] == "Camera Make"
         assert text_item["value"] == "Canon"
         assert text_item["type"] == "str"
 

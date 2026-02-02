@@ -17,6 +17,7 @@
 ## Executive Summary (2026-01-25)
 
 ### Production Readiness Status
+
 - ✅ **Clean Architecture:** Zero boundary violations (54 → 0)
 - ✅ **Type Safety:** Pragmatic strict mode (strictness 8.8/10)
 - ✅ **Code Quality:** Zero ruff violations (2062 → 0)
@@ -29,7 +30,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                      UI Layer (PyQt5)                       │
 ├─────────────────────────────────────────────────────────────┤
-│  Main Window > Widgets > Behaviors > Handlers              │
+│  Main Window > Widgets > Behaviors > Handlers               │
 │  ├── FileTableView (976 LOC)                                │
 │  ├── MetadataTreeView (1768 LOC)                            │
 │  ├── RenameModulesArea                                      │
@@ -51,7 +52,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │              App Services (Facades)                         │
 ├─────────────────────────────────────────────────────────────┤
-│  TIER 1 — PRAGMATIC STRICT TYPING (10 strict flags)        │
+│  TIER 1 — PRAGMATIC STRICT TYPING (10 strict flags)         │
 │  ├── user_interaction   (dialogs, questions)                │
 │  ├── cursor             (wait cursor)                       │
 │  ├── progress           (progress dialogs)                  │
@@ -67,7 +68,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │          Business Logic (Core + Domain)                     │
 ├─────────────────────────────────────────────────────────────┤
-│  TIER 2 — STRICT TYPING (disallow_untyped_defs)            │
+│  TIER 2 — STRICT TYPING (disallow_untyped_defs)             │
 │  ├── UnifiedRenameEngine        (rename orchestration)      │
 │  ├── UnifiedMetadataManager     (metadata loading)          │
 │  ├── Domain Models              (FileRecord, MetadataRecord)│
@@ -79,7 +80,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │           Infrastructure (Persistence)                      │
 ├─────────────────────────────────────────────────────────────┤
-│  TIER 1 — PRAGMATIC STRICT TYPING                          │
+│  TIER 1 — PRAGMATIC STRICT TYPING                           │
 │  ├── external/                  (ExifTool, FFmpeg clients)  │
 │  ├── cache/                     (metadata, hash, thumbnail) │
 │  ├── db/                        (file repository, database) │

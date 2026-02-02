@@ -173,7 +173,7 @@ class TestSaveCancellation:
         assert manager._save_cancelled is True
 
         # Now test with actual changes to reach reset point
-        mock_staging.get_all_staged_changes.return_value = {"/path/to/file.jpg": {"key": "value"}}
+        mock_staging.get_all_staged_changes.return_value = {"/path/to/file.jpg": {"tag": "value"}}
         manager.parent_window.file_model = MagicMock()
         manager.parent_window.file_model.files = []
 
@@ -207,7 +207,7 @@ class TestSaveCancellation:
         # Mock staging manager
         mock_staging = MagicMock()
         mock_staging.get_all_staged_changes.return_value = {
-            f"/path/to/file{i}.jpg": {"key": "value"} for i in range(5)
+            f"/path/to/file{i}.jpg": {"tag": "value"} for i in range(5)
         }
         manager.parent_window.context.get_manager.return_value = mock_staging
 

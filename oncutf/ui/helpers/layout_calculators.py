@@ -116,7 +116,7 @@ def get_metadata_tree_widths_from_ratios(
 
     Args:
         panel_width: Total panel width in pixels
-        ratios: Dictionary with 'key' and 'value' ratios
+        ratios: Dictionary with 'tag' and 'value' ratios
         min_widths: Minimum widths for each column
         max_widths: Maximum widths for each column (optional)
 

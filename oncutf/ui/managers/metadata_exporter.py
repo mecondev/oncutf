@@ -159,7 +159,7 @@ class MetadataExporter:
                         "scope": "individual",
                         "format": "json",
                     },
-                    "file": file_data,
+                    "draft": file_data,
                 }
 
                 # Generate filename based on source file

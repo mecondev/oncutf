@@ -374,9 +374,9 @@ def initialize_default_metadata_schema(
 
         # Video Information
         cat_id = create_metadata_category(
-            "video", "Video Properties", "Video-specific metadata and properties", 3
+            "movie", "Video Properties", "Video-specific metadata and properties", 3
         )
-        category_mapping["video"] = cat_id
+        category_mapping["movie"] = cat_id
 
         # Audio Information
         cat_id = create_metadata_category(
@@ -460,7 +460,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:Rotation",
                 "Rotation (Video)",
-                "video",
+                "movie",
                 "text",
                 True,
                 True,
@@ -511,7 +511,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:ImageWidth",
                 "Video Width",
-                "video",
+                "movie",
                 "number",
                 False,
                 True,
@@ -521,7 +521,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:ImageHeight",
                 "Video Height",
-                "video",
+                "movie",
                 "number",
                 False,
                 True,
@@ -531,7 +531,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:Duration",
                 "Duration",
-                "video",
+                "movie",
                 "duration",
                 False,
                 True,
@@ -541,7 +541,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:VideoFrameRate",
                 "Frame Rate",
-                "video",
+                "movie",
                 "number",
                 False,
                 True,
@@ -551,7 +551,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:VideoCodec",
                 "Video Codec",
-                "video",
+                "movie",
                 "text",
                 False,
                 True,
@@ -561,7 +561,7 @@ def initialize_default_metadata_schema(
             (
                 "QuickTime:AvgBitrate",
                 "Average Bitrate",
-                "video",
+                "movie",
                 "number",
                 False,
                 True,

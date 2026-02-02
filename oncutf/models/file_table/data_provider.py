@@ -268,7 +268,7 @@ class DataProvider:
                         metadata_status = "loaded"
 
             # Determine hash status
-            hash_status = "hash" if self.icon_manager.has_hash_cached(file.full_path) else "none"
+            hash_status = "tag" if self.icon_manager.has_hash_cached(file.full_path) else "none"
 
             # Create and return combined icon
             return self.icon_manager.create_combined_icon(metadata_status, hash_status)

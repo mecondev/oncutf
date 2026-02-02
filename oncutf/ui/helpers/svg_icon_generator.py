@@ -36,11 +36,11 @@ class SVGIconGenerator:
     ICON_MAPPINGS: ClassVar[dict[str, str]] = {
         "basic": "info",
         "extended": "info",
-        "invalid": "alert-circle",
-        "loaded": "check-circle",
-        "modified": "edit-2",
-        "partial": "alert-triangle",
-        "hash": "key",
+        "invalid": "error",
+        "loaded": "check_circle",
+        "modified": "edit_note",
+        "partial": "warning",
+        "tag": "tag",
         "none": "circle",  # Empty circle for no metadata
     }
 
@@ -56,22 +56,49 @@ class SVGIconGenerator:
         self.feather_dir = self.icons_dir / "feather_icons"
 
     def _load_svg_content(self, icon_name: str) -> str | None:
-        """Load SVG content from feather icons directory.
+        """Load SVG content from Material Design or feather icons directory.
+
+        Search order:
+        1. Categorized Material Design folders (metadata, utilities, etc.)
+        2. Legacy feather_icons folder
 
         Args:
-            icon_name: Name of the feather icon (without .svg extension)
+            icon_name: Name of the icon (without .svg extension)
 
         Returns:
             SVG content as string, or None if not found
 
         """
-        svg_path = self.feather_dir / f"{icon_name}.svg"
+        # Search in categorized Material Design folders first
+        categorized_folders = [
+            "metadata",
+            "preview",
+            "utilities",
+            "editing",
+            "navigation",
+            "files",
+            "filetypes",
+            "selection",
+            "toggles",
+        ]
 
+        for folder in categorized_folders:
+            svg_path = self.icons_dir / folder / f"{icon_name}.svg"
+            if svg_path.exists():
+                try:
+                    with svg_path.open(encoding="utf-8") as f:
+                        return f.read()
+                except Exception:
+                    logger.exception("[SVGIconGenerator] Error reading SVG from %s", svg_path)
+                    continue
+
+        # Fallback to feather_icons folder
+        svg_path = self.feather_dir / f"{icon_name}.svg"
         try:
             with svg_path.open(encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
-            logger.exception("[SVGIconGenerator] Feather icon not found: %s", svg_path)
+            logger.warning("[SVGIconGenerator] Icon not found: %s", icon_name)
             return None
         except Exception:
             logger.exception("[SVGIconGenerator] Error reading SVG")
@@ -79,6 +106,9 @@ class SVGIconGenerator:
 
     def _colorize_svg(self, svg_content: str, color: str) -> str:
         """Replace colors in SVG content with the specified color.
+
+        Handles both Feather icons (stroke-based) and Material Design icons (fill-based).
+        Material Design icons are detected by the absence of 'fill="none"' in the SVG.
 
         Args:
             svg_content: Original SVG content
@@ -88,23 +118,41 @@ class SVGIconGenerator:
             Modified SVG content with new color
 
         """
-        # Replace various stroke color formats used in feather icons
-        svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
-        svg_content = svg_content.replace("stroke='currentColor'", f"stroke='{color}'")
-        svg_content = svg_content.replace(
-            'stroke="#d6d6d6"', f'stroke="{color}"'
-        )  # Feather default
-        svg_content = svg_content.replace('stroke="#000"', f'stroke="{color}"')
-        svg_content = svg_content.replace('stroke="#000000"', f'stroke="{color}"')
-        svg_content = svg_content.replace('stroke="black"', f'stroke="{color}"')
+        import re
 
-        # Handle fill colors for some icons
-        svg_content = svg_content.replace('fill="currentColor"', f'fill="{color}"')
-        svg_content = svg_content.replace("fill='currentColor'", f"fill='{color}'")
+        # Detect icon type: Feather icons have fill="none" for stroke-only rendering
+        is_feather = 'fill="none"' in svg_content
 
-        # If no stroke attribute exists, add it to the main SVG element
-        if "stroke=" not in svg_content:
-            svg_content = svg_content.replace("<svg", f'<svg stroke="{color}"')
+        if is_feather:
+            # Feather icons: stroke-based
+            svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
+            svg_content = svg_content.replace("stroke='currentColor'", f"stroke='{color}'")
+            svg_content = svg_content.replace('stroke="#d6d6d6"', f'stroke="{color}"')
+            svg_content = svg_content.replace('stroke="#000"', f'stroke="{color}"')
+            svg_content = svg_content.replace('stroke="#000000"', f'stroke="{color}"')
+            svg_content = svg_content.replace('stroke="black"', f'stroke="{color}"')
+
+            # Some feather icons use fill too
+            svg_content = svg_content.replace('fill="currentColor"', f'fill="{color}"')
+            svg_content = svg_content.replace("fill='currentColor'", f"fill='{color}'")
+
+            # Add stroke to SVG element if missing
+            if "stroke=" not in svg_content:
+                svg_content = svg_content.replace("<svg", f'<svg stroke="{color}"')
+        else:
+            # Material Design icons: fill-based (no stroke)
+            # Replace existing fill colors
+            svg_content = svg_content.replace('fill="currentColor"', f'fill="{color}"')
+            svg_content = svg_content.replace("fill='currentColor'", f"fill='{color}'")
+            svg_content = svg_content.replace('fill="#000"', f'fill="{color}"')
+            svg_content = svg_content.replace('fill="#000000"', f'fill="{color}"')
+            svg_content = svg_content.replace('fill="black"', f'fill="{color}"')
+
+            # SAFER APPROACH: Add fill to SVG root if paths don't have fill
+            # Avoid modifying individual path elements which can corrupt the SVG
+            if "<path" in svg_content and not re.search(r"<svg[^>]*\sfill=", svg_content):
+                # Add fill to <svg> element - this applies to all children
+                svg_content = re.sub(r"<svg\s+", f'<svg fill="{color}" ', svg_content, count=1)
 
         return svg_content
 
@@ -262,4 +310,4 @@ def generate_hash_icon(size: int = 16) -> QPixmap:
 
     """
     generator = SVGIconGenerator(size)
-    return generator.generate_icon("hash", size)
+    return generator.generate_icon("tag", size)

@@ -119,7 +119,7 @@ class IconManager:
 
         Args:
             metadata_status: Status of metadata ('loaded', 'extended', 'modified', 'invalid', 'none')
-            hash_status: Status of hash ('hash' for available, 'none' for not available)
+            hash_status: Status of hash ('tag' for available, 'none' for not available)
 
         Returns:
             QIcon: Combined icon with metadata and hash status

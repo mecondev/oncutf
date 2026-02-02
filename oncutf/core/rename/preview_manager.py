@@ -240,7 +240,7 @@ class UnifiedPreviewManager:
         for module_data in modules_data:
             if module_data.get("type") == "metadata":
                 category = module_data.get("category")
-                if category == "hash":
+                if category == "tag":
                     # Check if file has hash
                     if not hash_availability.get(file.full_path, False):
                         return "missing_hash"

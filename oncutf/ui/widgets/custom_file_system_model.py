@@ -33,9 +33,9 @@ class CustomFileSystemModel(QFileSystemModel):
     - Professional cross-platform appearance
     """
 
-    # File type to icon mapping
+    # File type to icon mapping (Material Design icons)
     FILE_TYPE_ICONS: ClassVar[dict[str, str]] = {
-        # Images
+        # Images (Material Design: image.svg)
         "jpg": "image",
         "jpeg": "image",
         "png": "image",
@@ -50,44 +50,55 @@ class CustomFileSystemModel(QFileSystemModel):
         "cr2": "image",
         "nef": "image",
         "dng": "image",
-        # Videos
-        "mp4": "video",
-        "avi": "video",
-        "mov": "video",
-        "mkv": "video",
-        "wmv": "video",
-        "flv": "video",
-        "webm": "video",
-        "m4v": "video",
-        "3gp": "video",
-        "mpg": "video",
-        "mpeg": "video",
-        # Audio
-        "mp3": "music",
-        "wav": "music",
-        "flac": "music",
-        "aac": "music",
-        "ogg": "music",
-        "wma": "music",
-        "m4a": "music",
-        "opus": "music",
-        # Text/Documents
-        "txt": "file-text",
-        "md": "file-text",
-        "rtf": "file-text",
-        "doc": "file-text",
-        "docx": "file-text",
-        "pdf": "file-text",
-        "odt": "file-text",
-        # Archives
-        "zip": "archive",
-        "rar": "archive",
-        "7z": "archive",
-        "tar": "archive",
-        "gz": "archive",
-        "bz2": "archive",
-        "xz": "archive",
-        # Code files
+        "arw": "image",
+        "orf": "image",
+        "rw2": "image",
+        # Videos (Material Design: movie.svg)
+        "mp4": "movie",
+        "avi": "movie",
+        "mov": "movie",
+        "mkv": "movie",
+        "mts": "movie",
+        "wmv": "movie",
+        "flv": "movie",
+        "webm": "movie",
+        "m4v": "movie",
+        "3gp": "movie",
+        "mpg": "movie",
+        "mpeg": "movie",
+        # Audio (Material Design: audio_file.svg)
+        "mp3": "audio_file",
+        "wav": "audio_file",
+        "flac": "audio_file",
+        "aac": "audio_file",
+        "ogg": "audio_file",
+        "wma": "audio_file",
+        "m4a": "audio_file",
+        "opus": "audio_file",
+        "alac": "audio_file",
+        # Text/Documents (Material Design: description.svg)
+        "txt": "description",
+        "md": "description",
+        "rtf": "description",
+        "doc": "description",
+        "docx": "description",
+        "pdf": "description",
+        "odt": "description",
+        "xls": "description",
+        "xlsx": "description",
+        "ppt": "description",
+        "pptx": "description",
+        "csv": "description",
+        # Archives (Material Design: folder_zip.svg)
+        "zip": "folder_zip",
+        "rar": "folder_zip",
+        "7z": "folder_zip",
+        "tar": "folder_zip",
+        "gz": "folder_zip",
+        "bz2": "folder_zip",
+        "xz": "folder_zip",
+        "tgz": "folder_zip",
+        # Code files (Material Design: code.svg)
         "py": "code",
         "js": "code",
         "html": "code",
@@ -121,12 +132,12 @@ class CustomFileSystemModel(QFileSystemModel):
         """Preload commonly used icons into cache for better performance."""
         common_icons = [
             "folder",
-            "file",
+            "draft",
             "image",
-            "video",
-            "music",
-            "file-text",
-            "archive",
+            "movie",
+            "audio_file",
+            "description",
+            "folder_zip",
             "code",
         ]
 
@@ -160,7 +171,7 @@ class CustomFileSystemModel(QFileSystemModel):
                     self._icon_cache[icon_name] = icon
                 else:
                     # Fallback to default file icon
-                    icon = self._icon_cache.get("file", QIcon())
+                    icon = self._icon_cache.get("draft", QIcon())
                     self._icon_cache[icon_name] = icon
             except Exception:
                 logger.exception(
@@ -168,7 +179,7 @@ class CustomFileSystemModel(QFileSystemModel):
                     icon_name,
                 )
                 # Fallback to default file icon
-                icon = self._icon_cache.get("file", QIcon())
+                icon = self._icon_cache.get("draft", QIcon())
                 self._icon_cache[icon_name] = icon
 
         return self._icon_cache[icon_name]
@@ -185,10 +196,10 @@ class CustomFileSystemModel(QFileSystemModel):
 
         # Check if extension is in our allowed list
         if ext not in ALLOWED_EXTENSIONS:
-            return "file"  # Default icon for unsupported files
+            return "draft"  # Default icon for unsupported files
 
         # Return specific icon based on file type
-        return self.FILE_TYPE_ICONS.get(ext, "file")
+        return self.FILE_TYPE_ICONS.get(ext, "draft")
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
         """Override data method to provide custom icons."""

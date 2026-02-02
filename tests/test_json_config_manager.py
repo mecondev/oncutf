@@ -34,7 +34,7 @@ def test_register_save_load(tmp_path):
     f2 = mgr2.get_category("file_hashes")
     assert w2.get("last_folder") == "/tmp"
     entry = f2.get_file_hash("/tmp/a.txt")
-    assert entry is not None and entry.get("hash") == "abcd1234"
+    assert entry is not None and entry.get("tag") == "abcd1234"
 
 
 def test_get_category_create(tmp_path):

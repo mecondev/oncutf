@@ -7,6 +7,7 @@ This document describes the complete flow of the oncutf application from initial
 ## 1. Application Startup
 
 ### 1.1 main.py - Entry Point
+
 ```python
 def main():
     # Enable High DPI support
@@ -30,6 +31,7 @@ def main():
 ### 1.2 MainWindow.__init__() - Core Initialization
 
 #### A. Core Context & Services
+
 ```python
 # --- Core Application Context ---
 self.context = ApplicationContext.create_instance(parent=self)
@@ -39,6 +41,7 @@ self.db_manager = initialize_database()
 ```
 
 #### B. Cache Systems
+
 ```python
 # Persistent caches that save data between sessions
 self.metadata_cache = get_persistent_metadata_cache()
@@ -46,6 +49,7 @@ self.hash_cache = get_persistent_hash_cache()
 ```
 
 #### C. Managers Initialization
+
 ```python
 # Core managers for various functionalities
 self.file_load_manager = FileLoadManager(self)
@@ -65,41 +69,44 @@ DEBUG_RESET_DATABASE = True  # Deletes database on startup
 DEBUG_RESET_CONFIG = True    # Deletes config.json on startup
 ```
 
-- **Database Reset**: `DatabaseManager.__init__()` checks the flag and deletes the database
-- **Config Reset**: `JSONConfigManager.load()` checks the flag and deletes config.json
+- __Database Reset__: `DatabaseManager.__init__()` checks the flag and deletes the database
+- __Config Reset__: `JSONConfigManager.load()` checks the flag and deletes config.json
 
 ## 2. Database Architecture (V3 Schema)
 
 ### 2.1 Database Tables
 
-#### Core Tables:
-1. **`file_paths`** - Central file registry
-2. **`file_metadata`** - Raw metadata from ExifTool
-3. **`file_hashes`** - File checksums (CRC32, etc.)
-4. **`file_rename_history`** - Rename operations history
+#### Core Tables
 
-#### Structured Metadata Tables (V3):
-5. **`metadata_categories`** - Metadata categories (Image, Camera, Video, etc.)
-6. **`metadata_fields`** - Metadata field definitions with data types
-7. **`file_metadata_structured`** - Structured metadata values
+1. __`file_paths`__ - Central file registry
+2. __`file_metadata`__ - Raw metadata from ExifTool
+3. __`file_hashes`__ - File checksums (CRC32, etc.)
+4. __`file_rename_history`__ - Rename operations history
+
+#### Structured Metadata Tables (V3)
+
+1. __`metadata_categories`__ - Metadata categories (Image, Camera, Video, etc.)
+2. __`metadata_fields`__ - Metadata field definitions with data types
+3. __`file_metadata_structured`__ - Structured metadata values
 
 ### 2.2 Default Metadata Schema
 
 The application automatically creates 7 categories with 37 fields:
 
-1. **File Information** (6 fields): Filename, Size, Modified Date, etc.
-2. **Image Properties** (6 fields): Width, Height, Orientation, etc.
-3. **Camera & Device** (9 fields): Make, Model, ISO, F-Number, etc.
-4. **Video Properties** (5 fields): Duration, Frame Rate, Codec, etc.
-5. **Audio Properties** (4 fields): Channels, Sample Rate, etc.
-6. **Location & GPS** (4 fields): Latitude, Longitude, etc.
-7. **Technical Details** (3 fields): ExifTool Version, Permissions, etc.
+1. __File Information__ (6 fields): Filename, Size, Modified Date, etc.
+2. __Image Properties__ (6 fields): Width, Height, Orientation, etc.
+3. __Camera & Device__ (9 fields): Make, Model, ISO, F-Number, etc.
+4. __Video Properties__ (5 fields): Duration, Frame Rate, Codec, etc.
+5. __Audio Properties__ (4 fields): Channels, Sample Rate, etc.
+6. __Location & GPS__ (4 fields): Latitude, Longitude, etc.
+7. __Technical Details__ (3 fields): ExifTool Version, Permissions, etc.
 
 ## 3. File Import System
 
 ### 3.1 Import Methods
 
 #### A. Browse Button
+
 ```python
 MainWindow.handle_browse() →
 ApplicationService.handle_browse() →
@@ -107,6 +114,7 @@ FileLoadManager.load_files_from_paths()
 ```
 
 #### B. Folder Import Button
+
 ```python
 MainWindow.handle_folder_import() →
 ApplicationService.handle_folder_import() →
@@ -114,6 +122,7 @@ FileLoadManager.load_folder()
 ```
 
 #### C. Drag & Drop
+
 ```python
 # Drag to File Tree or File Table
 FileLoadManager.load_files_from_dropped_items() →
@@ -123,6 +132,7 @@ FileLoadManager.load_single_item_from_drop()
 ### 3.2 File Loading Process
 
 #### A. FileLoadManager.load_folder()
+
 ```python
 def load_folder(folder_path, merge_mode=False, recursive=False):
     # 1. Cleanup any active drag state
@@ -137,6 +147,7 @@ def load_folder(folder_path, merge_mode=False, recursive=False):
 ```
 
 #### B. File Item Creation
+
 ```python
 # Create FileItem objects
 items = [FileItem(path) for path in file_paths]
@@ -147,28 +158,31 @@ self.file_model.populate_from_items(items)
 
 ### 3.3 Modifier Keys Support
 
-- **No Modifiers**: Normal load
-- **Ctrl**: Recursive folder loading
-- **Shift**: Merge mode (doesn't clear existing files)
-- **Ctrl+Shift**: Recursive + Merge
+- __No Modifiers__: Normal load
+- __Ctrl__: Recursive folder loading
+- __Shift__: Merge mode (doesn't clear existing files)
+- __Ctrl+Shift__: Recursive + Merge
 
 ## 4. Metadata Loading System
 
 ### 4.1 Metadata Loading Triggers
 
 #### A. Automatic Loading
+
 - File selection changes
 - Drag & drop with metadata enabled
 
 #### B. Manual Loading
-- **F2**: Load basic metadata for selected files
-- **F3**: Load extended metadata for selected files
-- **Ctrl+F2**: Load basic metadata for all files
-- **Ctrl+F3**: Load extended metadata for all files
+
+- __F2__: Load basic metadata for selected files
+- __F3__: Load extended metadata for selected files
+- __Ctrl+F2__: Load basic metadata for all files
+- __Ctrl+F3__: Load extended metadata for all files
 
 ### 4.2 Metadata Loading Process
 
 #### A. MetadataManager.load_metadata_for_items()
+
 ```python
 def load_metadata_for_items(items, use_extended=False, source="unknown"):
     # 1. Filter files that need metadata
@@ -187,6 +201,7 @@ def load_metadata_for_items(items, use_extended=False, source="unknown"):
 ```
 
 #### B. Metadata Worker (Background Thread)
+
 ```python
 # widgets/metadata_worker.py
 class MetadataWorker(QObject):
@@ -208,12 +223,14 @@ class MetadataWorker(QObject):
 ### 4.3 Metadata Processing Pipeline
 
 #### A. Raw Metadata Storage
+
 ```python
 # Store original ExifTool output
 db_manager.store_metadata(file_path, raw_metadata, is_extended=True)
 ```
 
 #### B. Structured Metadata Processing
+
 ```python
 # Process and categorize metadata
 structured_manager.process_and_store_metadata(file_path, raw_metadata)
@@ -242,6 +259,7 @@ structured_manager.process_and_store_metadata(file_path, raw_metadata)
 ### 4.4 Metadata Display
 
 #### A. Metadata Tree View
+
 ```python
 # widgets/metadata_tree_view.py
 def display_metadata_for_file(file_item):
@@ -263,6 +281,7 @@ def display_structured_metadata(structured_data):
 ```
 
 #### B. Dynamic File Table Columns
+
 ```python
 # Metadata fields can be added as table columns
 # Context menu: "Add/Remove from File View"
@@ -277,14 +296,16 @@ self.column_manager.toggle_metadata_column(field_key)
 The application uses a modular rename system:
 
 #### A. Available Modules
-- **CounterModule**: Add counters (001, 002, etc.)
-- **MetadataModule**: Use metadata values in filenames
-- **NameTransformModule**: Text transformations (uppercase, lowercase, etc.)
-- **OriginalNameModule**: Use original filename
-- **SpecifiedTextModule**: Add custom text
-- **TextRemovalModule**: Remove text patterns
+
+- __CounterModule__: Add counters (001, 002, etc.)
+- __MetadataModule__: Use metadata values in filenames
+- __NameTransformModule__: Text transformations (uppercase, lowercase, etc.)
+- __OriginalNameModule__: Use original filename
+- __SpecifiedTextModule__: Add custom text
+- __TextRemovalModule__: Remove text patterns
 
 #### B. Module Configuration
+
 ```python
 # Each module has configuration data
 module_data = {
@@ -301,6 +322,7 @@ result = module.apply_from_data(module_data, file_item, metadata_cache)
 ### 5.2 Rename Process Flow
 
 #### A. Preview Generation
+
 ```python
 MainWindow.generate_preview_names():
     # 1. Get identity name pairs from modules
@@ -316,6 +338,7 @@ MainWindow.generate_preview_names():
 ```
 
 #### B. Rename Execution
+
 ```python
 MainWindow.rename_files():
     # 1. Validate all names
@@ -337,6 +360,7 @@ MainWindow.rename_files():
 ### 5.3 Safe Rename Workflow
 
 #### A. Conflict Resolution
+
 ```python
 # widgets/rename_conflict_resolver.py
 class RenameConflictResolver:
@@ -347,6 +371,7 @@ class RenameConflictResolver:
 ```
 
 #### B. Rename History
+
 ```python
 # Store in database for undo functionality
 rename_history_data = {
@@ -363,6 +388,7 @@ rename_history_data = {
 ### 6.1 Persistent Caches
 
 #### A. Metadata Cache
+
 ```python
 # core/persistent_metadata_cache.py
 class PersistentMetadataCache:
@@ -372,6 +398,7 @@ class PersistentMetadataCache:
 ```
 
 #### B. Hash Cache
+
 ```python
 # core/persistent_hash_cache.py
 class PersistentHashCache:
@@ -383,10 +410,12 @@ class PersistentHashCache:
 ### 6.2 Memory Management
 
 #### A. Lazy Loading
+
 - Metadata is loaded only when needed
 - Structured metadata is created on-demand
 
 #### B. Cache Invalidation
+
 - File modification time checking
 - Automatic cleanup for old entries
 
@@ -394,37 +423,41 @@ class PersistentHashCache:
 
 ### 7.1 Main Window Layout
 
-```
+```layout
 ┌─────────────────────────────────────────────────────────────┐
 │ MenuBar & Toolbar                                           │
 ├─────────────┬─────────────────────────┬─────────────────────┤
 │ File Tree   │ File Table              │ Metadata Tree       │
-│             │ ┌─────────────────────┐   │                     │
-│             │ │ Rename Modules      │   │                     │
-│             │ └─────────────────────┘   │                     │
-│             │ ┌─────────────────────┐   │                     │
-│             │ │ Preview Tables      │   │                     │
-│             │ └─────────────────────┘   │                     │
+│             │ ┌─────────────────────┐ │                     │
+│             │ │ Rename Modules      │ │                     │
+│             │ └─────────────────────┘ │                     │
+│             │ ┌─────────────────────┐ │                     │
+│             │ │ Preview Tables      │ │                     │
+│             │ └─────────────────────┘ │                     │
 └─────────────┴─────────────────────────┴─────────────────────┘
 ```
 
 ### 7.2 Key UI Managers
 
 #### A. SplitterManager
+
 - Manage splitter positions
 - Adaptive sizing for different screen sizes
 
 #### B. ColumnManager
+
 - Dynamic column management for File Table
 - Add/Remove metadata columns
 
 #### C. SelectionManager
+
 - File selection coordination
 - Preview updates
 
 ## 8. Configuration System
 
 ### 8.1 JSON Configuration
+
 ```python
 # utils/json_config_manager.py
 config_categories = {
@@ -435,6 +468,7 @@ config_categories = {
 ```
 
 ### 8.2 Application Settings
+
 ```python
 # config.py - Centralized configuration
 DEBUG_RESET_DATABASE = False    # Reset database on startup
@@ -446,6 +480,7 @@ LARGE_FOLDER_WARNING_THRESHOLD = 150  # File count warning
 ## 9. Error Handling & Logging
 
 ### 9.1 Logging System
+
 ```python
 # utils/logger_factory.py
 logger = get_cached_logger(__name__)
@@ -458,6 +493,7 @@ logger.error("Error occurred")
 ```
 
 ### 9.2 Exception Handling
+
 - Database operations: Automatic rollback
 - File operations: User-friendly error messages
 - Metadata loading: Graceful fallbacks
@@ -465,6 +501,7 @@ logger.error("Error occurred")
 ## 10. Testing & Debug Features
 
 ### 10.1 Debug Configuration
+
 ```python
 # config.py debug settings
 DEBUG_RESET_DATABASE = True   # Fresh database on startup
@@ -473,6 +510,7 @@ SHOW_DEV_ONLY_IN_CONSOLE = True  # Show debug logs
 ```
 
 ### 10.2 Testing Framework
+
 - Unit tests for each module
 - Integration tests for workflows
 - Mock objects for database/file operations
@@ -481,11 +519,11 @@ SHOW_DEV_ONLY_IN_CONSOLE = True  # Show debug logs
 
 The oncutf application uses a sophisticated architecture with:
 
-1. **Modular Design**: Separate managers for each functionality
-2. **Database-Driven**: Persistent storage for metadata, hashes, history
-3. **Caching**: Performance optimization with intelligent caching
-4. **Error Resilience**: Robust error handling and recovery
-5. **Extensibility**: Plugin-like module system for rename operations
-6. **Debug Support**: Comprehensive debugging and testing features
+1. __Modular Design__: Separate managers for each functionality
+2. __Database-Driven__: Persistent storage for metadata, hashes, history
+3. __Caching__: Performance optimization with intelligent caching
+4. __Error Resilience__: Robust error handling and recovery
+5. __Extensibility__: Plugin-like module system for rename operations
+6. __Debug Support__: Comprehensive debugging and testing features
 
 This architecture allows for easy maintenance, extension, and debugging of the application.

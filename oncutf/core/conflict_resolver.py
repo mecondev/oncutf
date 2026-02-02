@@ -25,7 +25,7 @@ class ConflictOperation:
 
     old_path: str
     new_path: str
-    operation_type: str  # "rename", "move", "copy"
+    operation_type: str  # "rename", "move", "content_copy"
     timestamp: float
     success: bool
     error_message: str = ""
@@ -194,7 +194,7 @@ class ConflictResolver:
             # Execute operation
             if operation_type == "rename":
                 Path(old_path).rename(new_path)
-            elif operation_type == "copy":
+            elif operation_type == "content_copy":
                 shutil.copy2(old_path, new_path)
             elif operation_type == "move":
                 shutil.move(old_path, new_path)

@@ -173,24 +173,24 @@ class TestHashExtraction:
     def test_extract_hash_valid_field(self, extractor, temp_file):
         """Test hash extraction with valid field."""
         # Note: This may return fallback if hash not computed
-        result = extractor.extract(temp_file, "hash_crc32", "hash")
+        result = extractor.extract(temp_file, "hash_crc32", "tag")
 
         assert isinstance(result, ExtractionResult)
-        assert result.category == "hash"
+        assert result.category == "tag"
         assert result.field == "hash_crc32"
-        # Source could be 'hash' or 'fallback' depending on hash availability
-        assert result.source in ["hash", "fallback"]
+        # Source could be 'tag' or 'fallback' depending on hash availability
+        assert result.source in ["tag", "fallback"]
 
     def test_extract_hash_invalid_field(self, extractor, temp_file):
         """Test hash extraction with invalid field."""
-        result = extractor.extract(temp_file, "invalid_field", "hash")
+        result = extractor.extract(temp_file, "invalid_field", "tag")
 
         assert result.value == "invalid"
         assert result.source == "error"
 
     def test_extract_hash_nonexistent_file(self, extractor):
         """Test hash extraction from nonexistent file."""
-        result = extractor.extract(Path("/nonexistent/file.txt"), "hash_crc32", "hash")
+        result = extractor.extract(Path("/nonexistent/file.txt"), "hash_crc32", "tag")
 
         assert result.value == "invalid"
         assert result.source == "error"
@@ -324,7 +324,7 @@ class TestGetAvailableFields:
 
     def test_get_available_fields_hash(self, extractor):
         """Test getting available hash fields."""
-        fields = extractor.get_available_fields("hash")
+        fields = extractor.get_available_fields("tag")
 
         assert isinstance(fields, list)
         assert "hash_crc32" in fields
@@ -481,7 +481,7 @@ class TestMetadataExtractorDependencyInjection:
         mock_service = MockHashService()
         extractor = MetadataExtractor(hash_service=mock_service)
 
-        result = extractor.extract(temp_file, "hash_crc32", category="hash")
+        result = extractor.extract(temp_file, "hash_crc32", category="tag")
 
         assert result.value == "injected_hash"
         assert mock_service.call_count == 1
@@ -491,7 +491,7 @@ class TestMetadataExtractorDependencyInjection:
         # Without service, falls back to internal implementation
         extractor = MetadataExtractor()
 
-        result = extractor.extract(temp_file, "hash_crc32", category="hash")
+        result = extractor.extract(temp_file, "hash_crc32", category="tag")
 
         # Should still return a hash (from internal implementation)
-        assert result.source in ("hash", "fallback")
+        assert result.source in ("tag", "fallback")

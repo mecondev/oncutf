@@ -14,12 +14,13 @@ Each icon type has its own loading function and caching mechanism.
 
 Usage:
     from oncutf.ui.helpers.icons_loader import load_metadata_icons, get_menu_icon
-    menu_icon = get_menu_icon("file")
+    menu_icon = get_menu_icon("draft")
 """
 
 import os
 from pathlib import Path
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -104,6 +105,11 @@ class ThemeIconLoader:
     def get_icon_path(self, name: str, theme: str | None = None) -> str:
         """Get the full path to an icon file.
 
+        Search order:
+        1. Categorized Material Design folders (navigation, editing, files, etc.)
+        2. Legacy feather_icons folder (backward compatibility)
+        3. Root icons folder
+
         Args:
             name: The icon name (without extension)
             theme: Optional theme override (default: None, uses the instance theme)
@@ -114,20 +120,39 @@ class ThemeIconLoader:
         """
         theme = theme or self.theme
 
-        # Try feather icons folder first (PNG only - no SVG support)
-        feather_png_path = str(Path(self.base_dir) / "feather_icons" / f"{name}.png")
-        if Path(feather_png_path).exists():
-            return feather_png_path
+        base_path = Path(self.base_dir)
 
-        # Try feather icons folder (SVG)
-        feather_svg_path = str(Path(self.base_dir) / "feather_icons" / f"{name}.svg")
-        if Path(feather_svg_path).exists():
-            return feather_svg_path
+        # 1. Try categorized Material Design folders (SVG only)
+        categorized_folders = [
+            "filetypes",  # File type icons (image, movie, audio_file, etc.)
+            "navigation",  # Navigation icons (menu, search, close, etc.)
+            "editing",  # Editing icons (cut, copy, paste, rotate, etc.)
+            "files",  # File operations (folder, save, download, etc.)
+            "utilities",  # Utility icons (info, tag, zoom, filter, etc.)
+            "metadata",  # Metadata icons (check_circle, error, etc.)
+            "preview",  # Preview icons (check_circle, error, etc.)
+            "selection",  # Selection icons (checkbox, etc.)
+            "toggles",  # Toggle icons (add, remove, toggle_on, etc.)
+        ]
 
-        # Fall back to root icons folder (PNG only)
-        fallback_png_path = str(Path(self.base_dir) / f"{name}.png")
-        if Path(fallback_png_path).exists():
-            return fallback_png_path
+        for folder in categorized_folders:
+            svg_path = base_path / folder / f"{name}.svg"
+            if svg_path.exists():
+                return str(svg_path)
+
+        # 2. Try legacy feather icons folder (PNG first, then SVG)
+        feather_png_path = base_path / "feather_icons" / f"{name}.png"
+        if feather_png_path.exists():
+            return str(feather_png_path)
+
+        feather_svg_path = base_path / "feather_icons" / f"{name}.svg"
+        if feather_svg_path.exists():
+            return str(feather_svg_path)
+
+        # 3. Fall back to root icons folder (PNG only)
+        fallback_png_path = base_path / f"{name}.png"
+        if fallback_png_path.exists():
+            return str(fallback_png_path)
 
         # Silently return empty string if not found (no warning spam)
         return ""
@@ -155,11 +180,99 @@ class ThemeIconLoader:
             # Return empty icon if not found
             return QIcon()
 
-        icon = QIcon(path)
+        # For SVG icons, colorize them based on theme
+        icon = self._load_colorized_svg_icon(path, theme) if path.endswith(".svg") else QIcon(path)
 
         # Cache the icon
         self.icon_cache[theme][name] = icon
         return icon
+
+    def _load_colorized_svg_icon(self, svg_path: str, theme: str) -> QIcon:
+        """Load and colorize an SVG icon based on theme.
+
+        Args:
+            svg_path: Path to SVG file
+            theme: Current theme ("dark" or "light")
+
+        Returns:
+            Colorized QIcon
+
+        """
+        from PyQt5.QtGui import QPixmap
+        from PyQt5.QtSvg import QSvgRenderer
+
+        # Theme colors for icons (matching text color)
+        theme_colors = {
+            "dark": "#f0ebd8",  # Light text for dark theme
+            "light": "#212121",  # Dark text for light theme
+        }
+        color = theme_colors.get(theme, "#f0ebd8")
+
+        try:
+            # Read SVG content
+            svg_path_obj = Path(svg_path)
+            svg_content = svg_path_obj.read_text(encoding="utf-8")
+
+            # Colorize SVG
+            svg_content = self._colorize_svg(svg_content, color)
+
+            # Render to QPixmap at standard sizes
+            renderer = QSvgRenderer()
+            renderer.load(svg_content.encode("utf-8"))
+
+            # Create pixmap at 24x24 (standard icon size)
+            pixmap = QPixmap(24, 24)
+            pixmap.fill(Qt.transparent)
+
+            from PyQt5.QtGui import QPainter
+
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+
+            return QIcon(pixmap)
+
+        except Exception:
+            logger.exception("[IconLoader] Error colorizing SVG icon: %s", svg_path)
+            # Fallback to non-colorized
+            return QIcon(svg_path)
+
+    def _colorize_svg(self, svg_content: str, color: str) -> str:
+        """Colorize SVG content for theme.
+
+        Args:
+            svg_content: Original SVG content
+            color: Target color (hex format)
+
+        Returns:
+            Colorized SVG content
+
+        """
+        import re
+
+        # Detect icon type
+        is_feather = 'fill="none"' in svg_content
+
+        if is_feather:
+            # Feather icons: stroke-based
+            svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
+            svg_content = svg_content.replace("stroke='currentColor'", f"stroke='{color}'")
+            svg_content = svg_content.replace('stroke="#000"', f'stroke="{color}"')
+            svg_content = svg_content.replace('stroke="#000000"', f'stroke="{color}"')
+
+            if "stroke=" not in svg_content:
+                svg_content = svg_content.replace("<svg", f'<svg stroke="{color}"')
+        else:
+            # Material Design icons: fill-based
+            # Replace existing fills
+            svg_content = svg_content.replace('fill="#000"', f'fill="{color}"')
+            svg_content = svg_content.replace('fill="#000000"', f'fill="{color}"')
+
+            # Add fill to SVG root if not present
+            if not re.search(r"<svg[^>]*\sfill=", svg_content):
+                svg_content = re.sub(r"<svg\s+", f'<svg fill="{color}" ', svg_content, count=1)
+
+        return svg_content
 
     def set_theme(self, theme: str) -> None:
         """Set the current theme.
@@ -224,6 +337,11 @@ def get_menu_icon(name: str) -> QIcon:
 def get_menu_icon_path(icon_name: str) -> str:
     """Get the absolute path to a menu icon file.
 
+    Search order:
+    1. Categorized Material Design folders (navigation, editing, files, etc.)
+    2. Legacy feather_icons folder (backward compatibility)
+    3. Root icons folder
+
     Args:
         icon_name: Name of the icon (without extension)
 
@@ -236,7 +354,30 @@ def get_menu_icon_path(icon_name: str) -> str:
 
         from oncutf.utils.filesystem.path_utils import get_resource_path
 
-        # Try PNG first (use Path joining for cross-platform compatibility)
+        # Categorized folders for Material Design icons
+        categorized_folders = [
+            "filetypes",
+            "navigation",
+            "editing",
+            "files",
+            "utilities",
+            "metadata",
+            "preview",
+            "selection",
+            "toggles",
+        ]
+
+        # 1. Try categorized Material Design folders (SVG only)
+        for folder in categorized_folders:
+            relative_path_svg = str(
+                Path("oncutf") / "resources" / "icons" / folder / f"{icon_name}.svg"
+            )
+            icon_path_svg = get_resource_path(relative_path_svg)
+
+            if icon_path_svg.exists():
+                return str(icon_path_svg)
+
+        # 2. Try legacy feather_icons folder (PNG first, then SVG)
         relative_path_png = str(
             Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.png"
         )
@@ -245,7 +386,6 @@ def get_menu_icon_path(icon_name: str) -> str:
         if icon_path_png.exists():
             return str(icon_path_png)
 
-        # Try SVG
         relative_path_svg = str(
             Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.svg"
         )
@@ -254,7 +394,7 @@ def get_menu_icon_path(icon_name: str) -> str:
         if icon_path_svg.exists():
             return str(icon_path_svg)
 
-        # Log warning if neither found
+        # Log warning if not found
         logger.warning("Icon not found: %s", icon_name)
     except Exception:
         logger.exception("Error getting icon path for '%s'", icon_name)

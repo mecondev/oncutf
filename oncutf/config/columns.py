@@ -32,7 +32,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     "color": {
         "title": "Color Flag",
         "display_title": "Color",
-        "key": "color",
+        "tag": "color",
         "default_visible": True,
         "removable": True,
         "resizable": False,
@@ -42,7 +42,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "filename": {
         "title": "Filename",
-        "key": "filename",
+        "tag": "filename",
         "default_visible": True,
         "removable": False,
         "resizable": True,
@@ -51,7 +51,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "file_size": {
         "title": "File Size",
-        "key": "file_size",
+        "tag": "file_size",
         "default_visible": True,
         "removable": True,
         "resizable": True,
@@ -62,7 +62,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     "type": {
         "title": "File Type",
         "display_title": "Type",
-        "key": "type",
+        "tag": "type",
         "default_visible": True,
         "removable": True,
         "resizable": True,
@@ -72,7 +72,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "modified": {
         "title": "Last Modified",
-        "key": "modified",
+        "tag": "modified",
         "default_visible": True,
         "removable": True,
         "resizable": True,
@@ -82,7 +82,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "rotation": {
         "title": "Rotation",
-        "key": "rotation",
+        "tag": "rotation",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -92,7 +92,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "duration": {
         "title": "Duration",
-        "key": "duration",
+        "tag": "duration",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -102,7 +102,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "audio_channels": {
         "title": "Audio Channels",
-        "key": "audio_channels",
+        "tag": "audio_channels",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -112,7 +112,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "audio_format": {
         "title": "Audio Format",
-        "key": "audio_format",
+        "tag": "audio_format",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -122,7 +122,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "aperture": {
         "title": "Aperture",
-        "key": "aperture",
+        "tag": "aperture",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -132,7 +132,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "iso": {
         "title": "ISO",
-        "key": "iso",
+        "tag": "iso",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -142,7 +142,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "shutter_speed": {
         "title": "Shutter Speed",
-        "key": "shutter_speed",
+        "tag": "shutter_speed",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -152,7 +152,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "white_balance": {
         "title": "White Balance",
-        "key": "white_balance",
+        "tag": "white_balance",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -162,7 +162,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "image_size": {
         "title": "Image Size",
-        "key": "image_size",
+        "tag": "image_size",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -172,7 +172,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "compression": {
         "title": "Compression",
-        "key": "compression",
+        "tag": "compression",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -182,7 +182,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "device_model": {
         "title": "Device Model",
-        "key": "device_model",
+        "tag": "device_model",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -192,7 +192,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "device_serial_no": {
         "title": "Device Serial No",
-        "key": "device_serial_no",
+        "tag": "device_serial_no",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -202,7 +202,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "video_fps": {
         "title": "Video FPS",
-        "key": "video_fps",
+        "tag": "video_fps",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -212,7 +212,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "video_avg_bitrate": {
         "title": "Video Avg. Bitrate",
-        "key": "video_avg_bitrate",
+        "tag": "video_avg_bitrate",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -222,7 +222,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "video_codec": {
         "title": "Video Codec",
-        "key": "video_codec",
+        "tag": "video_codec",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -232,7 +232,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "video_format": {
         "title": "Video Format",
-        "key": "video_format",
+        "tag": "video_format",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -242,7 +242,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "device_manufacturer": {
         "title": "Device Manufacturer",
-        "key": "device_manufacturer",
+        "tag": "device_manufacturer",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -252,7 +252,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "color_space": {
         "title": "Color Space",
-        "key": "color_space",
+        "tag": "color_space",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -262,7 +262,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "artist": {
         "title": "Artist",
-        "key": "artist",
+        "tag": "artist",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -272,7 +272,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "copyright": {
         "title": "Copyright",
-        "key": "copyright",
+        "tag": "copyright",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -282,7 +282,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "owner_name": {
         "title": "Owner Name",
-        "key": "owner_name",
+        "tag": "owner_name",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -292,7 +292,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "target_umid": {
         "title": "Target UMID",
-        "key": "target_umid",
+        "tag": "target_umid",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -302,7 +302,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     },
     "file_hash": {
         "title": "File Hash",
-        "key": "file_hash",
+        "tag": "file_hash",
         "default_visible": False,
         "removable": True,
         "resizable": True,
@@ -319,16 +319,16 @@ FILE_TABLE_COLUMN_CONFIG = {
 HASH_LIST_COLUMN_CONFIG = {
     "filename": {
         "title": "Filename",
-        "key": "filename",
+        "tag": "filename",
         "default_visible": True,
         "removable": False,
         "width": None,  # Smart-fill / stretch behavior
         "alignment": "left",
         "min_width": FILE_TABLE_COLUMN_CONFIG["filename"]["min_width"],
     },
-    "hash": {
+    "tag": {
         "title": "Hash",
-        "key": "hash",
+        "tag": "tag",
         "default_visible": True,
         "removable": True,
         "width": 100,  # RESULTS_TABLE_RIGHT_COLUMN_WIDTH
@@ -342,9 +342,9 @@ HASH_LIST_COLUMN_CONFIG = {
 # =====================================
 
 METADATA_TREE_COLUMN_CONFIG = {
-    "key": {
+    "tag": {
         "title": "Key",
-        "key": "key",
+        "tag": "tag",
         "default_visible": True,
         "removable": False,
         "width": 140,
@@ -353,7 +353,7 @@ METADATA_TREE_COLUMN_CONFIG = {
     },
     "value": {
         "title": "Value",
-        "key": "value",
+        "tag": "value",
         "default_visible": True,
         "removable": False,
         "width": 600,

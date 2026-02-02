@@ -195,7 +195,7 @@ class RenameModuleWidget(QWidget):
         )
 
         # Set drag handle icon
-        drag_icon = get_menu_icon("more-vertical")
+        drag_icon = get_menu_icon("more_vert")
         self.drag_handle.setPixmap(drag_icon.pixmap(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]))
 
         # Enable drag functionality

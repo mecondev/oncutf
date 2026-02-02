@@ -121,18 +121,18 @@ class SmartIconCache(QObject):
 
         # Commonly used icons for preloading
         self._common_icons = [
-            "file",
+            "draft",
             "folder",
             "image",
-            "video",
+            "movie",
             "audio",
             "document",
             "valid",
             "invalid",
             "unchanged",
             "duplicate",
-            "plus",
-            "minus",
+            "add",
+            "remove",
             "edit",
             "delete",
             "save",

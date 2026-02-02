@@ -428,7 +428,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Determine hash status color and style
         hash_value = getattr(file_item, "hash_value", None)
         if hash_value:
-            hash_color_hex = METADATA_ICON_COLORS["hash"]
+            hash_color_hex = METADATA_ICON_COLORS["tag"]
             hash_filled = True
         else:
             hash_color_hex = METADATA_ICON_COLORS["none"]

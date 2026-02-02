@@ -18,7 +18,7 @@ Key Features:
 Usage Examples:
 
 1. Hash operations:
-    manager = ProgressManager("hash", parent)
+    manager = ProgressManager("tag", parent)
     manager.start_tracking(total_size=1000000000)
     manager.update_progress(processed_bytes=500000000)
 
@@ -28,7 +28,7 @@ Usage Examples:
     manager.update_progress(file_count=50)
 
 3. Copy operations (future):
-    manager = ProgressManager("copy", parent)
+    manager = ProgressManager("content_copy", parent)
     manager.start_tracking(total_size=500000000)
     manager.update_progress(processed_bytes=250000000)
 """
@@ -55,13 +55,13 @@ class ProgressManager:
     - copy: Size-based progress for file operations (future)
     """
 
-    SUPPORTED_OPERATIONS: ClassVar[list[str]] = ["hash", "metadata", "copy"]
+    SUPPORTED_OPERATIONS: ClassVar[list[str]] = ["tag", "metadata", "content_copy"]
 
     def __init__(self, operation_type: str, parent: QWidget | None = None):
         """Initialize ProgressManager for specific operation type.
 
         Args:
-            operation_type: Type of operation ("hash", "metadata", "copy")
+            operation_type: Type of operation ("tag", "metadata", "content_copy")
             parent: Parent widget for the progress widget
 
         """
@@ -83,7 +83,7 @@ class ProgressManager:
 
     def _create_progress_widget(self):
         """Create the appropriate progress widget based on operation type."""
-        if self.operation_type == "hash":
+        if self.operation_type == "tag":
             # Hash operations: size-based progress with full tracking
             self.progress_widget = create_size_based_progress_widget(parent=self.parent)
         elif self.operation_type == "metadata":
@@ -94,7 +94,7 @@ class ProgressManager:
                 show_size_info=True,
                 show_time_info=True,
             )
-        elif self.operation_type == "copy":
+        elif self.operation_type == "content_copy":
             # Copy operations: size-based progress (future)
             self.progress_widget = create_size_based_progress_widget(parent=self.parent)
 
@@ -112,7 +112,7 @@ class ProgressManager:
 
         self._is_tracking = True
 
-        if self.operation_type in ["hash", "copy"]:
+        if self.operation_type in ["tag", "content_copy"]:
             # Size-based operations
             if total_size <= 0:
                 logger.warning(
@@ -175,7 +175,7 @@ class ProgressManager:
             self.progress_widget.set_filename(filename)
 
         # Update progress based on operation type
-        if self.operation_type in ["hash", "copy"]:
+        if self.operation_type in ["tag", "content_copy"]:
             # Size-based operations
             if processed_bytes > 0:
                 self.progress_widget.update_progress(
@@ -221,7 +221,7 @@ class ProgressManager:
 # Factory functions for backward compatibility and convenience
 def create_hash_progress_manager(parent: QWidget | None = None) -> ProgressManager:
     """Create a progress manager for hash operations."""
-    return ProgressManager("hash", parent)
+    return ProgressManager("tag", parent)
 
 
 def create_metadata_progress_manager(parent: QWidget | None = None) -> ProgressManager:
@@ -231,4 +231,4 @@ def create_metadata_progress_manager(parent: QWidget | None = None) -> ProgressM
 
 def create_copy_progress_manager(parent: QWidget | None = None) -> ProgressManager:
     """Create a progress manager for copy operations (future)."""
-    return ProgressManager("copy", parent)
+    return ProgressManager("content_copy", parent)

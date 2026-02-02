@@ -116,7 +116,7 @@ class MetadataEditDialog(QDialog):
         # Field label - show filename for Rotation field, field name for others
         if self.field_name == "Rotation":
             # For rotation, always show the filename (single file context)
-            filename = self.selected_files[0].filename if self.selected_files else "file"
+            filename = self.selected_files[0].filename if self.selected_files else "draft"
             self.field_label = QLabel(filename)
         else:
             self.field_label = QLabel(f"{self.field_name}:")

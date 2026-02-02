@@ -268,7 +268,7 @@ class ResultsTableDialog(QDialog):
                 logger.debug("[ResultsTableDialog] Loaded geometry: %s", geometry)
 
                 # Enforce min/max
-                if getattr(self, "config_key", "").startswith("hash"):
+                if getattr(self, "config_key", "").startswith("tag"):
                     min_h = HASH_LIST_WINDOW_MIN_HEIGHT
                     max_h = HASH_LIST_WINDOW_MAX_HEIGHT
                 else:
@@ -303,7 +303,7 @@ class ResultsTableDialog(QDialog):
 
     def _set_default_geometry(self):
         """Set default window geometry from config."""
-        if getattr(self, "config_key", "").startswith("hash"):
+        if getattr(self, "config_key", "").startswith("tag"):
             width = HASH_LIST_WINDOW_DEFAULT_WIDTH
             height = HASH_LIST_WINDOW_DEFAULT_HEIGHT
             min_h = HASH_LIST_WINDOW_MIN_HEIGHT
@@ -437,7 +437,7 @@ class ResultsTableDialog(QDialog):
             filename = Path(file_path).name
             # Extract hash from dict if needed (handle both dict and str)
             if isinstance(hash_value, dict):
-                display_data[filename] = hash_value.get("hash", str(hash_value))
+                display_data[filename] = hash_value.get("tag", str(hash_value))
             else:
                 display_data[filename] = hash_value
 

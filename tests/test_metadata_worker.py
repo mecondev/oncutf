@@ -68,9 +68,9 @@ def test_metadata_worker_runs_to_completion(qtbot, fake_reader, fake_cache, mock
 
     worker.run_batch()
 
-    assert (
-        len(progress_updates) == 3
-    ), f"Worker did not complete all files, got {len(progress_updates)} progress updates"
+    assert len(progress_updates) == 3, (
+        f"Worker did not complete all files, got {len(progress_updates)} progress updates"
+    )
 
     # With batch operations, cache.set might not be called directly
     # Instead, check that the reader was called for each file

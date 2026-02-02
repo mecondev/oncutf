@@ -159,7 +159,7 @@ class MetadataAnalyzer:
 
         if "image" in mime_lower:
             return "Image"
-        elif "video" in mime_lower:
+        elif "movie" in mime_lower:
             return "Video"
         elif "audio" in mime_lower:
             return "Audio"
@@ -229,7 +229,7 @@ class MetadataAnalyzer:
         # Common extensions by category
         extensions = {
             "image": [".jpg", ".jpeg", ".png", ".tiff", ".tif", ".raw", ".cr2", ".nef", ".arw"],
-            "video": [".mp4", ".mov", ".avi", ".mkv", ".m4v"],
+            "movie": [".mp4", ".mov", ".avi", ".mkv", ".m4v"],
             "audio": [".mp3", ".flac", ".wav", ".m4a", ".aac"],
             "document": [".pdf", ".docx", ".doc"],
         }

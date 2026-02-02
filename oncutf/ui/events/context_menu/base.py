@@ -158,13 +158,13 @@ class ContextMenuHandlers:
 
         # === SELECTION ACTIONS (First in menu) ===
         action_select_all = create_action_with_shortcut(
-            get_menu_icon("check-square"), "Select All", "Ctrl+A"
+            get_menu_icon("check_box"), "Select All", "Ctrl+A"
         )
         action_invert = create_action_with_shortcut(
-            get_menu_icon("refresh-cw"), "Invert Selection", "Ctrl+I"
+            get_menu_icon("refresh"), "Invert Selection", "Ctrl+I"
         )
         action_deselect_all = create_action_with_shortcut(
-            get_menu_icon("square"), "Deselect All", "Ctrl+Shift+A"
+            get_menu_icon("check_box_outline_blank"), "Deselect All", "Ctrl+Shift+A"
         )
 
         menu.addAction(action_select_all)
@@ -175,10 +175,10 @@ class ContextMenuHandlers:
 
         # === METADATA OPERATIONS (Selection-only) ===
         action_load_fast = create_action_with_shortcut(
-            get_menu_icon("file"), "Load Fast Metadata", "Ctrl+M"
+            get_menu_icon("draft"), "Load Fast Metadata", "Ctrl+M"
         )
         action_load_extended = create_action_with_shortcut(
-            get_menu_icon("file-plus"), "Load Extended Metadata", "Ctrl+Shift+M"
+            get_menu_icon("note_add"), "Load Extended Metadata", "Ctrl+Shift+M"
         )
 
         menu.addAction(action_load_fast)
@@ -223,11 +223,9 @@ class ContextMenuHandlers:
         menu.addSeparator()
 
         # === OTHER ACTIONS ===
-        action_reload = create_action_with_shortcut(
-            get_menu_icon("refresh-cw"), "Reload Folder", "F5"
-        )
+        action_reload = create_action_with_shortcut(get_menu_icon("refresh"), "Reload Folder", "F5")
         action_clear_table = create_action_with_shortcut(
-            get_menu_icon("x"), "Clear File Table", "Shift+Esc"
+            get_menu_icon("close"), "Clear File Table", "Shift+Esc"
         )
 
         menu.addAction(action_reload)
@@ -272,7 +270,7 @@ class ContextMenuHandlers:
 
         # === HASH OPERATIONS (Selection-only) ===
         action_calculate_hashes = create_action_with_shortcut(
-            get_menu_icon("hash"), "Calculate Checksums", "Ctrl+H"
+            get_menu_icon("tag"), "Calculate Checksums", "Ctrl+H"
         )
 
         # Smart hash state analysis - only analyze selected files for speed
@@ -359,7 +357,7 @@ class ContextMenuHandlers:
 
         # === ROTATION OPERATION (Selection-only) ===
         action_set_rotation = create_action_with_shortcut(
-            get_menu_icon("rotate-ccw"), "Set Rotation to 0", None
+            get_menu_icon("undo"), "Set Rotation to 0", None
         )
         menu.addAction(action_set_rotation)
 
@@ -405,10 +403,10 @@ class ContextMenuHandlers:
 
         # === HASH COMPARISON ACTIONS (Selection-only + All) ===
         action_find_duplicates_sel = create_action_with_shortcut(
-            get_menu_icon("copy"), "Find Duplicates in Selection", None
+            get_menu_icon("content_copy"), "Find Duplicates in Selection", None
         )
         action_find_duplicates_all = create_action_with_shortcut(
-            get_menu_icon("layers"), "Find Duplicates in All Files", None
+            get_menu_icon("stacks"), "Find Duplicates in All Files", None
         )
         action_compare_external = create_action_with_shortcut(
             get_menu_icon("folder"), "Compare with external folder...", None
@@ -421,10 +419,8 @@ class ContextMenuHandlers:
         menu.addSeparator()
 
         # === UNDO/REDO/HISTORY ACTIONS (Global) ===
-        action_undo = create_action_with_shortcut(get_menu_icon("rotate-ccw"), "Undo\tCtrl+Z", None)
-        action_redo = create_action_with_shortcut(
-            get_menu_icon("rotate-cw"), "Redo\tCtrl+Shift+Z", None
-        )
+        action_undo = create_action_with_shortcut(get_menu_icon("undo"), "Undo\tCtrl+Z", None)
+        action_redo = create_action_with_shortcut(get_menu_icon("redo"), "Redo\tCtrl+Shift+Z", None)
         action_show_history = create_action_with_shortcut(
             get_menu_icon("list"), "Show Command History\tCtrl+Y", None
         )

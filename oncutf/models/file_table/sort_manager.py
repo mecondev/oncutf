@@ -128,8 +128,8 @@ class SortManager:
                     if column_key == "image_size":
                         try:
                             # Extract width from "widthxheight" format
-                            if "x" in str(found_value):
-                                width = str(found_value).split("x")[0]
+                            if "close" in str(found_value):
+                                width = str(found_value).split("close")[0]
                                 return int(width)
                             return int(found_value)
                         except (ValueError, TypeError):

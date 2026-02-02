@@ -272,14 +272,14 @@ class MetadataWidget(QWidget):
         if not field:
             if category == "file_dates":
                 field = "last_modified_yymmdd"
-            elif category == "hash":
+            elif category == "tag":
                 field = "hash_crc32"
             elif category == "metadata_keys":
                 field = "last_modified_yymmdd"  # Fallback
 
         # For hash category, ensure we only return CRC32
         # Only CRC32 is supported, so ensure we return it
-        if category == "hash" and field and field != "hash_crc32":
+        if category == "tag" and field and field != "hash_crc32":
             logger.warning(
                 "[MetadataWidget] Hash algorithm '%s' not supported, using CRC32",
                 field,
@@ -400,7 +400,7 @@ class MetadataWidget(QWidget):
         if category == "metadata_keys":
             self.populate_metadata_keys()
             self.emit_if_changed()
-        elif category == "hash":
+        elif category == "tag":
             self.populate_hash_options()
             # The hash combo will remain disabled from populate_hash_options
             self.emit_if_changed()
@@ -412,7 +412,7 @@ class MetadataWidget(QWidget):
         category = data.get("category", "file_dates")
 
         # For hash category, check if field is a valid hash type
-        if category == "hash":
+        if category == "tag":
             return bool(field and field.startswith("hash_"))
 
         # For other categories, any field is effective

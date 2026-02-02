@@ -119,7 +119,7 @@ class TreeNavigator:
                 # Check if this item's key matches
                 item_data = index.data(Qt.ItemDataRole.UserRole)
                 if item_data and isinstance(item_data, dict):
-                    item_key = item_data.get("key", "")
+                    item_key = item_data.get("tag", "")
                     if item_key == target_key:
                         # Found it! Build the path
                         return self.get_item_path(index)

@@ -19,7 +19,7 @@ class ViewportSpec(NamedTuple):
 # Viewport button specifications - single source of truth
 VIEWPORT_SPECS: list[ViewportSpec] = [
     ViewportSpec("details", "Details view", "list", "F1"),
-    ViewportSpec("thumbs", "Thumbnail view", "grid", "F2"),
+    ViewportSpec("thumbs", "Thumbnail view", "grid_view", "F2"),
 ]
 
 # Layout constants (logical pixels - Qt scales for high-DPI)

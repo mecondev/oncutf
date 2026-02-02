@@ -44,7 +44,7 @@ class WindowConfigManager:
 
             if geometry:
                 self.main_window.setGeometry(
-                    geometry["x"], geometry["y"], geometry["width"], geometry["height"]
+                    geometry["close"], geometry["y"], geometry["width"], geometry["height"]
                 )
                 logger.debug(
                     "[Config] Applied saved window geometry: %s",
@@ -107,7 +107,7 @@ class WindowConfigManager:
             window_config.set(
                 "geometry",
                 {
-                    "x": geo.x(),
+                    "close": geo.x(),
                     "y": geo.y(),
                     "width": geo.width(),
                     "height": geo.height(),
@@ -214,12 +214,12 @@ class WindowConfigManager:
             # Save metadata tree column widths
             if hasattr(self.main_window, "metadata_tree_view"):
                 try:
-                    # Metadata tree has "key" and "value" columns (indices 0 and 1)
+                    # Metadata tree has "tag" and "value" columns (indices 0 and 1)
                     # Get header to check column count (tree may not have model initially)
                     tree_header = self.main_window.metadata_tree_view.header()
                     if tree_header and tree_header.count() >= 2:
                         metadata_column_widths = {}
-                        metadata_column_widths["key"] = (
+                        metadata_column_widths["tag"] = (
                             self.main_window.metadata_tree_view.columnWidth(0)
                         )
                         metadata_column_widths["value"] = (
@@ -452,9 +452,9 @@ class WindowConfigManager:
                 if metadata_tree_columns and hasattr(self.main_window, "metadata_tree_view"):
                     tree_header = self.main_window.metadata_tree_view.header()
                     if tree_header and tree_header.count() >= 2:
-                        if "key" in metadata_tree_columns:
+                        if "tag" in metadata_tree_columns:
                             self.main_window.metadata_tree_view.setColumnWidth(
-                                0, metadata_tree_columns["key"]
+                                0, metadata_tree_columns["tag"]
                             )
                         if "value" in metadata_tree_columns:
                             self.main_window.metadata_tree_view.setColumnWidth(
