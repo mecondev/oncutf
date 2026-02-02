@@ -305,7 +305,7 @@ class FileLoadController:
         # Decode modifiers for readable logging
         from oncutf.core.modifier_handler import decode_modifiers_to_flags
 
-        _, _, modifier_desc = decode_modifiers_to_flags(modifiers)
+        _, _, modifier_desc = decode_modifiers_to_flags(int(modifiers))
         logger.debug(
             "[DROP-CONTROLLER] handle_drop START: %d paths (modifiers=%s)",
             len(paths),

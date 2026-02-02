@@ -461,7 +461,7 @@ class DragHandler:
         modifiers = QApplication.keyboardModifiers()
         self._view.item_dropped.emit(self._drag_path, modifiers)
 
-        _, _, action = decode_modifiers_to_flags(modifiers)
+        _, _, action = decode_modifiers_to_flags(int(modifiers))
 
         logger.info(
             "[DragHandler] Dropped: %s (%s)",

@@ -54,7 +54,7 @@ class FileEventHandlers:
         if folder_path:
             # Get current modifiers at time of selection
             modifiers = QApplication.keyboardModifiers()
-            merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
+            merge_mode, recursive, action_type = decode_modifiers_to_flags(int(modifiers))
 
             logger.info("User selected folder: %s (%s)", folder_path, action_type)
 
@@ -85,7 +85,7 @@ class FileEventHandlers:
 
         # Get current modifiers
         modifiers = QApplication.keyboardModifiers()
-        merge_mode, recursive, _ = decode_modifiers_to_flags(modifiers)
+        merge_mode, recursive, _ = decode_modifiers_to_flags(int(modifiers))
 
         # Use controller for orchestration (proper architecture)
         self.parent_window.file_load_controller.load_folder(selected_path, merge_mode, recursive)

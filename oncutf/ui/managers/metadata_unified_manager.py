@@ -87,9 +87,9 @@ class UnifiedMetadataManager(QObject):
             MetadataCacheService,
             MetadataLoader,
             MetadataProgressHandler,
-            MetadataShortcutHandler,
             MetadataWriter,
         )
+        from oncutf.ui.handlers.metadata_shortcuts import MetadataShortcutHandler
         from oncutf.ui.managers.hash_loading_service import HashLoadingService
 
         self._cache_service = MetadataCacheService(parent_window)
