@@ -9,5 +9,7 @@ core layer without Qt dependencies.
 """
 
 from oncutf.modules.logic.counter_logic import CounterLogic
+from oncutf.modules.logic.specified_text_logic import SpecifiedTextLogic
+from oncutf.modules.logic.text_removal_logic import TextRemovalLogic
 
-__all__ = ["CounterLogic"]
+__all__ = ["CounterLogic", "SpecifiedTextLogic", "TextRemovalLogic"]

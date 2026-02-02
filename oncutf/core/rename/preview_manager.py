@@ -25,21 +25,21 @@ if TYPE_CHECKING:
 from oncutf.core.rename.data_classes import PreviewResult
 from oncutf.models.counter_scope import CounterScope
 from oncutf.modules.logic.counter_logic import CounterLogic
+from oncutf.modules.logic.specified_text_logic import SpecifiedTextLogic
+from oncutf.modules.logic.text_removal_logic import TextRemovalLogic
 from oncutf.modules.metadata_module import MetadataModule
 from oncutf.modules.original_name_module import OriginalNameModule
-from oncutf.modules.specified_text_module import SpecifiedTextModule
-from oncutf.modules.text_removal_module import TextRemovalModule
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 # Module type mapping for rename operations
 MODULE_TYPE_MAP = {
-    "specified_text": SpecifiedTextModule,
+    "specified_text": SpecifiedTextLogic,
     "counter": CounterLogic,
     "metadata": MetadataModule,
     "original_name": OriginalNameModule,
-    "remove_text_from_original_name": TextRemovalModule,
+    "remove_text_from_original_name": TextRemovalLogic,
 }
 
 
@@ -291,13 +291,13 @@ class UnifiedPreviewManager:
                 part = CounterLogic.apply_from_data(data, file_item, counter_index, metadata_cache)
 
             elif module_type == "specified_text":
-                part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+                part = SpecifiedTextLogic.apply_from_data(data, file_item, index, metadata_cache)
 
             elif module_type == "original_name":
                 part = original_base_name or "originalname"
 
             elif module_type == "remove_text_from_original_name":
-                result_filename = TextRemovalModule.apply_from_data(
+                result_filename = TextRemovalLogic.apply_from_data(
                     data, file_item, index, metadata_cache
                 )
                 part = Path(result_filename).stem
@@ -435,11 +435,11 @@ def apply_rename_modules(
             counter_index = calculate_scope_aware_index(scope, index, file_item, all_files)
             part = CounterLogic.apply_from_data(data, file_item, counter_index, metadata_cache)
         elif module_type == "specified_text":
-            part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+            part = SpecifiedTextLogic.apply_from_data(data, file_item, index, metadata_cache)
         elif module_type == "original_name":
             part = original_base_name or "originalname"
         elif module_type == "remove_text_from_original_name":
-            result_filename = TextRemovalModule.apply_from_data(
+            result_filename = TextRemovalLogic.apply_from_data(
                 data, file_item, index, metadata_cache
             )
             part = Path(result_filename).stem
