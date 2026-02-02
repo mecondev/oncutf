@@ -89,6 +89,15 @@ def cleanup_on_exit() -> None:
     except Exception as e:
         logger.warning("[App] Error in emergency FFmpeg cleanup: %s", e)
 
+    # Release lock file
+    try:
+        from oncutf.utils.lock_file import release_lock
+
+        release_lock()
+        logger.info("[CLEANUP] Lock file released")
+    except Exception as e:
+        logger.warning("[CLEANUP] Error releasing lock file: %s", e)
+
 
 def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
@@ -158,6 +167,15 @@ def main() -> int:
         # Enable High DPI support before creating QApplication
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
+        # Acquire lock file to prevent multiple instances
+        from oncutf.utils.lock_file import acquire_lock
+
+        if not acquire_lock():
+            logger.error("[App] Another instance is already running. Exiting.")
+            print("ERROR: Another instance of oncutf is already running.")
+            print("Please close the other instance first.")
+            return 1
 
         # Create application
         app = QApplication(sys.argv)
@@ -467,6 +485,13 @@ def main() -> int:
             from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        except Exception:
+            pass
+        # Release lock file on crash
+        try:
+            from oncutf.utils.lock_file import release_lock
+
+            release_lock()
         except Exception:
             pass
         return 1
