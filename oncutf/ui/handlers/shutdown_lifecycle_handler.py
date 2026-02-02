@@ -61,7 +61,9 @@ class ShutdownLifecycleHandler:
             return
 
         shutdown_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logger.info("Application shutting down at %s...", shutdown_timestamp)
+        logger.info("=" * 70)
+        logger.info("[SHUTDOWN] Application shutdown initiated at %s", shutdown_timestamp)
+        logger.info("=" * 70)
 
         # 0. Check for unsaved metadata changes
         if self._check_for_unsaved_changes():
@@ -115,7 +117,7 @@ class ShutdownLifecycleHandler:
             from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
             get_app_config_manager().save_immediate()
-            logger.info("[CloseEvent] Configuration saved immediately before shutdown")
+            logger.info("[SHUTDOWN] Configuration saved successfully")
         except Exception:
             logger.exception("[CloseEvent] Failed to save configuration")
 
@@ -152,7 +154,7 @@ class ShutdownLifecycleHandler:
         self._shutdown_watchdog_cancel = None
         self._shutdown_wait_cursor_cm = wait_cursor
 
-        logger.info("[CloseEvent] Starting coordinated shutdown")
+        logger.info("[SHUTDOWN] Starting coordinated shutdown process")
 
         from PyQt5.QtCore import QTimer
 
@@ -245,14 +247,14 @@ class ShutdownLifecycleHandler:
             summary = self.main_window.shutdown_coordinator.get_summary()
             if summary.get("executed", False):
                 logger.info(
-                    "[CloseEvent] Shutdown summary: %d/%d phases successful, %.2fs total, emergency=%s",
+                    "[SHUTDOWN] Summary: %d/%d phases successful, %.2fs total, emergency=%s",
                     summary.get("successful_phases", 0),
                     summary.get("total_phases", 0),
                     summary.get("total_duration", 0.0),
                     summary.get("emergency_mode", False),
                 )
             else:
-                logger.info("[CloseEvent] Shutdown summary: not executed")
+                logger.info("[SHUTDOWN] Summary: coordinator not executed")
 
             QTimer.singleShot(0, self._shutdown_step_finalize)
         except Exception:
@@ -358,17 +360,24 @@ class ShutdownLifecycleHandler:
                 if QApplication.instance():
                     QApplication.processEvents()
 
-            # Log completion
+            # Log completion BEFORE shutting down logging system
             status = "successfully" if success else "with errors"
-            logger.info("[CloseEvent] Shutdown completed %s", status)
+            logger.info("=" * 70)
+            logger.info("[SHUTDOWN] Shutdown completed %s", status)
+            logger.info("[SHUTDOWN] Application will now exit")
+            logger.info("=" * 70)
 
-            # Flush logs before quit to ensure summary is visible
+            # Flush logs before shutdown to ensure all messages are written
             import logging
             import sys
 
-            logging.shutdown()
+            for handler in logging.getLogger().handlers:
+                handler.flush()
             sys.stdout.flush()
             sys.stderr.flush()
+
+            # Now shutdown logging system
+            logging.shutdown()
 
             # Quit immediately - no delay
             with contextlib.suppress(RuntimeError):
@@ -376,6 +385,15 @@ class ShutdownLifecycleHandler:
 
         except Exception:
             logger.exception("[CloseEvent] Error completing shutdown")
+            # Flush on error too
+            import logging
+            import sys
+
+            for handler in logging.getLogger().handlers:
+                handler.flush()
+            sys.stdout.flush()
+            sys.stderr.flush()
+
             with contextlib.suppress(RuntimeError):
                 QApplication.quit()
 

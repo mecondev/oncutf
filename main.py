@@ -64,30 +64,34 @@ def cleanup_on_exit() -> None:
         return
     _cleanup_done = True
 
+    logger.info("=" * 70)
+    logger.info("[CLEANUP] Emergency cleanup handler triggered (atexit/signal)")
+    logger.info("=" * 70)
+
     try:
         # Save configuration immediately before exit
         from oncutf.utils.shared.json_config_manager import get_app_config_manager
 
         get_app_config_manager().save_immediate()
-        logger.info("[App] Configuration saved immediately before exit")
+        logger.info("[CLEANUP] Configuration saved successfully")
     except Exception as e:
-        logger.warning("[App] Error saving configuration during cleanup: %s", e)
+        logger.warning("[CLEANUP] Error saving configuration: %s", e)
 
     try:
         from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
-        logger.info("[App] Emergency ExifTool cleanup completed")
+        logger.info("[CLEANUP] ExifTool processes terminated")
     except Exception as e:
-        logger.warning("[App] Error in emergency ExifTool cleanup: %s", e)
+        logger.warning("[CLEANUP] Error terminating ExifTool processes: %s", e)
 
     try:
         from oncutf.core.thumbnail.providers import VideoThumbnailProvider
 
         VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes()
-        logger.info("[App] Emergency FFmpeg cleanup completed")
+        logger.info("[CLEANUP] FFmpeg processes terminated")
     except Exception as e:
-        logger.warning("[App] Error in emergency FFmpeg cleanup: %s", e)
+        logger.warning("[CLEANUP] Error terminating FFmpeg processes: %s", e)
 
     # Release lock file
     try:
