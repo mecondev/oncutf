@@ -20,15 +20,13 @@ if TYPE_CHECKING:
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
 
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QDesktopServices
-
 from oncutf.app.services.user_interaction import (
     show_question_message,
     show_warning_message,
 )
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.qt_compat import open_file_location
 
 logger = get_cached_logger(__name__)
 
@@ -281,7 +279,7 @@ class FileOperationsManager:
                         "Rename Complete",
                         f"{renamed_count} file(s) renamed.\nOpen the folder?",
                     ):
-                        QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
+                        open_file_location(current_folder_path)
                 except Exception:
                     logger.exception("[FileOperationsManager] Error showing completion dialog")
 

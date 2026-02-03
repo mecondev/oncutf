@@ -8,6 +8,8 @@ This allows core modules to remain testable and Qt-independent while
 still supporting UI responsiveness when Qt is available.
 """
 
+import platform
+import subprocess
 from typing import Any
 
 
@@ -34,6 +36,51 @@ def process_events() -> None:
     except (ImportError, RuntimeError):
         # Qt not available or no QApplication instance - safe to ignore
         pass
+
+
+def open_file_location(file_path: str) -> bool:
+    """Open file location in system file manager.
+
+    This is a Qt-free alternative to QDesktopServices.openUrl().
+    Uses platform-specific commands to open the file manager.
+
+    Args:
+        file_path: Path to file or folder to open
+
+    Returns:
+        True if operation succeeded, False otherwise
+
+    """
+    try:
+        from pathlib import Path
+
+        system = platform.system()
+        path = Path(file_path).resolve()
+
+        if system == "Windows":
+            # Windows: use explorer with /select flag to highlight file
+            if path.is_file():
+                subprocess.Popen(["explorer", "/select,", str(path)])
+            else:
+                subprocess.Popen(["explorer", str(path)])
+        elif system == "Darwin":  # macOS
+            # macOS: use 'open' command
+            if path.is_file():
+                # Reveal file in Finder
+                subprocess.Popen(["open", "-R", str(path)])
+            else:
+                subprocess.Popen(["open", str(path)])
+        else:  # Linux and others
+            # Linux: use xdg-open (works on most DEs)
+            if path.is_file():
+                # Open parent directory
+                subprocess.Popen(["xdg-open", str(path.parent)])
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+    except Exception:
+        return False
+    else:
+        return True
 
 
 def get_item_data_roles() -> dict[str, Any]:

@@ -385,7 +385,9 @@ def update_file_item_metadata(
     # Emit dataChanged signal for UI update
     if parent_window and hasattr(parent_window, "file_model"):
         try:
-            from PyQt5.QtCore import Qt
+            from oncutf.utils.qt_compat import get_item_data_roles
+
+            roles = get_item_data_roles()
 
             # Find the row and emit dataChanged
             for i, file in enumerate(parent_window.file_model.files):
@@ -406,7 +408,7 @@ def update_file_item_metadata(
                         extra={"dev_only": True},
                     )
                     parent_window.file_model.dataChanged.emit(
-                        top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                        top_left, bottom_right, [roles["DecorationRole"], roles["ToolTipRole"]]
                     )
                     break
         except Exception as e:

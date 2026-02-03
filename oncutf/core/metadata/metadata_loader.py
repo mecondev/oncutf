@@ -21,12 +21,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt5.QtCore import Qt
-
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.qt_compat import process_events
+from oncutf.utils.qt_compat import get_item_data_roles, process_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -628,6 +626,7 @@ class MetadataLoader:
             return
 
         try:
+            roles = get_item_data_roles()
             for j, file in enumerate(self._parent_window.file_model.files):
                 if paths_equal(file.full_path, item.full_path):
                     top_left = self._parent_window.file_model.index(j, 0)
@@ -635,7 +634,7 @@ class MetadataLoader:
                         j, self._parent_window.file_model.columnCount() - 1
                     )
                     self._parent_window.file_model.dataChanged.emit(
-                        top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                        top_left, bottom_right, [roles["DecorationRole"], roles["ToolTipRole"]]
                     )
                     break
         except Exception:
