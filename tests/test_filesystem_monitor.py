@@ -50,12 +50,12 @@ class TestFilesystemMonitor:
     def test_monitor_start_stop(self, monitor):
         """Test starting and stopping monitor."""
         monitor.start()
-        # Check timer is running
-        assert monitor._drive_poll_timer.isActive()
+        # Check timer is scheduled
+        assert monitor._drive_poll_timer_id is not None
 
         monitor.stop()
         # Check timer stopped
-        assert not monitor._drive_poll_timer.isActive()
+        assert monitor._drive_poll_timer_id is None
 
     def test_add_folder(self, monitor, temp_dir):
         """Test adding folder to monitoring."""
@@ -155,6 +155,9 @@ class TestFilesystemMonitor:
 
     def test_directory_changed_signal(self, monitor, temp_dir, qtbot):
         """Test directory_changed signal emission."""
+        # Start monitoring
+        monitor.start()
+
         # Add folder to monitoring
         monitor.add_folder(temp_dir)
 
@@ -164,10 +167,10 @@ class TestFilesystemMonitor:
             test_file = Path(temp_dir) / "test.txt"
             test_file.write_text("test")
 
-            # Process events to allow watcher to trigger
+            # Wait for debounce timer (500ms) + processing
             import time
 
-            time.sleep(0.1)
+            time.sleep(0.7)
             qtbot.wait(100)
 
     def test_set_drive_change_callback(self, monitor):

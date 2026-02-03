@@ -2,12 +2,13 @@
 
 Author: Michael Economou
 Date: 2025-12-16
+Updated: 2026-02-03 (Qt-free migration: QFileSystemWatcher → watchdog)
 
 Filesystem monitoring for drive and directory changes.
 
 Features:
 - Drive mount/unmount detection (polling-based)
-- Directory content change detection (QFileSystemWatcher)
+- Directory content change detection (watchdog library)
 - Automatic refresh via FileLoadManager when changes detected
 """
 
@@ -16,12 +17,20 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import threading
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from PyQt5.QtCore import QFileSystemWatcher, QObject, QTimer, pyqtSignal
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
+from watchdog.observers import Observer
 
-from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+from oncutf.utils.events import Observable, Signal
+from oncutf.utils.shared.timer_manager import (
+    TimerManager,
+    TimerPriority,
+    TimerType,
+    get_timer_manager,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,21 +41,89 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class FilesystemMonitor(QObject):
+class _DirectoryEventHandler(FileSystemEventHandler):
+    """Watchdog event handler for directory/file changes."""
+
+    def __init__(self, monitor: FilesystemMonitor) -> None:
+        """Initialize event handler.
+
+        Args:
+            monitor: FilesystemMonitor instance to notify
+
+        """
+        super().__init__()
+        self.monitor = monitor
+
+    def on_modified(self, event: FileSystemEvent) -> None:
+        """Handle file/directory modification.
+
+        Args:
+            event: File system event
+
+        """
+        if event.is_directory:
+            self.monitor._on_directory_changed(event.src_path)
+        else:
+            self.monitor._on_file_changed(event.src_path)
+
+    def on_created(self, event: FileSystemEvent) -> None:
+        """Handle file/directory creation.
+
+        Args:
+            event: File system event
+
+        """
+        if event.is_directory:
+            # New subdirectory created - notify parent
+            self.monitor._on_directory_changed(str(Path(event.src_path).parent))
+        else:
+            # New file created - notify containing directory
+            parent_path = str(Path(event.src_path).parent)
+            self.monitor._on_directory_changed(parent_path)
+
+    def on_deleted(self, event: FileSystemEvent) -> None:
+        """Handle file/directory deletion.
+
+        Args:
+            event: File system event
+
+        """
+        if event.is_directory:
+            self.monitor._on_directory_changed(str(Path(event.src_path).parent))
+        else:
+            parent_path = str(Path(event.src_path).parent)
+            self.monitor._on_directory_changed(parent_path)
+
+    def on_moved(self, event: FileSystemEvent) -> None:
+        """Handle file/directory move.
+
+        Args:
+            event: File system event
+
+        """
+        # Notify both source and destination parent directories
+        src_parent = str(Path(event.src_path).parent)
+        self.monitor._on_directory_changed(src_parent)
+        if hasattr(event, "dest_path"):
+            dest_parent = str(Path(event.dest_path).parent)
+            self.monitor._on_directory_changed(dest_parent)
+
+
+class FilesystemMonitor(Observable):
     """Monitor filesystem for drive and directory changes.
 
     Features:
     - Drive mount/unmount detection (polling-based)
-    - Directory content change detection (QFileSystemWatcher)
+    - Directory content change detection (watchdog library)
     - Loaded folder tracking and monitoring
     - Automatic FileStore refresh on changes
     """
 
-    # Signals
-    drive_added = pyqtSignal(str)  # New drive mounted
-    drive_removed = pyqtSignal(str)  # Drive unmounted
-    directory_changed = pyqtSignal(str)  # Directory content changed
-    file_changed = pyqtSignal(str)  # File modified
+    # Signals (Observable descriptors)
+    drive_added = Signal()  # New drive mounted
+    drive_removed = Signal()  # Drive unmounted
+    directory_changed = Signal()  # Directory content changed
+    file_changed = Signal()  # File modified
 
     def __init__(
         self,
@@ -65,25 +142,25 @@ class FilesystemMonitor(QObject):
         self.file_load_manager = file_load_manager
         self._system = platform.system()
 
-        # QFileSystemWatcher for directory/file changes
-        self._watcher = QFileSystemWatcher()
-        self._watcher.directoryChanged.connect(self._on_directory_changed)
-        self._watcher.fileChanged.connect(self._on_file_changed)
+        # Watchdog observer for directory/file changes
+        self._observer = Observer()
+        self._event_handler = _DirectoryEventHandler(self)
+        self._watch_handles: dict[str, Any] = {}  # path -> watch handle
 
-        # Timer for drive polling (detect mount/unmount)
-        self._drive_poll_timer = QTimer()
-        self._drive_poll_timer.setInterval(2000)  # Poll every 2 seconds
-        self._drive_poll_timer.timeout.connect(self._poll_drives)
+        # Timer manager for drive polling
+        self._timer_manager = TimerManager()
+        self._drive_poll_timer_id: str | None = None
         self._current_drives: set[str] = set()
 
-        # Debounce timer ID for change events (uses TimerManager)
-        self._debounce_timer_id: str | None = None
+        # Debounce timer for change events (threading.Timer for thread-safety)
+        self._debounce_timer: threading.Timer | None = None
         self._pending_changes: set[str] = set()
+        self._pending_lock = threading.Lock()
 
         # Track loaded folders
         self._monitored_folders: set[str] = set()
 
-        # Pause flag for temporarily disabling auto-refresh (e.g., during metadata save)
+        # Pause flag for temporarily disabling auto-refresh
         self._paused = False
 
         # Callbacks for custom actions
@@ -101,18 +178,31 @@ class FilesystemMonitor(QObject):
             ", ".join(sorted(self._current_drives)),
         )
 
-        # Start drive polling
-        self._drive_poll_timer.start()
+        # Start watchdog observer
+        self._observer.start()
+
+        # Start drive polling (every 2 seconds)
+        self._poll_drives()  # Initial poll
         logger.info("[FilesystemMonitor] Started monitoring (polling every 2s)")
 
     def stop(self) -> None:
         """Stop monitoring filesystem."""
-        self._drive_poll_timer.stop()
+        # Stop drive polling
+        if self._drive_poll_timer_id:
+            self._timer_manager.cancel(self._drive_poll_timer_id)
+            self._drive_poll_timer_id = None
+
         # Cancel debounce timer if active
-        if self._debounce_timer_id:
-            get_timer_manager().cancel(self._debounce_timer_id)
-            self._debounce_timer_id = None
-        self._watcher.blockSignals(True)
+        with self._pending_lock:
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
+
+        # Stop watchdog observer
+        if self._observer.is_alive():
+            self._observer.stop()
+            self._observer.join(timeout=2)
+
         logger.info("[FilesystemMonitor] Stopped monitoring")
 
     def add_folder(self, folder_path: str) -> bool:
@@ -135,7 +225,10 @@ class FilesystemMonitor(QObject):
             return True  # Already monitoring
 
         try:
-            self._watcher.addPath(normalized_path)
+            watch_handle = self._observer.schedule(
+                self._event_handler, normalized_path, recursive=False
+            )
+            self._watch_handles[normalized_path] = watch_handle
             self._monitored_folders.add(normalized_path)
             logger.debug(
                 "[FilesystemMonitor] Now watching: %s",
@@ -163,7 +256,9 @@ class FilesystemMonitor(QObject):
             return True  # Not monitoring anyway
 
         try:
-            self._watcher.removePath(normalized_path)
+            watch_handle = self._watch_handles.pop(normalized_path, None)
+            if watch_handle:
+                self._observer.unschedule(watch_handle)
             self._monitored_folders.discard(normalized_path)
             logger.debug(
                 "[FilesystemMonitor] Stopped watching: %s",
@@ -340,8 +435,18 @@ class FilesystemMonitor(QObject):
                 except Exception:
                     logger.exception("[FilesystemMonitor] Drive callback error")
 
+        # Re-schedule next poll (repeating timer pattern)
+        if self._drive_poll_timer_id or self._observer.is_alive():
+            self._drive_poll_timer_id = self._timer_manager.schedule(
+                timer_id="filesystem_monitor_drive_poll",
+                callback=self._poll_drives,
+                delay=2000,
+                timer_type=TimerType.UI_UPDATE,
+                priority=TimerPriority.LOW,
+            )
+
     def _on_directory_changed(self, path: str) -> None:
-        """Handle directory changed signal (debounced).
+        """Handle directory changed event (debounced).
 
         Args:
             path: Changed directory path
@@ -349,24 +454,21 @@ class FilesystemMonitor(QObject):
         """
         logger.debug("[FilesystemMonitor] Directory changed: %s", path, extra={"dev_only": True})
 
-        # Add to pending changes
-        self._pending_changes.add(path)
+        # Add to pending changes (thread-safe)
+        with self._pending_lock:
+            self._pending_changes.add(path)
 
-        # Schedule debounced processing via TimerManager
-        # Cancel existing timer and reschedule (debounce behavior)
-        timer_manager = get_timer_manager()
-        if self._debounce_timer_id:
-            timer_manager.cancel(self._debounce_timer_id)
-        self._debounce_timer_id = timer_manager.schedule(
-            self._process_pending_changes,
-            delay=500,
-            timer_type=TimerType.GENERIC,
-            timer_id="filesystem_monitor_debounce",
-            consolidate=False,
-        )
+            # Cancel existing timer and reschedule (debounce behavior)
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+
+            # Create new timer (500ms debounce)
+            self._debounce_timer = threading.Timer(0.5, self._process_pending_changes)
+            self._debounce_timer.daemon = True
+            self._debounce_timer.start()
 
     def _on_file_changed(self, path: str) -> None:
-        """Handle file changed signal.
+        """Handle file changed event.
 
         Args:
             path: Changed file path
@@ -379,10 +481,16 @@ class FilesystemMonitor(QObject):
         """Process pending directory changes after debounce."""
         # Skip processing if paused
         if self._paused:
-            self._pending_changes.clear()
+            with self._pending_lock:
+                self._pending_changes.clear()
             return
 
-        for path in self._pending_changes:
+        # Get pending changes (thread-safe)
+        with self._pending_lock:
+            pending = self._pending_changes.copy()
+            self._pending_changes.clear()
+
+        for path in pending:
             logger.info("[FilesystemMonitor] Processing directory change: %s", path)
             self.directory_changed.emit(path)
 
@@ -399,8 +507,6 @@ class FilesystemMonitor(QObject):
                     self._refresh_filestore_for_path(path)
                 except Exception:
                     logger.exception("[FilesystemMonitor] FileStore refresh error")
-
-        self._pending_changes.clear()
 
     def _refresh_filestore_for_path(self, changed_path: str) -> None:
         """Refresh FileStore for changed path.
