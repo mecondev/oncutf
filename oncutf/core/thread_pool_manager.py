@@ -26,8 +26,8 @@ from enum import Enum
 from typing import Any
 
 import psutil
-from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal
 
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -140,7 +140,7 @@ class PriorityQueue:
             self._size = 0
 
 
-class SmartWorkerThread(QThread):
+class SmartWorkerThread(threading.Thread):
     """Smart worker thread that can handle multiple types of tasks.
 
     Features:
@@ -150,9 +150,9 @@ class SmartWorkerThread(QThread):
     - Graceful shutdown
     """
 
-    task_completed = pyqtSignal(str, object)  # task_id, result
-    task_failed = pyqtSignal(str, str)  # task_id, error_message
-    task_progress = pyqtSignal(str, float)  # task_id, progress
+    task_completed = Signal()  # task_id, result
+    task_failed = Signal()  # task_id, error_message
+    task_progress = Signal()  # task_id, progress
 
     def __init__(self, worker_id: str, task_queue: PriorityQueue, parent: Any = None) -> None:
         """Initialize smart worker thread.
@@ -160,10 +160,11 @@ class SmartWorkerThread(QThread):
         Args:
             worker_id: Unique worker identifier
             task_queue: Shared task queue
-            parent: Parent QObject
+            parent: Parent object (for API compatibility)
 
         """
-        super().__init__(parent)
+        super().__init__(daemon=True)
+        Observable.__init__(self)
 
         self.worker_id = worker_id
         self.task_queue = task_queue
@@ -185,7 +186,7 @@ class SmartWorkerThread(QThread):
 
                 if task is None:
                     # No tasks available, sleep briefly
-                    self.msleep(50)
+                    time.sleep(0.05)  # 50ms
                     continue
 
                 # Execute task
@@ -264,7 +265,7 @@ class SmartWorkerThread(QThread):
         }
 
 
-class ThreadPoolManager(QObject):
+class ThreadPoolManager(Observable):
     """Advanced thread pool manager with intelligent work distribution.
 
     Features:
@@ -275,27 +276,27 @@ class ThreadPoolManager(QObject):
     - Comprehensive monitoring and statistics
     """
 
-    # Signals
-    task_submitted = pyqtSignal(str, str)  # task_id, priority
-    task_completed = pyqtSignal(str, object)  # task_id, result
-    task_failed = pyqtSignal(str, str)  # task_id, error_message
-    pool_resized = pyqtSignal(int)  # new_size
+    # Signals (Observable descriptors)
+    task_submitted = Signal()  # task_id, priority
+    task_completed = Signal()  # task_id, result
+    task_failed = Signal()  # task_id, error_message
+    pool_resized = Signal()  # new_size
 
     def __init__(
         self,
         min_threads: int = 2,
         max_threads: int | None = None,
-        parent: QObject | None = None,
+        parent: Any = None,
     ):
         """Initialize thread pool manager.
 
         Args:
             min_threads: Minimum number of threads
             max_threads: Maximum number of threads (default: CPU count * 2)
-            parent: Parent QObject
+            parent: Parent object (for API compatibility)
 
         """
-        super().__init__(parent)
+        super().__init__()
 
         # Configuration
         self.min_threads = min_threads
@@ -321,10 +322,21 @@ class ThreadPoolManager(QObject):
         # Thread safety
         self._mutex = threading.Lock()
 
-        # Monitoring timer
-        self._monitor_timer = QTimer()
-        self._monitor_timer.timeout.connect(self._monitor_pool)
-        self._monitor_timer.start(5000)  # Check every 5 seconds
+        # Monitoring timer (using timer_manager for Qt-free operation)
+        from oncutf.utils.shared.timer_manager import (
+            TimerManager,
+            TimerPriority,
+            TimerType,
+        )
+
+        self._timer_manager = TimerManager()
+        self._timer_manager.schedule(
+            timer_id="thread_pool_monitor",
+            callback=self._monitor_pool,
+            delay_ms=5000,
+            timer_type=TimerType.REPEATING,
+            priority=TimerPriority.LOW,
+        )
 
         # Start with minimum threads
         self._resize_pool(self.min_threads)
@@ -633,8 +645,7 @@ class ThreadPoolManager(QObject):
         logger.info("[ThreadPoolManager] Shutting down...")
 
         # Stop monitoring
-        if self._monitor_timer.isActive():
-            self._monitor_timer.stop()
+        self._timer_manager.cancel("thread_pool_monitor")
 
         # Clear task queue
         self._task_queue.clear()
