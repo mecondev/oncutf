@@ -304,7 +304,7 @@ class BackupManager(Observable):
             "backup_count": self.backup_count,
             "backup_interval": self.backup_interval,
             "periodic_enabled": self.periodic_enabled,
-            "timer_active": self.backup_timer.isActive(),
+            "timer_active": self._backup_timer is not None and self._backup_timer.is_alive(),
             "existing_backups": len(backup_files),
             "latest_backup": str(backup_files[0]) if backup_files else None,
         }

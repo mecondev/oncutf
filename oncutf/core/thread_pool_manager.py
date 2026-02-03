@@ -253,7 +253,7 @@ class SmartWorkerThread(threading.Thread, Observable):
         """Get worker statistics."""
         return {
             "worker_id": self.worker_id,
-            "is_running": self.isRunning(),
+            "is_running": self.is_alive(),
             "tasks_processed": self._tasks_processed,
             "total_execution_time": self._total_execution_time,
             "average_execution_time": (
@@ -333,8 +333,8 @@ class ThreadPoolManager(Observable):
         self._timer_manager.schedule(
             timer_id="thread_pool_monitor",
             callback=self._monitor_pool,
-            delay_ms=5000,
-            timer_type=TimerType.REPEATING,
+            delay=5000,
+            timer_type=TimerType.UI_UPDATE,
             priority=TimerPriority.LOW,
         )
 
@@ -481,16 +481,18 @@ class ThreadPoolManager(Observable):
             worker.request_shutdown()
 
             # Wait with timeout to prevent infinite hang
-            if not worker.wait(wait_ms):
+            worker.join(timeout=wait_ms / 1000.0)
+            if worker.is_alive():
                 logger.warning(
-                    "[ThreadPoolManager] Worker %s did not stop gracefully, terminating...",
+                    "[ThreadPoolManager] Worker %s did not stop gracefully (threading.Thread cannot be terminated)",
                     worker_id,
                 )
-                worker.terminate()
-                if not worker.wait(terminate_wait_ms):
+                worker.join(timeout=terminate_wait_ms / 1000.0)
+                if worker.is_alive():
                     logger.error(
-                        "[ThreadPoolManager] Worker %s did not terminate after 1s",
+                        "[ThreadPoolManager] Worker %s still running after %dms",
                         worker_id,
+                        terminate_wait_ms,
                     )
 
             del self._workers[worker_id]
@@ -617,7 +619,7 @@ class ThreadPoolManager(Observable):
             Dictionary with health status and metrics.
 
         """
-        active_workers = sum(1 for w in self._workers.values() if w.isRunning())
+        active_workers = sum(1 for w in self._workers.values() if w.is_alive())
 
         return {
             "healthy": self.is_healthy(),

@@ -62,9 +62,9 @@ class _DirectoryEventHandler(FileSystemEventHandler):
 
         """
         if event.is_directory:
-            self.monitor._on_directory_changed(event.src_path)
+            self.monitor._on_directory_changed(str(event.src_path))
         else:
-            self.monitor._on_file_changed(event.src_path)
+            self.monitor._on_file_changed(str(event.src_path))
 
     def on_created(self, event: FileSystemEvent) -> None:
         """Handle file/directory creation.
@@ -75,10 +75,10 @@ class _DirectoryEventHandler(FileSystemEventHandler):
         """
         if event.is_directory:
             # New subdirectory created - notify parent
-            self.monitor._on_directory_changed(str(Path(event.src_path).parent))
+            self.monitor._on_directory_changed(str(Path(str(event.src_path)).parent))
         else:
             # New file created - notify containing directory
-            parent_path = str(Path(event.src_path).parent)
+            parent_path = str(Path(str(event.src_path)).parent)
             self.monitor._on_directory_changed(parent_path)
 
     def on_deleted(self, event: FileSystemEvent) -> None:
@@ -89,9 +89,9 @@ class _DirectoryEventHandler(FileSystemEventHandler):
 
         """
         if event.is_directory:
-            self.monitor._on_directory_changed(str(Path(event.src_path).parent))
+            self.monitor._on_directory_changed(str(Path(str(event.src_path)).parent))
         else:
-            parent_path = str(Path(event.src_path).parent)
+            parent_path = str(Path(str(event.src_path)).parent)
             self.monitor._on_directory_changed(parent_path)
 
     def on_moved(self, event: FileSystemEvent) -> None:
@@ -102,10 +102,10 @@ class _DirectoryEventHandler(FileSystemEventHandler):
 
         """
         # Notify both source and destination parent directories
-        src_parent = str(Path(event.src_path).parent)
+        src_parent = str(Path(str(event.src_path)).parent)
         self.monitor._on_directory_changed(src_parent)
         if hasattr(event, "dest_path"):
-            dest_parent = str(Path(event.dest_path).parent)
+            dest_parent = str(Path(str(event.dest_path)).parent)
             self.monitor._on_directory_changed(dest_parent)
 
 
@@ -298,21 +298,23 @@ class FilesystemMonitor(Observable):
         """Pause auto-refresh (e.g., during metadata save)."""
         self._paused = True
         # Cancel any pending debounce timer
-        if self._debounce_timer_id:
-            get_timer_manager().cancel(self._debounce_timer_id)
-            self._debounce_timer_id = None
-        self._pending_changes.clear()
+        with self._pending_lock:
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
+            self._pending_changes.clear()
         logger.debug("[FilesystemMonitor] Paused", extra={"dev_only": True})
 
     def resume(self) -> None:
         """Resume auto-refresh after pause."""
         self._paused = False
         # Clear any pending changes that accumulated during pause
-        self._pending_changes.clear()
-        # Also cancel any debounce timer that might have been scheduled
-        if self._debounce_timer_id:
-            get_timer_manager().cancel(self._debounce_timer_id)
-            self._debounce_timer_id = None
+        with self._pending_lock:
+            self._pending_changes.clear()
+            # Also cancel any debounce timer that might have been scheduled
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
         logger.debug("[FilesystemMonitor] Resumed", extra={"dev_only": True})
 
     def is_paused(self) -> bool:

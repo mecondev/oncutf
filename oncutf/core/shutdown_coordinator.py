@@ -309,9 +309,9 @@ class ShutdownCoordinator(Observable):
         if not timer_mgr.schedule(
             timer_id="shutdown_next_phase",
             callback=self._execute_next_phase_async,
-            delay_ms=0,
-            timer_type=TimerType.SINGLE_SHOT,
-            priority=TimerPriority.CRITICAL,
+            delay=0,
+            timer_type=TimerType.UI_UPDATE,
+            priority=TimerPriority.NORMAL,
         ):
             # Timer manager not available or failed, execute immediately
             self._execute_next_phase_async()
