@@ -8,7 +8,7 @@ Defines consistent interfaces for progress reporting across all concurrent opera
 
 This module provides:
 - ProgressCallback Protocol for type-safe callbacks
-- ProgressSignals mixin for Qt workers
+- ProgressSignals mixin for workers
 - Standard progress data classes
 - Helper functions for progress calculation
 
@@ -22,7 +22,7 @@ Benefits:
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from oncutf.utils.events import Observable, Signal
 
 
 @dataclass
@@ -137,17 +137,17 @@ class SizeProgressCallback(Protocol):
         ...
 
 
-class ProgressSignals(QObject):
-    """Standard progress signals mixin for Qt workers.
+class ProgressSignals(Observable):
+    """Standard progress signals mixin for workers.
 
-    Workers should inherit from both QObject and this mixin (or just include these signals).
+    Workers should inherit from Observable and use these Signal descriptors.
 
     Usage:
-        class MyWorker(QObject):
+        class MyWorker(Observable):
             # Include standard progress signals
-            progress = pyqtSignal(int, int, str)  # current, total, message
-            size_progress = pyqtSignal(int, int, str)  # processed_bytes, total_bytes, filename
-            status_message = pyqtSignal(str)  # status updates
+            progress = Signal()  # (current, total, message)
+            size_progress = Signal()  # (processed_bytes, total_bytes, filename)
+            status_message = Signal()  # (message,)
 
             def run(self):
                 for i, item in enumerate(items):
@@ -171,26 +171,25 @@ class ProgressSignals(QObject):
     """
 
     # Standard item-based progress (current, total, message)
-    progress = pyqtSignal(int, int, str)
+    progress = Signal()
 
     # Size-based progress for file operations (processed_bytes, total_bytes, filename)
-    size_progress = pyqtSignal(int, int, str)
+    size_progress = Signal()
 
     # General status updates
-    status_message = pyqtSignal(str)
+    status_message = Signal()
 
 
 def create_progress_callback(
     progress_signal: Any | None = None, size_signal: Any | None = None
 ) -> tuple[ProgressCallback | None, SizeProgressCallback | None]:
-    """Create callback functions from Qt signals.
+    """Create callback functions from Signal objects.
 
-    Helper function to bridge Qt signals to callback functions.
+    Helper function to bridge Signal objects to callback functions.
 
     Args:
-        progress_signal: PyQt signal for item progress
-        size_signal: PyQt signal for size progress
-        status_signal: PyQt signal for status updates
+        progress_signal: Signal for item progress
+        size_signal: Signal for size progress
 
     Returns:
         Tuple of (progress_callback, size_callback)
