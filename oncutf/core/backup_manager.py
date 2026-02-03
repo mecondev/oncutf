@@ -15,10 +15,9 @@ Features:
 """
 
 import shutil
+import threading
 from datetime import datetime
 from pathlib import Path
-
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
 from oncutf.config import (
     BACKUP_FILENAME_FORMAT,
@@ -27,12 +26,13 @@ from oncutf.config import (
     DEFAULT_BACKUP_INTERVAL,
     DEFAULT_PERIODIC_BACKUP_ENABLED,
 )
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_helper import get_logger
 
 logger = get_logger(__name__)
 
 
-class BackupManager(QObject):
+class BackupManager(Observable):
     """Manages database backup operations including periodic backups and cleanup.
 
     This class handles:
@@ -43,8 +43,8 @@ class BackupManager(QObject):
     """
 
     # Signals
-    backup_completed = pyqtSignal(str)  # Emitted when backup is completed (filepath)
-    backup_failed = pyqtSignal(str)  # Emitted when backup fails (error message)
+    backup_completed = Signal(str)  # Emitted when backup is completed (filepath)
+    backup_failed = Signal(str)  # Emitted when backup fails (error message)
 
     def __init__(
         self,
@@ -72,9 +72,9 @@ class BackupManager(QObject):
         self.backup_interval = backup_interval
         self.periodic_enabled = periodic_enabled
 
-        # Setup periodic backup timer
-        self.backup_timer = QTimer()
-        self.backup_timer.timeout.connect(self._perform_periodic_backup)
+        # Setup periodic backup timer (using threading.Timer instead of QTimer)
+        self._backup_timer: threading.Timer | None = None
+        self._timer_lock = threading.Lock()
 
         # Start periodic backups if enabled
         if self.periodic_enabled and self.backup_interval > 0:
@@ -160,7 +160,18 @@ class BackupManager(QObject):
     def start_periodic_backups(self) -> None:
         """Start the periodic backup timer."""
         if self.backup_interval > 0:
-            self.backup_timer.start(self.backup_interval * 1000)  # Convert to milliseconds
+            with self._timer_lock:
+                # Cancel existing timer if any
+                if self._backup_timer is not None:
+                    self._backup_timer.cancel()
+
+                # Schedule next backup
+                self._backup_timer = threading.Timer(
+                    self.backup_interval, self._perform_periodic_backup
+                )
+                self._backup_timer.daemon = True
+                self._backup_timer.start()
+
             logger.info(
                 "[BackupManager] Periodic backups started (every %d seconds)",
                 self.backup_interval,
@@ -168,12 +179,25 @@ class BackupManager(QObject):
 
     def stop_periodic_backups(self) -> None:
         """Stop the periodic backup timer."""
-        self.backup_timer.stop()
+        with self._timer_lock:
+            if self._backup_timer is not None:
+                self._backup_timer.cancel()
+                self._backup_timer = None
+
         logger.info("[BackupManager] Periodic backups stopped")
 
     def _perform_periodic_backup(self) -> None:
         """Perform a periodic backup (called by timer)."""
         self.create_backup("periodic")
+
+        # Reschedule next backup
+        if self.periodic_enabled and self.backup_interval > 0:
+            with self._timer_lock:
+                self._backup_timer = threading.Timer(
+                    self.backup_interval, self._perform_periodic_backup
+                )
+                self._backup_timer.daemon = True
+                self._backup_timer.start()
 
     def backup_on_shutdown(self) -> str | None:
         """Create a backup when the application is shutting down.
