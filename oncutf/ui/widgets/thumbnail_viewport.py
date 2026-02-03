@@ -173,13 +173,16 @@ class ThumbnailViewportWidget(QWidget):
         self._update_placeholder_visibility()
 
     def _create_status_bar(self) -> QWidget:
-        """Create the status bar widget with label and zoom slider.
+        """Create the status bar widget with zoom icons and slider.
 
         Returns:
-            QWidget containing status label and zoom slider
+            QWidget containing status label and zoom controls
 
         """
-        from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSlider
+        from pathlib import Path
+
+        from PyQt5.QtGui import QIcon, QPixmap
+        from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSlider, QToolButton
 
         from oncutf.ui.theme_manager import get_theme_manager
 
@@ -213,11 +216,24 @@ class ThumbnailViewportWidget(QWidget):
         # Spacer
         layout.addStretch()
 
-        # Zoom label
-        zoom_label = QLabel("Zoom:")
-        layout.addWidget(zoom_label)
+        # Zoom out icon (small image)
+        zoom_out_btn = QToolButton()
+        zoom_out_btn.setFixedSize(16, 16)
+        icon_path = (
+            Path(__file__).parent.parent.parent
+            / "resources"
+            / "icons"
+            / "feather_icons"
+            / "image.svg"
+        )
+        zoom_out_btn.setIcon(QIcon(str(icon_path)))
+        zoom_out_btn.setIconSize(QSize(12, 12))
+        zoom_out_btn.setToolTip("Zoom out")
+        zoom_out_btn.clicked.connect(self.zoom_out)
+        zoom_out_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
+        layout.addWidget(zoom_out_btn)
 
-        # Zoom slider (right side)
+        # Zoom slider (center)
         self._zoom_slider = QSlider(Qt.Horizontal)
         self._zoom_slider.setMinimum(self.MIN_THUMBNAIL_SIZE)
         self._zoom_slider.setMaximum(self.MAX_THUMBNAIL_SIZE)
@@ -231,6 +247,16 @@ class ThumbnailViewportWidget(QWidget):
         self._zoom_slider.valueChanged.connect(self._on_zoom_slider_changed)
 
         layout.addWidget(self._zoom_slider)
+
+        # Zoom in icon (large image)
+        zoom_in_btn = QToolButton()
+        zoom_in_btn.setFixedSize(20, 20)
+        zoom_in_btn.setIcon(QIcon(str(icon_path)))
+        zoom_in_btn.setIconSize(QSize(18, 18))
+        zoom_in_btn.setToolTip("Zoom in")
+        zoom_in_btn.clicked.connect(self.zoom_in)
+        zoom_in_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
+        layout.addWidget(zoom_in_btn)
 
         return status_widget
 
