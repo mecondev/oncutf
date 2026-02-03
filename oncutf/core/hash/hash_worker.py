@@ -26,8 +26,6 @@ import os
 from pathlib import Path
 from typing import Any, Protocol
 
-from PyQt5.QtCore import QMutexLocker
-
 from oncutf.core.hash.base_hash_worker import BaseHashWorker
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -97,19 +95,19 @@ class HashWorker(BaseHashWorker):
     def setup_duplicate_scan(self, file_paths: list[str]) -> None:
         """Configure worker for duplicate detection."""
         super().setup_duplicate_scan(file_paths)
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._reset_sequential_state()
 
     def setup_external_comparison(self, file_paths: list[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
         super().setup_external_comparison(file_paths, external_folder)
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._reset_sequential_state()
 
     def setup_checksum_calculation(self, file_paths: list[str]) -> None:
         """Configure worker for checksum calculation."""
         super().setup_checksum_calculation(file_paths)
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._reset_sequential_state()
 
     def _check_cancellation(self) -> bool:
@@ -139,7 +137,7 @@ class HashWorker(BaseHashWorker):
                     self._enable_batching = False
 
             # Get configuration safely
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 operation_type = self._operation_type
                 file_paths = self._file_paths.copy()
                 external_folder = self._external_folder
@@ -237,7 +235,7 @@ class HashWorker(BaseHashWorker):
 
         if file_hash is not None:
             # Hash found in cache - update progress and return
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 if file_size > 0:
                     new_cumulative = self._cumulative_processed_bytes + file_size
                     if new_cumulative > self._cumulative_processed_bytes:
@@ -264,7 +262,7 @@ class HashWorker(BaseHashWorker):
 
             def update_progress(bytes_processed_in_file: int) -> None:
                 """Real-time progress callback for large files."""
-                with QMutexLocker(self._mutex):
+                with self._mutex:
                     current_total = self._cumulative_processed_bytes + bytes_processed_in_file
                     self.size_progress.emit(int(current_total), int(self._total_bytes))
 
@@ -280,7 +278,7 @@ class HashWorker(BaseHashWorker):
             self._store_hash_optimized(file_path, file_hash, "crc32")
 
         # Update cumulative bytes AFTER each file is completed
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             if file_size > 0:
                 new_cumulative = self._cumulative_processed_bytes + file_size
                 # Check for potential overflow (stay within safe 64-bit range)
@@ -311,7 +309,7 @@ class HashWorker(BaseHashWorker):
         self.status_updated.emit("Calculating CRC32 checksums...")
 
         # Reset cumulative tracking at start
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):
@@ -365,7 +363,7 @@ class HashWorker(BaseHashWorker):
         self.status_updated.emit("Calculating CRC32 hashes for duplicate detection...")
 
         # Reset cumulative tracking at start
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):
@@ -438,7 +436,7 @@ class HashWorker(BaseHashWorker):
         self.status_updated.emit(f"Comparing files with {Path(external_folder).name}...")
 
         # Reset cumulative tracking at start
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):

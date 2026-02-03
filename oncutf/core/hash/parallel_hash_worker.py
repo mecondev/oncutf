@@ -3,12 +3,13 @@
 Author: Michael Economou
 Date: 2025-11-24
 Updated: 2026-01-19 (Refactored to use BaseHashWorker)
+Updated: 2026-02-03 (Qt-free migration: removed QMutexLocker)
 
 Parallel hash worker using ThreadPoolExecutor for concurrent hash calculation.
 
 Key Features:
     - Concurrent hash calculation using ThreadPoolExecutor
-    - Thread-safe progress tracking with QMutex
+    - Thread-safe progress tracking with threading.Lock
     - Smart worker count based on CPU cores and I/O considerations
     - Cache-aware to avoid redundant calculations
     - Inherits common infrastructure from BaseHashWorker
@@ -18,8 +19,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-
-from PyQt5.QtCore import QMutexLocker
 
 from oncutf.core.hash.base_hash_worker import BaseHashWorker
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -112,13 +111,13 @@ class ParallelHashWorker(BaseHashWorker):
 
         if hash_value is not None:
             # Cache hit
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 self._cache_hits += 1
             logger.debug("[ParallelHashWorker] Cache hit: %s", filename)
             return (file_path, hash_value, file_size)
 
         # Cache miss - calculate hash
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._cache_misses += 1
 
         logger.debug("[ParallelHashWorker] Calculating hash: %s", filename)
@@ -133,7 +132,7 @@ class ParallelHashWorker(BaseHashWorker):
                 self._store_hash_optimized(file_path, hash_value, "crc32")
         except Exception as e:
             logger.warning("[ParallelHashWorker] Error processing %s: %s", filename, e)
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 self._errors.append((file_path, str(e)))
             return (file_path, None, file_size)
         else:
@@ -143,7 +142,7 @@ class ParallelHashWorker(BaseHashWorker):
 
     def _update_progress(self, file_path: str, file_size: int) -> None:
         """Update progress counters and emit signals (thread-safe)."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._completed_files += 1
             self._cumulative_processed_bytes += file_size
 
@@ -178,7 +177,7 @@ class ParallelHashWorker(BaseHashWorker):
                     self._enable_batching = False
 
             # Get operation config
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 operation_type = self._operation_type
                 file_paths = self._file_paths.copy()
                 external_folder = self._external_folder
