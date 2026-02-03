@@ -252,11 +252,11 @@ class MetadataTreeView(QTreeView):
         self._direct_loader = None
         self._initialize_direct_loader()
 
-        # Connect rebuild signal with QueuedConnection for thread-safe model operations
-        # This ensures all rebuilds go through Qt event queue and execute in main thread
-        self.rebuild_requested.connect(self._render_metadata_view_impl, Qt.QueuedConnection)
+        # Connect rebuild signal for thread-safe model operations
+        # Signal connections are queued by default in Qt6, ensuring main thread execution
+        self.rebuild_requested.connect(self._render_metadata_view_impl)
         logger.debug(
-            "[MetadataTree] QueuedConnection established for rebuild_requested signal",
+            "[MetadataTree] Rebuild signal connected (queued by default)",
             extra={"dev_only": True},
         )
 

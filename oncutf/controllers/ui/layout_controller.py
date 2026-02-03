@@ -539,10 +539,6 @@ class LayoutController:
             return
 
         try:
-            # Load metadata for selected files (like FileTableView does)
-            if hasattr(self.parent_window, "metadata_controller") and selected_rows:
-                self.parent_window.metadata_controller.load_metadata_for_selected(extended=False)
-
             # Update rename preview
             if hasattr(self.parent_window, "request_preview_update"):
                 self.parent_window.request_preview_update()

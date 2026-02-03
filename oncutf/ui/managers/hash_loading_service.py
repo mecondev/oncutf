@@ -517,38 +517,22 @@ class HashLoadingService:
         # Connect progress signals
         from typing import cast
 
-        cast("Any", self._hash_worker.progress_updated).connect(
-            self._on_operation_progress, Qt.QueuedConnection
-        )
-        cast("Any", self._hash_worker.size_progress).connect(
-            self._on_size_progress, Qt.QueuedConnection
-        )
-        cast("Any", self._hash_worker.file_hash_calculated).connect(
-            self._on_operation_file_hash, Qt.QueuedConnection
-        )
+        cast("Any", self._hash_worker.progress_updated).connect(self._on_operation_progress)
+        cast("Any", self._hash_worker.size_progress).connect(self._on_size_progress)
+        cast("Any", self._hash_worker.file_hash_calculated).connect(self._on_operation_file_hash)
 
         # Connect result signals
         if operation == "duplicates":
-            cast("Any", self._hash_worker.duplicates_found).connect(
-                self._on_duplicates_result, Qt.QueuedConnection
-            )
+            cast("Any", self._hash_worker.duplicates_found).connect(self._on_duplicates_result)
         elif operation == "compare":
-            cast("Any", self._hash_worker.comparison_result).connect(
-                self._on_comparison_result, Qt.QueuedConnection
-            )
+            cast("Any", self._hash_worker.comparison_result).connect(self._on_comparison_result)
         elif operation == "checksums":
-            cast("Any", self._hash_worker.checksums_calculated).connect(
-                self._on_checksums_result, Qt.QueuedConnection
-            )
+            cast("Any", self._hash_worker.checksums_calculated).connect(self._on_checksums_result)
 
         # Connect completion and error signals
         if hasattr(self._hash_worker, "finished_processing"):
-            cast("Any", self._hash_worker.finished_processing).connect(
-                self._on_operation_finished, Qt.QueuedConnection
-            )
-        cast("Any", self._hash_worker.error_occurred).connect(
-            self._on_operation_error, Qt.QueuedConnection
-        )
+            cast("Any", self._hash_worker.finished_processing).connect(self._on_operation_finished)
+        cast("Any", self._hash_worker.error_occurred).connect(self._on_operation_error)
 
         # Create progress dialog
         self._create_operation_progress_dialog(operation, len(file_paths))
