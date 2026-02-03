@@ -24,9 +24,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-if TYPE_CHECKING:
-    from PyQt5.QtCore import QTimer
-
 from oncutf.utils.events import Observable, Signal
 
 logger = logging.getLogger(__name__)
@@ -301,19 +298,23 @@ class ShutdownCoordinator(Observable):
 
     def _schedule_next_phase(self) -> None:
         """Schedule next phase execution (Qt event loop if available, else immediate)."""
-        try:
-            from PyQt5.QtCore import QTimer
-            from PyQt5.QtWidgets import QApplication
+        from oncutf.utils.shared.timer_manager import (
+            TimerManager,
+            TimerPriority,
+            TimerType,
+        )
 
-            # Use Qt event loop if QApplication exists
-            if QApplication.instance() is not None:
-                QTimer.singleShot(0, self._execute_next_phase_async)
-                return
-        except (ImportError, RuntimeError):
-            pass
-
-        # Fallback: immediate execution (no Qt available)
-        self._execute_next_phase_async()
+        timer_mgr = TimerManager()
+        # Try scheduling via Qt event loop, fallback to immediate execution
+        if not timer_mgr.schedule(
+            timer_id="shutdown_next_phase",
+            callback=self._execute_next_phase_async,
+            delay_ms=0,
+            timer_type=TimerType.SINGLE_SHOT,
+            priority=TimerPriority.CRITICAL,
+        ):
+            # Timer manager not available or failed, execute immediately
+            self._execute_next_phase_async()
 
     def _execute_next_phase_async(self) -> None:
         """Execute the next shutdown phase (scheduled via QTimer)."""
