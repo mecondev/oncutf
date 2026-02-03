@@ -261,6 +261,13 @@ disable_error_code = [
 ]
 
 # ============================================================
+# External libraries without type stubs
+# ============================================================
+[[tool.mypy.overrides]]
+module = "watchdog.*"
+ignore_missing_imports = true
+
+# ============================================================
 # Tests — Relaxed checking
 # ============================================================
 [[tool.mypy.overrides]]
