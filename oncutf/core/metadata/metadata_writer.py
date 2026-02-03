@@ -23,8 +23,6 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from PyQt5.QtCore import QObject
-
 from oncutf.app.services.user_interaction import (
     show_info_message,
     show_warning_message,
@@ -39,7 +37,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-class MetadataWriter(QObject):
+class MetadataWriter:
     """Writer service for metadata save/write operations.
 
     Responsibilities:
@@ -62,7 +60,6 @@ class MetadataWriter(QObject):
             ui_update: Port for UI updates (injected)
 
         """
-        super().__init__(parent_window)
         self.parent_window = parent_window
         self._exiftool_wrapper: ExifToolWrapper | None = None
         self._save_cancelled = False
