@@ -14,15 +14,13 @@ Date: 2026-01-22
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from PyQt5.QtWidgets import QWidget
-
     from oncutf.app.ports import UserDialogPort
 
 
-def show_info_message(_parent: QWidget | None, title: str, message: str) -> None:
+def show_info_message(_parent: Any, title: str, message: str) -> None:
     """Show information dialog using registered adapter.
 
     Args:
@@ -55,7 +53,7 @@ def show_info_message(_parent: QWidget | None, title: str, message: str) -> None
     adapter.show_info(title, message)
 
 
-def show_error_message(_parent: QWidget | None, title: str, message: str) -> None:
+def show_error_message(_parent: Any, title: str, message: str) -> None:
     """Show error dialog using registered adapter.
 
     Args:
@@ -82,7 +80,7 @@ def show_error_message(_parent: QWidget | None, title: str, message: str) -> Non
     adapter.show_error(title, message)
 
 
-def show_warning_message(_parent: QWidget | None, title: str, message: str) -> None:
+def show_warning_message(_parent: Any, title: str, message: str) -> None:
     """Show warning dialog using registered adapter.
 
     Args:
@@ -109,7 +107,7 @@ def show_warning_message(_parent: QWidget | None, title: str, message: str) -> N
     adapter.show_warning(title, message)
 
 
-def show_question_message(_parent: QWidget | None, title: str, message: str) -> bool:
+def show_question_message(_parent: Any, title: str, message: str) -> bool:
     """Show yes/no question dialog using registered adapter.
 
     Args:
