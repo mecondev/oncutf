@@ -21,10 +21,9 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from PyQt5.QtCore import Qt
-
 from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.controllers.protocols import TableManagerProtocol
+from oncutf.domain.keyboard import KeyboardModifier
 
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext as ApplicationContext
@@ -281,7 +280,7 @@ class FileLoadController:
     def handle_drop(
         self,
         paths: list[str],
-        modifiers: Qt.KeyboardModifiers | None = None,
+        modifiers: KeyboardModifier | None = None,
     ) -> dict[str, Any]:
         """Handle file/folder drop with keyboard modifiers.
 
@@ -296,7 +295,7 @@ class FileLoadController:
 
         """
         if modifiers is None:
-            modifiers = Qt.KeyboardModifiers()
+            modifiers = KeyboardModifier.NONE
 
         import time
 
@@ -305,7 +304,7 @@ class FileLoadController:
         # Decode modifiers for readable logging
         from oncutf.core.modifier_handler import decode_modifiers_to_flags
 
-        _, _, modifier_desc = decode_modifiers_to_flags(int(modifiers))
+        _, _, modifier_desc = decode_modifiers_to_flags(modifiers)
         logger.debug(
             "[DROP-CONTROLLER] handle_drop START: %d paths (modifiers=%s)",
             len(paths),

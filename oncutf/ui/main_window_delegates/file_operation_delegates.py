@@ -34,12 +34,21 @@ class FileOperationDelegates:
 
         from PyQt5.QtCore import Qt
 
+        from oncutf.domain.keyboard import KeyboardModifier
+        from oncutf.ui.adapters.qt_keyboard import qt_modifiers_to_domain
         from oncutf.utils.logging.logger_factory import get_cached_logger
 
         logger = get_cached_logger(__name__)
 
         if modifiers is None:
             modifiers = Qt.NoModifier
+
+        # Convert Qt modifiers to domain
+        domain_modifiers = (
+            qt_modifiers_to_domain(modifiers)
+            if modifiers != Qt.NoModifier
+            else KeyboardModifier.NONE
+        )
 
         t0 = time.time()
         logger.debug(
@@ -48,7 +57,7 @@ class FileOperationDelegates:
             extra={"dev_only": True},
         )
 
-        result = self.file_load_controller.handle_drop(paths, modifiers)
+        result = self.file_load_controller.handle_drop(paths, domain_modifiers)
 
         logger.debug(
             "[DROP-MAIN] handle_drop returned at +%.3fms, success=%s",
@@ -68,6 +77,8 @@ class FileOperationDelegates:
 
         from PyQt5.QtCore import Qt
 
+        from oncutf.domain.keyboard import KeyboardModifier
+        from oncutf.ui.adapters.qt_keyboard import qt_modifiers_to_domain
         from oncutf.utils.cursor_helper import wait_cursor
         from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -75,6 +86,13 @@ class FileOperationDelegates:
 
         if modifiers is None:
             modifiers = Qt.NoModifier
+
+        # Convert Qt modifiers to domain
+        domain_modifiers = (
+            qt_modifiers_to_domain(modifiers)
+            if modifiers != Qt.NoModifier
+            else KeyboardModifier.NONE
+        )
 
         t0 = time.time()
         logger.debug(
@@ -100,7 +118,7 @@ class FileOperationDelegates:
                 (t2 - t0) * 1000,
                 extra={"dev_only": True},
             )
-            self.file_load_controller.handle_drop([path], modifiers)
+            self.file_load_controller.handle_drop([path], domain_modifiers)
 
         logger.debug(
             "[DROP-SINGLE] Completed at +%.3fms",

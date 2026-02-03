@@ -17,14 +17,13 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from PyQt5.QtCore import Qt
-
 from oncutf.app.services.file_load import update_file_load_ui
 from oncutf.config import (
     ALLOWED_EXTENSIONS,
     COMPANION_FILES_ENABLED,
     SHOW_COMPANION_FILES_IN_TABLE,
 )
+from oncutf.domain.keyboard import KeyboardModifier
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -175,13 +174,13 @@ class FileLoadManager:
     def load_single_item_from_drop(
         self,
         path: str,
-        modifiers: Qt.KeyboardModifiers | None = None,
+        modifiers: KeyboardModifier | None = None,
     ) -> None:
         """Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
         if modifiers is None:
-            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+            modifiers = KeyboardModifier.NONE
 
         logger.info(
             "[FileLoadManager] load_single_item_from_drop: %s",
@@ -190,8 +189,8 @@ class FileLoadManager:
         )
 
         # Parse modifiers
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & KeyboardModifier.CTRL)
+        shift = bool(modifiers & KeyboardModifier.SHIFT)
         recursive = ctrl
         merge_mode = shift
 
@@ -229,13 +228,13 @@ class FileLoadManager:
     def load_files_from_dropped_items(
         self,
         paths: list[str],
-        modifiers: Qt.KeyboardModifiers | None = None,
+        modifiers: KeyboardModifier | None = None,
     ) -> None:
         """Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.
         """
         if modifiers is None:
-            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+            modifiers = KeyboardModifier.NONE
 
         if not paths:
             logger.info("[Drop] No files dropped in table.")
@@ -244,8 +243,8 @@ class FileLoadManager:
         logger.info("[Drop] %d file(s)/folder(s) dropped in table view", len(paths))
 
         # Parse modifiers
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & KeyboardModifier.CTRL)
+        shift = bool(modifiers & KeyboardModifier.SHIFT)
         recursive = ctrl
         merge_mode = shift
 

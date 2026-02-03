@@ -7,15 +7,13 @@ modifier_handler.py
 Centralized handling of keyboard modifier combinations for file operations.
 Provides consistent logic across all file loading contexts (import, browse, drag & drop).
 
-NOTE: Refactored 2026-02-03 to remove Qt dependency.
-Keyboard modifiers are passed as int flags instead of Qt.KeyboardModifiers.
+NOTE: Refactored 2026-02-03 to use domain KeyboardModifier enum.
+No Qt dependencies.
 """
 
 from enum import Enum
 
-# Qt modifier constants (copied to avoid Qt dependency)
-CONTROL_MODIFIER = 0x04000000
-SHIFT_MODIFIER = 0x02000000
+from oncutf.domain.keyboard import KeyboardModifier
 
 
 class ModifierAction(Enum):
@@ -27,7 +25,7 @@ class ModifierAction(Enum):
     MERGE_RECURSIVE = "merge_recursive"
 
 
-def decode_modifiers(modifiers: int) -> tuple[ModifierAction, str]:
+def decode_modifiers(modifiers: KeyboardModifier) -> tuple[ModifierAction, str]:
     """Decode keyboard modifiers into a ModifierAction and description.
 
     Modifier logic:
@@ -37,15 +35,14 @@ def decode_modifiers(modifiers: int) -> tuple[ModifierAction, str]:
     - Ctrl+Shift: Merge + recursive
 
     Args:
-        modifiers: Keyboard modifier flags (int). Use QApplication.keyboardModifiers()
-                  and pass int(modifiers) to this function.
+        modifiers: Domain KeyboardModifier flags
 
     Returns:
         Tuple of (ModifierAction, human-readable description)
 
     """
-    is_ctrl = bool(modifiers & CONTROL_MODIFIER)
-    is_shift = bool(modifiers & SHIFT_MODIFIER)
+    is_ctrl = bool(modifiers & KeyboardModifier.CTRL)
+    is_shift = bool(modifiers & KeyboardModifier.SHIFT)
 
     if is_ctrl and is_shift:
         return ModifierAction.MERGE_RECURSIVE, "Merge + Recursive"
@@ -77,12 +74,12 @@ def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
 
 
 def decode_modifiers_to_flags(
-    modifiers: int,
+    modifiers: KeyboardModifier,
 ) -> tuple[bool, bool, str]:
     """Convenience function to decode modifiers directly to flags and description.
 
     Args:
-        modifiers: Keyboard modifier flags (int)
+        modifiers: Domain KeyboardModifier flags
 
     Returns:
         Tuple of (merge_mode, recursive, description)
