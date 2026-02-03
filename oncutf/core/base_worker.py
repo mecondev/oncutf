@@ -3,11 +3,11 @@
 Author: Michael Economou
 Date: 2026-01-03
 
-Base worker protocol and mixin for Qt background workers.
+Base worker protocol and mixin for background workers.
 
 This module provides:
 - WorkerProtocol: Type-safe protocol for worker implementations
-- CancellableMixin: Reusable cancellation logic for QThread/QObject workers
+- CancellableMixin: Reusable cancellation logic for background workers
 
 Usage:
     from oncutf.core.base_worker import CancellableMixin, WorkerProtocol
@@ -29,9 +29,8 @@ Usage:
                 self.progress.emit(i, f"Processing {item}")
 """
 
+import threading
 from typing import Any, Protocol, runtime_checkable
-
-from PyQt5.QtCore import QMutex, QMutexLocker
 
 
 @runtime_checkable
@@ -62,7 +61,7 @@ class CancellableMixin:
     """Mixin providing thread-safe cancellation support for workers.
 
     Provides:
-    - Thread-safe cancellation flag with QMutex protection
+    - Thread-safe cancellation flag with threading.Lock protection
     - request_cancel() method for external cancellation requests
     - is_cancelled property for checking status in work loops
     - reset_cancellation() for worker reuse
@@ -84,7 +83,7 @@ class CancellableMixin:
 
     def __init__(self) -> None:
         """Initialize cancellation state with mutex protection."""
-        self._cancel_mutex = QMutex()
+        self._cancel_lock = threading.Lock()
         self._cancelled = False
 
     def request_cancel(self) -> None:
@@ -93,7 +92,7 @@ class CancellableMixin:
         Thread-safe method that sets the cancellation flag.
         The worker should check is_cancelled periodically and exit gracefully.
         """
-        with QMutexLocker(self._cancel_mutex):
+        with self._cancel_lock:
             self._cancelled = True
 
     @property
@@ -106,7 +105,7 @@ class CancellableMixin:
             True if cancellation was requested, False otherwise.
 
         """
-        with QMutexLocker(self._cancel_mutex):
+        with self._cancel_lock:
             return self._cancelled
 
     def reset_cancellation(self) -> None:
@@ -114,7 +113,7 @@ class CancellableMixin:
 
         Call this before restarting a worker that was previously cancelled.
         """
-        with QMutexLocker(self._cancel_mutex):
+        with self._cancel_lock:
             self._cancelled = False
 
 
