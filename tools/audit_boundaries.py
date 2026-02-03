@@ -151,11 +151,78 @@ class ImportRef:
     kind: str  # "import" or "from"
 
 
+class ImportVisitor(ast.NodeVisitor):
+    """AST visitor that collects runtime imports (excluding TYPE_CHECKING blocks)."""
+
+    def __init__(self):
+        self.imports: list[ImportRef] = []
+        self._in_type_checking = False
+        self._type_checking_depth = 0
+
+    def visit_If(self, node: ast.If) -> None:
+        """Track if we're inside a TYPE_CHECKING block."""
+        # Check if this is `if TYPE_CHECKING:`
+        is_type_checking = self._is_type_checking_condition(node.test)
+
+        if is_type_checking:
+            # Enter TYPE_CHECKING block
+            old_state = self._in_type_checking
+            old_depth = self._type_checking_depth
+            self._in_type_checking = True
+            self._type_checking_depth += 1
+
+            # Visit the body (but don't collect imports)
+            for stmt in node.body:
+                self.visit(stmt)
+
+            # Restore state after leaving block
+            self._in_type_checking = old_state
+            self._type_checking_depth = old_depth
+
+            # Visit orelse (elif/else) normally
+            for stmt in node.orelse:
+                self.visit(stmt)
+        else:
+            # Normal if block - visit all
+            self.generic_visit(node)
+
+    def _is_type_checking_condition(self, test_node: ast.expr) -> bool:
+        """Check if condition is TYPE_CHECKING (or typing.TYPE_CHECKING)."""
+        # Handle: if TYPE_CHECKING:
+        if isinstance(test_node, ast.Name) and test_node.id == "TYPE_CHECKING":
+            return True
+        # Handle: if typing.TYPE_CHECKING:
+        if isinstance(test_node, ast.Attribute):
+            if test_node.attr == "TYPE_CHECKING":
+                if isinstance(test_node.value, ast.Name) and test_node.value.id == "typing":
+                    return True
+        return False
+
+    def visit_Import(self, node: ast.Import) -> None:
+        """Collect import statements (only if not in TYPE_CHECKING block)."""
+        if not self._in_type_checking:
+            for alias in node.names:
+                if alias.name:
+                    self.imports.append(
+                        ImportRef(module=alias.name, lineno=node.lineno, kind="import")
+                    )
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """Collect from-import statements (only if not in TYPE_CHECKING block)."""
+        if not self._in_type_checking and node.module:
+            self.imports.append(
+                ImportRef(module=node.module, lineno=node.lineno, kind="from")
+            )
+        self.generic_visit(node)
+
+
 def iter_imports(py_file: Path) -> Iterator[ImportRef]:
-    """Yield all syntactic import references in a Python file.
+    """Yield runtime import references in a Python file (excluding TYPE_CHECKING).
 
     Notes:
     - Captures `import X` and `from X import Y`.
+    - Excludes imports inside `if TYPE_CHECKING:` blocks.
     - Does not capture dynamic imports (importlib, __import__).
 
     """
@@ -170,13 +237,9 @@ def iter_imports(py_file: Path) -> Iterator[ImportRef]:
         # Don't crash audits on a single bad file; treat as "no imports".
         return
 
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.name:
-                    yield ImportRef(module=alias.name, lineno=node.lineno, kind="import")
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            yield ImportRef(module=node.module, lineno=node.lineno, kind="from")
+    visitor = ImportVisitor()
+    visitor.visit(tree)
+    yield from visitor.imports
 
 
 def count_type_ignores(py_file: Path) -> int:
