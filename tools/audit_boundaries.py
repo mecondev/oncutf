@@ -149,10 +149,11 @@ class ImportRef:
     module: str
     lineno: int
     kind: str  # "import" or "from"
+    is_type_checking: bool = False  # True if inside TYPE_CHECKING block
 
 
 class ImportVisitor(ast.NodeVisitor):
-    """AST visitor that collects runtime imports (excluding TYPE_CHECKING blocks)."""
+    """AST visitor that collects ALL imports with TYPE_CHECKING context."""
 
     def __init__(self):
         self.imports: list[ImportRef] = []
@@ -171,7 +172,7 @@ class ImportVisitor(ast.NodeVisitor):
             self._in_type_checking = True
             self._type_checking_depth += 1
 
-            # Visit the body (but don't collect imports)
+            # Visit the body (collect imports marked as type-checking)
             for stmt in node.body:
                 self.visit(stmt)
 
@@ -199,30 +200,39 @@ class ImportVisitor(ast.NodeVisitor):
         return False
 
     def visit_Import(self, node: ast.Import) -> None:
-        """Collect import statements (only if not in TYPE_CHECKING block)."""
-        if not self._in_type_checking:
-            for alias in node.names:
-                if alias.name:
-                    self.imports.append(
-                        ImportRef(module=alias.name, lineno=node.lineno, kind="import")
+        """Collect all import statements with TYPE_CHECKING flag."""
+        for alias in node.names:
+            if alias.name:
+                self.imports.append(
+                    ImportRef(
+                        module=alias.name,
+                        lineno=node.lineno,
+                        kind="import",
+                        is_type_checking=self._in_type_checking,
                     )
+                )
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Collect from-import statements (only if not in TYPE_CHECKING block)."""
-        if not self._in_type_checking and node.module:
+        """Collect all from-import statements with TYPE_CHECKING flag."""
+        if node.module:
             self.imports.append(
-                ImportRef(module=node.module, lineno=node.lineno, kind="from")
+                ImportRef(
+                    module=node.module,
+                    lineno=node.lineno,
+                    kind="from",
+                    is_type_checking=self._in_type_checking,
+                )
             )
         self.generic_visit(node)
 
 
 def iter_imports(py_file: Path) -> Iterator[ImportRef]:
-    """Yield runtime import references in a Python file (excluding TYPE_CHECKING).
+    """Yield ALL import references in a Python file (including TYPE_CHECKING).
 
     Notes:
     - Captures `import X` and `from X import Y`.
-    - Excludes imports inside `if TYPE_CHECKING:` blocks.
+    - Marks imports inside `if TYPE_CHECKING:` blocks with is_type_checking=True.
     - Does not capture dynamic imports (importlib, __import__).
 
     """
@@ -466,7 +476,9 @@ def find_transitive_qt_dependencies(
     reports: list[FileReport],
     package: str,
 ) -> dict[str, list[str]]:
-    """Find all files that transitively depend on Qt.
+    """Find all files that transitively depend on Qt via RUNTIME imports.
+
+    TYPE_CHECKING imports are excluded since they don't create runtime dependencies.
 
     Returns: dict mapping file_path -> dependency_chain showing how Qt is reached.
     """
@@ -486,19 +498,25 @@ def find_transitive_qt_dependencies(
         except ValueError:
             pass
 
-    # Find files with direct Qt imports
+    # Find files with direct Qt imports (RUNTIME only)
     qt_prefixes = {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"}
     direct_qt_files: set[str] = set()
     for rep in reports:
         for imp in rep.imports:
+            # Skip TYPE_CHECKING imports
+            if imp.is_type_checking:
+                continue
             if any(imp.module == qt or imp.module.startswith(qt + ".") for qt in qt_prefixes):
                 direct_qt_files.add(rep.path)
                 break
 
-    # Build reverse graph: module -> files that import it
+    # Build reverse graph: module -> files that import it (RUNTIME only)
     importers: dict[str, set[str]] = defaultdict(set)
     for rep in reports:
         for imp in rep.imports:
+            # Skip TYPE_CHECKING imports
+            if imp.is_type_checking:
+                continue
             importers[imp.module].add(rep.path)
 
     # BFS to find transitive dependencies
@@ -546,12 +564,20 @@ def find_violations(
     check_external: bool = True,
     check_transitive: bool = True,
 ) -> list[RuleViolation]:
-    """Find boundary violations based on the rule matrix."""
+    """Find boundary violations based on the rule matrix.
+
+    Only runtime imports are checked - TYPE_CHECKING imports are ignored
+    since they don't create runtime dependencies.
+    """
     violations: list[RuleViolation] = []
     reports_list = list(reports)
 
     for rep in reports_list:
         for imp in rep.imports:
+            # Skip TYPE_CHECKING imports - they don't create runtime dependencies
+            if imp.is_type_checking:
+                continue
+
             imp_layer = infer_imported_layer(imp.module, package)
 
             # Check internal layer violations
@@ -615,6 +641,14 @@ def summarize(reports: list[FileReport], violations: list[RuleViolation]) -> dic
 
     type_ignores_total = sum(r.type_ignores for r in reports)
 
+    # Count TYPE_CHECKING imports
+    type_checking_imports_total = sum(
+        1 for r in reports for imp in r.imports if imp.is_type_checking
+    )
+    runtime_imports_total = sum(
+        1 for r in reports for imp in r.imports if not imp.is_type_checking
+    )
+
     by_rule: dict[str, int] = {}
     by_direction: dict[str, int] = {}
     for v in violations:
@@ -626,6 +660,8 @@ def summarize(reports: list[FileReport], violations: list[RuleViolation]) -> dic
         "files_scanned": len(reports),
         "files_by_layer": dict(sorted(files_by_layer.items())),
         "type_ignores_total": type_ignores_total,
+        "type_checking_imports": type_checking_imports_total,
+        "runtime_imports": runtime_imports_total,
         "violations_total": len(violations),
         "violations_by_rule": dict(sorted(by_rule.items(), key=lambda kv: (-kv[1], kv[0]))),
         "violations_by_direction": dict(
@@ -645,6 +681,8 @@ def print_human_report(
 
     print("=== Boundary Audit Summary ===")
     print(f"Files scanned:        {summary['files_scanned']}")
+    print(f"Runtime imports:      {summary['runtime_imports']}")
+    print(f"TYPE_CHECKING imports: {summary['type_checking_imports']}")
     print(f"Type ignores total:   {summary['type_ignores_total']}")
     print(f"Violations total:     {summary['violations_total']}")
     print()
