@@ -490,27 +490,25 @@ class ThumbnailManager(QObject):
 
         # Give workers time to finish current tasks gracefully
         for worker in self._workers:
-            if worker.isRunning():
-                # First attempt: graceful wait (2 seconds)
-                if not worker.wait(2000):
-                    logger.warning("ThumbnailWorker still running after 2s, waiting longer...")
-                    # Second attempt: extended wait (3 more seconds)
-                    if not worker.wait(3000):
-                        logger.error("ThumbnailWorker did not stop gracefully, forcing quit")
-                        # Force quit the thread event loop
-                        worker.quit()
-                        if not worker.wait(1000):
-                            logger.error("ThumbnailWorker did not respond to quit(), terminating")
-                            worker.terminate()
-                            worker.wait(500)
+            # Disconnect signals FIRST to prevent errors during cleanup
+            try:
+                worker.thumbnail_ready.disconnect()
+                worker.generation_error.disconnect()
+            except (TypeError, RuntimeError):
+                pass  # Signals may already be disconnected
 
-                # Disconnect signals to prevent errors during cleanup
-                try:
-                    worker.thumbnail_ready.disconnect()
-                    worker.generation_error.disconnect()
-                except (TypeError, RuntimeError):
-                    pass  # Signals may already be disconnected or worker deleted
+            if worker.isRunning() and not worker.wait(2000):
+                # Graceful wait failed after 2s, force quit
+                logger.warning("ThumbnailWorker still running after 2s, forcing quit...")
+                worker.quit()
+                # Wait for quit to take effect
+                if not worker.wait(1000):
+                    logger.error("ThumbnailWorker did not respond to quit(), terminating")
+                    worker.terminate()
+                    # Give terminate a chance to work
+                    worker.wait(500)
 
+        # Clear worker list after shutdown
         self._workers.clear()
 
         # Cleanup any orphan ffmpeg processes

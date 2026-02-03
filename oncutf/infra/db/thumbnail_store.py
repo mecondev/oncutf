@@ -155,6 +155,9 @@ class ThumbnailStore:
         cursor = self._connection.cursor()
 
         try:
+            # Ensure video_frame_time is None or float (SQLite compatibility)
+            vft = None if video_frame_time is None else float(video_frame_time)
+
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO thumbnail_cache
@@ -167,7 +170,7 @@ class ThumbnailStore:
                     file_mtime,
                     file_size,
                     cache_filename,
-                    video_frame_time,
+                    vft,
                 ),
             )
             self._connection.commit()
