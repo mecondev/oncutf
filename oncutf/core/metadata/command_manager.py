@@ -17,16 +17,15 @@ Features:
 from datetime import datetime, timedelta
 from typing import Any, cast
 
-from PyQt5.QtCore import QObject, pyqtSignal
-
 from oncutf.config import UNDO_REDO_SETTINGS
 from oncutf.core.metadata.commands import BatchMetadataCommand, MetadataCommand
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-class MetadataCommandManager(QObject):
+class MetadataCommandManager(Observable):
     """Manages metadata commands with undo/redo functionality.
 
     Provides command execution, undo/redo operations, and maintains
@@ -34,12 +33,12 @@ class MetadataCommandManager(QObject):
     """
 
     # Signals for UI updates
-    can_undo_changed = pyqtSignal(bool)
-    can_redo_changed = pyqtSignal(bool)
-    command_executed = pyqtSignal(str)  # description
-    command_undone = pyqtSignal(str)  # description
-    command_redone = pyqtSignal(str)  # description
-    history_changed = pyqtSignal()  # general history change
+    can_undo_changed = Signal()
+    can_redo_changed = Signal()
+    command_executed = Signal()  # description
+    command_undone = Signal()  # description
+    command_redone = Signal()  # description
+    history_changed = Signal()  # general history change
 
     def __init__(self, max_history: int | None = None):
         """Initialize metadata command manager.

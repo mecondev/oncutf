@@ -10,15 +10,14 @@ the UI from the save logic.
 
 from typing import Any
 
-from PyQt5.QtCore import QObject, pyqtSignal
-
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-class MetadataStagingManager(QObject):
+class MetadataStagingManager(Observable):
     """Manages staged metadata changes.
 
     This class maintains a registry of all metadata changes that have been
@@ -28,17 +27,17 @@ class MetadataStagingManager(QObject):
 
     # Signals
     # Emitted when a specific field is staged: (file_path, key, value)
-    change_staged = pyqtSignal(str, str, str)
+    change_staged = Signal()
     # Emitted when a specific field is unstaged/cleared: (file_path, key)
-    change_unstaged = pyqtSignal(str, str)
+    change_unstaged = Signal()
     # Emitted when all changes for a file are cleared: (file_path)
-    file_cleared = pyqtSignal(str)
+    file_cleared = Signal()
     # Emitted when all changes are cleared
-    all_cleared = pyqtSignal()
+    all_cleared = Signal()
 
-    def __init__(self, parent: Any = None) -> None:
+    def __init__(self) -> None:
         """Initialize the staging manager with empty change tracking."""
-        super().__init__(parent)
+        super().__init__()
         self._staged_changes: dict[str, dict[str, str]] = {}
         logger.debug("MetadataStagingManager initialized", extra={"dev_only": True})
 

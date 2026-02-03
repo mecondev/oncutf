@@ -148,7 +148,7 @@ class BootstrapOrchestrator:
         self.window.drag_manager = DragManager.get_instance()
         self.window.unified_rename_engine = QtRenameEngine()
         self.window.file_operations_manager = FileOperationsManager(parent_window=self.window)
-        self.window.metadata_staging_manager = MetadataStagingManager(parent=self.window)
+        self.window.metadata_staging_manager = MetadataStagingManager()
 
         # Set as global instance
         set_metadata_staging_manager(self.window.metadata_staging_manager)
