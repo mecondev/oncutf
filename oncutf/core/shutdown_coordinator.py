@@ -22,9 +22,12 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+if TYPE_CHECKING:
+    from PyQt5.QtCore import QTimer
+
+from oncutf.utils.events import Observable, Signal
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +55,7 @@ class ShutdownResult:
     health_before: dict[str, Any] | None = None
 
 
-class ShutdownCoordinator(QObject):
+class ShutdownCoordinator(Observable):
     """Coordinates graceful shutdown of all concurrent components.
 
     Manages ordered shutdown sequence with health checks, timeouts,
@@ -65,9 +68,9 @@ class ShutdownCoordinator(QObject):
     """
 
     # Signals
-    phase_started = pyqtSignal(str)  # phase_name
-    phase_completed = pyqtSignal(str, bool)  # phase_name, success
-    shutdown_completed = pyqtSignal(bool)  # overall_success
+    phase_started = Signal(str)  # phase_name
+    phase_completed = Signal(str, bool)  # phase_name, success
+    shutdown_completed = Signal(bool)  # overall_success
 
     # Default timeouts per phase (seconds)
     # Keep these reasonably short to avoid Windows "Not Responding" dialog,
@@ -86,10 +89,10 @@ class ShutdownCoordinator(QObject):
         """Initialize shutdown coordinator.
 
         Args:
-            parent: Optional parent QObject
+            parent: Optional parent (ignored for Observable, kept for API compat)
 
         """
-        super().__init__(parent)
+        super().__init__()
 
         # Phase timeouts (can be customized)
         self.phase_timeouts = self.DEFAULT_TIMEOUTS.copy()
@@ -293,8 +296,24 @@ class ShutdownCoordinator(QObject):
         ]
         self._async_index = 0
 
-        QTimer.singleShot(0, self._execute_next_phase_async)
+        self._schedule_next_phase()
         return True
+
+    def _schedule_next_phase(self) -> None:
+        """Schedule next phase execution (Qt event loop if available, else immediate)."""
+        try:
+            from PyQt5.QtCore import QTimer
+            from PyQt5.QtWidgets import QApplication
+
+            # Use Qt event loop if QApplication exists
+            if QApplication.instance() is not None:
+                QTimer.singleShot(0, self._execute_next_phase_async)
+                return
+        except (ImportError, RuntimeError):
+            pass
+
+        # Fallback: immediate execution (no Qt available)
+        self._execute_next_phase_async()
 
     def _execute_next_phase_async(self) -> None:
         """Execute the next shutdown phase (scheduled via QTimer)."""
@@ -340,7 +359,7 @@ class ShutdownCoordinator(QObject):
             )
 
             self._async_index += 1
-            QTimer.singleShot(0, self._execute_next_phase_async)
+            self._schedule_next_phase()
 
         except Exception:
             logger.exception("[ShutdownCoordinator] Async shutdown error")

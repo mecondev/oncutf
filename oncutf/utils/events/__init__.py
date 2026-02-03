@@ -9,6 +9,6 @@ Pure Python event/signal implementation for decoupling observers from state chan
 This replaces PyQt5 QObject/pyqtSignal in non-UI layers.
 """
 
-from oncutf.infra.events.observable import Observable, Signal
+from oncutf.utils.events.observable import Observable, Signal
 
 __all__ = ["Observable", "Signal"]
