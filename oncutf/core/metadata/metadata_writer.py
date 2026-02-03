@@ -282,9 +282,8 @@ class MetadataWriter:
         """
         import contextlib
 
-        from PyQt5.QtWidgets import QApplication
-
         from oncutf.app.services import wait_cursor
+        from oncutf.utils.qt_compat import process_events
 
         if not files_to_save:
             return
@@ -352,7 +351,7 @@ class MetadataWriter:
                 )
                 _loading_dialog.set_status("Saving metadata...")
                 _loading_dialog.show()
-                QApplication.processEvents()
+                process_events()
 
             cursor_context = (
                 wait_cursor()
@@ -377,7 +376,7 @@ class MetadataWriter:
                         _loading_dialog.set_filename(file_item.filename)
                         _loading_dialog.set_count(current_file_index, file_count)
                         _loading_dialog.set_progress(current_file_index, file_count)
-                        QApplication.processEvents()
+                        process_events()
 
                     file_path = file_item.full_path
                     modifications = self._get_modified_metadata_for_file(

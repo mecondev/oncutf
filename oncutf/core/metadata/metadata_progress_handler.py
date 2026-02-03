@@ -109,11 +109,10 @@ class MetadataProgressHandler:
 
         """
         try:
-            from PyQt5.QtWidgets import QApplication
-
             from oncutf.utils.filesystem.file_size_calculator import (
                 calculate_files_total_size,
             )
+            from oncutf.utils.qt_compat import process_events
 
             # Create dialog
             dialog = self.create_metadata_progress_dialog(is_extended, cancel_callback)
@@ -130,7 +129,7 @@ class MetadataProgressHandler:
 
             # Process events to ensure dialog is visible
             for _ in range(3):
-                QApplication.processEvents()
+                process_events()
 
             # Calculate total size for progress tracking
             total_size = calculate_files_total_size(files)
@@ -189,11 +188,10 @@ class MetadataProgressHandler:
 
         """
         try:
-            from PyQt5.QtWidgets import QApplication
-
             from oncutf.utils.filesystem.file_size_calculator import (
                 calculate_files_total_size,
             )
+            from oncutf.utils.qt_compat import process_events
 
             # Create dialog
             dialog = self.create_hash_progress_dialog(cancel_callback)
@@ -205,7 +203,7 @@ class MetadataProgressHandler:
             dialog.show()
 
             # Process events
-            QApplication.processEvents()
+            process_events()
 
             # Calculate total size
             total_size = calculate_files_total_size(files)

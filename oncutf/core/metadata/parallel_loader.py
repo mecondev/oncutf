@@ -122,13 +122,13 @@ class ParallelMetadataLoader:
 
                 # Use polling with timeout for responsive UI
                 # This prevents blocking until first result
-                from PyQt5.QtWidgets import QApplication
+                from oncutf.utils.qt_compat import process_events
 
                 pending = set(future_to_item.keys())
 
                 while pending and not self._cancelled:
                     # Process Qt events first for responsive UI
-                    QApplication.processEvents()
+                    process_events()
 
                     # Check for cancellation
                     if cancellation_check and cancellation_check():

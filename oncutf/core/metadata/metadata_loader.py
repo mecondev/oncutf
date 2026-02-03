@@ -22,11 +22,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.qt_compat import process_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -532,7 +532,7 @@ class MetadataLoader:
 
         # Process events to ensure dialog is visible with initial state
         for _ in range(3):
-            QApplication.processEvents()
+            process_events()
 
         # Progress tracking
         processed_size = 0
