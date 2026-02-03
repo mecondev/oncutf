@@ -86,7 +86,7 @@ def cleanup_on_exit() -> None:
         logger.warning("[CLEANUP] Error terminating ExifTool processes: %s", e)
 
     try:
-        from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+        from oncutf.ui.thumbnail.providers import VideoThumbnailProvider
 
         VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes()
         logger.info("[CLEANUP] FFmpeg processes terminated")

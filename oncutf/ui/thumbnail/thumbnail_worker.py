@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
-from oncutf.core.thumbnail.providers import (
+from oncutf.ui.thumbnail.providers import (
     ImageThumbnailProvider,
     ThumbnailGenerationError,
     VideoThumbnailProvider,
@@ -40,9 +40,9 @@ from oncutf.core.thumbnail.providers import (
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.core.thumbnail.thumbnail_cache import ThumbnailCache
-    from oncutf.core.thumbnail.thumbnail_manager import ThumbnailRequest
     from oncutf.infra.db.thumbnail_store import ThumbnailStore
+    from oncutf.ui.thumbnail.thumbnail_cache import ThumbnailCache
+    from oncutf.ui.thumbnail.thumbnail_manager import ThumbnailRequest
 
 logger = get_cached_logger(__name__)
 

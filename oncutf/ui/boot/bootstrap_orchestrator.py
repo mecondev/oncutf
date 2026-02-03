@@ -168,7 +168,7 @@ class BootstrapOrchestrator:
         self.window.backup_manager = get_backup_manager(str(self.window.db_manager.db_path))
 
         # Thumbnail System Initialization
-        from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager
+        from oncutf.ui.thumbnail.thumbnail_manager import ThumbnailManager
 
         self.window.thumbnail_manager = ThumbnailManager(
             db_store=self.window.db_manager.thumbnail_store

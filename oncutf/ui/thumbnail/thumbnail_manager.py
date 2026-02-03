@@ -35,13 +35,13 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
-from oncutf.core.thumbnail.thumbnail_cache import ThumbnailCache, ThumbnailCacheConfig
+from oncutf.ui.thumbnail.thumbnail_cache import ThumbnailCache, ThumbnailCacheConfig
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.paths import AppPaths
 
 if TYPE_CHECKING:
-    from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
     from oncutf.infra.db.thumbnail_store import ThumbnailStore
+    from oncutf.ui.thumbnail.thumbnail_worker import ThumbnailWorker
 
 logger = get_cached_logger(__name__)
 
@@ -293,7 +293,7 @@ class ThumbnailManager(QObject):
             self._max_workers,
         )
         while len(self._workers) < self._max_workers and not self._shutdown_flag:
-            from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
+            from oncutf.ui.thumbnail.thumbnail_worker import ThumbnailWorker
 
             worker = ThumbnailWorker(
                 request_queue=self._request_queue,
@@ -521,9 +521,9 @@ class ThumbnailManager(QObject):
     def _cleanup_ffmpeg_processes(self) -> None:
         """Kill any orphan ffmpeg processes started by this application."""
         try:
-            from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+            from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
 
-            VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes(
+            force_cleanup_ffmpeg_processes(
                 max_scan_s=0.5,
                 graceful_wait_s=0.5,
             )

@@ -13,14 +13,14 @@ Author: Michael Economou
 Date: 2026-01-16
 """
 
-from oncutf.core.thumbnail.thumbnail_cache import (
+from oncutf.ui.thumbnail.thumbnail_cache import (
     ThumbnailCache,
     ThumbnailCacheConfig,
     ThumbnailDiskCache,
     ThumbnailMemoryCache,
 )
-from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager, ThumbnailRequest
-from oncutf.core.thumbnail.thumbnail_worker import ThumbnailWorker
+from oncutf.ui.thumbnail.thumbnail_manager import ThumbnailManager, ThumbnailRequest
+from oncutf.ui.thumbnail.thumbnail_worker import ThumbnailWorker
 
 __all__ = [
     "ThumbnailCache",

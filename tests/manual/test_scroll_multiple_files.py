@@ -24,8 +24,8 @@ from PyQt5.QtWidgets import QApplication
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from oncutf.core.thumbnail.thumbnail_manager import ThumbnailManager
 from oncutf.infra.db.database_manager import DatabaseManager
+from oncutf.ui.thumbnail.thumbnail_manager import ThumbnailManager
 from oncutf.utils.paths import AppPaths
 
 

@@ -526,10 +526,10 @@ class ShutdownCoordinator(Observable):
         if not self._thumbnail_manager:
             # Still do force cleanup even if no manager registered
             try:
-                from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+                from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
 
                 threading.Thread(
-                    target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                    target=force_cleanup_ffmpeg_processes,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
                     name="FFmpegForceCleanup",
@@ -544,11 +544,11 @@ class ShutdownCoordinator(Observable):
 
             # Force cleanup all FFmpeg processes (like ExifTool)
             # This is critical to prevent zombie ffmpeg processes
-            from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+            from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
 
             # Run in background thread to avoid UI freezes
             threading.Thread(
-                target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                target=force_cleanup_ffmpeg_processes,
                 kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                 daemon=True,
                 name="FFmpegForceCleanup",
@@ -557,10 +557,10 @@ class ShutdownCoordinator(Observable):
             logger.exception("Thumbnail manager shutdown failed")
             # Even on error, try force cleanup
             try:
-                from oncutf.core.thumbnail.providers import VideoThumbnailProvider
+                from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
 
                 threading.Thread(
-                    target=VideoThumbnailProvider.force_cleanup_all_ffmpeg_processes,
+                    target=force_cleanup_ffmpeg_processes,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
                     name="FFmpegForceCleanup",
