@@ -102,9 +102,11 @@ def get_item_data_roles() -> dict[str, Any]:
             "EditRole": 2,
         }
     else:
+        # Qt.ItemDataRole enum values (standard Qt constants)
+        # Using literals to avoid mypy attr-defined errors in Qt namespace
         return {
-            "DecorationRole": Qt.DecorationRole,
-            "ToolTipRole": Qt.ToolTipRole,
-            "DisplayRole": Qt.DisplayRole,
-            "EditRole": Qt.EditRole,
+            "DecorationRole": 1,
+            "ToolTipRole": 3,
+            "DisplayRole": 0,
+            "EditRole": 2,
         }

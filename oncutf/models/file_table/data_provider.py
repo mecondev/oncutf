@@ -349,7 +349,7 @@ class DataProvider:
         if index.column() == 0:
             base_flags |= Qt.ItemIsUserCheckable
 
-        return base_flags
+        return Qt.ItemFlags(base_flags)
 
     def header_data(
         self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole
