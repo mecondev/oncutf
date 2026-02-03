@@ -17,7 +17,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class WorkerBase(threading.Thread):
+class WorkerBase(threading.Thread, Observable):
     """Base class for background workers.
 
     Provides QThread-like interface using standard threading.Thread.
@@ -53,13 +53,11 @@ class WorkerBase(threading.Thread):
             daemon: Whether thread should be daemon (default True)
 
         """
-        super().__init__(daemon=daemon)
+        threading.Thread.__init__(self, daemon=daemon)
+        Observable.__init__(self)
         self._parent = parent
         self._cancel_lock = threading.Lock()
         self._cancelled = False
-
-        # Initialize Observable mixin
-        Observable.__init__(self)
 
     def request_cancellation(self) -> None:
         """Request worker to cancel operation (thread-safe)."""

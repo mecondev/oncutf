@@ -232,11 +232,12 @@ class TestHashWorkerProgress:
             first_result = self.worker._cumulative_processed_bytes
             assert first_result == total_size
 
-            # Second operation with different setup
+            # Create new worker for second operation (threading.Thread cannot restart)
+            self.worker = HashWorker()
             self.worker.setup_duplicate_scan(files[:2])  # Only 2 files
             self.worker.set_total_size(10000)  # Different total
 
-            # Check that state was reset
+            # Check that state is initialized
             assert self.worker._cumulative_processed_bytes == 0
             assert self.worker._total_bytes == 10000
 

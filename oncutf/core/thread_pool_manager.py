@@ -140,7 +140,7 @@ class PriorityQueue:
             self._size = 0
 
 
-class SmartWorkerThread(threading.Thread):
+class SmartWorkerThread(threading.Thread, Observable):
     """Smart worker thread that can handle multiple types of tasks.
 
     Features:
@@ -163,7 +163,7 @@ class SmartWorkerThread(threading.Thread):
             parent: Parent object (for API compatibility)
 
         """
-        super().__init__(daemon=True)
+        threading.Thread.__init__(self, daemon=True)
         Observable.__init__(self)
 
         self.worker_id = worker_id

@@ -96,10 +96,11 @@ class SignalInstance:
         with self._lock:
             if callback not in self._callbacks:
                 self._callbacks.append(callback)
+                callback_name = getattr(callback, "__name__", repr(callback))
                 logger.debug(
                     "Signal connected: %s -> %s",
                     self.name,
-                    callback.__name__,
+                    callback_name,
                     extra={"dev_only": True},
                 )
 
