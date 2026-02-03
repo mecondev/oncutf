@@ -24,8 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import psutil
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
+from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -178,7 +178,7 @@ class LRUCache:
             }
 
 
-class MemoryManager(QObject):
+class MemoryManager(Observable):
     """Comprehensive memory management system for oncutf.
 
     Features:
@@ -190,12 +190,17 @@ class MemoryManager(QObject):
     """
 
     # Signals
-    memory_warning = pyqtSignal(float)  # memory_usage_percent
-    cache_cleaned = pyqtSignal(int)  # cleaned_entries_count
+    memory_warning = Signal(float)  # memory_usage_percent
+    cache_cleaned = Signal(int)  # cleaned_entries_count
 
     def __init__(self, parent: Any = None) -> None:
-        """Initialize memory manager."""
-        super().__init__(parent)
+        """Initialize memory manager.
+
+        Args:
+            parent: Ignored (kept for API compatibility)
+
+        """
+        super().__init__()
 
         # Configuration
         self.memory_threshold_percent = 85.0  # Trigger cleanup at 85% memory usage
@@ -212,12 +217,36 @@ class MemoryManager(QObject):
         self._last_cleanup = time.time()
         self._total_freed_mb = 0.0
 
-        # Monitoring timer
-        self._cleanup_timer = QTimer()
-        self._cleanup_timer.timeout.connect(self._perform_cleanup)
-        self._cleanup_timer.start(self.cleanup_interval_seconds * 1000)
+        # Monitoring timer (threading.Timer for automatic rescheduling)
+        self._cleanup_timer: threading.Timer | None = None
+        self._timer_lock = threading.Lock()
+        self._start_cleanup_timer()
 
         logger.info("[MemoryManager] Initialized with automatic cleanup")
+
+    def _start_cleanup_timer(self) -> None:
+        """Start the periodic cleanup timer."""
+        with self._timer_lock:
+            if self._cleanup_timer is not None:
+                self._cleanup_timer.cancel()
+
+            self._cleanup_timer = threading.Timer(
+                self.cleanup_interval_seconds, self._perform_cleanup
+            )
+            self._cleanup_timer.daemon = True
+            self._cleanup_timer.start()
+            logger.debug(
+                "[MemoryManager] Started cleanup timer with interval %ds",
+                self.cleanup_interval_seconds,
+            )
+
+    def stop_cleanup_timer(self) -> None:
+        """Stop the periodic cleanup timer."""
+        with self._timer_lock:
+            if self._cleanup_timer is not None:
+                self._cleanup_timer.cancel()
+                self._cleanup_timer = None
+                logger.debug("[MemoryManager] Stopped cleanup timer")
 
     def register_cache(self, name: str, cache_object: Any) -> None:
         """Register a cache object for monitoring and cleanup.
@@ -303,6 +332,9 @@ class MemoryManager(QObject):
 
         except Exception:
             logger.exception("[MemoryManager] Error during cleanup")
+        finally:
+            # Reschedule the timer for next cleanup
+            self._start_cleanup_timer()
 
     def _cleanup_caches(self) -> int:
         """Clean up registered caches."""
@@ -394,8 +426,8 @@ class MemoryManager(QObject):
 
     def shutdown(self) -> None:
         """Shutdown memory manager."""
-        if self._cleanup_timer.isActive():
-            self._cleanup_timer.stop()
+        # Stop the timer
+        self.stop_cleanup_timer()
 
         # Final cleanup
         self.force_cleanup()
