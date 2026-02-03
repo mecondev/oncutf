@@ -6,10 +6,10 @@ Date: 2025-12-16
 Counter scope enumeration for controlling counter reset behavior.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class CounterScope(str, Enum):
+class CounterScope(StrEnum):
     """Defines the scope for counter reset behavior.
 
     Used to control when the counter resets to the start value:

@@ -25,7 +25,7 @@ Usage:
 
 import platform
 import subprocess
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -33,7 +33,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class ToolName(str, Enum):
+class ToolName(StrEnum):
     """Supported external tools."""
 
     EXIFTOOL = "exiftool"
