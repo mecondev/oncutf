@@ -100,13 +100,13 @@ class ApplicationService:
 
         Args:
             path: File or folder path to load
-            modifiers: Keyboard modifiers (Qt.KeyboardModifiers or None)
+            modifiers: Keyboard modifiers (KeyboardModifier or None)
 
         """
         if modifiers is None:
-            from PyQt5.QtCore import Qt
+            from oncutf.domain.keyboard import KeyboardModifier
 
-            modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
+            modifiers = KeyboardModifier.NONE
 
         import time
 
