@@ -155,10 +155,11 @@ class ImportRef:
 class ImportVisitor(ast.NodeVisitor):
     """AST visitor that collects ALL imports with TYPE_CHECKING context."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize visitor with empty state."""
         self.imports: list[ImportRef] = []
-        self._in_type_checking = False
-        self._type_checking_depth = 0
+        self._in_type_checking: bool = False
+        self._type_checking_depth: int = 0
 
     def visit_If(self, node: ast.If) -> None:
         """Track if we're inside a TYPE_CHECKING block."""
