@@ -216,16 +216,18 @@ class ThumbnailViewportWidget(QWidget):
         # Spacer
         layout.addStretch()
 
-        # Zoom out icon (small image)
-        zoom_out_btn = QToolButton()
-        zoom_out_btn.setFixedSize(16, 16)
+        # Icon path for landscape icon
         icon_path = (
             Path(__file__).parent.parent.parent
             / "resources"
             / "icons"
-            / "feather_icons"
-            / "image.svg"
+            / "utilities"
+            / "landscape.svg"
         )
+
+        # Zoom out icon (small landscape)
+        zoom_out_btn = QToolButton()
+        zoom_out_btn.setFixedSize(16, 16)
         zoom_out_btn.setIcon(QIcon(str(icon_path)))
         zoom_out_btn.setIconSize(QSize(12, 12))
         zoom_out_btn.setToolTip("Zoom out")
@@ -248,7 +250,7 @@ class ThumbnailViewportWidget(QWidget):
 
         layout.addWidget(self._zoom_slider)
 
-        # Zoom in icon (large image)
+        # Zoom in icon (large landscape)
         zoom_in_btn = QToolButton()
         zoom_in_btn.setFixedSize(20, 20)
         zoom_in_btn.setIcon(QIcon(str(icon_path)))
