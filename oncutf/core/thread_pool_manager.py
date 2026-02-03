@@ -26,7 +26,7 @@ from enum import Enum
 from typing import Any
 
 import psutil
-from PyQt5.QtCore import QMutex, QMutexLocker, QObject, QThread, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -319,7 +319,7 @@ class ThreadPoolManager(QObject):
         self._total_execution_time = 0.0
 
         # Thread safety
-        self._mutex = QMutex()
+        self._mutex = threading.Lock()
 
         # Monitoring timer
         self._monitor_timer = QTimer()
@@ -362,7 +362,7 @@ class ThreadPoolManager(QObject):
             kwargs = {}
 
         try:
-            with QMutexLocker(self._mutex):
+            with self._mutex:
                 if task_id in self._tasks:
                     logger.warning("[ThreadPoolManager] Task %s already exists", task_id)
                     return False
@@ -486,7 +486,7 @@ class ThreadPoolManager(QObject):
 
     def _on_task_completed(self, task_id: str, result: Any) -> None:
         """Handle task completion."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             if task_id in self._tasks:
                 task = self._tasks[task_id]
                 self._completed_tasks += 1
@@ -496,7 +496,7 @@ class ThreadPoolManager(QObject):
 
     def _on_task_failed(self, task_id: str, error_message: str) -> None:
         """Handle task failure and update health tracking."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             self._failed_tasks += 1
             self.task_failed.emit(task_id, error_message)
 
@@ -539,7 +539,7 @@ class ThreadPoolManager(QObject):
 
     def get_stats(self) -> ThreadPoolStats:
         """Get thread pool statistics."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             # Get system stats
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory_info = psutil.virtual_memory()
@@ -562,12 +562,12 @@ class ThreadPoolManager(QObject):
 
     def get_worker_stats(self) -> list[dict[str, Any]]:
         """Get individual worker statistics."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             return [worker.get_stats() for worker in self._workers.values()]
 
     def clear_completed_tasks(self) -> None:
         """Clear completed tasks from memory."""
-        with QMutexLocker(self._mutex):
+        with self._mutex:
             completed_tasks = [
                 task_id for task_id, task in self._tasks.items() if task.is_completed
             ]
