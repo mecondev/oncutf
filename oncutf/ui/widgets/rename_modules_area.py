@@ -99,7 +99,7 @@ class RenameModulesArea(QWidget):
 
         # Use centralized timer manager for debouncing
         # This replaces the local QTimer with a managed timer that handles cleanup
-        from oncutf.ui.helpers.timer_manager import schedule_preview_update
+        from oncutf.utils.shared.timer_manager import schedule_preview_update
 
         self._schedule_preview_update = schedule_preview_update
         self._preview_timer_id = f"preview_debounce_{id(self)}"

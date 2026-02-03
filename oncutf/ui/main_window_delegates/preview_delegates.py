@@ -6,7 +6,7 @@ Date: 2026-01-10
 
 from pathlib import Path
 
-from oncutf.ui.helpers.timer_manager import cancel_timer, schedule_preview_update
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 
 
 class PreviewDelegates:

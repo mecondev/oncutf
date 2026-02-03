@@ -17,9 +17,9 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.ui.helpers.timer_manager import cancel_timer, schedule_preview_update
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_preview_update
 
 if TYPE_CHECKING:
     from oncutf.ui.main_window import MainWindow
