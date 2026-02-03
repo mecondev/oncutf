@@ -17,6 +17,7 @@ Responsibilities:
 import importlib
 import inspect
 import pkgutil
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -25,25 +26,16 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
+@dataclass
 class ModuleDescriptor:
     """Describes a module type and its metadata."""
 
-    def __init__(
-        self,
-        name: str,
-        display_name: str,
-        module_class: type,
-        ui_widget_class: type | None = None,
-        ui_rows: int = 1,
-        description: str = "",
-    ):
-        """Initialize module descriptor with name, classes, and metadata."""
-        self.name = name  # Internal ID
-        self.display_name = display_name  # UI label
-        self.module_class = module_class  # Pure logic class
-        self.ui_widget_class = ui_widget_class  # UI widget (can be None for pure modules)
-        self.ui_rows = ui_rows  # Height hint for UI
-        self.description = description
+    name: str  # Internal ID
+    display_name: str  # UI label
+    module_class: type  # Pure logic class
+    ui_widget_class: type | None = None  # UI widget (can be None for pure modules)
+    ui_rows: int = 1  # Height hint for UI
+    description: str = ""  # Optional description
 
 
 class ModuleOrchestrator:

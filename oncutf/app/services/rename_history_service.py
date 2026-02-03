@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -56,15 +57,14 @@ class RenameHistoryDB(Protocol):
         ...
 
 
+@dataclass
 class RenameOperation:
     """Represents a single rename operation within a batch."""
 
-    def __init__(self, old_path: str, new_path: str, old_filename: str, new_filename: str):
-        """Initialize rename operation with old and new paths/filenames."""
-        self.old_path = old_path
-        self.new_path = new_path
-        self.old_filename = old_filename
-        self.new_filename = new_filename
+    old_path: str
+    new_path: str
+    old_filename: str
+    new_filename: str
 
     def __repr__(self) -> str:
         """Return string representation of rename operation."""
