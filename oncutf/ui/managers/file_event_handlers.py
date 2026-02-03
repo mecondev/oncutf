@@ -16,6 +16,7 @@ from typing import Any
 from PyQt5.QtWidgets import QApplication
 
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
+from oncutf.ui.adapters.qt_keyboard import qt_modifiers_to_domain
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -53,8 +54,9 @@ class FileEventHandlers:
 
         if folder_path:
             # Get current modifiers at time of selection
-            modifiers = QApplication.keyboardModifiers()
-            merge_mode, recursive, action_type = decode_modifiers_to_flags(int(modifiers))
+            qt_mods = QApplication.keyboardModifiers()
+            domain_mods = qt_modifiers_to_domain(qt_mods)
+            merge_mode, recursive, action_type = decode_modifiers_to_flags(domain_mods)
 
             logger.info("User selected folder: %s (%s)", folder_path, action_type)
 
@@ -84,8 +86,9 @@ class FileEventHandlers:
             return
 
         # Get current modifiers
-        modifiers = QApplication.keyboardModifiers()
-        merge_mode, recursive, _ = decode_modifiers_to_flags(int(modifiers))
+        qt_mods = QApplication.keyboardModifiers()
+        domain_mods = qt_modifiers_to_domain(qt_mods)
+        merge_mode, recursive, _ = decode_modifiers_to_flags(domain_mods)
 
         # Use controller for orchestration (proper architecture)
         self.parent_window.file_load_controller.load_folder(selected_path, merge_mode, recursive)

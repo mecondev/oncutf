@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import QApplication
 
 from oncutf.config import ALLOWED_EXTENSIONS
 from oncutf.core.modifier_handler import decode_modifiers_to_flags
+from oncutf.ui.adapters.qt_keyboard import qt_modifiers_to_domain
 from oncutf.ui.drag.drag_manager import DragManager
 from oncutf.ui.drag.drag_visual_manager import (
     DragVisualManager,
@@ -458,10 +459,11 @@ class DragHandler:
         if not self._drag_path:
             return
 
-        modifiers = QApplication.keyboardModifiers()
-        self._view.item_dropped.emit(self._drag_path, modifiers)
+        qt_mods = QApplication.keyboardModifiers()
+        self._view.item_dropped.emit(self._drag_path, qt_mods)
 
-        _, _, action = decode_modifiers_to_flags(int(modifiers))
+        domain_mods = qt_modifiers_to_domain(qt_mods)
+        _, _, action = decode_modifiers_to_flags(domain_mods)
 
         logger.info(
             "[DragHandler] Dropped: %s (%s)",
