@@ -12,8 +12,6 @@ import os
 from pathlib import Path
 from typing import Any, cast
 
-from PyQt5.QtCore import Qt
-
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -96,10 +94,18 @@ class ApplicationService:
     def load_single_item_from_drop(
         self,
         path: str,
-        modifiers: Qt.KeyboardModifiers | None = None,
+        modifiers: Any = None,
     ) -> None:
-        """Load single item from drop via FileLoadController."""
+        """Load single item from drop via FileLoadController.
+
+        Args:
+            path: File or folder path to load
+            modifiers: Keyboard modifiers (Qt.KeyboardModifiers or None)
+
+        """
         if modifiers is None:
+            from PyQt5.QtCore import Qt
+
             modifiers = Qt.KeyboardModifiers(Qt.NoModifier)
 
         import time
