@@ -103,5 +103,10 @@ class WorkerBase(threading.Thread, Observable):
             True if thread finished, False if timeout occurred
 
         """
+        # Cannot join current thread
+        if threading.current_thread() is self:
+            logger.warning("[%s] Cannot wait() on current thread", self.__class__.__name__)
+            return not self.is_alive()
+
         self.join(timeout=timeout)
         return not self.is_alive()

@@ -18,6 +18,7 @@ Refactored 2026-01-15: Consolidated from HashWorkerCoordinator to provide
 unified callback architecture for all hash operations.
 """
 
+import contextlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -363,17 +364,25 @@ class HashLoadingService:
 
     def _cleanup_hash_worker(self) -> None:
         """Clean up hash worker."""
-        if (
-            hasattr(self, "_hash_worker")
-            and self._hash_worker
-            and self._hash_worker.isRunning()
-            and not self._hash_worker.wait(3000)
-        ):
-            self._hash_worker.terminate()
-            self._hash_worker.wait(1000)
-        if hasattr(self, "_hash_worker") and self._hash_worker:
-            self._hash_worker.deleteLater()
-            self._hash_worker = None
+        if not hasattr(self, "_hash_worker") or not self._hash_worker:
+            return
+
+        # Request cancellation if still running
+        if self._hash_worker.isRunning():
+            self._hash_worker.request_cancellation()
+
+            # Wait for thread to finish (max 3 seconds)
+            if not self._hash_worker.wait(3.0):
+                logger.warning("[HashLoadingService] Worker thread did not finish in time")
+
+        # Disconnect proxy signals to prevent callbacks after cleanup
+        if hasattr(self, "_signal_proxy") and self._signal_proxy:
+            with contextlib.suppress(Exception):
+                self._signal_proxy.deleteLater()
+            self._signal_proxy = None
+
+        # Clear worker reference (no deleteLater for threading.Thread)
+        self._hash_worker = None
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -497,6 +506,7 @@ class HashLoadingService:
         import time
 
         from oncutf.core.hash.parallel_hash_worker import ParallelHashWorker
+        from oncutf.ui.utils.signal_proxy import SignalProxy
         from oncutf.utils.filesystem.file_size_calculator import (
             calculate_files_total_size,
         )
@@ -514,25 +524,48 @@ class HashLoadingService:
         elif operation == "checksums":
             self._hash_worker.setup_checksum_calculation(file_paths)
 
-        # Connect progress signals
+        # Create SignalProxy for thread-safe signal forwarding
+        self._signal_proxy = SignalProxy(parent=self.parent_window)
+
+        # Connect worker Observable signals to proxy forwarders
         from typing import cast
 
-        cast("Any", self._hash_worker.progress_updated).connect(self._on_operation_progress)
-        cast("Any", self._hash_worker.size_progress).connect(self._on_size_progress)
-        cast("Any", self._hash_worker.file_hash_calculated).connect(self._on_operation_file_hash)
+        cast("Any", self._hash_worker.status_updated).connect(self._signal_proxy.forward_status)
+        cast("Any", self._hash_worker.progress_updated).connect(self._signal_proxy.forward_progress)
+        cast("Any", self._hash_worker.size_progress).connect(
+            self._signal_proxy.forward_size_progress
+        )
+        cast("Any", self._hash_worker.file_hash_calculated).connect(
+            self._signal_proxy.forward_file_hash
+        )
+        cast("Any", self._hash_worker.finished_processing).connect(
+            self._signal_proxy.forward_finished
+        )
+        cast("Any", self._hash_worker.error_occurred).connect(self._signal_proxy.forward_error)
 
-        # Connect result signals
+        # Connect result signals based on operation type
         if operation == "duplicates":
-            cast("Any", self._hash_worker.duplicates_found).connect(self._on_duplicates_result)
+            cast("Any", self._hash_worker.duplicates_found).connect(
+                self._signal_proxy.forward_duplicates
+            )
+            self._signal_proxy.duplicates_signal.connect(self._on_duplicates_result)
         elif operation == "compare":
-            cast("Any", self._hash_worker.comparison_result).connect(self._on_comparison_result)
+            cast("Any", self._hash_worker.comparison_result).connect(
+                self._signal_proxy.forward_comparison
+            )
+            self._signal_proxy.comparison_signal.connect(self._on_comparison_result)
         elif operation == "checksums":
-            cast("Any", self._hash_worker.checksums_calculated).connect(self._on_checksums_result)
+            cast("Any", self._hash_worker.checksums_calculated).connect(
+                self._signal_proxy.forward_checksums
+            )
+            self._signal_proxy.checksums_signal.connect(self._on_checksums_result)
 
-        # Connect completion and error signals
-        if hasattr(self._hash_worker, "finished_processing"):
-            cast("Any", self._hash_worker.finished_processing).connect(self._on_operation_finished)
-        cast("Any", self._hash_worker.error_occurred).connect(self._on_operation_error)
+        # Connect proxy Qt signals to callbacks
+        self._signal_proxy.progress_signal.connect(self._on_operation_progress)
+        self._signal_proxy.size_progress_signal.connect(self._on_size_progress)
+        self._signal_proxy.file_hash_signal.connect(self._on_operation_file_hash)
+        self._signal_proxy.finished_signal.connect(self._on_operation_finished)
+        self._signal_proxy.error_signal.connect(self._on_operation_error)
 
         # Create progress dialog
         self._create_operation_progress_dialog(operation, len(file_paths))
@@ -577,13 +610,7 @@ class HashLoadingService:
         dialog.set_count(0, file_count)
         dialog.start_progress_tracking(self._total_size)
 
-        # Connect status updates from worker
-        if self._hash_worker and hasattr(self._hash_worker, "status_updated"):
-            from typing import cast
-
-            cast("Any", self._hash_worker.status_updated).connect(
-                dialog.set_status, Qt.QueuedConnection
-            )
+        # Status updates handled via SignalProxy (connected in _start_operation)
 
         dialog.show()
 
