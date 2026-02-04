@@ -6,7 +6,7 @@ Date: 2025-05-31
 This module provides unified icon loading functionality for the application.
 It handles different types of icons:
 - Metadata status icons
-- Menu icons (from Feather icon set)
+- Menu icons
 - Application icons
 - Preview status icons
 
@@ -107,8 +107,7 @@ class ThemeIconLoader:
 
         Search order:
         1. Categorized Material Design folders (navigation, editing, files, etc.)
-        2. Legacy feather_icons folder (backward compatibility)
-        3. Root icons folder
+        2. Root icons folder
 
         Args:
             name: The icon name (without extension)
@@ -140,16 +139,7 @@ class ThemeIconLoader:
             if svg_path.exists():
                 return str(svg_path)
 
-        # 2. Try legacy feather icons folder (PNG first, then SVG)
-        feather_png_path = base_path / "feather_icons" / f"{name}.png"
-        if feather_png_path.exists():
-            return str(feather_png_path)
-
-        feather_svg_path = base_path / "feather_icons" / f"{name}.svg"
-        if feather_svg_path.exists():
-            return str(feather_svg_path)
-
-        # 3. Fall back to root icons folder (PNG only)
+        # 2. Fall back to root icons folder (PNG only)
         fallback_png_path = base_path / f"{name}.png"
         if fallback_png_path.exists():
             return str(fallback_png_path)
@@ -250,11 +240,11 @@ class ThemeIconLoader:
         """
         import re
 
-        # Detect icon type
-        is_feather = 'fill="none"' in svg_content
+        # Detect icon type based on fill attribute
+        is_stroke_based = 'fill="none"' in svg_content
 
-        if is_feather:
-            # Feather icons: stroke-based
+        if is_stroke_based:
+            # Stroke-based icons (outline style)
             svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
             svg_content = svg_content.replace("stroke='currentColor'", f"stroke='{color}'")
             svg_content = svg_content.replace('stroke="#000"', f'stroke="{color}"')
@@ -264,6 +254,10 @@ class ThemeIconLoader:
                 svg_content = svg_content.replace("<svg", f'<svg stroke="{color}"')
         else:
             # Material Design icons: fill-based
+            # Replace currentColor first (theme-aware placeholder)
+            svg_content = svg_content.replace('fill="currentColor"', f'fill="{color}"')
+            svg_content = svg_content.replace("fill='currentColor'", f"fill='{color}'")
+
             # Replace existing fills
             svg_content = svg_content.replace('fill="#000"', f'fill="{color}"')
             svg_content = svg_content.replace('fill="#000000"', f'fill="{color}"')
@@ -339,8 +333,7 @@ def get_menu_icon_path(icon_name: str) -> str:
 
     Search order:
     1. Categorized Material Design folders (navigation, editing, files, etc.)
-    2. Legacy feather_icons folder (backward compatibility)
-    3. Root icons folder
+    2. Root icons folder
 
     Args:
         icon_name: Name of the icon (without extension)
@@ -376,23 +369,6 @@ def get_menu_icon_path(icon_name: str) -> str:
 
             if icon_path_svg.exists():
                 return str(icon_path_svg)
-
-        # 2. Try legacy feather_icons folder (PNG first, then SVG)
-        relative_path_png = str(
-            Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.png"
-        )
-        icon_path_png = get_resource_path(relative_path_png)
-
-        if icon_path_png.exists():
-            return str(icon_path_png)
-
-        relative_path_svg = str(
-            Path("oncutf") / "resources" / "icons" / "feather_icons" / f"{icon_name}.svg"
-        )
-        icon_path_svg = get_resource_path(relative_path_svg)
-
-        if icon_path_svg.exists():
-            return str(icon_path_svg)
 
         # Log warning if not found
         logger.warning("Icon not found: %s", icon_name)

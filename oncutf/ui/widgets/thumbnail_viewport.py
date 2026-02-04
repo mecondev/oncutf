@@ -216,19 +216,15 @@ class ThumbnailViewportWidget(QWidget):
         # Spacer
         layout.addStretch()
 
-        # Icon path for landscape icon
-        icon_path = (
-            Path(__file__).parent.parent.parent
-            / "resources"
-            / "icons"
-            / "utilities"
-            / "landscape.svg"
-        )
+        # Get theme-aware landscape icon
+        from oncutf.ui.helpers.icons_loader import icons_loader
+
+        landscape_icon = icons_loader.load_icon("landscape")
 
         # Zoom out icon (small landscape)
         zoom_out_btn = QToolButton()
         zoom_out_btn.setFixedSize(16, 16)
-        zoom_out_btn.setIcon(QIcon(str(icon_path)))
+        zoom_out_btn.setIcon(landscape_icon)
         zoom_out_btn.setIconSize(QSize(12, 12))
         zoom_out_btn.setToolTip("Zoom out")
         zoom_out_btn.clicked.connect(self.zoom_out)
@@ -253,7 +249,7 @@ class ThumbnailViewportWidget(QWidget):
         # Zoom in icon (large landscape)
         zoom_in_btn = QToolButton()
         zoom_in_btn.setFixedSize(20, 20)
-        zoom_in_btn.setIcon(QIcon(str(icon_path)))
+        zoom_in_btn.setIcon(landscape_icon)
         zoom_in_btn.setIconSize(QSize(18, 18))
         zoom_in_btn.setToolTip("Zoom in")
         zoom_in_btn.clicked.connect(self.zoom_in)
