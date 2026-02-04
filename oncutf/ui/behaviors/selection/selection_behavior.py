@@ -70,7 +70,7 @@ class SelectionBehavior:
     def _setup(self) -> None:
         """Set up behavior-specific initialization."""
         # Connect to Qt selection model if available
-        if hasattr(self.widget, "selectionModel") and callable(self._widget.selectionModel):
+        if hasattr(self._widget, "selectionModel") and callable(self._widget.selectionModel):
             selection_model = self._widget.selectionModel()
             if selection_model:
                 selection_model.selectionChanged.connect(self._on_qt_selection_changed)

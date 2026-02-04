@@ -539,13 +539,22 @@ class LayoutController:
             return
 
         try:
-            # Update rename preview
-            if hasattr(self.parent_window, "request_preview_update"):
-                self.parent_window.request_preview_update()
+            updated_via_store = False
 
-            # Update metadata tree from selection
-            if hasattr(self.parent_window, "metadata_tree_view"):
-                self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+            file_table_view = getattr(self.parent_window, "file_table_view", None)
+            if file_table_view and hasattr(file_table_view, "_selection_behavior"):
+                selection_behavior = file_table_view._selection_behavior
+                selection_behavior.update_selection_store(set(selected_rows), emit_signal=True)
+                updated_via_store = True
+
+            if not updated_via_store:
+                # Fallback: update rename preview directly
+                if hasattr(self.parent_window, "request_preview_update"):
+                    self.parent_window.request_preview_update()
+
+                # Fallback: update metadata tree from selection
+                if hasattr(self.parent_window, "metadata_tree_view"):
+                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
 
             logger.debug(
                 "[LayoutController] Thumbnail selection changed: %d items, updated preview",

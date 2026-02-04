@@ -86,11 +86,13 @@ class SignalInstance:
         self._callbacks: list[Callable[..., Any]] = []
         self._lock = threading.Lock()
 
-    def connect(self, callback: Callable[..., Any]) -> None:
+    def connect(self, callback: Callable[..., Any], connection_type: Any = None) -> None:
         """Connect callback to signal.
 
         Args:
             callback: Function to call when signal is emitted
+            connection_type: Optional Qt connection type (ignored for pure Python signals,
+                kept for API compatibility with Qt signals)
 
         """
         with self._lock:

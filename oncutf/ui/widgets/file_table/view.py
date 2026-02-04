@@ -360,6 +360,9 @@ class FileTableView(QTableView):
             extra={"dev_only": True},
         )
 
+        # Connect Qt selection changes to SelectionStore updates
+        self._selection_behavior._setup()
+
         # Sync current Qt selection to store
         selection_store = self._get_selection_store()
         if selection_store is not None:

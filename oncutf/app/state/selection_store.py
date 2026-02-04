@@ -13,7 +13,6 @@ Features:
 - Automatic synchronization between selection and checked states
 """
 
-import threading
 import time
 from typing import Any
 
@@ -64,14 +63,6 @@ class SelectionStore(Observable):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
-        # Debounce timer (pure Python threading.Timer for Qt-free impl)
-        self._update_timer: threading.Timer | None = None
-        self._timer_lock = threading.Lock()
-
-        # Pending signal emissions (for debouncing)
-        self._pending_selection_signal = False
-        self._pending_checked_signal = False
-
         logger.debug("SelectionStore initialized", extra={"dev_only": True})
 
     # =====================================
@@ -109,9 +100,9 @@ class SelectionStore(Observable):
 
         self._last_operation_time = time.time()
 
-        # OPTIMIZED: Use debounced signal emission for better performance
+        # Direct signal emission (consumers can debounce if needed)
         if emit_signal:
-            self._schedule_selection_signal()
+            self.selection_changed.emit(list(self._selected_rows))
 
     def add_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """Add rows to current selection.
@@ -128,9 +119,9 @@ class SelectionStore(Observable):
         self._selected_rows.update(rows)
         new_count = len(self._selected_rows)
 
-        # OPTIMIZED: Use debounced signal emission
+        # Direct signal emission
         if new_count != old_count and emit_signal:
-            self._schedule_selection_signal()
+            self.selection_changed.emit(list(self._selected_rows))
 
     def remove_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """Remove rows from current selection.
@@ -147,9 +138,9 @@ class SelectionStore(Observable):
         self._selected_rows.difference_update(rows)
         new_count = len(self._selected_rows)
 
-        # OPTIMIZED: Use debounced signal emission
+        # Direct signal emission
         if new_count != old_count and emit_signal:
-            self._schedule_selection_signal()
+            self.selection_changed.emit(list(self._selected_rows))
 
     def clear_selection(self, *, emit_signal: bool = True) -> None:
         """Clear all selected rows.
@@ -163,7 +154,7 @@ class SelectionStore(Observable):
 
         self._selected_rows.clear()
         if emit_signal:
-            self._schedule_selection_signal()
+            self.selection_changed.emit([])
 
     # =====================================
     # Checked State Management
@@ -200,7 +191,7 @@ class SelectionStore(Observable):
                 new_count,
                 extra={"dev_only": True},
             )
-            self._schedule_checked_signal()
+            self.checked_changed.emit(list(self._checked_rows))
 
     def add_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """Add rows to checked state.
@@ -225,7 +216,7 @@ class SelectionStore(Observable):
                 extra={"dev_only": True},
             )
             if emit_signal:
-                self._schedule_checked_signal()
+                self.checked_changed.emit(list(self._checked_rows))
 
     def remove_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """Remove rows from checked state.
@@ -250,7 +241,7 @@ class SelectionStore(Observable):
                 extra={"dev_only": True},
             )
             if emit_signal:
-                self._schedule_checked_signal()
+                self.checked_changed.emit(list(self._checked_rows))
 
     def clear_checked(self, *, emit_signal: bool = True) -> None:
         """Clear all checked rows.
@@ -264,7 +255,7 @@ class SelectionStore(Observable):
 
         self._checked_rows.clear()
         if emit_signal:
-            self._schedule_checked_signal()
+            self.checked_changed.emit([])
 
     # =====================================
     # Anchor Management
@@ -323,8 +314,8 @@ class SelectionStore(Observable):
         logger.info("Selected all: %d files", total_files)
 
         # Emit both signals
-        self._schedule_selection_signal()
-        self._schedule_checked_signal()
+        self.selection_changed.emit(list(self._selected_rows))
+        self.checked_changed.emit(list(self._checked_rows))
 
     def invert_selection(self, total_files: int) -> None:
         """Invert current selection efficiently.
@@ -350,8 +341,8 @@ class SelectionStore(Observable):
         logger.info("Inverted selection: %d -> %d files", old_count, new_count)
 
         # Emit both signals
-        self._schedule_selection_signal()
-        self._schedule_checked_signal()
+        self.selection_changed.emit(list(self._selected_rows))
+        self.checked_changed.emit(list(self._checked_rows))
 
     # =====================================
     # State Queries
@@ -417,43 +408,6 @@ class SelectionStore(Observable):
             "last_operation_time": self._last_operation_time,
             "batch_operations": self._batch_operations.copy(),
         }
-
-    # =====================================
-    # Signal Management (Debouncing)
-    # =====================================
-
-    def _schedule_selection_signal(self) -> None:
-        """Schedule selection_changed signal emission with debouncing."""
-        self._schedule_debounced_emit()
-
-    def _schedule_checked_signal(self) -> None:
-        """Schedule checked_changed signal emission with debouncing."""
-        self._pending_checked_signal = True
-        self._schedule_debounced_emit()
-
-    def _schedule_debounced_emit(self) -> None:
-        """Schedule debounced signal emission using threading.Timer."""
-        with self._timer_lock:
-            # Cancel existing timer if any
-            if self._update_timer is not None:
-                self._update_timer.cancel()
-
-            # Create new timer (15ms debounce)
-            self._update_timer = threading.Timer(0.015, self._emit_deferred_signals)
-            self._update_timer.start()
-
-    def _emit_deferred_signals(self) -> None:
-        """Emit pending signals after debounce timer."""
-        with self._timer_lock:
-            self._update_timer = None
-
-        if self._pending_selection_signal:
-            self.selection_changed.emit(list(self._selected_rows))
-            self._pending_selection_signal = False
-
-        if self._pending_checked_signal:
-            self.checked_changed.emit(list(self._checked_rows))
-            self._pending_checked_signal = False
 
     # =====================================
     # Cleanup
