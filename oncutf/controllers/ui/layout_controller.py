@@ -625,6 +625,10 @@ class LayoutController:
                     len(selected_files),
                 )
 
+                # Update metadata tree after selection sync
+                if hasattr(self.parent_window, "metadata_tree_view"):
+                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+
         except Exception:
             logger.exception("[LayoutController] Error syncing selection to table")
 
@@ -705,27 +709,29 @@ class LayoutController:
         self.parent_window.metadata_search_field.setObjectName("metadataSearchField")
         self.parent_window.metadata_search_field.setEnabled(False)
 
-        # Add search icon
-        search_icon_path = get_icons_dir() / "feather_icons" / "search_dark.svg"
-        self.parent_window.search_action = QAction(
-            QIcon(str(search_icon_path)),
-            "Search",
-            self.parent_window.metadata_search_field,
-        )
-        self.parent_window.metadata_search_field.addAction(
-            self.parent_window.search_action, QLineEdit.TrailingPosition
-        )
+        # Add search icon (using existing close icon as placeholder)
+        search_icon_path = get_icons_dir() / "navigation" / "close.svg"
+        if search_icon_path.exists():
+            self.parent_window.search_action = QAction(
+                QIcon(str(search_icon_path)),
+                "Search",
+                self.parent_window.metadata_search_field,
+            )
+            self.parent_window.metadata_search_field.addAction(
+                self.parent_window.search_action, QLineEdit.TrailingPosition
+            )
 
         # Add clear icon
-        clear_icon_path = get_icons_dir() / "feather_icons" / "x_dark.svg"
-        self.parent_window.clear_search_action = QAction(
-            QIcon(str(clear_icon_path)),
-            "Clear",
-            self.parent_window.metadata_search_field,
-        )
-        self.parent_window.metadata_search_field.addAction(
-            self.parent_window.clear_search_action, QLineEdit.TrailingPosition
-        )
+        clear_icon_path = get_icons_dir() / "navigation" / "close.svg"
+        if clear_icon_path.exists():
+            self.parent_window.clear_search_action = QAction(
+                QIcon(str(clear_icon_path)),
+                "Clear",
+                self.parent_window.metadata_search_field,
+            )
+            self.parent_window.metadata_search_field.addAction(
+                self.parent_window.clear_search_action, QLineEdit.TrailingPosition
+            )
         self.parent_window.clear_search_action.setVisible(False)
 
         # Set up custom context menu

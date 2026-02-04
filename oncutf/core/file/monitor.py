@@ -217,7 +217,11 @@ class FilesystemMonitor(Observable):
         """
         path = Path(folder_path)
         if not path.exists() or not path.is_dir():
-            logger.warning("[FilesystemMonitor] Cannot watch non-existent folder: %s", folder_path)
+            logger.debug(
+                "[FilesystemMonitor] Cannot watch non-existent or inaccessible folder: %s",
+                folder_path,
+                extra={"dev_only": True},
+            )
             return False
 
         normalized_path = str(path.resolve())
@@ -235,6 +239,15 @@ class FilesystemMonitor(Observable):
                 normalized_path,
                 extra={"dev_only": True},
             )
+        except OSError as e:
+            # Common on Windows: drives that are not ready, network drives, etc.
+            logger.debug(
+                "[FilesystemMonitor] Cannot watch %s: %s",
+                normalized_path,
+                e,
+                extra={"dev_only": True},
+            )
+            return False
         except Exception:
             logger.exception("[FilesystemMonitor] Failed to watch %s", normalized_path)
             return False

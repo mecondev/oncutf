@@ -42,9 +42,9 @@ class WindowConfigManager:
                 extra={"dev_only": True},
             )
 
-            if geometry:
+            if geometry and all(key in geometry for key in ["x", "y", "width", "height"]):
                 self.main_window.setGeometry(
-                    geometry["close"], geometry["y"], geometry["width"], geometry["height"]
+                    geometry["x"], geometry["y"], geometry["width"], geometry["height"]
                 )
                 logger.debug(
                     "[Config] Applied saved window geometry: %s",
@@ -107,7 +107,7 @@ class WindowConfigManager:
             window_config.set(
                 "geometry",
                 {
-                    "close": geo.x(),
+                    "x": geo.x(),
                     "y": geo.y(),
                     "width": geo.width(),
                     "height": geo.height(),

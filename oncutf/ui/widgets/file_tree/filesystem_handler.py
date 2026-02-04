@@ -185,7 +185,11 @@ class FilesystemHandler:
             logger.info("[FilesystemHandler] Filesystem monitor started")
 
         except Exception as e:
-            logger.warning("[FilesystemHandler] Failed to setup filesystem monitor: %s", e)
+            logger.debug(
+                "[FilesystemHandler] Failed to setup filesystem monitor: %s",
+                e,
+                extra={"dev_only": True},
+            )
             self._filesystem_monitor = None
 
     def _reconnect_managers(self) -> None:

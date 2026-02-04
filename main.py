@@ -107,6 +107,14 @@ def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
     logger.info("[App] Received signal %d, performing cleanup...", signum)
     cleanup_on_exit()
+
+    # Ensure QApplication exits cleanly
+    from PyQt5.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app:
+        app.quit()
+
     sys.exit(0)
 
 
@@ -165,7 +173,7 @@ def main() -> int:
             logger.info("[App] Windows version: %s", platform.win32_ver())
             import locale
 
-            logger.info("[App] System locale: %s", locale.getdefaultlocale())
+            logger.info("[App] System locale: %s", locale.getlocale())
             logger.info("[App] File system encoding: %s", sys.getfilesystemencoding())
 
         # Enable High DPI support before creating QApplication

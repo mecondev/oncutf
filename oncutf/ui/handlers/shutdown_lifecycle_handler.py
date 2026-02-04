@@ -376,6 +376,14 @@ class ShutdownLifecycleHandler:
             sys.stdout.flush()
             sys.stderr.flush()
 
+            # Release lock file before shutdown
+            try:
+                from oncutf.utils.lock_file import release_lock
+
+                release_lock()
+            except Exception:
+                pass
+
             # Now shutdown logging system
             logging.shutdown()
 
