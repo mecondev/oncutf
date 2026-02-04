@@ -40,7 +40,7 @@ from oncutf.ui.delegates.thumbnail_delegate import ThumbnailDelegate
 from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.shared.timer_manager import cancel_timer
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
@@ -937,8 +937,8 @@ class ThumbnailViewportWidget(QWidget):
             self._clear_pending_thumbnail_requests()
 
             self.placeholder_helper.show()
-            # Center the placeholder after showing
-            self.placeholder_helper.update_position()
+            # Center the placeholder after showing (deferred for correct viewport size)
+            schedule_ui_update(self.placeholder_helper.update_position, 0)
             logger.debug("[ThumbnailViewport] Showing placeholder (no files)")
         else:
             self.placeholder_helper.hide()
@@ -967,6 +967,12 @@ class ThumbnailViewportWidget(QWidget):
         super().resizeEvent(event)
         if hasattr(self, "placeholder_helper"):
             self.placeholder_helper.update_position()
+
+    def showEvent(self, event) -> None:
+        """Handle show events - ensure placeholder centers after view switch."""
+        super().showEvent(event)
+        if hasattr(self, "placeholder_helper"):
+            schedule_ui_update(self.placeholder_helper.update_position, 0)
 
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.
