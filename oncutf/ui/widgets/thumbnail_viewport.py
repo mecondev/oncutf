@@ -194,14 +194,52 @@ class ThumbnailViewportWidget(QWidget):
         bg_color = theme.get_color("table_background")
         border_color = theme.get_color("border")
         text_color = theme.get_color("text")
+        accent_color = theme.get_color("accent")
         status_widget.setStyleSheet(f"""
             QWidget {{
                 background-color: {bg_color};
-                border-top: 1px solid {border_color};
+                border: none;
             }}
             QLabel {{
                 color: {text_color};
                 padding: 0px 8px;
+                border: none;
+            }}
+            QSlider {{
+                background: transparent;
+            }}
+            QSlider::groove:horizontal {{
+                background: {border_color};
+                height: 4px;
+                border-radius: 2px;
+                border: none;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {accent_color};
+                height: 4px;
+                border-radius: 2px;
+            }}
+            QSlider::add-page:horizontal {{
+                background: {border_color};
+                height: 4px;
+                border-radius: 2px;
+            }}
+            QSlider::handle:horizontal {{
+                background: {accent_color};
+                width: 12px;
+                height: 12px;
+                margin: -4px 0;
+                border-radius: 6px;
+                border: none;
+            }}
+            QSlider::handle:horizontal:hover {{
+                background: {text_color};
+            }}
+            QSlider::handle:horizontal:pressed {{
+                background: {text_color};
+            }}
+            QSlider::sub-page:horizontal:hover {{
+                background: {text_color};
             }}
         """)
 
