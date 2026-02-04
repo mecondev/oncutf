@@ -194,7 +194,9 @@ class ThumbnailViewportWidget(QWidget):
         bg_color = theme.get_color("table_background")
         border_color = theme.get_color("border")
         text_color = theme.get_color("text")
-        accent_color = theme.get_color("accent")
+        handle = theme.get_color("scrollbar_handle")
+        handle_hover = theme.get_color("button_hover_bg")
+        handle_pressed = theme.get_color("button_pressed_bg")
         status_widget.setStyleSheet(f"""
             QWidget {{
                 background-color: {bg_color};
@@ -209,23 +211,23 @@ class ThumbnailViewportWidget(QWidget):
                 background: transparent;
             }}
             QSlider::groove:horizontal {{
-                background: {border_color};
-                height: 4px;
+                background: {bg_color};
+                height: 12px;
                 border-radius: 2px;
                 border: none;
             }}
             QSlider::sub-page:horizontal {{
-                background: {accent_color};
-                height: 4px;
+                background: {border_color};
+                margin: 5px 0;
                 border-radius: 2px;
             }}
             QSlider::add-page:horizontal {{
                 background: {border_color};
-                height: 4px;
+                margin: 5px 0;
                 border-radius: 2px;
             }}
             QSlider::handle:horizontal {{
-                background: {accent_color};
+                background: {handle};
                 width: 12px;
                 height: 12px;
                 margin: -4px 0;
@@ -233,13 +235,10 @@ class ThumbnailViewportWidget(QWidget):
                 border: none;
             }}
             QSlider::handle:horizontal:hover {{
-                background: {text_color};
+                background: {handle_hover};
             }}
             QSlider::handle:horizontal:pressed {{
-                background: {text_color};
-            }}
-            QSlider::sub-page:horizontal:hover {{
-                background: {text_color};
+                background: {handle_pressed};
             }}
         """)
 
@@ -261,12 +260,17 @@ class ThumbnailViewportWidget(QWidget):
 
         # Zoom out icon (small landscape)
         zoom_out_btn = QToolButton()
-        zoom_out_btn.setFixedSize(16, 16)
+        zoom_out_btn.setFixedSize(18, 18)
         zoom_out_btn.setIcon(landscape_icon)
         zoom_out_btn.setIconSize(QSize(12, 12))
         zoom_out_btn.setToolTip("Zoom out")
         zoom_out_btn.clicked.connect(self.zoom_out)
-        zoom_out_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
+        zoom_out_btn.setStyleSheet(
+            "QToolButton { border: none; background: transparent; }"
+            "QToolButton:hover { background: transparent; }"
+            "QToolButton:pressed { background: transparent; }"
+            "QToolButton:checked { background: transparent; }"
+        )
         layout.addWidget(zoom_out_btn)
 
         # Zoom slider (center)
@@ -291,7 +295,12 @@ class ThumbnailViewportWidget(QWidget):
         zoom_in_btn.setIconSize(QSize(18, 18))
         zoom_in_btn.setToolTip("Zoom in")
         zoom_in_btn.clicked.connect(self.zoom_in)
-        zoom_in_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
+        zoom_in_btn.setStyleSheet(
+            "QToolButton { border: none; background: transparent; }"
+            "QToolButton:hover { background: transparent; }"
+            "QToolButton:pressed { background: transparent; }"
+            "QToolButton:checked { background: transparent; }"
+        )
         layout.addWidget(zoom_in_btn)
 
         return status_widget
