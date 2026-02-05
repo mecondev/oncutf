@@ -47,7 +47,7 @@ class QtProgressFactory:
             Concrete ProgressDialog instance
 
         """
-        return ProgressDialog.create_by_type(
+        return ProgressDialog(
             parent=parent,
             operation_type=operation_type,
             cancel_callback=cancel_callback,
