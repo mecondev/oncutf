@@ -89,6 +89,26 @@ class ThumbnailViewportWidget(QWidget):
         self._model = model
         self._thumbnail_size = self.DEFAULT_THUMBNAIL_SIZE
 
+        # Get ThumbnailManager for controller
+        thumbnail_manager = None
+        try:
+            from oncutf.ui.adapters.qt_app_context import QtAppContext
+
+            context = QtAppContext.get_instance()
+            if context and context.has_manager("thumbnail"):
+                thumbnail_manager = context.get_manager("thumbnail")
+        except Exception as e:
+            logger.warning("[ThumbnailViewport] Could not get ThumbnailManager: %s", e)
+
+        # Initialize controller for backend operations
+        from oncutf.controllers.thumbnail_viewport_controller import (
+            ThumbnailViewportController,
+        )
+
+        self._controller = ThumbnailViewportController(
+            model=model, thumbnail_manager=thumbnail_manager, parent=self
+        )
+
         # Lasso selection state
         self._rubber_band: QRubberBand | None = None
         self._rubber_band_origin: QPoint | None = None
@@ -349,18 +369,13 @@ class ThumbnailViewportWidget(QWidget):
         v_scrollbar = self._list_view.verticalScrollBar()
         v_scrollbar.valueChanged.connect(self._on_viewport_scrolled)
 
-        # Connect thumbnail_ready signal from ThumbnailManager
-        try:
-            from oncutf.ui.adapters.qt_app_context import QtAppContext
-
-            context = QtAppContext.get_instance()
-            if context and context.has_manager("thumbnail"):
-                thumbnail_manager = context.get_manager("thumbnail")
-                thumbnail_manager.thumbnail_ready.connect(self._on_thumbnail_ready)
-                thumbnail_manager.generation_progress.connect(self._on_thumbnail_progress)
-                logger.debug("[ThumbnailViewport] Connected to thumbnail signals")
-        except Exception as e:
-            logger.warning("[ThumbnailViewport] Could not connect to ThumbnailManager: %s", e)
+        # Connect controller signals for thumbnail updates
+        self._controller.thumbnail_ready.connect(self._on_thumbnail_ready)
+        self._controller.thumbnail_progress.connect(self._on_thumbnail_progress)
+        self._controller.viewport_mode_changed.connect(
+            lambda mode: self.viewport_mode_changed.emit(mode)
+        )
+        self._controller.files_reordered.connect(lambda: self.files_reordered.emit())
 
     def set_order_mode(self, mode: Literal["manual", "sorted"]) -> None:
         """Set the order mode (manual drag or sorted).
@@ -697,77 +712,27 @@ class ThumbnailViewportWidget(QWidget):
             reverse: Reverse order
 
         """
-        logger.info("[ThumbnailViewport] Sorting by %s (reverse=%s)", key, reverse)
-
-        # Delegate to model
-        self._model.set_order_mode("sorted", sort_key=key, reverse=reverse)
-
-        # Update local UI state
-        self.set_order_mode("sorted")
+        # Delegate to controller
+        self._controller.sort_by(key, reverse=reverse)
 
     def _return_to_manual_order(self) -> None:
         """Return to manual order mode and load from DB."""
-        logger.info("[ThumbnailViewport] Returning to manual order")
-
-        # Delegate to model (will load from DB)
-        self._model.set_order_mode("manual")
-
-        # Update local UI state
-        self.set_order_mode("manual")
+        # Delegate to controller
+        self._controller.return_to_manual_order()
 
     def _open_file(self) -> None:
         """Open selected file with default application."""
-        from pathlib import Path
-
-        from PyQt5.QtCore import QUrl
-        from PyQt5.QtGui import QDesktopServices
-
-        selected_files = self.get_selected_files()
-        if not selected_files:
-            logger.warning("[ThumbnailViewport] No file selected for opening")
-            return
-
-        file_path = selected_files[0]
-        if not Path(file_path).exists():
-            logger.error("[ThumbnailViewport] File does not exist: %s", file_path)
-            return
-
-        success = QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
-        if success:
-            logger.info("[ThumbnailViewport] Opened file: %s", file_path)
-        else:
-            logger.error("[ThumbnailViewport] Failed to open file: %s", file_path)
+        # Delegate to controller
+        result = self._controller.open_selected_files(self._list_view.selectionModel())
+        if not result["success"]:
+            logger.warning("[ThumbnailViewport] Failed to open files: %s", result["errors"])
 
     def _reveal_in_file_manager(self) -> None:
         """Reveal selected file in system file manager."""
-        import platform
-        import subprocess
-        from pathlib import Path
-
-        selected_files = self.get_selected_files()
-        if not selected_files:
-            logger.warning("[ThumbnailViewport] No file selected for revealing")
-            return
-
-        file_path = Path(selected_files[0])
-        if not file_path.exists():
-            logger.error("[ThumbnailViewport] File does not exist: %s", file_path)
-            return
-
-        system = platform.system()
-        try:
-            if system == "Windows":
-                subprocess.run(["explorer", "/select,", str(file_path)], check=False)
-            elif system == "Darwin":  # macOS
-                subprocess.run(["open", "-R", str(file_path)], check=False)
-            else:  # Linux and others
-                # Open the containing folder (most file managers don't support reveal)
-                folder_path = file_path.parent
-                subprocess.run(["xdg-open", str(folder_path)], check=False)
-
-            logger.info("[ThumbnailViewport] Revealed file: %s", file_path)
-        except Exception:
-            logger.exception("[ThumbnailViewport] Failed to reveal file")
+        # Delegate to controller
+        result = self._controller.reveal_in_file_manager(self._list_view.selectionModel())
+        if not result["success"]:
+            logger.warning("[ThumbnailViewport] Failed to reveal files: %s", result["errors"])
 
     def _open_file_location(self) -> None:
         """Open containing folder of selected file(s)."""
@@ -805,19 +770,8 @@ class ThumbnailViewportWidget(QWidget):
             List of selected file paths
 
         """
-        selection_model = self._list_view.selectionModel()
-        if not selection_model:
-            return []
-
-        selected_indexes = selection_model.selectedIndexes()
-        file_paths = []
-
-        for index in selected_indexes:
-            file_item = index.data(Qt.UserRole)
-            if file_item:
-                file_paths.append(file_item.full_path)
-
-        return file_paths
+        # Delegate to controller
+        return self._controller.get_selected_file_paths(self._list_view.selectionModel())
 
     def select_files(self, file_paths: list[str]) -> None:
         """Select files by file paths (for sync with table view).
@@ -826,22 +780,8 @@ class ThumbnailViewportWidget(QWidget):
             file_paths: List of file paths to select
 
         """
-        selection_model = self._list_view.selectionModel()
-        if not selection_model:
-            return
-
-        selection = QItemSelection()
-        file_path_set = set(file_paths)
-
-        for row in range(self._model.rowCount()):
-            index = self._model.index(row, 0)
-            file_item = index.data(Qt.UserRole)
-
-            if file_item and file_item.full_path in file_path_set:
-                selection.append(QItemSelectionRange(index))
-
-        selection_model.select(selection, QItemSelectionModel.ClearAndSelect)
-        logger.debug("[ThumbnailViewport] Selected %d files", len(file_paths))
+        # Delegate to controller
+        self._controller.select_files_by_paths(file_paths, self._list_view.selectionModel())
 
     def clear_selection(self) -> None:
         """Clear all selections."""
@@ -964,15 +904,8 @@ class ThumbnailViewportWidget(QWidget):
 
         Called when files are cleared to prevent stale thumbnail updates.
         """
-        try:
-            from oncutf.ui.adapters.qt_app_context import QtAppContext
-
-            context = QtAppContext.get_instance()
-            if context and context.has_manager("thumbnail"):
-                thumbnail_manager = context.get_manager("thumbnail")
-                thumbnail_manager.clear_pending_requests()
-        except Exception as e:
-            logger.debug("[ThumbnailViewport] Could not clear pending requests: %s", e)
+        # Delegate to controller
+        self._controller.clear_pending_thumbnail_requests()
 
     def _queue_all_thumbnails_for_background_loading(self) -> None:
         """Queue all file thumbnails for background loading (priority=0).
@@ -986,38 +919,8 @@ class ThumbnailViewportWidget(QWidget):
         - Visible items get priority=1 (loaded first)
         - Non-visible items get priority=0 (background loading)
         """
-        try:
-            from oncutf.ui.adapters.qt_app_context import QtAppContext
-
-            context = QtAppContext.get_instance()
-            if not context or not context.has_manager("thumbnail"):
-                logger.debug("[ThumbnailViewport] ThumbnailManager not available for bulk loading")
-                return
-
-            thumbnail_manager = context.get_manager("thumbnail")
-
-            # Get all file paths from model
-            file_paths = []
-            for row in range(self._model.rowCount()):
-                index = self._model.index(row, 0)
-                file_item = index.data(Qt.UserRole)
-                if file_item:
-                    file_paths.append(file_item.full_path)
-
-            if file_paths:
-                # Queue all with priority=0 (background), size matches current viewport size
-                thumbnail_manager.queue_all_thumbnails(
-                    file_paths=file_paths, priority=0, size_px=self._thumbnail_size
-                )
-                logger.info(
-                    "[ThumbnailViewport] Queued %d files for background thumbnail loading",
-                    len(file_paths),
-                )
-
-        except Exception as e:
-            logger.warning(
-                "[ThumbnailViewport] Error queuing thumbnails for background loading: %s", e
-            )
+        # Delegate to controller
+        self._controller.queue_all_thumbnails(size_px=self._thumbnail_size)
 
     def _on_viewport_scrolled(self) -> None:
         """Handle viewport scroll - prioritize visible thumbnails.
@@ -1025,41 +928,23 @@ class ThumbnailViewportWidget(QWidget):
         Called when the vertical scrollbar value changes. Re-queues visible
         thumbnails with priority=1 to ensure they are loaded first.
         """
-        try:
-            from oncutf.ui.adapters.qt_app_context import QtAppContext
+        # Get visible viewport indices
+        visible_paths = []
+        viewport_rect = self._list_view.viewport().rect()
 
-            context = QtAppContext.get_instance()
-            if not context or not context.has_manager("thumbnail"):
-                return
+        for row in range(self._model.rowCount()):
+            index = self._model.index(row, 0)
+            item_rect = self._list_view.visualRect(index)
 
-            thumbnail_manager = context.get_manager("thumbnail")
+            # Check if item intersects viewport
+            if viewport_rect.intersects(item_rect):
+                file_item = index.data(Qt.UserRole)
+                if file_item:
+                    visible_paths.append(file_item.full_path)
 
-            # Get visible viewport indices
-            visible_paths = []
-            viewport_rect = self._list_view.viewport().rect()
-
-            for row in range(self._model.rowCount()):
-                index = self._model.index(row, 0)
-                item_rect = self._list_view.visualRect(index)
-
-                # Check if item intersects viewport
-                if viewport_rect.intersects(item_rect):
-                    file_item = index.data(Qt.UserRole)
-                    if file_item:
-                        visible_paths.append(file_item.full_path)
-
-            # Re-queue visible items with high priority
-            if visible_paths:
-                thumbnail_manager.queue_all_thumbnails(
-                    file_paths=visible_paths, priority=1, size_px=self._thumbnail_size
-                )
-                logger.debug(
-                    "[ThumbnailViewport] Scrolled: prioritized %d visible thumbnails",
-                    len(visible_paths),
-                )
-
-        except Exception as e:
-            logger.debug("[ThumbnailViewport] Error prioritizing visible thumbnails: %s", e)
+        # Delegate to controller
+        if visible_paths:
+            self._controller.prioritize_visible_thumbnails(visible_paths)
 
     def resizeEvent(self, event) -> None:
         """Handle resize events - update placeholder position."""
