@@ -87,7 +87,7 @@ class ApplicationService:
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Prepare folder load via FileLoadManager."""
         return cast(
-            list[str],
+            "list[str]",
             self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear),
         )
 
@@ -323,7 +323,7 @@ class ApplicationService:
         if validation_result["should_warn"]:
             # Show warning with smart information
             return cast(
-                bool,
+                "bool",
                 self.main_window.dialog_manager.confirm_large_folder(
                     folder_path, validation_result["file_count"]
                 ),
@@ -391,7 +391,7 @@ class ApplicationService:
 
         if validation_result["should_warn"]:
             # Show detailed confirmation dialog
-            return cast(bool, self.main_window.dialog_manager.confirm_large_files(files))
+            return cast("bool", self.main_window.dialog_manager.confirm_large_files(files))
 
         return True  # No confirmation needed
 
@@ -403,7 +403,7 @@ class ApplicationService:
         This method is intended to be called by the metadata manager.
         """
         return cast(
-            set[str],
+            "set[str]",
             self.main_window.metadata_manager.get_file_type_field_support(file_item, metadata),
         )
 
@@ -429,7 +429,7 @@ class ApplicationService:
 
         operation = operation_map.get(operation_type, OperationType.FILE_LOADING)
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             self.main_window.file_validation_manager.validate_operation_batch(files, operation),
         )
 

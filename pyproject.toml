@@ -112,7 +112,8 @@ disallow_any_unimported = false
 disallow_any_expr = false
 disallow_any_decorated = false
 disallow_any_explicit = false
-warn_return_any = false  # Enabled only for Tier 1 (app/domain/infra)
+warn_return_any = false  # Enabled per tier (Tier 1 + Tier 2)
+disallow_subclassing_any = true  # Global: prevent subclassing Any
 
 [[tool.mypy.overrides]]
 module = "oncutf.*"
@@ -162,9 +163,9 @@ disallow_untyped_decorators = true
 extra_checks = true
 
 # ============================================================
-# Tier 2 — Controllers / Services (legacy) — GRADUAL STRICT
-# Focus areas for reducing error count
-# Enforce disallow_untyped_defs for controllers
+# Tier 2 — Controllers / Core / Models — STRICT
+# Approaching Tier 1 strictness; enforce typed defs, return checks,
+# untyped calls, and extra semantic checks
 # ============================================================
 [[tool.mypy.overrides]]
 module = [
@@ -175,11 +176,14 @@ module = [
 ignore_errors = false
 disallow_any_generics = true
 disallow_subclassing_any = true
-disallow_untyped_defs = true  # Enforce typed functions
-warn_return_any = true  # Stricter return type checking
-no_implicit_reexport = true  # Require explicit __all__ for re-exports
-strict_optional = true  # Stricter None checking
+disallow_untyped_defs = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_optional = true
 disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+extra_checks = true
 
 # ============================================================
 # Tier 3 — Qt / UI / glue code (targeted error suppression)
@@ -258,6 +262,7 @@ disable_error_code = [
     "has-type",           # Qt forward references
     "var-annotated",      # Qt widget attributes
     "comparison-overlap", # Qt enum comparisons
+    "no-untyped-call",    # Calls to untyped Qt widget constructors
 ]
 
 # ============================================================
@@ -327,6 +332,17 @@ select = [
     "RSE",  # flake8-raise (exception raising improvements)
     "FBT",  # flake8-boolean-trap (boolean parameters)
     "ARG",  # flake8-unused-arguments
+    "FA",   # flake8-future-annotations
+    "FURB", # refurb (modern Python idioms)
+    "G",    # flake8-logging-format (logging format strings)
+    "ICN",  # flake8-import-conventions
+    "ISC",  # flake8-implicit-str-concat
+    "LOG",  # flake8-logging (logging best practices)
+    "PLE",  # pylint errors
+    "Q",    # flake8-quotes (quote consistency)
+    "SLOT", # flake8-slots (__slots__ enforcement)
+    "TC",   # flake8-type-checking (TYPE_CHECKING imports)
+    "TID",  # flake8-tidy-imports
 ]
 
 # Treat underscore-prefixed params as intentionally unused
@@ -376,10 +392,10 @@ ignore = [
 
     # Unused arguments (ARG001 enabled for functions, others gradual)
     # ARG001 removed - enabled to catch unused function args (use _ prefix for intentional)
-    "ARG002", # unused-method-argument (113 violations) - Qt method overrides require matching signature
-    "ARG003", # unused-class-method-argument - Qt class factories often have unused classmethod args
-    "ARG004", # unused-static-method-argument - static methods may have compatibility args
-    "ARG005", # unused-lambda-argument - lambda compatibility patterns
+    "ARG002", # unused-method-argument (121 violations) - Qt method overrides require matching signature
+    # ARG003 removed - enabled (0 violations)
+    # ARG004 removed - enabled (2 violations fixed)
+    # ARG005 removed - enabled (0 violations)
 ]
 
 # Per-file ignores for scripts and utilities
@@ -398,6 +414,11 @@ ignore = [
 "oncutf/app/**/*.py" = []  # No ignores for app/ layer
 "oncutf/domain/**/*.py" = []  # No ignores for domain/ layer
 "oncutf/infra/**/*.py" = []  # No ignores for infra/ layer
+# TC false positives: imports used at runtime (cast(), threading locks, Callable checks)
+"oncutf/app/services/file_load.py" = ["TC001"]  # FileLoadUIPort used in cast() at runtime
+"oncutf/core/rename/validation_manager.py" = ["TC001"]  # SmartCacheManager used at runtime
+"oncutf/infra/db/metadata_store.py" = ["TC003"]  # threading used for locks at runtime
+"oncutf/utils/events/observable.py" = ["TC003"]  # Callable used at runtime for subscriber checks
 # UI layer - allow Qt patterns and boolean flags
 "oncutf/ui/**/*.py" = ["FBT001", "FBT002", "FBT003", "D100", "D101", "D102", "D103"]  # Boolean flags + docstrings OK in UI glue code
 # Legitimate Any usage (external APIs, dynamic data)

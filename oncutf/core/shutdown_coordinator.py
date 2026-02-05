@@ -459,18 +459,18 @@ class ShutdownCoordinator(Observable):
         try:
             if phase == ShutdownPhase.TIMERS and self._timer_manager:
                 if hasattr(self._timer_manager, "health_check"):
-                    return cast(dict[str, Any] | None, self._timer_manager.health_check())
+                    return cast("dict[str, Any] | None", self._timer_manager.health_check())
 
             elif phase == ShutdownPhase.THREAD_POOL and self._thread_pool_manager:
                 if hasattr(self._thread_pool_manager, "health_check"):
-                    return cast(dict[str, Any] | None, self._thread_pool_manager.health_check())
+                    return cast("dict[str, Any] | None", self._thread_pool_manager.health_check())
 
             elif (
                 phase == ShutdownPhase.EXIFTOOL
                 and self._exiftool_wrapper
                 and hasattr(self._exiftool_wrapper, "health_check")
             ):
-                return cast(dict[str, Any] | None, self._exiftool_wrapper.health_check())
+                return cast("dict[str, Any] | None", self._exiftool_wrapper.health_check())
 
         except Exception as e:
             logger.warning("[ShutdownCoordinator] Error getting health for %s: %s", phase.value, e)

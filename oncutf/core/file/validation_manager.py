@@ -400,7 +400,7 @@ class FileValidationManager:
         if pref_key in self.user_preferences:
             pref = self.user_preferences[pref_key]
             if time.time() - pref["timestamp"] < pref.get("ttl", 3600):  # 1 hour default
-                return cast(bool, pref["should_warn"])
+                return cast("bool", pref["should_warn"])
 
         # Apply thresholds
         exceeds_file_limit = file_count > thresholds.max_files

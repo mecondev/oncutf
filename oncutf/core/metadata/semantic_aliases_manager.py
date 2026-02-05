@@ -121,7 +121,7 @@ class SemanticAliasesManager:
             logger.exception("Error loading semantic aliases")
             return MetadataKeyRegistry.DEFAULT_SEMANTIC_ALIASES.copy()
         else:
-            return cast(dict[str, list[str]], data)
+            return cast("dict[str, list[str]]", data)
 
     def _create_default_file(self) -> None:
         """Create semantic aliases file with default values."""

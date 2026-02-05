@@ -380,17 +380,17 @@ class RenameController:
             logger.info("[RenameController] Validating files before execution...")
             from oncutf.core.pre_execution_validator import PreExecutionValidator
 
-            validator = PreExecutionValidator(check_hash=False)
-            validation_result = validator.validate(file_items)
+            pre_exec_validator = PreExecutionValidator(check_hash=False)
+            pre_exec_result = pre_exec_validator.validate(file_items)
 
-            if not validation_result.is_valid:
+            if not pre_exec_result.is_valid:
                 logger.warning(
                     "[RenameController] Pre-execution validation found %d issue(s)",
-                    len(validation_result.issues),
+                    len(pre_exec_result.issues),
                 )
 
                 # Show validation dialog (if UI available)
-                user_decision = self._handle_validation_issues(validation_result)
+                user_decision = self._handle_validation_issues(pre_exec_result)
 
                 if user_decision == "cancel":
                     logger.info("[RenameController] User cancelled due to validation issues")
@@ -399,7 +399,7 @@ class RenameController:
                         "renamed_count": 0,
                         "failed_count": 0,
                         "skipped_count": len(file_items),
-                        "errors": [validation_result.get_summary()],
+                        "errors": [pre_exec_result.get_summary()],
                     }
                 if user_decision == "refresh":
                     logger.info("[RenameController] User requested preview refresh")
@@ -414,13 +414,16 @@ class RenameController:
                 if user_decision == "skip":
                     logger.info(
                         "[RenameController] User chose to skip %d problematic files",
-                        len(validation_result.issues),
+                        len(pre_exec_result.issues),
                     )
                     # Continue with only valid files
-                    file_items = validation_result.valid_files
+                    file_items = pre_exec_result.valid_files
                     # Rebuild preview for valid files only
                     preview_result = self._unified_rename_engine.generate_preview(
-                        file_items, current_folder
+                        files=file_items,
+                        modules_data=modules_data,
+                        post_transform=post_transform,
+                        metadata_cache=metadata_cache,
                     )
 
             # Step 4: Execute rename
@@ -469,9 +472,9 @@ class RenameController:
                 "failed_count": execution_result.failed_count,
                 "skipped_count": execution_result.skipped_count,
                 "errors": [
-                    result.error
-                    for result in execution_result.results
-                    if not result.success and result.error
+                    item.error_message
+                    for item in execution_result.items
+                    if not item.success and item.error_message
                 ],
             }
 

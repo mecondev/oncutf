@@ -9,8 +9,10 @@ Provides metrics and monitoring for rename operations.
 
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from functools import wraps
+from typing import Any, TypeVar
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -184,6 +186,9 @@ class PerformanceMonitor:
         }
 
 
+F = TypeVar("F", bound=Callable[..., Any])
+
+
 class PerformanceDecorator:
     """Decorator for automatic performance monitoring."""
 
@@ -192,9 +197,10 @@ class PerformanceDecorator:
         self.monitor = monitor
         self.operation_name = operation_name
 
-    def __call__(self, func: Any) -> Any:
+    def __call__(self, func: F) -> F:
         """Wrap function with performance monitoring."""
 
+        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Start timing
             self.monitor.start_operation(self.operation_name)
@@ -221,11 +227,11 @@ class PerformanceDecorator:
             else:
                 return result
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
 
 # Global performance monitor instance
-_performance_monitor = None
+_performance_monitor: PerformanceMonitor | None = None
 
 
 def get_performance_monitor() -> PerformanceMonitor:
@@ -236,6 +242,6 @@ def get_performance_monitor() -> PerformanceMonitor:
     return _performance_monitor
 
 
-def monitor_performance(operation_name: str) -> Any:
+def monitor_performance(operation_name: str) -> Callable[[F], F]:
     """Decorator for monitoring function performance."""
     return PerformanceDecorator(get_performance_monitor(), operation_name)

@@ -214,8 +214,7 @@ def _has_allowed_extension(filename: str) -> bool:
     path_obj = Path(filename.lower())
     ext = path_obj.suffix
     # Remove leading dot from extension for comparison
-    if ext.startswith("."):
-        ext = ext[1:]
+    ext = ext.removeprefix(".")
     return ext in ALLOWED_EXTENSIONS
 
 

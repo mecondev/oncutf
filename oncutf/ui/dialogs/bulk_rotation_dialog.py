@@ -228,8 +228,7 @@ class BulkRotationDialog(QDialog):
 
         for file_item in self.selected_files:
             ext = Path(file_item.filename).suffix.lower()
-            if ext.startswith("."):
-                ext = ext[1:]
+            ext = ext.removeprefix(".")
 
             if ext in ["jpg", "jpeg", "png", "tiff", "tif", "bmp", "gif"]:
                 file_type = "Images"

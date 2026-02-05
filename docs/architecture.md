@@ -26,7 +26,6 @@
 
 ### Architecture Layers
 
-```
 ┌─────────────────────────────────────────────────────────────┐
 │                      UI Layer (PyQt5)                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -95,12 +94,11 @@
 │  ├── JSON Config Files          (user preferences)          │
 │  └── File System                (renames, backups)          │
 └─────────────────────────────────────────────────────────────┘
-```
 
 ### Key Architectural Patterns
 
 | Pattern | Implementation | Purpose |
-|---------|---------------|---------|
+| --------- | --------------- | --------- |
 | **Facade** | app/services/*.py | Isolate UI from business logic |
 | **Dependency Inversion** | app/ports/*.py (Protocols) | Decouple layers via interfaces |
 | **Adapter** | ui/adapters/qt_*.py | Qt implementations of protocols |
@@ -116,7 +114,6 @@
 
 oncutf uses a **three-tier typing strategy** optimized for a metadata-centric application:
 
-```
 Tier 1 (app/domain/infra): PRAGMATIC STRICT
 ├─ 10 strict mypy flags enabled
 ├─ 2 pragmatically excluded (metadata domain)
@@ -131,12 +128,11 @@ Tier 2 (controllers/core/models): STRICT
 Tier 3 (UI/Qt): SELECTIVE
 ├─ 13 Qt-specific error suppressions
 └─ Rationale: PyQt5 stubs have limitations
-```
 
 ### Enabled Strict Flags (Tier 1)
 
 | Flag | Purpose | Impact |
-|------|---------|--------|
+| ------ | --------- | -------- |
 | `disallow_untyped_defs` | All functions must have types | Core safety |
 | `disallow_any_generics` | Generic types must be specified | Type precision |
 | `warn_return_any` | Flag functions returning Any | Explicit Any |
@@ -151,11 +147,12 @@ Tier 3 (UI/Qt): SELECTIVE
 ### Pragmatic Exclusions (Tier 1)
 
 | Excluded Flag | Rationale |
-|---------------|-----------|
+| --------------- | ----------- |
 | `disallow_any_explicit` | Metadata uses `dict[str, Any]` for EXIF data (intrinsically untyped) |
 | `disallow_any_expr` | Validators use `Callable[[Any], ...]` for runtime validation |
 
 **Why these exclusions are correct:**
+
 - EXIF metadata has **no compile-time type information** (camera-dependent fields)
 - Using `dict[str, Any]` is the **idiomatic Python approach** for dynamic data
 - Alternatives (TypedDict per field, wrapper types) add complexity without improving safety
@@ -174,7 +171,7 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 ### Type Safety Metrics
 
 | Metric | Before (Phase A) | After (Phase E) | Change |
-|--------|------------------|-----------------|--------|
+| -------- | ------------------ | ----------------- | -------- |
 | Strictness | 6.0/10 | 8.8/10 | +47% |
 | Type:ignore | 115 | 5 | -95.7% |
 | Mypy errors | 21 | 0 | -100% |
@@ -188,7 +185,6 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 
 ### MVC-Inspired Four-Tier Design (Legacy)
 
-```
 ┌─────────────────────────────────────┐
 │        UI Layer (PyQt5)             │
 ├─────────────────────────────────────┤
@@ -227,12 +223,11 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 │  ├── Config Persistence (JSON)      │
 │  └── File System Operations         │
 └─────────────────────────────────────┘
-```
 
 ### Key Components
 
 | Component | Files | LOC | Purpose |
-|-----------|-------|-----|---------|
+| ----------- | ------- | ----- | --------- |
 | **Controllers (Phase 1)** | 4 | 1217 | UI ↔ Business logic separation |
 | **FileTableView** | 1 + 3 behaviors | 976 | Display files with columns |
 | **MetadataTreeView** | 1 + 4 behaviors | 1768 | Edit file metadata |
@@ -248,9 +243,11 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 ## Recent Improvements (2025-12)
 
 ### Phase 7: Final Polish ⚡ (NEW - Dec 2025)
+
 **Goal:** Performance optimization, documentation, and final polish
 
 #### Performance Optimizations [x]
+
 - **Startup Time:** 31% faster (1426ms → 989ms)
   - Lazy-loaded ExifToolWrapper: -12% (1426ms → 1261ms)
   - Lazy-loaded CompanionFilesHelper: -21% (1261ms → 989ms)
@@ -267,6 +264,7 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
   - `docs/PERFORMANCE_BASELINE.md`: Performance history tracking
 
 **Impact:**
+
 - Faster application launch (sub-second startup)
 - Memory-safe for large workloads (1000+ files)
 - Foundation for future performance work
@@ -274,33 +272,39 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 ---
 
 ### Phase 1: Controllers Architecture [x] (Dec 2025)
+
 **Goal:** Separate UI from business logic with testable controller layer
 
 #### Phase 1A: FileLoadController [x]
+
 - **Orchestrates:** File loading, drag & drop, directory scanning
 - **Methods:** `load_files_from_drop()`, `load_folder()`, `clear_files()`
 - **Tests:** 11 comprehensive tests (100% coverage)
 - **Benefit:** File loading logic testable without Qt/GUI
 
 #### Phase 1B: MetadataController [x]
+
 - **Orchestrates:** Metadata loading, cache management
 - **Methods:** `load_metadata()`, `reload_metadata()`, `clear_metadata_cache()`
 - **Tests:** 13 comprehensive tests (100% coverage)
 - **Benefit:** Metadata workflows testable independently
 
 #### Phase 1C: RenameController [x]
+
 - **Orchestrates:** Rename preview, validation, execution
 - **Methods:** `preview_rename()`, `execute_rename()`, `update_preview()`
 - **Tests:** 16 comprehensive tests (100% coverage)
 - **Benefit:** Rename logic testable with mock dependencies
 
 #### Phase 1D: MainWindowController [x]
+
 - **Orchestrates:** High-level multi-service workflows
 - **Methods:** `restore_last_session_workflow()`, `coordinate_shutdown_workflow()`
 - **Tests:** 17 comprehensive tests (100% coverage)
 - **Benefit:** Complex workflows testable without MainWindow
 
 **Results:**
+
 - 57 new tests (549 → 592, 100% pass rate)
 - Clean separation: UI → Controllers → Services
 - Zero regressions (all existing functionality preserved)
@@ -309,6 +313,7 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 ---
 
 ### Phase 0: Widget Decomposition [x]
+
 - **FileTableView:** 2715 → 976 LOC (-64%)
   - Extracted: Column management (34 methods)
   - Created: `ColumnManagementBehavior` (composition-based)
@@ -318,16 +323,19 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
   - Improved: Testability and maintainability
 
 ### Domain Models [x]
+
 - Created: `FileEntry` (type-safe file representation)
 - Created: `MetadataEntry` (structured metadata)
 - Benefit: Type safety, memory efficiency, clarity
 
 ### Selection Unification [x]
+
 - Created: `SelectionProvider` (unified interface)
 - Replaced: 50+ ad-hoc selection patterns
 - Benefit: Single source of truth, 500x faster (cached)
 
 ### Code Quality [x]
+
 - Translated: Greek → English (38 instances)
 - Synced: Docstring dates to git history (75 files)
 - Tests: 592 passing (100%)
@@ -336,7 +344,7 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 
 ## File Organization
 
-```
+```tree
 oncutf/
 ├── main.py                          # Entry point
 ├── config.py                        # Configuration
@@ -425,7 +433,9 @@ oncutf/
 ## Key Architecture Patterns
 
 ### 1. Controllers Layer (NEW - Phase 1)
+
 Separation of UI from business logic:
+
 ```python
 # FileLoadController - orchestrates file loading
 controller = FileLoadController(app_context)
@@ -447,6 +457,7 @@ shutdown = main_ctrl.coordinate_shutdown_workflow(on_progress=callback)
 ```
 
 **Benefits:**
+
 - Testable without Qt (controllers use pure Python interfaces)
 - Clear responsibility boundaries
 - Easy to mock dependencies in tests
@@ -454,7 +465,9 @@ shutdown = main_ctrl.coordinate_shutdown_workflow(on_progress=callback)
 - Foundation for future CLI/API interfaces
 
 ### 2. ApplicationContext (Singleton)
+
 Central registry of managers and services:
+
 ```python
 # Usage
 context = ApplicationContext()
@@ -463,7 +476,9 @@ context.metadata_manager.load_metadata(files)
 ```
 
 ### 3. Behavior-based Composition
+
 Widget behavior decomposed into composable behaviors:
+
 ```python
 class FileTableView(QTableView):
     def __init__(self):
@@ -475,7 +490,9 @@ class FileTableView(QTableView):
 ```
 
 ### 4. Domain Models (Dataclasses)
+
 Type-safe data structures:
+
 ```python
 @dataclass
 class FileEntry:
@@ -491,7 +508,9 @@ class MetadataEntry:
 ```
 
 ### 5. Unified Interfaces
+
 Single point of access for common operations:
+
 ```python
 # Old: scattered selection logic
 table.selection_model().selectedRows()  # Qt direct
@@ -502,7 +521,9 @@ selection = SelectionProvider(table).get_selected_files()
 ```
 
 ### 6. Caching Strategy
+
 Multi-layer caching:
+
 - **L1:** Python dict (LRU, fast, volatile)
 - **L2:** SQLite (persistent, indexed)
 - **L3:** File system (original data)
@@ -512,7 +533,7 @@ Multi-layer caching:
 ## Performance Metrics
 
 | Metric | Before Phase 1 | After Phase 1 | Improvement |
-|--------|-----------------|---------------|-------------|
+| -------- | ----------------- | --------------- | ------------- |
 | Test Count | 549 | 592 | +43 tests (+7.8%) |
 | Controller LOC | 0 | 1217 | New layer |
 | MainWindow LOC | ~1309 | ~900 | -31% (UI-focused) |
@@ -520,6 +541,7 @@ Multi-layer caching:
 | Test Speed (controllers) | N/A | ~1s | Fast (no Qt) |
 
 **Historical Widget Refactoring:**
+
 - FileTableView: 2715 → 976 LOC (-64%)
 - MetadataTreeView: 3102 → 1768 LOC (-43%)
 
@@ -564,6 +586,7 @@ Multi-layer caching:
 ## Current Status Summary
 
 ### [x] Completed
+
 - **Phase 1: Controllers Architecture** (Dec 2025)
   - FileLoadController, MetadataController, RenameController, MainWindowController
   - 57 new tests (592 total, 100% passing)
@@ -578,12 +601,14 @@ Multi-layer caching:
 - Code quality (Greek translated, dates synced)
 
 ### 🎯 Next Phase
+
 - **Phase 2: State Management Fix**
   - Consolidate FileStore with FileGroup support
   - Fix counter conflicts after multi-folder imports
   - Implement StateCoordinator for synchronization
 
 ### ⏸️ Deferred (Conscious Decision)
+
 - Streaming metadata (ROI analysis: not worthwhile)
 - Service layer consolidation (too risky)
 - ViewModel layer (over-engineering)
@@ -604,7 +629,7 @@ For detailed development plans, see documentation in `docs/` folder:
 ## Reference Documents
 
 | Document | Purpose | Status |
-|----------|---------|--------|
+| ---------- | --------- | -------- |
 | [README.md](README.md) | Documentation index | [x] Active |
 | [PHASE5_SUMMARY.md](PHASE5_SUMMARY.md) | Phase 5 summary | [x] Reference |
 
@@ -619,8 +644,10 @@ Historical phase execution plans are archived in `_archive/`.
 **Solution:** Use these strict naming and placement rules going forward:
 
 ### 1. **Controllers** (`controllers/`)
+
 **Purpose:** UI/application flow orchestration  
 **Responsibilities:**
+
 - Handle user actions (button clicks, menu selections)
 - Connect UI signals to business logic
 - Coordinate between multiple core services/managers
@@ -628,6 +655,7 @@ Historical phase execution plans are archived in `_archive/`.
 - No direct external I/O (delegate to services)
 
 **Examples:**
+
 - `controllers/file_load_controller.py` — Handles file loading workflow triggered by user
 - `controllers/rename_controller.py` — Orchestrates rename preview → validation → execution
 - `controllers/metadata_controller.py` — Manages metadata loading requests from UI
@@ -637,8 +665,10 @@ Historical phase execution plans are archived in `_archive/`.
 ---
 
 ### 2. **Services** (`services/`)
+
 **Purpose:** Adapters to external world (I/O boundaries)  
 **Responsibilities:**
+
 - Filesystem operations (read/write files, directories)
 - External tool integration (ExifTool, hash calculators)
 - Database operations (SQLite reads/writes)
@@ -646,6 +676,7 @@ Historical phase execution plans are archived in `_archive/`.
 - Pure I/O adapters with minimal business logic
 
 **Examples:**
+
 - `services/filesystem_service.py` — File system operations (list files, check existence)
 - `services/exiftool_service.py` — ExifTool wrapper for metadata extraction
 - `services/hash_service.py` — File hash computation
@@ -657,8 +688,10 @@ Historical phase execution plans are archived in `_archive/`.
 ---
 
 ### 3. **Managers** (`core/`)
+
 **Purpose:** Stateful orchestration + feature-specific coordination  
 **Responsibilities:**
+
 - Manage application state for a specific feature
 - Coordinate multiple operations within a domain
 - Cache management and invalidation
@@ -666,6 +699,7 @@ Historical phase execution plans are archived in `_archive/`.
 - Workflow orchestration (multi-step operations)
 
 **Examples:**
+
 - `core/metadata/unified_manager.py` — Orchestrates metadata loading, caching, companion files
 - `core/metadata/staging_manager.py` — Manages staged metadata changes before write
 - `core/backup_manager.py` — Coordinates backup creation/restoration
@@ -679,8 +713,10 @@ Historical phase execution plans are archived in `_archive/`.
 ---
 
 ### 4. **Utils** (`utils/`)
+
 **Purpose:** Stateless, reusable helper functions  
 **Responsibilities:**
+
 - Pure functions (no side effects)
 - Data transformation and formatting
 - Path normalization, validation
@@ -688,6 +724,7 @@ Historical phase execution plans are archived in `_archive/`.
 - No I/O, no state, no signals
 
 **Examples:**
+
 - `utils/path_normalizer.py` — Path string manipulation
 - `utils/logger_factory.py` — Logger creation
 - `utils/cursor_helper.py` — Wait cursor context manager
@@ -701,7 +738,6 @@ Historical phase execution plans are archived in `_archive/`.
 
 ### Quick Decision Tree
 
-```
 Does it handle user actions or UI flow?
   ├─ YES → Controller (controllers/)
   └─ NO  ↓
@@ -716,19 +752,20 @@ Does it manage state or coordinate multiple operations?
 
 Is it a pure helper function?
   └─ YES → Util (utils/)
-```
 
 ---
 
 ### Examples in Current Codebase
 
 [x] **Good (follows rules):**
+
 - `controllers/file_load_controller.py` — UI flow orchestration
 - `services/exiftool_service.py` — External tool adapter
 - `core/metadata/unified_manager.py` — Stateful metadata orchestration
 - `utils/path_normalizer.py` — Pure path helper
 
 ⚠️ **Legacy (grandfathered, don't replicate):**
+
 - `core/ui_managers/*` — UI managers (should ideally be in controllers or separate layer, but kept for historical reasons)
 - Some `*_manager.py` scattered in `core/` root — Should be in feature folders like `core/<domain>/`
 
@@ -738,7 +775,8 @@ Is it a pure helper function?
 
 **For new code:** Follow the rules above strictly.
 
-**For existing code:** 
+**For existing code:**
+
 - Don't rename unless it causes real confusion
 - Document exceptions in this file
 - Refactor opportunistically (when touching the file anyway)
@@ -752,6 +790,7 @@ Is it a pure helper function?
 To avoid architectural confusion, follow these rules when placing code:
 
 **`oncutf/core/*`** — Business logic, orchestration, workflows:
+
 - Metadata loading orchestration (workflows, cache coordination)
 - File operations (rename validation, execution, rollback)
 - Services that bind to application state or managers
@@ -759,6 +798,7 @@ To avoid architectural confusion, follow these rules when placing code:
 - **Example:** `core/metadata/metadata_loader.py` (orchestrates parallel loading)
 
 **`oncutf/utils/*`** — Pure helpers, formatters, small composable functions:
+
 - Path normalization, filename validation
 - Metadata formatting/parsing (no I/O)
 - Logging factories, cursor helpers
@@ -770,11 +810,13 @@ To avoid architectural confusion, follow these rules when placing code:
 ### UI Organization
 
 **`oncutf/ui/dialogs/*`** — All dialog widgets:
+
 - Progress dialogs, confirmation dialogs, input dialogs
 - Self-contained UI units with their own lifecycle
 - **No exceptions:** All dialog widgets belong here (not in `ui/widgets/` or elsewhere)
 
 **`oncutf/ui/services/*`** — UI-layer helpers and managers:
+
 - `dialog_manager.py` (dialog creation/coordination)
 - `utility_manager.py` (UI utilities)
 - Column managers, splitter managers, shortcut managers
@@ -802,4 +844,4 @@ When modifying architecture:
 
 ---
 
-*Last Updated: 2025-12-29 — Added "Naming Guidelines: Controllers, Services, Managers" section*
+*Last Updated: 2025-12-29 — Added "Naming Guidelines: Controllers, Services, Managers" section

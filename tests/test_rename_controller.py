@@ -73,6 +73,7 @@ class MockRenameResult:
         self.new_path = new_path
         self.success = success
         self.error = error
+        self.error_message = error  # Alias for ExecutionItem compatibility
 
 
 class MockExecutionResult:
@@ -89,6 +90,7 @@ class MockExecutionResult:
         self.failed_count = failed_count
         self.skipped_count = skipped_count
         self.results = results or []
+        self.items = self.results  # Alias for compatibility
 
 
 class MockRenameState:

@@ -456,7 +456,7 @@ class MetadataWriter:
 
         for key, value in all_modified_metadata.items():
             if normalize_path(key) == normalized:
-                return cast(dict[str, Any], value)
+                return cast("dict[str, Any]", value)
 
         # Not found
         return {}

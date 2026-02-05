@@ -24,9 +24,9 @@ class CounterLogic:
     @staticmethod
     def apply_from_data(
         data: dict[str, Any],
-        file_item: "FileItem",
+        _file_item: "FileItem",
         index: int = 0,
-        metadata_cache: dict | None = None,
+        _metadata_cache: dict | None = None,
     ) -> str:
         """Applies counter-based formatting using the given config and index.
 

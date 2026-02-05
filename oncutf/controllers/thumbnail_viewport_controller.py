@@ -239,9 +239,9 @@ class ThumbnailViewportController(QObject):
         # Find and select matching rows
         for row in range(self._model.rowCount()):
             index = self._model.index(row, 0)
-            file_item = index.data(0x0100)  # Qt.UserRole
+            file_item = index.data(Qt.ItemDataRole.UserRole)
             if file_item and file_item.full_path in file_paths:
-                selection_model.select(index, 0x0002)  # QItemSelectionModel.Select
+                selection_model.select(index, QItemSelectionModel.SelectionFlag.Select)
 
         logger.debug("[ThumbnailViewportController] Selected %d files", len(file_paths))
 

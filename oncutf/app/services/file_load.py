@@ -37,5 +37,5 @@ def update_file_load_ui(items: list["FileItem"], clear: bool = True) -> None:
             "Call AppContext.register_manager('file_load_ui', adapter) during initialization."
         )
 
-    adapter = cast(FileLoadUIPort, ctx.get_manager("file_load_ui"))
+    adapter = cast("FileLoadUIPort", ctx.get_manager("file_load_ui"))
     adapter.update_model_and_ui(items, clear)

@@ -17,13 +17,12 @@ The app layer (use cases) should also be Qt-free for testability.
 
 audit_boundaries.py results with `--transitive` enabled:
 
-```
 Violations by rule:
-  - core_must_not_import_qt                       34
-  - core_must_not_import_qt_transitive            13
-  - app_must_not_import_qt_transitive             6
-  - app_must_not_import_qt                        3
-```
+
+- core_must_not_import_qt                       34
+- core_must_not_import_qt_transitive            13
+- app_must_not_import_qt_transitive             6
+- app_must_not_import_qt                        3
 
 ### Key Transitive Leaks
 

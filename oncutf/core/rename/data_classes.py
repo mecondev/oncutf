@@ -99,6 +99,9 @@ class ValidationResult:
         has_errors: True if any item failed validation.
         has_unchanged: True if all items are unchanged (no actual renames).
         unchanged_count: Number of unchanged files.
+        valid_count: Number of valid, changed items (computed).
+        invalid_count: Number of invalid items (computed).
+        duplicate_count: Number of duplicate items (computed).
 
     """
 
@@ -107,12 +110,18 @@ class ValidationResult:
     has_errors: bool = False
     has_unchanged: bool = False
     unchanged_count: int = 0
+    valid_count: int = 0
+    invalid_count: int = 0
+    duplicate_count: int = 0
 
     def __post_init__(self) -> None:
         """Compute derived validation flags from items."""
         self.has_errors = any(not item.is_valid for item in self.items)
         self.unchanged_count = sum(1 for item in self.items if item.is_unchanged)
         self.has_unchanged = self.unchanged_count == len(self.items) if self.items else False
+        self.valid_count = sum(1 for item in self.items if item.is_valid and not item.is_unchanged)
+        self.invalid_count = sum(1 for item in self.items if not item.is_valid)
+        self.duplicate_count = sum(1 for item in self.items if item.is_duplicate)
 
 
 @dataclass
@@ -152,6 +161,10 @@ class ExecutionResult:
         conflicts_count: Number of items that hit a filesystem conflict
             (computed).
 
+    Properties:
+        renamed_count: Alias for success_count.
+        failed_count: Alias for error_count.
+
     """
 
     items: list[ExecutionItem]
@@ -166,6 +179,16 @@ class ExecutionResult:
         self.error_count = sum(1 for item in self.items if not item.success and item.error_message)
         self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)
         self.conflicts_count = sum(1 for item in self.items if item.is_conflict)
+
+    @property
+    def renamed_count(self) -> int:
+        """Alias for success_count (semantic convenience)."""
+        return self.success_count
+
+    @property
+    def failed_count(self) -> int:
+        """Alias for error_count (semantic convenience)."""
+        return self.error_count
 
 
 @dataclass

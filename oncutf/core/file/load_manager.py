@@ -339,8 +339,7 @@ class FileLoadManager:
     def _is_allowed_extension(self, path: str) -> bool:
         """Check if file has allowed extension."""
         ext = Path(path).suffix.lower()
-        if ext.startswith("."):
-            ext = ext[1:]
+        ext = ext.removeprefix(".")
         return ext in self.allowed_extensions
 
     def get_file_items_from_folder(
@@ -377,7 +376,7 @@ class FileLoadManager:
                     folder_path,
                     len(cached_files),
                 )
-                return cast(list[FileItem], cached_files)
+                return cast("list[FileItem]", cached_files)
 
         # Scan folder using unified scanning method (I/O operation)
         file_paths = self._get_files_from_folder(folder_path, recursive=False, sorted_output=True)
