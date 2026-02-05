@@ -438,7 +438,8 @@ markers = [
     "unit: marks tests as unit tests",
     "gui: marks tests that require GUI (skipped on CI)",
     "exiftool: marks tests that require exiftool",
-    "local_only: marks tests that only run in local environment"
+    "local_only: marks tests that only run in local environment",
+    "manual: marks tests for manual execution only (requires explicit marker selection)"
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

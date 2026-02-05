@@ -118,14 +118,17 @@ def pytest_sessionstart(session) -> None:
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Modify test collection to handle CI environment."""
+    """Modify test collection to handle CI environment and manual tests."""
     # Reference session/config to avoid unused-argument lint warnings while
     # keeping signature compatible with pytest hookspec.
     _ = session
-    _ = config
 
     # Check if we're in CI environment
     is_ci = "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
+
+    # Check if user explicitly requested manual tests with -m manual
+    markexpr = config.getoption("-m", default="")
+    manual_requested = "manual" in markexpr
 
     if is_ci:
         # Skip GUI tests in CI
@@ -137,6 +140,13 @@ def pytest_collection_modifyitems(session, config, items):
                 item.add_marker(skip_gui)
             if "local_only" in item.keywords:
                 item.add_marker(skip_local)
+
+    # Skip manual tests unless explicitly requested
+    if not manual_requested:
+        skip_manual = pytest.mark.skip(reason="Manual tests require explicit -m manual flag")
+        for item in items:
+            if "manual" in item.keywords:
+                item.add_marker(skip_manual)
 
 
 @pytest.fixture(scope="session")
