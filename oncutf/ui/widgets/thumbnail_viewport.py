@@ -345,6 +345,10 @@ class ThumbnailViewportWidget(QWidget):
         # Selection changes - emit for rename preview sync
         self._list_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
 
+        # Viewport scroll changes - prioritize visible thumbnails
+        v_scrollbar = self._list_view.verticalScrollBar()
+        v_scrollbar.valueChanged.connect(self._on_viewport_scrolled)
+
         # Connect thumbnail_ready signal from ThumbnailManager
         try:
             from oncutf.ui.adapters.qt_app_context import QtAppContext
@@ -893,6 +897,7 @@ class ThumbnailViewportWidget(QWidget):
         """Update the status label with thumbnail loading progress.
 
         Thread-safe: checks if widget exists and is valid before updating.
+        Shows total files from model, not just queued thumbnail requests.
         """
         if not hasattr(self, "_status_label") or not self._status_label:
             return
@@ -907,15 +912,19 @@ class ThumbnailViewportWidget(QWidget):
             pass
 
         try:
+            # Get total file count from model (not from thumbnail requests)
+            total_files = self._model.rowCount() if self._model else 0
+
             # Show thumbnail loading progress if available
             if hasattr(self, "_thumbnail_progress") and self._thumbnail_progress:
-                completed, total = self._thumbnail_progress
-                if completed < total:
-                    status_text = f"Loading thumbnails: {completed}/{total}"
+                completed, _queued_total = self._thumbnail_progress
+                # Use total_files from model, not queued count
+                if completed < total_files and total_files > 0:
+                    status_text = f"Loading thumbnails: {completed}/{total_files}"
                 else:
-                    status_text = "Ready"
+                    status_text = f"Ready ({total_files} files)" if total_files > 0 else "Ready"
             else:
-                status_text = "Ready"
+                status_text = f"Ready ({total_files} files)" if total_files > 0 else "Ready"
 
             self._status_label.setText(status_text)
         except (RuntimeError, AttributeError) as e:
@@ -944,6 +953,9 @@ class ThumbnailViewportWidget(QWidget):
             self.placeholder_helper.hide()
             logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
 
+            # Queue all thumbnails for background loading when files are present
+            self._queue_all_thumbnails_for_background_loading()
+
         # Update status label
         self._update_status_label()
 
@@ -961,6 +973,93 @@ class ThumbnailViewportWidget(QWidget):
                 thumbnail_manager.clear_pending_requests()
         except Exception as e:
             logger.debug("[ThumbnailViewport] Could not clear pending requests: %s", e)
+
+    def _queue_all_thumbnails_for_background_loading(self) -> None:
+        """Queue all file thumbnails for background loading (priority=0).
+
+        Called when files are loaded into the model. This ensures all thumbnails
+        are generated in background, with visible viewport items prioritized via
+        scroll tracking (implemented separately).
+
+        Professional app behavior:
+        - Load ALL thumbnails immediately when files are loaded
+        - Visible items get priority=1 (loaded first)
+        - Non-visible items get priority=0 (background loading)
+        """
+        try:
+            from oncutf.ui.adapters.qt_app_context import QtAppContext
+
+            context = QtAppContext.get_instance()
+            if not context or not context.has_manager("thumbnail"):
+                logger.debug("[ThumbnailViewport] ThumbnailManager not available for bulk loading")
+                return
+
+            thumbnail_manager = context.get_manager("thumbnail")
+
+            # Get all file paths from model
+            file_paths = []
+            for row in range(self._model.rowCount()):
+                index = self._model.index(row, 0)
+                file_item = index.data(Qt.UserRole)
+                if file_item:
+                    file_paths.append(file_item.full_path)
+
+            if file_paths:
+                # Queue all with priority=0 (background), size matches current viewport size
+                thumbnail_manager.queue_all_thumbnails(
+                    file_paths=file_paths, priority=0, size_px=self._thumbnail_size
+                )
+                logger.info(
+                    "[ThumbnailViewport] Queued %d files for background thumbnail loading",
+                    len(file_paths),
+                )
+
+        except Exception as e:
+            logger.warning(
+                "[ThumbnailViewport] Error queuing thumbnails for background loading: %s", e
+            )
+
+    def _on_viewport_scrolled(self) -> None:
+        """Handle viewport scroll - prioritize visible thumbnails.
+
+        Called when the vertical scrollbar value changes. Re-queues visible
+        thumbnails with priority=1 to ensure they are loaded first.
+        """
+        try:
+            from oncutf.ui.adapters.qt_app_context import QtAppContext
+
+            context = QtAppContext.get_instance()
+            if not context or not context.has_manager("thumbnail"):
+                return
+
+            thumbnail_manager = context.get_manager("thumbnail")
+
+            # Get visible viewport indices
+            visible_paths = []
+            viewport_rect = self._list_view.viewport().rect()
+
+            for row in range(self._model.rowCount()):
+                index = self._model.index(row, 0)
+                item_rect = self._list_view.visualRect(index)
+
+                # Check if item intersects viewport
+                if viewport_rect.intersects(item_rect):
+                    file_item = index.data(Qt.UserRole)
+                    if file_item:
+                        visible_paths.append(file_item.full_path)
+
+            # Re-queue visible items with high priority
+            if visible_paths:
+                thumbnail_manager.queue_all_thumbnails(
+                    file_paths=visible_paths, priority=1, size_px=self._thumbnail_size
+                )
+                logger.debug(
+                    "[ThumbnailViewport] Scrolled: prioritized %d visible thumbnails",
+                    len(visible_paths),
+                )
+
+        except Exception as e:
+            logger.debug("[ThumbnailViewport] Error prioritizing visible thumbnails: %s", e)
 
     def resizeEvent(self, event) -> None:
         """Handle resize events - update placeholder position."""

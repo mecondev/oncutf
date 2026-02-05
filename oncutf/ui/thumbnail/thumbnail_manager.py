@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-@dataclass
+@dataclass(order=False)
 class ThumbnailRequest:
     """Thumbnail generation request.
 
@@ -55,6 +55,13 @@ class ThumbnailRequest:
         folder_path: Parent folder for order tracking
         size_px: Requested thumbnail size (square dimension)
         priority: Higher values processed first (0=normal, 1=high)
+        _counter: Internal counter for FIFO tiebreaking (auto-assigned)
+
+    Priority Queue Behavior:
+        - Higher priority values are processed first (1 > 0)
+        - Same priority: FIFO order (lower counter first)
+        - Visible viewport items: priority=1
+        - Background loading: priority=0
 
     """
 
@@ -62,6 +69,38 @@ class ThumbnailRequest:
     folder_path: str
     size_px: int = 128
     priority: int = 0
+    _counter: int = 0  # Auto-assigned for FIFO ordering
+
+    # Class variable for counter (shared across all instances)
+    _global_counter: int = 0
+
+    def __post_init__(self) -> None:
+        """Assign unique counter for FIFO tiebreaking."""
+        # Use class variable to ensure uniqueness
+        ThumbnailRequest._global_counter += 1
+        object.__setattr__(self, "_counter", ThumbnailRequest._global_counter)
+
+    def __lt__(self, other: object) -> bool:
+        """Compare requests for priority queue sorting.
+
+        Args:
+            other: Another ThumbnailRequest
+
+        Returns:
+            True if self has higher priority than other
+
+        Priority Rules:
+            1. Higher priority value wins (reversed for max-heap)
+            2. Same priority: lower counter wins (FIFO)
+
+        """
+        if not isinstance(other, ThumbnailRequest):
+            return NotImplemented
+        # Higher priority first (reverse comparison for max-heap behavior)
+        if self.priority != other.priority:
+            return self.priority > other.priority
+        # Same priority: FIFO order (lower counter = earlier request)
+        return self._counter < other._counter
 
 
 class ThumbnailManager(QObject):
@@ -134,8 +173,9 @@ class ThumbnailManager(QObject):
             )
         self._cache = ThumbnailCache(cache_config)
 
-        # Request queue (thread-safe)
-        self._request_queue: queue.Queue[ThumbnailRequest] = queue.Queue()
+        # Request queue (thread-safe priority queue)
+        # Items sorted by: (higher priority first, then FIFO order)
+        self._request_queue: queue.PriorityQueue[ThumbnailRequest] = queue.PriorityQueue()
 
         # Track pending requests to avoid duplicates
         self._pending_requests: set[str] = set()
@@ -430,6 +470,72 @@ class ThumbnailManager(QObject):
         self._cache.clear()
         # Note: DB cleanup handled by ThumbnailStore.cleanup_orphaned_entries()
         logger.info("Cache cleared")
+
+    def queue_all_thumbnails(
+        self, file_paths: list[str], priority: int = 0, size_px: int = 128
+    ) -> None:
+        """Queue all file paths for thumbnail generation (background loading).
+
+        This is the bulk loading API for loading all thumbnails when files are loaded.
+        Use priority=0 for background loading, priority=1 for visible viewport items.
+
+        Args:
+            file_paths: List of absolute file paths to generate thumbnails for
+            priority: Priority for all requests (0=normal, 1=high)
+            size_px: Requested thumbnail size (square dimension)
+
+        Returns:
+            None
+
+        Note:
+            - Only queues files that are not already cached or pending
+            - Use priority=1 for visible viewport items (processed first)
+            - Use priority=0 for background loading (processed after visible)
+            - Workers are started automatically if not running
+
+        """
+        queued_count = 0
+        cached_count = 0
+
+        with self._pending_lock:
+            for file_path in file_paths:
+                # Skip if already pending or failed
+                if file_path in self._pending_requests or file_path in self._failed_files:
+                    continue
+
+                # Skip if file doesn't exist
+                if not Path(file_path).exists():
+                    continue
+
+                # Check if already cached (fast check without loading)
+                try:
+                    stat = Path(file_path).stat()
+                    if self._cache.get(file_path, stat.st_mtime, stat.st_size):
+                        cached_count += 1
+                        continue
+                except OSError:
+                    continue  # Skip files with stat errors
+
+                # Queue for generation
+                folder_path = str(Path(file_path).parent)
+                request = ThumbnailRequest(
+                    file_path=file_path, folder_path=folder_path, size_px=size_px, priority=priority
+                )
+                self._request_queue.put(request)
+                self._pending_requests.add(file_path)
+                self._total_requests += 1
+                queued_count += 1
+
+        # Start workers if not running
+        if queued_count > 0:
+            self._ensure_workers_running()
+            logger.info(
+                "Queued %d thumbnails (priority=%d, cached=%d, total_pending=%d)",
+                queued_count,
+                priority,
+                cached_count,
+                self._request_queue.qsize(),
+            )
 
     def clear_pending_requests(self) -> None:
         """Clear all pending thumbnail requests from the queue.
