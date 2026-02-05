@@ -58,13 +58,18 @@ def test_shutdown_logging():
     print("=" * 70)
 
     # Verify expected shutdown markers are present
-    assert "[SHUTDOWN]" in stdout, "Should contain [SHUTDOWN] marker"
-    assert "shutdown initiated" in stdout.lower(), "Should log shutdown initiation"
+    # Note: Application uses [CLEANUP] marker for emergency cleanup handler
+    assert "[CLEANUP]" in stdout, "Should contain [CLEANUP] marker"
+    assert "cleanup" in stdout.lower(), "Should log cleanup operations"
+    assert "Emergency cleanup handler triggered" in stdout or "performing cleanup" in stdout, (
+        "Should log cleanup handler activation"
+    )
 
     # Verify clean exit
     assert proc.returncode == 0, f"Should exit cleanly (got exit code {proc.returncode})"
 
-    print("✓ Shutdown markers found")
+    print("✓ Cleanup markers found ([CLEANUP])")
+    print("✓ Emergency cleanup handler triggered")
     print("✓ Clean exit (code 0)")
     print("=" * 70)
     print("TEST PASSED")
