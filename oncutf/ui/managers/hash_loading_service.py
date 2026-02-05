@@ -369,11 +369,15 @@ class HashLoadingService:
 
         # Request cancellation if still running
         if self._hash_worker.isRunning():
+            logger.debug("[HashLoadingService] Requesting worker cancellation")
             self._hash_worker.request_cancellation()
 
-            # Wait for thread to finish (max 3 seconds)
-            if not self._hash_worker.wait(3.0):
-                logger.warning("[HashLoadingService] Worker thread did not finish in time")
+            # Wait for thread to finish (max 2 seconds)
+            if not self._hash_worker.wait(2.0):
+                logger.warning(
+                    "[HashLoadingService] Worker thread did not finish in time, "
+                    "will be abandoned (daemon thread will auto-terminate)"
+                )
 
         # Disconnect proxy signals to prevent callbacks after cleanup
         if hasattr(self, "_signal_proxy") and self._signal_proxy:
