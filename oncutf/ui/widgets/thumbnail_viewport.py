@@ -87,7 +87,6 @@ class ThumbnailViewportWidget(QWidget):
         """
         super().__init__(parent)
         self._model = model
-        self._thumbnail_size = self.DEFAULT_THUMBNAIL_SIZE
 
         # Get ThumbnailManager for controller
         thumbnail_manager = None
@@ -109,32 +108,42 @@ class ThumbnailViewportWidget(QWidget):
             model=model, thumbnail_manager=thumbnail_manager, parent=self
         )
 
-        # Lasso selection state
-        self._rubber_band: QRubberBand | None = None
-        self._rubber_band_origin: QPoint | None = None
-
-        # Pan state
-        self._is_panning = False
-        self._pan_start_pos: QPoint | None = None
-
         # Thumbnail loading progress
         self._thumbnail_progress: tuple[int, int] | None = None  # (completed, total)
 
-        # Tooltip state
-        self._tooltip_timer_id: int | None = None
-        self._tooltip_index: QModelIndex | None = None
+        # Behaviors (initialized in _setup_ui after widgets are created)
+        self._zoom_behavior = None
+        self._pan_behavior = None
+        self._lasso_behavior = None
+        self._tooltip_behavior = None
+        self._context_menu_builder = None
 
         self._setup_ui()
         self._connect_signals()
 
         logger.info(
             "[ThumbnailViewport] Initialized with thumbnail size: %d",
-            self._thumbnail_size,
+            self._zoom_behavior.get_current_size(),
         )
 
     def _setup_ui(self) -> None:
         """Set up the UI components."""
+        from oncutf.ui.behaviors.thumbnail_viewport_lasso_behavior import (
+            ThumbnailViewportLassoBehavior,
+        )
+        from oncutf.ui.behaviors.thumbnail_viewport_pan_behavior import (
+            ThumbnailViewportPanBehavior,
+        )
+        from oncutf.ui.behaviors.thumbnail_viewport_tooltip_behavior import (
+            ThumbnailViewportTooltipBehavior,
+        )
+        from oncutf.ui.behaviors.thumbnail_viewport_zoom_behavior import (
+            ThumbnailViewportZoomBehavior,
+        )
         from oncutf.ui.theme_manager import get_theme_manager
+        from oncutf.ui.widgets.thumbnail_viewport_context_menu import (
+            ThumbnailViewportContextMenuBuilder,
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -163,20 +172,30 @@ class ThumbnailViewportWidget(QWidget):
         # Set model
         self._list_view.setModel(self._model)
 
-        # Install event filter for tooltips
-        self._list_view.viewport().installEventFilter(self)
-
         # Create and set delegate
         self._delegate = ThumbnailDelegate(self._list_view)
-        self._delegate.set_thumbnail_size(self._thumbnail_size)
         self._list_view.setItemDelegate(self._delegate)
 
-        # Install event filter for lasso selection and pan
-        self._list_view.viewport().installEventFilter(self)
+        # Initialize behaviors
+        self._zoom_behavior = ThumbnailViewportZoomBehavior(
+            list_view=self._list_view,
+            delegate=self._delegate,
+            zoom_slider=None,  # Will be set after status bar creation
+            status_update_callback=self._update_status_label,
+        )
 
-        # Create rubber band (hidden initially)
-        self._rubber_band = QRubberBand(QRubberBand.Rectangle, self._list_view.viewport())
-        self._rubber_band.hide()
+        self._pan_behavior = ThumbnailViewportPanBehavior(list_view=self._list_view)
+
+        self._lasso_behavior = ThumbnailViewportLassoBehavior(
+            list_view=self._list_view, model=self._model
+        )
+
+        self._tooltip_behavior = ThumbnailViewportTooltipBehavior(list_view=self._list_view)
+
+        self._context_menu_builder = ThumbnailViewportContextMenuBuilder(parent_widget=self)
+
+        # Install event filter for behaviors
+        self._list_view.viewport().installEventFilter(self)
 
         layout.addWidget(self._list_view)
 
@@ -295,16 +314,19 @@ class ThumbnailViewportWidget(QWidget):
 
         # Zoom slider (center)
         self._zoom_slider = QSlider(Qt.Horizontal)
-        self._zoom_slider.setMinimum(self.MIN_THUMBNAIL_SIZE)
-        self._zoom_slider.setMaximum(self.MAX_THUMBNAIL_SIZE)
-        self._zoom_slider.setValue(self._thumbnail_size)
-        self._zoom_slider.setSingleStep(self.ZOOM_STEP)
-        self._zoom_slider.setPageStep(self.ZOOM_STEP * 2)
+        self._zoom_slider.setMinimum(self._zoom_behavior.MIN_SIZE)
+        self._zoom_slider.setMaximum(self._zoom_behavior.MAX_SIZE)
+        self._zoom_slider.setValue(self._zoom_behavior.get_current_size())
+        self._zoom_slider.setSingleStep(self._zoom_behavior.STEP)
+        self._zoom_slider.setPageStep(self._zoom_behavior.STEP * 2)
         self._zoom_slider.setFixedWidth(120)
-        self._zoom_slider.setToolTip(f"Zoom: {self._thumbnail_size}px")
+        self._zoom_slider.setToolTip(f"Zoom: {self._zoom_behavior.get_current_size()}px")
 
         # Connect slider to zoom change
         self._zoom_slider.valueChanged.connect(self._on_zoom_slider_changed)
+
+        # Update zoom behavior with slider reference
+        self._zoom_behavior._zoom_slider = self._zoom_slider
 
         layout.addWidget(self._zoom_slider)
 
@@ -333,13 +355,13 @@ class ThumbnailViewportWidget(QWidget):
 
         """
         # Round to nearest ZOOM_STEP
-        rounded_value = round(value / self.ZOOM_STEP) * self.ZOOM_STEP
+        rounded_value = round(value / self._zoom_behavior.STEP) * self._zoom_behavior.STEP
         if rounded_value != value:
             self._zoom_slider.setValue(rounded_value)
             return
 
-        # Update thumbnail size
-        self.set_thumbnail_size(rounded_value)
+        # Update thumbnail size via behavior
+        self._zoom_behavior.set_size(rounded_value)
 
         # Update tooltip
         self._zoom_slider.setToolTip(f"Zoom: {rounded_value}px")
@@ -406,44 +428,22 @@ class ThumbnailViewportWidget(QWidget):
             size: Thumbnail size in pixels (clamped to MIN/MAX)
 
         """
-        size = max(self.MIN_THUMBNAIL_SIZE, min(size, self.MAX_THUMBNAIL_SIZE))
-
-        if size != self._thumbnail_size:
-            self._thumbnail_size = size
-            self._delegate.set_thumbnail_size(size)
-
-            # Update zoom slider if it exists (without triggering valueChanged signal)
-            if hasattr(self, "_zoom_slider"):
-                self._zoom_slider.blockSignals(True)
-                self._zoom_slider.setValue(size)
-                self._zoom_slider.setToolTip(f"Zoom: {size}px")
-                self._zoom_slider.blockSignals(False)
-
-            # Update status label
-            if hasattr(self, "_status_label"):
-                self._update_status_label()
-
-            # Force layout update
-            self._list_view.scheduleDelayedItemsLayout()
-
-            logger.debug("[ThumbnailViewport] Thumbnail size changed to: %d", size)
+        self._zoom_behavior.set_size(size)
 
     def zoom_in(self) -> None:
         """Increase thumbnail size by ZOOM_STEP."""
-        new_size = self._thumbnail_size + self.ZOOM_STEP
-        self.set_thumbnail_size(new_size)
+        self._zoom_behavior.zoom_in()
 
     def zoom_out(self) -> None:
         """Decrease thumbnail size by ZOOM_STEP."""
-        new_size = self._thumbnail_size - self.ZOOM_STEP
-        self.set_thumbnail_size(new_size)
+        self._zoom_behavior.zoom_out()
 
     def reset_zoom(self) -> None:
         """Reset thumbnail size to default."""
-        self.set_thumbnail_size(self.DEFAULT_THUMBNAIL_SIZE)
+        self._zoom_behavior.reset()
 
     def eventFilter(self, obj: QWidget, event: QEvent) -> bool:
-        """Event filter for lasso selection and pan support.
+        """Event filter delegating to behaviors.
 
         Args:
             obj: Watched object (viewport)
@@ -458,124 +458,27 @@ class ThumbnailViewportWidget(QWidget):
 
         event_type = event.type()
 
-        # Mouse wheel for zoom (Ctrl+wheel)
-        if event_type == QEvent.Wheel:
-            if event.modifiers() & Qt.ControlModifier:
-                if event.angleDelta().y() > 0:
-                    self.zoom_in()
-                else:
-                    self.zoom_out()
-                return True
+        # Right-click should NOT change selection (only show context menu)
+        if event_type == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
+            return False  # Let context menu handler deal with it
 
-        # Middle button pan
-        elif event_type == QEvent.MouseButtonPress:
-            if event.button() == Qt.MiddleButton:
-                self._is_panning = True
-                self._pan_start_pos = event.pos()
-                self._list_view.viewport().setCursor(Qt.ClosedHandCursor)
-                return True
+        # Delegate to behaviors in priority order:
+        # 1. Zoom behavior (Ctrl+Wheel)
+        if self._zoom_behavior.handle_event_filter(obj, event):
+            return True
 
-            # Right-click should NOT select items (only show context menu)
-            if event.button() == Qt.RightButton:
-                # Don't change selection on right-click
-                return False  # Let context menu handler deal with it
+        # 2. Pan behavior (middle mouse)
+        if self._pan_behavior.handle_event_filter(obj, event):
+            return True
 
-            # Lasso selection (left button on empty space)
-            if event.button() == Qt.LeftButton:
-                index = self._list_view.indexAt(event.pos())
-                # Start lasso only if clicking on empty space
-                if not index.isValid():
-                    self._rubber_band_origin = event.pos()
-                    self._rubber_band.setGeometry(QRect(self._rubber_band_origin, QSize()))
-                    self._rubber_band.show()
-                    return False  # Let QListView handle the click
+        # 3. Lasso selection behavior (left mouse on empty space)
+        if self._lasso_behavior.handle_event_filter(obj, event):
+            return True
 
-        elif event_type == QEvent.MouseMove:
-            # Pan
-            if self._is_panning and self._pan_start_pos:
-                delta = event.pos() - self._pan_start_pos
-                h_bar = self._list_view.horizontalScrollBar()
-                v_bar = self._list_view.verticalScrollBar()
-
-                h_bar.setValue(h_bar.value() - delta.x())
-                v_bar.setValue(v_bar.value() - delta.y())
-
-                self._pan_start_pos = event.pos()
-                return True
-
-            # Lasso selection
-            if self._rubber_band and self._rubber_band.isVisible() and self._rubber_band_origin:
-                # Update rubber band geometry
-                self._rubber_band.setGeometry(
-                    QRect(self._rubber_band_origin, event.pos()).normalized()
-                )
-
-                # Calculate intersecting items
-                self._update_lasso_selection()
-                return True
-
-            # Handle hover for tooltips (when not panning or lasso selecting)
-            if not self._is_panning:
-                index = self._list_view.indexAt(event.pos())
-                if index.isValid() and index != self._tooltip_index:
-                    # New item hovered
-                    self._cancel_tooltip()
-                    self._tooltip_index = index
-                    self._schedule_tooltip()
-                elif not index.isValid() and self._tooltip_index:
-                    # Left item area
-                    self._cancel_tooltip()
-
-        elif event_type == QEvent.MouseButtonRelease:
-            # End pan
-            if event.button() == Qt.MiddleButton and self._is_panning:
-                self._is_panning = False
-                self._pan_start_pos = None
-                self._list_view.viewport().setCursor(Qt.ArrowCursor)
-                return True
-
-            # End lasso
-            if (
-                event.button() == Qt.LeftButton
-                and self._rubber_band
-                and self._rubber_band.isVisible()
-            ):
-                self._rubber_band.hide()
-                self._rubber_band_origin = None
-                return False  # Let QListView handle the release
-
-        elif event_type == QEvent.Leave:
-            # Clear tooltip when mouse leaves viewport
-            self._cancel_tooltip()
+        # 4. Tooltip behavior (hover - doesn't consume events)
+        self._tooltip_behavior.handle_event_filter(obj, event, self._pan_behavior.is_panning())
 
         return super().eventFilter(obj, event)
-
-    def _update_lasso_selection(self) -> None:
-        """Update selection based on rubber band intersection."""
-        if not self._rubber_band or not self._rubber_band.isVisible():
-            return
-
-        if not self._model or self._model.rowCount() == 0:
-            return
-
-        rubber_rect = self._rubber_band.geometry()
-        selection = QItemSelection()
-
-        # Check all items for intersection
-        for row in range(self._model.rowCount()):
-            index = self._model.index(row, 0)
-            if not index.isValid():
-                continue
-
-            item_rect = self._list_view.visualRect(index)
-
-            if rubber_rect.intersects(item_rect):
-                selection.append(QItemSelectionRange(index))
-
-        # Apply selection (replace current selection)
-        selection_model = self._list_view.selectionModel()
-        if selection_model:
-            selection_model.select(selection, QItemSelectionModel.ClearAndSelect)
 
     def _on_item_activated(self, index: "QModelIndex") -> None:
         """Handle double-click on thumbnail.
@@ -647,51 +550,22 @@ class ThumbnailViewportWidget(QWidget):
             position: Click position in widget coordinates
 
         """
-        menu = QMenu(self)
-
-        # Sort submenu
-        sort_menu = menu.addMenu("Sort")
-        sort_menu.addAction("Ascending (A-Z)", lambda: self._sort_by("filename", False))
-        sort_menu.addAction("Descending (Z-A)", lambda: self._sort_by("filename", True))
-        sort_menu.addAction("By Color Flag", lambda: self._sort_by("color", False))
-
-        menu.addSeparator()
-
-        # Order mode toggle
-        if self._model.order_mode == "sorted":
-            menu.addAction("Return to Manual Order", lambda: self._return_to_manual_order())
-        else:
-            action = menu.addAction("Manual Order Active")
-            action.setEnabled(False)
-
-        menu.addSeparator()
-
-        # Zoom controls
-        menu.addAction("Zoom In", self.zoom_in)
-        menu.addAction("Zoom Out", self.zoom_out)
-        menu.addAction("Reset Zoom", self.reset_zoom)
-
-        menu.addSeparator()
-
-        # File operations
-        selected_files = self.get_selected_files()
-        if selected_files:
-            if len(selected_files) == 1:
-                menu.addAction("Open File", self._open_file)
-                menu.addAction("Reveal in File Manager", self._reveal_in_file_manager)
-            menu.addAction(
-                f"Open Folder ({len(selected_files)} file(s) selected)",
-                self._open_file_location,
-            )
-        else:
-            action = menu.addAction("No files selected")
-            action.setEnabled(False)
-
-        menu.addSeparator()
-        menu.addAction("Refresh", self._refresh)
-
-        # Show menu
-        menu.exec_(self._list_view.viewport().mapToGlobal(position))
+        # Build and show menu using builder
+        self._context_menu_builder.show_menu(
+            position=position,
+            viewport_widget=self._list_view.viewport(),
+            order_mode=self._model.order_mode,
+            selected_files=self.get_selected_files(),
+            sort_callback=self._sort_by,
+            return_to_manual_callback=self._return_to_manual_order,
+            zoom_in_callback=self.zoom_in,
+            zoom_out_callback=self.zoom_out,
+            reset_zoom_callback=self.reset_zoom,
+            open_file_callback=self._open_file,
+            reveal_callback=self._reveal_in_file_manager,
+            open_location_callback=self._open_file_location,
+            refresh_callback=self._refresh,
+        )
 
     def _on_thumbnail_progress(self, completed: int, total: int) -> None:
         """Handle thumbnail loading progress updates.
@@ -808,7 +682,7 @@ class ThumbnailViewportWidget(QWidget):
             Current thumbnail size in pixels
 
         """
-        return self._thumbnail_size
+        return self._zoom_behavior.get_current_size()
 
     def get_order_mode(self) -> Literal["manual", "sorted"]:
         """Get current order mode.
@@ -919,16 +793,26 @@ class ThumbnailViewportWidget(QWidget):
         - Visible items get priority=1 (loaded first)
         - Non-visible items get priority=0 (background loading)
         """
-        # Delegate to controller
-        self._controller.queue_all_thumbnails(size_px=self._thumbnail_size)
+        # STEP 1: Prioritize visible thumbnails first (priority=1)
+        visible_paths = self._get_visible_file_paths()
+        if visible_paths:
+            self._controller.prioritize_visible_thumbnails(visible_paths)
+            logger.debug(
+                "[ThumbnailViewport] Prioritized %d visible thumbnails on initial load",
+                len(visible_paths),
+            )
 
-    def _on_viewport_scrolled(self) -> None:
-        """Handle viewport scroll - prioritize visible thumbnails.
+        # STEP 2: Queue all thumbnails for background loading (priority=0)
+        # The ThumbnailManager will skip already-queued visible items
+        self._controller.queue_all_thumbnails(size_px=self._zoom_behavior.get_current_size())
 
-        Called when the vertical scrollbar value changes. Re-queues visible
-        thumbnails with priority=1 to ensure they are loaded first.
+    def _get_visible_file_paths(self) -> list[str]:
+        """Get list of file paths for currently visible thumbnails.
+
+        Returns:
+            List of absolute file paths for visible items
+
         """
-        # Get visible viewport indices
         visible_paths = []
         viewport_rect = self._list_view.viewport().rect()
 
@@ -942,7 +826,16 @@ class ThumbnailViewportWidget(QWidget):
                 if file_item:
                     visible_paths.append(file_item.full_path)
 
-        # Delegate to controller
+        return visible_paths
+
+    def _on_viewport_scrolled(self) -> None:
+        """Handle viewport scroll - prioritize visible thumbnails.
+
+        Called when the vertical scrollbar value changes. Re-queues visible
+        thumbnails with priority=1 to ensure they are loaded first.
+        """
+        # Get visible thumbnails and prioritize them
+        visible_paths = self._get_visible_file_paths()
         if visible_paths:
             self._controller.prioritize_visible_thumbnails(visible_paths)
 
@@ -1015,60 +908,4 @@ class ThumbnailViewportWidget(QWidget):
             "[ThumbnailViewport] Updated %d items after model data change",
             bottom_right.row() - top_left.row() + 1,
             extra={"dev_only": True},
-        )
-
-    # ========== Tooltip Helpers ==========
-
-    def _schedule_tooltip(self) -> None:
-        """Schedule tooltip display after hover delay."""
-        from oncutf.utils.shared.timer_manager import schedule_dialog_close
-
-        if self._tooltip_timer_id:
-            cancel_timer(self._tooltip_timer_id)
-
-        # Use schedule_dialog_close for consistent tooltip delay (default 500ms)
-        self._tooltip_timer_id = schedule_dialog_close(self._show_tooltip)
-
-    def _cancel_tooltip(self) -> None:
-        """Cancel pending tooltip and clear active tooltip."""
-        if self._tooltip_timer_id:
-            cancel_timer(self._tooltip_timer_id)
-            self._tooltip_timer_id = None
-
-        TooltipHelper.clear_tooltips_for_widget(self._list_view.viewport())
-        self._tooltip_index = None
-
-    def _show_tooltip(self) -> None:
-        """Show tooltip for currently hovered item."""
-        if not self._tooltip_index or not self._tooltip_index.isValid():
-            return
-
-        file_item = self._tooltip_index.data(Qt.UserRole)
-        if not file_item:
-            return
-
-        # Build tooltip text
-        tooltip_lines = [
-            f"<b>{file_item.filename}</b>",
-            f"Type: {file_item.extension.upper() if file_item.extension else 'Unknown'}",
-        ]
-
-        # Add metadata if available
-        if hasattr(file_item, "duration") and file_item.duration:
-            tooltip_lines.append(f"Duration: {file_item.duration}")
-        if hasattr(file_item, "image_size") and file_item.image_size:
-            tooltip_lines.append(f"Size: {file_item.image_size}")
-        if file_item.color and file_item.color.lower() != "none":
-            tooltip_lines.append(f"Color: {file_item.color}")
-
-        tooltip_text = "<br>".join(tooltip_lines)
-
-        from oncutf.config import TOOLTIP_DURATION
-
-        TooltipHelper.show_tooltip(
-            self._list_view.viewport(),
-            tooltip_text,
-            TooltipType.INFO,
-            duration=TOOLTIP_DURATION,
-            persistent=False,
         )

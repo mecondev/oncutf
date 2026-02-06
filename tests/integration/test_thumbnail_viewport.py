@@ -127,7 +127,7 @@ class TestThumbnailViewportWidget:
         viewport = ThumbnailViewportWidget(file_model)
         assert viewport is not None
         assert viewport._model == file_model
-        assert viewport._thumbnail_size == viewport.DEFAULT_THUMBNAIL_SIZE
+        assert viewport.get_thumbnail_size() == viewport.DEFAULT_THUMBNAIL_SIZE
 
     def test_zoom_in_out(self, qapp, file_model):
         """Test zoom functionality."""
