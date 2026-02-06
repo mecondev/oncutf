@@ -79,15 +79,40 @@ class DatabaseManager:
                     self.db_path,
                 )
                 try:
-                    self.db_path.unlink()
-                    # Also remove WAL and SHM files if they exist
+                    # Force WAL checkpoint to merge WAL into main DB and release locks
+                    try:
+                        temp_conn = sqlite3.connect(str(self.db_path), timeout=1.0)
+                        try:
+                            # TRUNCATE mode: checkpoint + delete WAL file
+                            temp_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                            temp_conn.commit()
+                            logger.debug("[DatabaseManager] WAL checkpoint completed")
+                        finally:
+                            temp_conn.close()
+                    except Exception as e:
+                        logger.debug("[DatabaseManager] WAL checkpoint failed: %s", e)
+                        # Continue anyway - WAL may not be enabled
+
+                    # Delete WAL and SHM files first (they may hold locks)
                     wal_path = self.db_path.with_suffix(".db-wal")
                     shm_path = self.db_path.with_suffix(".db-shm")
                     if wal_path.exists():
                         wal_path.unlink()
+                        logger.debug("[DatabaseManager] Deleted WAL file: %s", wal_path)
                     if shm_path.exists():
                         shm_path.unlink()
-                    logger.info("[DatabaseManager] Database files deleted for fresh start")
+                        logger.debug("[DatabaseManager] Deleted SHM file: %s", shm_path)
+
+                    # Now delete the main DB file
+                    self.db_path.unlink()
+                    logger.info("[DatabaseManager] Database files deleted successfully")
+                except PermissionError as e:
+                    logger.warning(
+                        "[DatabaseManager] Could not delete database (file locked): %s - "
+                        "Will use existing database. Close any DB browsers or other "
+                        "oncutf instances and restart.",
+                        e,
+                    )
                 except Exception:
                     logger.exception("[DatabaseManager] Failed to delete database")
 

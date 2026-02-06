@@ -60,7 +60,7 @@ def _is_process_running(pid: int) -> bool:
 
         # Windows: Use kernel32.OpenProcess
         PROCESS_QUERY_INFORMATION = 0x0400
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        kernel32 = ctypes.windll.kernel32
         kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
         kernel32.OpenProcess.restype = wintypes.HANDLE
         kernel32.CloseHandle.argtypes = [wintypes.HANDLE]

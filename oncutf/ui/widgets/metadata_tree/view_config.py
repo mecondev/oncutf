@@ -237,25 +237,8 @@ class MetadataTreeViewConfig:
 
             header.show()
 
-            # Clear invalid runtime widths (from Qt default initialization)
-            # Only keep runtime widths if they represent a reasonable ratio (20-40% for key)
-            if self._runtime_widths:
-                key_w = self._runtime_widths.get("tag", 0)
-                value_w = self._runtime_widths.get("value", 0)
-                if key_w > 0 and value_w > 0:
-                    ratio = key_w / (key_w + value_w)
-                    # Clear if ratio is outside reasonable range (e.g., Qt defaults like 100/538 = 15.7%)
-                    if ratio < 0.20 or ratio > 0.40:
-                        logger.info(
-                            "[MetadataTree] Clearing invalid runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f%%",
-                            key_w,
-                            value_w,
-                            ratio * 100,
-                        )
-                        self._runtime_widths.clear()
-
-            # Get or calculate column widths using ratio-based system
             # Clear invalid runtime widths (from placeholder/Qt defaults)
+            # Only keep runtime widths if they represent a reasonable ratio (25-35% for key column)
             if self._runtime_widths:
                 key = self._runtime_widths.get("tag", 0)
                 value = self._runtime_widths.get("value", 0)
@@ -264,7 +247,7 @@ class MetadataTreeViewConfig:
                     actual_ratio = key / total
                     # If ratio is far from 30/70 (±5%), it's likely from Qt defaults - clear it
                     if not (0.25 <= actual_ratio <= 0.35):
-                        logger.info(
+                        logger.debug(
                             "[MetadataTree] Clearing invalid runtime widths (ratio: %.1f/%.1f)",
                             100 * actual_ratio,
                             100 * (1 - actual_ratio),
@@ -276,7 +259,7 @@ class MetadataTreeViewConfig:
                 # Use runtime widths (preserved across file selection changes)
                 key_width = self._runtime_widths["tag"]
                 value_width = self._runtime_widths["value"]
-                logger.info(
+                logger.debug(
                     "[MetadataTree] Using runtime widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
                     key_width,
                     value_width,
@@ -291,7 +274,7 @@ class MetadataTreeViewConfig:
                     value_width = saved_widths["value"]
                     self._runtime_widths["tag"] = key_width
                     self._runtime_widths["value"] = value_width
-                    logger.info(
+                    logger.debug(
                         "[MetadataTree] Using saved widths - Key: %dpx, Value: %dpx, Ratio: %.1f/%.1f",
                         key_width,
                         value_width,
@@ -352,7 +335,7 @@ class MetadataTreeViewConfig:
                         if (key_width + value_width) > 0
                         else 0
                     )
-                    logger.info(
+                    logger.debug(
                         "Metadata tree column widths - Viewport: %d, Panel: %d, Key: %d (%.1f%%), Value: %d (%.1f%%), Total: %d, Target: %.1f%%/%.1f%%",
                         viewport_width,
                         panel_width,

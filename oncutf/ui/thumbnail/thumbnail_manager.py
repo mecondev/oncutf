@@ -585,6 +585,80 @@ class ThumbnailManager(QObject):
             "active_workers": len(self._workers),
         }
 
+    def set_worker_count(self, count: int) -> None:
+        """Dynamically adjust worker thread count for priority management.
+
+        Used by hybrid loading system to scale workers based on viewport visibility:
+        - HIGH priority (viewport visible): 6 workers
+        - BACKGROUND priority (viewport hidden): 2 workers
+        - PAUSED (timeout reached): 0 workers
+
+        Args:
+            count: Number of workers (0 to pause, 1-max_workers for scaling)
+
+        """
+        if count < 0 or count > self._max_workers:
+            logger.warning(
+                "[ThumbnailManager] Invalid worker count %d (valid: 0-%d), ignoring",
+                count,
+                self._max_workers,
+            )
+            return
+
+        current_count = len(self._workers)
+        if current_count == count:
+            return  # Already at target
+
+        logger.info("[ThumbnailManager] Adjusting worker count: %d -> %d", current_count, count)
+
+        if count == 0:
+            # Pause all workers (stop and remove them)
+            for worker in self._workers:
+                worker.request_stop()
+            for worker in self._workers:
+                if worker.isRunning():
+                    worker.wait(1000)  # Wait up to 1s for graceful stop
+            self._workers.clear()
+            logger.debug("[ThumbnailManager] All workers stopped (paused)")
+
+        elif count > current_count:
+            # Scale up: start additional workers
+            workers_to_add = count - current_count
+            for _ in range(workers_to_add):
+                from oncutf.ui.thumbnail.thumbnail_worker import ThumbnailWorker
+
+                worker = ThumbnailWorker(
+                    request_queue=self._request_queue,
+                    cache=self._cache,
+                    db_store=self._db_store,
+                    parent=self,
+                )
+                worker.thumbnail_ready.connect(self._on_worker_thumbnail_ready)
+                worker.generation_error.connect(self._on_worker_error)
+                worker.finished.connect(lambda w=worker: self._on_worker_finished(w))
+                worker.start()
+                self._workers.append(worker)
+            logger.debug(
+                "[ThumbnailManager] Scaled up: added %d workers (now %d active)",
+                workers_to_add,
+                len(self._workers),
+            )
+
+        else:
+            # Scale down: stop excess workers
+            workers_to_remove = current_count - count
+            for _ in range(workers_to_remove):
+                if self._workers:
+                    worker = self._workers.pop()
+                    worker.request_stop()
+                    if worker.isRunning():
+                        worker.wait(1000)  # Wait up to 1s for graceful stop
+            logger.debug(
+                "[ThumbnailManager] Scaled down: removed %d workers (now %d active)",
+                workers_to_remove,
+                len(self._workers),
+            )
+
     def shutdown(self) -> None:
         """Shutdown manager and stop all workers gracefully."""
         logger.info("Shutting down ThumbnailManager...")

@@ -25,6 +25,7 @@ from PyQt5.QtCore import (
     QRect,
     QSize,
     Qt,
+    QTimer,
     pyqtSignal,
 )
 from PyQt5.QtWidgets import (
@@ -110,6 +111,13 @@ class ThumbnailViewportWidget(QWidget):
 
         # Thumbnail loading progress
         self._thumbnail_progress: tuple[int, int] | None = None  # (completed, total)
+
+        # Scroll optimization - debouncing and range tracking
+        self._scroll_debounce_timer = QTimer()
+        self._scroll_debounce_timer.setSingleShot(True)
+        self._scroll_debounce_timer.setInterval(150)  # 150ms debounce
+        self._scroll_debounce_timer.timeout.connect(self._process_scroll_change)
+        self._last_visible_range: set[str] | None = None  # Track visible file paths
 
         # Behaviors (initialized in _setup_ui after widgets are created)
         self._zoom_behavior = None
@@ -793,6 +801,11 @@ class ThumbnailViewportWidget(QWidget):
         - Visible items get priority=1 (loaded first)
         - Non-visible items get priority=0 (background loading)
         """
+        # Skip thumbnail loading if viewport is not visible (e.g., table view is active)
+        if not self.isVisible():
+            logger.debug("[ThumbnailViewport] Skipping thumbnail loading - viewport not visible")
+            return
+
         # STEP 1: Prioritize visible thumbnails first (priority=1)
         visible_paths = self._get_visible_file_paths()
         if visible_paths:
@@ -809,14 +822,26 @@ class ThumbnailViewportWidget(QWidget):
     def _get_visible_file_paths(self) -> list[str]:
         """Get list of file paths for currently visible thumbnails.
 
+        Optimized for performance:
+        - Early exit if viewport invalid
+        - Direct iteration over visible items only
+
         Returns:
             List of absolute file paths for visible items
 
         """
+        if not self._list_view or not self._model:
+            return []
+
         visible_paths = []
         viewport_rect = self._list_view.viewport().rect()
 
-        for row in range(self._model.rowCount()):
+        # Early exit if viewport is invalid
+        if not viewport_rect.isValid() or viewport_rect.isEmpty():
+            return []
+
+        row_count = self._model.rowCount()
+        for row in range(row_count):
             index = self._model.index(row, 0)
             item_rect = self._list_view.visualRect(index)
 
@@ -829,15 +854,56 @@ class ThumbnailViewportWidget(QWidget):
         return visible_paths
 
     def _on_viewport_scrolled(self) -> None:
-        """Handle viewport scroll - prioritize visible thumbnails.
+        """Handle viewport scroll - debounced to avoid excessive re-queuing.
 
-        Called when the vertical scrollbar value changes. Re-queues visible
-        thumbnails with priority=1 to ensure they are loaded first.
+        Called on every scroll event. Uses a timer to debounce and only process
+        scroll changes after 150ms of no scrolling activity.
         """
-        # Get visible thumbnails and prioritize them
+        # Skip if viewport is hidden (table view active)
+        if not self.isVisible():
+            return
+
+        # Restart debounce timer (cancels previous timer if still running)
+        self._scroll_debounce_timer.start()
+
+    def _process_scroll_change(self) -> None:
+        """Process scroll change after debounce delay.
+
+        Only re-queues thumbnails if the visible range has changed significantly
+        (more than 20% difference) to avoid unnecessary re-queuing.
+        """
         visible_paths = self._get_visible_file_paths()
-        if visible_paths:
-            self._controller.prioritize_visible_thumbnails(visible_paths)
+        if not visible_paths:
+            return
+
+        # Convert to set for efficient comparison
+        visible_set = set(visible_paths)
+
+        # Check if visible range changed significantly
+        if self._last_visible_range is not None:
+            # Calculate overlap
+            intersection = visible_set & self._last_visible_range
+            union = visible_set | self._last_visible_range
+
+            if union:
+                overlap_ratio = len(intersection) / len(union)
+                # If more than 80% overlap, skip re-queue (range hasn't changed much)
+                if overlap_ratio > 0.80:
+                    logger.debug(
+                        "[ThumbnailViewport] Scroll range overlap %.1f%% - skipping re-queue",
+                        overlap_ratio * 100,
+                    )
+                    return
+
+        # Update tracked range
+        self._last_visible_range = visible_set
+
+        # Re-queue visible items with HIGH priority
+        self._controller.prioritize_visible_thumbnails(visible_paths)
+        logger.debug(
+            "[ThumbnailViewport] Scroll processed - prioritized %d visible thumbnails",
+            len(visible_paths),
+        )
 
     def resizeEvent(self, event) -> None:
         """Handle resize events - update placeholder position."""
@@ -846,10 +912,32 @@ class ThumbnailViewportWidget(QWidget):
             self.placeholder_helper.update_position()
 
     def showEvent(self, event) -> None:
-        """Handle show events - ensure placeholder centers after view switch."""
+        """Handle show events - switch to high priority loading."""
         super().showEvent(event)
         if hasattr(self, "placeholder_helper"):
             schedule_ui_update(self.placeholder_helper.update_position, 0)
+
+        # Switch to HIGH priority mode when viewport becomes visible
+        if hasattr(self, "_controller") and self._controller:
+            self._controller.set_viewport_visible(True)
+
+        # Queue thumbnails when viewport becomes visible (e.g., switching from table view)
+        if self._model.rowCount() > 0:
+            logger.debug(
+                "[ThumbnailViewport] Viewport shown with %d files - queueing thumbnails",
+                self._model.rowCount(),
+            )
+            # Use schedule to avoid queueing during initialization
+            schedule_ui_update(self._queue_all_thumbnails_for_background_loading, 10)
+
+    def hideEvent(self, event) -> None:
+        """Handle hide events - switch to background loading."""
+        super().hideEvent(event)
+
+        # Switch to BACKGROUND priority mode when viewport becomes hidden
+        if hasattr(self, "_controller") and self._controller:
+            self._controller.set_viewport_visible(False)
+            logger.debug("[ThumbnailViewport] Viewport hidden - switched to BACKGROUND mode")
 
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.
@@ -884,6 +972,21 @@ class ThumbnailViewportWidget(QWidget):
                 return
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations
+
+    def cleanup(self) -> None:
+        """Clean up viewport resources.
+
+        Called on widget destruction to stop timers and clean up resources.
+        """
+        # Stop scroll debounce timer
+        if hasattr(self, "_scroll_debounce_timer") and self._scroll_debounce_timer:
+            self._scroll_debounce_timer.stop()
+
+        # Clean up controller
+        if hasattr(self, "_controller") and self._controller:
+            self._controller.cleanup()
+
+        logger.debug("[ThumbnailViewport] Cleanup completed")
 
     def _on_model_data_changed(
         self, top_left: "QModelIndex", bottom_right: "QModelIndex", roles: list[int] | None = None

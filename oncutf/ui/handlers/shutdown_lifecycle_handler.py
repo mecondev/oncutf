@@ -519,7 +519,9 @@ class ShutdownLifecycleHandler:
         if hasattr(self.main_window, "metadata_thread") and self.main_window.metadata_thread:
             try:
                 thread = self.main_window.metadata_thread
-                logger.info("[CloseEvent] Cleaning up metadata thread (isRunning=%s)", thread.isRunning())
+                logger.info(
+                    "[CloseEvent] Cleaning up metadata thread (isRunning=%s)", thread.isRunning()
+                )
 
                 # Disconnect all signals first to prevent crashes
                 with suppress(RuntimeError, TypeError):
@@ -530,14 +532,18 @@ class ShutdownLifecycleHandler:
 
                 # Wait for thread with longer timeout (2 seconds)
                 if not thread.wait(2000):
-                    logger.warning("[CloseEvent] Metadata thread did not stop after 2s, terminating...")
+                    logger.warning(
+                        "[CloseEvent] Metadata thread did not stop after 2s, terminating..."
+                    )
                     thread.terminate()
 
                     # Give terminate a chance to complete (1 second)
                     if thread.wait(1000):
                         logger.info("[CloseEvent] Metadata thread terminated successfully")
                     else:
-                        logger.error("[CloseEvent] Metadata thread failed to terminate - may still be running")
+                        logger.error(
+                            "[CloseEvent] Metadata thread failed to terminate - may still be running"
+                        )
                 else:
                     logger.info("[CloseEvent] Metadata thread stopped gracefully")
 

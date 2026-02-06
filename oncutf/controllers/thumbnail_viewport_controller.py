@@ -25,7 +25,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, pyqtSignal
+from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
 if TYPE_CHECKING:
@@ -41,6 +41,11 @@ class ThumbnailViewportController(QObject):
     Orchestrates thumbnail loading, file operations, selection, and sorting
     without direct UI dependencies. Emits signals for UI updates.
 
+    Hybrid Loading System:
+        - HIGH priority (6 workers): Viewport visible, immediate loading
+        - BACKGROUND priority (2 workers): Viewport hidden, low-priority continuation
+        - PAUSED (0 workers): After 30s timeout in background mode
+
     Signals:
         thumbnail_ready: Emitted when thumbnail is loaded (file_path, pixmap)
         thumbnail_progress: Emitted during loading (completed, total)
@@ -49,6 +54,14 @@ class ThumbnailViewportController(QObject):
         viewport_mode_changed: Emitted when order mode changes ("manual" or "sorted")
 
     """
+
+    # Priority levels for thumbnail loading
+    PRIORITY_HIGH = 10  # Visible items, immediate loading
+    PRIORITY_BACKGROUND = 5  # Background continuation when not visible
+    PRIORITY_IDLE = 1  # Low-priority prefetch
+
+    # Background mode timeout (30 seconds)
+    BACKGROUND_TIMEOUT_MS = 30000
 
     # Signals for UI updates
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap
@@ -76,10 +89,25 @@ class ThumbnailViewportController(QObject):
         self._thumbnail_manager = thumbnail_manager
         self._thumbnail_size = 128
 
+        # Hybrid loading state
+        self._is_background_mode = False
+        self._normal_worker_count = 6  # High priority worker count
+        self._background_worker_count = 2  # Background mode worker count
+        self._current_priority = self.PRIORITY_HIGH
+
+        # Resume tracking - track what we've queued to avoid re-queuing on resume
+        self._queued_files: set[str] = set()  # All files ever queued
+        self._last_queue_priority = self.PRIORITY_HIGH
+
+        # Background timeout timer
+        self._background_timeout_timer = QTimer()
+        self._background_timeout_timer.setSingleShot(True)
+        self._background_timeout_timer.timeout.connect(self._on_background_timeout)
+
         # Connect to ThumbnailManager signals if available
         self._connect_thumbnail_manager()
 
-        logger.info("[ThumbnailViewportController] Initialized")
+        logger.info("[ThumbnailViewportController] Initialized with hybrid priority system")
 
     def _connect_thumbnail_manager(self) -> None:
         """Connect to ThumbnailManager signals."""
@@ -97,12 +125,95 @@ class ThumbnailViewportController(QObject):
     # Thumbnail Loading Orchestration
     # -------------------------------------------------------------------------
 
-    def queue_all_thumbnails(self, size_px: int = 128) -> None:
-        """Queue all file thumbnails for background loading (priority=0).
+    def set_viewport_visible(self, visible: bool) -> None:
+        """Handle viewport visibility changes for hybrid loading.
 
-        Called when files are loaded into the model. Ensures all thumbnails
-        are generated in background, with visible viewport items prioritized
-        via viewport scrolling (implemented in widget).
+        Args:
+            visible: True if viewport is visible, False if hidden
+
+        """
+        if visible:
+            self._switch_to_high_priority_mode()
+        else:
+            self._switch_to_background_mode()
+
+    def _switch_to_high_priority_mode(self) -> None:
+        """Switch to high priority mode (viewport visible)."""
+        if not self._is_background_mode and self._current_priority == self.PRIORITY_HIGH:
+            return  # Already in high priority mode
+
+        logger.info(
+            "[ThumbnailViewportController] Switching to HIGH priority mode (workers: %d -> %d)",
+            self._background_worker_count if self._is_background_mode else 0,
+            self._normal_worker_count,
+        )
+
+        self._is_background_mode = False
+        self._current_priority = self.PRIORITY_HIGH
+        self._background_timeout_timer.stop()
+
+        # Scale up workers
+        if self._thumbnail_manager:
+            self._thumbnail_manager.set_worker_count(self._normal_worker_count)
+
+        # Re-queue visible items with high priority
+        self._reprioritize_visible_items()
+
+    def _switch_to_background_mode(self) -> None:
+        """Switch to background mode (viewport hidden, low priority continuation)."""
+        if self._is_background_mode:
+            return  # Already in background mode
+
+        logger.info(
+            "[ThumbnailViewportController] Switching to BACKGROUND mode "
+            "(workers: %d -> %d, timeout: %ds)",
+            self._normal_worker_count,
+            self._background_worker_count,
+            self.BACKGROUND_TIMEOUT_MS // 1000,
+        )
+
+        self._is_background_mode = True
+        self._current_priority = self.PRIORITY_BACKGROUND
+
+        # Scale down workers for background loading
+        if self._thumbnail_manager:
+            self._thumbnail_manager.set_worker_count(self._background_worker_count)
+
+        # Start 30-second timeout to pause loading
+        self._background_timeout_timer.start(self.BACKGROUND_TIMEOUT_MS)
+
+    def _on_background_timeout(self) -> None:
+        """Pause thumbnail loading after background timeout."""
+        if not self._is_background_mode:
+            return
+
+        logger.info(
+            "[ThumbnailViewportController] Background loading timeout - pausing thumbnail generation"
+        )
+        self._current_priority = self.PRIORITY_IDLE
+
+        # Pause by removing workers
+        if self._thumbnail_manager:
+            self._thumbnail_manager.set_worker_count(0)
+
+    def _reprioritize_visible_items(self) -> None:
+        """Re-prioritize visible items on resume without duplicate queueing.
+
+        Called when switching back to high priority mode. Only queues items
+        that haven't been queued yet (smart resume).
+        """
+        # This is now implemented via prioritize_visible_thumbnails() from viewport
+        # The viewport will call it with the current visible range
+        logger.debug("[ThumbnailViewportController] Ready to re-prioritize visible items on demand")
+
+    def queue_all_thumbnails(self, size_px: int = 128) -> None:
+        """Queue all file thumbnails with priority based on visibility.
+
+        Called when files are loaded into the model. Uses current priority
+        based on viewport visibility (HIGH when visible, BACKGROUND when hidden).
+
+        Smart queueing: Tracks what has been queued to enable resume without
+        re-queueing on priority changes.
 
         Args:
             size_px: Thumbnail size in pixels
@@ -123,17 +234,35 @@ class ThumbnailViewportController(QObject):
                 file_paths.append(file_item.full_path)
 
         if file_paths:
-            # Queue all with priority=0 (background)
-            self._thumbnail_manager.queue_all_thumbnails(
-                file_paths=file_paths, priority=0, size_px=size_px
-            )
-            logger.info(
-                "[ThumbnailViewportController] Queued %d files for background thumbnail loading",
-                len(file_paths),
-            )
+            # Update queued files tracking
+            new_files = set(file_paths) - self._queued_files
+            self._queued_files.update(file_paths)
+
+            # Use current priority (HIGH when visible, BACKGROUND when hidden)
+            priority = self._current_priority
+            self._last_queue_priority = priority
+
+            # Only queue new files (smart resume)
+            if new_files:
+                self._thumbnail_manager.queue_all_thumbnails(
+                    file_paths=list(new_files), priority=priority, size_px=size_px
+                )
+                logger.info(
+                    "[ThumbnailViewportController] Queued %d new files with priority=%d "
+                    "(background_mode=%s, total_tracked=%d)",
+                    len(new_files),
+                    priority,
+                    self._is_background_mode,
+                    len(self._queued_files),
+                )
+            else:
+                logger.debug(
+                    "[ThumbnailViewportController] All %d files already queued, skipping",
+                    len(file_paths),
+                )
 
     def prioritize_visible_thumbnails(self, visible_file_paths: list[str]) -> None:
-        """Re-queue visible thumbnails with high priority (priority=1).
+        """Re-queue visible thumbnails with high priority.
 
         Called when viewport scrolls to ensure visible items load first.
 
@@ -146,7 +275,7 @@ class ThumbnailViewportController(QObject):
 
         # Re-queue visible items with high priority
         self._thumbnail_manager.queue_all_thumbnails(
-            file_paths=visible_file_paths, priority=1, size_px=self._thumbnail_size
+            file_paths=visible_file_paths, priority=self.PRIORITY_HIGH, size_px=self._thumbnail_size
         )
         logger.debug(
             "[ThumbnailViewportController] Prioritized %d visible thumbnails",
@@ -157,15 +286,53 @@ class ThumbnailViewportController(QObject):
         """Clear pending thumbnail requests from ThumbnailManager.
 
         Called when files are cleared to prevent stale thumbnail updates.
+        Also resets tracking state for fresh start.
         """
         if not self._thumbnail_manager:
             return
 
         try:
             self._thumbnail_manager.clear_pending_requests()
-            logger.debug("[ThumbnailViewportController] Cleared pending thumbnail requests")
+            # Clear tracking state for fresh start
+            self._queued_files.clear()
+            logger.debug(
+                "[ThumbnailViewportController] Cleared pending requests and tracking state"
+            )
         except Exception as e:
             logger.debug("[ThumbnailViewportController] Error clearing pending requests: %s", e)
+
+    def get_loading_stats(self) -> dict[str, int]:
+        """Get thumbnail loading statistics for progress monitoring.
+
+        Returns:
+            dict with keys:
+                - queued: Files queued by controller
+                - queue_size: Items in ThumbnailManager queue
+                - completed: Completed thumbnail requests
+                - total: Total thumbnail requests
+                - cached: Cached thumbnails (from stats)
+                - active_workers: Currently active workers
+
+        """
+        if not self._thumbnail_manager:
+            return {
+                "queued": len(self._queued_files),
+                "queue_size": 0,
+                "completed": 0,
+                "total": 0,
+                "cached": 0,
+                "active_workers": 0,
+            }
+
+        stats = self._thumbnail_manager.get_cache_stats()
+        return {
+            "queued": len(self._queued_files),
+            "queue_size": stats.get("queue_size", 0),
+            "completed": stats.get("completed_requests", 0),
+            "total": stats.get("total_requests", 0),
+            "cached": stats.get("memory_entries", 0) + stats.get("disk_entries", 0),
+            "active_workers": stats.get("active_workers", 0),
+        }
 
     def _on_thumbnail_ready(self, file_path: str, pixmap: QPixmap) -> None:
         """Handle thumbnail ready signal from ThumbnailManager.
@@ -339,6 +506,15 @@ class ThumbnailViewportController(QObject):
             "revealed_count": revealed_count,
             "errors": errors,
         }
+
+    # -------------------------------------------------------------------------
+    # Cleanup
+    # -------------------------------------------------------------------------
+
+    def cleanup(self) -> None:
+        """Clean up controller resources."""
+        self._background_timeout_timer.stop()
+        logger.debug("[ThumbnailViewportController] Controller cleanup completed")
 
     # -------------------------------------------------------------------------
     # Sorting Operations
