@@ -154,6 +154,9 @@ class ThumbnailWorker(QThread):
 
         logger.debug("ThumbnailWorker stopped (processed: %d)", self._processed_count)
 
+        # Ensure thread is properly terminated
+        self.quit()
+
     def _process_request(self, request: ThumbnailRequest) -> None:
         """Process single thumbnail request.
 

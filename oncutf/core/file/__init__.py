@@ -16,12 +16,11 @@ Modules:
     validation_manager: FileValidationManager for content-based validation
     load_manager: FileLoadManager for loading files from directories
     store: FileStore for centralized file state management
-    monitor: FilesystemMonitor for watching file changes
+    monitor: FilesystemMonitor for watching file changes (requires watchdog)
 """
 
 from oncutf.app.state.file_store import FileStore
 from oncutf.core.file.load_manager import FileLoadManager
-from oncutf.core.file.monitor import FilesystemMonitor
 from oncutf.core.file.operations_manager import FileOperationsManager
 from oncutf.core.file.validation_manager import (
     FileSignature,
@@ -41,8 +40,6 @@ __all__ = [
     "FileStore",
     # Validation
     "FileValidationManager",
-    # Monitoring
-    "FilesystemMonitor",
     "OperationType",
     "ValidationAccuracy",
     "ValidationResult",

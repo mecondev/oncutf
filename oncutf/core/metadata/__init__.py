@@ -40,6 +40,10 @@ from oncutf.core.metadata.field_compatibility import (
 from oncutf.core.metadata.metadata_cache_service import MetadataCacheService
 from oncutf.core.metadata.metadata_loader import MetadataLoader
 from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
+from oncutf.core.metadata.metadata_service import (
+    MetadataService,
+    get_metadata_service,
+)
 from oncutf.core.metadata.metadata_writer import MetadataWriter
 from oncutf.core.metadata.staging_manager import (
     MetadataStagingManager,
@@ -63,6 +67,7 @@ __all__ = [
     "MetadataCommandManager",
     "MetadataLoader",
     "MetadataProgressHandler",
+    "MetadataService",
     "MetadataStagingManager",
     "MetadataWriter",
     "ResetMetadataFieldCommand",
@@ -70,6 +75,7 @@ __all__ = [
     "UnifiedMetadataManagerProtocol",
     "get_field_compatibility_checker",
     "get_metadata_command_manager",
+    "get_metadata_service",
     "get_metadata_staging_manager",
     "set_metadata_staging_manager",
 ]

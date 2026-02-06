@@ -523,7 +523,10 @@ class ShutdownCoordinator(Observable):
         """Shutdown thumbnail manager (must run before database)."""
         import threading
 
+        logger.info("[ShutdownCoordinator] Starting thumbnail manager shutdown")
+
         if not self._thumbnail_manager:
+            logger.info("[ShutdownCoordinator] No thumbnail manager registered, skipping")
             # Still do force cleanup even if no manager registered
             try:
                 from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
@@ -540,7 +543,11 @@ class ShutdownCoordinator(Observable):
 
         try:
             if hasattr(self._thumbnail_manager, "shutdown"):
+                logger.info("[ShutdownCoordinator] Calling thumbnail_manager.shutdown()")
                 self._thumbnail_manager.shutdown()
+                logger.info("[ShutdownCoordinator] Thumbnail manager shutdown completed")
+            else:
+                logger.warning("[ShutdownCoordinator] Thumbnail manager has no shutdown() method")
 
             # Force cleanup all FFmpeg processes (like ExifTool)
             # This is critical to prevent zombie ffmpeg processes
