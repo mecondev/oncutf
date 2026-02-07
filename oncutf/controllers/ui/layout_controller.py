@@ -456,43 +456,86 @@ class LayoutController:
             button: The clicked button from viewport_button_group
 
         """
-        try:
-            # Get button ID from viewport_buttons dict
-            button_id = None
-            for spec_id, btn in self.parent_window.viewport_buttons.items():
-                if btn == button:
-                    button_id = spec_id
-                    break
+        import time
 
-            if button_id is None:
-                logger.warning("[LayoutController] Viewport button clicked but ID not found")
-                return
+        from oncutf.utils.cursor_helper import wait_cursor
 
-            # Map button ID to stack index
-            # VIEWPORT_SPECS order: ["details", "thumbs"]
-            if button_id == "details":
-                self.parent_window.viewport_stack.setCurrentIndex(0)
-                # Sync selection from thumbnail viewport to file table
-                self._sync_selection_to_table()
-                logger.info("[LayoutController] Switched to details view")
-            elif button_id == "thumbs":
-                # Safety check: ensure thumbnail viewport is initialized
-                if (
-                    not hasattr(self.parent_window, "thumbnail_viewport")
-                    or not self.parent_window.thumbnail_viewport
-                ):
-                    logger.error("[LayoutController] ThumbnailViewport not initialized!")
+        # Use restore_after=False to keep cursor active during worker adjustment
+        with wait_cursor(restore_after=False):
+            # Force wait cursor to be visible immediately
+            from PyQt5.QtCore import QTimer
+            from PyQt5.QtWidgets import QApplication
+
+            QApplication.processEvents()
+
+            t0 = time.time()
+            try:
+                # Get button ID from viewport_buttons dict
+                button_id = None
+                for spec_id, btn in self.parent_window.viewport_buttons.items():
+                    if btn == button:
+                        button_id = spec_id
+                        break
+
+                if button_id is None:
+                    logger.warning("[LayoutController] Viewport button clicked but ID not found")
                     return
 
-                self.parent_window.viewport_stack.setCurrentIndex(1)
-                # Sync selection from file table to thumbnail viewport
-                self._sync_selection_to_viewport()
-                logger.info("[LayoutController] Switched to thumbnail view")
-            else:
-                logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
+                logger.debug(
+                    "[VIEW-SWITCH] Button clicked: %s at t=%.3fms",
+                    button_id,
+                    (time.time() - t0) * 1000,
+                )
 
-        except Exception:
-            logger.exception("[LayoutController] Error switching viewport")
+                # Map button ID to stack index
+                # VIEWPORT_SPECS order: ["details", "thumbs"]
+                if button_id == "details":
+                    self.parent_window.viewport_stack.setCurrentIndex(0)
+                    logger.debug(
+                        "[VIEW-SWITCH] setCurrentIndex(0) at t=%.3fms",
+                        (time.time() - t0) * 1000,
+                    )
+
+                    # Defer selection sync to avoid blocking UI
+                    from oncutf.utils.shared.timer_manager import schedule_ui_update
+
+                    schedule_ui_update(self._sync_selection_to_table, delay=0)
+                    logger.info(
+                        "[LayoutController] Switched to details view in %.3fms",
+                        (time.time() - t0) * 1000,
+                    )
+                elif button_id == "thumbs":
+                    # Safety check: ensure thumbnail viewport is initialized
+                    if (
+                        not hasattr(self.parent_window, "thumbnail_viewport")
+                        or not self.parent_window.thumbnail_viewport
+                    ):
+                        logger.error("[LayoutController] ThumbnailViewport not initialized!")
+                        return
+
+                    self.parent_window.viewport_stack.setCurrentIndex(1)
+                    logger.debug(
+                        "[VIEW-SWITCH] setCurrentIndex(1) at t=%.3fms",
+                        (time.time() - t0) * 1000,
+                    )
+
+                    # Defer selection sync to avoid blocking UI
+                    from oncutf.utils.shared.timer_manager import schedule_ui_update
+
+                    schedule_ui_update(self._sync_selection_to_viewport, delay=50)
+                    logger.info(
+                        "[LayoutController] Switched to thumbnail view in %.3fms",
+                        (time.time() - t0) * 1000,
+                    )
+                else:
+                    logger.warning("[LayoutController] Unknown viewport button ID: %s", button_id)
+
+            except Exception:
+                logger.exception("[LayoutController] Error switching viewport")
+            finally:
+                # Restore wait cursor after worker adjustment completes (~600ms average)
+                # Use 700ms to ensure workers are fully adjusted even on slow systems
+                QTimer.singleShot(700, lambda: QApplication.restoreOverrideCursor())
 
     def _setup_selection_sync(self) -> None:
         """Setup bidirectional selection synchronization between FileTable and ThumbnailViewport.

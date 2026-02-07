@@ -466,9 +466,15 @@ class ThumbnailViewportWidget(QWidget):
 
         event_type = event.type()
 
-        # Right-click should NOT change selection (only show context menu)
+        # Right-click on empty space should NOT clear selection
         if event_type == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
-            return False  # Let context menu handler deal with it
+            # Check if click is on empty space
+            index = self._list_view.indexAt(event.pos())
+            if not index.isValid():
+                # Emit context menu signal manually (since we're consuming the event)
+                self._list_view.customContextMenuRequested.emit(event.pos())
+                return True  # Consume event to prevent selection clear
+            return False  # On item - let QListView handle it normally
 
         # Delegate to behaviors in priority order:
         # 1. Zoom behavior (Ctrl+Wheel)
@@ -533,23 +539,39 @@ class ThumbnailViewportWidget(QWidget):
         """Show context menu for thumbnail operations.
 
         Uses unified context menu handler (same as file table).
+        Protects selection from being cleared when dismissing menu with click.
 
         Args:
             position: Click position in widget coordinates
 
         """
-        # Use unified context menu handler from parent window
-        if hasattr(self, "_parent_window") and self._parent_window:
-            try:
-                # Delegate to the same handler used by file table
-                self._parent_window.handle_table_context_menu(position)
-            except Exception as e:
-                logger.warning("Error showing unified context menu: %s", e)
-                # Fallback to simplified menu if unified handler fails
-                self._show_fallback_context_menu(position)
+        # Install menu dismiss guard to prevent selection loss
+        from oncutf.ui.helpers.menu_dismiss_guard import MenuDismissGuard
+
+        selection_model = self._list_view.selectionModel()
+        if selection_model:
+            saved_selection = selection_model.selection()
+            guard = MenuDismissGuard.install(self._list_view, saved_selection)
         else:
-            # No parent window - use fallback
-            self._show_fallback_context_menu(position)
+            guard = None
+
+        try:
+            # Use unified context menu handler from parent window
+            if hasattr(self, "_parent_window") and self._parent_window:
+                try:
+                    # Delegate to the same handler used by file table
+                    self._parent_window.handle_table_context_menu(position)
+                except Exception as e:
+                    logger.warning("Error showing unified context menu: %s", e)
+                    # Fallback to simplified menu if unified handler fails
+                    self._show_fallback_context_menu(position)
+            else:
+                # No parent window - use fallback
+                self._show_fallback_context_menu(position)
+        finally:
+            # Remove guard after menu closes
+            if guard:
+                guard.uninstall()
 
     def _show_fallback_context_menu(self, position: QPoint) -> None:
         """Show fallback context menu if unified handler not available.
@@ -768,8 +790,8 @@ class ThumbnailViewportWidget(QWidget):
             self._clear_pending_thumbnail_requests()
 
             self.placeholder_helper.show()
-            # Center the placeholder after showing (deferred for correct viewport size)
-            schedule_ui_update(self.placeholder_helper.update_position, 0)
+            # Update position immediately (no delay for instant visibility)
+            self.placeholder_helper.update_position()
             logger.debug("[ThumbnailViewport] Showing placeholder (no files)")
         else:
             self.placeholder_helper.hide()
@@ -801,13 +823,24 @@ class ThumbnailViewportWidget(QWidget):
         - Visible items get priority=1 (loaded first)
         - Non-visible items get priority=0 (background loading)
         """
+        import time
+
+        t0 = time.time()
+
         # Skip thumbnail loading if viewport is not visible (e.g., table view is active)
         if not self.isVisible():
-            logger.debug("[ThumbnailViewport] Skipping thumbnail loading - viewport not visible")
+            logger.debug(
+                "[ThumbnailViewport] Skipping thumbnail loading - viewport not visible",
+            )
             return
 
         # STEP 1: Prioritize visible thumbnails first (priority=1)
         visible_paths = self._get_visible_file_paths()
+        logger.debug(
+            "[THUMBS-QUEUE] _get_visible_file_paths at t=%.3fms, found %d",
+            (time.time() - t0) * 1000,
+            len(visible_paths),
+        )
         if visible_paths:
             self._controller.prioritize_visible_thumbnails(visible_paths)
             logger.debug(
@@ -818,6 +851,11 @@ class ThumbnailViewportWidget(QWidget):
         # STEP 2: Queue all thumbnails for background loading (priority=0)
         # The ThumbnailManager will skip already-queued visible items
         self._controller.queue_all_thumbnails(size_px=self._zoom_behavior.get_current_size())
+
+        logger.debug(
+            "[THUMBS-QUEUE] Completed at t=%.3fms",
+            (time.time() - t0) * 1000,
+        )
 
     def _get_visible_file_paths(self) -> list[str]:
         """Get list of file paths for currently visible thumbnails.
@@ -913,31 +951,47 @@ class ThumbnailViewportWidget(QWidget):
 
     def showEvent(self, event) -> None:
         """Handle show events - switch to high priority loading."""
+        import time
+
+        t0 = time.time()
         super().showEvent(event)
+        logger.debug("[THUMBS-SHOW] showEvent START at t=%.3fms", (time.time() - t0) * 1000)
+
         if hasattr(self, "placeholder_helper"):
-            schedule_ui_update(self.placeholder_helper.update_position, 0)
+            # Update position immediately (no delay for instant visibility)
+            self.placeholder_helper.update_position()
 
         # Switch to HIGH priority mode when viewport becomes visible
         if hasattr(self, "_controller") and self._controller:
             self._controller.set_viewport_visible(True)
 
-        # Queue thumbnails when viewport becomes visible (e.g., switching from table view)
+        # Queue thumbnails asynchronously to avoid blocking the view switch
         if self._model.rowCount() > 0:
             logger.debug(
-                "[ThumbnailViewport] Viewport shown with %d files - queueing thumbnails",
+                "[ThumbnailViewport] Viewport shown with %d files - scheduling thumbnail queue",
                 self._model.rowCount(),
             )
-            # Use schedule to avoid queueing during initialization
-            schedule_ui_update(self._queue_all_thumbnails_for_background_loading, 10)
+            # Defer queueing to avoid blocking UI (reduced delay from 10ms to 0ms)
+            schedule_ui_update(self._queue_all_thumbnails_for_background_loading, delay=0)
+
+        logger.debug(
+            "[THUMBS-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000
+        )
 
     def hideEvent(self, event) -> None:
         """Handle hide events - switch to background loading."""
+        import time
+
+        t0 = time.time()
         super().hideEvent(event)
+        logger.debug("[THUMBS-HIDE] hideEvent START at t=%.3fms", (time.time() - t0) * 1000)
 
         # Switch to BACKGROUND priority mode when viewport becomes hidden
         if hasattr(self, "_controller") and self._controller:
             self._controller.set_viewport_visible(False)
             logger.debug("[ThumbnailViewport] Viewport hidden - switched to BACKGROUND mode")
+
+        logger.debug("[THUMBS-HIDE] hideEvent END at t=%.3fms", (time.time() - t0) * 1000)
 
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.

@@ -644,7 +644,7 @@ class ExifToolWrapper:
         *,
         max_scan_s: float = 0.5,
         graceful_wait_s: float = 0.5,
-    ) -> None:
+    ) -> int:
         """Force cleanup all ExifTool processes system-wide.
 
         Notes:
@@ -654,6 +654,9 @@ class ExifToolWrapper:
         Args:
             max_scan_s: Maximum time to spend scanning processes.
             graceful_wait_s: Maximum time to wait for terminate() before kill().
+
+        Returns:
+            Number of ExifTool processes cleaned up.
 
         """
         try:
@@ -690,7 +693,7 @@ class ExifToolWrapper:
                     "[ExifToolWrapper] No orphaned ExifTool processes found",
                     extra={"dev_only": True},
                 )
-                return
+                return 0
 
             logger.warning(
                 "[ExifToolWrapper] Found %d orphaned ExifTool processes",
@@ -742,11 +745,14 @@ class ExifToolWrapper:
                     extra={"dev_only": True},
                 )
 
+            return len(exiftool_processes)
+
         except ImportError:
             logger.warning(
                 "[ExifToolWrapper] psutil not available, cannot clean up orphaned processes",
                 extra={"dev_only": True},
             )
+            return 0
 
     def is_healthy(self) -> bool:
         """Check if ExifTool wrapper is healthy.

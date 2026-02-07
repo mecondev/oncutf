@@ -607,6 +607,10 @@ class ThumbnailManager(QObject):
             count: Number of workers (0 to pause, 1-max_workers for scaling)
 
         """
+        import time
+
+        t0 = time.time()
+
         if count < 0 or count > self._max_workers:
             logger.warning(
                 "[ThumbnailManager] Invalid worker count %d (valid: 0-%d), ignoring",
@@ -627,9 +631,13 @@ class ThumbnailManager(QObject):
                 worker.request_stop()
             for worker in self._workers:
                 if worker.isRunning():
-                    worker.wait(1000)  # Wait up to 1s for graceful stop
+                    # Reduced timeout from 1000ms to 100ms for faster viewport switching
+                    worker.wait(100)  # Wait up to 100ms for graceful stop (Windows optimization)
             self._workers.clear()
-            logger.debug("[ThumbnailManager] All workers stopped (paused)")
+            logger.debug(
+                "[ThumbnailManager] All workers stopped (paused) in %.3fms",
+                (time.time() - t0) * 1000,
+            )
 
         elif count > current_count:
             # Scale up: start additional workers
@@ -649,9 +657,10 @@ class ThumbnailManager(QObject):
                 worker.start()
                 self._workers.append(worker)
             logger.debug(
-                "[ThumbnailManager] Scaled up: added %d workers (now %d active)",
+                "[ThumbnailManager] Scaled up: added %d workers (now %d active) in %.3fms",
                 workers_to_add,
                 len(self._workers),
+                (time.time() - t0) * 1000,
             )
 
         else:
@@ -662,11 +671,13 @@ class ThumbnailManager(QObject):
                     worker = self._workers.pop()
                     worker.request_stop()
                     if worker.isRunning():
-                        worker.wait(1000)  # Wait up to 1s for graceful stop
+                        # Reduced timeout from 1000ms to 100ms for faster viewport switching
+                        worker.wait(100)  # Wait up to 100ms for graceful stop (Windows optimization)
             logger.debug(
-                "[ThumbnailManager] Scaled down: removed %d workers (now %d active)",
+                "[ThumbnailManager] Scaled down: removed %d workers (now %d active) in %.3fms",
                 workers_to_remove,
                 len(self._workers),
+                (time.time() - t0) * 1000,
             )
 
     def shutdown(self) -> None:

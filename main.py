@@ -80,8 +80,9 @@ def cleanup_on_exit() -> None:
     try:
         from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
-        ExifToolWrapper.force_cleanup_all_exiftool_processes()
-        logger.info("[CLEANUP] ExifTool processes terminated")
+        cleaned_count = ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        if cleaned_count > 0:
+            logger.info("[CLEANUP] ExifTool processes terminated (%d)", cleaned_count)
     except Exception as e:
         logger.warning("[CLEANUP] Error terminating ExifTool processes: %s", e)
 
@@ -439,9 +440,10 @@ def main() -> int:
         try:
             from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
-            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            cleaned_count = ExifToolWrapper.force_cleanup_all_exiftool_processes()
             _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
-            logger.info("[App] ExifTool processes cleaned up")
+            if cleaned_count > 0:
+                logger.info("[App] ExifTool processes cleaned up (%d)", cleaned_count)
         except Exception as e:
             logger.warning("[App] Error cleaning up ExifTool processes: %s", e)
 
@@ -496,7 +498,7 @@ def main() -> int:
         try:
             from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
 
-            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()  # Don't log on crash
         except Exception:
             pass
         # Release lock file on crash

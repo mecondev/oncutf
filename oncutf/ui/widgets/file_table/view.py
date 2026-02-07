@@ -316,9 +316,23 @@ class FileTableView(QTableView):
 
     def showEvent(self, event) -> None:
         """Handle show events."""
+        import time
+
+        t0 = time.time()
         super().showEvent(event)
-        self._viewport_handler.force_scrollbar_update()
-        self._column_mgmt_behavior._update_header_visibility()
+        logger.debug("[TABLE-SHOW] showEvent START at t=%.3fms", (time.time() - t0) * 1000)
+
+        # Critical: Update placeholder immediately for instant visibility
+        if hasattr(self, "placeholder_helper"):
+            self.update_placeholder_visibility()
+
+        # Defer non-critical updates to avoid blocking view switch
+        from oncutf.utils.shared.timer_manager import schedule_ui_update
+
+        schedule_ui_update(self._viewport_handler.force_scrollbar_update, delay=0)
+        schedule_ui_update(self._column_mgmt_behavior._update_header_visibility, delay=0)
+
+        logger.debug("[TABLE-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000)
 
     def paintEvent(self, event) -> None:
         """Handle paint events."""
@@ -402,6 +416,7 @@ class FileTableView(QTableView):
                 model.columnsRemoved.connect(self._column_mgmt_behavior.configure_columns)
             if hasattr(model, "modelReset"):
                 model.modelReset.connect(self._column_mgmt_behavior.configure_columns)
+                model.modelReset.connect(self.update_placeholder_visibility)
 
             if model.columnCount() > 0:
                 schedule_ui_update(self._column_mgmt_behavior.check_and_fix_column_widths, delay=50)
@@ -445,6 +460,7 @@ class FileTableView(QTableView):
             self.hover_delegate.hovered_row = -1
 
         self.viewport().update()
+        self._loading_in_progress = False
         self.update_placeholder_visibility()
         self.refresh_view_state()
 
@@ -578,6 +594,8 @@ class FileTableView(QTableView):
         if hasattr(self, "placeholder_helper"):
             if visible:
                 self.placeholder_helper.show()
+                # Update position immediately after showing
+                self.placeholder_helper.update_position()
             else:
                 self.placeholder_helper.hide()
         self.refresh_view_state()
@@ -585,6 +603,13 @@ class FileTableView(QTableView):
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on table content."""
         if hasattr(self, "placeholder_helper"):
+            if self.is_empty():
+                # During active loading, suppress showing placeholder
+                # (streaming batches temporarily clear then refill the model)
+                if not getattr(self, "_loading_in_progress", False):
+                    self.placeholder_helper.show()
+            else:
+                self.placeholder_helper.hide()
             self.placeholder_helper.update_position()
 
     # =====================================
@@ -631,8 +656,11 @@ class FileTableView(QTableView):
         )
 
         with wait_cursor(restore_after=False):
-            # Force cursor update before any processing
+            # Force wait cursor to be visible immediately
             QApplication.processEvents()
+
+            # Note: Placeholder will be hidden before files_dropped.emit below
+            # to avoid flickering during streaming loads (>200 files)
             t3 = time.time()
             logger.debug(
                 "[DROP-TIMING] After processEvents at +%.3fms",
@@ -659,6 +687,13 @@ class FileTableView(QTableView):
                 )
 
                 if result:
+                    # Suppress placeholder re-showing during streaming load
+                    self._loading_in_progress = True
+
+                    # Hide placeholder IMMEDIATELY before emitting signal
+                    self.set_placeholder_visible(False)
+                    self.repaint()
+
                     dropped_paths, modifiers = result
                     logger.debug(
                         "[DROP-TIMING] Emitting files_dropped with %d paths at +%.3fms",

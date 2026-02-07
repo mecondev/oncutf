@@ -203,6 +203,8 @@ class FileLoadUIService:
     def _update_file_table_placeholder(self, total_files: int) -> None:
         """Update file table placeholder visibility."""
         if hasattr(self.parent_window, "file_table_view"):
+            # Reset loading flag so placeholder visibility can be updated
+            self.parent_window.file_table_view._loading_in_progress = False
             visible = total_files == 0
             self.parent_window.file_table_view.set_placeholder_visible(visible)
             logger.debug(

@@ -72,6 +72,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
         @staticmethod
         def force_cleanup_all_exiftool_processes():
             calls["count"] += 1
+            return 0  # Return 0 to indicate no processes cleaned
 
     fake_mod.ExifToolWrapper = FakeExif
 

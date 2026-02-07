@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
@@ -62,6 +62,19 @@ class ThumbnailViewportController(QObject):
 
     # Background mode timeout (30 seconds)
     BACKGROUND_TIMEOUT_MS = 30000
+
+    # Supported thumbnail file extensions (images + RAW + videos)
+    # Audio files (.mp3, .wav, etc.) are explicitly excluded
+    SUPPORTED_THUMBNAIL_EXTENSIONS: ClassVar[set[str]] = {
+        # Images
+        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif",
+        ".webp", ".heic", ".heif",
+        # RAW
+        ".cr2", ".cr3", ".nef", ".orf", ".rw2", ".arw", ".dng", ".raf",
+        # Videos
+        ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
+        ".m4v", ".mpg", ".mpeg", ".3gp", ".mts", ".m2ts", ".mxf",
+    }
 
     # Signals for UI updates
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap
@@ -146,13 +159,33 @@ class ThumbnailViewportController(QObject):
             visible: True if viewport is visible, False if hidden
 
         """
+        import time
+
+        t0 = time.time()
+
+        # Skip worker adjustment if no files loaded (massive performance gain on Windows)
+        if self._model.rowCount() == 0:
+            logger.debug(
+                "[ThumbnailViewportController] Skipping worker adjustment - no files loaded"
+            )
+            return
+
         if visible:
             self._switch_to_high_priority_mode()
         else:
             self._switch_to_background_mode()
 
+        logger.debug(
+            "[WORKER-ADJUST] set_viewport_visible completed in %.3fms",
+            (time.time() - t0) * 1000,
+        )
+
     def _switch_to_high_priority_mode(self) -> None:
         """Switch to high priority mode (viewport visible)."""
+        import time
+
+        t0 = time.time()
+
         if not self._is_background_mode and self._current_priority == self.PRIORITY_HIGH:
             return  # Already in high priority mode
 
@@ -166,15 +199,29 @@ class ThumbnailViewportController(QObject):
         self._current_priority = self.PRIORITY_HIGH
         self._background_timeout_timer.stop()
 
-        # Scale up workers
+        # Scale up workers (THIS IS THE SLOW PART on Windows!)
+        t1 = time.time()
         if self._thumbnail_manager:
             self._thumbnail_manager.set_worker_count(self._normal_worker_count)
+        logger.debug(
+            "[WORKER-ADJUST] set_worker_count took %.3fms",
+            (time.time() - t1) * 1000,
+        )
 
         # Re-queue visible items with high priority
         self._reprioritize_visible_items()
 
+        logger.debug(
+            "[WORKER-ADJUST] _switch_to_high_priority_mode total: %.3fms",
+            (time.time() - t0) * 1000,
+        )
+
     def _switch_to_background_mode(self) -> None:
         """Switch to background mode (viewport hidden, low priority continuation)."""
+        import time
+
+        t0 = time.time()
+
         if self._is_background_mode:
             return  # Already in background mode
 
@@ -189,12 +236,22 @@ class ThumbnailViewportController(QObject):
         self._is_background_mode = True
         self._current_priority = self.PRIORITY_BACKGROUND
 
-        # Scale down workers for background loading
+        # Scale down workers for background loading (THIS IS THE SLOW PART on Windows!)
+        t1 = time.time()
         if self._thumbnail_manager:
             self._thumbnail_manager.set_worker_count(self._background_worker_count)
+        logger.debug(
+            "[WORKER-ADJUST] set_worker_count took %.3fms",
+            (time.time() - t1) * 1000,
+        )
 
         # Start 30-second timeout to pause loading
         self._background_timeout_timer.start(self.BACKGROUND_TIMEOUT_MS)
+
+        logger.debug(
+            "[WORKER-ADJUST] _switch_to_background_mode total: %.3fms",
+            (time.time() - t0) * 1000,
+        )
 
     def _on_background_timeout(self) -> None:
         """Pause thumbnail loading after background timeout."""
@@ -239,13 +296,26 @@ class ThumbnailViewportController(QObject):
 
         self._thumbnail_size = size_px
 
-        # Get all file paths from model
+        # Get all file paths from model and filter out unsupported formats
         file_paths = []
+        skipped_count = 0
         for row in range(self._model.rowCount()):
             index = self._model.index(row, 0)
             file_item = index.data(0x0100)  # Qt.UserRole
             if file_item:
-                file_paths.append(file_item.full_path)
+                from pathlib import Path
+
+                ext = Path(file_item.full_path).suffix.lower()
+                if ext in self.SUPPORTED_THUMBNAIL_EXTENSIONS:
+                    file_paths.append(file_item.full_path)
+                else:
+                    skipped_count += 1
+
+        if skipped_count > 0:
+            logger.debug(
+                "[ThumbnailViewportController] Skipped %d unsupported files (e.g., audio)",
+                skipped_count,
+            )
 
         if file_paths:
             # Update queued files tracking
@@ -279,6 +349,7 @@ class ThumbnailViewportController(QObject):
         """Re-queue visible thumbnails with high priority.
 
         Called when viewport scrolls to ensure visible items load first.
+        Filters out unsupported file types (e.g., audio).
 
         Args:
             visible_file_paths: List of visible file paths
@@ -287,13 +358,24 @@ class ThumbnailViewportController(QObject):
         if not self._thumbnail_manager or not visible_file_paths:
             return
 
+        # Filter out unsupported file types (audio, etc.)
+        from pathlib import Path
+
+        filtered_paths = [
+            p for p in visible_file_paths
+            if Path(p).suffix.lower() in self.SUPPORTED_THUMBNAIL_EXTENSIONS
+        ]
+
+        if not filtered_paths:
+            return
+
         # Re-queue visible items with high priority
         self._thumbnail_manager.queue_all_thumbnails(
-            file_paths=visible_file_paths, priority=self.PRIORITY_HIGH, size_px=self._thumbnail_size
+            file_paths=filtered_paths, priority=self.PRIORITY_HIGH, size_px=self._thumbnail_size
         )
         logger.debug(
             "[ThumbnailViewportController] Prioritized %d visible thumbnails",
-            len(visible_file_paths),
+            len(filtered_paths),
         )
 
     def clear_pending_thumbnail_requests(self) -> None:
@@ -414,17 +496,26 @@ class ThumbnailViewportController(QObject):
         if not selection_model:
             return
 
-        # Clear current selection
-        selection_model.clearSelection()
+        # Build QItemSelection for batch selection (faster, single signal)
+        from PyQt5.QtCore import QItemSelection, QItemSelectionRange
 
-        # Find and select matching rows
+        file_paths_set = set(file_paths)
+        selection = QItemSelection()
+
+        # Find matching rows
         for row in range(self._model.rowCount()):
             index = self._model.index(row, 0)
             file_item = index.data(Qt.ItemDataRole.UserRole)
-            if file_item and file_item.full_path in file_paths:
-                selection_model.select(index, QItemSelectionModel.SelectionFlag.Select)
+            if file_item and file_item.full_path in file_paths_set:
+                selection.append(QItemSelectionRange(index))
 
-        logger.debug("[ThumbnailViewportController] Selected %d files", len(file_paths))
+        # Apply batch selection
+        selection_model.select(selection, QItemSelectionModel.SelectionFlag.ClearAndSelect)
+        logger.debug(
+            "[ThumbnailViewportController] Selected %d/%d files",
+            len(selection),
+            len(file_paths),
+        )
 
     # -------------------------------------------------------------------------
     # File Operations
