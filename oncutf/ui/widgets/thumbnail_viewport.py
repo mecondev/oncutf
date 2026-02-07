@@ -28,8 +28,10 @@ from PyQt5.QtCore import (
     QTimer,
     pyqtSignal,
 )
+from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QListView,
     QMenu,
     QRubberBand,
@@ -71,6 +73,7 @@ class ThumbnailViewportWidget(QWidget):
     files_reordered = pyqtSignal()  # Emitted when manual order changes
     viewport_mode_changed = pyqtSignal(str)  # "manual" or "sorted"
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
+    files_dropped = pyqtSignal(list, object)  # Emitted with dropped paths and modifiers
 
     # Zoom limits
     MIN_THUMBNAIL_SIZE = 64
@@ -128,6 +131,10 @@ class ThumbnailViewportWidget(QWidget):
         self._lasso_behavior = None
         self._tooltip_behavior = None
         self._context_menu_builder = None
+        self._drag_drop_behavior = None
+
+        # Drag-drop state
+        self._loading_in_progress = False
 
         self._setup_ui()
         self._connect_signals()
@@ -168,6 +175,7 @@ class ThumbnailViewportWidget(QWidget):
         self._list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._list_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self._list_view.setMovement(QListView.Free)  # Allow drag rearrange
+        self._list_view.setAcceptDrops(True)  # Enable drop acceptance
 
         # Apply styling from theme to match FileTable appearance
         theme = get_theme_manager()
@@ -204,6 +212,11 @@ class ThumbnailViewportWidget(QWidget):
         self._tooltip_behavior = ThumbnailViewportTooltipBehavior(list_view=self._list_view)
 
         self._context_menu_builder = ThumbnailViewportContextMenuBuilder(parent_widget=self)
+
+        # Initialize drag-drop behavior (will use self as DraggableWidget)
+        from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior
+
+        self._drag_drop_behavior = DragDropBehavior(widget=self)
 
         # Install event filter for behaviors
         self._list_view.viewport().installEventFilter(self)
@@ -496,6 +509,81 @@ class ThumbnailViewportWidget(QWidget):
         self._tooltip_behavior.handle_event_filter(obj, event, self._pan_behavior.is_panning())
 
         return super().eventFilter(obj, event)
+
+    # =====================================
+    # Drag-and-Drop Event Handlers
+    # =====================================
+
+    def dragEnterEvent(self, event: QDropEvent) -> None:
+        """Handle drag enter event.
+
+        Accepts drops from file explorer, file tree, and other file sources.
+
+        Args:
+            event: Qt drop event
+
+        """
+        if self._drag_drop_behavior.handle_drag_enter(event):
+            return
+        super().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event: QDropEvent) -> None:
+        """Handle drag move event.
+
+        Args:
+            event: Qt drop event
+
+        """
+        if self._drag_drop_behavior.handle_drag_move(event):
+            return
+        super().dragMoveEvent(event)
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        """Handle drop event.
+
+        Processes dropped files/folders and emits files_dropped signal
+        for the main window to load.
+
+        Args:
+            event: Qt drop event
+
+        """
+        from oncutf.utils.cursor_helper import wait_cursor
+
+        # Set wait cursor for user feedback
+        with wait_cursor(restore_after=False):
+            QApplication.processEvents()
+
+            try:
+                result = self._drag_drop_behavior.handle_drop(event)
+
+                if result:
+                    # Suppress placeholder re-showing during streaming load
+                    self._loading_in_progress = True
+
+                    # Hide placeholder immediately
+                    if hasattr(self, "placeholder_helper") and self.placeholder_helper:
+                        self.placeholder_helper.hide()
+                    self.update()
+
+                    dropped_paths, modifiers = result
+                    logger.debug(
+                        "[ThumbnailViewport] Emitting files_dropped with %d paths",
+                        len(dropped_paths),
+                        extra={"dev_only": True},
+                    )
+                    self.files_dropped.emit(dropped_paths, modifiers)
+                else:
+                    # Restore cursor if no valid drop
+                    QApplication.restoreOverrideCursor()
+                    logger.debug(
+                        "[ThumbnailViewport] No valid drop",
+                        extra={"dev_only": True},
+                    )
+            except Exception:
+                QApplication.restoreOverrideCursor()
+                logger.exception("[ThumbnailViewport] Error handling drop event")
+                raise
 
     def _on_item_activated(self, index: "QModelIndex") -> None:
         """Handle double-click on thumbnail.
@@ -1103,3 +1191,61 @@ class ThumbnailViewportWidget(QWidget):
             bottom_right.row() - top_left.row() + 1,
             extra={"dev_only": True},
         )
+
+    # =====================================
+    # DraggableWidget Protocol Implementation
+    # (Required by DragDropBehavior)
+    # =====================================
+
+    def model(self):
+        """Return the underlying model."""
+        return self._model
+
+    def viewport(self):
+        """Return the list view viewport."""
+        return self._list_view.viewport()
+
+    def visualRect(self, index: "QModelIndex"):
+        """Return visual rectangle for model index."""
+        return self._list_view.visualRect(index)
+
+    def rect(self):
+        """Return widget rectangle."""
+        return self._list_view.rect()
+
+    def mapFromGlobal(self, pos):
+        """Map global position to list view coordinates."""
+        return self._list_view.mapFromGlobal(pos)
+
+    def blockSignals(self, block: bool) -> bool:
+        """Block/unblock signals on list view."""
+        return self._list_view.blockSignals(block)
+
+    def _get_current_selection(self) -> set[int]:
+        """Get currently selected rows from list view.
+
+        Returns:
+            Set of row indices that are selected
+
+        """
+        selection_model = self._list_view.selectionModel()
+        if not selection_model:
+            return set()
+        return {index.row() for index in selection_model.selectedIndexes()}
+
+    def _get_current_selection_safe(self) -> set[int]:
+        """Get current selection safely (fallback implementation)."""
+        try:
+            return self._get_current_selection()
+        except Exception as e:
+            logger.warning("[ThumbnailViewport] Error getting selection: %s", e)
+            return set()
+
+    def _get_selection_store(self):
+        """Get selection store (not used in thumbnail viewport, return None)."""
+
+    def _force_cursor_cleanup(self) -> None:
+        """Force cleanup of any stuck cursors during drag operations."""
+        from oncutf.utils.cursor_helper import force_restore_cursor
+
+        force_restore_cursor()

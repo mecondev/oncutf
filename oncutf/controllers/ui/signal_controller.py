@@ -50,6 +50,7 @@ class SignalController:
         self._setup_folder_tree_signals()
         self._setup_splitter_signals()
         self._setup_file_table_signals()
+        self._setup_thumbnail_viewport_signals()
         self._setup_metadata_signals()
         self._setup_rename_signals()
         self._setup_preview_signals()
@@ -131,6 +132,19 @@ class SignalController:
 
         # Connect F5 refresh request
         self.parent_window.file_table_view.refresh_requested.connect(self._refresh_file_table)
+
+    def _setup_thumbnail_viewport_signals(self) -> None:
+        """Connect thumbnail viewport signals."""
+        # Check if thumbnail_viewport exists (may not be created in all contexts)
+        if not hasattr(self.parent_window, "thumbnail_viewport"):
+            logger.debug("[SignalController] thumbnail_viewport not found, skipping signal setup")
+            return
+
+        # Connect files dropped signal to the same handler as file table
+        self.parent_window.thumbnail_viewport.files_dropped.connect(
+            self.parent_window.load_files_from_dropped_items
+        )
+        logger.debug("[SignalController] Thumbnail viewport signals connected")
 
     def _setup_metadata_signals(self) -> None:
         """Connect metadata tree signals."""

@@ -312,6 +312,7 @@ class DragHandler:
 
         visual_manager = DragVisualManager.get_instance()
         valid_drop = False
+        target_widget = None
 
         if widget_under_cursor:
             parent = widget_under_cursor
@@ -328,7 +329,7 @@ class DragHandler:
                         parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
-                    self._handle_drop_on_table()
+                    target_widget = parent
                     valid_drop = True
                     break
 
@@ -342,7 +343,7 @@ class DragHandler:
                         parent.parent().__class__.__name__,
                         extra={"dev_only": True},
                     )
-                    self._handle_drop_on_table()
+                    target_widget = parent.parent()
                     valid_drop = True
                     break
 
@@ -356,7 +357,9 @@ class DragHandler:
 
                 parent = parent.parent()
 
-        if not valid_drop:
+        if valid_drop and target_widget:
+            self._handle_drop_on_target(target_widget)
+        else:
             logger.debug("[DragHandler] Drop on invalid target", extra={"dev_only": True})
 
         self._cleanup_drag_state()
@@ -454,8 +457,56 @@ class DragHandler:
             extra={"dev_only": True},
         )
 
+    def _handle_drop_on_target(self, target_widget) -> None:
+        """Handle drop on target widget (FileTableView or ThumbnailViewportWidget).
+
+        Args:
+            target_widget: The target widget that received the drop
+
+        """
+        if not self._drag_path:
+            return
+
+        qt_mods = QApplication.keyboardModifiers()
+        target_class = target_widget.__class__.__name__
+
+        # For FileTableView, use the original file tree behavior
+        if target_class == "FileTableView":
+            self._view.item_dropped.emit(self._drag_path, qt_mods)
+            logger.info(
+                "[DragHandler] Dropped on FileTableView: %s",
+                self._drag_path,
+                extra={"dev_only": True},
+            )
+        # For ThumbnailViewportWidget, emit files_dropped signal
+        elif target_class == "ThumbnailViewportWidget":
+            # Emit files_dropped signal like normal drop sources do
+            target_widget.files_dropped.emit([self._drag_path], qt_mods)
+            logger.info(
+                "[DragHandler] Dropped on ThumbnailViewportWidget: %s",
+                self._drag_path,
+                extra={"dev_only": True},
+            )
+        else:
+            logger.warning(
+                "[DragHandler] Unknown drop target: %s",
+                target_class,
+                extra={"dev_only": True},
+            )
+
+        domain_mods = qt_modifiers_to_domain(qt_mods)
+        _, _, action = decode_modifiers_to_flags(domain_mods)
+        logger.info(
+            "[DragHandler] Drop action: %s",
+            action,
+            extra={"dev_only": True},
+        )
+
     def _handle_drop_on_table(self) -> None:
-        """Handle drop on file table with modifier logic."""
+        """Handle drop on file table with modifier logic.
+
+        Deprecated: Use _handle_drop_on_target instead.
+        """
         if not self._drag_path:
             return
 
