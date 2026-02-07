@@ -68,11 +68,11 @@ class MetadataWriter:
     @property
     def ui_update(self) -> UIUpdatePort:
         """Lazy-load UI update adapter from QtAppContext."""
-        if self._ui_update is None:
-            from oncutf.app.state.context import get_app_context
+        from oncutf.app.state.context import get_app_context
 
+        if self._ui_update is None:
             context = get_app_context()
-            self._ui_update = context.get_manager("ui_update")
+            self._ui_update = cast("UIUpdatePort", context.get_manager("ui_update"))
             if self._ui_update is None:
                 raise RuntimeError("UIUpdatePort not registered in QtAppContext")
         return self._ui_update
@@ -418,6 +418,20 @@ class MetadataWriter:
                 )
 
                 def delayed_resume() -> None:
+                    # Check if application is shutting down before resuming
+                    try:
+                        from oncutf.core.shutdown_coordinator import get_shutdown_coordinator
+
+                        coordinator = get_shutdown_coordinator()
+                        if coordinator.is_shutting_down:
+                            logger.debug(
+                                "[MetadataWriter] Skipping filesystem monitor resume (shutdown in progress)"
+                            )
+                            return
+                    except Exception:
+                        # If we can't check shutdown status, proceed with resume
+                        pass
+
                     if filesystem_monitor:
                         filesystem_monitor.resume()
                         logger.info(

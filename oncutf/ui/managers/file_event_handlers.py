@@ -46,10 +46,17 @@ class FileEventHandlers:
         """
         from oncutf.ui.services.folder_selection import select_folder
 
+        # Get current folder from context (if available)
+        current_folder = (
+            self.parent_window.context.get_current_folder()
+            if hasattr(self.parent_window, "context")
+            else None
+        )
+
         folder_path = select_folder(
             self.parent_window,
             "Select Folder",
-            self.parent_window.current_folder_path or str(Path.home()),
+            current_folder or str(Path.home()),
         )
 
         if folder_path:

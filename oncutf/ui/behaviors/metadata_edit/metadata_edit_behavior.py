@@ -182,12 +182,6 @@ class MetadataEditBehavior:
         """Open a dialog to edit the value of a metadata field."""
         self._edit_ops.edit_value(key_path, current_value)
 
-    def _fallback_edit_value(
-        self, key_path: str, new_value: str, old_value: str, files_to_modify: list
-    ) -> None:
-        """Fallback method for editing metadata without command system."""
-        self._edit_ops._fallback_edit_value(key_path, new_value, old_value, files_to_modify)
-
     # =====================================
     # Rotation Operations (delegated)
     # =====================================
@@ -195,12 +189,6 @@ class MetadataEditBehavior:
     def set_rotation_to_zero(self, key_path: str) -> None:
         """Set rotation metadata to 0 degrees."""
         self._rotation_handler.set_rotation_to_zero(key_path)
-
-    def _fallback_set_rotation_to_zero(
-        self, key_path: str, new_value: str, current_value: Any
-    ) -> None:
-        """Fallback method for setting rotation to zero."""
-        self._rotation_handler._fallback_set_rotation_to_zero(key_path, new_value, current_value)
 
     # =====================================
     # Reset Operations (delegated)

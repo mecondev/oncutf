@@ -507,6 +507,16 @@ class ShutdownLifecycleHandler:
 
     def _pre_cleanup_cleanup_metadata_thread(self) -> None:
         """Cleanup metadata manager and thread before shutdown."""
+        # Cancel any pending filesystem monitor resume timers to prevent post-shutdown execution
+        try:
+            from oncutf.utils.shared.timer_manager import get_timer_manager
+
+            timer_manager = get_timer_manager()
+            if timer_manager.cancel("metadata_save_resume"):
+                logger.info("[CloseEvent] Cancelled pending filesystem monitor resume timer")
+        except Exception as e:
+            logger.debug("[CloseEvent] Timer cancellation failed (may not exist): %s", e)
+
         # First, cleanup the metadata manager (handles ParallelMetadataLoader)
         if hasattr(self.main_window, "metadata_manager") and self.main_window.metadata_manager:
             try:

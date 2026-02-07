@@ -7,12 +7,30 @@ Utility functions for handling window positioning in multiscreen desktop environ
 Ensures dialogs and progress bars appear on the correct monitor relative to their parent window.
 """
 
-from PyQt5.QtGui import QScreen
-from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget
+from PyQt5.QtGui import QIcon, QScreen
+from PyQt5.QtWidgets import QApplication, QFileDialog, QPushButton, QWidget
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 logger = get_cached_logger(__name__)
+
+
+def _remove_dialog_button_icons(dialog: QFileDialog) -> None:
+    """Remove icons from all QPushButton widgets in the dialog.
+
+    Args:
+        dialog: QFileDialog instance to process
+
+    """
+
+    # Use TimerManager to ensure buttons are created before we try to modify them
+    def _clear_icons() -> None:
+        buttons = dialog.findChildren(QPushButton)
+        for button in buttons:
+            button.setIcon(QIcon())
+
+    schedule_ui_update(_clear_icons, delay=0)
 
 
 def get_screen_for_widget(widget: QWidget) -> QScreen | None:
@@ -227,6 +245,9 @@ def get_existing_directory_on_parent_screen(
     if parent:
         ensure_dialog_on_parent_screen(dialog, parent)
 
+    # Remove default button icons
+    _remove_dialog_button_icons(dialog)
+
     # Show the dialog and get result
     if dialog.exec_() == QFileDialog.Accepted:
         selected_dirs = dialog.selectedFiles()
@@ -265,6 +286,9 @@ def get_open_file_name_on_parent_screen(
     # Position the dialog on the parent's screen
     if parent:
         ensure_dialog_on_parent_screen(dialog, parent)
+
+    # Remove default button icons
+    _remove_dialog_button_icons(dialog)
 
     # Show the dialog and get result
     if dialog.exec_() == QFileDialog.Accepted:
@@ -306,6 +330,9 @@ def get_save_file_name_on_parent_screen(
     # Position the dialog on the parent's screen
     if parent:
         ensure_dialog_on_parent_screen(dialog, parent)
+
+    # Remove default button icons
+    _remove_dialog_button_icons(dialog)
 
     # Show the dialog and get result
     if dialog.exec_() == QFileDialog.Accepted:

@@ -55,21 +55,31 @@ def _is_process_running(pid: int) -> bool:
 
     """
     if platform.system() == "Windows":
-        import ctypes
-        from ctypes import wintypes
+        # Windows: Use kernel32.OpenProcess (runtime import for platform-specific code)
+        try:
+            import ctypes
+            from ctypes import wintypes
 
-        # Windows: Use kernel32.OpenProcess
-        PROCESS_QUERY_INFORMATION = 0x0400
-        kernel32 = ctypes.windll.kernel32
-        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-        kernel32.OpenProcess.restype = wintypes.HANDLE
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        kernel32.CloseHandle.restype = wintypes.BOOL
+            # Check if windll is available (Windows-specific)
+            if not hasattr(ctypes, "windll"):
+                return False
 
-        handle = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid)
-        if handle:
-            kernel32.CloseHandle(handle)
-            return True
+            PROCESS_QUERY_INFORMATION = 0x0400
+            kernel32 = ctypes.windll.kernel32
+            kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+            kernel32.OpenProcess.restype = wintypes.HANDLE
+            kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+            kernel32.CloseHandle.restype = wintypes.BOOL
+
+            handle = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid)
+            if handle:
+                kernel32.CloseHandle(handle)
+                return True
+            # No else needed - return False at the end if handle is invalid
+        except (ImportError, AttributeError, OSError):
+            # Fallback if Windows API calls fail
+            pass  # Fall through to return False at end
+
         return False
 
     # Linux/macOS: Use os.kill with signal 0

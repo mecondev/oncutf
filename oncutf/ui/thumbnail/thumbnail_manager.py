@@ -202,6 +202,16 @@ class ThumbnailManager(QObject):
             cache_config.cache_dir,
         )
 
+    @property
+    def max_workers(self) -> int:
+        """Get maximum worker count.
+
+        Returns:
+            Maximum number of worker threads
+
+        """
+        return self._max_workers
+
     def get_thumbnail(self, file_path: str, size_px: int = 128) -> QPixmap:
         """Get thumbnail for file (from cache or queue for generation).
 
@@ -589,8 +599,8 @@ class ThumbnailManager(QObject):
         """Dynamically adjust worker thread count for priority management.
 
         Used by hybrid loading system to scale workers based on viewport visibility:
-        - HIGH priority (viewport visible): 6 workers
-        - BACKGROUND priority (viewport hidden): 2 workers
+        - HIGH priority (viewport visible): max_workers
+        - BACKGROUND priority (viewport hidden): max_workers // 4 (min 1)
         - PAUSED (timeout reached): 0 workers
 
         Args:

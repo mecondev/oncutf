@@ -69,10 +69,14 @@ class TableManager:
         """Clears the file table and shows a placeholder message."""
         # Only clear metadata modifications if we're actually changing folders
         # This preserves modifications when reloading the same folder
+        current_folder = (
+            self.parent_window.context.get_current_folder()
+            if hasattr(self.parent_window, "context")
+            else None
+        )
         should_clear_modifications = (
             message != "No folder selected"  # User explicitly clearing
-            or not hasattr(self.parent_window, "current_folder_path")  # No current folder
-            or self.parent_window.current_folder_path is None  # Folder path is None
+            or not current_folder  # No current folder
         )
 
         if should_clear_modifications:
@@ -149,7 +153,12 @@ class TableManager:
         # Handle application-specific setup
         # Store files in FileStore (centralized state management)
         self.parent_window.context.file_store.set_loaded_files(file_items)
-        self.parent_window.file_model.folder_path = self.parent_window.current_folder_path
+        current_folder = (
+            self.parent_window.context.get_current_folder()
+            if hasattr(self.parent_window, "context")
+            else None
+        )
+        self.parent_window.file_model.folder_path = current_folder
         self.parent_window.preview_map = {f.filename: f for f in file_items}
 
         # Enable header and update UI elements

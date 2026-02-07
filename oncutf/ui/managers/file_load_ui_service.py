@@ -74,7 +74,7 @@ class FileLoadUIService:
                         folder_path, has_subdirectory_files
                     )
                     logger.info(
-                        "[FileLoadUIService] Set current_folder_path to: %s",
+                        "[FileLoadUIService] Set current folder to: %s",
                         folder_path,
                         extra={"dev_only": True},
                     )

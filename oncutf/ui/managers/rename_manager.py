@@ -153,7 +153,11 @@ class RenameManager:
             """Safe wrapper for post-rename workflow with error handling."""
             try:
                 # Check if main window is still valid
-                if not self.main_window or not hasattr(self.main_window, "current_folder_path"):
+                if (
+                    not self.main_window
+                    or not hasattr(self.main_window, "context")
+                    or not self.main_window.context.get_current_folder()
+                ):
                     logger.warning(
                         "[RenameManager] Main window no longer valid, skipping post-rename workflow"
                     )

@@ -42,8 +42,8 @@ class ThumbnailViewportController(QObject):
     without direct UI dependencies. Emits signals for UI updates.
 
     Hybrid Loading System:
-        - HIGH priority (6 workers): Viewport visible, immediate loading
-        - BACKGROUND priority (2 workers): Viewport hidden, low-priority continuation
+        - HIGH priority (max workers): Viewport visible, immediate loading
+        - BACKGROUND priority (25% workers): Viewport hidden, low-priority continuation
         - PAUSED (0 workers): After 30s timeout in background mode
 
     Signals:
@@ -91,8 +91,16 @@ class ThumbnailViewportController(QObject):
 
         # Hybrid loading state
         self._is_background_mode = False
-        self._normal_worker_count = 6  # High priority worker count
-        self._background_worker_count = 2  # Background mode worker count
+        # Calculate worker counts dynamically based on manager's max_workers
+        # High priority: use all available workers, Background: use 25% (min 1)
+        if thumbnail_manager is not None:
+            max_workers = thumbnail_manager.max_workers
+            self._normal_worker_count = max_workers  # Use all workers for high priority
+            self._background_worker_count = max(1, max_workers // 4)  # 25% for background
+        else:
+            # Fallback if manager not available yet (will be updated later)
+            self._normal_worker_count = 2
+            self._background_worker_count = 1
         self._current_priority = self.PRIORITY_HIGH
 
         # Resume tracking - track what we've queued to avoid re-queuing on resume

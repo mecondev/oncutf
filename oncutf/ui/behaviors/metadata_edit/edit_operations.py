@@ -150,21 +150,41 @@ class EditOperations:
             selected_files: Files to modify
 
         """
-        try:
-            from oncutf.core.metadata import (
-                get_metadata_command_manager,
-                get_metadata_service,
+        from oncutf.core.metadata import (
+            get_metadata_command_manager,
+            get_metadata_service,
+        )
+
+        command_manager = get_metadata_command_manager()
+        metadata_service = get_metadata_service()
+
+        # For single file selection (metadata tree context), use command system
+        if len(selected_files) == 1:
+            file_item = selected_files[0]
+
+            # Create and execute command
+            command = metadata_service.create_edit_command(
+                file_path=file_item.full_path,
+                field_path=normalized_field_path,
+                new_value=new_value,
+                old_value=current_value,
+                metadata_tree_view=self._widget,
+                display_path=key_path,
             )
 
-            command_manager = get_metadata_command_manager()
-            metadata_service = get_metadata_service()
+            command_manager.execute_command(command)
 
-            # For single file selection (metadata tree context), use command system
-            if len(selected_files) == 1:
-                file_item = selected_files[0]
+            logger.info(
+                "Edited %s metadata for file %s via command system",
+                normalized_field_path,
+                file_item.filename,
+            )
+        else:
+            # Multi-file editing: execute command for each file
+            for file_item in selected_files:
+                from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
-                # Create and execute command
-                command = metadata_service.create_edit_command(
+                command = EditMetadataFieldCommand(
                     file_path=file_item.full_path,
                     field_path=normalized_field_path,
                     new_value=new_value,
@@ -172,105 +192,21 @@ class EditOperations:
                     metadata_tree_view=self._widget,
                     display_path=key_path,
                 )
-
                 command_manager.execute_command(command)
 
-                logger.info(
-                    "Edited %s metadata for file %s via command system",
-                    normalized_field_path,
-                    file_item.filename,
-                )
-            else:
-                # Multi-file editing: execute command for each file
-                for file_item in selected_files:
-                    from oncutf.core.metadata.commands import EditMetadataFieldCommand
-
-                    command = EditMetadataFieldCommand(
-                        file_path=file_item.full_path,
-                        field_path=normalized_field_path,
-                        new_value=new_value,
-                        old_value=current_value,
-                        metadata_tree_view=self._widget,
-                        display_path=key_path,
-                    )
-                    command_manager.execute_command(command)
-
-                logger.info(
-                    "Edited %s metadata for %d files via command system",
-                    normalized_field_path,
-                    len(selected_files),
-                )
-
-            # Emit signal with normalized path
-            if hasattr(self._widget, "value_edited"):
-                self._widget.value_edited.emit(
-                    normalized_field_path,
-                    new_value,
-                    str(current_value) if current_value else "",
-                )
-
-        except Exception as e:
-            logger.warning(
-                "Command system not available or failed, using fallback: %s",
-                e,
-            )
-            # Fallback to direct method with original path
-            files_to_modify = list(selected_files)
-            self._fallback_edit_value(key_path, new_value, current_value, files_to_modify)
-
-            # Emit signal with original path
-            if hasattr(self._widget, "value_edited"):
-                self._widget.value_edited.emit(
-                    key_path,
-                    new_value,
-                    str(current_value) if current_value else "",
-                )
-
-    def _fallback_edit_value(
-        self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
-    ) -> None:
-        """Fallback method for editing metadata without command system.
-
-        Args:
-            key_path: Metadata key path
-            new_value: New value to set
-            _old_value: Old value (unused in fallback)
-            files_to_modify: List of file items to modify
-
-        """
-        from oncutf.core.metadata.metadata_service import get_metadata_service
-
-        metadata_service = get_metadata_service()
-
-        logger.info(
-            "Fallback edit: using MetadataService",
-        )
-
-        success_count = 0
-
-        for file_item in files_to_modify:
             logger.info(
-                "Staging change: %s, %s, %s",
-                file_item.full_path,
-                key_path,
-                new_value,
+                "Edited %s metadata for %d files via command system",
+                normalized_field_path,
+                len(selected_files),
             )
-            metadata_service.staging_manager.stage_change(file_item.full_path, key_path, new_value)
-            success_count += 1
-            file_item.metadata_status = "modified"
 
-        if success_count == 0:
-            logger.warning("No files were successfully updated")
-            return
-
-        # Update the file icon status immediately
-        self._widget._cache_behavior.update_file_icon_status()
-
-        # Update the tree display to show the new value
-        self._update_tree_item_value(key_path, new_value)
-
-        # Force viewport update to refresh visual state
-        self._widget.viewport().update()
+        # Emit signal with normalized path
+        if hasattr(self._widget, "value_edited"):
+            self._widget.value_edited.emit(
+                normalized_field_path,
+                new_value,
+                str(current_value) if current_value else "",
+            )
 
     def _edit_date_time_field(
         self, key_path: str, current_value: Any, saved_path: list[str] | None = None
@@ -316,48 +252,38 @@ class EditOperations:
             )
 
             # Use command system for undo/redo support
-            try:
-                from oncutf.app.services import (
-                    get_metadata_command_manager,
-                    get_metadata_service,
-                )
+            from oncutf.app.services import (
+                get_metadata_command_manager,
+                get_metadata_service,
+            )
 
-                command_manager = get_metadata_command_manager()
-                metadata_service = get_metadata_service()
-                metadata_cache = self._widget._cache_behavior.get_metadata_cache()
+            command_manager = get_metadata_command_manager()
+            metadata_service = get_metadata_service()
+            metadata_cache = self._widget._cache_behavior.get_metadata_cache()
 
-                # Filter selected files to only those in result_files
-                files_to_modify = [f for f in selected_files if f.full_path in result_files]
+            # Filter selected files to only those in result_files
+            files_to_modify = [f for f in selected_files if f.full_path in result_files]
 
-                if not files_to_modify:
-                    logger.warning("No matching files found for date editing")
-                    return
+            if not files_to_modify:
+                logger.warning("No matching files found for date editing")
+                return
 
-                # Create and execute command
-                command = metadata_service.create_edit_command(
-                    files=files_to_modify,
-                    key_path=key_path,
-                    new_value=datetime_str,
-                    old_value=current_value,
-                    metadata_cache=metadata_cache,
-                )
+            # Create and execute command
+            command = metadata_service.create_edit_command(
+                files=files_to_modify,
+                key_path=key_path,
+                new_value=datetime_str,
+                old_value=current_value,
+                metadata_cache=metadata_cache,
+            )
 
-                command_manager.execute_command(command)
+            command_manager.execute_command(command)
 
-                logger.info(
-                    "Edited %s date for %d files via command system",
-                    date_type,
-                    len(files_to_modify),
-                )
-
-            except Exception as e:
-                logger.warning(
-                    "Command system not available or failed, using fallback: %s",
-                    e,
-                )
-                # Fallback to direct method
-                files_to_modify = [f for f in selected_files if f.full_path in result_files]
-                self._fallback_edit_value(key_path, datetime_str, current_value, files_to_modify)
+            logger.info(
+                "Edited %s date for %d files via command system",
+                date_type,
+                len(files_to_modify),
+            )
 
         # Restore selection if we saved it
         if saved_path:

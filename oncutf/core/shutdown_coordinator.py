@@ -115,6 +115,16 @@ class ShutdownCoordinator(Observable):
 
         logger.info("[ShutdownCoordinator] Initialized")
 
+    @property
+    def is_shutting_down(self) -> bool:
+        """Check if shutdown is in progress.
+
+        Returns:
+            True if shutdown is currently in progress
+
+        """
+        return self._shutdown_in_progress
+
     def register_timer_manager(self, timer_manager: Any) -> None:
         """Register timer manager for shutdown."""
         self._timer_manager = timer_manager

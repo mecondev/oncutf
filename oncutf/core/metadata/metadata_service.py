@@ -123,15 +123,23 @@ class MetadataService:
 
     # Command Creation (factory methods)
     def create_edit_command(
-        self, file_path: str, key: str, new_value: Any, old_value: Any | None = None
+        self,
+        file_path: str,
+        field_path: str,
+        new_value: Any,
+        old_value: Any | None = None,
+        metadata_tree_view: Any | None = None,
+        display_path: str | None = None,
     ) -> EditMetadataFieldCommand:
         """Create edit metadata field command.
 
         Args:
             file_path: Path to file
-            key: Metadata key to edit
+            field_path: Path to the metadata field for storage (e.g., "Rotation")
             new_value: New value to set
             old_value: Previous value (for undo)
+            metadata_tree_view: Reference to the metadata tree view (optional)
+            display_path: Optional grouped path for tree display (e.g., "File Info (12 fields)/Rotation")
 
         Returns:
             EditMetadataFieldCommand instance
@@ -139,7 +147,9 @@ class MetadataService:
         """
         from oncutf.core.metadata.commands import EditMetadataFieldCommand
 
-        return EditMetadataFieldCommand(file_path, key, new_value, old_value)
+        return EditMetadataFieldCommand(
+            file_path, field_path, new_value, old_value, metadata_tree_view, display_path
+        )
 
     def create_reset_command(
         self,
