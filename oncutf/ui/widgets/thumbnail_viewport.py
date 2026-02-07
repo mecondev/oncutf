@@ -119,6 +119,9 @@ class ThumbnailViewportWidget(QWidget):
         self._scroll_debounce_timer.timeout.connect(self._process_scroll_change)
         self._last_visible_range: set[str] | None = None  # Track visible file paths
 
+        # Context menu state - prevent re-triggering while menu is open
+        self._context_menu_open = False
+
         # Behaviors (initialized in _setup_ui after widgets are created)
         self._zoom_behavior = None
         self._pan_behavior = None
@@ -545,33 +548,69 @@ class ThumbnailViewportWidget(QWidget):
             position: Click position in widget coordinates
 
         """
-        # Install menu dismiss guard to prevent selection loss
-        from oncutf.ui.helpers.menu_dismiss_guard import MenuDismissGuard
+        # Prevent re-triggering context menu while one is already open
+        if self._context_menu_open:
+            return
 
-        selection_model = self._list_view.selectionModel()
-        if selection_model:
-            saved_selection = selection_model.selection()
-            guard = MenuDismissGuard.install(self._list_view, saved_selection)
-        else:
-            guard = None
+        self._context_menu_open = True
+
+        # Temporarily disconnect the context menu signal to prevent re-triggering
+        # when menu closes via ESC or outside click
+        self._list_view.customContextMenuRequested.disconnect(self._on_context_menu)
 
         try:
-            # Use unified context menu handler from parent window
-            if hasattr(self, "_parent_window") and self._parent_window:
-                try:
-                    # Delegate to the same handler used by file table
-                    self._parent_window.handle_table_context_menu(position)
-                except Exception as e:
-                    logger.warning("Error showing unified context menu: %s", e)
-                    # Fallback to simplified menu if unified handler fails
-                    self._show_fallback_context_menu(position)
+            # Install menu dismiss guard to prevent selection loss
+            from oncutf.ui.helpers.menu_dismiss_guard import MenuDismissGuard
+
+            selection_model = self._list_view.selectionModel()
+            if selection_model:
+                saved_selection = selection_model.selection()
+                guard = MenuDismissGuard.install(self._list_view, saved_selection)
             else:
-                # No parent window - use fallback
-                self._show_fallback_context_menu(position)
+                guard = None
+
+            try:
+                # Use unified context menu handler from parent window
+                if hasattr(self, "_parent_window") and self._parent_window:
+                    try:
+                        # Delegate to the same handler used by file table
+                        # Pass the thumbnail view's viewport so menu position is correct
+                        self._parent_window.handle_thumbnail_context_menu(position, self._list_view)
+                    except AttributeError:
+                        # Fallback if handle_thumbnail_context_menu doesn't exist
+                        try:
+                            self._parent_window.handle_table_context_menu(position)
+                        except Exception as e:
+                            logger.warning("Error showing unified context menu: %s", e)
+                            self._show_fallback_context_menu(position)
+                    except Exception as e:
+                        logger.warning("Error showing unified context menu: %s", e)
+                        # Fallback to simplified menu if unified handler fails
+                        self._show_fallback_context_menu(position)
+                else:
+                    # No parent window - use fallback
+                    self._show_fallback_context_menu(position)
+            finally:
+                # Remove guard after menu closes
+                if guard:
+                    guard.uninstall()
         finally:
-            # Remove guard after menu closes
-            if guard:
-                guard.uninstall()
+            # Reconnect signal in next event loop iteration to avoid race conditions
+            # when menu closes and generates events
+            QTimer.singleShot(0, self._reconnect_context_menu_signal)
+
+    def _reconnect_context_menu_signal(self) -> None:
+        """Reconnect context menu signal after menu closes.
+
+        Called via QTimer.singleShot to avoid race conditions.
+        """
+        try:
+            self._list_view.customContextMenuRequested.connect(self._on_context_menu)
+        except TypeError:
+            # Already connected, ignore
+            pass
+        finally:
+            self._context_menu_open = False
 
     def _show_fallback_context_menu(self, position: QPoint) -> None:
         """Show fallback context menu if unified handler not available.
@@ -974,9 +1013,7 @@ class ThumbnailViewportWidget(QWidget):
             # Defer queueing to avoid blocking UI (reduced delay from 10ms to 0ms)
             schedule_ui_update(self._queue_all_thumbnails_for_background_loading, delay=0)
 
-        logger.debug(
-            "[THUMBS-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000
-        )
+        logger.debug("[THUMBS-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000)
 
     def hideEvent(self, event) -> None:
         """Handle hide events - switch to background loading."""

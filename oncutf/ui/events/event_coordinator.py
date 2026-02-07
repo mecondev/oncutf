@@ -128,6 +128,16 @@ class EventCoordinator:
         """Delegate to ContextMenuHandlers."""
         self.context_menu_handlers.handle_table_context_menu(position)
 
+    def handle_thumbnail_context_menu(self, position: Any, widget: Any = None) -> None:
+        """Handle context menu for thumbnail view.
+
+        Args:
+            position: Click position in widget coordinates
+            widget: The thumbnail list view widget (for correct coordinate mapping)
+
+        """
+        self.context_menu_handlers.handle_thumbnail_context_menu(position, widget)
+
     # =====================================
     # Delegated Analysis Methods (for backward compatibility)
     # =====================================

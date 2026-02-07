@@ -64,15 +64,24 @@ class ContextMenuHandlers:
 
         logger.debug("ContextMenuHandlers initialized", extra={"dev_only": True})
 
-    def handle_table_context_menu(self, position: Any) -> None:
+    def handle_table_context_menu(self, position: Any, source_widget: Any = None) -> None:
         """Handles the right-click context menu for the file table.
         Simplified for faster response - basic functionality only.
+
+        Args:
+            position: Click position in widget coordinates
+            source_widget: Optional source widget (defaults to file_table_view)
+
         """
         if not self.parent_window.file_model.files:
             return
 
+        # Use provided widget or default to file_table_view
+        if source_widget is None:
+            source_widget = self.parent_window.file_table_view
+
         # Check if right-click was on color column - skip context menu for color column
-        index = self.parent_window.file_table_view.indexAt(position)
+        index = source_widget.indexAt(position)
         if index.isValid() and hasattr(self.parent_window.file_model, "_column_mapping"):
             # Get column key from model
             column_key = self.parent_window.file_model._column_mapping.get(index.column())
@@ -510,7 +519,7 @@ class ContextMenuHandlers:
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
 
         # Show menu and get chosen action
-        action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
+        action = menu.exec_(source_widget.viewport().mapToGlobal(position))
 
         self.parent_window.file_table_view.context_focused_row = None
 
@@ -584,6 +593,17 @@ class ContextMenuHandlers:
                 else []
             )
             self.metadata_ops.handle_export_metadata(all_files, "all")
+
+    def handle_thumbnail_context_menu(self, position: Any, widget: Any) -> None:
+        """Handle context menu for thumbnail view.
+
+        Args:
+            position: Click position in widget coordinates
+            widget: The thumbnail list view widget
+
+        """
+        # Delegate to handle_table_context_menu with the correct widget
+        self.handle_table_context_menu(position, source_widget=widget)
 
     # =====================================
     # Backward Compatibility Delegation

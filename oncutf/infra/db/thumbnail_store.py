@@ -15,9 +15,12 @@ Tables:
 Schema managed by migrations.py (v4 -> v5).
 """
 
+from __future__ import annotations
+
 import contextlib
 import json
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -41,14 +44,16 @@ class ThumbnailStore:
 
     """
 
-    def __init__(self, connection: sqlite3.Connection):
+    def __init__(self, connection: sqlite3.Connection, write_lock: threading.RLock | None = None):
         """Initialize thumbnail store with database connection.
 
         Args:
             connection: Active SQLite connection
+            write_lock: Optional threading lock for thread-safe write operations
 
         """
         self._connection = connection
+        self._write_lock = write_lock or threading.RLock()
         logger.debug("[ThumbnailStore] Initialized")
 
     def _is_connection_open(self) -> bool:
@@ -152,34 +157,35 @@ class ThumbnailStore:
             )
             return False
 
-        cursor = self._connection.cursor()
-
         try:
-            # Ensure video_frame_time is None or float (SQLite compatibility)
-            vft = None if video_frame_time is None else float(video_frame_time)
+            with self._write_lock:
+                cursor = self._connection.cursor()
 
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO thumbnail_cache
-                (folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    folder_path,
-                    file_path,
-                    file_mtime,
-                    file_size,
+                # Ensure video_frame_time is None or float (SQLite compatibility)
+                vft = None if video_frame_time is None else float(video_frame_time)
+
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO thumbnail_cache
+                    (folder_path, file_path, file_mtime, file_size, cache_filename, video_frame_time)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        folder_path,
+                        file_path,
+                        file_mtime,
+                        file_size,
+                        cache_filename,
+                        vft,
+                    ),
+                )
+                self._connection.commit()
+
+                logger.debug(
+                    "[ThumbnailStore] Saved cache entry: %s -> %s",
+                    Path(file_path).name,
                     cache_filename,
-                    vft,
-                ),
-            )
-            self._connection.commit()
-
-            logger.debug(
-                "[ThumbnailStore] Saved cache entry: %s -> %s",
-                Path(file_path).name,
-                cache_filename,
-            )
+                )
         except sqlite3.Error:
             # Rollback to prevent "cannot commit - no transaction is active" errors
             with contextlib.suppress(sqlite3.Error):
@@ -203,21 +209,22 @@ class ThumbnailStore:
             True if entry was removed
 
         """
-        cursor = self._connection.cursor()
-
         try:
-            cursor.execute(
-                """
-                DELETE FROM thumbnail_cache
-                WHERE file_path = ?
-                """,
-                (file_path,),
-            )
-            self._connection.commit()
+            with self._write_lock:
+                cursor = self._connection.cursor()
 
-            deleted = cursor.rowcount > 0
-            if deleted:
-                logger.debug("[ThumbnailStore] Invalidated entry: %s", Path(file_path).name)
+                cursor.execute(
+                    """
+                    DELETE FROM thumbnail_cache
+                    WHERE file_path = ?
+                    """,
+                    (file_path,),
+                )
+                self._connection.commit()
+
+                deleted = cursor.rowcount > 0
+                if deleted:
+                    logger.debug("[ThumbnailStore] Invalidated entry: %s", Path(file_path).name)
         except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to invalidate entry")
             return False
@@ -276,25 +283,26 @@ class ThumbnailStore:
             True if saved successfully
 
         """
-        cursor = self._connection.cursor()
-
         try:
-            file_paths_json = json.dumps(file_paths)
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO thumbnail_order
-                (folder_path, file_paths, updated_at)
-                VALUES (?, ?, datetime('now'))
-                """,
-                (folder_path, file_paths_json),
-            )
-            self._connection.commit()
+            with self._write_lock:
+                cursor = self._connection.cursor()
 
-            logger.info(
-                "[ThumbnailStore] Saved manual order: %d files in %s",
-                len(file_paths),
-                Path(folder_path).name,
-            )
+                file_paths_json = json.dumps(file_paths)
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO thumbnail_order
+                    (folder_path, file_paths, updated_at)
+                    VALUES (?, ?, datetime('now'))
+                    """,
+                    (folder_path, file_paths_json),
+                )
+                self._connection.commit()
+
+                logger.info(
+                    "[ThumbnailStore] Saved manual order: %d files in %s",
+                    len(file_paths),
+                    Path(folder_path).name,
+                )
         except (sqlite3.Error, TypeError):
             logger.exception("[ThumbnailStore] Failed to save folder order")
             return False
@@ -311,24 +319,25 @@ class ThumbnailStore:
             True if entry was removed
 
         """
-        cursor = self._connection.cursor()
-
         try:
-            cursor.execute(
-                """
-                DELETE FROM thumbnail_order
-                WHERE folder_path = ?
-                """,
-                (folder_path,),
-            )
-            self._connection.commit()
+            with self._write_lock:
+                cursor = self._connection.cursor()
 
-            deleted = cursor.rowcount > 0
-            if deleted:
-                logger.info(
-                    "[ThumbnailStore] Cleared manual order for: %s",
-                    Path(folder_path).name,
+                cursor.execute(
+                    """
+                    DELETE FROM thumbnail_order
+                    WHERE folder_path = ?
+                    """,
+                    (folder_path,),
                 )
+                self._connection.commit()
+
+                deleted = cursor.rowcount > 0
+                if deleted:
+                    logger.info(
+                        "[ThumbnailStore] Cleared manual order for: %s",
+                        Path(folder_path).name,
+                    )
         except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to clear folder order")
             return False
@@ -345,38 +354,39 @@ class ThumbnailStore:
             Number of entries removed
 
         """
-        cursor = self._connection.cursor()
-
         try:
-            # Build placeholders for SQL IN clause
-            placeholders = ",".join("?" * len(valid_folder_paths))
-            query = f"""
-                DELETE FROM thumbnail_cache
-                WHERE folder_path NOT IN ({placeholders})
-            """
+            with self._write_lock:
+                cursor = self._connection.cursor()
 
-            cursor.execute(query, valid_folder_paths)
-            cache_deleted = cursor.rowcount
+                # Build placeholders for SQL IN clause
+                placeholders = ",".join("?" * len(valid_folder_paths))
+                query = f"""
+                    DELETE FROM thumbnail_cache
+                    WHERE folder_path NOT IN ({placeholders})
+                """
 
-            cursor.execute(
-                f"""
-                DELETE FROM thumbnail_order
-                WHERE folder_path NOT IN ({placeholders})
-                """,
-                valid_folder_paths,
-            )
-            order_deleted = cursor.rowcount
+                cursor.execute(query, valid_folder_paths)
+                cache_deleted = cursor.rowcount
 
-            self._connection.commit()
-
-            total_deleted = cache_deleted + order_deleted
-            if total_deleted > 0:
-                logger.info(
-                    "[ThumbnailStore] Cleaned up %d orphaned entries (%d cache, %d order)",
-                    total_deleted,
-                    cache_deleted,
-                    order_deleted,
+                cursor.execute(
+                    f"""
+                    DELETE FROM thumbnail_order
+                    WHERE folder_path NOT IN ({placeholders})
+                    """,
+                    valid_folder_paths,
                 )
+                order_deleted = cursor.rowcount
+
+                self._connection.commit()
+
+                total_deleted = cache_deleted + order_deleted
+                if total_deleted > 0:
+                    logger.info(
+                        "[ThumbnailStore] Cleaned up %d orphaned entries (%d cache, %d order)",
+                        total_deleted,
+                        cache_deleted,
+                        order_deleted,
+                    )
         except sqlite3.Error:
             logger.exception("[ThumbnailStore] Failed to cleanup orphaned entries")
             return 0

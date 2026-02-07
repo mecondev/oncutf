@@ -240,7 +240,7 @@ class DatabaseManager:
         self.hash_store = HashStore(self._conn, self.path_store, self._write_lock)
         self.metadata_store = MetadataStore(self._conn, self.path_store, self._write_lock)
         self.session_state_store = SessionStateStore(self._conn, self._write_lock)
-        self.thumbnail_store = ThumbnailStore(self._conn)
+        self.thumbnail_store = ThumbnailStore(self._conn, self._write_lock)
 
         logger.debug("[DatabaseManager] Store instances initialized", extra={"dev_only": True})
 
