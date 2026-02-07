@@ -121,10 +121,10 @@ class ValidationService:
         }
 
         # Special requirements for specific fields
-        if field_name in ["Date"]:
+        if field_name == "Date":
             requirements["format"] = "YYYY:MM:DD HH:MM:SS or YYYY-MM-DD"
 
-        if field_name in ["Rating"]:
+        if field_name == "Rating":
             requirements["format"] = "Integer 0-5"
 
         return requirements

@@ -323,7 +323,7 @@ class FileTreeView(QTreeView):
         index = selected_rows[0]
         if self.model() and hasattr(self.model(), "filePath"):
             path = self.model().filePath(index)
-            return path if path else ""
+            return path or ""
 
         return ""
 

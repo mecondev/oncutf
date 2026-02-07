@@ -176,7 +176,7 @@ class RotationHandlers:
             "Cancel": "cancel",
         }
 
-        selected: str = dlg.selected if dlg.selected else "cancel"
+        selected: str = dlg.selected or "cancel"
         return button_map.get(selected, "cancel")
 
     def _apply_bulk_rotation(self, files_to_process: list[FileItem]) -> None:

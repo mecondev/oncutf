@@ -272,7 +272,7 @@ class CustomFileSystemModel(QFileSystemModel):
 
                 logger.info(
                     "[CustomFileSystemModel] Refreshed file system from: %s",
-                    root_path if root_path else "My Computer",
+                    root_path or "My Computer",
                 )
             else:
                 # Refresh specific index

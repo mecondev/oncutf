@@ -94,9 +94,15 @@ class ThumbnailViewportController(QObject):
         # Calculate worker counts dynamically based on manager's max_workers
         # High priority: use all available workers, Background: use 25% (min 1)
         if thumbnail_manager is not None:
-            max_workers = thumbnail_manager.max_workers
-            self._normal_worker_count = max_workers  # Use all workers for high priority
-            self._background_worker_count = max(1, max_workers // 4)  # 25% for background
+            max_workers = getattr(thumbnail_manager, "max_workers", None)
+            # Only use dynamic values if max_workers is actually an integer
+            if isinstance(max_workers, int):
+                self._normal_worker_count = max_workers  # Use all workers for high priority
+                self._background_worker_count = max(1, max_workers // 4)  # 25% for background
+            else:
+                # Fallback to defaults if max_workers not available or not an integer
+                self._normal_worker_count = 2
+                self._background_worker_count = 1
         else:
             # Fallback if manager not available yet (will be updated later)
             self._normal_worker_count = 2

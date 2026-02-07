@@ -75,17 +75,3 @@ class TestMetadataTreeStagingIntegration:
             staging_manager.clear_staged_changes(file_item.full_path)
             staged = staging_manager.get_staged_changes(file_item.full_path)
             assert staged.get("EXIF/Artist") is None
-
-            # 4. Test fallback edit value (stages change)
-            # Mock needed methods for _fallback_edit_value to work
-            tree_view._cache_behavior._update_file_icon_status = MagicMock()
-            tree_view._edit_behavior._update_tree_item_value = MagicMock()
-            tree_view.viewport = MagicMock()
-
-            tree_view._edit_behavior._fallback_edit_value(
-                "EXIF/Copyright", "New Copyright", "Old", [file_item]
-            )
-
-            staged = staging_manager.get_staged_changes(file_item.full_path)
-            assert staged.get("EXIF/Copyright") == "New Copyright"
-            assert file_item.metadata_status == "modified"

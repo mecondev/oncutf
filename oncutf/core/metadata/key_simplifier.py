@@ -114,7 +114,7 @@ class SmartKeySimplifier:
                 continue
 
             result = self._simplify_single_key(processed, list(preprocessed.values()))
-            simplified[key] = result if result else key
+            simplified[key] = result or key
 
         # Resolve collisions
         return self._resolve_collisions(simplified)
@@ -227,7 +227,7 @@ class SmartKeySimplifier:
                 cleaned_tokens = cleaned_tokens[-max_seg:]
 
         result = " ".join(cleaned_tokens)
-        return result if result else key
+        return result or key
 
     def _remove_repetitions_iterative(self, tokens: list[str]) -> list[str]:
         """Remove consecutive repetitions iteratively until stable.

@@ -67,7 +67,7 @@ class IconManager:
 
         """
         hash_value = get_hash_for_file(file_path)
-        return hash_value if hash_value else ""
+        return hash_value or ""
 
     def get_unified_tooltip(self, file: "FileItem") -> str:
         """Get unified tooltip for all columns showing metadata and hash status.

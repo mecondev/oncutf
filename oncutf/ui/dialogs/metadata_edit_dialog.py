@@ -57,7 +57,7 @@ class MetadataEditDialog(QDialog):
         self.is_multi_file = len(self.selected_files) > 1
 
         # Determine if this is a multi-line field
-        self.is_multiline = field_name in ["Description"]
+        self.is_multiline = field_name == "Description"
 
         # Set up dialog properties - simple modal dialog
         self.setModal(True)

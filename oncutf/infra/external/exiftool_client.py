@@ -110,7 +110,7 @@ class ExifToolClient:
             logger.exception("Error extracting metadata from %s", path)
             return {}
         else:
-            return result if result else {}
+            return result or {}
 
     def extract_batch(self, paths: list[Path]) -> dict[str, dict[str, Any]]:
         """Extract metadata from multiple files (batch operation).
