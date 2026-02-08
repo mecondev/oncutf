@@ -82,11 +82,11 @@ class DragManager(QObject):
         # Reset cleanup count for new drag
         self._cleanup_count = 0
 
-        # Start safety timer via TimerManager (10 second timeout)
+        # Start safety timer via TimerManager (3 second timeout)
         # Cancel previous timer if still active
         if self._cleanup_timer_id:
             cancel_timer(self._cleanup_timer_id)
-        self._cleanup_timer_id = schedule_drag_cleanup(self._safety_cleanup, delay=10000)
+        self._cleanup_timer_id = schedule_drag_cleanup(self._safety_cleanup, delay=3000)
 
         logger.debug("[DragManager] Drag started from: %s", source, extra={"dev_only": True})
 

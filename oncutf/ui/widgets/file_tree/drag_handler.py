@@ -61,6 +61,8 @@ class DragHandler:
         self._drag_path: str | None = None
         self._drag_start_pos = None
         self._drag_feedback_timer_id = None
+        self._last_recursive_state: bool | None = None
+        self._has_subfolders: bool | None = None
 
         # Original state to restore after drag
         self._original_mouse_tracking: bool = False
@@ -218,6 +220,8 @@ class DragHandler:
 
         self._drag_path = clicked_path
         self._is_dragging = True
+        self._last_recursive_state = None
+        self._has_subfolders = None
 
         # Disable mouse tracking and hover during drag
         self._original_mouse_tracking = self._view.hasMouseTracking()
@@ -238,11 +242,13 @@ class DragHandler:
 
         # Determine initial display info
         is_folder = Path(clicked_path).is_dir()
-        initial_info = Path(clicked_path).name if is_folder else "1 item"
+        initial_info = Path(clicked_path).name if is_folder else "1 file"
 
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
         drag_type = visual_manager.get_drag_type_from_path(clicked_path)
+        if not is_folder:
+            visual_manager.update_recursive_support(False)
         start_drag_visual(drag_type, initial_info, "file_tree")
 
         # For folders, schedule async count update
@@ -282,6 +288,14 @@ class DragHandler:
         """Update visual feedback based on current cursor position during drag."""
         if not self._is_dragging:
             return
+
+        if self._drag_path and Path(self._drag_path).is_dir():
+            modifiers = QApplication.keyboardModifiers()
+            is_recursive = bool(modifiers & Qt.ControlModifier)
+            if self._has_subfolders is None or (
+                self._has_subfolders and self._last_recursive_state != is_recursive
+            ):
+                self._update_folder_count(self._drag_path)
 
         should_continue = update_drag_feedback_for_widget(self._view, "file_tree")
 
@@ -445,7 +459,13 @@ class DragHandler:
             timeout_ms=100.0,
         )
 
-        display_text = count.format_display()
+        self._has_subfolders = count.folders > 0
+        self._last_recursive_state = is_recursive
+
+        visual_manager = DragVisualManager.get_instance()
+        visual_manager.update_recursive_support(count.folders > 0)
+
+        display_text = count.format_display(recursive=is_recursive)
         update_source_info(display_text)
 
         logger.debug(

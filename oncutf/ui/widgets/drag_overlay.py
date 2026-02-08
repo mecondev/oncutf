@@ -7,7 +7,7 @@ Provides visual feedback for external drag & drop operations when cursor
 control is not available (dragging from file explorer).
 """
 
-from PyQt5.QtCore import QPoint, QSize, Qt, QTimer
+from PyQt5.QtCore import QPoint, QSize, Qt
 from PyQt5.QtGui import QColor, QCursor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QWidget
 
@@ -15,6 +15,7 @@ from oncutf.config import ICON_SIZES
 from oncutf.ui.services.icon_service import get_menu_icon
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 
 logger = get_cached_logger(__name__)
 
@@ -228,9 +229,7 @@ class DragOverlay(QWidget):
         self._info_text = ""
         self._modifier_text = ""
         self._drag_type = None  # Will be set when showing
-        self._update_timer = QTimer(self)
-        self._update_timer.timeout.connect(self._update_position)
-        self._update_timer.setInterval(16)  # ~60 FPS
+        self._update_timer_id: str | None = None
 
         # Initially hidden
         self.hide()
@@ -249,7 +248,7 @@ class DragOverlay(QWidget):
         self._update_position()
         self.raise_()  # Bring to front
         self.show()
-        self._update_timer.start()
+        self._start_update_loop()
         logger.info("[DragOverlay] Showing with text: %s, type: %s", info_text, drag_type)
 
     def update_modifier(self, modifier_text: str) -> None:
@@ -265,9 +264,17 @@ class DragOverlay(QWidget):
 
     def hide_overlay(self) -> None:
         """Hide the overlay."""
-        self._update_timer.stop()
+        if self._update_timer_id:
+            cancel_timer(self._update_timer_id)
+            self._update_timer_id = None
         self.hide()
         logger.info("[DragOverlay] Hidden")
+
+    def _start_update_loop(self) -> None:
+        if not self.isVisible():
+            return
+        self._update_position()
+        self._update_timer_id = schedule_ui_update(self._start_update_loop, delay=16)
 
     def _update_theme_colors(self) -> None:
         """Update colors based on current theme."""

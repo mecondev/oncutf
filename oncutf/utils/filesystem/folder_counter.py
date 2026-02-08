@@ -33,26 +33,27 @@ class FolderCount:
         """Total number of items (files + folders)."""
         return self.files + self.folders
 
-    def format_display(self) -> str:
+    def format_display(self, *, recursive: bool = False) -> str:
         """Format count for display in drag cursor.
 
         Returns:
-            String like "5 items", "3 folders / 127 items", etc.
+            String like "5 files" or "3 folders / 127 files" when recursive.
 
         """
-        # Always show in format "X folder(s) / Y item(s)" for folders
-        # For consistency and clarity
         if self.folders == 0 and self.files == 0:
-            # Empty folder
-            return "0 items"
+            return "0 files"
+
+        if not recursive:
+            return f"{self.files} {'file' if self.files == 1 else 'files'}"
+
         if self.folders == 0:
-            # No subfolders, only files
-            return f"{self.files} {'item' if self.files == 1 else 'items'}"
+            return f"{self.files} {'file' if self.files == 1 else 'files'}"
         if self.files == 0:
-            # Only subfolders, no files
-            return f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / 0 items"
-        # Both folders and files
-        return f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / {self.files} {'item' if self.files == 1 else 'items'}"
+            return f"{self.folders} {'folder' if self.folders == 1 else 'folders'}"
+        return (
+            f"{self.folders} {'folder' if self.folders == 1 else 'folders'} / "
+            f"{self.files} {'file' if self.files == 1 else 'files'}"
+        )
 
 
 def count_folder_contents(

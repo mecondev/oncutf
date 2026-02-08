@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QApplication, QWidget
 
 from oncutf.config import ICON_SIZES
 from oncutf.ui.services.icon_service import get_menu_icon
+from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -88,6 +89,7 @@ class DragVisualManager:
         self._original_cursor: QCursor | None = None
         self._drag_source: str | None = None
         self._source_info: str | None = None  # Text to display (e.g. "1000 files")
+        self._allow_recursive: bool | None = None
 
         # Icon cache for different states
         self._icon_cache: dict[str, QIcon] = {}
@@ -131,6 +133,7 @@ class DragVisualManager:
         self._drag_type = drag_type
         self._drag_source = drag_source
         self._source_info = source_info
+        self._allow_recursive = None
 
         # Start with VALID state to show action icons immediately (File Explorer UX)
         if drag_source in ("file_tree", "file_table"):
@@ -156,6 +159,7 @@ class DragVisualManager:
             self._source_info = None
             self._drop_zone_state = DropZoneState.NEUTRAL
             self._modifier_state = ModifierState.NORMAL
+            self._allow_recursive = None
 
             # Clear widget cache
             self._last_widget_pos = None
@@ -197,6 +201,12 @@ class DragVisualManager:
             self._clear_cache()
             self._update_cursor()
 
+    def update_recursive_support(self, allow_recursive: bool | None) -> None:
+        if self._allow_recursive != allow_recursive:
+            self._allow_recursive = allow_recursive
+            self._clear_cache()
+            self._update_cursor()
+
     # =====================================
     # Cursor Management
     # =====================================
@@ -220,7 +230,11 @@ class DragVisualManager:
 
     def _get_cursor_key(self) -> str:
         """Generate cache key for current cursor state."""
-        return f"{self._drag_type.value}_{self._drop_zone_state.value}_{self._modifier_state.value}_{self._source_info}"
+        recursive_key = "" if self._allow_recursive is None else str(self._allow_recursive)
+        return (
+            f"{self._drag_type.value}_{self._drop_zone_state.value}_{self._modifier_state.value}_"
+            f"{recursive_key}_{self._source_info}"
+        )
 
     def _create_cursor(self) -> QCursor:
         """Create cursor for current state."""
@@ -235,6 +249,8 @@ class DragVisualManager:
         # Check if dragging to metadata tree
         is_metadata_drop = self._drag_source is not None and self._drag_source == "file_table"
 
+        recursive_allowed = self._allow_recursive is not False
+
         # Choose action icons based on context
         if is_metadata_drop:
             action_icons = ["close"] if self._drop_zone_state == DropZoneState.INVALID else ["info"]
@@ -244,19 +260,58 @@ class DragVisualManager:
         elif self._drop_zone_state == DropZoneState.VALID:
             # For files, ignore recursive modifiers (no subdirectories)
             if self._drag_type == DragType.FILE:
-                if self._modifier_state in [
-                    ModifierState.SHIFT,
-                    ModifierState.CTRL_SHIFT,
-                ]:
-                    action_icons = (
-                        ["add", "stacks"]
-                        if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else ["add"]
-                    )
+                if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
+                    action_icons = ["add"]
                 else:
-                    action_icons = []  # Replace + Shallow (no icon)
+                    action_icons = []
             else:
                 # For folders and multiple items
+                if not recursive_allowed:
+                    action_icons = (
+                        ["add"]
+                        if self._modifier_state
+                        in [
+                            ModifierState.SHIFT,
+                            ModifierState.CTRL_SHIFT,
+                        ]
+                        else []
+                    )
+                else:
+                    action_icons = (
+                        ["add"]
+                        if self._modifier_state == ModifierState.SHIFT
+                        else (
+                            ["stacks"]
+                            if self._modifier_state == ModifierState.CTRL
+                            else (
+                                ["add", "stacks"]
+                                if self._modifier_state == ModifierState.CTRL_SHIFT
+                                else []
+                            )
+                        )
+                    )
+        elif self._drag_type == DragType.FILE:
+            action_icons = (
+                ["add"]
+                if self._modifier_state
+                in [
+                    ModifierState.SHIFT,
+                    ModifierState.CTRL_SHIFT,
+                ]
+                else []
+            )
+        else:
+            if not recursive_allowed:
+                action_icons = (
+                    ["add"]
+                    if self._modifier_state
+                    in [
+                        ModifierState.SHIFT,
+                        ModifierState.CTRL_SHIFT,
+                    ]
+                    else []
+                )
+            else:
                 action_icons = (
                     ["add"]
                     if self._modifier_state == ModifierState.SHIFT
@@ -270,26 +325,6 @@ class DragVisualManager:
                         )
                     )
                 )
-        elif self._drag_type == DragType.FILE:
-            action_icons = (
-                ["add", "stacks"]
-                if self._modifier_state == ModifierState.CTRL_SHIFT
-                else (["add"] if self._modifier_state == ModifierState.SHIFT else [])
-            )
-        else:
-            action_icons = (
-                ["add"]
-                if self._modifier_state == ModifierState.SHIFT
-                else (
-                    ["stacks"]
-                    if self._modifier_state == ModifierState.CTRL
-                    else (
-                        ["add", "stacks"]
-                        if self._modifier_state == ModifierState.CTRL_SHIFT
-                        else []
-                    )
-                )
-            )
 
         return self._create_composite_cursor(base_icon, action_icons)
 
@@ -302,9 +337,9 @@ class DragVisualManager:
 
         """
         # Calculate dimensions
-        # Base icon: 32x32 (drawn at 4,8)
-        # Action icons: 16x16 (drawn at 24,24 and 36,24)
-        # Text: drawn at 40, 20 (approx)
+        # Base icon: 32x32 (drawn at 0,0)
+        # Action icons: 18x18 (drawn at 18,28 and 32,28)
+        # Text: drawn at (icon_width + 8), 10 (approx)
 
         # Determine text width if we have source info
         text_width = 0
@@ -320,9 +355,14 @@ class DragVisualManager:
             text_width = fm.width(self._source_info) + 10  # Padding
 
         # Create wider canvas for multiple action icons + text
-        icon_width = 48 if len(action_icons) <= 1 else 70
+        if len(action_icons) == 0:
+            icon_width = 32
+        elif len(action_icons) == 1:
+            icon_width = 38
+        else:
+            icon_width = 48
         canvas_width = icon_width + text_width
-        canvas_height = 48
+        canvas_height = 46
 
         pixmap = QPixmap(canvas_width, canvas_height)
         pixmap.fill(Qt.transparent)
@@ -334,14 +374,15 @@ class DragVisualManager:
         base_qicon = get_menu_icon(base_icon)
         if not base_qicon.isNull():
             base_pixmap = base_qicon.pixmap(ICON_SIZES["LARGE"], ICON_SIZES["LARGE"])
-            painter.drawPixmap(4, 8, base_pixmap)
+            painter.drawPixmap(0, 0, base_pixmap)
 
         # Draw text label (Virtual Drag Proxy)
         if self._source_info:
             painter.setFont(font)
 
             # Draw background for text
-            text_rect = QRect(40, 10, text_width, text_height)
+            text_x = icon_width + 3
+            text_rect = QRect(text_x, 3, text_width, text_height)
             path = QPainterPath()
             path.addRoundedRect(
                 text_rect.x(),
@@ -352,17 +393,18 @@ class DragVisualManager:
                 4,
             )
 
-            painter.fillPath(path, QColor(40, 40, 40, 200))
-            painter.setPen(QColor(255, 255, 255))
+            theme = get_theme_manager()
+            text_color = theme.get_color("text")
+            painter.setPen(QColor(text_color))
             painter.drawText(text_rect, Qt.AlignCenter, self._source_info)
 
         # Draw action icons (overlay)
         # We need to restore the full logic for action icons here
         # to support different colors for invalid/valid/metadata states
 
-        offset_x = 28  # Shifted right by 4px (was 24)
-        offset_y = 24
-        icon_size = ICON_SIZES["MEDIUM"]
+        offset_x = 18
+        offset_y = 23
+        icon_size = 18
 
         for i, icon_name in enumerate(action_icons):
             icon = get_menu_icon(icon_name)

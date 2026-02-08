@@ -41,10 +41,13 @@ from oncutf.ui.behaviors import (
 )
 from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.theme_manager import get_theme_manager
+from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+from oncutf.ui.widgets.drag_overlay import DragOverlayManager
 from oncutf.ui.widgets.file_table.event_handler import EventHandler
 from oncutf.ui.widgets.file_table.hover_handler import HoverHandler
 from oncutf.ui.widgets.file_table.tooltip_handler import TooltipHandler
 from oncutf.ui.widgets.file_table.viewport_handler import ViewportHandler
+from oncutf.utils.cursor_helper import wait_cursor
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
@@ -641,10 +644,13 @@ class FileTableView(QTableView):
         """Delegate to DragDropBehavior."""
         import time
 
-        from oncutf.utils.logging.logger_factory import get_cached_logger
-
-        logger = get_cached_logger(__name__)
-        from oncutf.utils.cursor_helper import wait_cursor
+        drag_cancel_handler = get_drag_cancel_handler()
+        if drag_cancel_handler.was_cancelled():
+            overlay_manager = DragOverlayManager.get_instance()
+            overlay_manager.hide_overlay()
+            event.ignore()
+            drag_cancel_handler.deactivate()
+            return
 
         t0 = time.time()
         logger.debug("[DROP-TIMING] dropEvent START at %.3f", t0, extra={"dev_only": True})

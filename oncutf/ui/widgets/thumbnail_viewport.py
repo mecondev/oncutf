@@ -610,12 +610,22 @@ class ThumbnailViewportWidget(QWidget):
             event: Qt drop event
 
         """
+        from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+        from oncutf.ui.widgets.drag_overlay import DragOverlayManager
         from oncutf.utils.cursor_helper import wait_cursor
 
         logger.debug(
             "[ThumbnailViewport] dropEvent START",
             extra={"dev_only": True},
         )
+
+        drag_cancel_handler = get_drag_cancel_handler()
+        if drag_cancel_handler.was_cancelled():
+            overlay_manager = DragOverlayManager.get_instance()
+            overlay_manager.hide_overlay()
+            event.ignore()
+            drag_cancel_handler.deactivate()
+            return
 
         # Set wait cursor for user feedback
         with wait_cursor(restore_after=False):

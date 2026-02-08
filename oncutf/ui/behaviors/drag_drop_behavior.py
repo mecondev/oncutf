@@ -14,6 +14,7 @@ Protocol contract:
     - Widget routes events to behavior
 """
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
@@ -223,6 +224,23 @@ class DragDropBehavior:
             drag_type = DragType.MULTIPLE
             source_info = f"{actual_count} files"
 
+        has_folder = any(Path(p).is_dir() for p in file_paths)
+        if not has_folder:
+            visual_manager.update_recursive_support(False)
+        else:
+            allow_recursive = False
+            for path in file_paths:
+                try:
+                    if not Path(path).is_dir():
+                        continue
+                    with os.scandir(path) as entries:
+                        if any(entry.is_dir() for entry in entries):
+                            allow_recursive = True
+                            break
+                except OSError:
+                    continue
+            visual_manager.update_recursive_support(allow_recursive)
+
         start_drag_visual(drag_type, source_info, "file_table")
 
         # Start drag feedback loop
@@ -299,6 +317,32 @@ class DragDropBehavior:
 
         """
         mime_data = event.mimeData()
+
+        if mime_data.hasUrls():
+            from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+            from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+            drag_cancel_handler = get_drag_cancel_handler()
+            if drag_cancel_handler.was_cancelled():
+                overlay_manager = DragOverlayManager.get_instance()
+                overlay_manager.hide_overlay()
+                event.ignore()
+                drag_cancel_handler.deactivate()
+                self._external_drag_active = False
+                return None
+
+        if self._external_drag_active:
+            from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+            from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+            drag_cancel_handler = get_drag_cancel_handler()
+            if drag_cancel_handler.was_cancelled():
+                overlay_manager = DragOverlayManager.get_instance()
+                overlay_manager.hide_overlay()
+                event.ignore()
+                drag_cancel_handler.deactivate()
+                self._external_drag_active = False
+                return None
 
         # Handle external drag (from file explorer)
         if mime_data.hasUrls():
