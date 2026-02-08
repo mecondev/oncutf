@@ -28,7 +28,7 @@ from PyQt5.QtCore import (
     QTimer,
     pyqtSignal,
 )
-from PyQt5.QtGui import QDropEvent
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -52,6 +52,57 @@ if TYPE_CHECKING:
     from oncutf.models.file_table.file_table_model import FileTableModel
 
 logger = get_cached_logger(__name__)
+
+
+class ThumbnailListView(QListView):
+    """Custom QListView for thumbnail grid that handles drop events properly.
+
+    This subclass ensures drop events are properly processed and provides
+    access to the parent ThumbnailViewportWidget for drop handling.
+    """
+
+    def __init__(self, parent: "ThumbnailViewportWidget | None" = None):
+        """Initialize thumbnail list view.
+
+        Args:
+            parent: Parent ThumbnailViewportWidget
+
+        """
+        super().__init__(parent)
+        self._parent_viewport = parent
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """Handle drag enter event."""
+        logger.debug(
+            "[ThumbnailListView] dragEnterEvent called - delegating to parent",
+            extra={"dev_only": True},
+        )
+        if self._parent_viewport:
+            self._parent_viewport.dragEnterEvent(event)
+        else:
+            super().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        """Handle drag move event."""
+        logger.debug(
+            "[ThumbnailListView] dragMoveEvent called - delegating to parent",
+            extra={"dev_only": True},
+        )
+        if self._parent_viewport:
+            self._parent_viewport.dragMoveEvent(event)
+        else:
+            super().dragMoveEvent(event)
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        """Handle drop event."""
+        logger.debug(
+            "[ThumbnailListView] dropEvent called on list view - delegating to parent",
+            extra={"dev_only": True},
+        )
+        if self._parent_viewport:
+            self._parent_viewport.dropEvent(event)
+        else:
+            super().dropEvent(event)
 
 
 class ThumbnailViewportWidget(QWidget):
@@ -166,8 +217,8 @@ class ThumbnailViewportWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Create QListView in IconMode
-        self._list_view = QListView(self)
+        # Create custom ThumbnailListView with proper drop event handling
+        self._list_view = ThumbnailListView(parent=self)
         self._list_view.setViewMode(QListView.IconMode)
         self._list_view.setResizeMode(QListView.Adjust)
         self._list_view.setSpacing(16)
@@ -514,7 +565,7 @@ class ThumbnailViewportWidget(QWidget):
     # Drag-and-Drop Event Handlers
     # =====================================
 
-    def dragEnterEvent(self, event: QDropEvent) -> None:
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter event.
 
         Accepts drops from file explorer, file tree, and other file sources.
@@ -527,7 +578,7 @@ class ThumbnailViewportWidget(QWidget):
             return
         super().dragEnterEvent(event)
 
-    def dragMoveEvent(self, event: QDropEvent) -> None:
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
         """Handle drag move event.
 
         Args:
@@ -550,12 +601,27 @@ class ThumbnailViewportWidget(QWidget):
         """
         from oncutf.utils.cursor_helper import wait_cursor
 
+        logger.debug(
+            "[ThumbnailViewport] dropEvent START",
+            extra={"dev_only": True},
+        )
+
         # Set wait cursor for user feedback
         with wait_cursor(restore_after=False):
             QApplication.processEvents()
 
             try:
+                logger.debug(
+                    "[ThumbnailViewport] Calling handle_drop",
+                    extra={"dev_only": True},
+                )
                 result = self._drag_drop_behavior.handle_drop(event)
+
+                logger.debug(
+                    "[ThumbnailViewport] handle_drop returned: %s",
+                    result is not None,
+                    extra={"dev_only": True},
+                )
 
                 if result:
                     # Suppress placeholder re-showing during streaming load
@@ -567,7 +633,7 @@ class ThumbnailViewportWidget(QWidget):
                     self.update()
 
                     dropped_paths, modifiers = result
-                    logger.debug(
+                    logger.info(
                         "[ThumbnailViewport] Emitting files_dropped with %d paths",
                         len(dropped_paths),
                         extra={"dev_only": True},
