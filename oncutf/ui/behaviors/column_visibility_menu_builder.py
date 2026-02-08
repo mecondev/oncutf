@@ -32,7 +32,15 @@ class ColumnVisibilityMenuBuilder:
 
     # Column categories for grouping
     COLUMN_CATEGORIES: ClassVar[dict[str, list[str]]] = {
-        "File": ["color", "type", "file_size", "modified", "file_hash", "duration"],
+        "File": [
+            "color",
+            "type",
+            "file_size",
+            "modified",
+            "path",
+            "file_hash",
+            "duration",
+        ],
         "Image": [
             "image_size",
             "rotation",

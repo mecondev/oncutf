@@ -80,6 +80,16 @@ FILE_TABLE_COLUMN_CONFIG = {
         "alignment": "left",
         "min_width": 70,
     },
+    "path": {
+        "title": "Path",
+        "tag": "path",
+        "default_visible": True,
+        "removable": True,
+        "resizable": True,
+        "width": 180,
+        "alignment": "left",
+        "min_width": 120,
+    },
     "rotation": {
         "title": "Rotation",
         "tag": "rotation",

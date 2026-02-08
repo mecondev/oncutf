@@ -73,6 +73,8 @@ class SortManager:
             return sorted(files, key=lambda f: f.extension.lower(), reverse=reverse)
         if column_key == "modified":
             return sorted(files, key=lambda f: f.modified, reverse=reverse)
+        if column_key == "path":
+            return sorted(files, key=lambda f: f.full_path.lower(), reverse=reverse)
         if column_key == "file_hash":
             if self._get_hash_value:
                 return sorted(

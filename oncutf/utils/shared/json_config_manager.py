@@ -86,6 +86,7 @@ class WindowConfig(ConfigCategory[Any]):
                 "file_size": 85,
                 "type": 60,
                 "modified": 154,
+                "path": 180,
             },
             "file_table_column_widths": {},
             "file_table_columns": {},

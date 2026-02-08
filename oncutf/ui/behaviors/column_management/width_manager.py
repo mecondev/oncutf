@@ -106,6 +106,7 @@ class ColumnWidthManager:
                     "file_size": 85,
                     "type": 60,
                     "modified": 154,
+                    "path": 180,
                 },
             )
 
