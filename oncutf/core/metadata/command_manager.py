@@ -14,7 +14,7 @@ Features:
 - Signal-based UI updates
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from oncutf.config import UNDO_REDO_SETTINGS
@@ -97,7 +97,7 @@ class MetadataCommandManager(Observable):
                 self._add_to_undo_stack(command)
 
             # Update last command time
-            self._last_command_time = datetime.now()
+            self._last_command_time = datetime.now(UTC)
 
             # Emit signals
             self.command_executed.emit(command.get_description())
@@ -281,7 +281,7 @@ class MetadataCommandManager(Observable):
             return False
 
         # Check time window
-        time_diff = datetime.now() - self._last_command_time
+        time_diff = datetime.now(UTC) - self._last_command_time
         if time_diff > timedelta(milliseconds=float(self.grouping_timeout)):
             return False
 

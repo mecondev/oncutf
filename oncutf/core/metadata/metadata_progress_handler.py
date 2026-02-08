@@ -109,10 +109,10 @@ class MetadataProgressHandler:
 
         """
         try:
+            from oncutf.app.services.ui_events import process_events
             from oncutf.utils.filesystem.file_size_calculator import (
                 calculate_files_total_size,
             )
-            from oncutf.utils.qt_compat import process_events
 
             # Create dialog
             dialog = self.create_metadata_progress_dialog(is_extended, cancel_callback)
@@ -188,10 +188,10 @@ class MetadataProgressHandler:
 
         """
         try:
+            from oncutf.app.services.ui_events import process_events
             from oncutf.utils.filesystem.file_size_calculator import (
                 calculate_files_total_size,
             )
-            from oncutf.utils.qt_compat import process_events
 
             # Create dialog
             dialog = self.create_hash_progress_dialog(cancel_callback)

@@ -21,7 +21,7 @@ Benefits over JSON:
 import json
 import sqlite3
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -153,7 +153,7 @@ class SessionStateStore:
                 value_type = "string"
                 serialized = str(value) if value is not None else ""
 
-            timestamp = datetime.now().isoformat()
+            timestamp = datetime.now(UTC).isoformat()
 
             with self._write_lock:
                 cursor = self.connection.cursor()
@@ -249,7 +249,7 @@ class SessionStateStore:
 
         """
         try:
-            timestamp = datetime.now().isoformat()
+            timestamp = datetime.now(UTC).isoformat()
 
             with self._write_lock:
                 cursor = self.connection.cursor()

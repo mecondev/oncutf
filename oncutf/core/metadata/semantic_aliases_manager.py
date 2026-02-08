@@ -179,9 +179,9 @@ class SemanticAliasesManager:
         if not self._aliases_file.exists():
             return
 
-        from datetime import datetime
+        from datetime import UTC, datetime
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_name = f"{self.ALIASES_FILENAME}.corrupted_{timestamp}"
         backup_path = self._aliases_file.parent / backup_name
 

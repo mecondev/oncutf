@@ -17,7 +17,7 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -184,7 +184,7 @@ class MetadataExtractor:
         """Extract filesystem date in various formats."""
         try:
             ts = file_path.stat().st_mtime
-            dt = datetime.fromtimestamp(ts)
+            dt = datetime.fromtimestamp(ts, tz=UTC).astimezone()
 
             format_map = {
                 "last_modified_yymmdd": "%y%m%d",

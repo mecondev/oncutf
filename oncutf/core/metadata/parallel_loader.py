@@ -122,7 +122,7 @@ class ParallelMetadataLoader:
 
                 # Use polling with timeout for responsive UI
                 # This prevents blocking until first result
-                from oncutf.utils.qt_compat import process_events
+                from oncutf.app.services.ui_events import process_events
 
                 pending = set(future_to_item.keys())
 
@@ -385,7 +385,7 @@ def update_file_item_metadata(
     # Emit dataChanged signal for UI update
     if parent_window and hasattr(parent_window, "file_model"):
         try:
-            from oncutf.utils.qt_compat import get_item_data_roles
+            from oncutf.app.services.ui_events import get_item_data_roles
 
             roles = get_item_data_roles()
 

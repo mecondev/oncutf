@@ -14,7 +14,7 @@ from __future__ import annotations
 import contextlib
 import time
 from contextlib import suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -60,7 +60,7 @@ class ShutdownLifecycleHandler:
             event.ignore()
             return
 
-        shutdown_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        shutdown_timestamp = datetime.now(UTC).astimezone().strftime("%Y-%m-%d %H:%M:%S")
         logger.info("=" * 70)
         logger.info("[SHUTDOWN] Application shutdown initiated at %s", shutdown_timestamp)
         logger.info("=" * 70)

@@ -9,7 +9,7 @@ Handles all file path CRUD operations.
 
 import os
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -69,7 +69,11 @@ class PathStore:
             path_obj = Path(norm_path)
             if path_obj.exists():
                 file_size = path_obj.stat().st_size
-                modified_time = datetime.fromtimestamp(path_obj.stat().st_mtime).isoformat()
+                modified_time = (
+                    datetime.fromtimestamp(path_obj.stat().st_mtime, tz=UTC)
+                    .astimezone()
+                    .isoformat()
+                )
         except OSError:
             pass
 
@@ -136,7 +140,11 @@ class PathStore:
                 new_path_obj = Path(new_norm_path)
                 if new_path_obj.exists():
                     file_size = new_path_obj.stat().st_size
-                    modified_time = datetime.fromtimestamp(new_path_obj.stat().st_mtime).isoformat()
+                    modified_time = (
+                        datetime.fromtimestamp(new_path_obj.stat().st_mtime, tz=UTC)
+                        .astimezone()
+                        .isoformat()
+                    )
             except OSError:
                 pass
 

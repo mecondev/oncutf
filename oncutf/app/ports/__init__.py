@@ -23,6 +23,8 @@ from oncutf.app.ports.service_registry import (
     configure_default_services,
     get_service_registry,
 )
+from oncutf.app.ports.ui_events import UiEventsPort
+from oncutf.app.ports.ui_scheduler import TimerPriority, TimerType, UiSchedulerPort
 from oncutf.app.ports.ui_update import UIUpdatePort
 from oncutf.app.ports.user_interaction import (
     ProgressReporter,
@@ -49,7 +51,11 @@ __all__ = [
     "ResultsDisplayPort",
     "ServiceRegistry",
     "StatusReporter",
+    "TimerPriority",
+    "TimerType",
     "UIUpdatePort",
+    "UiEventsPort",
+    "UiSchedulerPort",
     "UserDialogPort",
     "configure_default_services",
     "get_service_registry",

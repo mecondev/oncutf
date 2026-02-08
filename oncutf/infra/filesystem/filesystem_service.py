@@ -19,7 +19,7 @@ Usage:
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -151,8 +151,8 @@ class FilesystemService:
                 "mtime": stat.st_mtime,
                 "ctime": stat.st_ctime,
                 "atime": stat.st_atime,
-                "mtime_datetime": datetime.fromtimestamp(stat.st_mtime),
-                "ctime_datetime": datetime.fromtimestamp(stat.st_ctime),
+                "mtime_datetime": datetime.fromtimestamp(stat.st_mtime, tz=UTC).astimezone(),
+                "ctime_datetime": datetime.fromtimestamp(stat.st_ctime, tz=UTC).astimezone(),
                 "is_symlink": path.is_symlink(),
                 "parent": str(path.parent),
                 "full_path": str(path.absolute()),
@@ -288,7 +288,7 @@ class FilesystemService:
             Backup path with timestamp suffix.
 
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).astimezone().strftime("%Y%m%d_%H%M%S")
         backup_name = f"{path.stem}_backup_{timestamp}{path.suffix}"
         return path.parent / backup_name
 

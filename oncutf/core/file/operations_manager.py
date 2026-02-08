@@ -24,9 +24,9 @@ from oncutf.app.services.user_interaction import (
     show_question_message,
     show_warning_message,
 )
+from oncutf.utils.filesystem.open_location import open_file_location
 from oncutf.utils.filesystem.path_utils import find_file_by_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
-from oncutf.utils.qt_compat import open_file_location
 
 logger = get_cached_logger(__name__)
 
@@ -288,13 +288,13 @@ class FileOperationsManager:
                 self.parent_window.pending_completion_dialog = show_completion_dialog
             else:
                 # Fallback: schedule with timer manager for delayed execution
-                from oncutf.utils.shared.timer_manager import (
+                from oncutf.app.services.ui_scheduler import (
                     TimerPriority,
                     TimerType,
-                    get_timer_manager,
+                    schedule_timer,
                 )
 
-                get_timer_manager().schedule(
+                schedule_timer(
                     show_completion_dialog,
                     delay=300,  # 300ms delay to let post-rename workflow complete
                     priority=TimerPriority.LOW,

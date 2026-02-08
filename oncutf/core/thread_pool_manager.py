@@ -322,20 +322,19 @@ class ThreadPoolManager(Observable):
         # Thread safety
         self._mutex = threading.Lock()
 
-        # Monitoring timer (using timer_manager for Qt-free operation)
-        from oncutf.utils.shared.timer_manager import (
-            TimerManager,
+        # Monitoring timer
+        from oncutf.app.services.ui_scheduler import (
             TimerPriority,
             TimerType,
+            schedule_timer,
         )
 
-        self._timer_manager = TimerManager()
-        self._timer_manager.schedule(
-            timer_id="thread_pool_monitor",
-            callback=self._monitor_pool,
+        self._monitor_timer_id = schedule_timer(
+            self._monitor_pool,
             delay=5000,
             timer_type=TimerType.UI_UPDATE,
             priority=TimerPriority.LOW,
+            timer_id="thread_pool_monitor",
         )
 
         # Start with minimum threads
@@ -647,7 +646,10 @@ class ThreadPoolManager(Observable):
         logger.info("[ThreadPoolManager] Shutting down...")
 
         # Stop monitoring
-        self._timer_manager.cancel("thread_pool_monitor")
+        if hasattr(self, "_monitor_timer_id") and self._monitor_timer_id:
+            from oncutf.app.services.ui_scheduler import cancel_timer
+
+            cancel_timer(self._monitor_timer_id)
 
         # Clear task queue
         self._task_queue.clear()

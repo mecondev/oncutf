@@ -283,7 +283,7 @@ class MetadataWriter:
         import contextlib
 
         from oncutf.app.services import wait_cursor
-        from oncutf.utils.qt_compat import process_events
+        from oncutf.app.services.ui_events import process_events
 
         if not files_to_save:
             return
@@ -412,10 +412,7 @@ class MetadataWriter:
             # Resume filesystem monitoring with delay to catch late events
             # QFileSystemWatcher may send events slightly after the file write completes
             if filesystem_monitor and hasattr(filesystem_monitor, "resume"):
-                from oncutf.utils.shared.timer_manager import (
-                    TimerType,
-                    get_timer_manager,
-                )
+                from oncutf.app.services.ui_scheduler import TimerType, schedule_timer
 
                 def delayed_resume() -> None:
                     # Check if application is shutting down before resuming
@@ -438,7 +435,7 @@ class MetadataWriter:
                             "[MetadataWriter] Resumed filesystem monitoring after save (delayed)"
                         )
 
-                get_timer_manager().schedule(
+                schedule_timer(
                     delayed_resume,
                     delay=1000,  # 1 second delay to catch late events
                     timer_type=TimerType.GENERIC,
@@ -480,7 +477,7 @@ class MetadataWriter:
     ) -> None:
         """Update file item after successful metadata save."""
         import contextlib
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         # Clear staged changes
         try:
@@ -500,8 +497,8 @@ class MetadataWriter:
         # Update modification time
         with contextlib.suppress(Exception):
             file_item.date_modified = datetime.fromtimestamp(
-                Path(file_item.full_path).stat().st_mtime
-            )
+                Path(file_item.full_path).stat().st_mtime, tz=UTC
+            ).astimezone()
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)

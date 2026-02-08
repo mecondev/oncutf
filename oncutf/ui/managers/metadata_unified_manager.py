@@ -19,7 +19,7 @@ is now cleanly separated into focused modules.
 """
 
 import contextlib
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -453,7 +453,9 @@ class UnifiedMetadataManager(QObject):
 
         # Update modification time
         with contextlib.suppress(Exception):
-            file_item.modified = datetime.fromtimestamp(Path(file_item.full_path).stat().st_mtime)
+            file_item.modified = datetime.fromtimestamp(
+                Path(file_item.full_path).stat().st_mtime, tz=UTC
+            ).astimezone()
 
         # Refresh display if this file is shown
         self._refresh_display_if_current(file_item)

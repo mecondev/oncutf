@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 from weakref import WeakSet
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -67,7 +67,7 @@ class Signal:
             signal_instance = SignalInstance(self.name, self.arg_types)
             setattr(obj, attr_name, signal_instance)
 
-        return getattr(obj, attr_name)
+        return cast("SignalInstance", getattr(obj, attr_name))
 
 
 class SignalInstance:

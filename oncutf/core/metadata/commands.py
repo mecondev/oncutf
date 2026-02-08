@@ -14,7 +14,7 @@ Features:
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +40,7 @@ class MetadataCommand(ABC):
 
         """
         self.file_path = file_path
-        self.timestamp = timestamp or datetime.now()
+        self.timestamp = timestamp or datetime.now(UTC)
         self.command_id = f"{self.timestamp.isoformat()}_{id(self)}"
         self.executed = False
         self.undone = False

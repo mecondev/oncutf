@@ -23,7 +23,7 @@ Date:
 import logging
 import logging.handlers
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -47,7 +47,7 @@ def setup_logging(log_dir: str = "logs", log_level: int = logging.INFO) -> None:
     if not Path(log_dir).exists():
         Path(log_dir).mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).astimezone().strftime("%Y%m%d_%H%M%S")
 
     log_format = "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"

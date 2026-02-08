@@ -16,7 +16,7 @@ Features:
 
 import shutil
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from oncutf.config import (
@@ -105,7 +105,7 @@ class BackupManager(Observable):
                 return None
 
             # Generate backup filename
-            timestamp = datetime.now().strftime(BACKUP_TIMESTAMP_FORMAT)
+            timestamp = datetime.now(UTC).strftime(BACKUP_TIMESTAMP_FORMAT)
             basename = self.database_path.stem
             backup_filename = BACKUP_FILENAME_FORMAT.format(basename=basename, timestamp=timestamp)
             backup_path = self.database_path.parent / backup_filename

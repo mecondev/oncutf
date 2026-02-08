@@ -11,7 +11,7 @@ Exports metadata with proper grouping, hash information, and application brandin
 import json
 import os
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +35,7 @@ class MetadataExporter:
 
     def _get_export_timestamp(self) -> str:
         """Get formatted timestamp for export operations."""
-        return datetime.now().strftime(EXPORT_DATE_FORMAT)
+        return datetime.now(UTC).astimezone().strftime(EXPORT_DATE_FORMAT)
 
     def export_selected_files(self, output_dir: str, format_type: str = "json") -> bool:
         """Export metadata for selected files.
@@ -154,7 +154,7 @@ class MetadataExporter:
                     "export_info": {
                         "application": self.app_name,
                         "version": self.app_version,
-                        "exported_at": datetime.now().isoformat(),
+                        "exported_at": datetime.now(UTC).isoformat(),
                         "export_date": self._get_export_timestamp(),
                         "scope": "individual",
                         "format": "json",

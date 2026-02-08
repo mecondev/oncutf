@@ -112,12 +112,22 @@ disallow_any_unimported = false
 disallow_any_expr = false
 disallow_any_decorated = false
 disallow_any_explicit = false
-warn_return_any = false  # Enabled per tier (Tier 1 + Tier 2)
+warn_return_any = true
 disallow_subclassing_any = true  # Global: prevent subclassing Any
+disallow_incomplete_defs = true
+no_implicit_reexport = true
 
 [[tool.mypy.overrides]]
 module = "oncutf.*"
 ignore_missing_imports = false
+
+# Explicitly allow implicit re-exports in config aggregator
+[[tool.mypy.overrides]]
+module = [
+    "oncutf.config",
+    "oncutf.config.*",
+]
+no_implicit_reexport = false
 
 # ============================================================
 # Tier 0 — Generated / auto files / external packages (NEVER check)
@@ -246,6 +256,12 @@ module = [
     "oncutf.utils.metadata.exiftool_adapter"
 ]
 ignore_errors = false
+# Keep UI/glue code pragmatic while preserving type checks
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+warn_return_any = false
 # NOTE: Only Qt-stub-specific errors remain disabled
 # Removed: index (now enforced), unused-ignore (type:ignore cleanup complete)
 disable_error_code = [
@@ -309,6 +325,9 @@ exclude = [
 ]
 
 [tool.ruff.lint]
+extend-select = [
+    "DTZ",  # datetime timezone awareness
+]
 select = [
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
@@ -420,7 +439,7 @@ ignore = [
 "oncutf/infra/db/metadata_store.py" = ["TC003"]  # threading used for locks at runtime
 "oncutf/utils/events/observable.py" = ["TC003"]  # Callable used at runtime for subscriber checks
 # UI layer - allow Qt patterns and boolean flags
-"oncutf/ui/**/*.py" = ["FBT001", "FBT002", "FBT003", "D100", "D101", "D102", "D103"]  # Boolean flags + docstrings OK in UI glue code
+"oncutf/ui/**/*.py" = ["FBT001", "FBT002", "FBT003", "D100", "D101", "D102", "D103", "PLR0912", "PLR0915", "PLR2004"]  # Boolean flags + docstrings OK in UI glue code
 # Legitimate Any usage (external APIs, dynamic data)
 "oncutf/core/metadata/metadata_service.py" = ["ANN401"]  # Metadata values are truly dynamic
 "oncutf/app/services/batch_service.py" = ["ANN401"]  # Generic batch operations with dynamic kwargs
@@ -432,7 +451,7 @@ ignore = [
 "oncutf/core/file/load_manager.py" = ["ANN401"]  # Qt parent, FileStore duck typing
 "oncutf/core/cache/advanced_cache_manager.py" = ["ANN401"]  # Generic cache values
 # Tests - exclude from type annotation requirements and ERA001 (commented-out code)
-"tests/**/*.py" = ["ANN", "ERA001"]  # Test code can remain loosely typed, may include documented code examples
+"tests/**/*.py" = ["ANN", "DTZ", "ERA001", "PLR2004"]  # Test code can remain loosely typed, may include documented code examples
 
 [tool.ruff.lint.isort]
 force-single-line = false
@@ -451,6 +470,7 @@ line-ending = "auto"
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra -q --tb=short --strict-markers --strict-config"
+xfail_strict = true
 testpaths = ["tests"]
 qt_api = "pyqt5"
 markers = [

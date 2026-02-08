@@ -120,6 +120,8 @@ class BootstrapOrchestrator:
         from oncutf.ui.adapters.qt_file_load_ui import QtFileLoadUIAdapter
         from oncutf.ui.adapters.qt_metadata_edit import QtMetadataEditAdapter
         from oncutf.ui.adapters.qt_results_display import QtResultsDisplayAdapter
+        from oncutf.ui.adapters.qt_ui_events import QtUiEventsAdapter
+        from oncutf.ui.adapters.qt_ui_scheduler import QtUiSchedulerAdapter
         from oncutf.ui.adapters.qt_ui_update import QtUIUpdateAdapter
         from oncutf.ui.adapters.qt_user_interaction import (
             QtCursorAdapter,
@@ -135,6 +137,8 @@ class BootstrapOrchestrator:
         self.window.context.register_manager("conflict_resolution", QtConflictResolutionAdapter())
         self.window.context.register_manager("metadata_edit", QtMetadataEditAdapter())
         self.window.context.register_manager("ui_update", QtUIUpdateAdapter())
+        self.window.context.register_manager("ui_events", QtUiEventsAdapter())
+        self.window.context.register_manager("ui_scheduler", QtUiSchedulerAdapter())
 
         # Phase 6.1: Drag state port
         self.window.context.register_manager("drag_state", QtDragStateAdapter())

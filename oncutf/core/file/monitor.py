@@ -24,13 +24,13 @@ from typing import TYPE_CHECKING, Any
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from oncutf.utils.events import Observable, Signal
-from oncutf.utils.shared.timer_manager import (
-    TimerManager,
+from oncutf.app.services.ui_scheduler import (
     TimerPriority,
     TimerType,
-    get_timer_manager,
+    cancel_timer,
+    schedule_timer,
 )
+from oncutf.utils.events import Observable, Signal
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -147,8 +147,7 @@ class FilesystemMonitor(Observable):
         self._event_handler = _DirectoryEventHandler(self)
         self._watch_handles: dict[str, Any] = {}  # path -> watch handle
 
-        # Timer manager for drive polling
-        self._timer_manager = TimerManager()
+        # Timer id for drive polling
         self._drive_poll_timer_id: str | None = None
         self._current_drives: set[str] = set()
 
@@ -189,7 +188,7 @@ class FilesystemMonitor(Observable):
         """Stop monitoring filesystem."""
         # Stop drive polling
         if self._drive_poll_timer_id:
-            self._timer_manager.cancel(self._drive_poll_timer_id)
+            cancel_timer(self._drive_poll_timer_id)
             self._drive_poll_timer_id = None
 
         # Cancel debounce timer if active
@@ -452,12 +451,12 @@ class FilesystemMonitor(Observable):
 
         # Re-schedule next poll (repeating timer pattern)
         if self._drive_poll_timer_id or self._observer.is_alive():
-            self._drive_poll_timer_id = self._timer_manager.schedule(
-                timer_id="filesystem_monitor_drive_poll",
-                callback=self._poll_drives,
+            self._drive_poll_timer_id = schedule_timer(
+                self._poll_drives,
                 delay=2000,
                 timer_type=TimerType.UI_UPDATE,
                 priority=TimerPriority.LOW,
+                timer_id="filesystem_monitor_drive_poll",
             )
 
     def _on_directory_changed(self, path: str) -> None:

@@ -19,7 +19,7 @@ Date:
     2025-12-12
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from oncutf.ui.widgets.node_editor.core.node import Node
 from oncutf.ui.widgets.node_editor.core.socket import LEFT_CENTER, RIGHT_CENTER
@@ -55,7 +55,7 @@ class CurrentTimeNode(Node):
 
     def evalImplementation(self):
         """Return the current system timestamp."""
-        return datetime.now().timestamp()
+        return datetime.now(UTC).timestamp()
 
 
 @NodeRegistry.register(101)
@@ -116,7 +116,7 @@ class FormatDateNode(Node):
                 format_str = str(format_input)
 
         try:
-            dt = datetime.fromtimestamp(timestamp)
+            dt = datetime.fromtimestamp(timestamp, tz=UTC).astimezone()
             result = dt.strftime(format_str)
             self.markValid()
         except (ValueError, OSError):
@@ -179,7 +179,7 @@ class ParseDateNode(Node):
                 format_str = str(format_input)
 
         try:
-            dt = datetime.strptime(date_string, format_str)
+            dt = datetime.strptime(date_string, format_str).replace(tzinfo=UTC)
             result = dt.timestamp()
             self.markValid()
         except ValueError:

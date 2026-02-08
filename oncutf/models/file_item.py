@@ -13,7 +13,7 @@ Classes:
 """
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -81,9 +81,9 @@ class FileItem:
         # Get modification time
         try:
             mtime = Path(file_path).stat().st_mtime
-            modified = datetime.fromtimestamp(mtime)
+            modified = datetime.fromtimestamp(mtime, tz=UTC).astimezone()
         except (OSError, ValueError):
-            modified = datetime.fromtimestamp(0)
+            modified = datetime.fromtimestamp(0, tz=UTC).astimezone()
 
         # Create the instance
         instance = cls(file_path, extension, modified)

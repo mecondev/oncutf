@@ -308,23 +308,15 @@ class ShutdownCoordinator(Observable):
 
     def _schedule_next_phase(self) -> None:
         """Schedule next phase execution (Qt event loop if available, else immediate)."""
-        from oncutf.utils.shared.timer_manager import (
-            TimerManager,
-            TimerPriority,
-            TimerType,
-        )
+        from oncutf.app.services.ui_scheduler import TimerPriority, TimerType, schedule_timer
 
-        timer_mgr = TimerManager()
-        # Try scheduling via Qt event loop, fallback to immediate execution
-        if not timer_mgr.schedule(
-            timer_id="shutdown_next_phase",
-            callback=self._execute_next_phase_async,
+        schedule_timer(
+            self._execute_next_phase_async,
             delay=0,
             timer_type=TimerType.UI_UPDATE,
             priority=TimerPriority.NORMAL,
-        ):
-            # Timer manager not available or failed, execute immediately
-            self._execute_next_phase_async()
+            timer_id="shutdown_next_phase",
+        )
 
     def _execute_next_phase_async(self) -> None:
         """Execute the next shutdown phase (scheduled via QTimer)."""

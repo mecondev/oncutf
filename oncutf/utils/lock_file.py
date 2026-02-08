@@ -132,10 +132,10 @@ def acquire_lock() -> bool:
     # Create lock file with current PID
     try:
         import socket
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         hostname = socket.gethostname()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(UTC).astimezone().strftime("%Y-%m-%d %H:%M:%S")
 
         lock_content = f"{current_pid} {hostname} {timestamp}\n"
         _lock_file_path.write_text(lock_content, encoding="utf-8")

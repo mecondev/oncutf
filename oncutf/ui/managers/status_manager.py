@@ -18,7 +18,7 @@ Key Features:
 
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -364,9 +364,9 @@ class StatusManager:
             self._operation_contexts[operation_id] = {
                 "type": operation_type,
                 "description": description,
-                "start_time": datetime.now(),
+                "start_time": datetime.now(UTC),
                 "status_count": 0,
-                "last_update": datetime.now(),
+                "last_update": datetime.now(UTC),
             }
 
         logger.debug("[StatusManager] Started operation: %s (%s)", operation_id, operation_type)
@@ -376,7 +376,7 @@ class StatusManager:
         with self._lock:
             if operation_id in self._operation_contexts:
                 self._operation_contexts[operation_id].update(kwargs)
-                self._operation_contexts[operation_id]["last_update"] = datetime.now()
+                self._operation_contexts[operation_id]["last_update"] = datetime.now(UTC)
 
     def finish_operation(
         self, operation_id: str, success: bool = True, final_message: str = ""
@@ -388,7 +388,7 @@ class StatusManager:
         with self._lock:
             if operation_id in self._operation_contexts:
                 context = self._operation_contexts[operation_id]
-                duration = (datetime.now() - context["start_time"]).total_seconds()
+                duration = (datetime.now(UTC) - context["start_time"]).total_seconds()
 
                 if final_message:
                     category_map = {

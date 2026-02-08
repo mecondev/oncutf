@@ -540,11 +540,11 @@ class DatabaseManager:
     def _backup_corrupted_database(self) -> None:
         """Backup corrupted database and remove it."""
         import shutil
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         try:
             # Create backup with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
             backup_path = self.db_path.with_suffix(f".corrupted.{timestamp}.db")
 
             # Backup main database file

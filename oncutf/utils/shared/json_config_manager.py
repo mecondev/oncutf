@@ -12,9 +12,9 @@ multiple configuration categories, automatic backups, and thread-safe operations
 import json
 import shutil
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from oncutf.config import APP_VERSION
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -120,7 +120,7 @@ class FileHashConfig(ConfigCategory[Any]):
         hashes = self.get("hashes", {})
         hashes[filepath] = {
             "tag": hash_value,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "size": file_size,
         }
         self.set("hashes", hashes)
@@ -128,7 +128,7 @@ class FileHashConfig(ConfigCategory[Any]):
     def get_file_hash(self, filepath: str) -> dict[str, Any] | None:
         """Get file hash entry if exists."""
         hashes = self.get("hashes", {})
-        return hashes.get(filepath)
+        return cast("dict[str, Any] | None", hashes.get(filepath))
 
 
 class AppConfig(ConfigCategory[Any]):
@@ -312,7 +312,7 @@ class JSONConfigManager:
                     data[category_name] = category.to_dict()
 
                 data["_metadata"] = {
-                    "last_saved": datetime.now().isoformat(),
+                    "last_saved": datetime.now(UTC).isoformat(),
                     "version": f"v{APP_VERSION}",
                     "app_name": self.app_name,
                 }
@@ -509,7 +509,9 @@ class JSONConfigManager:
         if self.config_file.exists():
             stat = self.config_file.stat()
             info["file_size"] = stat.st_size
-            info["last_modified"] = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            info["last_modified"] = (
+                datetime.fromtimestamp(stat.st_mtime, tz=UTC).astimezone().isoformat()
+            )
 
         return info
 
@@ -558,7 +560,7 @@ def load_config() -> dict[str, Any]:
             return {}
 
         with config_manager.config_file.open(encoding="utf-8") as f:
-            return json.load(f)
+            return cast("dict[str, Any]", json.load(f))
     except Exception as e:
         logger.warning("Failed to load config: %s", e)
         return {}

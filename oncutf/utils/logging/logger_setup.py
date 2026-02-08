@@ -15,9 +15,11 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime
+from collections.abc import Callable
+from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any
 
 from oncutf.utils.logging.logger_file_helper import add_file_handler
 
@@ -34,7 +36,7 @@ def safe_text(text: str) -> str:
     return pattern.sub(lambda m: replacements[m.group(0)], text)
 
 
-def safe_log(logger_func, message: str):
+def safe_log(logger_func: Callable[[str], Any], message: str) -> None:
     """Wrapper for logger functions that catches encoding issues and falls back to ASCII."""
     try:
         logger_func(message)
@@ -107,7 +109,7 @@ class ConfigureLogger:
             Path(log_dir).mkdir(parents=True, exist_ok=True)
 
             # Add timestamp to log filename for unique sessions
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(UTC).astimezone().strftime("%Y%m%d_%H%M%S")
             log_file_path = str(Path(log_dir) / f"{log_name}_{timestamp}.log")
             debug_file_path = str(Path(log_dir) / f"{log_name}_debug_{timestamp}.log")
 
@@ -129,7 +131,7 @@ class ConfigureLogger:
                     backup_count=debug_backup_count,
                 )
 
-    def _setup_console_handler(self, level: int):
+    def _setup_console_handler(self, level: int) -> None:
         """Sets up console handler with UTF-8-safe formatting and DevOnlyFilter."""
         console_handler = logging.StreamHandler(sys.stdout)
 
@@ -150,7 +152,7 @@ class ConfigureLogger:
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
 
-    def _setup_file_handler(self, path: str, level: int, max_bytes: int, backup_count: int):
+    def _setup_file_handler(self, path: str, level: int, max_bytes: int, backup_count: int) -> None:
         """Sets up file handler with rotating file output."""
         file_handler = RotatingFileHandler(path, maxBytes=max_bytes, backupCount=backup_count)
         file_handler.setLevel(level)

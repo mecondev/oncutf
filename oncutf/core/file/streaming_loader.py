@@ -126,9 +126,9 @@ class StreamingFileLoader:
             self.parent_window.update_files_label()
 
         # Schedule next batch (5ms delay to allow UI updates)
-        from oncutf.utils.shared.timer_manager import TimerType, get_timer_manager
+        from oncutf.app.services.ui_scheduler import TimerType, schedule_timer
 
-        get_timer_manager().schedule(
+        schedule_timer(
             self._process_next_batch,
             delay=5,
             timer_type=TimerType.UI_UPDATE,

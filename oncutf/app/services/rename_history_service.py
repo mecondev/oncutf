@@ -18,7 +18,7 @@ from __future__ import annotations
 import os
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -87,7 +87,7 @@ class RenameBatch:
         self.operations = operations
         self.modules_data = modules_data
         self.post_transform_data = post_transform_data
-        self.timestamp = timestamp or datetime.now().isoformat()
+        self.timestamp = timestamp or datetime.now(UTC).isoformat()
 
     @property
     def file_count(self) -> int:
