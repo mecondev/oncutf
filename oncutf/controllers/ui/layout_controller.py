@@ -98,6 +98,7 @@ class LayoutController:
     def _setup_main_layout(self) -> None:
         """Setup central widget and main layout."""
         self.parent_window.central_widget = QWidget()
+        self.parent_window.central_widget.setAcceptDrops(True)  # Enable drag & drop to children
         self.parent_window.setCentralWidget(self.parent_window.central_widget)
         self.parent_window.main_layout = QVBoxLayout(self.parent_window.central_widget)
 

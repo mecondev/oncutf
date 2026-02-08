@@ -109,3 +109,34 @@ def extract_file_paths(mime_data: QMimeData) -> list[str]:
     Only includes local files, ignores other types like text.
     """
     return [url.toLocalFile() for url in mime_data.urls() if url.isLocalFile()]
+
+
+def create_drop_info_text(paths: list[str]) -> str:
+    """Create informative text for drag overlay showing file/folder counts.
+
+    Args:
+        paths: List of file/folder paths being dragged
+
+    Returns:
+        Text like "5 files", "3 folders", or "2 folders / 8 files"
+
+    """
+    if not paths:
+        return ""
+
+    folders = [p for p in paths if Path(p).is_dir()]
+    files = [p for p in paths if Path(p).is_file()]
+
+    folder_count = len(folders)
+    file_count = len(files)
+
+    if folder_count > 0 and file_count > 0:
+        folder_text = "1 folder" if folder_count == 1 else f"{folder_count} folders"
+        file_text = "1 file" if file_count == 1 else f"{file_count} files"
+        return f"{folder_text} / {file_text}"
+    if folder_count > 0:
+        return "1 folder" if folder_count == 1 else f"{folder_count} folders"
+    if file_count > 0:
+        return "1 file" if file_count == 1 else f"{file_count} files"
+    # Should not reach here normally, but return folder count as fallback
+    return f"{len(paths)} folders"

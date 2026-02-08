@@ -632,6 +632,11 @@ class FileTableView(QTableView):
         if not self._drag_drop_behavior.handle_drag_move(event):
             super().dragMoveEvent(event)
 
+    def dragLeaveEvent(self, event) -> None:
+        """Delegate to DragDropBehavior."""
+        if not self._drag_drop_behavior.handle_drag_leave(event):
+            super().dragLeaveEvent(event)
+
     def dropEvent(self, event) -> None:
         """Delegate to DragDropBehavior."""
         import time

@@ -134,6 +134,9 @@ class DragDropBehavior:
         # Large selection optimization
         self._drag_pending_rows: list[int] | None = None
 
+        # External drag state (from file explorer)
+        self._external_drag_active = False
+
     # =====================================
     # Public API
     # =====================================
@@ -295,11 +298,56 @@ class DragDropBehavior:
             True if event was handled, False to delegate to parent
 
         """
-        if event.mimeData().hasUrls() or event.mimeData().hasFormat(
-            "application/x-oncutf-internal"
-        ):
+        mime_data = event.mimeData()
+
+        # Handle external drag (from file explorer)
+        if mime_data.hasUrls():
+            # Use overlay widget for external drags (cursor control not available)
+            from pathlib import Path
+
+            from oncutf.ui.helpers.file_drop_helper import (
+                create_drop_info_text,
+                extract_file_paths,
+            )
+            from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+            from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+            paths = extract_file_paths(mime_data)
+            if paths:
+                # Determine drag type
+                folders = [p for p in paths if Path(p).is_dir()]
+                files = [p for p in paths if Path(p).is_file()]
+
+                if len(folders) > 0 and len(files) == 0:
+                    drag_type = "folder" if len(folders) == 1 else "multiple"
+                elif len(files) > 0 and len(folders) == 0:
+                    drag_type = "file" if len(files) == 1 else "multiple"
+                else:
+                    drag_type = "multiple"
+
+                # Create info text
+                info_text = create_drop_info_text(paths)
+
+                # Show overlay with drag info and type
+                overlay_manager = DragOverlayManager.get_instance()
+                overlay_manager.show_drag_info(info_text, drag_type)
+                self._external_drag_active = True
+
+                # Activate ESC key monitoring for canceling drag
+                drag_cancel_handler = get_drag_cancel_handler()
+                drag_cancel_handler.activate()
+
+                # Update modifier state immediately
+                self._update_external_drag_modifier_display()
+
             event.acceptProposedAction()
             return True
+
+        # Handle internal drag
+        if mime_data.hasFormat("application/x-oncutf-internal"):
+            event.acceptProposedAction()
+            return True
+
         return False
 
     def handle_drag_move(self, event) -> bool:
@@ -309,12 +357,48 @@ class DragDropBehavior:
             True if event was handled, False to delegate to parent
 
         """
-        if event.mimeData().hasUrls() or event.mimeData().hasFormat(
-            "application/x-oncutf-internal"
-        ):
+        mime_data = event.mimeData()
+
+        # Update visual feedback for external drags
+        if self._external_drag_active and mime_data.hasUrls():
+            # Update modifier state display in overlay
+            self._update_external_drag_modifier_display()
+
+        if mime_data.hasUrls() or mime_data.hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
             return True
+
         return False
+
+    def handle_drag_leave(self, event) -> bool:
+        """Handle drag leave event.
+
+        Cleans up visual feedback when drag exits the widget.
+
+        Returns:
+            True if event was handled, False to delegate to parent
+
+        """
+        # Clean up external drag feedback
+        if self._external_drag_active:
+            from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+            from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+            logger.debug(
+                "[DragDropBehavior] Drag left widget - cleaning up overlay",
+                extra={"dev_only": True},
+            )
+
+            overlay_manager = DragOverlayManager.get_instance()
+            overlay_manager.hide_overlay()
+
+            # Deactivate ESC key monitoring
+            drag_cancel_handler = get_drag_cancel_handler()
+            drag_cancel_handler.deactivate()
+
+            self._external_drag_active = False
+
+        return True
 
     def handle_drop(self, event: QDropEvent) -> tuple[list[str], object] | None:
         """Handle drop event.
@@ -372,6 +456,21 @@ class DragDropBehavior:
             new_paths = dropped_paths
 
         event.acceptProposedAction()
+
+        # End visual feedback for external drags
+        if self._external_drag_active:
+            from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
+            from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+            overlay_manager = DragOverlayManager.get_instance()
+            overlay_manager.hide_overlay()
+
+            # Deactivate ESC key monitoring
+            drag_cancel_handler = get_drag_cancel_handler()
+            drag_cancel_handler.deactivate()
+
+            self._external_drag_active = False
+
         logger.debug(
             "[DROP-BEHAVIOR] Returning %d paths at +%.3fms",
             len(new_paths),
@@ -531,3 +630,24 @@ class DragDropBehavior:
         from oncutf.utils.filesystem.path_utils import find_parent_with_attribute
 
         return find_parent_with_attribute(self._widget, "metadata_tree_view")
+
+    def _update_external_drag_modifier_display(self) -> None:
+        """Update modifier state display for external drags."""
+        from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+        modifiers = QApplication.keyboardModifiers()
+        is_ctrl = bool(modifiers & Qt.ControlModifier)
+        is_shift = bool(modifiers & Qt.ShiftModifier)
+
+        # Map modifiers to user-friendly text
+        if is_ctrl and is_shift:
+            modifier_text = "Ctrl+Shift: Merge + Recursive"
+        elif is_shift:
+            modifier_text = "Shift: Merge + Shallow"
+        elif is_ctrl:
+            modifier_text = "Ctrl: Replace + Recursive"
+        else:
+            modifier_text = "Replace + Shallow"
+
+        overlay_manager = DragOverlayManager.get_instance()
+        overlay_manager.update_modifier_info(modifier_text)

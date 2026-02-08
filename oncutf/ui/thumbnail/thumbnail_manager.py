@@ -672,7 +672,9 @@ class ThumbnailManager(QObject):
                     worker.request_stop()
                     if worker.isRunning():
                         # Reduced timeout from 1000ms to 100ms for faster viewport switching
-                        worker.wait(100)  # Wait up to 100ms for graceful stop (Windows optimization)
+                        worker.wait(
+                            100
+                        )  # Wait up to 100ms for graceful stop (Windows optimization)
             logger.debug(
                 "[ThumbnailManager] Scaled down: removed %d workers (now %d active) in %.3fms",
                 workers_to_remove,

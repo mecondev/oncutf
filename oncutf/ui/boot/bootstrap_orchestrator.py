@@ -370,6 +370,13 @@ class BootstrapOrchestrator:
         self.window.signal_controller.setup()
         self.window.shortcut_controller.setup()
 
+        # Initialize drag overlay manager for external drag visual feedback
+        from oncutf.ui.widgets.drag_overlay import DragOverlayManager
+
+        overlay_manager = DragOverlayManager.get_instance()
+        overlay_manager.initialize(self.window)
+        logger.debug("[Phase4C] DragOverlayManager initialized", extra={"dev_only": True})
+
         # Re-enable updates after UI is fully constructed
         self.window.setUpdatesEnabled(True)
         logger.info("[Phase4C] UI setup completed via controllers", extra={"dev_only": True})

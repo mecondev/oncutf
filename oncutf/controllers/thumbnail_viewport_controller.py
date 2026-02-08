@@ -67,13 +67,40 @@ class ThumbnailViewportController(QObject):
     # Audio files (.mp3, .wav, etc.) are explicitly excluded
     SUPPORTED_THUMBNAIL_EXTENSIONS: ClassVar[set[str]] = {
         # Images
-        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif",
-        ".webp", ".heic", ".heif",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".heic",
+        ".heif",
         # RAW
-        ".cr2", ".cr3", ".nef", ".orf", ".rw2", ".arw", ".dng", ".raf",
+        ".cr2",
+        ".cr3",
+        ".nef",
+        ".orf",
+        ".rw2",
+        ".arw",
+        ".dng",
+        ".raf",
         # Videos
-        ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
-        ".m4v", ".mpg", ".mpeg", ".3gp", ".mts", ".m2ts", ".mxf",
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".flv",
+        ".webm",
+        ".m4v",
+        ".mpg",
+        ".mpeg",
+        ".3gp",
+        ".mts",
+        ".m2ts",
+        ".mxf",
     }
 
     # Signals for UI updates
@@ -362,7 +389,8 @@ class ThumbnailViewportController(QObject):
         from pathlib import Path
 
         filtered_paths = [
-            p for p in visible_file_paths
+            p
+            for p in visible_file_paths
             if Path(p).suffix.lower() in self.SUPPORTED_THUMBNAIL_EXTENSIONS
         ]
 

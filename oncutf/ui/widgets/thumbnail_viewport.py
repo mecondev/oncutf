@@ -589,6 +589,17 @@ class ThumbnailViewportWidget(QWidget):
             return
         super().dragMoveEvent(event)
 
+    def dragLeaveEvent(self, event) -> None:
+        """Handle drag leave event.
+
+        Args:
+            event: Qt drag leave event
+
+        """
+        if self._drag_drop_behavior.handle_drag_leave(event):
+            return
+        super().dragLeaveEvent(event)
+
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event.
 
