@@ -74,9 +74,6 @@ class SignalController:
 
     def _setup_folder_tree_signals(self) -> None:
         """Connect folder tree signals."""
-        self.parent_window.folder_tree.item_dropped.connect(
-            self.parent_window.load_single_item_from_drop
-        )
         self.parent_window.folder_tree.folder_selected.connect(
             self.parent_window.handle_folder_import
         )

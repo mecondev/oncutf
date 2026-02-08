@@ -56,7 +56,6 @@ class FileTreeView(QTreeView):
     """
 
     # Signals
-    item_dropped = pyqtSignal(str, object)  # single path and keyboard modifiers
     folder_selected = pyqtSignal()  # Signal emitted when Return/Enter is pressed
     selection_changed = pyqtSignal(str)  # Signal emitted when selection changes (single path)
 

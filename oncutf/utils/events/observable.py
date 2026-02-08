@@ -56,7 +56,7 @@ class Signal:
         """Called when signal is assigned to class attribute."""
         self.name = name
 
-    def __get__(self, obj: Observable | None, objtype: type | None = None) -> SignalInstance:
+    def __get__(self, obj: Observable | None, _objtype: type | None = None) -> SignalInstance:
         """Get signal instance for object."""
         if obj is None:
             return self  # type: ignore[return-value]
@@ -86,7 +86,7 @@ class SignalInstance:
         self._callbacks: list[Callable[..., Any]] = []
         self._lock = threading.Lock()
 
-    def connect(self, callback: Callable[..., Any], connection_type: Any = None) -> None:
+    def connect(self, callback: Callable[..., Any], _connection_type: Any = None) -> None:
         """Connect callback to signal.
 
         Args:

@@ -229,6 +229,9 @@ Final output must always pass the full baseline commands.
 
 ## Canonical sources (Single Source of Truth)
 
+References:
+- PROJECT_RULES.md
+
 | Domain | Canonical | Legacy/Supporting |
 |--------|-----------|-------------------|
 | **Rename Pipeline** | `UnifiedRenameEngine` (`core/rename/unified_rename_engine.py`) | `utils/naming/*` (helpers only) |

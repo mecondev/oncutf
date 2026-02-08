@@ -337,27 +337,18 @@ class DragHandler:
                     extra={"dev_only": True},
                 )
 
-                if visual_manager.is_valid_drop_target(parent, "file_tree"):
+                if visual_manager.is_valid_drop_target(
+                    parent, "file_tree"
+                ) and parent.__class__.__name__ in (
+                    "FileTableView",
+                    "ThumbnailViewportWidget",
+                ):
                     logger.debug(
                         "[DragHandler] Valid drop target found: %s",
                         parent.__class__.__name__,
                         extra={"dev_only": True},
                     )
                     target_widget = parent
-                    valid_drop = True
-                    break
-
-                if (
-                    hasattr(parent, "parent")
-                    and parent.parent()
-                    and visual_manager.is_valid_drop_target(parent.parent(), "file_tree")
-                ):
-                    logger.debug(
-                        "[DragHandler] Valid drop target found via viewport: %s",
-                        parent.parent().__class__.__name__,
-                        extra={"dev_only": True},
-                    )
-                    target_widget = parent.parent()
                     valid_drop = True
                     break
 
@@ -490,9 +481,13 @@ class DragHandler:
         qt_mods = QApplication.keyboardModifiers()
         target_class = target_widget.__class__.__name__
 
-        # For FileTableView, use the original file tree behavior
+        # For FileTableView, emit files_dropped to reuse the main drop pipeline
         if target_class == "FileTableView":
-            self._view.item_dropped.emit(self._drag_path, qt_mods)
+            from oncutf.utils.cursor_helper import wait_cursor
+
+            with wait_cursor(restore_after=False):
+                QApplication.processEvents()
+                target_widget.files_dropped.emit([self._drag_path], qt_mods)
             logger.info(
                 "[DragHandler] Dropped on FileTableView: %s",
                 self._drag_path,
@@ -501,7 +496,11 @@ class DragHandler:
         # For ThumbnailViewportWidget, emit files_dropped signal
         elif target_class == "ThumbnailViewportWidget":
             # Emit files_dropped signal like normal drop sources do
-            target_widget.files_dropped.emit([self._drag_path], qt_mods)
+            from oncutf.utils.cursor_helper import wait_cursor
+
+            with wait_cursor(restore_after=False):
+                QApplication.processEvents()
+                target_widget.files_dropped.emit([self._drag_path], qt_mods)
             logger.info(
                 "[DragHandler] Dropped on ThumbnailViewportWidget: %s",
                 self._drag_path,
@@ -518,27 +517,6 @@ class DragHandler:
         _, _, action = decode_modifiers_to_flags(domain_mods)
         logger.info(
             "[DragHandler] Drop action: %s",
-            action,
-            extra={"dev_only": True},
-        )
-
-    def _handle_drop_on_table(self) -> None:
-        """Handle drop on file table with modifier logic.
-
-        Deprecated: Use _handle_drop_on_target instead.
-        """
-        if not self._drag_path:
-            return
-
-        qt_mods = QApplication.keyboardModifiers()
-        self._view.item_dropped.emit(self._drag_path, qt_mods)
-
-        domain_mods = qt_modifiers_to_domain(qt_mods)
-        _, _, action = decode_modifiers_to_flags(domain_mods)
-
-        logger.info(
-            "[DragHandler] Dropped: %s (%s)",
-            self._drag_path,
             action,
             extra={"dev_only": True},
         )
