@@ -117,15 +117,10 @@ def count_folder_contents(
 
 
 def _count_shallow(folder_path: str, include_hidden: bool) -> FolderCount:
-    """Count direct child folders (shallow) but ALL files recursively.
-
-    This provides intuitive feedback: shows immediate subfolders but counts
-    all files that would be loaded, regardless of depth.
-    """
+    """Count direct child folders and direct files only."""
     result = FolderCount()
 
     try:
-        # First pass: count direct children folders only
         for entry in os.scandir(folder_path):
             # Skip hidden files/folders if requested
             if not include_hidden and entry.name.startswith("."):
@@ -133,26 +128,13 @@ def _count_shallow(folder_path: str, include_hidden: bool) -> FolderCount:
 
             if entry.is_dir(follow_symlinks=False):
                 result.folders += 1
-
-        # Second pass: count ALL files recursively using os.walk
-        for _root, dirs, files in os.walk(folder_path, followlinks=False):
-            # Filter hidden directories if needed
-            if not include_hidden:
-                dirs[:] = [d for d in dirs if not d.startswith(".")]
-
-            # Count all files with allowed extensions
-            for file in files:
-                # Skip hidden files if requested
-                if not include_hidden and file.startswith("."):
-                    continue
-
-                if _has_allowed_extension(file):
+            elif entry.is_file(follow_symlinks=False):
+                if _has_allowed_extension(entry.name):
                     result.files += 1
                 else:
-                    # Debug: log filtered files
                     logger.debug(
                         "[FolderCounter] Skipped file (extension filter): %s",
-                        file,
+                        entry.name,
                         extra={"dev_only": True},
                     )
 

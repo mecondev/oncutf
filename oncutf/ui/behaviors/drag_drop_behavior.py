@@ -329,7 +329,7 @@ class DragDropBehavior:
                 event.ignore()
                 drag_cancel_handler.deactivate()
                 self._external_drag_active = False
-                return None
+                return False
 
         if self._external_drag_active:
             from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
@@ -342,7 +342,7 @@ class DragDropBehavior:
                 event.ignore()
                 drag_cancel_handler.deactivate()
                 self._external_drag_active = False
-                return None
+                return False
 
         # Handle external drag (from file explorer)
         if mime_data.hasUrls():
