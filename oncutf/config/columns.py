@@ -46,8 +46,9 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": False,
         "resizable": True,
+        "width": 250,
         "alignment": "left",
-        "min_width": 80,
+        "min_width": 100,
     },
     "file_size": {
         "title": "File Size",

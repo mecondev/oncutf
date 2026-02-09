@@ -69,7 +69,7 @@ class DatabaseManager:
             self.db_path = AppPaths.get_database_path()
 
         # Debug: Reset database if requested
-        from oncutf.config import DEBUG_FRESH_START
+        from oncutf.config.app import DEBUG_FRESH_START
 
         global _FRESH_START_DONE
         if DEBUG_FRESH_START and not _FRESH_START_DONE:
