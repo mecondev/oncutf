@@ -10,6 +10,7 @@ multiple configuration categories, automatic backups, and thread-safe operations
 """
 
 import json
+import os
 import shutil
 import threading
 from datetime import UTC, datetime
@@ -22,6 +23,17 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 T = TypeVar("T")
+
+
+def _atomic_write_json(target_path: Path, data: dict[str, Any]) -> None:
+    """Write JSON atomically to avoid partial/corrupted files."""
+    tmp_path = target_path.with_name(f"{target_path.name}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+
+    tmp_path.replace(target_path)
 
 
 class ConfigCategory[T]:
@@ -318,8 +330,7 @@ class JSONConfigManager:
                     "app_name": self.app_name,
                 }
 
-                with self.config_file.open("w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
+                _atomic_write_json(self.config_file, data)
 
                 # Clear dirty flag after successful save
                 self._dirty = False
@@ -577,8 +588,7 @@ def save_config(config_data: dict[str, Any]) -> bool:
             shutil.copy2(config_manager.config_file, config_manager.backup_file)
 
         # Save new config
-        with config_manager.config_file.open("w", encoding="utf-8") as f:
-            json.dump(config_data, f, indent=2, ensure_ascii=False)
+        _atomic_write_json(config_manager.config_file, config_data)
 
         logger.debug("Configuration saved to %s", config_manager.config_file)
     except Exception:

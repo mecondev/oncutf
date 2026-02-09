@@ -66,7 +66,11 @@ class ColumnWidthManager:
                         return saved_width
 
                     if column_key == "filename":
-                        return self._calculate_dynamic_filename_width()
+                        from oncutf.config import COLUMN_RESIZE_BEHAVIOR
+
+                        if COLUMN_RESIZE_BEHAVIOR.get("AUTO_ADJUST_FILENAME", False):
+                            return self._calculate_dynamic_filename_width()
+                        return default_width
                 except Exception:
                     pass
 
@@ -76,7 +80,11 @@ class ColumnWidthManager:
             column_widths = config.get("file_table_column_widths", {})
 
             if column_key == "filename" and column_key not in column_widths:
-                return self._calculate_dynamic_filename_width()
+                from oncutf.config import COLUMN_RESIZE_BEHAVIOR
+
+                if COLUMN_RESIZE_BEHAVIOR.get("AUTO_ADJUST_FILENAME", False):
+                    return self._calculate_dynamic_filename_width()
+                return default_width
 
             return column_widths.get(column_key, default_width)
 

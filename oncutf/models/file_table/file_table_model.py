@@ -202,6 +202,10 @@ class FileTableModel(QAbstractTableModel):
         """Returns a list of all checked files."""
         return self._file_ops.get_checked_files()
 
+    def get_all_file_items(self) -> list[FileItem]:
+        """Return all file items currently loaded in the model."""
+        return self.files.copy()
+
     def setup_custom_tooltips(self, table_view: Any) -> None:
         """Setup custom tooltips for all cells in the table view."""
         self._file_ops.setup_custom_tooltips(table_view)
