@@ -182,15 +182,11 @@ class ContextMenuHandlers:
 
         menu.addSeparator()
 
-        # === VIEW / SORT (Thumbnail View) ===
+        # === VIEW / SORT (Available in both thumbnail and file table views) ===
         thumbnail_viewport = getattr(self.parent_window, "thumbnail_viewport", None)
-        thumbnail_list_view = getattr(thumbnail_viewport, "_list_view", None)
-        is_thumbnail_view = source_widget is not None and thumbnail_list_view is source_widget
-        enable_thumbnail_actions = bool(thumbnail_viewport and is_thumbnail_view)
 
         view_menu = menu.addMenu("View")
         view_menu.setIcon(get_menu_icon("table_view"))
-        view_menu.setEnabled(enable_thumbnail_actions)
 
         zoom_in_action = QAction(get_menu_icon("zoom_in"), "Zoom In", view_menu)
         zoom_in_action.triggered.connect(
@@ -212,7 +208,6 @@ class ContextMenuHandlers:
 
         sort_menu = menu.addMenu("Sort")
         sort_menu.setIcon(get_menu_icon("sort_by_alpha"))
-        sort_menu.setEnabled(enable_thumbnail_actions)
 
         sort_asc_action = QAction(
             get_menu_icon("keyboard_arrow_down"), "Ascending (A-Z)", sort_menu

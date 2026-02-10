@@ -181,7 +181,6 @@ class ThumbnailViewportWidget(QWidget):
         self._pan_behavior = None
         self._lasso_behavior = None
         self._tooltip_behavior = None
-        self._context_menu_builder = None
         self._drag_drop_behavior = None
 
         # Drag-drop state
@@ -210,9 +209,6 @@ class ThumbnailViewportWidget(QWidget):
             ThumbnailViewportZoomBehavior,
         )
         from oncutf.ui.theme_manager import get_theme_manager
-        from oncutf.ui.widgets.thumbnail_viewport_context_menu import (
-            ThumbnailViewportContextMenuBuilder,
-        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -261,8 +257,6 @@ class ThumbnailViewportWidget(QWidget):
         )
 
         self._tooltip_behavior = ThumbnailViewportTooltipBehavior(list_view=self._list_view)
-
-        self._context_menu_builder = ThumbnailViewportContextMenuBuilder(parent_widget=self)
 
         # Initialize drag-drop behavior (will use self as DraggableWidget)
         from oncutf.ui.behaviors.drag_drop_behavior import DragDropBehavior
@@ -722,9 +716,9 @@ class ThumbnailViewportWidget(QWidget):
         )
 
     def _on_context_menu(self, position: QPoint) -> None:
-        """Show context menu for thumbnail operations.
+        """Show unified context menu for thumbnail operations (same as file table).
 
-        Uses unified context menu handler (same as file table).
+        Uses the parent window's handle_table_context_menu handler.
         Protects selection from being cleared when dismissing menu with click.
 
         Args:
@@ -753,26 +747,13 @@ class ThumbnailViewportWidget(QWidget):
                 guard = None
 
             try:
-                # Use unified context menu handler from parent window
+                # Use unified context menu handler from parent window (same as file table)
                 if hasattr(self, "_parent_window") and self._parent_window:
-                    try:
-                        # Delegate to the same handler used by file table
-                        # Pass the thumbnail view's viewport so menu position is correct
-                        self._parent_window.handle_thumbnail_context_menu(position, self._list_view)
-                    except AttributeError:
-                        # Fallback if handle_thumbnail_context_menu doesn't exist
-                        try:
-                            self._parent_window.handle_table_context_menu(position)
-                        except Exception as e:
-                            logger.warning("Error showing unified context menu: %s", e)
-                            self._show_fallback_context_menu(position)
-                    except Exception as e:
-                        logger.warning("Error showing unified context menu: %s", e)
-                        # Fallback to simplified menu if unified handler fails
-                        self._show_fallback_context_menu(position)
+                    self._parent_window.handle_table_context_menu(position)
                 else:
-                    # No parent window - use fallback
-                    self._show_fallback_context_menu(position)
+                    logger.warning(
+                        "Cannot show context menu: no parent window", extra={"dev_only": True}
+                    )
             finally:
                 # Remove guard after menu closes
                 if guard:
@@ -794,30 +775,6 @@ class ThumbnailViewportWidget(QWidget):
             pass
         finally:
             self._context_menu_open = False
-
-    def _show_fallback_context_menu(self, position: QPoint) -> None:
-        """Show fallback context menu if unified handler not available.
-
-        Args:
-            position: Click position in widget coordinates
-
-        """
-        # Build and show menu using builder
-        self._context_menu_builder.show_menu(
-            position=position,
-            viewport_widget=self._list_view.viewport(),
-            order_mode=self._model.order_mode,
-            selected_files=self.get_selected_files(),
-            sort_callback=self.sort_by,
-            return_to_manual_callback=self.return_to_manual_order,
-            zoom_in_callback=self.zoom_in,
-            zoom_out_callback=self.zoom_out,
-            reset_zoom_callback=self.reset_zoom,
-            open_file_callback=self._open_file,
-            reveal_callback=self._reveal_in_file_manager,
-            open_location_callback=self._open_file_location,
-            refresh_callback=self._refresh,
-        )
 
     def _on_thumbnail_progress(self, completed: int, total: int) -> None:
         """Handle thumbnail loading progress updates.
