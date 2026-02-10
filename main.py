@@ -106,15 +106,23 @@ def cleanup_on_exit() -> None:
 
 def signal_handler(signum, _frame) -> None:
     """Handle signals for graceful shutdown."""
+    global _app_quit_called
     logger.info("[App] Received signal %d, performing cleanup...", signum)
     cleanup_on_exit()
 
-    # Ensure QApplication exits cleanly
-    from PyQt5.QtWidgets import QApplication
+    # Ensure QApplication exits cleanly without abrupt sys.exit
+    try:
+        from PyQt5.QtCore import QTimer
+        from PyQt5.QtWidgets import QApplication
+    except Exception:
+        sys.exit(0)
 
     app = QApplication.instance()
     if app:
-        app.quit()
+        if not _app_quit_called:
+            _app_quit_called = True
+            QTimer.singleShot(0, app.quit)
+        return
 
     sys.exit(0)
 

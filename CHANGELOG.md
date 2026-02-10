@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - 2026-01-11
 
 Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and comprehensive testing.
+
 - **Legacy Methods** (marked for removal in v2.0):
   - `ApplicationContext.set_files()` - Use `FileStore.set_loaded_files()` instead
   - `TextRemovalModule.on_text_changed()` - Connect to `module_changed` signal instead
@@ -21,6 +22,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - `oncutf.ui.behaviors.metadata_context_menu_behavior` - Import from `oncutf.ui.behaviors.metadata_context_menu` instead
 
 ### Code Quality
+
 - **Audit-driven improvements** (2026-01-11):
   - Standardized all logging to `get_cached_logger(__name__)` pattern
   - Added `@deprecated` decorator to legacy methods with migration guidance
@@ -34,6 +36,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - **Total test coverage**: 1006 comprehensive tests across all modules
 
 ### Performance
+
 - **Phase 7 - Final Polish**: Major performance optimizations and polish
   - **Startup Optimization**: 31% faster application startup (1426ms → 989ms)
     - Lazy-loaded ExifToolWrapper in UnifiedMetadataManager (12% improvement)
@@ -49,6 +52,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
     - Created docs/PERFORMANCE_BASELINE.md for tracking improvements
 
 ### Added
+
 - **MainWindowController**: High-level multi-service orchestration
   - Coordinates FileLoad, Metadata, and Rename controllers
   - `restore_last_session_workflow()`: Session restoration orchestration
@@ -57,6 +61,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Full test coverage with comprehensive integration tests
 
 ### Refactoring
+
 - **Mixin Extraction from FileTableView** (Day 8 - 2025-12-04):
   - Extracted SelectionMixin (486 lines, 12 methods) for Windows Explorer-style selection
   - Extracted DragDropMixin (365 lines, 9 methods) for drag-and-drop functionality
@@ -67,6 +72,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Comprehensive documentation with usage examples
 
 ### Documentation
+
 - **Cache Strategy Documentation** (Day 7 - 2025-12-04):
   - Comprehensive cache system documentation (2500+ lines)
   - Complete guide for AdvancedCacheManager, PersistentHashCache, PersistentMetadataCache
@@ -79,6 +85,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Visual diagrams and architecture charts
 
 ### Added
+
 - **Companion Files System**: Comprehensive support for camera-generated companion/sidecar files
   - Automatic detection of Sony camera XML metadata files (e.g., C8227.MP4 + C8227M01.XML)
   - Support for XMP sidecar files for RAW images (e.g., IMG_1234.CR2 + IMG_1234.xmp)
@@ -90,6 +97,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Metadata extraction from Sony XML files (duration, codec, resolution, etc.)
   - File loading optimization to filter companion files based on preferences
   - Professional workflow support for video production and photography
+  
   - **Metadata Integration**: Automatic companion metadata enhancement during metadata loading
     - Sony XML metadata automatically merged into MP4 file metadata
     - Device info, video specs, and audio info extracted from companion files
@@ -106,6 +114,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
 ## [1.3] - 2025-06-29
 
 ### Added
+
 - **Backup System**: Automatic database backups for data protection
   - Automatic backups on application shutdown
   - Periodic backup system (every 15 minutes, configurable)
@@ -114,6 +123,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Backup files with timestamp naming: `oncutf_YYYYMMDD_HHMMSS.db.bak`
 
 ### Fixed
+
 - **CRITICAL**: Fixed tooltip system crash when renaming files (RuntimeError: deleted Qt objects)
 - **CRITICAL**: Fixed post-rename workflow crash that prevented UI updates after successful file renaming
   - Implemented Safe Rename Workflow with TimerManager for delayed execution
@@ -125,6 +135,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
 - Improved application stability during file operations
 
 ### Changed
+
 - **Tooltip System Overhaul**: Complete rewrite of tooltip management
   - Added comprehensive error handling for Qt object lifecycle
   - Enhanced tooltip persistence with proper cleanup mechanisms
@@ -133,6 +144,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Optimized tooltip event handling and reduced memory footprint
 
 ### Technical
+
 - Enhanced error logging and debugging capabilities
 - Improved application shutdown sequence with backup integration
 - Added comprehensive test suite for backup functionality (simplified architecture)
@@ -142,6 +154,7 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
 ## [1.3.0] - 2025-07-27 (Database System Release)
 
 ### Added
+
 - **Database System**: Comprehensive SQLite-based database system for persistent storage
   - Persistent metadata cache with automatic database storage
   - Persistent hash cache for CRC32 checksums
@@ -174,12 +187,14 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Seamless migration from old cache system
 
 ### Changed
+
 - Replaced memory-only MetadataCache with PersistentMetadataCache
 - Enhanced HashManager with persistent caching capabilities
 - Improved error handling and recovery mechanisms
 - Better thread safety across all database operations
 
 ### Technical Details
+
 - Database location: `~/.local/share/oncutf/` (Linux/macOS) or `%APPDATA%/oncutf/` (Windows)
 - SQLite backend with WAL mode for better concurrency
 - Foreign key constraints for referential integrity
@@ -192,12 +207,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.2] - 2025-05-27
 
 ### Added
+
 - Smart default window geometry based on screen size and aspect ratio
 - Metadata groups now display in logical order (File Info first, then alphabetical)
 - Splash screen positioning relative to main window location
 - Individual file export system (creates separate files per source)
 
 ### Changed
+
 - **BREAKING**: Removed CSV export format from metadata export dialog
 - **BREAKING**: Metadata export now creates individual files instead of combined files
 - Markdown export format cleaned up (removed all bold formatting and colors)
@@ -205,11 +222,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version format changed from "1.1" to "v1.1" for consistency
 
 ### Fixed
+
 - **CRITICAL**: Fixed save metadata bug where the third modified file wouldn't be saved
 - Fixed Qt imports consolidation for better maintainability
 - Fixed splash screen positioning when no config.json exists
 
 ### Technical
+
 - Consolidated Qt imports through central qt_imports.py
 - Improved error handling in window geometry calculations
 - Enhanced metadata tree view modification tracking
@@ -218,6 +237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.1] - Previous Release
 
 ### Features
+
 - Metadata export system (JSON, Markdown, CSV)
 - Bulk file operations
 - Advanced metadata editing

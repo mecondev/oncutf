@@ -32,7 +32,7 @@ python tools/icon_migration_viewer.py
 ### Columns
 
 | Column | Description |
-|--------|-------------|
+| -------- | ------------- |
 | Feather Icon | Original Feather icon name |
 | Preview | Small preview of Feather icon |
 | → | Migration arrow |
@@ -103,7 +103,7 @@ get_menu_icon("create_new_folder")
 
 ### Old Structure (Feather)
 
-```
+```tree
 oncutf/resources/icons/
 └── feather_icons/         (289 SVG files)
     ├── chevron-up.svg
@@ -113,7 +113,7 @@ oncutf/resources/icons/
 
 ### New Structure (Material Design)
 
-```
+```tree
 oncutf/resources/icons/
 ├── navigation/            (6 icons)
 │   ├── keyboard_arrow_up.svg

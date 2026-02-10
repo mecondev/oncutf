@@ -27,21 +27,26 @@ Violating any of the above is considered a failure.
 Every response **must end** with a structured block containing **all** of the following:
 
 STATUS:
+
 - What was changed, verified, or intentionally not changed.
 
 FILES:
+
 - Exact list of files touched (or “none”).
 
 COMMANDS:
+
 - Exact commands to run next (copy-paste ready).
 
 NEXT:
+
 - The next 2–3 concrete actions  
   (file path + symbol/function/class name).
 
 If you must stop early, clearly label:
 
 HANDOFF:
+
 - STOP_POINT: exact file + symbol
 - CONTEXT: what is known / what is assumed
 - NEXT_COMMANDS: exact commands
@@ -54,25 +59,31 @@ No motivational language. No summaries outside this structure.
 ## 2. Definition of Done (Tooling Gate)
 
 A task is **NOT DONE** unless one of the following is true:
+
 - All required tools pass, OR
 - You explicitly state which tools were NOT run and WHY.
 
 ### Canonical Toolchain (Order Matters)
 
 Primary loop:
+
 - `ruff check .`
 - `ruff format .`
 
 Type safety:
+
 - `mypy` (project configuration)
 
 Tests:
+
 - `pytest` (targeted or full – state which)
 
 Dead code detection:
+
 - `vulture` (project configuration or default rules)
 
 Architecture / repo audits (if present):
+
 - `tools/audit_boundaries.py` (or equivalent)
 
 If a tool is skipped, it must be justified explicitly.
@@ -93,6 +104,7 @@ If a tool is skipped, it must be justified explicitly.
 ## 4. Coding & Design Standards
 
 ### Python
+
 - Target the project’s configured Python version.
 - Prefer `pathlib.Path` over `os.path`  
   unless interacting with low-level or third-party APIs.
@@ -102,6 +114,7 @@ If a tool is skipped, it must be justified explicitly.
 - Prefer existing Protocols / types from the repo.
 
 ### Architecture
+
 - Follow existing architectural boundaries strictly.
 - Do NOT introduce new layers, patterns, or abstractions
   unless explicitly requested.
@@ -112,6 +125,7 @@ If a tool is skipped, it must be justified explicitly.
 ## 5. Ruff / MyPy / Vulture Playbook
 
 ### Ruff
+
 - Fix only violations that are in scope.
 - Do not reformat unrelated files.
 - For path-related rules (e.g. PTH):
@@ -119,11 +133,13 @@ If a tool is skipped, it must be justified explicitly.
   - Do not change behavior or error handling.
 
 ### MyPy
+
 - Add types where behavior is clear and stable.
 - Prefer narrowing types over casting.
 - Avoid silencing errors unless no alternative exists.
 
 ### Vulture
+
 - Treat findings as **candidates**, not automatic deletions.
 - Before removing code:
   - Verify call sites.
@@ -143,6 +159,7 @@ If a tool is skipped, it must be justified explicitly.
   - If tests are not possible, explain why.
 
 Failures must include:
+
 - Ranked root-cause hypotheses.
 - A minimal reproduction or inspection plan.
 
@@ -151,6 +168,7 @@ Failures must include:
 ## 7. Search Discipline (No Blind Edits)
 
 When uncertain:
+
 - Use `ripgrep` (`rg`) or equivalent.
 - Cite exact file paths and symbol names.
 - Do not proceed on assumptions.
@@ -180,6 +198,7 @@ When uncertain:
 ## 10. Final Rule
 
 If any ambiguity exists:
+
 - STOP
 - VERIFY
 - STATE ASSUMPTIONS

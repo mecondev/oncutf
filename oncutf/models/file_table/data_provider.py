@@ -245,7 +245,7 @@ class DataProvider:
 
         if role == Qt.DecorationRole:
             # Determine metadata status
-            metadata_status = "none"
+            metadata_status = "metadata_unavailable"
 
             # Check staging manager for modified status
             is_modified = False
@@ -270,7 +270,9 @@ class DataProvider:
                         metadata_status = "loaded"
 
             # Determine hash status
-            hash_status = "tag" if self.icon_manager.has_hash_cached(file.full_path) else "none"
+            hash_status = (
+                "tag" if self.icon_manager.has_hash_cached(file.full_path) else "hash_unavailable"
+            )
 
             # Create and return combined icon
             return self.icon_manager.create_combined_icon(metadata_status, hash_status)

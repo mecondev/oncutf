@@ -203,6 +203,7 @@ class StatusManager:
             "skipped": STATUS_COLORS["metadata_skipped"],
             "success": STATUS_COLORS["metadata_success"],
             "error": STATUS_COLORS["error"],
+            "cancelled": STATUS_COLORS["cancelled"],
         }
 
         color = color_map.get(operation_type, STATUS_COLORS["info"])
@@ -240,6 +241,7 @@ class StatusManager:
             "duplicate_found": STATUS_COLORS["duplicate_found"],
             "no_duplicates": STATUS_COLORS["operation_success"],
             "error": STATUS_COLORS["error"],
+            "cancelled": STATUS_COLORS["cancelled"],
         }
 
         color = color_map.get(operation_type, STATUS_COLORS["info"])

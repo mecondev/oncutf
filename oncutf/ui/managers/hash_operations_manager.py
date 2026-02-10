@@ -187,7 +187,7 @@ class HashOperationsManager:
 
             if not external_folder:
                 logger.debug(
-                    "[HashManager] User cancelled external folder selection",
+                    "[HashManager] External folder selection cancelled by user",
                     extra={"dev_only": True},
                 )
                 return
@@ -251,26 +251,82 @@ class HashOperationsManager:
             )
 
     def _calculate_single_file_hash_fast(self, file_item: FileItem) -> None:
-        """Calculate hash for a single small file using wait cursor (fast, no cancellation).
+        """Calculate hash for a single file with cancellation support.
 
         Args:
             file_item: FileItem object to calculate hash for
 
         """
-        from oncutf.app.services import wait_cursor
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
+        from oncutf.app.services import create_hash_dialog, wait_cursor
+        from oncutf.app.services.ui_events import process_events
         from oncutf.core.hash.hash_manager import HashManager
+        from oncutf.utils.filesystem.file_size_calculator import (
+            calculate_files_total_size,
+        )
+
+        cancelled = False
+
+        def cancel_callback() -> None:
+            nonlocal cancelled
+            cancelled = True
+
+        dialog = create_hash_dialog(self.parent_window, cancel_callback=cancel_callback)
+        dialog.set_status("Calculating hash...")
+
+        total_size = calculate_files_total_size([file_item.full_path])
+        dialog.start_progress_tracking(total_size)
+        dialog.set_count(0, 1)
+        dialog.set_filename(file_item.filename)
+        dialog.show()
+        dialog.activateWindow()
+        dialog.setFocus()
+        dialog.raise_()
+
+        for _ in range(3):
+            process_events()
 
         try:
             hash_results = {}
             with wait_cursor():
                 hash_manager = HashManager()
-                file_hash = hash_manager.calculate_hash(file_item.full_path)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(
+                        hash_manager.calculate_hash,
+                        file_item.full_path,
+                        None,
+                        lambda: cancelled,
+                    )
+                    file_hash = None
+                    while True:
+                        try:
+                            file_hash = future.result(timeout=0.05)
+                            break
+                        except FuturesTimeout:
+                            process_events()
+                            continue
+
+                dialog.set_count(1, 1)
+                dialog.update_progress(
+                    file_count=1,
+                    total_files=1,
+                    processed_bytes=total_size,
+                    total_bytes=total_size,
+                )
+
+                if cancelled:
+                    if hasattr(self.parent_window, "status_manager"):
+                        self.parent_window.status_manager.set_hash_status(
+                            "Hash calculation cancelled by user",
+                            operation_type="cancelled",
+                            auto_reset=True,
+                        )
+                    return
 
                 if file_hash:
                     hash_results[file_item.full_path] = file_hash
 
-            # Show results after cursor is restored
-            # Wrap flat dict into nested structure expected by results presenter
             wrapped_results: dict[str, dict[str, str]] = {
                 path: {"tag": hash_val} for path, hash_val in hash_results.items()
             }
@@ -279,6 +335,8 @@ class HashOperationsManager:
         except Exception as e:
             logger.exception("[HashManager] Error calculating checksum")
             show_info_message(self.parent_window, "Error", f"Failed to calculate checksum: {e!s}")
+        finally:
+            dialog.close()
 
     # ===== Worker Callbacks =====
 

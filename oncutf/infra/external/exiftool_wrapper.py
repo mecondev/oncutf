@@ -13,9 +13,11 @@ Requires: exiftool installed and in PATH
 import contextlib
 import json
 import os
+import signal
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -125,26 +127,39 @@ class ExifToolWrapper:
         else:
             return available
 
-    def get_metadata(self, file_path: str, use_extended: bool = False) -> dict[str, Any]:
+    def get_metadata(
+        self,
+        file_path: str,
+        use_extended: bool = False,
+        cancellation_check: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
         """Get metadata for a single file using exiftool.
 
         Args:
             file_path: Path to the file
             use_extended: Whether to use extended metadata extraction
+            cancellation_check: Optional callback to cancel long-running extraction
 
         Returns:
             Dictionary containing metadata
 
         """
         try:
-            return self._get_metadata_with_exiftool(file_path, use_extended)
+            return self._get_metadata_with_exiftool(
+                file_path,
+                use_extended,
+                cancellation_check,
+            )
 
         except Exception:
             logger.exception("[ExifToolWrapper] Error getting metadata for %s", file_path)
             return {}
 
     def _get_metadata_with_exiftool(
-        self, file_path: str, use_extended: bool = False
+        self,
+        file_path: str,
+        use_extended: bool = False,
+        cancellation_check: Callable[[], bool] | None = None,
     ) -> dict[str, Any]:
         """Execute exiftool command and parse results."""
         logger.info(
@@ -154,14 +169,14 @@ class ExifToolWrapper:
         )
 
         if use_extended:
-            result = self._get_metadata_extended(file_path)
+            result = self._get_metadata_extended(file_path, cancellation_check)
         else:
-            result = self._get_metadata_fast(
-                file_path
-            )  # Convert None to empty dict for consistency
+            result = self._get_metadata_fast(file_path, cancellation_check)
         return result if result is not None else {}
 
-    def _get_metadata_fast(self, file_path: str) -> dict[str, Any] | None:
+    def _get_metadata_fast(
+        self, file_path: str, cancellation_check: Callable[[], bool] | None = None
+    ) -> dict[str, Any] | None:
         """Execute ExifTool with standard options for fast metadata extraction."""
         # Normalize path for Windows compatibility
         from oncutf.utils.filesystem.path_normalizer import normalize_path
@@ -187,31 +202,31 @@ class ExifToolWrapper:
         ]
 
         try:
-            result = subprocess.run(
+            returncode, stdout, stderr, was_cancelled = self._run_exiftool_command(
                 cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=EXIFTOOL_TIMEOUT_FAST,
-                encoding="utf-8",
-                errors="replace",
+                timeout_s=EXIFTOOL_TIMEOUT_FAST,
+                cancellation_check=cancellation_check,
             )
 
-            if result.returncode != 0:
+            if was_cancelled:
+                logger.info("[ExifToolWrapper] Cancelled exiftool for %s", file_path)
+                return None
+
+            if returncode != 0:
                 logger.warning(
                     "[ExifToolWrapper] ExifTool returned error code %d for %s",
-                    result.returncode,
+                    returncode,
                     file_path,
                 )
-                if result.stderr:
-                    logger.warning("[ExifToolWrapper] ExifTool stderr: %s", result.stderr)
+                if stderr:
+                    logger.warning("[ExifToolWrapper] ExifTool stderr: %s", stderr)
                 return None
 
             # Success - reset error counter
             self._consecutive_errors = 0
-            return self._parse_json_output(result.stdout)
+            return self._parse_json_output(stdout)
 
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             logger.exception("[ExifToolWrapper] Timeout executing exiftool for %s", file_path)
             self._last_error = f"Timeout executing exiftool for {file_path}"
             self._consecutive_errors += 1
@@ -221,6 +236,96 @@ class ExifToolWrapper:
             self._last_error = str(e)
             self._consecutive_errors += 1
             return None
+
+    def _run_exiftool_command(
+        self,
+        cmd: list[str],
+        timeout_s: float,
+        cancellation_check: Callable[[], bool] | None = None,
+    ) -> tuple[int, str, str, bool]:
+        """Run an exiftool command with cancellation and timeouts.
+
+        Returns:
+            (returncode, stdout, stderr, was_cancelled)
+
+        """
+        proc: subprocess.Popen[str] | None = None
+        start_time = time.monotonic()
+        was_cancelled = False
+        stdout = ""
+        stderr = ""
+
+        try:
+            popen_kwargs: dict[str, Any] = {
+                "stdin": subprocess.PIPE,
+                "stdout": subprocess.PIPE,
+                "stderr": subprocess.PIPE,
+                "text": True,
+                "encoding": "utf-8",
+                "errors": "replace",
+            }
+
+            if os.name == "nt":
+                popen_kwargs["creationflags"] = getattr(
+                    subprocess,
+                    "CREATE_NEW_PROCESS_GROUP",
+                    0,
+                )
+            else:
+                popen_kwargs["start_new_session"] = True
+
+            proc = subprocess.Popen(cmd, **popen_kwargs)
+
+            while True:
+                if cancellation_check and cancellation_check():
+                    was_cancelled = True
+                    self._terminate_process(proc, reason="cancel")
+                    return 1, "", "", was_cancelled
+
+                elapsed = time.monotonic() - start_time
+                if elapsed > timeout_s:
+                    self._terminate_process(proc, reason="timeout")
+                    raise TimeoutError("exiftool timeout")
+
+                try:
+                    stdout, stderr = proc.communicate(timeout=0.1)
+                except subprocess.TimeoutExpired:
+                    continue
+                else:
+                    returncode = proc.returncode or 0
+                    return returncode, stdout, stderr, was_cancelled
+        finally:
+            if proc and proc.poll() is None:
+                self._terminate_process(proc, reason="cleanup")
+
+    def _terminate_process(self, proc: subprocess.Popen[str], reason: str) -> None:
+        """Terminate a running exiftool process (best effort)."""
+        try:
+            if os.name == "nt":
+                ctrl_break = getattr(signal, "CTRL_BREAK_EVENT", None)
+                if ctrl_break is not None:
+                    with contextlib.suppress(Exception):
+                        proc.send_signal(ctrl_break)
+                with contextlib.suppress(Exception):
+                    proc.terminate()
+            else:
+                with contextlib.suppress(Exception):
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except Exception:
+            logger.debug(
+                "[ExifToolWrapper] Failed to terminate exiftool (%s)",
+                reason,
+                extra={"dev_only": True},
+            )
+        finally:
+            with contextlib.suppress(Exception):
+                proc.wait(timeout=0.2)
+            if proc.poll() is None:
+                with contextlib.suppress(Exception):
+                    if os.name == "nt":
+                        proc.kill()
+                    else:
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
 
     @staticmethod
     def _parse_json_output(output: str) -> MetadataDict | None:
@@ -253,13 +358,17 @@ class ExifToolWrapper:
             return parsed
 
     def get_metadata_batch(
-        self, file_paths: list[str], use_extended: bool = False
+        self,
+        file_paths: list[str],
+        use_extended: bool = False,
+        cancellation_check: Callable[[], bool] | None = None,
     ) -> list[dict[str, Any]]:
         """Load metadata for multiple files in a single ExifTool call (10x faster than individual calls).
 
         Args:
             file_paths: List of file paths to process
             use_extended: Whether to use extended metadata extraction
+            cancellation_check: Optional callback to cancel long-running extraction
 
         Returns:
             List of metadata dictionaries, one per file (empty dict on error)
@@ -284,17 +393,18 @@ class ExifToolWrapper:
                 len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE,
             )
 
-            result = subprocess.run(
+            returncode, stdout, stderr, was_cancelled = self._run_exiftool_command(
                 cmd,
-                capture_output=True,
-                text=True,
-                timeout=dynamic_timeout,  # Dynamic timeout based on file count
-                encoding="utf-8",
-                errors="replace",
+                timeout_s=dynamic_timeout,
+                cancellation_check=cancellation_check,
             )
 
-            if result.returncode == 0:
-                data = json.loads(result.stdout)
+            if was_cancelled:
+                logger.info("[ExifToolWrapper] Cancelled batch exiftool call")
+                return [{} for _ in file_paths]
+
+            if returncode == 0:
+                data = json.loads(stdout)
 
                 # Mark extended metadata if requested
                 if use_extended:
@@ -309,8 +419,10 @@ class ExifToolWrapper:
                 return list(data)
             logger.warning(
                 "[ExifToolWrapper] Batch metadata failed with code %d",
-                result.returncode,
+                returncode,
             )
+            if stderr:
+                logger.warning("[ExifToolWrapper] ExifTool stderr: %s", stderr)
             return [{} for _ in file_paths]
 
         except json.JSONDecodeError:
@@ -320,7 +432,11 @@ class ExifToolWrapper:
             logger.exception("[ExifToolWrapper] Batch metadata error")
             return [{} for _ in file_paths]
 
-    def _get_metadata_extended(self, file_path: str) -> dict[str, Any] | None:
+    def _get_metadata_extended(
+        self,
+        file_path: str,
+        cancellation_check: Callable[[], bool] | None = None,
+    ) -> dict[str, Any] | None:
         """Uses a one-shot subprocess call with -ee for extended metadata.
         Parses and merges embedded entries, marks result as extended.
         """
@@ -348,19 +464,15 @@ class ExifToolWrapper:
         try:
             # Use run() with timeout for simpler and more reliable execution
             # communicate() automatically handles stdout/stderr buffering
-            result = subprocess.run(
+            returncode, output, stderr, was_cancelled = self._run_exiftool_command(
                 cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=EXIFTOOL_TIMEOUT_EXTENDED,
-                encoding="utf-8",
-                errors="replace",
+                timeout_s=EXIFTOOL_TIMEOUT_EXTENDED,
+                cancellation_check=cancellation_check,
             )
 
-            returncode = result.returncode
-            output = result.stdout
-            stderr = result.stderr
+            if was_cancelled:
+                logger.info("[ExtendedReader] Cancelled exiftool for %s", file_path)
+                return None
 
             if returncode != 0:
                 # Suppress warnings for SIGTERM (-15) during shutdown
@@ -436,7 +548,7 @@ class ExifToolWrapper:
                 extra={"dev_only": True},
             )
             return None
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             # Timeout is expected for large video files - log as warning, not error
             filename = Path(file_path).name
             logger.warning(

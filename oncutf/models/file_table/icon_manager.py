@@ -118,8 +118,8 @@ class IconManager:
         Always shows both icons - uses grayout color for missing states.
 
         Args:
-            metadata_status: Status of metadata ('loaded', 'extended', 'modified', 'invalid', 'none')
-            hash_status: Status of hash ('tag' for available, 'none' for not available)
+            metadata_status: Status of metadata ('loaded', 'extended', 'modified', 'invalid', 'metadata_unavailable')
+            hash_status: Status of hash ('tag' for available, 'hash_unavailable' for not available)
 
         Returns:
             QIcon: Combined icon with metadata and hash status

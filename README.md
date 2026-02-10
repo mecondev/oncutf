@@ -19,6 +19,7 @@
 ## Key Features
 
 ### Modular Rename System
+
 - **Original Name**: Preserve original filename with optional Greek-to-Greeklish conversion
 - **Specified Text**: Add custom text with context menu shortcuts and original name insertion
 - **Counter**: Sequential numbering with configurable start, step, and padding
@@ -27,12 +28,14 @@
 - **Final Transform**: Post-processing options for case, separator, and Greek-to-Greeklish conversion
 
 ### Data Protection & Reliability
+
 - **Automatic Backup System**: Database backups on shutdown and periodic intervals (every 15 minutes)
 - **Persistent Storage**: SQLite-based database for metadata, hashes, and rename history
 - **Enhanced Stability**: Robust error handling and recovery mechanisms for Qt object lifecycle
 - **Data Integrity**: Backup rotation with configurable retention and timestamp naming
 
 ### Advanced File Management
+
 - **Drag & Drop Interface**:
   - File tree to table: Import files/folders with modifier-based metadata loading
   - File table to metadata tree: Quick metadata inspection (Shift for extended metadata)
@@ -43,6 +46,7 @@
   - Smart caching system to avoid redundant operations
 
 ### Professional UI/UX
+
 - **Live Preview**: Real-time filename preview before applying changes
 - **Visual Feedback**: Professional icons, tooltips, and status indicators
 - **Conflict Resolution**: Overwrite/Skip/Cancel options for existing files
@@ -51,6 +55,7 @@
 - **Configuration Management**: JSON-based settings with automatic backup and cross-platform support
 
 ### Metadata Integration
+
 - **File Dates**: Last modified in various formats (ISO, European, US, year-only, etc.)
 - **Metadata Fields**: Camera settings, GPS coordinates, creation dates, and technical metadata
 - **Dynamic Field Discovery**: Automatically detects available metadata fields from loaded files
@@ -67,25 +72,30 @@
 ### Installing ExifTool
 
 **Windows:**
+
 1. Download from [ExifTool website](https://exiftool.org/)
 2. Extract to a folder (e.g., `C:\exiftool`)
 3. Add the folder to your system PATH
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt-get install exiftool
 ```
 
 **macOS:**
+
 ```bash
 brew install exiftool
 ```
 
 **Manual Installation:**
+
 1. Download from [ExifTool website](https://exiftool.org/)
 2. Extract and add to PATH
 
 **Verify Installation:**
+
 ```bash
 exiftool -ver
 ```
@@ -132,6 +142,7 @@ python3.12 main.py
 ### Keyboard Shortcuts & Modifiers
 
 #### Global Shortcuts (work regardless of focus)
+
 - **Ctrl+O**: Browse for files/folders
 - **Ctrl+S**: Save all metadata
 - **Ctrl+L**: Show hash results dialog
@@ -142,12 +153,14 @@ python3.12 main.py
 - **Shift+Escape**: Clear file table
 
 #### Widget-Specific F5 (Refresh)
+
 - **F5 (File Table)**: Reload files from current folder
 - **F5 (File Tree)**: Refresh file tree view
 - **F5 (Metadata Tree)**: Reload metadata from selection
 - **F5 (Preview)**: Refresh preview tables
 
 #### File Table Shortcuts (when file table has focus)
+
 - **Ctrl+A**: Select all files
 - **Ctrl+Shift+A**: Clear selection
 - **Ctrl+I**: Invert selection
@@ -158,12 +171,14 @@ python3.12 main.py
 - **Ctrl+Shift+T**: Reset columns to default widths
 
 #### Column Management Shortcuts (when hovering over column header)
+
 - **Ctrl+Left**: Move hovered column left (columns must be unlocked)
 - **Ctrl+Right**: Move hovered column right (columns must be unlocked)
 
 **Note:** Column reordering is hover-based — no need to click the column header. Simply hover over it and press Ctrl+Left/Right. Columns must be unlocked via the header context menu (right-click on any column header).
 
 **Drag & Drop Modifiers:**
+
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
 - **Ctrl**: Load basic metadata
 - **Ctrl+Shift**: Load extended metadata
@@ -174,16 +189,19 @@ python3.12 main.py
 ## Selection & Modifier Behavior (File Table)
 
 ### Single Click
+
 - **No Modifier**: Select clicked row, deselect others
 - **Ctrl**: Toggle clicked row (add/remove from selection)
 - **Shift**: Extend selection from anchor to clicked row
 
 ### Drag Operations
+
 - **Drag to Metadata Tree (No Modifier)**: Load fast metadata for selected files
 - **Drag to Metadata Tree (Shift)**: Load extended metadata for selected files (requires 3x normal drag distance to prevent accidental triggers)
 - **Ctrl+Drag (Lasso)**: Select/deselect rows in range; initial selection XOR dragged range. Compatible with Windows Explorer behavior
 
 ### Multi-Selection Behavior
+
 - Clicking on already-selected item (no modifier): Preserves multi-selection for drag. If no drag occurs, converts to single selection
 - Anchor row is maintained for Shift+Click range selection
 - Selection restored after metadata operations
@@ -192,7 +210,7 @@ python3.12 main.py
 
 ## Project Structure
 
-```
+```tree
 oncutf/
 ├── main.py                  # Application entry point
 ├── config.py                # Global configuration constants
@@ -284,6 +302,7 @@ pytest tests/ -v
 ```
 
 **Current Status:**
+
 - **Ruff:** All checks passing
 - **MyPy:** Clean (0 errors, 330 source files)
 - **Pytest:** 949 tests passing
@@ -291,6 +310,7 @@ pytest tests/ -v
 ### Future Enhancements
 
 See [TODO.md](TODO.md) for planned features and improvements:
+
 - Last state restoration (sort column persistence)
 - Non-blocking conflict resolution UI
 - Metadata database search functionality
@@ -303,12 +323,13 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 **Canonical Patterns (Single Source of Truth):**
 
 | Domain | Canonical | Legacy/Supporting |
-|--------|-----------|-------------------|
+| -------- | ----------- | ------------------- |
 | Rename Pipeline | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
 | Column Management | `UnifiedColumnService` | `ColumnManager` (thin adapter) |
 | UI Components | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
 
 **Rules:**
+
 - All rename operations go through `UnifiedRenameEngine`
 - New code uses Behaviors, not Mixins
 - New column logic goes in `UnifiedColumnService`
@@ -318,6 +339,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 ## Technical Highlights
 
 ### Performance Optimizations
+
 - **Advanced Cache System**: Multi-tier caching (memory + disk + database) for 500x speedup
 - **Persistent ExifTool Process**: Uses `-stay_open` mode for fast metadata extraction
 - **Intelligent Caching**: Smart cache invalidation with 90%+ hit rates
@@ -327,18 +349,21 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 - **Cross-Platform Path Handling**: Normalized path operations for Windows/Linux compatibility
 
 ### Data Protection & Backup System
+
 - **Automatic Database Backups**: Scheduled backups every 15 minutes + shutdown backups
 - **Backup Rotation**: Configurable backup count with automatic cleanup of old backups
 - **Persistent Storage**: SQLite database with WAL mode for better concurrency
 - **Data Recovery**: Comprehensive backup system with timestamp-based file naming
 
 ### Advanced Drag & Drop System
+
 - **Multi-Selection Aware**: Handles complex selection scenarios with modifier keys
 - **Visual Feedback**: Real-time drop zone highlighting and cursor changes
 - **Conflict Resolution**: Smart handling of Qt selection conflicts during drag operations
 - **Cross-Widget Communication**: Seamless data transfer between file tree, table, and metadata views
 
 ### Robust Error Handling
+
 - **Graceful Degradation**: Continues operation even when ExifTool encounters issues
 - **User-Friendly Messages**: Clear error reporting without technical jargon
 - **Recovery Mechanisms**: Automatic cleanup and state restoration after failures

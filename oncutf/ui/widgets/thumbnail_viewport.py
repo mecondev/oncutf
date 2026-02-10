@@ -517,6 +517,14 @@ class ThumbnailViewportWidget(QWidget):
         """Reset thumbnail size to default."""
         self._zoom_behavior.reset()
 
+    def sort_by(self, key: str, reverse: bool) -> None:
+        """Public sort entry point for context menu actions."""
+        self._controller.sort_by(key, reverse=reverse)
+
+    def return_to_manual_order(self) -> None:
+        """Return to manual order mode and load from DB."""
+        self._controller.return_to_manual_order()
+
     def eventFilter(self, obj: QWidget, event: QEvent) -> bool:
         """Event filter delegating to behaviors.
 
@@ -800,8 +808,8 @@ class ThumbnailViewportWidget(QWidget):
             viewport_widget=self._list_view.viewport(),
             order_mode=self._model.order_mode,
             selected_files=self.get_selected_files(),
-            sort_callback=self._sort_by,
-            return_to_manual_callback=self._return_to_manual_order,
+            sort_callback=self.sort_by,
+            return_to_manual_callback=self.return_to_manual_order,
             zoom_in_callback=self.zoom_in,
             zoom_out_callback=self.zoom_out,
             reset_zoom_callback=self.reset_zoom,
@@ -1230,6 +1238,8 @@ class ThumbnailViewportWidget(QWidget):
                 # Update the view for this item
                 index = self._model.index(row, 0)
                 self._list_view.update(index)
+                if self._tooltip_behavior:
+                    self._tooltip_behavior.refresh_tooltip_if_active(row, row)
                 logger.debug(
                     "[ThumbnailViewport] Updated view for row=%d, file=%s",
                     row,
@@ -1272,6 +1282,9 @@ class ThumbnailViewportWidget(QWidget):
             index = self._model.index(row, 0)
             if index.isValid():
                 self._list_view.update(index)
+
+        if self._tooltip_behavior:
+            self._tooltip_behavior.refresh_tooltip_if_active(top_left.row(), bottom_right.row())
 
         logger.debug(
             "[ThumbnailViewport] Updated %d items after model data change",

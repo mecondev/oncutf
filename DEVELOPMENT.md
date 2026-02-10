@@ -9,12 +9,14 @@
 ## Quick Start
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/mecondev/oncutf.git
    cd oncutf
    ```
 
 2. **Install development dependencies**
+
    ```bash
    make install-dev
    # or
@@ -22,6 +24,7 @@
    ```
 
 3. **Install pre-commit hooks**
+
    ```bash
    make install-hooks
    # or
@@ -29,6 +32,7 @@
    ```
 
 4. **Run the application**
+
    ```bash
    make run
    # or
@@ -85,7 +89,7 @@ make dist
 
 ## Project Structure
 
-```
+```tree
 oncutf/
 ├── core/                   # Core application components
 │   ├── application_context.py  # Application-wide context
@@ -104,6 +108,7 @@ oncutf/
 ## Code Style
 
 This project uses:
+
 - **Ruff** for linting and formatting
 - **Black** for code formatting
 - **MyPy** for type checking
@@ -165,7 +170,7 @@ logger = get_cached_logger(__name__)
 #### Log Levels
 
 | Level | Usage |
-|-------|-------|
+| ------- | ------- |
 | `DEBUG` | Development-only messages, verbose details |
 | `INFO` | Operation milestones (file loaded, rename completed) |
 | `WARNING` | Recoverable issues (failed to load optional data) |
@@ -233,15 +238,14 @@ DEBUG_RESET_DATABASE = True  # Reset database on startup
 
 ### Commit Message Format
 
-```
 type(scope): description
 
 [optional body]
 
 [optional footer]
-```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -264,6 +268,7 @@ Types:
 ### Common Issues
 
 **ExifTool not found:**
+
 ```bash
 # Install ExifTool
 # Ubuntu/Debian
@@ -276,12 +281,14 @@ brew install exiftool
 ```
 
 **PyQt5 installation issues:**
+
 ```bash
 # Try installing with specific version
 pip install PyQt5==5.15.11
 ```
 
 **Pre-commit hooks failing:**
+
 ```bash
 # Update hooks
 pre-commit autoupdate
@@ -291,6 +298,7 @@ git commit --no-verify
 ```
 
 **Test failures:**
+
 ```bash
 # Clean and reinstall
 make clean

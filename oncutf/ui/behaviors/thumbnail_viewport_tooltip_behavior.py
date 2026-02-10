@@ -35,6 +35,8 @@ class ThumbnailViewportTooltipBehavior:
         self._list_view = list_view
         self._tooltip_timer_id: int | None = None
         self._tooltip_index: QModelIndex | None = None
+        self._tooltip_visible = False
+        self._last_tooltip_text: str | None = None
 
     def schedule_tooltip(self, index: "QModelIndex") -> None:
         """Schedule tooltip display after hover delay.
@@ -59,31 +61,34 @@ class ThumbnailViewportTooltipBehavior:
 
         TooltipHelper.clear_tooltips_for_widget(self._list_view.viewport())
         self._tooltip_index = None
+        self._tooltip_visible = False
+        self._last_tooltip_text = None
 
-    def _show_tooltip(self) -> None:
-        """Show tooltip for currently hovered item."""
-        if not self._tooltip_index or not self._tooltip_index.isValid():
+    def refresh_tooltip_if_active(self, top_row: int, bottom_row: int) -> None:
+        """Refresh tooltip only if the hovered item changed.
+
+        Args:
+            top_row: Top row in changed range
+            bottom_row: Bottom row in changed range
+
+        """
+        if not self._tooltip_visible or not self._tooltip_index:
+            return
+
+        if not self._tooltip_index.isValid():
+            return
+
+        hovered_row = self._tooltip_index.row()
+        if hovered_row < top_row or hovered_row > bottom_row:
             return
 
         file_item = self._tooltip_index.data(Qt.UserRole)
         if not file_item:
             return
 
-        # Build tooltip text
-        tooltip_lines = [
-            f"<b>{file_item.filename}</b>",
-            f"Type: {file_item.extension.upper() if file_item.extension else 'Unknown'}",
-        ]
-
-        # Add metadata if available
-        if hasattr(file_item, "duration") and file_item.duration:
-            tooltip_lines.append(f"Duration: {file_item.duration}")
-        if hasattr(file_item, "image_size") and file_item.image_size:
-            tooltip_lines.append(f"Size: {file_item.image_size}")
-        if file_item.color and file_item.color.lower() != "none":
-            tooltip_lines.append(f"Color: {file_item.color}")
-
-        tooltip_text = "<br>".join(tooltip_lines)
+        tooltip_text = self._build_tooltip_text(file_item)
+        if tooltip_text == self._last_tooltip_text:
+            return
 
         from oncutf.config import TOOLTIP_DURATION
 
@@ -94,6 +99,46 @@ class ThumbnailViewportTooltipBehavior:
             duration=TOOLTIP_DURATION,
             persistent=False,
         )
+        self._last_tooltip_text = tooltip_text
+
+    def _show_tooltip(self) -> None:
+        """Show tooltip for currently hovered item."""
+        if not self._tooltip_index or not self._tooltip_index.isValid():
+            return
+
+        file_item = self._tooltip_index.data(Qt.UserRole)
+        if not file_item:
+            return
+
+        tooltip_text = self._build_tooltip_text(file_item)
+
+        from oncutf.config import TOOLTIP_DURATION
+
+        TooltipHelper.show_tooltip(
+            self._list_view.viewport(),
+            tooltip_text,
+            TooltipType.INFO,
+            duration=TOOLTIP_DURATION,
+            persistent=False,
+        )
+        self._tooltip_visible = True
+        self._last_tooltip_text = tooltip_text
+
+    def _build_tooltip_text(self, file_item) -> str:
+        """Build tooltip text for a file item."""
+        tooltip_lines = [
+            f"<b>{file_item.filename}</b>",
+            f"Type: {file_item.extension.upper() if file_item.extension else 'Unknown'}",
+        ]
+
+        if hasattr(file_item, "duration") and file_item.duration:
+            tooltip_lines.append(f"Duration: {file_item.duration}")
+        if hasattr(file_item, "image_size") and file_item.image_size:
+            tooltip_lines.append(f"Size: {file_item.image_size}")
+        if file_item.color and file_item.color.lower() != "none":
+            tooltip_lines.append(f"Color: {file_item.color}")
+
+        return "<br>".join(tooltip_lines)
 
     def handle_event_filter(self, obj: "QListView", event: QEvent, is_panning: bool) -> bool:
         """Handle events from event filter.

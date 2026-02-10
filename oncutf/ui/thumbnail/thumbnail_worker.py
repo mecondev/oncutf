@@ -71,6 +71,8 @@ class ThumbnailWorker(QThread):
         request_queue: queue.Queue[ThumbnailRequest],
         cache: ThumbnailCache,
         db_store: ThumbnailStore,
+        pending_requests: dict[str, int],
+        pending_lock,
         parent: QObject | None = None,
     ):
         """Initialize worker.
@@ -79,6 +81,8 @@ class ThumbnailWorker(QThread):
             request_queue: Shared queue of thumbnail requests
             cache: Thumbnail cache for storage
             db_store: Database store for cache index
+            pending_requests: Shared map of pending request priorities
+            pending_lock: Lock for pending request access
             parent: Parent QObject for proper cleanup
 
         """
@@ -87,6 +91,8 @@ class ThumbnailWorker(QThread):
         self._request_queue = request_queue
         self._cache = cache
         self._db_store = db_store
+        self._pending_requests = pending_requests
+        self._pending_lock = pending_lock
 
         # Providers (reused for efficiency)
         self._image_provider = ImageThumbnailProvider()
@@ -170,6 +176,15 @@ class ThumbnailWorker(QThread):
 
         file_path = request.file_path
         size_px = request.size_px
+
+        with self._pending_lock:
+            current_priority = self._pending_requests.get(file_path)
+
+        if current_priority is None:
+            return
+
+        if request.priority < current_priority:
+            return
 
         def _raise_file_not_found() -> None:
             raise ThumbnailGenerationError(f"File not found: {file_path}")

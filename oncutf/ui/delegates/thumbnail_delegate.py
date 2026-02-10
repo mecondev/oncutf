@@ -7,7 +7,7 @@ Renders thumbnails with:
 - Rectangle frame (photo slide style, 3px border)
 - Thumbnail image centered with aspect ratio fit
 - Filename word-wrapped below thumbnail
-- Color flag indicator (top-left, 12px circle)
+- Metadata/hash status icons (top corners)
 - Video duration badge (bottom-right, semi-transparent)
 - Loading spinner for generating thumbnails
 - Placeholder for failed/missing thumbnails
@@ -28,7 +28,6 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
-from oncutf.config import METADATA_ICON_COLORS
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -44,7 +43,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
     Displays:
     - Framed thumbnail with photo slide border
-    - Color flag indicator (if set)
+    - Metadata/hash status icons (top corners)
     - Video duration badge (for videos)
     - Filename below thumbnail
     - Loading/placeholder states
@@ -61,13 +60,10 @@ class ThumbnailDelegate(QStyledItemDelegate):
     FILENAME_HEIGHT = 30  # Space below thumbnail for filename
     FILENAME_MARGIN = 4  # Vertical margin above filename
 
-    # Metadata/Hash indicators (2 circles in top corners)
-    INDICATOR_CIRCLE_SIZE = 12  # Diameter of each circle
+    # Metadata/Hash indicators (icons from file table column 0)
+    INDICATOR_ICON_SIZE = 16  # Size of each status icon
     INDICATOR_MARGIN = 8  # Distance from corners of frame
-    INDICATOR_BORDER_WIDTH = 2  # Border width for outline style
 
-    COLOR_FLAG_SIZE = 12  # Diameter of color flag circle (deprecated, use indicators)
-    COLOR_FLAG_MARGIN = 4  # Distance from top-left corner
     VIDEO_BADGE_MARGIN = 4  # Distance from bottom-right corner
     VIDEO_BADGE_PADDING = 4  # Padding inside badge
 
@@ -90,6 +86,13 @@ class ThumbnailDelegate(QStyledItemDelegate):
         """
         super().__init__(parent)
         self._thumbnail_size = 128  # Default size, will be set from viewport
+        self._status_icons = self._load_status_icons()
+
+    def _load_status_icons(self) -> dict[str, QPixmap]:
+        """Load metadata/hash status icons used by the file table."""
+        from oncutf.ui.services.icon_service import load_metadata_icons
+
+        return load_metadata_icons()
 
     def set_thumbnail_size(self, size: int) -> None:
         """Set the thumbnail size for rendering.
@@ -183,8 +186,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
             )
             self._draw_placeholder(painter, thumbnail_rect, file_item)
 
-        # Draw metadata/hash indicators (two circles, top-left)
-        self._draw_metadata_indicators(painter, frame_rect, file_item)
+        # Draw metadata/hash indicators (icons from file table column 0)
+        self._draw_status_icons(painter, frame_rect, file_item, index)
 
         # Draw video duration badge (if video)
         duration = getattr(file_item, "duration", None)
@@ -263,67 +266,40 @@ class ThumbnailDelegate(QStyledItemDelegate):
         Args:
             painter: QPainter
             frame_rect: Frame rectangle
-            file_item: File item (for color flag)
+            file_item: File item with color tag
             is_selected: Whether item is selected
             is_hover: Whether item is hovered
 
         """
-        # Get file color or default to white
-        has_color = file_item.color and file_item.color.lower() != "none"
+        border_color = self.FRAME_COLOR_SELECTED if is_selected else self.FRAME_COLOR_NORMAL
+        if is_hover and not is_selected:
+            border_color = self.FRAME_COLOR_HOVER
 
-        if has_color:
-            # Use file color for background
-            bg_color = QColor(file_item.color)
-            if not bg_color.isValid():
-                bg_color = QColor(Qt.white)
-        else:
-            # No color - use white
-            bg_color = QColor(Qt.white)
+        background_color = QColor(255, 255, 255)
+        if getattr(file_item, "color", "none") != "none":
+            color_value = QColor(file_item.color)
+            if color_value.isValid():
+                background_color = color_value
 
-        # Set opacity based on selection state
-        if is_selected:
-            bg_color.setAlpha(217)  # 85% opacity (217/255)
-        else:
-            bg_color.setAlpha(128)  # 50% opacity (128/255)
+        background_color.setAlphaF(0.85 if is_selected else 0.5)
 
-        # Draw background fill with opacity
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(bg_color))
-        painter.drawRect(frame_rect)
-
-        # Draw border - always #777777
-        border_color = QColor("#777777")
-        pen = QPen(border_color, self.FRAME_BORDER_WIDTH)
-        painter.setPen(pen)
-        painter.setBrush(Qt.NoBrush)
+        painter.setPen(QPen(border_color, self.FRAME_BORDER_WIDTH))
+        painter.setBrush(QBrush(background_color))
         painter.drawRect(frame_rect)
 
     def _draw_thumbnail(
         self,
         painter: QPainter,
         thumbnail_rect: QRect,
-        pixmap: QPixmap,
+        thumbnail_pixmap: QPixmap,
     ) -> None:
-        """Draw the thumbnail image, scaled to fit with aspect ratio.
-
-        Args:
-            painter: QPainter
-            thumbnail_rect: Target rectangle for thumbnail
-            pixmap: Thumbnail pixmap
-
-        """
-        # Scale pixmap to fit rectangle while preserving aspect ratio
-        scaled_pixmap = pixmap.scaled(
-            thumbnail_rect.size(),
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
+        """Draw the thumbnail image centered within the thumbnail rect."""
+        scaled = thumbnail_pixmap.scaled(
+            thumbnail_rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
-
-        # Center in thumbnail rect
-        x = thumbnail_rect.left() + (thumbnail_rect.width() - scaled_pixmap.width()) // 2
-        y = thumbnail_rect.top() + (thumbnail_rect.height() - scaled_pixmap.height()) // 2
-
-        painter.drawPixmap(x, y, scaled_pixmap)
+        x = thumbnail_rect.left() + (thumbnail_rect.width() - scaled.width()) // 2
+        y = thumbnail_rect.top() + (thumbnail_rect.height() - scaled.height()) // 2
+        painter.drawPixmap(x, y, scaled)
 
     def _draw_placeholder(
         self,
@@ -331,174 +307,82 @@ class ThumbnailDelegate(QStyledItemDelegate):
         thumbnail_rect: QRect,
         file_item: FileItem,
     ) -> None:
-        """Draw a placeholder for missing/loading thumbnails.
+        """Draw a placeholder for missing thumbnails."""
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(self.PLACEHOLDER_BACKGROUND))
+        painter.drawRect(thumbnail_rect)
 
-        Args:
-            painter: QPainter
-            thumbnail_rect: Target rectangle
-            file_item: File item (for extension/type info)
-
-        """
-        # No background - let frame color show through
-
-        # Draw text (file extension or "Loading...")
         painter.setPen(self.PLACEHOLDER_TEXT)
         font = painter.font()
-        font.setPointSize(10)
+        font.setPointSize(8)
         painter.setFont(font)
 
-        # Use file extension as placeholder text
-        ext = file_item.filename.rsplit(".", 1)[-1].upper() if "." in file_item.filename else "FILE"
-        text = f".{ext}\nLoading..."
+        painter.drawText(thumbnail_rect, Qt.AlignCenter, "No Preview")
 
-        painter.drawText(thumbnail_rect, Qt.AlignCenter, text)
-
-    def _draw_color_flag(
-        self,
-        painter: QPainter,
-        frame_rect: QRect,
-        color_name: str,
-    ) -> None:
-        """Draw the color flag indicator circle.
-
-        DEPRECATED: This method is kept for compatibility.
-        Use _draw_metadata_indicators() instead which shows metadata/hash status.
-
-        Args:
-            painter: QPainter
-            frame_rect: Frame rectangle (flag drawn at top-left)
-            color_name: Color name (e.g., "red", "blue", "#FF0000")
-
-        """
-        # Calculate position (top-left corner with margin)
-        center_x = frame_rect.left() + self.COLOR_FLAG_MARGIN + self.COLOR_FLAG_SIZE // 2
-        center_y = frame_rect.top() + self.COLOR_FLAG_MARGIN + self.COLOR_FLAG_SIZE // 2
-
-        # Parse color (handle both named colors and hex)
-        color = QColor(color_name)
-        if not color.isValid():
-            # Fallback to gray if color parsing fails
-            color = QColor(128, 128, 128)
-
-        # Draw circle with border
-        painter.setPen(QPen(Qt.white, 2))
-        painter.setBrush(QBrush(color))
-        painter.drawEllipse(
-            center_x - self.COLOR_FLAG_SIZE // 2,
-            center_y - self.COLOR_FLAG_SIZE // 2,
-            self.COLOR_FLAG_SIZE,
-            self.COLOR_FLAG_SIZE,
-        )
-
-    def _draw_metadata_indicators(
+    def _draw_status_icons(
         self,
         painter: QPainter,
         frame_rect: QRect,
         file_item: FileItem,
+        index: "QModelIndex",
     ) -> None:
-        """Draw metadata and hash status indicators (2 circles in top corners).
-
-        Top-left circle: Metadata status
-        - No metadata: dark gray outline (#404040)
-        - Fast metadata loaded: green filled (#51cf66)
-        - Extended metadata loaded: yellowish-orange filled (#fabf65)
-
-        Top-right circle: Hash status
-        - No hash: dark gray outline (#404040)
-        - Hash cached: pink-purple filled (#ce93d8)
+        """Draw metadata/hash status icons in the top corners.
 
         Args:
             painter: QPainter
             frame_rect: Frame rectangle
-            file_item: File item with metadata/hash status
+            file_item: FileItem for status checks
+            index: QModelIndex for model access
 
         """
-        # Determine metadata status color and style
-        metadata_status = getattr(file_item, "metadata_status", "none")
-        if metadata_status == "extended":
-            metadata_color_hex = METADATA_ICON_COLORS["extended"]
-            metadata_filled = True
-        elif metadata_status in ("loaded", "modified"):
-            metadata_color_hex = METADATA_ICON_COLORS["loaded"]
-            metadata_filled = True
-        else:
-            metadata_color_hex = METADATA_ICON_COLORS["none"]
-            metadata_filled = False  # Outline for none
+        metadata_status, hash_status = self._get_status_values(file_item, index)
 
-        # Determine hash status color and style
-        hash_value = getattr(file_item, "hash_value", None)
-        if hash_value:
-            hash_color_hex = METADATA_ICON_COLORS["tag"]
-            hash_filled = True
-        else:
-            hash_color_hex = METADATA_ICON_COLORS["none"]
-            hash_filled = False  # Outline for none
+        metadata_icon = self._status_icons.get(metadata_status)
+        hash_icon = self._status_icons.get(hash_status)
 
-        # Draw metadata circle (top-left corner)
-        self._draw_status_circle(
-            painter,
-            frame_rect,
-            "top-left",
-            metadata_color_hex,
-            metadata_filled,
-        )
+        if metadata_icon:
+            x = frame_rect.left() + self.INDICATOR_MARGIN
+            y = frame_rect.top() + self.INDICATOR_MARGIN
+            painter.drawPixmap(x, y, metadata_icon)
 
-        # Draw hash circle (top-right corner)
-        self._draw_status_circle(
-            painter,
-            frame_rect,
-            "top-right",
-            hash_color_hex,
-            hash_filled,
-        )
+        if hash_icon:
+            x = frame_rect.right() - self.INDICATOR_MARGIN - self.INDICATOR_ICON_SIZE
+            y = frame_rect.top() + self.INDICATOR_MARGIN
+            painter.drawPixmap(x, y, hash_icon)
 
-    def _draw_status_circle(
-        self,
-        painter: QPainter,
-        frame_rect: QRect,
-        corner: str,
-        color_hex: str,
-        filled: bool,
-    ) -> None:
-        """Draw a single status indicator circle.
+    def _get_status_values(self, file_item: FileItem, index: "QModelIndex") -> tuple[str, str]:
+        """Return metadata and hash status values matching file table logic."""
+        metadata_status = "metadata_unavailable"
 
-        Args:
-            painter: QPainter
-            frame_rect: Frame rectangle
-            corner: Corner position ("top-left" or "top-right")
-            color_hex: Hex color for the circle
-            filled: True for filled circle, False for outline only
+        is_modified = False
+        try:
+            from oncutf.core.metadata import get_metadata_staging_manager
 
-        """
-        # Calculate center position based on corner
-        if corner == "top-left":
-            center_x = frame_rect.left() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
-        else:  # top-right
-            center_x = frame_rect.right() - self.INDICATOR_MARGIN - self.INDICATOR_CIRCLE_SIZE // 2
+            staging_manager = get_metadata_staging_manager()
+            if staging_manager and staging_manager.has_staged_changes(file_item.full_path):
+                is_modified = True
+        except Exception:
+            pass
 
-        center_y = frame_rect.top() + self.INDICATOR_MARGIN + self.INDICATOR_CIRCLE_SIZE // 2
+        parent_window = None
+        model = index.model() if index is not None else None
+        if model is not None and hasattr(model, "parent_window"):
+            parent_window = model.parent_window
 
-        # Parse color
-        color = QColor(color_hex)
-        if not color.isValid():
-            color = QColor(METADATA_ICON_COLORS["none"])
+        if parent_window and hasattr(parent_window, "metadata_cache"):
+            entry = parent_window.metadata_cache.get_entry(file_item.full_path)
+            if entry and hasattr(entry, "data") and entry.data:
+                if is_modified or (hasattr(entry, "modified") and entry.modified):
+                    metadata_status = "modified"
+                elif hasattr(entry, "is_extended") and entry.is_extended:
+                    metadata_status = "extended"
+                else:
+                    metadata_status = "loaded"
 
-        # Draw circle - filled or outline based on status
-        if filled:
-            # Filled circle with subtle border
-            painter.setPen(QPen(color.darker(120), 1))
-            painter.setBrush(QBrush(color))
-        else:
-            # Outline only for none status (like file table)
-            painter.setPen(QPen(color, self.INDICATOR_BORDER_WIDTH))
-            painter.setBrush(Qt.NoBrush)
+        from oncutf.utils.filesystem.file_status_helpers import has_hash
 
-        painter.drawEllipse(
-            center_x - self.INDICATOR_CIRCLE_SIZE // 2,
-            center_y - self.INDICATOR_CIRCLE_SIZE // 2,
-            self.INDICATOR_CIRCLE_SIZE,
-            self.INDICATOR_CIRCLE_SIZE,
-        )
+        hash_status = "tag" if has_hash(file_item.full_path) else "hash_unavailable"
+        return metadata_status, hash_status
 
     def _draw_video_badge(
         self,
@@ -621,12 +505,4 @@ class ThumbnailDelegate(QStyledItemDelegate):
             True if tooltip handled
 
         """
-        from PyQt5.QtWidgets import QToolTip
-
-        file_item = index.data(Qt.UserRole)
-        if isinstance(file_item, FileItem):
-            # Show full filename as tooltip
-            QToolTip.showText(event.globalPos(), file_item.filename, view)
-            return True
-
-        return super().helpEvent(event, view, option, index)
+        return True

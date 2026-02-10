@@ -360,7 +360,13 @@ class HashLoadingService:
         """Cancel current hash loading operation."""
         if hasattr(self, "_hash_worker") and self._hash_worker:
             self._hash_worker.cancel()
-            logger.info("[HashLoadingService] Hash loading cancelled")
+            logger.info("[HashLoadingService] Hash calculation cancelled by user")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_hash_status(
+                    "Hash calculation cancelled by user",
+                    operation_type="cancelled",
+                    auto_reset=True,
+                )
 
     def _cleanup_hash_worker(self) -> None:
         """Clean up hash worker."""
@@ -620,13 +626,19 @@ class HashLoadingService:
 
     def _cancel_operation(self) -> None:
         """Cancel the current operation."""
-        logger.info("[HashLoadingService] User cancelled operation")
+        logger.info("[HashLoadingService] Hash operation cancelled by user")
         self._operation_cancelled = True
 
         if self._hash_worker:
             self._hash_worker.cancel()
 
-        if hasattr(self.parent_window, "set_status"):
+        if hasattr(self.parent_window, "status_manager"):
+            self.parent_window.status_manager.set_hash_status(
+                "Hash calculation cancelled by user",
+                operation_type="cancelled",
+                auto_reset=True,
+            )
+        elif hasattr(self.parent_window, "set_status"):
             self.parent_window.set_status(
                 "Hash operation cancelled",
                 color=STATUS_COLORS["no_action"],

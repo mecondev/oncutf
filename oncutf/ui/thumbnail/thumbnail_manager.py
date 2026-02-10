@@ -54,14 +54,14 @@ class ThumbnailRequest:
         file_path: Absolute path to source file
         folder_path: Parent folder for order tracking
         size_px: Requested thumbnail size (square dimension)
-        priority: Higher values processed first (0=normal, 1=high)
+        priority: Higher values processed first (larger = higher)
         _counter: Internal counter for FIFO tiebreaking (auto-assigned)
 
     Priority Queue Behavior:
-        - Higher priority values are processed first (1 > 0)
+        - Higher priority values are processed first
         - Same priority: FIFO order (lower counter first)
-        - Visible viewport items: priority=1
-        - Background loading: priority=0
+        - Visible viewport items: priority=high
+        - Background loading: priority=low
 
     """
 
@@ -177,8 +177,8 @@ class ThumbnailManager(QObject):
         # Items sorted by: (higher priority first, then FIFO order)
         self._request_queue: queue.PriorityQueue[ThumbnailRequest] = queue.PriorityQueue()
 
-        # Track pending requests to avoid duplicates
-        self._pending_requests: set[str] = set()
+        # Track pending requests with highest priority
+        self._pending_requests: dict[str, int] = {}
         self._pending_lock = threading.Lock()
 
         # Track files that failed thumbnail generation (to avoid retrying)
@@ -292,27 +292,40 @@ class ThumbnailManager(QObject):
 
         return None
 
-    def _queue_request(self, file_path: str, size_px: int) -> None:
+    def _queue_request(self, file_path: str, size_px: int, priority: int = 0) -> None:
         """Queue thumbnail generation request.
 
         Args:
             file_path: Absolute path to source file
             size_px: Requested thumbnail size
+            priority: Priority for request (larger = higher)
 
         """
         # Check if already pending or previously failed (avoid duplicate requests)
         with self._pending_lock:
             if file_path in self._pending_requests:
-                logger.debug("[ThumbnailManager] Request already pending for: %s", file_path)
-                return
+                existing_priority = self._pending_requests[file_path]
+                if priority <= existing_priority:
+                    logger.debug(
+                        "[ThumbnailManager] Request already pending for: %s",
+                        file_path,
+                    )
+                    return
+                self._pending_requests[file_path] = priority
             if file_path in self._failed_files:
                 # Don't retry failed files until files are reloaded
                 return
-            self._pending_requests.add(file_path)
+            if file_path not in self._pending_requests:
+                self._pending_requests[file_path] = priority
 
         logger.debug("[ThumbnailManager] _queue_request() called for: %s", file_path)
         folder_path = str(Path(file_path).parent)
-        request = ThumbnailRequest(file_path=file_path, folder_path=folder_path, size_px=size_px)
+        request = ThumbnailRequest(
+            file_path=file_path,
+            folder_path=folder_path,
+            size_px=size_px,
+            priority=priority,
+        )
 
         self._request_queue.put(request)
         self._total_requests += 1
@@ -349,6 +362,8 @@ class ThumbnailManager(QObject):
                 request_queue=self._request_queue,
                 cache=self._cache,
                 db_store=self._db_store,
+                pending_requests=self._pending_requests,
+                pending_lock=self._pending_lock,
                 parent=self,  # Pass parent for proper Qt cleanup
             )
 
@@ -379,9 +394,9 @@ class ThumbnailManager(QObject):
         )
         self._completed_requests += 1
 
-        # Remove from pending set
+        # Remove from pending map
         with self._pending_lock:
-            self._pending_requests.discard(file_path)
+            self._pending_requests.pop(file_path, None)
 
         # Emit progress
         if self._total_requests > 0:
@@ -408,9 +423,9 @@ class ThumbnailManager(QObject):
         """
         self._completed_requests += 1
 
-        # Remove from pending set and add to failed set
+        # Remove from pending map and add to failed set
         with self._pending_lock:
-            self._pending_requests.discard(file_path)
+            self._pending_requests.pop(file_path, None)
             self._failed_files.add(file_path)
 
         self.generation_error.emit(file_path, error_msg)
@@ -487,20 +502,20 @@ class ThumbnailManager(QObject):
         """Queue all file paths for thumbnail generation (background loading).
 
         This is the bulk loading API for loading all thumbnails when files are loaded.
-        Use priority=0 for background loading, priority=1 for visible viewport items.
+        Use lower priority for background loading and higher for visible viewport items.
 
         Args:
             file_paths: List of absolute file paths to generate thumbnails for
-            priority: Priority for all requests (0=normal, 1=high)
+            priority: Priority for all requests (larger = higher)
             size_px: Requested thumbnail size (square dimension)
 
         Returns:
             None
 
         Note:
-            - Only queues files that are not already cached or pending
-            - Use priority=1 for visible viewport items (processed first)
-            - Use priority=0 for background loading (processed after visible)
+            - Only queues files that are not already cached or pending with higher priority
+            - Use higher priority for visible viewport items (processed first)
+            - Use lower priority for background loading (processed after visible)
             - Workers are started automatically if not running
 
         """
@@ -509,8 +524,12 @@ class ThumbnailManager(QObject):
 
         with self._pending_lock:
             for file_path in file_paths:
-                # Skip if already pending or failed
-                if file_path in self._pending_requests or file_path in self._failed_files:
+                # Skip failed requests until reload
+                if file_path in self._failed_files:
+                    continue
+
+                existing_priority = self._pending_requests.get(file_path)
+                if existing_priority is not None and priority <= existing_priority:
                     continue
 
                 # Skip if file doesn't exist
@@ -532,7 +551,7 @@ class ThumbnailManager(QObject):
                     file_path=file_path, folder_path=folder_path, size_px=size_px, priority=priority
                 )
                 self._request_queue.put(request)
-                self._pending_requests.add(file_path)
+                self._pending_requests[file_path] = priority
                 self._total_requests += 1
                 queued_count += 1
 
@@ -649,6 +668,8 @@ class ThumbnailManager(QObject):
                     request_queue=self._request_queue,
                     cache=self._cache,
                     db_store=self._db_store,
+                    pending_requests=self._pending_requests,
+                    pending_lock=self._pending_lock,
                     parent=self,
                 )
                 worker.thumbnail_ready.connect(self._on_worker_thumbnail_ready)

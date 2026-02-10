@@ -9,8 +9,9 @@ Builds context menu for thumbnail viewport operations.
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QAction, QMenu
 
+from oncutf.ui.services.icon_service import get_menu_icon
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -67,27 +68,50 @@ class ThumbnailViewportContextMenuBuilder:
         """
         menu = QMenu(self._parent)
 
+        # View submenu
+        view_menu = menu.addMenu("View")
+        view_menu.setIcon(get_menu_icon("table_view"))
+
+        zoom_in_action = QAction(get_menu_icon("zoom_in"), "Zoom In", view_menu)
+        zoom_in_action.triggered.connect(zoom_in_callback)
+        view_menu.addAction(zoom_in_action)
+
+        zoom_out_action = QAction(get_menu_icon("zoom_out"), "Zoom Out", view_menu)
+        zoom_out_action.triggered.connect(zoom_out_callback)
+        view_menu.addAction(zoom_out_action)
+
+        reset_zoom_action = QAction(get_menu_icon("zoom_out_map"), "Reset Zoom", view_menu)
+        reset_zoom_action.triggered.connect(reset_zoom_callback)
+        view_menu.addAction(reset_zoom_action)
+
         # Sort submenu
         sort_menu = menu.addMenu("Sort")
-        sort_menu.addAction("Ascending (A-Z)", lambda: sort_callback("filename", False))
-        sort_menu.addAction("Descending (Z-A)", lambda: sort_callback("filename", True))
-        sort_menu.addAction("By Color Flag", lambda: sort_callback("color", False))
+        sort_menu.setIcon(get_menu_icon("sort_by_alpha"))
 
-        menu.addSeparator()
+        sort_asc_action = QAction(
+            get_menu_icon("keyboard_arrow_down"), "Ascending (A-Z)", sort_menu
+        )
+        sort_asc_action.triggered.connect(lambda: sort_callback("filename", False))
+        sort_menu.addAction(sort_asc_action)
 
-        # Order mode toggle
-        if order_mode == "sorted":
-            menu.addAction("Return to Manual Order", return_to_manual_callback)
-        else:
-            action = menu.addAction("Manual Order Active")
-            action.setEnabled(False)
+        sort_desc_action = QAction(
+            get_menu_icon("keyboard_arrow_up"), "Descending (Z-A)", sort_menu
+        )
+        sort_desc_action.triggered.connect(lambda: sort_callback("filename", True))
+        sort_menu.addAction(sort_desc_action)
 
-        menu.addSeparator()
+        sort_color_action = QAction(get_menu_icon("palette"), "By Color Flag", sort_menu)
+        sort_color_action.triggered.connect(lambda: sort_callback("color", False))
+        sort_menu.addAction(sort_color_action)
 
-        # Zoom controls
-        menu.addAction("Zoom In", zoom_in_callback)
-        menu.addAction("Zoom Out", zoom_out_callback)
-        menu.addAction("Reset Zoom", reset_zoom_callback)
+        sort_menu.addSeparator()
+
+        return_manual_action = QAction(
+            get_menu_icon("pinch_zoom_out"), "Return to Manual Mode", sort_menu
+        )
+        return_manual_action.triggered.connect(return_to_manual_callback)
+        return_manual_action.setEnabled(order_mode == "sorted")
+        sort_menu.addAction(return_manual_action)
 
         menu.addSeparator()
 

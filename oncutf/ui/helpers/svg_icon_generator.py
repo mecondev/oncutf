@@ -42,6 +42,8 @@ class SVGIconGenerator:
         "partial": "warning",
         "tag": "tag",
         "none": "circle",  # Empty circle for no metadata
+        "metadata_unavailable": "check_circle",
+        "hash_unavailable": "tag",
     }
 
     def __init__(self, size: int = 16):

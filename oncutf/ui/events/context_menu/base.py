@@ -182,6 +182,76 @@ class ContextMenuHandlers:
 
         menu.addSeparator()
 
+        # === VIEW / SORT (Thumbnail View) ===
+        thumbnail_viewport = getattr(self.parent_window, "thumbnail_viewport", None)
+        thumbnail_list_view = getattr(thumbnail_viewport, "_list_view", None)
+        is_thumbnail_view = source_widget is not None and thumbnail_list_view is source_widget
+        enable_thumbnail_actions = bool(thumbnail_viewport and is_thumbnail_view)
+
+        view_menu = menu.addMenu("View")
+        view_menu.setIcon(get_menu_icon("table_view"))
+        view_menu.setEnabled(enable_thumbnail_actions)
+
+        zoom_in_action = QAction(get_menu_icon("zoom_in"), "Zoom In", view_menu)
+        zoom_in_action.triggered.connect(
+            lambda: thumbnail_viewport.zoom_in() if thumbnail_viewport else None
+        )
+        view_menu.addAction(zoom_in_action)
+
+        zoom_out_action = QAction(get_menu_icon("zoom_out"), "Zoom Out", view_menu)
+        zoom_out_action.triggered.connect(
+            lambda: thumbnail_viewport.zoom_out() if thumbnail_viewport else None
+        )
+        view_menu.addAction(zoom_out_action)
+
+        reset_zoom_action = QAction(get_menu_icon("zoom_out_map"), "Reset Zoom", view_menu)
+        reset_zoom_action.triggered.connect(
+            lambda: thumbnail_viewport.reset_zoom() if thumbnail_viewport else None
+        )
+        view_menu.addAction(reset_zoom_action)
+
+        sort_menu = menu.addMenu("Sort")
+        sort_menu.setIcon(get_menu_icon("sort_by_alpha"))
+        sort_menu.setEnabled(enable_thumbnail_actions)
+
+        sort_asc_action = QAction(
+            get_menu_icon("keyboard_arrow_down"), "Ascending (A-Z)", sort_menu
+        )
+        sort_asc_action.triggered.connect(
+            lambda: thumbnail_viewport.sort_by("filename", False) if thumbnail_viewport else None
+        )
+        sort_menu.addAction(sort_asc_action)
+
+        sort_desc_action = QAction(
+            get_menu_icon("keyboard_arrow_up"), "Descending (Z-A)", sort_menu
+        )
+        sort_desc_action.triggered.connect(
+            lambda: thumbnail_viewport.sort_by("filename", True) if thumbnail_viewport else None
+        )
+        sort_menu.addAction(sort_desc_action)
+
+        sort_color_action = QAction(get_menu_icon("palette"), "By Color Flag", sort_menu)
+        sort_color_action.triggered.connect(
+            lambda: thumbnail_viewport.sort_by("color", False) if thumbnail_viewport else None
+        )
+        sort_menu.addAction(sort_color_action)
+
+        sort_menu.addSeparator()
+
+        return_manual_action = QAction(
+            get_menu_icon("pinch_zoom_out"), "Return to Manual Mode", sort_menu
+        )
+        return_manual_action.triggered.connect(
+            lambda: thumbnail_viewport.return_to_manual_order() if thumbnail_viewport else None
+        )
+        if thumbnail_viewport and hasattr(thumbnail_viewport, "get_order_mode"):
+            return_manual_action.setEnabled(thumbnail_viewport.get_order_mode() == "sorted")
+        else:
+            return_manual_action.setEnabled(False)
+        sort_menu.addAction(return_manual_action)
+
+        menu.addSeparator()
+
         # === METADATA OPERATIONS (Selection-only) ===
         action_load_fast = create_action_with_shortcut(
             get_menu_icon("draft"), "Load Fast Metadata", "Ctrl+M"

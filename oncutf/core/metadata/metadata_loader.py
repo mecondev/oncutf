@@ -17,7 +17,7 @@ Responsibilities:
 from __future__ import annotations
 
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout, as_completed
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -404,7 +404,7 @@ class MetadataLoader:
     def _load_single_file_metadata(
         self, item: FileItem, use_extended: bool, _metadata_tree_view: Any
     ) -> None:
-        """Load metadata for a single file with wait_cursor (immediate, no dialog).
+        """Load metadata for a single file with cancellation support.
 
         Args:
             item: The FileItem to load metadata for
@@ -412,12 +412,79 @@ class MetadataLoader:
             _metadata_tree_view: Reference to metadata tree view (unused - display handled via model)
 
         """
-        from oncutf.app.services import wait_cursor
+        from oncutf.app.services import create_metadata_dialog, wait_cursor
+        from oncutf.app.services.ui_events import process_events
+        from oncutf.utils.filesystem.file_size_calculator import (
+            calculate_files_total_size,
+        )
+
+        self.reset_cancellation_flag()
+
+        def cancel_callback() -> None:
+            self.request_cancellation()
+            logger.info("[MetadataLoader] Metadata loading cancelled by user (single file)")
+
+        loading_dialog = create_metadata_dialog(
+            self._parent_window,
+            is_extended=use_extended,
+            cancel_callback=cancel_callback,
+        )
+        loading_dialog.set_status(
+            "Loading extended metadata..." if use_extended else "Loading metadata..."
+        )
+
+        total_size = calculate_files_total_size([item])
+        loading_dialog.start_progress_tracking(total_size)
+        loading_dialog.set_count(0, 1)
+        loading_dialog.set_filename(item.filename)
+
+        loading_dialog.show()
+        loading_dialog.activateWindow()
+        loading_dialog.setFocus()
+        loading_dialog.raise_()
+
+        for _ in range(3):
+            process_events()
 
         with wait_cursor():
             try:
-                # Load metadata using ExifTool wrapper
-                metadata = self.exiftool_wrapper.get_metadata(item.full_path, use_extended)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(
+                        self.exiftool_wrapper.get_metadata,
+                        item.full_path,
+                        use_extended,
+                        self.is_cancelled,
+                    )
+
+                    metadata: dict[str, Any] = {}
+                    while True:
+                        try:
+                            metadata = future.result(timeout=0.05)
+                            break
+                        except FuturesTimeout:
+                            process_events()
+                            continue
+
+                loading_dialog.set_count(1, 1)
+                loading_dialog.update_progress(
+                    file_count=1,
+                    total_files=1,
+                    processed_bytes=total_size,
+                    total_bytes=total_size,
+                )
+                if self.is_cancelled():
+                    logger.info(
+                        "[MetadataLoader] Single file metadata loading cancelled by user for %s",
+                        item.filename,
+                    )
+                    if self._parent_window and hasattr(self._parent_window, "status_manager"):
+                        self._parent_window.status_manager.set_metadata_status(
+                            "Metadata loading cancelled by user",
+                            operation_type="cancelled",
+                            file_count=1,
+                            auto_reset=True,
+                        )
+                    return
 
                 if metadata:
                     # Mark metadata with loading mode
@@ -461,6 +528,8 @@ class MetadataLoader:
                     "[MetadataLoader] Failed to load metadata for %s",
                     item.filename,
                 )
+            finally:
+                loading_dialog.close()
 
     # =========================================================================
     # Multiple Files Loading
@@ -488,8 +557,8 @@ class MetadataLoader:
         self._metadata_cancelled = False
 
         def cancel_callback() -> None:
-            self._metadata_cancelled = True
-            logger.info("[MetadataLoader] Metadata loading cancelled by user")
+            self.request_cancellation()
+            logger.info("[MetadataLoader] Metadata loading cancelled by user (multi file)")
 
         # Create progress dialog
         from oncutf.app.services import create_metadata_dialog

@@ -41,13 +41,14 @@ QLABEL_BORDER_GRAY = "#3a3a3a"
 QLABEL_DARK_BORDER = "#555555"
 QLABEL_ERROR_BG = "#3a2222"
 QLABEL_DARK_BG = "#181818"
+INFO_UNAVAILABLE = "#555555"
 
 STATUS_COLORS = {
     "ready": "",
-    "error": "#ff6b6b",
+    "error": "#f88d8d",
     "success": "#51cf66",
     "warning": "#ffa726",
-    "info": "#74c0fc",
+    "info": "#bce2ff",
     "loading": "#adb5bd",
     "metadata_skipped": "#adb5bd",
     "metadata_extended": "#ff8a65",
@@ -65,6 +66,7 @@ STATUS_COLORS = {
     "hash_success": "#90ee90",
     "duplicate_found": "#ffd700",
     "metadata_success": "#90ee90",
+    "cancelled": "#9aa0a6",
 }
 
 THEME_COLORS = {
@@ -226,5 +228,7 @@ METADATA_ICON_COLORS = {
     "modified": "#fffd9c",
     "partial": "#ffd139",
     "tag": "#ce93d8",
-    "none": "#404040",
+    "none": INFO_UNAVAILABLE,
+    "metadata_unavailable": INFO_UNAVAILABLE,
+    "hash_unavailable": INFO_UNAVAILABLE,
 }

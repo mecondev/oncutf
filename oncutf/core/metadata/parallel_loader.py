@@ -113,10 +113,20 @@ class ParallelMetadataLoader:
             # Use ThreadPoolExecutor for parallel ExifTool execution
             executor = ThreadPoolExecutor(max_workers=self.max_workers)
 
+            def should_cancel() -> bool:
+                if self._cancelled:
+                    return True
+                return cancellation_check() if cancellation_check else False
+
             try:
                 # Submit all tasks
                 future_to_item = {
-                    executor.submit(self._load_single_file_safe, item, use_extended): item
+                    executor.submit(
+                        self._load_single_file_safe,
+                        item,
+                        use_extended,
+                        should_cancel,
+                    ): item
                     for item in items
                 }
 
@@ -131,7 +141,7 @@ class ParallelMetadataLoader:
                     process_events()
 
                     # Check for cancellation
-                    if cancellation_check and cancellation_check():
+                    if should_cancel():
                         logger.info(
                             "[ParallelMetadataLoader] Cancellation detected - stopping immediately"
                         )
@@ -164,7 +174,7 @@ class ParallelMetadataLoader:
                                 cancelled_count += 1
 
                         logger.info(
-                            "[ParallelMetadataLoader] Cancelled %d pending tasks",
+                            "[ParallelMetadataLoader] Cancelled %d pending tasks due to user request",
                             cancelled_count,
                         )
 
@@ -242,7 +252,12 @@ class ParallelMetadataLoader:
 
         return ordered_results
 
-    def _load_single_file_safe(self, item: FileItem, use_extended: bool) -> dict[str, Any]:
+    def _load_single_file_safe(
+        self,
+        item: FileItem,
+        use_extended: bool,
+        cancellation_check: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
         """Load metadata for a single file with error handling.
 
         This runs in a worker thread and should not raise exceptions.
@@ -250,6 +265,7 @@ class ParallelMetadataLoader:
         Args:
             item: FileItem to load metadata for
             use_extended: Whether to use extended metadata
+            cancellation_check: Optional callback to cancel long-running extraction
 
         Returns:
             Metadata dictionary (empty dict on error)
@@ -263,7 +279,9 @@ class ParallelMetadataLoader:
             )
 
             metadata = self._exiftool_wrapper.get_metadata(
-                item.full_path, use_extended=use_extended
+                item.full_path,
+                use_extended=use_extended,
+                cancellation_check=cancellation_check,
             )
 
             if metadata:
@@ -272,10 +290,16 @@ class ParallelMetadataLoader:
                     metadata["__extended__"] = True
                 elif not use_extended and "__extended__" in metadata:
                     del metadata["__extended__"]
-            logger.warning(
-                "[ParallelMetadataLoader] No metadata returned for %s",
-                item.filename,
-            )
+            elif cancellation_check and cancellation_check():
+                logger.info(
+                    "[ParallelMetadataLoader] Metadata loading cancelled by user for %s",
+                    item.filename,
+                )
+            else:
+                logger.warning(
+                    "[ParallelMetadataLoader] No metadata returned for %s",
+                    item.filename,
+                )
         except Exception:
             logger.exception(
                 "[ParallelMetadataLoader] Error loading %s",

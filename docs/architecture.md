@@ -764,7 +764,7 @@ Is it a pure helper function?
 - `core/metadata/unified_manager.py` — Stateful metadata orchestration
 - `utils/path_normalizer.py` — Pure path helper
 
-⚠️ **Legacy (grandfathered, don't replicate):**
+**Legacy (grandfathered, don't replicate):**
 
 - `core/ui_managers/*` — UI managers (should ideally be in controllers or separate layer, but kept for historical reasons)
 - Some `*_manager.py` scattered in `core/` root — Should be in feature folders like `core/<domain>/`
