@@ -11,9 +11,9 @@ class EventDelegates:
     All methods delegate to event_handler_manager or utility_manager.
     """
 
-    def handle_table_context_menu(self, position) -> None:
+    def handle_table_context_menu(self, position, source_widget=None) -> None:
         """Handle table context menu via EventCoordinator."""
-        self.event_handler_manager.handle_table_context_menu(position)
+        self.event_handler_manager.handle_table_context_menu(position, source_widget)
 
     def handle_file_double_click(self, index, modifiers=None) -> None:
         """Handle file double click via EventCoordinator."""

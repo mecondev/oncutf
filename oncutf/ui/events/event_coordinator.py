@@ -124,9 +124,9 @@ class EventCoordinator:
     # Delegated Methods - Context Menu
     # =====================================
 
-    def handle_table_context_menu(self, position: Any) -> None:
+    def handle_table_context_menu(self, position: Any, source_widget: Any = None) -> None:
         """Delegate to ContextMenuHandlers."""
-        self.context_menu_handlers.handle_table_context_menu(position)
+        self.context_menu_handlers.handle_table_context_menu(position, source_widget)
 
     def handle_thumbnail_context_menu(self, position: Any, widget: Any = None) -> None:
         """Handle context menu for thumbnail view.

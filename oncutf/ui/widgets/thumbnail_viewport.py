@@ -747,12 +747,22 @@ class ThumbnailViewportWidget(QWidget):
                 guard = None
 
             try:
+                # Find parent window by walking up the widget hierarchy
+                parent_window = None
+                widget = self.parent()
+                while widget and not parent_window:
+                    if hasattr(widget, "handle_table_context_menu"):
+                        parent_window = widget
+                        break
+                    widget = widget.parent()
+
                 # Use unified context menu handler from parent window (same as file table)
-                if hasattr(self, "_parent_window") and self._parent_window:
-                    self._parent_window.handle_table_context_menu(position)
+                if parent_window:
+                    parent_window.handle_table_context_menu(position, self._list_view)
                 else:
                     logger.warning(
-                        "Cannot show context menu: no parent window", extra={"dev_only": True}
+                        "Cannot show context menu: no parent window found",
+                        extra={"dev_only": True},
                     )
             finally:
                 # Remove guard after menu closes
