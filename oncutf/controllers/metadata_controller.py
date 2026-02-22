@@ -154,6 +154,25 @@ class MetadataController:
                 "errors": ["No files provided"],
             }
 
+        # Exclude files that no longer exist on disk - do not attempt to read
+        # metadata for them and do not show stale data in the metadata panel.
+        available = [f for f in file_items if not getattr(f, "file_missing", False)]
+        missing_count = len(file_items) - len(available)
+        if missing_count:
+            logger.info(
+                "[MetadataController] Skipping %d missing file(s) for metadata load",
+                missing_count,
+            )
+        if not available:
+            logger.debug("[MetadataController] All selected files are missing, skipping load")
+            return {
+                "success": False,
+                "loaded_count": 0,
+                "skipped_count": missing_count,
+                "errors": ["All selected files are missing"],
+            }
+        file_items = available
+
         logger.info(
             "[MetadataController] Loading %s metadata for %d items (source=%s)",
             "extended" if use_extended else "fast",

@@ -126,3 +126,32 @@ class ValidationDialogProtocol(Protocol):
 
         """
         ...
+
+
+@runtime_checkable
+class ConflictResolverProtocol(Protocol):
+    """Protocol for conflict resolution dialogs.
+
+    Decouples RenameController from concrete UI conflict dialogs.
+    Implemented by oncutf.ui.adapters.controller_adapters.ConflictResolverAdapter.
+    """
+
+    def show_conflict(
+        self,
+        old_filename: str,
+        new_filename: str,
+        parent: Any = None,
+    ) -> tuple[str, bool]:
+        """Show conflict resolution dialog and get user decision.
+
+        Args:
+            old_filename: Current filename
+            new_filename: Conflicting target filename
+            parent: Optional parent window
+
+        Returns:
+            Tuple of (action, apply_to_all) where action is one of
+            "skip", "overwrite", "rename", or "cancel".
+
+        """
+        ...

@@ -257,7 +257,6 @@ class BootstrapOrchestrator:
         )
         from oncutf.core.file import get_file_validation_manager
         from oncutf.core.file.load_manager import FileLoadManager
-        from oncutf.ui.adapters.controller_adapters import ValidationDialogAdapter
         from oncutf.ui.boot.bootstrap_manager import BootstrapManager
         from oncutf.ui.drag.drag_cleanup_manager import DragCleanupManager
         from oncutf.ui.events.event_coordinator import EventCoordinator
@@ -305,14 +304,20 @@ class BootstrapOrchestrator:
 
         # Phase 1C: Initialize RenameController (orchestration layer)
         from oncutf.controllers.rename_controller import RenameController
+        from oncutf.ui.adapters.controller_adapters import (
+            ConflictResolverAdapter,
+            ValidationDialogAdapter,
+        )
 
         validation_dialog_adapter = ValidationDialogAdapter()
+        conflict_resolver_adapter = ConflictResolverAdapter()
         self.window.rename_controller = RenameController(
             unified_rename_engine=self.window.unified_rename_engine,
             rename_manager=self.window.rename_manager,
             file_store=self.window.file_model,  # FileTableModel acts as FileStore
             context=self.window.context,
             validation_dialog=validation_dialog_adapter,
+            conflict_resolver=conflict_resolver_adapter,
         )
         logger.info("[Phase1C] RenameController initialized", extra={"dev_only": True})
 

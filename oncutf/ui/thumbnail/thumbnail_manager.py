@@ -25,6 +25,7 @@ Thread Safety:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import queue
 import threading
@@ -70,6 +71,7 @@ class ThumbnailRequest:
     size_px: int = 128
     priority: int = 0
     _counter: int = 0  # Auto-assigned for FIFO ordering
+    is_sentinel: bool = False  # True for shutdown sentinel items (do not process)
 
     # Class variable for counter (shared across all instances)
     _global_counter: int = 0
@@ -704,39 +706,59 @@ class ThumbnailManager(QObject):
             )
 
     def shutdown(self) -> None:
-        """Shutdown manager and stop all workers gracefully."""
+        """Shutdown manager and stop all workers gracefully.
+
+        Shutdown order is critical to avoid 'QThread: Destroyed while thread is
+        still running' crashes:
+          1. Signal workers to stop.
+          2. Kill active ffmpeg/ffprobe subprocesses -- this is the main blocker.
+          3. Put sentinel items in queue to unblock any worker waiting in queue.get.
+          4. Wait for each worker to exit.  After terminate(), wait() has NO timeout
+             so we never call self._workers.clear() while a thread is alive.
+        """
         logger.info("Shutting down ThumbnailManager...")
         self._shutdown_flag = True
 
-        # Stop all workers
+        # Step 1: signal all workers to stop their loop.
         for worker in self._workers:
             worker.request_stop()
 
-        # Give workers time to finish current tasks gracefully
+        # Step 2: kill active ffmpeg/ffprobe subprocesses FIRST.
+        # Workers blocked inside VideoThumbnailProvider.generate() (subprocess.run)
+        # will not check _stop_requested until the subprocess returns.  Killing them
+        # here unblocks those workers immediately.
+        self._cleanup_ffmpeg_processes()
+
+        # Step 3: put one sentinel per worker into the queue so that workers
+        # currently blocked on queue.get(timeout=0.5) wake up right away.
+        sentinel = ThumbnailRequest(file_path="", folder_path="", is_sentinel=True)
+        for _ in self._workers:
+            with contextlib.suppress(Exception):
+                self._request_queue.put_nowait(sentinel)
+
+        # Step 4: wait for each worker; disconnect signals first to avoid callbacks
+        # during teardown, then wait properly -- we MUST NOT destroy a QThread while
+        # its OS thread is still alive or Qt will abort().
         for worker in self._workers:
-            # Disconnect signals FIRST to prevent errors during cleanup
             try:
                 worker.thumbnail_ready.disconnect()
                 worker.generation_error.disconnect()
             except (TypeError, RuntimeError):
-                pass  # Signals may already be disconnected
+                pass  # Already disconnected
 
-            if worker.isRunning() and not worker.wait(2000):
-                # Graceful wait failed after 2s, force quit
-                logger.warning("ThumbnailWorker still running after 2s, forcing quit...")
-                worker.quit()
-                # Wait for quit to take effect
-                if not worker.wait(1000):
-                    logger.error("ThumbnailWorker did not respond to quit(), terminating")
-                    worker.terminate()
-                    # Give terminate a chance to work
-                    worker.wait(500)
+            if not worker.isRunning():
+                continue
 
-        # Clear worker list after shutdown
+            # Fast path: with ffmpeg killed workers should finish within ~1s.
+            if not worker.wait(2000):
+                logger.warning("ThumbnailWorker still running after 2s, forcing terminate")
+                worker.terminate()
+                # Must wait indefinitely -- never leave a thread running when we
+                # clear _workers, or Qt will abort with 'Destroyed while running'.
+                worker.wait()
+
+        # Safe to release list only after all threads have actually stopped.
         self._workers.clear()
-
-        # Cleanup any orphan ffmpeg processes
-        self._cleanup_ffmpeg_processes()
 
         logger.info("ThumbnailManager shutdown complete")
 

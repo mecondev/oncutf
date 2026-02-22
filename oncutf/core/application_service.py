@@ -249,9 +249,23 @@ class ApplicationService:
                 auto_reset=True,
             )
 
-            # Reload folder to reflect changes
+            # Show renamed files with old name highlighted in yellow until F5 reload
             if renamed_count > 0:
-                self.main_window.file_load_manager.reload_current_folder()
+                renamed_path_map: dict[str, str] = result.get("renamed_path_map", {})
+                if renamed_path_map:
+                    for file_item in selected_files:
+                        new_path = renamed_path_map.get(file_item.full_path)
+                        if new_path:
+                            # Store old name for display; update path for FS correctness
+                            file_item.pre_rename_name = file_item.filename
+                            file_item.full_path = new_path
+                            # filename intentionally kept as old name (shown in yellow)
+                            file_item.rename_dirty = True
+                # Block FS-monitor rescan so dirty items are not replaced by fresh ones
+                self.main_window.file_load_manager.suppress_next_refresh()
+                # Repaint the table and thumbnail viewport to reflect dirty state
+                if hasattr(self.main_window, "file_model") and self.main_window.file_model:
+                    self.main_window.file_model.layoutChanged.emit()
 
         except Exception as e:
             logger.exception("[ApplicationService] Error in RenameController rename")

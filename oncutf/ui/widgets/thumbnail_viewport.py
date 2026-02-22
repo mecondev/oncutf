@@ -986,6 +986,10 @@ class ThumbnailViewportWidget(QWidget):
             self.placeholder_helper.hide()
             logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
 
+            # Clear any stale pending requests (e.g. from renamed/removed files)
+            # before queuing fresh requests for the current file list.
+            self._clear_pending_thumbnail_requests()
+
             # Queue all thumbnails for background loading when files are present
             self._queue_all_thumbnails_for_background_loading()
 

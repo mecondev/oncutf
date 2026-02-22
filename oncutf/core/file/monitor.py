@@ -492,7 +492,17 @@ class FilesystemMonitor(Observable):
         self.file_changed.emit(path)
 
     def _process_pending_changes(self) -> None:
-        """Process pending directory changes after debounce."""
+        """Process pending directory changes after debounce.
+
+        NOTE: This runs on a threading.Timer background thread.  The
+        directory_changed signal is a pure-Python Observable signal whose
+        emit() calls connected callbacks synchronously.  The UI-layer listener
+        (FilesystemHandler._on_directory_changed) guards against cross-thread
+        access itself by re-dispatching to the Qt main thread when needed.
+        Similarly, refresh_loaded_folders() emits layoutChanged (a Qt
+        pyqtSignal) which Qt delivers as a queued connection to the main thread
+        automatically when the emitter is on a different thread.
+        """
         # Skip processing if paused
         if self._paused:
             with self._pending_lock:

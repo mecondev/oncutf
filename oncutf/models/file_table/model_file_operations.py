@@ -181,13 +181,17 @@ class FileOperationsManager:
         )
 
     def get_checked_files(self) -> list["FileItem"]:
-        """Returns a list of all checked files.
+        """Returns a list of all checked files, excluding missing files.
+
+        Files marked as file_missing are excluded: they are still visible
+        and selectable in the UI (shown in red) but must not participate
+        in rename or preview operations.
 
         Returns:
-            List of checked FileItem objects
+            List of checked, non-missing FileItem objects
 
         """
-        return [f for f in self.model.files if f.checked]
+        return [f for f in self.model.files if f.checked and not getattr(f, "file_missing", False)]
 
     def setup_custom_tooltips(self, table_view: Any) -> None:
         """Setup custom tooltips for all cells in the table view.

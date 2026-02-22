@@ -55,6 +55,14 @@ class FileItem:
         # NOTE: Color loading moved to external repository to break models→core cycle
         # Use FileRepository.get_color_tag() to load colors after initialization
         self.color = "none"
+        # Rename dirty flag: True after a successful rename until files are reloaded
+        # Used to visually mark renamed files with a yellow text color in all views
+        self.rename_dirty: bool = False
+        # Original filename before rename (shown in table while dirty until F5 reload)
+        self.pre_rename_name: str = ""
+        # Missing flag: True when the file is no longer found on disk (external delete/move)
+        # Used to visually mark unreachable files with a red text color in all views
+        self.file_missing: bool = False
 
     def __str__(self) -> str:
         """Return simple string representation with filename only."""

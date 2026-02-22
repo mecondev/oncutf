@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import platform
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -45,6 +45,25 @@ class StateHandler:
         self._pending_expand_paths: list[str] = []
         self._pending_select_path: str | None = None
         self._restore_in_progress = False
+
+    @staticmethod
+    def _index_from_path(model: Any, path: str) -> QModelIndex:
+        """Get a QModelIndex for a filesystem path from the current model.
+
+        Handles both DriveSortProxyModel (which exposes ``index_from_path``)
+        and plain QFileSystemModel (which accepts a string in ``index``).
+
+        Args:
+            model: The tree model (proxy or source).
+            path: Filesystem path to resolve.
+
+        Returns:
+            QModelIndex for *path*, or an invalid index if resolution fails.
+
+        """
+        if hasattr(model, "index_from_path"):
+            return model.index_from_path(path)
+        return model.index(path)
 
     def save_expanded_state(self) -> list[str]:
         """Save currently expanded paths.
@@ -85,7 +104,7 @@ class StateHandler:
                         collect_expanded(index, depth + 1)
 
         root = "" if platform.system() == "Windows" else "/"
-        root_index = model.index(root)
+        root_index = self._index_from_path(model, root)
         collect_expanded(root_index, 0)
 
         logger.debug(
@@ -143,7 +162,7 @@ class StateHandler:
                 break
 
             try:
-                index = model.index(path)
+                index = self._index_from_path(model, path)
                 if index.isValid():
                     self._view.setExpanded(index, True)
                     restored_count += 1
@@ -266,7 +285,7 @@ class StateHandler:
         if model:
             for path in batch:
                 try:
-                    index = model.index(path)
+                    index = self._index_from_path(model, path)
                     if index.isValid():
                         self._view.setExpanded(index, True)
                 except Exception as e:

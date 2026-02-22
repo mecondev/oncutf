@@ -279,6 +279,9 @@ class UtilityManager:
         with wait_cursor():
             selected_files = self.main_window.get_selected_files()
 
+            # Exclude files that are no longer present on disk
+            selected_files = [f for f in selected_files if not getattr(f, "file_missing", False)]
+
             # Check if data changed to avoid unnecessary regeneration
             selected_files_hash = (
                 hash(tuple(f.full_path for f in selected_files)) if selected_files else None

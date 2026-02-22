@@ -307,9 +307,14 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             # For all other columns, paint everything manually - no super().paint()
         display_text = model.data(index, Qt.ItemDataRole.DisplayRole) if model else ""
         if display_text:
+            # Check if model provides a custom foreground color (e.g. rename_dirty yellow)
+            custom_fg = model.data(index, Qt.ItemDataRole.ForegroundRole) if model else None
+
             # Determine text color based on selection and hover state
             theme = get_theme_manager()
-            if is_selected and is_hovered:
+            if custom_fg and isinstance(custom_fg, QColor) and custom_fg.isValid():
+                text_color = custom_fg
+            elif is_selected and is_hovered:
                 # Selected + hovered: dark text for light blue background
                 text_color = QColor(theme.get_color("table_selection_text"))
             else:

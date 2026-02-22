@@ -14,11 +14,15 @@ from __future__ import annotations
 import os
 import platform
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from PyQt5.QtCore import QCoreApplication, QThread, QTimer
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
+    from PyQt5.QtCore import QModelIndex
+
     from oncutf.core.file.monitor import FilesystemMonitor
     from oncutf.ui.widgets.file_tree.view import FileTreeView
 
@@ -43,6 +47,19 @@ class FilesystemHandler:
         self._filesystem_monitor: FilesystemMonitor | None = None
         self._last_monitored_path: str | None = None
         self._refresh_in_progress = False
+
+    @staticmethod
+    def _index_from_path(model: Any, path: str) -> QModelIndex:
+        """Get a QModelIndex for a path from the current model.
+
+        Handles DriveSortProxyModel (which exposes ``index_from_path``) and plain
+        QFileSystemModel (which accepts a string in ``index``).
+        Avoids the segfault caused by passing a string to the C++ overload of
+        ``QAbstractProxyModel.index(row, col, parent)``.
+        """
+        if hasattr(model, "index_from_path"):
+            return model.index_from_path(path)
+        return model.index(path)
 
     @property
     def filesystem_monitor(self) -> FilesystemMonitor | None:
@@ -244,6 +261,18 @@ class FilesystemHandler:
             dir_path: Path of changed directory
 
         """
+        # This callback is connected to FilesystemMonitor.directory_changed, a
+        # pure-Python Observable signal whose emit() is synchronous.  The monitor
+        # fires it from a threading.Timer background thread.  All operations
+        # below touch Qt objects (QFileSystemModel, QTreeView scrollbar, etc.)
+        # which must only be accessed from the main thread.
+        # QTimer.singleShot(0, context_qobject, fn) is thread-safe: it posts
+        # the callable to the context object's thread event loop (main thread).
+        app = QCoreApplication.instance()
+        if app is not None and QThread.currentThread() is not app.thread():
+            QTimer.singleShot(0, self._view, lambda: self._on_directory_changed(dir_path))
+            return
+
         # Prevent infinite loop if refresh triggers another directory change event
         if self._refresh_in_progress:
             logger.debug(
@@ -273,7 +302,7 @@ class FilesystemHandler:
 
                 # Reset root index after refresh to prevent "/" from appearing
                 root = "" if platform.system() == "Windows" else "/"
-                self._view.setRootIndex(model.index(root))
+                self._view.setRootIndex(self._index_from_path(model, root))
 
                 logger.debug(
                     "[FilesystemHandler] Model refreshed after directory change",
@@ -469,7 +498,7 @@ class FilesystemHandler:
         # Expand the paths
         for path in sorted(paths_to_expand):
             try:
-                index = model.index(path)
+                index = self._index_from_path(model, path)
                 if index.isValid() and not self._view.isExpanded(index):
                     self._view.expand(index)
                     logger.debug(

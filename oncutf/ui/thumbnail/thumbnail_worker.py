@@ -152,6 +152,11 @@ class ThumbnailWorker(QThread):
                 # No requests, check stop flag and retry
                 continue
 
+            # Sentinel: shutdown signal inserted by ThumbnailManager.shutdown()
+            if request.is_sentinel:
+                self._request_queue.task_done()
+                break
+
             # Process request
             self._process_request(request)
 
@@ -159,9 +164,6 @@ class ThumbnailWorker(QThread):
             self._request_queue.task_done()
 
         logger.debug("ThumbnailWorker stopped (processed: %d)", self._processed_count)
-
-        # Ensure thread is properly terminated
-        self.quit()
 
     def _process_request(self, request: ThumbnailRequest) -> None:
         """Process single thumbnail request.

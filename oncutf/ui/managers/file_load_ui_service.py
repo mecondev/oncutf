@@ -19,6 +19,9 @@ import os
 from pathlib import Path
 from typing import Any
 
+from PyQt5.QtCore import Qt
+
+from oncutf.core.session_state_manager import SESSION_STATE_DEFAULTS
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -83,6 +86,21 @@ class FileLoadUIService:
                         has_subdirectory_files,
                         extra={"dev_only": True},
                     )
+
+            # Reset sort to default (filename ascending) on each new folder load.
+            # This ensures files always start in a predictable order regardless
+            # of whatever sort state was saved from a previous session.
+            if clear and hasattr(self.parent_window, "current_sort_column"):
+                self.parent_window.current_sort_column = SESSION_STATE_DEFAULTS["sort_column"]
+                self.parent_window.current_sort_order = Qt.SortOrder(
+                    SESSION_STATE_DEFAULTS["sort_order"]
+                )
+                logger.debug(
+                    "[FileLoadUIService] Reset sort state to default: column=%d, order=%d",
+                    SESSION_STATE_DEFAULTS["sort_column"],
+                    SESSION_STATE_DEFAULTS["sort_order"],
+                    extra={"dev_only": True},
+                )
 
             # Use streaming loading for large file sets (> 200 files)
             if len(items) > 200:

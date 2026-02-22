@@ -90,8 +90,18 @@ class UnifiedExecutionManager:
                     results.append(item)
                     continue
 
-            # Check for conflicts
-            if Path(item.new_path).exists():
+            # Check for conflicts.
+            # Exception: case-only renames in the same directory are renaming the
+            # same file (case-insensitive filesystems: NTFS, exFAT, macOS HFS+).
+            # Path.exists() would return True for the same file under the new case,
+            # which would be a false conflict.  Skip the check in that case.
+            old_name = Path(item.old_path).name
+            new_name = Path(item.new_path).name
+            same_dir = Path(item.old_path).parent == Path(item.new_path).parent
+            is_same_file_case_rename = same_dir and (
+                old_name.lower() == new_name.lower() and old_name != new_name
+            )
+            if Path(item.new_path).exists() and not is_same_file_case_rename:
                 item.is_conflict = True
                 resolution = self._resolve_conflict(item)
 

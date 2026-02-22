@@ -28,6 +28,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
+from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR, QLABEL_PRIMARY_TEXT
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -195,7 +196,14 @@ class ThumbnailDelegate(QStyledItemDelegate):
             self._draw_video_badge(painter, frame_rect, duration)
 
         # Draw filename
-        self._draw_filename(painter, filename_rect, file_item.filename, is_selected)
+        self._draw_filename(
+            painter,
+            filename_rect,
+            file_item.filename,
+            is_selected,
+            getattr(file_item, "rename_dirty", False),
+            getattr(file_item, "file_missing", False),
+        )
 
         painter.restore()
 
@@ -440,6 +448,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         filename_rect: QRect,
         filename: str,
         is_selected: bool,
+        rename_dirty: bool = False,
+        file_missing: bool = False,
     ) -> None:
         """Draw the filename text, word-wrapped if needed.
 
@@ -448,10 +458,17 @@ class ThumbnailDelegate(QStyledItemDelegate):
             filename_rect: Target rectangle for filename
             filename: Filename to display
             is_selected: Whether item is selected
+            rename_dirty: Whether the file was renamed but not yet reloaded
+            file_missing: Whether the file is no longer found on disk
 
         """
-        # Set text color (always dark gray for readability)
-        text_color = QColor("#333333")
+        # Red for missing, yellow for renamed-dirty, default table text color otherwise
+        if file_missing:
+            text_color = QColor(MISSED_TEXT_COLOR)
+        elif rename_dirty:
+            text_color = QColor(MODIFIED_TEXT_COLOR)
+        else:
+            text_color = QColor(QLABEL_PRIMARY_TEXT)
         painter.setPen(text_color)
 
         # Use smaller font for filename
@@ -488,16 +505,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
     def helpEvent(
         self,
-        event,
-        view: "QWidget",
+        _event,
+        _view: "QWidget",
         option: "QStyleOptionViewItem",
         index: "QModelIndex",
     ) -> bool:
         """Show tooltip with full filename on hover.
 
         Args:
-            event: Help event
-            view: View widget
+            _event: Help event (unused, required by Qt API)
+            _view: View widget (unused, required by Qt API)
             option: Style options
             index: Model index
 

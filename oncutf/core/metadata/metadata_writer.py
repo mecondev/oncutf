@@ -186,6 +186,9 @@ class MetadataWriter:
         all_staged_changes = {}
 
         for file_item in selected_files:
+            if getattr(file_item, "file_missing", False):
+                logger.warning("[MetadataWriter] Skipping missing file: %s", file_item.filename)
+                continue
             if staging_manager.has_staged_changes(file_item.full_path):
                 files_to_save.append(file_item)
                 all_staged_changes[file_item.full_path] = staging_manager.get_staged_changes(

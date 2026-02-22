@@ -220,6 +220,12 @@ THEME_TOKENS = {
     },
 }
 
+# Text foreground color for items that have unsaved/pending changes (modified metadata, rename dirty)
+MODIFIED_TEXT_COLOR = "#ffeb92"
+
+# Text foreground color for files that are missing/failed to load
+MISSED_TEXT_COLOR = "#ff6b6b"
+
 METADATA_ICON_COLORS = {
     "basic": "#e8f4fd",
     "extended": EXTENDED_METADATA_COLOR,

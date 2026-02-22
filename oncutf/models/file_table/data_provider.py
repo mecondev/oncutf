@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     from oncutf.models.file_table.model_column_manager import ColumnManager
 
 from PyQt5.QtCore import QModelIndex, Qt, QVariant
+from PyQt5.QtGui import QColor
 
+from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR
 from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -128,6 +130,15 @@ class DataProvider:
                 return config.qt_alignment
             # Default fallback
             return Qt.AlignLeft | Qt.AlignVCenter
+
+        if role == Qt.ForegroundRole:
+            # Red text for files that are no longer found on disk (external delete/move)
+            if getattr(file, "file_missing", False):
+                return QColor(MISSED_TEXT_COLOR)
+            # Yellow text for files that have been renamed but not yet reloaded
+            if getattr(file, "rename_dirty", False):
+                return QColor(MODIFIED_TEXT_COLOR)
+            return QVariant()
 
         return QVariant()
 

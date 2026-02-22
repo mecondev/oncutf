@@ -25,7 +25,11 @@ if TYPE_CHECKING:
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
     from oncutf.models.file_item import FileItem
 
-from oncutf.controllers.protocols import RenameManagerProtocol, ValidationDialogProtocol
+from oncutf.controllers.protocols import (
+    ConflictResolverProtocol,
+    RenameManagerProtocol,
+    ValidationDialogProtocol,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +64,7 @@ class RenameController:
         file_store: Optional["FileStore"] = None,
         context: Optional["ApplicationContext"] = None,
         validation_dialog: ValidationDialogProtocol | None = None,
+        conflict_resolver: ConflictResolverProtocol | None = None,
     ) -> None:
         """Initialize RenameController.
 
@@ -70,6 +75,7 @@ class RenameController:
             file_store: Store for maintaining file state (injected)
             context: Application context for global state (injected)
             validation_dialog: Handler for validation issue dialogs (injected)
+            conflict_resolver: Handler for conflict resolution dialogs (injected)
 
         """
         logger.info("[RenameController] Initializing controller")
@@ -78,6 +84,7 @@ class RenameController:
         self._file_store = file_store
         self._context = context
         self._validation_dialog = validation_dialog
+        self._conflict_resolver = conflict_resolver
 
         logger.debug(
             "[RenameController] Initialized with managers: "
@@ -131,6 +138,15 @@ class RenameController:
             "[RenameController] Generating preview for %d files",
             len(file_items),
         )
+
+        # Exclude files no longer on disk - they cannot be renamed
+        available = [f for f in file_items if not getattr(f, "file_missing", False)]
+        if len(available) != len(file_items):
+            logger.info(
+                "[RenameController] Skipping %d missing file(s) from preview",
+                len(file_items) - len(available),
+            )
+        file_items = available
 
         # Validate inputs
         if not file_items:
@@ -432,9 +448,31 @@ class RenameController:
             # Extract new names from name_pairs
             new_names = [new_name for _, new_name in preview_result.name_pairs]
 
+            # Build conflict callback from injected resolver (if available)
+            conflict_callback = None
+            if self._conflict_resolver is not None:
+                resolver = self._conflict_resolver
+                remembered: list[str | None] = [None]
+
+                def conflict_callback(_parent: Any, filename: str) -> str:
+                    if remembered[0] is not None:
+                        return remembered[0]
+                    # Find the original filename from file_items
+                    original = next(
+                        (f.filename for f in file_items if Path(f.full_path).name != filename),
+                        "unknown",
+                    )
+                    action, apply_to_all = resolver.show_conflict(
+                        old_filename=original, new_filename=filename
+                    )
+                    if apply_to_all and action in ("skip", "overwrite"):
+                        remembered[0] = action
+                    return action
+
             execution_result = self._unified_rename_engine.execute_rename(
                 files=file_items,
                 new_names=new_names,
+                conflict_callback=conflict_callback,
             )
 
             logger.info(
@@ -466,17 +504,25 @@ class RenameController:
                     extra={"dev_only": True},
                 )
 
-            return {
-                "success": execution_result.renamed_count > 0,
-                "renamed_count": execution_result.renamed_count,
-                "failed_count": execution_result.failed_count,
-                "skipped_count": execution_result.skipped_count,
-                "errors": [
-                    item.error_message
+            errors = [
+                item.error_message
+                for item in execution_result.items
+                if not item.success and item.error_message
+            ]
+            # When renamed=0 but items were skipped due to conflicts, provide a
+            # meaningful message instead of letting the caller show "Unknown error".
+            if not errors and execution_result.renamed_count == 0:
+                conflict_count = sum(
+                    1
                     for item in execution_result.items
-                    if not item.success and item.error_message
-                ],
-            }
+                    if item.skip_reason in ("conflict_skipped", "conflict_skip_all")
+                )
+                if conflict_count > 0:
+                    errors = [f"{conflict_count} file(s) not renamed: target name already exists"]
+                elif execution_result.skipped_count > 0:
+                    errors = [
+                        f"{execution_result.skipped_count} file(s) skipped (no changes applied)"
+                    ]
 
         except Exception as e:
             logger.exception("[RenameController] Error executing rename")
@@ -487,10 +533,20 @@ class RenameController:
                 "skipped_count": 0,
                 "errors": [f"Rename execution failed: {e!s}"],
             }
-
-    # -------------------------------------------------------------------------
-    # State Queries
-    # -------------------------------------------------------------------------
+        else:
+            renamed_path_map = {
+                item.old_path: item.new_path
+                for item in execution_result.items
+                if item.success and not getattr(item, "skip_reason", "")
+            }
+            return {
+                "success": execution_result.renamed_count > 0,
+                "renamed_count": execution_result.renamed_count,
+                "failed_count": execution_result.failed_count,
+                "skipped_count": execution_result.skipped_count,
+                "errors": errors,
+                "renamed_path_map": renamed_path_map,
+            }
 
     def has_pending_changes(self) -> bool:
         """Check if there are pending rename changes.

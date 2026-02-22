@@ -56,6 +56,8 @@ class FileLoadManager:
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
+        # When True, FS-monitor triggered refresh is suppressed (dirty files visible)
+        self._has_dirty_renamed_files: bool = False
         logger.debug(
             "[FileLoadManager] Initialized with unified loading policy",
             extra={"dev_only": True},
@@ -99,6 +101,11 @@ class FileLoadManager:
         if not Path(folder_path).is_dir():
             logger.error("Path is not a directory: %s", folder_path)
             return
+
+        # Clear rename-dirty suppression on full folder loads so that the FS
+        # monitor can operate normally and fresh FileItem objects are shown.
+        if not merge_mode:
+            self.clear_rename_dirty_state()
 
         # Store the recursive state for future reloads (if not merging)
         # Use QtAppContext for centralized state management
@@ -491,6 +498,32 @@ class FileLoadManager:
         logger.info("[FileLoadManager] reload_current_folder called")
         # Implementation depends on how current folder is tracked
 
+    def suppress_next_refresh(self) -> None:
+        """Block the next FS-monitor refresh while renamed files are shown as dirty.
+
+        Called right after a successful rename so that the filesystem-monitor
+        triggered rescan does not replace the mutated-in-place FileItem objects
+        (which still display the OLD filename in yellow) with fresh ones.
+        The flag is cleared by a full folder load (F5 / force reload).
+        """
+        self._has_dirty_renamed_files = True
+        logger.debug(
+            "[FileLoadManager] FS-monitor refresh suppressed (dirty renamed files present)",
+            extra={"dev_only": True},
+        )
+
+    def clear_rename_dirty_state(self) -> None:
+        """Clear the rename-dirty suppression flag on a full folder load.
+
+        Called before loading a fresh file list so that FS-monitor refreshes
+        are no longer blocked and FileItem objects reflect the current disk state.
+        """
+        self._has_dirty_renamed_files = False
+        logger.debug(
+            "[FileLoadManager] Rename-dirty state cleared (full reload)",
+            extra={"dev_only": True},
+        )
+
     def set_allowed_extensions(self, extensions: set[str]) -> None:
         """Update the set of allowed file extensions."""
         self.allowed_extensions = extensions
@@ -510,17 +543,30 @@ class FileLoadManager:
         """Refresh files from loaded folders after filesystem changes.
 
         I/O LAYER METHOD - Performs filesystem scanning to reload files.
-        Updates FileStore state with refreshed file list.
+        Mutates existing FileItem objects in-place so that file_model references
+        remain valid.  Sets file_missing=True on items no longer found on disk,
+        and appends newly appeared files to the live list.  Emits layoutChanged
+        on the file_model when anything changed so the table repaints.
 
         Args:
             changed_folder: Specific folder that changed (optional)
             file_store: FileStore instance to update (optional, uses parent_window if available)
 
         Returns:
-            bool: True if files were refreshed
+            bool: True if refresh was attempted
 
         """
-        # Get FileStore instance
+        # Suppress FS-monitor refresh while renamed files are displayed as dirty
+        # (old filenames with yellow color).  The refresh will proceed normally
+        # after the user forces a full reload (F5).
+        if self._has_dirty_renamed_files:
+            logger.debug(
+                "[FileLoadManager] Skipping FS-monitor refresh (dirty renamed files suppressed)",
+                extra={"dev_only": True},
+            )
+            return True
+
+        # Resolve FileStore instance
         if not file_store:
             if hasattr(self.parent_window, "context") and hasattr(
                 self.parent_window.context, "file_store"
@@ -535,13 +581,17 @@ class FileLoadManager:
             logger.debug("[FileLoadManager] No files loaded, skipping refresh")
             return False
 
-        # Get unique folders from loaded files
-        loaded_folders = set()
-        for file_item in loaded_files:
+        # Authoritative display list: prefer file_model.files (keeps same object refs)
+        file_model: Any = getattr(self.parent_window, "file_model", None)
+        live_files: list[FileItem] = list(getattr(file_model, "files", None) or loaded_files)
+
+        # Get unique folders from live display list
+        loaded_folders: set[str] = set()
+        for file_item in live_files:
             folder = str(Path(file_item.full_path).parent)
             loaded_folders.add(folder)
 
-        # If specific folder given, check if it's relevant
+        # If a specific folder was given, check if it's relevant
         if changed_folder:
             changed_folder_norm = os.path.normpath(changed_folder)
             if changed_folder_norm not in loaded_folders:
@@ -550,8 +600,7 @@ class FileLoadManager:
                     changed_folder,
                 )
                 return False
-
-            folders_to_refresh = {changed_folder_norm}
+            folders_to_refresh: set[str] = {changed_folder_norm}
         else:
             folders_to_refresh = loaded_folders
 
@@ -564,30 +613,88 @@ class FileLoadManager:
         for folder in folders_to_refresh:
             file_store.invalidate_folder_cache(folder)
 
-        # Reload files from all loaded folders (I/O operation)
-        refreshed_files: list[FileItem] = []
-        for folder in loaded_folders:
-            # Skip folders that no longer exist (e.g., unmounted USB drives)
+        # Scan the refreshed folders; build path -> FileItem map for each
+        # Folders that no longer exist produce an empty map (all their files go missing)
+        scanned_per_folder: dict[str, dict[str, FileItem]] = {}
+        for folder in folders_to_refresh:
             if not Path(folder).exists():
                 logger.info(
-                    "[FileLoadManager] Folder no longer exists, removing its files: %s",
+                    "[FileLoadManager] Folder no longer exists, marking its files as missing: %s",
                     folder,
                 )
+                scanned_per_folder[folder] = {}
                 continue
-
             try:
-                # Use get_file_items_from_folder for I/O (bypasses cache)
                 folder_files = self.get_file_items_from_folder(
                     folder, use_cache=False, file_store=file_store
                 )
-                refreshed_files.extend(folder_files)
+                scanned_per_folder[folder] = {f.full_path: f for f in folder_files}
             except Exception:
-                logger.exception("[FileLoadManager] Error refreshing folder %s", folder)
+                logger.exception("[FileLoadManager] Error scanning folder %s", folder)
+                scanned_per_folder[folder] = {}
 
-        # Update FileStore state
-        file_store.set_loaded_files(refreshed_files)
+        # Build flat set of paths currently on disk (for refreshed folders only)
+        disk_paths: set[str] = set()
+        for folder_map in scanned_per_folder.values():
+            disk_paths.update(folder_map.keys())
 
-        logger.info("[FileLoadManager] Refreshed %d files", len(refreshed_files))
+        # --- In-place mutation of existing FileItem objects ---
+        existing_paths: set[str] = {f.full_path for f in live_files}
+        changed = False
+
+        for item in live_files:
+            item_folder = str(Path(item.full_path).parent)
+            if item_folder not in folders_to_refresh:
+                continue  # Not in a folder being refreshed; leave as-is
+            was_missing = item.file_missing
+            item.file_missing = item.full_path not in disk_paths
+            if item.file_missing != was_missing:
+                changed = True
+                if item.file_missing:
+                    logger.info("[FileLoadManager] File went missing: %s", item.filename)
+                else:
+                    logger.info("[FileLoadManager] File reappeared: %s", item.filename)
+
+        # --- Append genuinely new files (appeared on disk, not in live list) ---
+        new_items: list[FileItem] = []
+        for folder_map in scanned_per_folder.values():
+            for path, new_item in folder_map.items():
+                if path not in existing_paths:
+                    new_items.append(new_item)
+                    changed = True
+                    logger.info("[FileLoadManager] New file appeared: %s", new_item.filename)
+
+        if new_items:
+            live_files.extend(new_items)
+
+        # Sync merged list back to FileStore
+        file_store.set_loaded_files(live_files)
+
+        # Load color tags for newly appeared files
+        if new_items:
+            self._load_color_tags(new_items)
+
+        # Notify file_model to repaint when the display state changed.
+        # refresh_loaded_folders() may be called from a background thread
+        # (watchdog / threading.Timer).  layoutChanged is a Qt pyqtSignal on
+        # QAbstractItemModel: emitting from a non-main thread is safe because
+        # Qt automatically delivers it as a queued connection to the connected
+        # views which live in the main thread.
+        if changed and file_model is not None:
+            layout_changed = getattr(file_model, "layoutChanged", None)
+            if layout_changed is not None:
+                layout_changed.emit()
+                logger.debug(
+                    "[FileLoadManager] layoutChanged emitted after file status update",
+                    extra={"dev_only": True},
+                )
+
+        missing_count = sum(1 for f in live_files if f.file_missing)
+        logger.info(
+            "[FileLoadManager] Refresh complete: %d files total, %d missing",
+            len(live_files),
+            missing_count,
+        )
         return True
 
     def _load_color_tags(self, file_items: list[FileItem]) -> None:

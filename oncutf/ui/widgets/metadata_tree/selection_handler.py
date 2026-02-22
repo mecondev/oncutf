@@ -130,6 +130,9 @@ class MetadataTreeSelectionHandler:
             # Handle single file selection
             if len(selection) == 1:
                 file_item = selection[0]
+                if getattr(file_item, "file_missing", False):
+                    self._view.show_empty_state("File not found on disk")
+                    return
                 metadata = self._view._cache_behavior.try_lazy_metadata_loading(
                     file_item, "parent_selection"
                 )

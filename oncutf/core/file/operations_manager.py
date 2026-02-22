@@ -235,6 +235,7 @@ class FileOperationsManager:
                 if item:
                     item.filename = Path(exec_item.new_path).name
                     item.full_path = exec_item.new_path
+                    item.rename_dirty = True  # Mark as visually dirty until files reload
             elif exec_item.skip_reason:
                 logger.info(
                     "[Rename] Skipped: %s — Reason: %s",
