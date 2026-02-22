@@ -123,10 +123,10 @@ class DragCleanupManager:
         ):
             self.main_window.folder_tree._dragging = False
 
-        if hasattr(self.main_window, "file_table_view") and hasattr(
-            self.main_window.file_table_view, "_drag_start_pos"
+        if hasattr(self.main_window, "file_list_view") and hasattr(
+            self.main_window.file_list_view, "_drag_start_pos"
         ):
-            self.main_window.file_table_view._drag_start_pos = None
+            self.main_window.file_list_view._drag_start_pos = None
 
         logger.debug("[DragCleanupManager] Widget drag states cleaned")
 

@@ -52,9 +52,9 @@ class MetadataTreeSelectionHandler:
         except Exception:
             pass
 
-        # Fallback: check file_table_view selection
-        if hasattr(parent_window, "file_table_view"):
-            selection_model = parent_window.file_table_view.selectionModel()
+        # Fallback: check file_list_view selection
+        if hasattr(parent_window, "file_list_view"):
+            selection_model = parent_window.file_list_view.selectionModel()
             if selection_model:
                 return len(selection_model.selectedRows())
 
@@ -72,7 +72,7 @@ class MetadataTreeSelectionHandler:
 
         # Method 1: Use selection model directly
         try:
-            selection = parent_window.file_table_view.selectionModel()
+            selection = parent_window.file_list_view.selectionModel()
             if selection and selection.hasSelection():
                 selected_rows = selection.selectedRows()
                 if selected_rows and hasattr(parent_window, "file_model"):
@@ -87,9 +87,9 @@ class MetadataTreeSelectionHandler:
         # Method 2: Use file table view's internal selection method
         if not selected_files:
             try:
-                if hasattr(parent_window.file_table_view, "_selection_behavior"):
+                if hasattr(parent_window.file_list_view, "_selection_behavior"):
                     selected_rows = (
-                        parent_window.file_table_view._selection_behavior.get_current_selection()
+                        parent_window.file_list_view._selection_behavior.get_current_selection()
                     )
                     if selected_rows and hasattr(parent_window, "file_model"):
                         file_model = parent_window.file_model
@@ -111,10 +111,10 @@ class MetadataTreeSelectionHandler:
             if not selection:
                 # Try alternative method to get selection if first method failed
                 parent_window = self._view._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "file_table_view"):
-                    file_table_view = parent_window.file_table_view
-                    if hasattr(file_table_view, "_selection_behavior"):
-                        selected_rows = file_table_view._selection_behavior.get_current_selection()
+                if parent_window and hasattr(parent_window, "file_list_view"):
+                    file_list_view = parent_window.file_list_view
+                    if hasattr(file_list_view, "_selection_behavior"):
+                        selected_rows = file_list_view._selection_behavior.get_current_selection()
                         if selected_rows and hasattr(parent_window, "file_model"):
                             file_model = parent_window.file_model
                             selection = [

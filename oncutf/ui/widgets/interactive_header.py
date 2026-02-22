@@ -388,11 +388,11 @@ class InteractiveHeader(QHeaderView):
             return
 
         # Get the file table view to access its horizontal scroll bar
-        file_table_view = self._get_file_table_view()
-        if not file_table_view:
+        file_list_view = self._get_file_list_view()
+        if not file_list_view:
             return
 
-        h_scroll = file_table_view.horizontalScrollBar()
+        h_scroll = file_list_view.horizontalScrollBar()
         if not h_scroll:
             return
 
@@ -485,9 +485,9 @@ class InteractiveHeader(QHeaderView):
     def enterEvent(self, event) -> None:
         """Clear table hover when mouse enters header."""
         # Get file table view to clear its hover state
-        file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, "_hover_handler"):
-            file_table_view._hover_handler.clear_hover()
+        file_list_view = self._get_file_list_view()
+        if file_list_view and hasattr(file_list_view, "_hover_handler"):
+            file_list_view._hover_handler.clear_hover()
         super().enterEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
@@ -570,11 +570,11 @@ class InteractiveHeader(QHeaderView):
         if logical_index == 0:
             return "Select/Deselect all files (toggle status column)."
 
-        file_table_view = self._get_file_table_view()
-        if not file_table_view or not hasattr(file_table_view, "_column_mgmt_behavior"):
+        file_list_view = self._get_file_list_view()
+        if not file_list_view or not hasattr(file_list_view, "_column_mgmt_behavior"):
             return None
 
-        visible_columns = file_table_view._column_mgmt_behavior.get_visible_columns_list()
+        visible_columns = file_list_view._column_mgmt_behavior.get_visible_columns_list()
         column_index = logical_index - 1  # -1 for status column
         if not (0 <= column_index < len(visible_columns)):
             return None
@@ -778,24 +778,24 @@ class InteractiveHeader(QHeaderView):
 
     def _add_column_visibility_menu(self, menu):
         """Add column visibility toggle options to the menu with grouped sections."""
-        file_table_view = self._get_file_table_view()
-        if not file_table_view:
+        file_list_view = self._get_file_list_view()
+        if not file_list_view:
             return
 
         # Use builder to create column visibility submenu
-        builder = ColumnVisibilityMenuBuilder(file_table_view)
+        builder = ColumnVisibilityMenuBuilder(file_list_view)
         builder.build_menu(menu, self._toggle_column_visibility)
 
         # Add separator before lock toggle
         menu.addSeparator()
 
         # Add lock columns toggle
-        self._add_lock_columns_toggle(menu, file_table_view)
+        self._add_lock_columns_toggle(menu, file_list_view)
 
         # Add reset column order option
-        self._add_reset_column_order(menu, file_table_view)
+        self._add_reset_column_order(menu, file_list_view)
 
-    def _get_file_table_view(self):
+    def _get_file_list_view(self):
         """Get the file table view that this header belongs to."""
         # The header's parent should be the table view
         parent = self.parent()
@@ -803,7 +803,7 @@ class InteractiveHeader(QHeaderView):
             return parent
         return None
 
-    def _add_lock_columns_toggle(self, menu, file_table_view):
+    def _add_lock_columns_toggle(self, menu, file_list_view):
         """Add lock/unlock columns toggle to menu."""
         try:
             from oncutf.ui.helpers.icons_loader import get_menu_icon
@@ -861,7 +861,7 @@ class InteractiveHeader(QHeaderView):
         except Exception as e:
             logger.warning("Failed to save columns lock state: %s", e)
 
-    def _add_reset_column_order(self, menu, file_table_view):
+    def _add_reset_column_order(self, menu, file_list_view):
         """Add reset column order option to menu."""
         try:
             from oncutf.ui.helpers.icons_loader import get_menu_icon
@@ -887,8 +887,8 @@ class InteractiveHeader(QHeaderView):
                 return
 
             # Get file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
+            file_list_view = self._get_file_list_view()
+            if not file_list_view:
                 return
 
             config_manager = main_window.window_config_manager.config_manager
@@ -921,8 +921,8 @@ class InteractiveHeader(QHeaderView):
                         header.moveSection(current_visual, logical_index)
 
             # 5. Reconfigure columns to apply defaults
-            if hasattr(file_table_view, "_column_mgmt_behavior"):
-                file_table_view._column_mgmt_behavior.configure_columns()
+            if hasattr(file_list_view, "_column_mgmt_behavior"):
+                file_list_view._column_mgmt_behavior.configure_columns()
 
             logger.info("Reset columns to default (order, widths, visibility)")
 
@@ -931,6 +931,6 @@ class InteractiveHeader(QHeaderView):
 
     def _toggle_column_visibility(self, column_key: str):
         """Toggle visibility of a specific column via canonical column management API."""
-        file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, "_column_mgmt_behavior"):
-            file_table_view._column_mgmt_behavior.toggle_column_visibility(column_key)
+        file_list_view = self._get_file_list_view()
+        if file_list_view and hasattr(file_list_view, "_column_mgmt_behavior"):
+            file_list_view._column_mgmt_behavior.toggle_column_visibility(column_key)

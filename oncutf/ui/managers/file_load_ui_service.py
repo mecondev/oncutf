@@ -202,11 +202,11 @@ class FileLoadUIService:
 
     def _update_file_table_placeholder(self, total_files: int) -> None:
         """Update file table placeholder visibility."""
-        if hasattr(self.parent_window, "file_table_view"):
+        if hasattr(self.parent_window, "file_list_view"):
             # Reset loading flag so placeholder visibility can be updated
-            self.parent_window.file_table_view._loading_in_progress = False
+            self.parent_window.file_list_view._loading_in_progress = False
             visible = total_files == 0
-            self.parent_window.file_table_view.set_placeholder_visible(visible)
+            self.parent_window.file_list_view.set_placeholder_visible(visible)
             logger.debug(
                 "[FileLoadUIService] %s file table placeholder",
                 "Shown" if visible else "Hidden",
@@ -248,7 +248,7 @@ class FileLoadUIService:
 
     def _refresh_file_table(self) -> None:
         """Refresh file table view and restore sorting."""
-        if not hasattr(self.parent_window, "file_table_view"):
+        if not hasattr(self.parent_window, "file_list_view"):
             return
 
         # Restore previous sorting state for consistency
@@ -266,11 +266,11 @@ class FileLoadUIService:
 
             # Apply sorting through the model and header
             self.parent_window.file_model.sort(sort_column, sort_order)
-            header = self.parent_window.file_table_view.horizontalHeader()
+            header = self.parent_window.file_list_view.horizontalHeader()
             header.setSortIndicator(sort_column, sort_order)
 
         # Force refresh of the table view
-        self.parent_window.file_table_view.viewport().update()
+        self.parent_window.file_list_view.viewport().update()
 
         # Refresh icons to show any cached metadata/hash status
         if hasattr(self.parent_window.file_model, "refresh_icons"):
@@ -281,8 +281,8 @@ class FileLoadUIService:
             )
 
         # Reset selection state to ensure clicks work
-        if hasattr(self.parent_window.file_table_view, "_selection_behavior"):
-            self.parent_window.file_table_view._selection_behavior.sync_selection_safely()
+        if hasattr(self.parent_window.file_list_view, "_selection_behavior"):
+            self.parent_window.file_list_view._selection_behavior.sync_selection_safely()
             logger.debug(
                 "[FileLoadUIService] Refreshed file table view",
                 extra={"dev_only": True},

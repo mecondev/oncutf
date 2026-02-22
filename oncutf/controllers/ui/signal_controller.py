@@ -101,10 +101,10 @@ class SignalController:
 
         # Connect callbacks for file table view
         self.parent_window.horizontal_splitter.splitterMoved.connect(
-            self.parent_window.file_table_view.on_horizontal_splitter_moved
+            self.parent_window.file_list_view.on_horizontal_splitter_moved
         )
         self.parent_window.vertical_splitter.splitterMoved.connect(
-            self.parent_window.file_table_view.on_vertical_splitter_moved
+            self.parent_window.file_list_view.on_vertical_splitter_moved
         )
 
         # Connect to preview tables view
@@ -114,21 +114,21 @@ class SignalController:
 
     def _setup_file_table_signals(self) -> None:
         """Connect file table signals."""
-        self.parent_window.file_table_view.clicked.connect(self.parent_window.on_table_row_clicked)
+        self.parent_window.file_list_view.clicked.connect(self.parent_window.on_table_row_clicked)
         # NOTE: selection_changed connection is handled in initialization_manager.py
-        self.parent_window.file_table_view.files_dropped.connect(
+        self.parent_window.file_list_view.files_dropped.connect(
             self.parent_window.load_files_from_dropped_items
         )
         self.parent_window.file_model.sort_changed.connect(
             self.parent_window.request_preview_update
         )
-        self.parent_window.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.parent_window.file_table_view.customContextMenuRequested.connect(
+        self.parent_window.file_list_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.parent_window.file_list_view.customContextMenuRequested.connect(
             self.parent_window.handle_table_context_menu
         )
 
         # Connect F5 refresh request
-        self.parent_window.file_table_view.refresh_requested.connect(self._refresh_file_table)
+        self.parent_window.file_list_view.refresh_requested.connect(self._refresh_file_table)
 
     def _setup_thumbnail_viewport_signals(self) -> None:
         """Connect thumbnail viewport signals."""
@@ -224,7 +224,7 @@ class SignalController:
             context = get_qt_app_context()
             if context:
                 FileTableStateHelper.clear_all_state(
-                    self.parent_window.file_table_view, context, metadata_tree_view
+                    self.parent_window.file_list_view, context, metadata_tree_view
                 )
 
             self.parent_window.force_reload()

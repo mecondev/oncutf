@@ -62,14 +62,14 @@ class ColumnVisibilityMenuBuilder:
         ],
     }
 
-    def __init__(self, file_table_view) -> None:
+    def __init__(self, file_list_view) -> None:
         """Initialize builder with file table view.
 
         Args:
-            file_table_view: File table view with _column_mgmt_behavior attribute.
+            file_list_view: File table view with _column_mgmt_behavior attribute.
 
         """
-        self._file_table_view = file_table_view
+        self._file_list_view = file_list_view
 
     def build_menu(
         self,
@@ -86,7 +86,7 @@ class ColumnVisibilityMenuBuilder:
         """
         try:
             # Check if file table view has required behavior
-            if not hasattr(self._file_table_view, "_column_mgmt_behavior"):
+            if not hasattr(self._file_list_view, "_column_mgmt_behavior"):
                 logger.warning("File table view missing _column_mgmt_behavior")
                 return
 
@@ -96,7 +96,7 @@ class ColumnVisibilityMenuBuilder:
 
             # Get current visible columns
             visible_columns_list = (
-                self._file_table_view._column_mgmt_behavior.get_visible_columns_list()
+                self._file_list_view._column_mgmt_behavior.get_visible_columns_list()
             )
 
             # Build grouped columns

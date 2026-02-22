@@ -8,7 +8,7 @@ Global reusable dialog for displaying tabular results with persistent geometry.
 Features:
 - QTableView with custom model (not QTableWidget)
 - Two-column table with customizable headers
-- Proper styling matching file_table_view
+- Proper styling matching file_list_view
 - Alternating row colors
 - Adjustable column widths (persisted to user config)
 - Persistent window geometry
@@ -182,7 +182,7 @@ class ResultsTableDialog(QDialog):
         self.setLayout(layout)
 
     def _apply_styling(self):
-        """Apply dark theme styling matching file_table_view."""
+        """Apply dark theme styling matching file_list_view."""
         theme = get_theme_manager()
 
         style = f"""

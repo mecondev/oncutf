@@ -174,13 +174,13 @@ class WindowConfigManager:
             # ====================================================================
 
             # Save file table column widths (ALL columns, not just visible)
-            if hasattr(self.main_window, "file_table_view"):
-                file_model = self.main_window.file_table_view.model()
+            if hasattr(self.main_window, "file_list_view"):
+                file_model = self.main_window.file_list_view.model()
                 if file_model:
                     column_widths = {}
 
                     # Save status column (always column 0)
-                    column_widths["status"] = self.main_window.file_table_view.columnWidth(0)
+                    column_widths["status"] = self.main_window.file_list_view.columnWidth(0)
 
                     # Get all columns from the unified service to include hidden ones
                     column_service = None
@@ -195,7 +195,7 @@ class WindowConfigManager:
                     for i, column_key in enumerate(all_columns.keys()):
                         column_index = i + 1  # +1 because status is column 0
                         if column_index < file_model.columnCount():
-                            width = self.main_window.file_table_view.columnWidth(column_index)
+                            width = self.main_window.file_list_view.columnWidth(column_index)
                         else:
                             # Hidden columns are not in the view; persist the service width
                             width = column_service.get_column_width(column_key)
@@ -523,7 +523,7 @@ class WindowConfigManager:
     def _refresh_file_table_for_window_change(self) -> None:
         """Refresh file table layout after window state changes."""
         try:
-            if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view:
+            if hasattr(self.main_window, "file_list_view") and self.main_window.file_list_view:
                 # Schedule a delayed refresh to allow window state to settle
                 from oncutf.utils.shared.timer_manager import (
                     TimerType,
@@ -531,11 +531,11 @@ class WindowConfigManager:
                 )
 
                 def refresh() -> None:
-                    # Reset manual column preference for auto-sizing - use original FileTableView logic
-                    if hasattr(self.main_window.file_table_view, "_manual_column_resize"):
-                        self.main_window.file_table_view._manual_column_resize = False
-                    if hasattr(self.main_window.file_table_view, "_has_manual_preference"):
-                        self.main_window.file_table_view._has_manual_preference = False
+                    # Reset manual column preference for auto-sizing - use original FileListView logic
+                    if hasattr(self.main_window.file_list_view, "_manual_column_resize"):
+                        self.main_window.file_list_view._manual_column_resize = False
+                    if hasattr(self.main_window.file_list_view, "_has_manual_preference"):
+                        self.main_window.file_list_view._has_manual_preference = False
 
                     # Trigger column auto-sizing using original logic
                     if hasattr(self.main_window, "_ensure_initial_column_sizing"):
@@ -631,10 +631,7 @@ class WindowConfigManager:
 
     def ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
-        if (
-            hasattr(self.main_window, "file_table_view")
-            and self.main_window.file_table_view.model()
-        ):
+        if hasattr(self.main_window, "file_list_view") and self.main_window.file_list_view.model():
             # No longer need column adjustment - columns maintain fixed widths from config
             logger.debug(
                 "[Config] Column sizing handled by fixed-width configuration",

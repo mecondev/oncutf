@@ -38,14 +38,14 @@ class SelectionDelegates:
             List of FileItem objects sorted by their row position in the table
 
         """
-        if not (hasattr(self, "file_table_view") and hasattr(self, "file_model")):
+        if not (hasattr(self, "file_list_view") and hasattr(self, "file_model")):
             return []
 
         if not self.file_model or not self.file_model.files:
             return []
 
         # Get current selection and sort to maintain display order
-        selected_rows = self.file_table_view._selection_behavior.get_current_selection()
+        selected_rows = self.file_list_view._selection_behavior.get_current_selection()
         selected_rows_sorted = sorted(selected_rows)
 
         # Convert to FileItem objects with bounds checking

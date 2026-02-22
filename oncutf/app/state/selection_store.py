@@ -26,7 +26,7 @@ class SelectionStore(Observable):
     """Centralized selection and checked state manager.
 
     Handles all selection-related logic previously scattered across
-    MainWindow and FileTableView, providing better performance and
+    MainWindow and FileListView, providing better performance and
     maintainability through event-driven architecture.
 
     Features:

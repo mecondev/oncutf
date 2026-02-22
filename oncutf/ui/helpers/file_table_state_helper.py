@@ -25,7 +25,7 @@ from PyQt5.QtCore import QItemSelection, QItemSelectionModel
 if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext
     from oncutf.ui.adapters.qt_app_context import QtAppContext
-    from oncutf.ui.widgets.file_table import FileTableView
+    from oncutf.ui.widgets.file_table import FileListView
 
     # Union type for context - supports both Qt-free and Qt versions
     ContextType = AppContext | QtAppContext
@@ -51,20 +51,20 @@ class FileTableStateHelper:
 
     Example usage:
         # Auto-refresh after save (preserve state)
-        state = FileTableStateHelper.save_state(file_table_view, context)
+        state = FileTableStateHelper.save_state(file_list_view, context)
         # ... perform file operations ...
-        FileTableStateHelper.restore_state(file_table_view, context, state)
+        FileTableStateHelper.restore_state(file_list_view, context, state)
 
         # Manual F5 refresh (clear state)
-        FileTableStateHelper.clear_all_state(file_table_view, context, metadata_tree_view)
+        FileTableStateHelper.clear_all_state(file_list_view, context, metadata_tree_view)
     """
 
     @staticmethod
-    def save_state(file_table_view: "FileTableView", context: "ContextType") -> FileTableState:
+    def save_state(file_list_view: "FileListView", context: "ContextType") -> FileTableState:
         """Save current file table state for later restoration.
 
         Args:
-            file_table_view: File table view widget
+            file_list_view: File table view widget
             context: Application context with selection store
 
         Returns:
@@ -78,7 +78,7 @@ class FileTableStateHelper:
 
         try:
             # Get model and selection store
-            file_table_model = file_table_view.model()
+            file_table_model = file_list_view.model()
             file_items = None
             if file_table_model is not None:
                 file_items = getattr(file_table_model, "file_items", None)
@@ -122,7 +122,7 @@ class FileTableStateHelper:
             logger.info("[StateHelper] Saved %d checked paths", len(checked_paths))
 
             # Save scroll position
-            scroll_bar = file_table_view.verticalScrollBar()
+            scroll_bar = file_list_view.verticalScrollBar()
             if scroll_bar:
                 scroll_position = scroll_bar.value()
                 logger.debug(
@@ -138,7 +138,7 @@ class FileTableStateHelper:
 
     @staticmethod
     def restore_state(
-        file_table_view: "FileTableView",
+        file_list_view: "FileListView",
         context: "ContextType",
         state: FileTableState,
         delay_ms: int = 100,
@@ -149,7 +149,7 @@ class FileTableStateHelper:
         the file table model is fully updated before restoration.
 
         Args:
-            file_table_view: File table view widget
+            file_list_view: File table view widget
             context: Application context with selection store
             state: Saved state to restore
             delay_ms: Delay in milliseconds before restoration (default: 100)
@@ -164,7 +164,7 @@ class FileTableStateHelper:
         def restore():
             """Execute state restoration."""
             try:
-                file_table_model = file_table_view.model()
+                file_table_model = file_list_view.model()
                 file_items = None
                 if file_table_model is not None:
                     file_items = getattr(file_table_model, "file_items", None)
@@ -207,9 +207,9 @@ class FileTableStateHelper:
 
                         # CRITICAL: Also update Qt selection model for visual feedback
                         # This ensures the selection is visible in the table
-                        selection_model = file_table_view.selectionModel()
+                        selection_model = file_list_view.selectionModel()
                         if selection_model:
-                            model = file_table_view.model()
+                            model = file_list_view.model()
                             if model:
                                 # Clear existing selection
                                 selection_model.clearSelection()
@@ -242,7 +242,7 @@ class FileTableStateHelper:
 
                 # Restore scroll position
                 if state.scroll_position > 0:
-                    scroll_bar = file_table_view.verticalScrollBar()
+                    scroll_bar = file_list_view.verticalScrollBar()
                     if scroll_bar:
                         scroll_bar.setValue(state.scroll_position)
                         logger.debug(
@@ -252,7 +252,7 @@ class FileTableStateHelper:
                         )
 
                 # Update viewport to reflect changes
-                file_table_view.viewport().update()
+                file_list_view.viewport().update()
 
             except Exception:
                 logger.exception("[StateHelper] Error restoring state")
@@ -274,7 +274,7 @@ class FileTableStateHelper:
 
     @staticmethod
     def restore_state_sync(
-        file_table_view: "FileTableView",
+        file_list_view: "FileListView",
         context: "ContextType",
         state: FileTableState,
     ) -> None:
@@ -284,13 +284,13 @@ class FileTableStateHelper:
         debouncing on files_loaded signal).
 
         Args:
-            file_table_view: File table view widget
+            file_list_view: File table view widget
             context: Application context with selection store
             state: Saved state to restore
 
         """
         try:
-            file_table_model = file_table_view.model()
+            file_table_model = file_list_view.model()
             file_items = None
             if file_table_model is not None:
                 file_items = getattr(file_table_model, "file_items", None)
@@ -328,9 +328,9 @@ class FileTableStateHelper:
                     )
 
                     # CRITICAL: Also update Qt selection model for visual feedback
-                    selection_model = file_table_view.selectionModel()
+                    selection_model = file_list_view.selectionModel()
                     if selection_model:
-                        model = file_table_view.model()
+                        model = file_list_view.model()
                         if model:
                             # Clear existing selection
                             selection_model.clearSelection()
@@ -358,19 +358,19 @@ class FileTableStateHelper:
 
             # Restore scroll position
             if state.scroll_position > 0:
-                scroll_bar = file_table_view.verticalScrollBar()
+                scroll_bar = file_list_view.verticalScrollBar()
                 if scroll_bar:
                     scroll_bar.setValue(state.scroll_position)
 
             # Update viewport to reflect changes
-            file_table_view.viewport().update()
+            file_list_view.viewport().update()
 
         except Exception:
             logger.exception("[StateHelper] Error in sync state restoration")
 
     @staticmethod
     def clear_all_state(
-        file_table_view: "FileTableView",
+        file_list_view: "FileListView",
         context: "ContextType",
         metadata_tree_view=None,
     ) -> None:
@@ -383,7 +383,7 @@ class FileTableStateHelper:
         4. Resets anchor row
 
         Args:
-            file_table_view: File table view widget
+            file_list_view: File table view widget
             context: Application context with selection store
             metadata_tree_view: Optional metadata tree view to clear
 
@@ -400,13 +400,13 @@ class FileTableStateHelper:
                     logger.debug("[StateHelper] Cleared selection store")
 
                 # Clear Qt selection model
-                selection_model = file_table_view.selectionModel()
+                selection_model = file_list_view.selectionModel()
                 if selection_model:
                     selection_model.clearSelection()
                     logger.debug("[StateHelper] Cleared Qt selection model")
 
                 # Uncheck all files in model
-                file_table_model = file_table_view.model()
+                file_table_model = file_list_view.model()
                 if file_table_model and hasattr(file_table_model, "files"):
                     for file_item in file_table_model.files:
                         file_item.checked = False
@@ -418,13 +418,13 @@ class FileTableStateHelper:
                     logger.debug("[StateHelper] Cleared metadata tree view")
 
                 # Reset scroll position
-                scroll_bar = file_table_view.verticalScrollBar()
+                scroll_bar = file_list_view.verticalScrollBar()
                 if scroll_bar:
                     scroll_bar.setValue(0)
                     logger.debug("[StateHelper] Reset scroll position")
 
                 # Update viewport
-                file_table_view.viewport().update()
+                file_list_view.viewport().update()
 
             except Exception:
                 logger.exception("[StateHelper] Error clearing state")

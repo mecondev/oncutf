@@ -263,10 +263,10 @@ class FileTableModel(QAbstractTableModel):
         try:
             get_qt_app_context()
             if self.parent_window:
-                selection_model = self.parent_window.file_table_view.selectionModel()
+                selection_model = self.parent_window.file_list_view.selectionModel()
         except RuntimeError:
             if self.parent_window:
-                selection_model = self.parent_window.file_table_view.selectionModel()
+                selection_model = self.parent_window.file_list_view.selectionModel()
         return selection_model
 
     def _restore_selection(self, selection_model: Any, selected_items: list[FileItem]) -> None:

@@ -1,4 +1,4 @@
-"""Module: hover_handler.py - Hover state management for FileTableView.
+"""Module: hover_handler.py - Hover state management for FileListView.
 
 Author: Michael Economou
 Date: 2026-01-04
@@ -16,27 +16,27 @@ from typing import TYPE_CHECKING
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.file_table.view import FileTableView
+    from oncutf.ui.widgets.file_table.view import FileListView
 
 logger = get_cached_logger(__name__)
 
 
 class HoverHandler:
-    """Manages hover state for FileTableView rows.
+    """Manages hover state for FileListView rows.
 
     This handler tracks which row the mouse is currently hovering over
     and updates the visual feedback via the hover delegate.
 
     Attributes:
-        _view: Reference to the parent FileTableView
+        _view: Reference to the parent FileListView
 
     """
 
-    def __init__(self, view: FileTableView) -> None:
+    def __init__(self, view: FileListView) -> None:
         """Initialize hover handler.
 
         Args:
-            view: The parent FileTableView widget
+            view: The parent FileListView widget
 
         """
         self._view = view

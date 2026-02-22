@@ -1,4 +1,4 @@
-"""Module: event_handler.py - Qt event handlers for FileTableView.
+"""Module: event_handler.py - Qt event handlers for FileListView.
 
 Author: Michael Economou
 Date: 2026-01-04
@@ -23,7 +23,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.file_table.view import FileTableView
+    from oncutf.ui.widgets.file_table.view import FileListView
 
 logger = get_cached_logger(__name__)
 
@@ -55,21 +55,21 @@ def _format_modifiers(modifiers: Qt.KeyboardModifiers) -> str:
 
 
 class EventHandler:
-    """Handles Qt events for FileTableView.
+    """Handles Qt events for FileListView.
 
     This handler manages all Qt event overrides, delegating to
     specialized handlers (hover, tooltip, viewport) as needed.
 
     Attributes:
-        _view: Reference to the parent FileTableView
+        _view: Reference to the parent FileListView
 
     """
 
-    def __init__(self, view: FileTableView) -> None:
+    def __init__(self, view: FileListView) -> None:
         """Initialize event handler.
 
         Args:
-            view: The parent FileTableView widget
+            view: The parent FileListView widget
 
         """
         self._view = view

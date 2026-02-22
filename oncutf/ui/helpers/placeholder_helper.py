@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-05-01
 
 Unified placeholder management system for all widgets.
-Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.
+Provides consistent placeholder behavior across FileListView, MetadataTreeView, and PreviewTablesView.
 
 Performance optimizations (2025-12-20):
 - Lazy icon loading: icons loaded only when placeholder is first shown

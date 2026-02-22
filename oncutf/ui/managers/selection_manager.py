@@ -41,9 +41,9 @@ class SelectionManager:
             return
 
         file_model = getattr(self.parent_window, "file_model", None)
-        file_table_view = getattr(self.parent_window, "file_table_view", None)
+        file_list_view = getattr(self.parent_window, "file_list_view", None)
 
-        if not file_model or not file_table_view or not file_model.files:
+        if not file_model or not file_list_view or not file_model.files:
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
                     "No files to select",
@@ -60,16 +60,16 @@ class SelectionManager:
             self.clear_preview_cache()
 
             # PROTECTION: Block signals during checked state updates to prevent infinite loops
-            if file_table_view:
-                file_table_view.blockSignals(True)
+            if file_list_view:
+                file_list_view.blockSignals(True)
 
             try:
                 for file in file_model.files:
                     file.checked = True
 
-                file_table_view._selection_behavior.select_rows_range(0, len(file_model.files) - 1)
-                if hasattr(file_table_view, "anchor_row"):
-                    file_table_view.anchor_row = 0
+                file_list_view._selection_behavior.select_rows_range(0, len(file_model.files) - 1)
+                if hasattr(file_list_view, "anchor_row"):
+                    file_list_view.anchor_row = 0
 
                 if hasattr(self.parent_window, "update_files_label"):
                     self.parent_window.update_files_label()
@@ -100,8 +100,8 @@ class SelectionManager:
 
             finally:
                 # Restore signals
-                if file_table_view:
-                    file_table_view.blockSignals(False)
+                if file_list_view:
+                    file_list_view.blockSignals(False)
 
     def clear_all_selection(self) -> None:
         """Clears all selection in the file table.
@@ -112,9 +112,9 @@ class SelectionManager:
             return
 
         file_model = getattr(self.parent_window, "file_model", None)
-        file_table_view = getattr(self.parent_window, "file_table_view", None)
+        file_list_view = getattr(self.parent_window, "file_list_view", None)
 
-        if not file_model or not file_table_view:
+        if not file_model or not file_list_view:
             return
 
         # If everything is already deselected, do nothing
@@ -135,7 +135,7 @@ class SelectionManager:
             metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
 
             if context:
-                FileTableStateHelper.clear_all_state(file_table_view, context, metadata_tree_view)
+                FileTableStateHelper.clear_all_state(file_list_view, context, metadata_tree_view)
 
             # Update labels
             if hasattr(self.parent_window, "update_files_label"):
@@ -151,9 +151,9 @@ class SelectionManager:
             return
 
         file_model = getattr(self.parent_window, "file_model", None)
-        file_table_view = getattr(self.parent_window, "file_table_view", None)
+        file_list_view = getattr(self.parent_window, "file_list_view", None)
 
-        if not file_model or not file_table_view or not file_model.files:
+        if not file_model or not file_list_view or not file_model.files:
             if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
                     "No files to invert selection",
@@ -170,11 +170,11 @@ class SelectionManager:
             self.clear_preview_cache()
 
             # PROTECTION: Block signals during checked state updates to prevent infinite loops
-            if file_table_view:
-                file_table_view.blockSignals(True)
+            if file_list_view:
+                file_list_view.blockSignals(True)
 
             try:
-                selection_model = file_table_view.selectionModel()
+                selection_model = file_list_view.selectionModel()
                 # Get selected rows as set (avoiding import from utils.ui)
                 current_selected = (
                     {index.row() for index in selection_model.selectedRows()}
@@ -208,15 +208,15 @@ class SelectionManager:
                 )
 
                 for start, end in ranges:
-                    if hasattr(file_table_view, "_selection_behavior"):
-                        file_table_view._selection_behavior.select_rows_range(start, end)
+                    if hasattr(file_list_view, "_selection_behavior"):
+                        file_list_view._selection_behavior.select_rows_range(start, end)
 
-                if hasattr(file_table_view, "anchor_row") and checked_rows:
-                    file_table_view.anchor_row = checked_rows[0]
-                elif hasattr(file_table_view, "anchor_row"):
-                    file_table_view.anchor_row = 0
+                if hasattr(file_list_view, "anchor_row") and checked_rows:
+                    file_list_view.anchor_row = checked_rows[0]
+                elif hasattr(file_list_view, "anchor_row"):
+                    file_list_view.anchor_row = 0
 
-                file_table_view.viewport().update()
+                file_list_view.viewport().update()
 
                 if hasattr(self.parent_window, "update_files_label"):
                     self.parent_window.update_files_label()
@@ -259,8 +259,8 @@ class SelectionManager:
 
             finally:
                 # Restore signals
-                if file_table_view:
-                    file_table_view.blockSignals(False)
+                if file_list_view:
+                    file_list_view.blockSignals(False)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """Synchronizes the checked state of files and updates preview + metadata panel.
@@ -288,9 +288,9 @@ class SelectionManager:
             self.parent_window.utility_manager.clear_preview_caches()
 
         # Block signals to prevent loops
-        file_table_view = getattr(self.parent_window, "file_table_view", None)
-        if file_table_view:
-            file_table_view.blockSignals(True)
+        file_list_view = getattr(self.parent_window, "file_list_view", None)
+        if file_list_view:
+            file_list_view.blockSignals(True)
 
         try:
             # Update checked states
@@ -307,8 +307,8 @@ class SelectionManager:
             self._update_metadata_display(selected_rows)
 
         finally:
-            if file_table_view:
-                file_table_view.blockSignals(False)
+            if file_list_view:
+                file_list_view.blockSignals(False)
 
     def _update_metadata_display(self, selected_rows: list[int]) -> None:
         """Simplified metadata display logic."""
@@ -375,8 +375,8 @@ class SelectionManager:
         self._last_preview_update_time = 0
 
         # Get current selection and trigger update
-        if self.parent_window and hasattr(self.parent_window, "file_table_view"):
-            selection_model = self.parent_window.file_table_view.selectionModel()
+        if self.parent_window and hasattr(self.parent_window, "file_list_view"):
+            selection_model = self.parent_window.file_list_view.selectionModel()
             if selection_model:
                 selected_rows = [idx.row() for idx in selection_model.selectedRows()]
                 self.update_preview_from_selection(selected_rows)

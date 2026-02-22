@@ -137,7 +137,7 @@ class MetadataTreeView(QTreeView):
         value_reset: Emitted when a metadata value is reset
     """
 
-    # NOTE: files_dropped signal removed - FileTableView now calls MetadataManager directly
+    # NOTE: files_dropped signal removed - FileListView now calls MetadataManager directly
 
     # Signals for metadata operations
     value_copied = pyqtSignal(str)
@@ -562,8 +562,8 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def _get_parent_with_file_table(self) -> QWidget | None:
-        """Find the parent window that has file_table_view attribute."""
-        return find_parent_with_attribute(self, "file_table_view")
+        """Find the parent window that has file_list_view attribute."""
+        return find_parent_with_attribute(self, "file_list_view")
 
     def _get_current_selection(self):
         """Get current selection via parent traversal. Delegates to selection handler."""

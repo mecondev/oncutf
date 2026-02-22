@@ -49,7 +49,7 @@ class TableManager:
         if column == 0:
             return  # Do not sort the status/info column
 
-        header = self.parent_window.file_table_view.horizontalHeader()
+        header = self.parent_window.file_list_view.horizontalHeader()
         current_column = header.sortIndicatorSection()
         current_order = header.sortIndicatorOrder()
 
@@ -96,14 +96,14 @@ class TableManager:
             self.parent_window.metadata_tree_view.clear_view()
 
         self.parent_window.file_model.set_files([])  # reset model with empty list
-        self.parent_window.file_table_view.set_placeholder_visible(
+        self.parent_window.file_list_view.set_placeholder_visible(
             True
         )  # Show placeholder when empty
         # Prefer view-owned API to toggle header enabled state
-        if hasattr(self.parent_window, "file_table_view") and hasattr(
-            self.parent_window.file_table_view, "set_header_enabled"
+        if hasattr(self.parent_window, "file_list_view") and hasattr(
+            self.parent_window.file_list_view, "set_header_enabled"
         ):
-            self.parent_window.file_table_view.set_header_enabled(False)
+            self.parent_window.file_list_view.set_header_enabled(False)
         # Fallback to previous behavior for compatibility
         elif hasattr(self.parent_window, "header") and self.parent_window.header is not None:
             self.parent_window.header.setEnabled(False)  # disable header
@@ -113,12 +113,12 @@ class TableManager:
         self.parent_window.update_files_label()
 
         # Update scrollbar visibility after clearing table
-        # Use public API on FileTableView instead of calling internal method
-        if hasattr(self.parent_window.file_table_view, "ensure_scrollbar_visibility"):
-            self.parent_window.file_table_view.ensure_scrollbar_visibility()
+        # Use public API on FileListView instead of calling internal method
+        if hasattr(self.parent_window.file_list_view, "ensure_scrollbar_visibility"):
+            self.parent_window.file_list_view.ensure_scrollbar_visibility()
         else:
             # Fallback to internal method for backwards compatibility
-            self.parent_window.file_table_view._update_scrollbar_visibility()
+            self.parent_window.file_list_view._update_scrollbar_visibility()
 
         # No longer need column adjustment - columns maintain fixed widths
 
@@ -132,7 +132,7 @@ class TableManager:
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """Prepare the file table view with the given file items.
 
-        Delegates the core table preparation to the FileTableView and handles
+        Delegates the core table preparation to the FileListView and handles
         application-specific logic like updating labels and preview maps.
 
         Args:
@@ -140,14 +140,14 @@ class TableManager:
 
         """
         # Delegate table preparation to the view itself
-        self.parent_window.file_table_view.prepare_table(file_items)
+        self.parent_window.file_list_view.prepare_table(file_items)
 
         # CRITICAL: Hide placeholder when files are loaded
         if file_items:
-            self.parent_window.file_table_view.set_placeholder_visible(False)
+            self.parent_window.file_list_view.set_placeholder_visible(False)
             logger.debug("[TableManager] Hidden file table placeholder - files loaded")
         else:
-            self.parent_window.file_table_view.set_placeholder_visible(True)
+            self.parent_window.file_list_view.set_placeholder_visible(True)
             logger.debug("[TableManager] Shown file table placeholder - no files")
 
         # Handle application-specific setup
@@ -162,10 +162,10 @@ class TableManager:
         self.parent_window.preview_map = {f.filename: f for f in file_items}
 
         # Enable header and update UI elements
-        if hasattr(self.parent_window, "file_table_view") and hasattr(
-            self.parent_window.file_table_view, "set_header_enabled"
+        if hasattr(self.parent_window, "file_list_view") and hasattr(
+            self.parent_window.file_list_view, "set_header_enabled"
         ):
-            self.parent_window.file_table_view.set_header_enabled(True)
+            self.parent_window.file_list_view.set_header_enabled(True)
         elif hasattr(self.parent_window, "header") and self.parent_window.header is not None:
             self.parent_window.header.setEnabled(True)
 
@@ -206,12 +206,12 @@ class TableManager:
                 # Thumbnail view (index 1) - QListView uses selectedIndexes
                 selection_model = self.parent_window.thumbnail_viewport.selection_model()
                 use_selected_indexes = True
-            elif hasattr(self.parent_window, "file_table_view"):
+            elif hasattr(self.parent_window, "file_list_view"):
                 # Details view (index 0) or fallback - QTreeView uses selectedRows
-                selection_model = self.parent_window.file_table_view.selectionModel()
-        elif hasattr(self.parent_window, "file_table_view"):
-            # Fallback to file_table_view only (no viewport_stack)
-            selection_model = self.parent_window.file_table_view.selectionModel()
+                selection_model = self.parent_window.file_list_view.selectionModel()
+        elif hasattr(self.parent_window, "file_list_view"):
+            # Fallback to file_list_view only (no viewport_stack)
+            selection_model = self.parent_window.file_list_view.selectionModel()
 
         if not selection_model:
             return []
@@ -238,7 +238,7 @@ class TableManager:
         Triggers UI refresh for the file table, updates the header state and label,
         and regenerates the filename preview.
         """
-        self.parent_window.file_table_view.viewport().update()
+        self.parent_window.file_list_view.viewport().update()
         self.parent_window.update_files_label()
         self.parent_window.request_preview_update()
 

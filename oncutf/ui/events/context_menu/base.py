@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from PyQt5.QtWidgets import QAction, QMenu
+from PyQt5.QtWidgets import QAction, QListView, QMenu
 
 from oncutf.ui.helpers.stylesheet_utils import inject_font_family
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
@@ -70,15 +70,15 @@ class ContextMenuHandlers:
 
         Args:
             position: Click position in widget coordinates
-            source_widget: Optional source widget (defaults to file_table_view)
+            source_widget: Optional source widget (defaults to file_list_view)
 
         """
         if not self.parent_window.file_model.files:
             return
 
-        # Use provided widget or default to file_table_view
+        # Use provided widget or default to file_list_view
         if source_widget is None:
-            source_widget = self.parent_window.file_table_view
+            source_widget = self.parent_window.file_list_view
 
         # Check if right-click was on color column - skip context menu for color column
         index = source_widget.indexAt(position)
@@ -185,6 +185,9 @@ class ContextMenuHandlers:
         # === VIEW / SORT (Available in both thumbnail and file table views) ===
         thumbnail_viewport = getattr(self.parent_window, "thumbnail_viewport", None)
 
+        # Detect source: ThumbnailViewport uses QListView internally; FileTable uses QTableView
+        is_from_filetable = not isinstance(source_widget, QListView)
+
         view_menu = menu.addMenu("View")
         view_menu.setIcon(get_menu_icon("table_view"))
 
@@ -193,18 +196,27 @@ class ContextMenuHandlers:
             lambda: thumbnail_viewport.zoom_in() if thumbnail_viewport else None
         )
         view_menu.addAction(zoom_in_action)
+        # Disable zoom for FileTable (only relevant for ThumbnailViewport)
+        if is_from_filetable:
+            zoom_in_action.setEnabled(False)
 
         zoom_out_action = QAction(get_menu_icon("zoom_out"), "Zoom Out", view_menu)
         zoom_out_action.triggered.connect(
             lambda: thumbnail_viewport.zoom_out() if thumbnail_viewport else None
         )
         view_menu.addAction(zoom_out_action)
+        # Disable zoom for FileTable
+        if is_from_filetable:
+            zoom_out_action.setEnabled(False)
 
         reset_zoom_action = QAction(get_menu_icon("zoom_out_map"), "Reset Zoom", view_menu)
         reset_zoom_action.triggered.connect(
             lambda: thumbnail_viewport.reset_zoom() if thumbnail_viewport else None
         )
         view_menu.addAction(reset_zoom_action)
+        # Disable zoom for FileTable
+        if is_from_filetable:
+            reset_zoom_action.setEnabled(False)
 
         sort_menu = menu.addMenu("Sort")
         sort_menu.setIcon(get_menu_icon("sort_by_alpha"))
@@ -242,6 +254,9 @@ class ContextMenuHandlers:
         if thumbnail_viewport and hasattr(thumbnail_viewport, "get_order_mode"):
             return_manual_action.setEnabled(thumbnail_viewport.get_order_mode() == "sorted")
         else:
+            return_manual_action.setEnabled(False)
+        # Also disable manual sort for FileTable (only for ThumbnailViewport)
+        if is_from_filetable:
             return_manual_action.setEnabled(False)
         sort_menu.addAction(return_manual_action)
 
@@ -436,14 +451,22 @@ class ContextMenuHandlers:
         menu.addAction(action_set_rotation)
 
         # Check if ANY selected file has rotation != 0
+        # Uses MetadataFieldMapper to resolve all possible keys ("Orientation", "Rotation", etc.)
+        # and formats to canonical form ("0deg", "90deg", ...).  Enable if at least one file
+        # has metadata loaded AND its resolved rotation is not the zero-value "0deg".
         has_rotation_to_reset = False
         if has_selection and hasattr(self.parent_window, "metadata_cache"):
+            from oncutf.core.metadata.field_mapper import MetadataFieldMapper
+
             for file_item in selected_files:
                 metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if metadata_entry and hasattr(metadata_entry, "data"):
-                    rotation = metadata_entry.data.get("rotation", "0")
-                    # Enable if rotation exists and is not "0" or 0
-                    if rotation and str(rotation) != "0":
+                if metadata_entry and hasattr(metadata_entry, "data") and metadata_entry.data:
+                    rotation_str = MetadataFieldMapper.get_metadata_value(
+                        metadata_entry.data, "rotation"
+                    )
+                    # get_metadata_value returns values like "0deg", "90deg", "180deg",
+                    # "0°", "90°", or raw numeric strings.  Non-empty + not zero = needs reset.
+                    if rotation_str and rotation_str not in ("0°", "0deg", "0"):
                         has_rotation_to_reset = True
                         break
 
@@ -459,10 +482,20 @@ class ContextMenuHandlers:
                     action_set_rotation, rotation_tip, TooltipType.INFO, menu
                 )
             else:
+                # Distinguish: no metadata loaded vs all already at 0
+                has_any_metadata = any(
+                    self.parent_window.metadata_cache.get_entry(fi.full_path) is not None
+                    for fi in selected_files
+                    if hasattr(self.parent_window, "metadata_cache")
+                )
+                if has_any_metadata:
+                    tip_msg = "All selected files already have rotation = 0"
+                else:
+                    tip_msg = "Load metadata first (Ctrl+M) to check rotation values"
                 TooltipHelper.setup_action_tooltip(
                     action_set_rotation,
-                    "All selected files already have rotation = 0",
-                    TooltipType.INFO,
+                    tip_msg,
+                    TooltipType.WARNING,
                     menu,
                 )
         else:
@@ -586,7 +619,7 @@ class ContextMenuHandlers:
         # Show menu and get chosen action
         action = menu.exec_(source_widget.viewport().mapToGlobal(position))
 
-        self.parent_window.file_table_view.context_focused_row = None
+        self.parent_window.file_list_view.context_focused_row = None
 
         # === Handlers ===
         if action == action_load_fast:

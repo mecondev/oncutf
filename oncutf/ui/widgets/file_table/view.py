@@ -1,4 +1,4 @@
-"""Module: view.py - FileTableView widget (thin shell).
+"""Module: view.py - FileListView widget (thin shell).
 
 Author: Michael Economou
 Date: 2025-05-21 (Refactored: 2026-01-04)
@@ -57,7 +57,7 @@ logger = get_cached_logger(__name__)
 SCROLLBAR_MARGIN = 40
 
 
-class FileTableView(QTableView):
+class FileListView(QTableView):
     """Custom QTableView with Windows Explorer-like behavior.
 
     Features:
@@ -403,7 +403,7 @@ class FileTableView(QTableView):
 
     def setModel(self, model) -> None:
         """Set the model for the table view."""
-        logger.debug("FileTableView setModel called", extra={"dev_only": True})
+        logger.debug("FileListView setModel called", extra={"dev_only": True})
 
         if model is self.model():
             return

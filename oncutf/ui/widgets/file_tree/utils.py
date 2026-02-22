@@ -17,7 +17,7 @@ logger = get_cached_logger(__name__)
 class DragCancelFilter:
     """Filter that prevents selection clearing during drag operations.
 
-    This is used to maintain file selection when dragging from FileTableView
+    This is used to maintain file selection when dragging from FileListView
     to MetadataTreeView, especially when no modifier keys are pressed.
     """
 

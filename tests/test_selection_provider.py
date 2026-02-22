@@ -33,7 +33,7 @@ class MockSelectionModel:
         return [MockIndex(row) for row in self._selected_rows]
 
 
-class MockFileTableView:
+class MockFileListView:
     """Mock file table view."""
 
     def __init__(self, selected_rows: list[int]):
@@ -87,13 +87,13 @@ class MockParentWindow:
         self.file_model = MockFileModel(self.files)
 
         # Default: no selection
-        self.file_table_view = None
+        self.file_list_view = None
         self.selection_store = None
         self.table_manager = None
 
     def setup_selection_model(self, selected_rows: list[int]):
         """Set up Qt selection model."""
-        self.file_table_view = MockFileTableView(selected_rows)
+        self.file_list_view = MockFileListView(selected_rows)
 
     def setup_selection_store(self, selected_rows: set[int]):
         """Set up selection store."""

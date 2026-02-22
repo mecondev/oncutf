@@ -34,19 +34,19 @@ class UtilityDelegates:
         self.status_manager.set_status(text, color, auto_reset, reset_delay)
 
     def _enable_selection_store_mode(self):
-        """Enable SelectionStore mode in FileTableView."""
+        """Enable SelectionStore mode in FileListView."""
         from oncutf.utils.logging.logger_factory import get_cached_logger
 
         logger = get_cached_logger(__name__)
 
         if hasattr(self, "initialization_manager"):
             self.initialization_manager.enable_selection_store_mode()
-        if hasattr(self, "file_table_view"):
+        if hasattr(self, "file_list_view"):
             logger.debug(
-                "[MainWindow] Enabling SelectionStore mode in FileTableView",
+                "[MainWindow] Enabling SelectionStore mode in FileListView",
                 extra={"dev_only": True},
             )
-            self.file_table_view.enable_selection_store_mode()
+            self.file_list_view.enable_selection_store_mode()
 
     def global_undo(self) -> None:
         """Global undo handler (Ctrl+Z).

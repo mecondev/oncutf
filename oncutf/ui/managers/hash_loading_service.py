@@ -711,12 +711,12 @@ class HashLoadingService:
 
         """
         # Update file table view to show new hash
-        if hasattr(self.parent_window, "file_table_view") and self.parent_window.file_table_view:
+        if hasattr(self.parent_window, "file_list_view") and self.parent_window.file_list_view:
             try:
                 from oncutf.app.state.context import get_app_context
 
                 file_store = get_app_context().file_store
-                model = self.parent_window.file_table_view.model()
+                model = self.parent_window.file_list_view.model()
 
                 if model and file_store:
                     file_items = file_store.get_loaded_files()

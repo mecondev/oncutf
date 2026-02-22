@@ -51,9 +51,9 @@ class BootstrapManager:
         )
 
     def enable_selection_store_mode(self) -> None:
-        """Enable SelectionStore mode in FileTableView once QtAppContext is ready."""
+        """Enable SelectionStore mode in FileListView once QtAppContext is ready."""
         try:
-            self.main_window.file_table_view.enable_selection_store_mode()
+            self.main_window.file_list_view.enable_selection_store_mode()
 
             # Connect SelectionStore signals to MainWindow handlers
             from oncutf.ui.adapters.qt_app_context import get_qt_app_context
@@ -80,7 +80,7 @@ class BootstrapManager:
                 )
 
             logger.debug(
-                "[MainWindow] Enabling SelectionStore mode in FileTableView",
+                "[MainWindow] Enabling SelectionStore mode in FileListView",
                 extra={"dev_only": True},
             )
         except Exception as e:
@@ -136,13 +136,13 @@ class BootstrapManager:
                     self.main_window.update_preview_tables_from_pairs([])
 
                 # 2. Update table view (preserve selection - RenameManager will restore)
-                self.main_window.file_table_view.prepare_table(files, preserve_selection=True)
+                self.main_window.file_list_view.prepare_table(files, preserve_selection=True)
 
                 # 3. Update placeholder visibility
                 if files:
-                    self.main_window.file_table_view.set_placeholder_visible(False)
+                    self.main_window.file_list_view.set_placeholder_visible(False)
                 else:
-                    self.main_window.file_table_view.set_placeholder_visible(True)
+                    self.main_window.file_list_view.set_placeholder_visible(True)
 
                 # 4. Update UI labels
                 self.main_window.update_files_label()
@@ -154,7 +154,7 @@ class BootstrapManager:
                 logger.warning("[MainWindow] No application context available")
                 return
 
-            state = FileTableStateHelper.save_state(self.main_window.file_table_view, context)
+            state = FileTableStateHelper.save_state(self.main_window.file_list_view, context)
 
             # 1. Clear stale selections (files may no longer exist)
             try:
@@ -211,18 +211,18 @@ class BootstrapManager:
                     logger.warning("[MainWindow] Error filtering companion files: %s", e)
 
             # 4. Update table view (FileStore already updated)
-            self.main_window.file_table_view.prepare_table(filtered_files)
+            self.main_window.file_list_view.prepare_table(filtered_files)
 
             # 5. Restore file table state (selection, checked, scroll position)
             FileTableStateHelper.restore_state(
-                self.main_window.file_table_view, context, state, delay_ms=100
+                self.main_window.file_list_view, context, state, delay_ms=100
             )
 
             # 6. Update placeholder visibility
             if files:
-                self.main_window.file_table_view.set_placeholder_visible(False)
+                self.main_window.file_list_view.set_placeholder_visible(False)
             else:
-                self.main_window.file_table_view.set_placeholder_visible(True)
+                self.main_window.file_list_view.set_placeholder_visible(True)
 
             # 7. Update UI labels
             self.main_window.update_files_label()
@@ -264,7 +264,7 @@ class BootstrapManager:
             "current_folder": self.main_window.context.get_current_folder(),
             "force_extended_metadata": self.main_window.force_extended_metadata,
             "has_status_manager": self.main_window.status_manager is not None,
-            "has_file_table_view": hasattr(self.main_window, "file_table_view"),
+            "has_file_list_view": hasattr(self.main_window, "file_list_view"),
         }
 
     def validate_initialization(self) -> bool:
@@ -277,7 +277,7 @@ class BootstrapManager:
         required_components = [
             "status_manager",
             "file_model",
-            "file_table_view",
+            "file_list_view",
             "preview_manager",
         ]
 

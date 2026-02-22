@@ -312,7 +312,7 @@ class LayoutController:
     def _setup_center_panel(self) -> None:
         """Setup center panel (file table view)."""
         # Lazy import: Only load when setting up center panel
-        from oncutf.ui.widgets.file_table import FileTableView
+        from oncutf.ui.widgets.file_table import FileListView
         from oncutf.ui.widgets.interactive_header import InteractiveHeader
 
         self.parent_window.center_frame = QFrame()
@@ -380,20 +380,20 @@ class LayoutController:
         center_layout.addWidget(files_header_widget)
 
         parent_widget = cast("QWidget", self.parent_window)
-        self.parent_window.file_table_view = FileTableView(parent=parent_widget)
-        self.parent_window.file_table_view.parent_window = parent_widget
-        self.parent_window.file_table_view.verticalHeader().setVisible(False)
-        self.parent_window.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.parent_window.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.parent_window.file_table_view.setModel(self.parent_window.file_model)
+        self.parent_window.file_list_view = FileListView(parent=parent_widget)
+        self.parent_window.file_list_view.parent_window = parent_widget
+        self.parent_window.file_list_view.verticalHeader().setVisible(False)
+        self.parent_window.file_list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.parent_window.file_list_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.parent_window.file_list_view.setModel(self.parent_window.file_model)
 
         # Header setup
         self.parent_window.header = InteractiveHeader(
             Qt.Horizontal,
-            self.parent_window.file_table_view,
+            self.parent_window.file_list_view,
             parent_window=self.parent_window,
         )
-        self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
+        self.parent_window.file_list_view.setHorizontalHeader(self.parent_window.header)
         if hasattr(self.parent_window.header, "setDefaultAlignment"):
             self.parent_window.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.parent_window.header.setSortIndicatorShown(False)
@@ -403,23 +403,23 @@ class LayoutController:
         if hasattr(self.parent_window.header, "set_click_actions_enabled"):
             self.parent_window.header.set_click_actions_enabled(True)
 
-        self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
+        self.parent_window.file_list_view.setHorizontalHeader(self.parent_window.header)
 
         # Setup keyboard shortcuts for column reordering (Ctrl+Left/Right)
-        self.parent_window.file_table_view.setup_header_keyboard_shortcuts()
+        self.parent_window.file_list_view.setup_header_keyboard_shortcuts()
 
-        self.parent_window.file_table_view.setAlternatingRowColors(True)
-        self.parent_window.file_table_view.setShowGrid(False)
-        self.parent_window.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.parent_window.file_table_view.setSortingEnabled(False)
-        self.parent_window.file_table_view.setWordWrap(False)
+        self.parent_window.file_list_view.setAlternatingRowColors(True)
+        self.parent_window.file_list_view.setShowGrid(False)
+        self.parent_window.file_list_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.parent_window.file_list_view.setSortingEnabled(False)
+        self.parent_window.file_list_view.setWordWrap(False)
 
         # Initialize header and set default row height
-        self.parent_window.file_table_view.horizontalHeader()
-        self.parent_window.file_table_view.verticalHeader().setDefaultSectionSize(22)
+        self.parent_window.file_list_view.horizontalHeader()
+        self.parent_window.file_list_view.verticalHeader().setDefaultSectionSize(22)
 
         # Show placeholder after setup is complete
-        self.parent_window.file_table_view.set_placeholder_visible(True)
+        self.parent_window.file_list_view.set_placeholder_visible(True)
 
         # Create ThumbnailViewportWidget
         from oncutf.ui.widgets.thumbnail_viewport import ThumbnailViewportWidget
@@ -431,7 +431,7 @@ class LayoutController:
         # Create QStackedWidget to hold both views
         self.parent_window.viewport_stack = QStackedWidget()
         self.parent_window.viewport_stack.addWidget(
-            self.parent_window.file_table_view
+            self.parent_window.file_list_view
         )  # Index 0 (details)
         self.parent_window.viewport_stack.addWidget(
             self.parent_window.thumbnail_viewport
@@ -544,7 +544,7 @@ class LayoutController:
         Connects selection change signals from both views to sync methods.
         """
         # FileTable selection changed -> update ThumbnailViewport (but only when thumbs view is active)
-        self.parent_window.file_table_view.selection_changed.connect(
+        self.parent_window.file_list_view.selection_changed.connect(
             self._on_file_table_selection_changed
         )
 
@@ -585,9 +585,9 @@ class LayoutController:
         try:
             updated_via_store = False
 
-            file_table_view = getattr(self.parent_window, "file_table_view", None)
-            if file_table_view and hasattr(file_table_view, "_selection_behavior"):
-                selection_behavior = file_table_view._selection_behavior
+            file_list_view = getattr(self.parent_window, "file_list_view", None)
+            if file_list_view and hasattr(file_list_view, "_selection_behavior"):
+                selection_behavior = file_list_view._selection_behavior
                 selection_behavior.update_selection_store(set(selected_rows), emit_signal=True)
                 updated_via_store = True
 
@@ -613,7 +613,7 @@ class LayoutController:
         try:
             # Get selected files from FileTable
             selected_files = []
-            selection_model = self.parent_window.file_table_view.selectionModel()
+            selection_model = self.parent_window.file_list_view.selectionModel()
             if selection_model:
                 selected_indexes = selection_model.selectedRows()
                 for index in selected_indexes:
@@ -641,11 +641,11 @@ class LayoutController:
             selected_files = self.parent_window.thumbnail_viewport.get_selected_files()
 
             # Find corresponding rows in FileTable
-            selection_model = self.parent_window.file_table_view.selectionModel()
+            selection_model = self.parent_window.file_list_view.selectionModel()
             if not selection_model:
                 return
 
-            model = self.parent_window.file_table_view.model()
+            model = self.parent_window.file_list_view.model()
             if not model:
                 return
 

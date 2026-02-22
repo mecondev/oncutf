@@ -357,9 +357,9 @@ class MetadataLoader:
         except Exception:
             pass
 
-        # Fallback: check file_table_view selection
-        if hasattr(self._parent_window, "file_table_view"):
-            selection_model = self._parent_window.file_table_view.selectionModel()
+        # Fallback: check file_list_view selection
+        if hasattr(self._parent_window, "file_list_view"):
+            selection_model = self._parent_window.file_list_view.selectionModel()
             if selection_model:
                 return len(selection_model.selectedRows())
 

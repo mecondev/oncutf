@@ -32,8 +32,8 @@ class TestSafeRenameWorkflow:
         self.mock_main_window.file_model = self.mock_file_model
 
         # Setup file table view
-        self.mock_file_table_view = MagicMock()
-        self.mock_main_window.file_table_view = self.mock_file_table_view
+        self.mock_file_list_view = MagicMock()
+        self.mock_main_window.file_list_view = self.mock_file_list_view
 
         # Setup metadata cache
         self.mock_metadata_cache = MagicMock()
@@ -191,7 +191,7 @@ class TestSafeRenameWorkflow:
         assert self.mock_file_model.index.call_count == 2
 
         # Verify viewport update was called
-        self.mock_file_table_view.viewport().update.assert_called()
+        self.mock_file_list_view.viewport().update.assert_called()
 
     def test_update_info_icons_safe_with_invalid_main_window(self):
         """Test safe icon update handles invalid main window gracefully."""

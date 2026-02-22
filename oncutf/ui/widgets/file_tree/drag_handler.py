@@ -46,7 +46,7 @@ class DragHandler:
     - Uses manual drag detection instead of Qt's built-in system
     - Provides real-time visual feedback during drag
     - Supports 4 modifier combinations for different behaviors
-    - Validates drop targets (only FileTableView allowed)
+    - Validates drop targets (only FileListView allowed)
     """
 
     def __init__(self, view: FileTreeView) -> None:
@@ -340,7 +340,7 @@ class DragHandler:
                 if visual_manager.is_valid_drop_target(
                     parent, "file_tree"
                 ) and parent.__class__.__name__ in (
-                    "FileTableView",
+                    "FileListView",
                     "ThumbnailViewportWidget",
                 ):
                     logger.debug(
@@ -469,7 +469,7 @@ class DragHandler:
         )
 
     def _handle_drop_on_target(self, target_widget) -> None:
-        """Handle drop on target widget (FileTableView or ThumbnailViewportWidget).
+        """Handle drop on target widget (FileListView or ThumbnailViewportWidget).
 
         Args:
             target_widget: The target widget that received the drop
@@ -481,15 +481,15 @@ class DragHandler:
         qt_mods = QApplication.keyboardModifiers()
         target_class = target_widget.__class__.__name__
 
-        # For FileTableView, emit files_dropped to reuse the main drop pipeline
-        if target_class == "FileTableView":
+        # For FileListView, emit files_dropped to reuse the main drop pipeline
+        if target_class == "FileListView":
             from oncutf.utils.cursor_helper import wait_cursor
 
             with wait_cursor(restore_after=False):
                 QApplication.processEvents()
                 target_widget.files_dropped.emit([self._drag_path], qt_mods)
             logger.info(
-                "[DragHandler] Dropped on FileTableView: %s",
+                "[DragHandler] Dropped on FileListView: %s",
                 self._drag_path,
                 extra={"dev_only": True},
             )

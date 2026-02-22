@@ -60,8 +60,8 @@ class StreamingFileLoader:
 
         # Suppress placeholder visibility during streaming
         # (prevents placeholder re-showing when model is temporarily empty)
-        if hasattr(self.parent_window, "file_table_view"):
-            self.parent_window.file_table_view._loading_in_progress = True
+        if hasattr(self.parent_window, "file_list_view"):
+            self.parent_window.file_list_view._loading_in_progress = True
 
         # Clear existing files if requested
         if clear:
@@ -87,8 +87,8 @@ class StreamingFileLoader:
             self._loading_in_progress = False
             self._pending_files = []
             # Reset view's loading flag (also done in refresh_ui_after_load)
-            if hasattr(self.parent_window, "file_table_view"):
-                self.parent_window.file_table_view._loading_in_progress = False
+            if hasattr(self.parent_window, "file_list_view"):
+                self.parent_window.file_list_view._loading_in_progress = False
             logger.info("[StreamingFileLoader] Streaming load complete")
             # Final UI refresh after streaming completes
             if self.ui_service:

@@ -62,12 +62,12 @@ class ShortcutController:
                 FILE_TABLE_SHORTCUTS["CALCULATE_HASH"],
                 self.parent_window.shortcut_calculate_hash_selected,
             ),
-            # NOTE: REFRESH (F5) removed - now handled via FileTableView.keyPressEvent
+            # NOTE: REFRESH (F5) removed - now handled via FileListView.keyPressEvent
             # NOTE: LOAD_METADATA and LOAD_EXTENDED_METADATA moved to global shortcuts
         ]
 
         for key, handler in file_table_shortcuts:
-            shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
+            shortcut = QShortcut(QKeySequence(key), self.parent_window.file_list_view)
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 

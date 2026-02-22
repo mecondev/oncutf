@@ -215,7 +215,7 @@ class UtilityManager:
 
     def get_selected_rows_files(self) -> list:
         """Returns a list of FileItem objects currently selected (blue-highlighted) in the table view."""
-        selected_indexes = self.main_window.file_table_view.selectionModel().selectedRows()
+        selected_indexes = self.main_window.file_list_view.selectionModel().selectedRows()
         return [
             self.main_window.file_model.files[i.row()]
             for i in selected_indexes

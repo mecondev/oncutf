@@ -1,4 +1,4 @@
-"""Module: viewport_handler.py - Scrollbar and viewport management for FileTableView.
+"""Module: viewport_handler.py - Scrollbar and viewport management for FileListView.
 
 Author: Michael Economou
 Date: 2026-01-04
@@ -20,13 +20,13 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import schedule_ui_update
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.file_table.view import FileTableView
+    from oncutf.ui.widgets.file_table.view import FileListView
 
 logger = get_cached_logger(__name__)
 
 
 class ViewportHandler:
-    """Manages scrollbar and viewport state for FileTableView.
+    """Manages scrollbar and viewport state for FileListView.
 
     This handler coordinates:
     - Horizontal scrollbar visibility based on column widths
@@ -35,15 +35,15 @@ class ViewportHandler:
     - Text display refresh for visible cells
 
     Attributes:
-        _view: Reference to the parent FileTableView
+        _view: Reference to the parent FileListView
 
     """
 
-    def __init__(self, view: FileTableView) -> None:
+    def __init__(self, view: FileListView) -> None:
         """Initialize viewport handler.
 
         Args:
-            view: The parent FileTableView widget
+            view: The parent FileListView widget
 
         """
         self._view = view

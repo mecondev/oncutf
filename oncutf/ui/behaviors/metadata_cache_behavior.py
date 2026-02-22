@@ -48,7 +48,7 @@ class CacheableWidget(Protocol):
         ...
 
     def _get_parent_with_file_table(self) -> QWidget | None:
-        """Find the parent window that has file_table_view attribute.
+        """Find the parent window that has file_list_view attribute.
 
         Returns:
             QWidget | None: Parent window if found

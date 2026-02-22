@@ -42,7 +42,7 @@ class ColorColumnDelegate(FileTableHoverDelegate):
         """Initialize the color column delegate.
 
         Args:
-            parent: Parent widget (FileTableView)
+            parent: Parent widget (FileListView)
 
         """
         super().__init__(parent)

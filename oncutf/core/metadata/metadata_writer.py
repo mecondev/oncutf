@@ -572,11 +572,11 @@ class MetadataWriter:
         requiring a full table reload.
         """
         try:
-            if hasattr(self.parent_window, "file_table_view") and hasattr(
+            if hasattr(self.parent_window, "file_list_view") and hasattr(
                 self.parent_window, "file_model"
             ):
                 self.ui_update.update_file_icon(
-                    self.parent_window.file_table_view,
+                    self.parent_window.file_list_view,
                     self.parent_window.file_model,
                     file_item.full_path,
                 )

@@ -70,7 +70,7 @@ class WindowEventHandler:
             schedule_resize_adjust(update_splitters, 50)
 
             # Also trigger column adjustment when window resizes
-            if hasattr(self.main_window, "file_table_view"):
+            if hasattr(self.main_window, "file_list_view"):
 
                 def trigger_column_adjustment():
                     """Trigger column width adjustment after splitter change."""
@@ -113,8 +113,8 @@ class WindowEventHandler:
     def _refresh_file_table_for_window_change(self) -> None:
         """Refresh file table after window state changes."""
         if (
-            not hasattr(self.main_window, "file_table_view")
-            or not self.main_window.file_table_view.model()
+            not hasattr(self.main_window, "file_list_view")
+            or not self.main_window.file_list_view.model()
         ):
             return
 
@@ -123,13 +123,13 @@ class WindowEventHandler:
         def refresh():
             """Refresh file table column widths after layout change."""
             # Reset manual column preference for auto-sizing
-            if not getattr(self.main_window.file_table_view, "_recent_manual_resize", False):
-                self.main_window.file_table_view._has_manual_preference = False
+            if not getattr(self.main_window.file_list_view, "_recent_manual_resize", False):
+                self.main_window.file_list_view._has_manual_preference = False
 
             # Use existing splitter logic for column sizing
             if hasattr(self.main_window, "horizontal_splitter"):
                 sizes = self.main_window.horizontal_splitter.sizes()
-                self.main_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
+                self.main_window.file_list_view.on_horizontal_splitter_moved(sizes[1], 1)
 
         schedule_resize_adjust(refresh, 25)
 

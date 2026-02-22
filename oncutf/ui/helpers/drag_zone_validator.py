@@ -5,7 +5,7 @@ Date: 2025-06-10
 
 Drag Zone Validator - Common logic for drag & drop zone validation
 This module provides shared logic for validating drop zones during drag operations,
-eliminating code duplication between FileTreeView and FileTableView.
+eliminating code duplication between FileTreeView and FileListView.
 """
 
 from typing import ClassVar
@@ -29,12 +29,12 @@ class DragZoneValidator:
     # Define valid/invalid drop zones for each source type
     ZONE_RULES: ClassVar[dict[str, dict[str, list[str]]]] = {
         "file_tree": {
-            "valid": ["FileTableView"],
+            "valid": ["FileListView"],
             "invalid": ["FileTreeView", "MetadataTreeView"],
         },
         "file_table": {
             "valid": ["MetadataTreeView"],
-            "invalid": ["FileTreeView", "FileTableView"],
+            "invalid": ["FileTreeView", "FileListView"],
         },
     }
 

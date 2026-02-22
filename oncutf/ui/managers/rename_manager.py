@@ -250,7 +250,7 @@ class RenameManager:
                     context = get_app_context()
                     # Call restore SYNCHRONOUSLY - we already debounced via files_loaded signal
                     FileTableStateHelper.restore_state_sync(
-                        self.main_window.file_table_view,
+                        self.main_window.file_list_view,
                         context,
                         state,
                     )
@@ -500,8 +500,8 @@ class RenameManager:
             if not hasattr(file_model, "files") or not hasattr(file_model, "rowCount"):
                 return
 
-            file_table_view = getattr(self.main_window, "file_table_view", None)
-            if not file_table_view:
+            file_list_view = getattr(self.main_window, "file_list_view", None)
+            if not file_list_view:
                 return
 
             # Update icons for each row
@@ -513,8 +513,8 @@ class RenameManager:
                             self.main_window, "metadata_cache"
                         ) and self.main_window.metadata_cache.has(file_item.full_path):
                             index = file_model.index(row, 0)
-                            rect = file_table_view.visualRect(index)
-                            file_table_view.viewport().update(rect)
+                            rect = file_list_view.visualRect(index)
+                            file_list_view.viewport().update(rect)
                 except Exception as e:
                     logger.debug(
                         "[RenameManager] Could not update icon for row %d: %s",
@@ -524,7 +524,7 @@ class RenameManager:
                     continue
 
             # Update entire viewport
-            file_table_view.viewport().update()
+            file_list_view.viewport().update()
 
         except Exception:
             logger.exception("[RenameManager] Error in _update_info_icons_safe")
@@ -535,10 +535,10 @@ class RenameManager:
             file_item = self.main_window.file_model.files[row]
             if self.main_window.metadata_cache.has(file_item.full_path):
                 index = self.main_window.file_model.index(row, 0)
-                rect = self.main_window.file_table_view.visualRect(index)
-                self.main_window.file_table_view.viewport().update(rect)
+                rect = self.main_window.file_list_view.visualRect(index)
+                self.main_window.file_list_view.viewport().update(rect)
 
-        self.main_window.file_table_view.viewport().update()
+        self.main_window.file_list_view.viewport().update()
 
     def update_module_dividers(self) -> None:
         """Updates the visibility of module dividers based on module position."""

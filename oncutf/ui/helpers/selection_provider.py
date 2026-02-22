@@ -34,7 +34,7 @@ class SelectionProvider:
     - parent_window.get_selected_files()
     - parent_window.get_selected_files_ordered()
     - parent_window.table_manager.get_selected_files()
-    - file_table_view._get_current_selection()
+    - file_list_view._get_current_selection()
     - selection_model.selectedRows() + manual file lookup
     - context._selection_store.get_selected_files()
     Instead, use:
@@ -60,7 +60,7 @@ class SelectionProvider:
         """Get currently selected files from any parent window.
 
         Args:
-            parent_window: MainWindow or any widget with file_model/file_table_view
+            parent_window: MainWindow or any widget with file_model/file_list_view
             ordered: If True, return files in table display order (default)
 
         Returns:
@@ -128,18 +128,16 @@ class SelectionProvider:
     @classmethod
     def _via_selection_model(cls, parent_window: Any, *, ordered: bool) -> list[FileItem] | None:
         """Get selected files via Qt selection model."""
-        if not hasattr(parent_window, "file_table_view") or not hasattr(
-            parent_window, "file_model"
-        ):
+        if not hasattr(parent_window, "file_list_view") or not hasattr(parent_window, "file_model"):
             return None
 
-        file_table_view = parent_window.file_table_view
+        file_list_view = parent_window.file_list_view
         file_model = parent_window.file_model
 
-        if not file_table_view or not file_model:
+        if not file_list_view or not file_model:
             return None
 
-        selection_model = file_table_view.selectionModel()
+        selection_model = file_list_view.selectionModel()
         if not selection_model:
             return None
 
@@ -204,10 +202,10 @@ class SelectionProvider:
                 return result
 
         # Fallback: use selection model
-        if hasattr(parent_window, "file_table_view"):
-            file_table_view = parent_window.file_table_view
-            if file_table_view:
-                selection_model = file_table_view.selectionModel()
+        if hasattr(parent_window, "file_list_view"):
+            file_list_view = parent_window.file_list_view
+            if file_list_view:
+                selection_model = file_list_view.selectionModel()
                 if selection_model:
                     from oncutf.ui.helpers.selection_provider import (
                         get_selected_row_set,
@@ -284,7 +282,7 @@ def get_selected_files(parent_window: Any, *, ordered: bool = True) -> list[File
     Convenience function that delegates to SelectionProvider.
 
     Args:
-        parent_window: MainWindow or any widget with file_model/file_table_view
+        parent_window: MainWindow or any widget with file_model/file_list_view
         ordered: If True, return files in table display order
 
     Returns:

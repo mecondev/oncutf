@@ -300,7 +300,7 @@ class HeaderConfigurator:
         header.setVisible(not is_empty)
 
         logger.debug(
-            "[FileTableView] Header visibility: %s (empty: %s)",
+            "[FileListView] Header visibility: %s (empty: %s)",
             "hidden" if is_empty else "visible",
             is_empty,
             extra={"dev_only": True},

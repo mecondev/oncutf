@@ -43,7 +43,7 @@ class UIEventHandlers:
 
         total = len(self.parent_window.file_model.files)
         all_selected = all(file.checked for file in self.parent_window.file_model.files)
-        selection_model = self.parent_window.file_table_view.selectionModel()
+        selection_model = self.parent_window.file_list_view.selectionModel()
 
         from oncutf.ui.services.cursor_service import wait_cursor
 
@@ -55,14 +55,14 @@ class UIEventHandlers:
                     file.checked = False
             else:
                 # Select all efficiently
-                self.parent_window.file_table_view._selection_behavior.select_rows_range(
+                self.parent_window.file_list_view._selection_behavior.select_rows_range(
                     0, total - 1
                 )
                 for file in self.parent_window.file_model.files:
                     file.checked = True
-                self.parent_window.file_table_view.anchor_row = 0
+                self.parent_window.file_list_view.anchor_row = 0
 
-            self.parent_window.file_table_view.viewport().update()
+            self.parent_window.file_list_view.viewport().update()
             self.parent_window.update_files_label()
             self.parent_window.request_preview_update()
             self.parent_window.metadata_tree_view.refresh_metadata_from_selection()

@@ -1,4 +1,4 @@
-"""Module: utils.py - Utility functions for FileTableView.
+"""Module: utils.py - Utility functions for FileListView.
 
 Author: Michael Economou
 Date: 2026-01-04
@@ -19,19 +19,19 @@ from PyQt5.QtWidgets import QApplication
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.file_table.view import FileTableView
+    from oncutf.ui.widgets.file_table.view import FileListView
 
 logger = get_cached_logger(__name__)
 
 
-def force_cursor_cleanup(view: FileTableView) -> None:
+def force_cursor_cleanup(view: FileListView) -> None:
     """Force cleanup of any stuck cursor states.
 
     This clears all override cursors and resets the view's cursor
     to the default arrow cursor.
 
     Args:
-        view: The FileTableView to clean up
+        view: The FileListView to clean up
 
     """
     try:
@@ -47,14 +47,14 @@ def force_cursor_cleanup(view: FileTableView) -> None:
         logger.warning("Error during cursor cleanup: %s", e)
 
 
-def emergency_cursor_cleanup(view: FileTableView) -> None:
+def emergency_cursor_cleanup(view: FileListView) -> None:
     """Emergency cursor cleanup with aggressive reset.
 
     This is a more aggressive cleanup that removes up to 10
     override cursors and forcefully resets all widget cursors.
 
     Args:
-        view: The FileTableView to clean up
+        view: The FileListView to clean up
 
     """
     try:
@@ -78,11 +78,11 @@ def emergency_cursor_cleanup(view: FileTableView) -> None:
         logger.warning("Error during emergency cursor cleanup: %s", e)
 
 
-def get_metadata_tree(view: FileTableView):
+def get_metadata_tree(view: FileListView):
     """Get the metadata tree widget from the parent hierarchy.
 
     Args:
-        view: The FileTableView to search from
+        view: The FileListView to search from
 
     Returns:
         The metadata tree widget or None if not found
@@ -98,11 +98,11 @@ def get_metadata_tree(view: FileTableView):
     return None
 
 
-def get_main_window(view: FileTableView):
+def get_main_window(view: FileListView):
     """Get the main window from the parent hierarchy.
 
     Args:
-        view: The FileTableView to search from
+        view: The FileListView to search from
 
     Returns:
         The main window or None if not found
@@ -116,11 +116,11 @@ def get_main_window(view: FileTableView):
     return None
 
 
-def clear_preview_and_metadata(view: FileTableView) -> None:
+def clear_preview_and_metadata(view: FileListView) -> None:
     """Clear preview and metadata displays when no selection exists.
 
     Args:
-        view: The FileTableView to use for finding parent window
+        view: The FileListView to use for finding parent window
 
     """
     try:

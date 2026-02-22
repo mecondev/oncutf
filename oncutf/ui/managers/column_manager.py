@@ -73,10 +73,10 @@ class ColumnManager:
             )
             return
 
-        # TEMPORARILY skip file_table to avoid conflicts with FileTableView column management
+        # TEMPORARILY skip file_table to avoid conflicts with FileListView column management
         if table_type == "file_table":
             logger.debug(
-                "[ColumnManager] Skipping file_table - managed by FileTableView directly",
+                "[ColumnManager] Skipping file_table - managed by FileListView directly",
                 extra={"dev_only": True},
             )
             return
@@ -257,7 +257,7 @@ class ColumnManager:
             table_type: Type identifier
 
         """
-        # For now, this is mostly handled by FileTableView
+        # For now, this is mostly handled by FileListView
         # Could add smart resize logic here if needed
         if isinstance(table_view, QTableView):
             self.ensure_horizontal_scrollbar_state(table_view)

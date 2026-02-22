@@ -13,7 +13,7 @@ Keyboard shortcuts configuration.
 # Common refresh key used by multiple widgets
 REFRESH_KEY = "F5"
 
-# File Table shortcuts (work when FileTableView has focus)
+# File Table shortcuts (work when FileListView has focus)
 FILE_TABLE_SHORTCUTS = {
     "SELECT_ALL": "Ctrl+A",
     "CLEAR_SELECTION": "Ctrl+Shift+A",

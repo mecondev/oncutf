@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from oncutf.ui.managers.status_manager import StatusManager
     from oncutf.ui.services.utility_manager import UtilityManager
     from oncutf.ui.widgets.custom_file_system_model import CustomFileSystemModel
-    from oncutf.ui.widgets.file_table import FileTableView
+    from oncutf.ui.widgets.file_table import FileListView
     from oncutf.ui.widgets.file_tree import FileTreeView
     from oncutf.ui.widgets.file_tree.drive_sort_proxy import DriveSortProxyModel
     from oncutf.ui.widgets.final_transform_container import FinalTransformContainer
@@ -97,7 +97,7 @@ class ShortcutContext(Protocol):
     """
 
     shortcuts: list["QShortcut"]
-    file_table_view: "FileTableView"
+    file_list_view: "FileListView"
     shortcut_manager: "ShortcutManager"
 
     # File table shortcuts
@@ -172,7 +172,7 @@ class SignalContext(Protocol):
     browse_folder_button: "QPushButton"
     rename_button: "QPushButton"
     folder_tree: "FileTreeView"
-    file_table_view: "FileTableView"
+    file_list_view: "FileListView"
     file_model: "FileTableModel"
     metadata_tree_view: "MetadataTreeView"
     preview_tables_view: "PreviewTablesView"
@@ -301,7 +301,7 @@ class LayoutContext(Protocol):
 
     # Center panel
     files_label: "QLabel"
-    file_table_view: "FileTableView"
+    file_list_view: "FileListView"
     thumbnail_viewport: "ThumbnailViewportWidget"
     viewport_stack: "QStackedWidget"
     file_model: "FileTableModel"

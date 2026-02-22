@@ -602,12 +602,12 @@ class DragVisualManager:
         while current_widget:
             widget_class = current_widget.__class__.__name__
 
-            # FileTreeView can drop on FileTableView or ThumbnailViewportWidget
+            # FileTreeView can drop on FileListView or ThumbnailViewportWidget
             if drag_source == "file_tree":
-                if widget_class in ("FileTableView", "ThumbnailViewportWidget"):
+                if widget_class in ("FileListView", "ThumbnailViewportWidget"):
                     return True
 
-            # FileTableView can only drop on MetadataTreeView
+            # FileListView can only drop on MetadataTreeView
             elif drag_source == "file_table" and widget_class == "MetadataTreeView":
                 return True
 

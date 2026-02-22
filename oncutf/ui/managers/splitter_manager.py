@@ -59,8 +59,8 @@ class SplitterManager:
         if hasattr(self.parent_window, "folder_tree"):
             self.parent_window.folder_tree.on_horizontal_splitter_moved(pos, index)
 
-        if hasattr(self.parent_window, "file_table_view"):
-            self.parent_window.file_table_view.on_horizontal_splitter_moved(pos, index)
+        if hasattr(self.parent_window, "file_list_view"):
+            self.parent_window.file_list_view.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement.
@@ -82,8 +82,8 @@ class SplitterManager:
         if hasattr(self.parent_window, "folder_tree"):
             self.parent_window.folder_tree.on_vertical_splitter_moved(pos, index)
 
-        if hasattr(self.parent_window, "file_table_view"):
-            self.parent_window.file_table_view.on_vertical_splitter_moved(pos, index)
+        if hasattr(self.parent_window, "file_list_view"):
+            self.parent_window.file_list_view.on_vertical_splitter_moved(pos, index)
 
         if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
@@ -267,12 +267,12 @@ class SplitterManager:
         This is useful when splitter movements affect column layouts.
         """
         # For file table, use the original sophisticated logic
-        if hasattr(self.parent_window, "file_table_view") and hasattr(
+        if hasattr(self.parent_window, "file_list_view") and hasattr(
             self.parent_window, "horizontal_splitter"
         ):
             # Use existing splitter logic for column sizing (original implementation)
             sizes = self.parent_window.horizontal_splitter.sizes()
-            self.parent_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
+            self.parent_window.file_list_view.on_horizontal_splitter_moved(sizes[1], 1)
             logger.debug("[SplitterManager] Triggered original file table column adjustment")
 
         # Use ColumnManager for other table views that don't have sophisticated logic

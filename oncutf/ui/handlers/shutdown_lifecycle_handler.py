@@ -566,11 +566,11 @@ class ShutdownLifecycleHandler:
         """Perform final cleanup after coordinator shutdown."""
         try:
             # Clean up Qt resources with defensive checks
-            if hasattr(self.main_window, "file_table_view") and self.main_window.file_table_view:
+            if hasattr(self.main_window, "file_list_view") and self.main_window.file_list_view:
                 with suppress(RuntimeError, AttributeError):
-                    self.main_window.file_table_view.clearSelection()
+                    self.main_window.file_list_view.clearSelection()
                 with suppress(RuntimeError, AttributeError):
-                    self.main_window.file_table_view.setModel(None)
+                    self.main_window.file_list_view.setModel(None)
 
             # Additional cleanup
             try:

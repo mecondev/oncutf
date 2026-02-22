@@ -107,50 +107,39 @@ logger = get_cached_logger(__name__)
 # Migration Notes
 # =============================================================================
 
-"""
-MIGRATION GUIDELINES
-====================
-
-When to migrate from Mixin to Behavior:
----------------------------------------
-1. Creating a NEW widget that needs selection/drag-drop/editing functionality
-2. Mixin initialization order is causing bugs
-3. Need to unit test behavior in isolation
-4. Widget has too many mixins (> 3-4)
-
-When NOT to migrate:
---------------------
-1. Existing widget is stable and well-tested
-2. Mixin approach is working without issues
-3. No clear benefit from composition pattern
-4. Risk of regression outweighs benefits
-
-Step-by-step migration:
------------------------
-1. Create the Behavior instance in widget __init__
-2. Delegate method calls to behavior
-3. Update tests to test behavior in isolation
-4. Remove mixin from inheritance chain
-5. Clean up any leftover mixin attributes/methods
-
-Example migration diff:
------------------------
-# Before:
-class FileTableView(SelectionMixin, DragDropMixin, QTableView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        # mixin init happens via super()
-
-# After:
-class FileTableView(QTableView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._selection = SelectionBehavior(self)
-        self._drag_drop = DragDropBehavior(self)
-
-    def get_selected_rows(self):
-        return self._selection.get_selected_rows()
-"""
+# MIGRATION GUIDELINES
+# ====================
+#
+# When to migrate from Mixin to Behavior:
+# ----------------------------------------
+# 1. Creating a NEW widget that needs selection/drag-drop/editing functionality
+# 2. Mixin initialization order is causing bugs
+# 3. Need to unit test behavior in isolation
+# 4. Widget has too many mixins (> 3-4)
+#
+# When NOT to migrate:
+# --------------------
+# 1. Existing widget is stable and well-tested
+# 2. Mixin approach is working without issues
+# 3. No clear benefit from composition pattern
+# 4. Risk of regression outweighs benefits
+#
+# Step-by-step migration:
+# -----------------------
+# 1. Create the Behavior instance in widget __init__
+# 2. Delegate method calls to behavior
+# 3. Update tests to test behavior in isolation
+# 4. Remove mixin from inheritance chain
+# 5. Clean up any leftover mixin attributes/methods
+#
+# Example migration diff:
+# -----------------------
+# Before: class FileListView(SelectionMixin, DragDropMixin, QTableView)
+#   - mixin init happens via super()
+# After:  class FileListView(QTableView)
+#   - self._selection = SelectionBehavior(self)
+#   - self._drag_drop = DragDropBehavior(self)
+#   - delegate: def get_selected_rows(self): return self._selection.get_selected_rows()
 
 # Export all public interfaces
 

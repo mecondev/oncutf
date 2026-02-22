@@ -1,4 +1,4 @@
-"""Module: tooltip_handler.py - Custom tooltip logic for FileTableView.
+"""Module: tooltip_handler.py - Custom tooltip logic for FileListView.
 
 Author: Michael Economou
 Date: 2026-01-04
@@ -20,13 +20,13 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.shared.timer_manager import cancel_timer, schedule_dialog_close
 
 if TYPE_CHECKING:
-    from oncutf.ui.widgets.file_table.view import FileTableView
+    from oncutf.ui.widgets.file_table.view import FileListView
 
 logger = get_cached_logger(__name__)
 
 
 class TooltipHandler:
-    """Manages custom tooltips for FileTableView cells.
+    """Manages custom tooltips for FileListView cells.
 
     This handler provides context-aware tooltips that:
     - Show after a hover delay
@@ -34,17 +34,17 @@ class TooltipHandler:
     - Hide on mouse events or leaving the viewport
 
     Attributes:
-        _view: Reference to the parent FileTableView
+        _view: Reference to the parent FileListView
         _timer: Timer for tooltip hover delay
         _current_index: Currently tracked cell index
 
     """
 
-    def __init__(self, view: FileTableView) -> None:
+    def __init__(self, view: FileListView) -> None:
         """Initialize tooltip handler.
 
         Args:
-            view: The parent FileTableView widget
+            view: The parent FileListView widget
 
         """
         self._view = view

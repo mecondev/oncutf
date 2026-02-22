@@ -130,7 +130,7 @@ class TestRenameIntegration:
         # Create mock main window
         mock_main_window = MagicMock()
         mock_file_model = MagicMock()
-        mock_file_table_view = MagicMock()
+        mock_file_list_view = MagicMock()
 
         # Setup mock file model
         mock_file_model.rowCount.return_value = 2
@@ -142,7 +142,7 @@ class TestRenameIntegration:
 
         # Setup mock main window
         mock_main_window.file_model = mock_file_model
-        mock_main_window.file_table_view = mock_file_table_view
+        mock_main_window.file_list_view = mock_file_list_view
         mock_main_window.metadata_cache = MagicMock()
         mock_main_window.metadata_cache.has.return_value = True
 
@@ -153,7 +153,7 @@ class TestRenameIntegration:
         rename_manager._update_info_icons_safe()
 
         # Verify viewport update was called
-        mock_file_table_view.viewport().update.assert_called()
+        mock_file_list_view.viewport().update.assert_called()
 
     def test_safe_post_rename_workflow_with_invalid_window(self):
         """Test safe post-rename workflow handles invalid main window gracefully."""
