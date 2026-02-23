@@ -23,6 +23,25 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
+def _load_hash_icons() -> dict[str, QPixmap]:
+    """Load hash status icons (tag, hash_unavailable) at 20px size.
+
+    Returns:
+        dict[str, QPixmap]: Hash status icons at 20px size
+
+    """
+    from oncutf.ui.helpers.svg_icon_generator import generate_metadata_icons
+
+    # Generate hash-specific icons at 20px (4px larger than metadata icons)
+    icon_map = generate_metadata_icons(size=20)
+    # Return only the hash status icons (assert they exist)
+    tag_icon = icon_map.get("tag")
+    hash_unavail_icon = icon_map.get("hash_unavailable")
+    assert tag_icon is not None, "Failed to generate 'tag' icon"
+    assert hash_unavail_icon is not None, "Failed to generate 'hash_unavailable' icon"
+    return {"tag": tag_icon, "hash_unavailable": hash_unavail_icon}
+
+
 class IconManager:
     """Manages status icons and tooltips for file table display.
 
@@ -42,6 +61,7 @@ class IconManager:
         """
         self.parent_window = parent_window
         self.metadata_icons = load_metadata_icons()
+        self.hash_icons = _load_hash_icons()  # Hash status icons at 20px (tag, hash_unavailable)
         self._tooltip_cache: dict[str, str] = {}  # full_path -> tooltip
 
     def has_hash_cached(self, file_path: str) -> bool:
@@ -117,6 +137,8 @@ class IconManager:
         """Create a combined icon showing metadata status (left) and hash status (right).
         Always shows both icons - uses grayout color for missing states.
 
+        Metadata icons are 16px, hash status icons are 20px (+4px larger).
+
         Args:
             metadata_status: Status of metadata ('loaded', 'extended', 'modified', 'invalid', 'metadata_unavailable')
             hash_status: Status of hash ('tag' for available, 'hash_unavailable' for not available)
@@ -125,26 +147,26 @@ class IconManager:
             QIcon: Combined icon with metadata and hash status
 
         """
-        # Use hardcoded width for status column (column 0)
-        combined_width = 50  # Metadata icon (16px) + hash indicator (16px) + padding
-        combined_height = 16  # Icon height
+        # Combined width accommodates 16px metadata + 20px hash + padding: 2+16+4+20+2 = 44, round to 58
+        combined_width = 58  # Metadata icon (16px) + hash indicator (20px) + padding
+        combined_height = 20  # Icon height (sized for 20px hash icon)
         combined_pixmap = QPixmap(combined_width, combined_height)
         combined_pixmap.fill(QColor(0, 0, 0, 0))
 
         painter = QPainter(combined_pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Get metadata icon
+        # Get metadata icon (16px) - center vertically in 20px space
         metadata_icon = self.metadata_icons.get(metadata_status)
         if metadata_icon:
-            # Draw metadata icon on the left (2px from left edge)
-            painter.drawPixmap(2, 0, metadata_icon)
+            # Draw metadata icon on the left, centered vertically (2px from left, 2px from top)
+            painter.drawPixmap(2, 2, metadata_icon)
 
-        # Get hash icon
-        hash_icon = self.metadata_icons.get(hash_status)
+        # Get hash status icon (20px) - align to top
+        hash_icon = self.hash_icons.get(hash_status)
         if hash_icon:
-            # Draw hash icon on the right (50-16-2 = 32px from left)
-            painter.drawPixmap(32, 0, hash_icon)
+            # Draw hash icon on the right (58-20-2 = 36px from left), aligned to top
+            painter.drawPixmap(36, 0, hash_icon)
 
         painter.end()
         return QIcon(combined_pixmap)
