@@ -817,6 +817,8 @@ class ThumbnailViewportWidget(QWidget):
     def _on_thumbnail_progress(self, completed: int, total: int) -> None:
         """Handle thumbnail loading progress updates.
 
+        Starts / stops the delegate shimmer animation based on loading state.
+
         Args:
             completed: Number of thumbnails loaded
             total: Total number of thumbnails to load
@@ -824,6 +826,9 @@ class ThumbnailViewportWidget(QWidget):
         """
         self._thumbnail_progress = (completed, total)
         self._update_status_label()
+        # Stop shimmer when all thumbnails have been processed
+        if total > 0 and completed >= total:
+            self._delegate.stop_shimmer()
 
     def _spin_tick(self) -> None:
         """Advance spinner rotation by one step."""
@@ -1152,6 +1157,9 @@ class ThumbnailViewportWidget(QWidget):
         # The ThumbnailManager will skip already-queued visible items
         self._controller.queue_all_thumbnails(size_px=self._zoom_behavior.get_current_size())
 
+        # Start shimmer animation in delegate for all loading items
+        self._delegate.start_shimmer()
+
         logger.debug(
             "[THUMBS-QUEUE] Completed at t=%.3fms",
             (time.time() - t0) * 1000,
@@ -1294,7 +1302,8 @@ class ThumbnailViewportWidget(QWidget):
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.
 
-        Updates the view to show the newly loaded thumbnail.
+        Registers a crossfade transition in the delegate so the real thumbnail
+        fades in smoothly over the skeleton placeholder.
 
         Args:
             file_path: Absolute path to file
@@ -1313,7 +1322,10 @@ class ThumbnailViewportWidget(QWidget):
         # Find the row for this file
         for row, file_item in enumerate(self._model.files):
             if file_item.full_path == file_path:
-                # Update the view for this item
+                # Register crossfade in delegate (skeleton -> real thumbnail)
+                if not pixmap.isNull():
+                    self._delegate.register_fade(row, pixmap)
+                # Always trigger a view update for the item
                 index = self._model.index(row, 0)
                 self._list_view.update(index)
                 if self._tooltip_behavior:
@@ -1339,6 +1351,10 @@ class ThumbnailViewportWidget(QWidget):
         # Stop spinner timer
         if hasattr(self, "_spinner_timer") and self._spinner_timer:
             self._spinner_timer.stop()
+
+        # Stop delegate shimmer timer
+        if hasattr(self, "_delegate") and self._delegate:
+            self._delegate._shimmer_timer.stop()
 
         # Clean up controller
         if hasattr(self, "_controller") and self._controller:

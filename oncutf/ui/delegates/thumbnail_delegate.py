@@ -14,18 +14,22 @@ Renders thumbnails with:
 - Hover and selection visual feedback
 """
 
-from typing import TYPE_CHECKING
+import time
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
 
-from PyQt5.QtCore import QRect, QRectF, QSize, Qt
+from PyQt5.QtCore import QRect, QRectF, QSize, Qt, QTimer
 from PyQt5.QtGui import (
     QBrush,
     QColor,
     QFont,
     QFontMetrics,
+    QLinearGradient,
     QPainter,
     QPen,
     QPixmap,
 )
+from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
 from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR, QLABEL_PRIMARY_TEXT
@@ -75,8 +79,145 @@ class ThumbnailDelegate(QStyledItemDelegate):
     BACKGROUND_COLOR_SELECTED = QColor(50, 120, 255, 40)  # Semi-transparent
     VIDEO_BADGE_BACKGROUND = QColor(0, 0, 0, 180)  # Semi-transparent black
     VIDEO_BADGE_TEXT = QColor(255, 255, 255)
-    PLACEHOLDER_BACKGROUND = QColor(240, 240, 240)
-    PLACEHOLDER_TEXT = QColor(150, 150, 150)
+
+    # Skeleton placeholder colors (loading state)
+    SKELETON_BG_COLOR = QColor(42, 44, 50)  # dark fill, "still building"
+    SKELETON_SHAPE_COLOR = QColor(55, 58, 66)  # inner shape, slightly lighter
+    SKELETON_SHIMMER_ALPHA = 28  # shimmer highlight alpha (0-255)
+    PROGRESS_BAR_TRACK_COLOR = QColor(55, 58, 66)  # indeterminate bar track
+    PROGRESS_BAR_FILL_COLOR = QColor(75, 105, 155)  # indeterminate bar fill
+    PROGRESS_BAR_HEIGHT = 3  # px
+
+    # No-preview placeholder colors (permanent state, slightly brighter than skeleton)
+    NO_PREVIEW_BG_COLOR = QColor(58, 62, 72)  # brighter than skeleton
+    NO_PREVIEW_ICON_SIZE = 48  # filetype silhouette px
+    NO_PREVIEW_ICON_OPACITY = 0.65  # 65% opacity
+    NO_PREVIEW_ICON_COLOR = "#7a7f8c"  # muted gray-blue tint
+
+    # Crossfade duration (ms)
+    CROSSFADE_DURATION_MS = 500.0
+
+    # Shimmer timer interval (ms) -- 25 fps
+    SHIMMER_TICK_MS = 40
+    SHIMMER_PHASE_STEP = 0.04  # phase advance per tick (1.0 = full sweep)
+
+    # Extensions that have thumbnail support (matches ThumbnailManager.PREVIEWABLE_EXTENSIONS)
+    PREVIEWABLE_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
+        {
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp",
+            "tiff",
+            "tif",
+            "webp",
+            "heic",
+            "heif",
+            "raw",
+            "cr2",
+            "cr3",
+            "nef",
+            "arw",
+            "dng",
+            "orf",
+            "raf",
+            "rw2",
+            "pef",
+            "nrw",
+            "srw",
+            "dcr",
+            "fff",
+            "mp4",
+            "mov",
+            "avi",
+            "mkv",
+            "wmv",
+            "m4v",
+            "flv",
+            "webm",
+            "m2ts",
+            "ts",
+            "mts",
+            "3gp",
+            "ogv",
+        }
+    )
+
+    # Mapping from file extension to filetype icon name (in resources/icons/filetypes/)
+    _FILETYPE_ICON_MAP: ClassVar[dict[str, str]] = {
+        # Raster images
+        "jpg": "photo",
+        "jpeg": "photo",
+        "png": "photo",
+        "gif": "photo",
+        "bmp": "photo",
+        "tiff": "photo",
+        "tif": "photo",
+        "webp": "photo",
+        "heic": "photo",
+        "heif": "photo",
+        # RAW camera
+        "raw": "image",
+        "cr2": "image",
+        "cr3": "image",
+        "nef": "image",
+        "arw": "image",
+        "dng": "image",
+        "orf": "image",
+        "raf": "image",
+        "rw2": "image",
+        "pef": "image",
+        "nrw": "image",
+        "srw": "image",
+        "dcr": "image",
+        "fff": "image",
+        # Video
+        "mp4": "film",
+        "mov": "film",
+        "avi": "film",
+        "mkv": "film",
+        "wmv": "film",
+        "m4v": "film",
+        "flv": "film",
+        "webm": "film",
+        "m2ts": "film",
+        "ts": "film",
+        "mts": "film",
+        "3gp": "film",
+        "ogv": "film",
+        # Audio
+        "mp3": "audio_file",
+        "flac": "audio_file",
+        "wav": "audio_file",
+        "aac": "audio_file",
+        "ogg": "audio_file",
+        "wma": "audio_file",
+        "m4a": "audio_file",
+        "opus": "audio_file",
+        "aiff": "audio_file",
+        # Archives
+        "zip": "folder_zip",
+        "rar": "folder_zip",
+        "7z": "folder_zip",
+        "tar": "folder_zip",
+        "gz": "folder_zip",
+        "bz2": "folder_zip",
+        # Code / text ("ts" used for video above, not duplicated here)
+        "py": "code",
+        "js": "code",
+        "html": "code",
+        "css": "code",
+        "json": "code",
+        "xml": "code",
+        "yaml": "code",
+        "yml": "code",
+        "sh": "code",
+        "bat": "code",
+    }
+
+    # Filetype icon cache: (extension, size) -> QPixmap
+    _filetype_icon_cache: ClassVar[dict[tuple[str, int], QPixmap]] = {}
 
     def __init__(self, parent: "QWidget | None" = None):
         """Initialize the thumbnail delegate.
@@ -89,11 +230,87 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self._thumbnail_size = 128  # Default size, will be set from viewport
         self._status_icons = self._load_status_icons()
 
+        # Shimmer / crossfade animation state
+        self._shimmer_phase: float = 0.0
+        self._loading_active: bool = False
+        # row -> (start_time_ms, real_pixmap) for active crossfades
+        self._fade_states: dict[int, tuple[float, QPixmap]] = {}
+
+        # Single shared timer drives both shimmer and crossfade repaints
+        self._shimmer_timer = QTimer(self)
+        self._shimmer_timer.setInterval(self.SHIMMER_TICK_MS)
+        self._shimmer_timer.timeout.connect(self._tick)
+
     def _load_status_icons(self) -> dict[str, QPixmap]:
         """Load metadata/hash status icons used by the file table."""
         from oncutf.ui.services.icon_service import load_metadata_icons
 
         return load_metadata_icons()
+
+    # ------------------------------------------------------------------
+    # Animation control (called from ThumbnailViewportWidget)
+    # ------------------------------------------------------------------
+
+    def start_shimmer(self) -> None:
+        """Start shimmer animation for loading state (called from viewport).
+
+        Safe to call multiple times; the timer will not double-start.
+
+        """
+        self._loading_active = True
+        if not self._shimmer_timer.isActive():
+            self._shimmer_timer.start()
+
+    def stop_shimmer(self) -> None:
+        """Signal that bulk loading is complete.
+
+        The timer continues running until all crossfades finish, then stops
+        itself automatically inside _tick().
+
+        """
+        self._loading_active = False
+
+    def register_fade(self, row: int, pixmap: QPixmap) -> None:
+        """Register a crossfade transition for a specific row.
+
+        Called from ThumbnailViewportWidget._on_thumbnail_ready() when a real
+        thumbnail has arrived and should fade in over the skeleton placeholder.
+
+        Args:
+            row: Model row index of the item to transition
+            pixmap: The newly ready real thumbnail pixmap
+
+        """
+        self._fade_states[row] = (time.monotonic() * 1000.0, pixmap)
+        # Ensure timer is running for the crossfade repaints
+        if not self._shimmer_timer.isActive():
+            self._shimmer_timer.start()
+
+    def _tick(self) -> None:
+        """Advance shimmer phase and trigger viewport repaint.
+
+        Called by _shimmer_timer every SHIMMER_TICK_MS ms. Also handles
+        cleanup of completed crossfade transitions.
+
+        """
+        self._shimmer_phase = (self._shimmer_phase + self.SHIMMER_PHASE_STEP) % 1.0
+
+        # Clean up completed fades (elapsed >= CROSSFADE_DURATION_MS)
+        now_ms = time.monotonic() * 1000.0
+        self._fade_states = {
+            row: state
+            for row, state in self._fade_states.items()
+            if (now_ms - state[0]) < self.CROSSFADE_DURATION_MS
+        }
+
+        # Trigger viewport repaint for visible items
+        parent = self.parent()
+        if parent is not None:
+            parent.viewport().update()
+
+        # Self-stop when no animation is needed
+        if not self._loading_active and not self._fade_states:
+            self._shimmer_timer.stop()
 
     def set_thumbnail_size(self, size: int) -> None:
         """Set the thumbnail size for rendering.
@@ -140,6 +357,12 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Render a thumbnail item.
 
+        State machine:
+          1. row in _fade_states  -> crossfade skeleton -> real thumbnail (500 ms)
+          2. has real pixmap      -> draw real thumbnail directly
+          3. previewable ext      -> shimmer skeleton + indeterminate progress bar
+          4. non-previewable ext  -> permanent file-type silhouette
+
         Args:
             painter: QPainter for rendering
             option: Style options (includes hover/selection state)
@@ -173,24 +396,42 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Draw frame border with color tinting
         self._draw_frame(painter, frame_rect, file_item, is_selected, is_hover)
 
-        # Draw thumbnail or placeholder
-        # Use Qt.UserRole + 1 for thumbnail pixmaps (separate from status icons)
-        thumbnail_pixmap = index.data(Qt.UserRole + 1)
-        if isinstance(thumbnail_pixmap, QPixmap) and not thumbnail_pixmap.isNull():
-            logger.debug("[ThumbnailDelegate] Drawing actual thumbnail for row=%d", index.row())
-            self._draw_thumbnail(painter, thumbnail_rect, thumbnail_pixmap)
-        else:
-            logger.debug(
-                "[ThumbnailDelegate] Drawing placeholder for row=%d (pixmap=%s)",
-                index.row(),
-                type(thumbnail_pixmap).__name__,
-            )
-            self._draw_placeholder(painter, thumbnail_rect, file_item)
+        # --- Thumbnail area: state machine ---
+        row = index.row()
+        pixmap = index.data(Qt.UserRole + 1)
+        has_real_pixmap = isinstance(pixmap, QPixmap) and not pixmap.isNull()
+        extension = file_item.extension.lower()
+        is_previewable = extension in self.PREVIEWABLE_EXTENSIONS
 
-        # Draw metadata/hash indicators (icons from file table column 0)
+        if row in self._fade_states:
+            # Crossfade: skeleton fades out, thumbnail fades in
+            start_ms, real_pixmap = self._fade_states[row]
+            t = min(1.0, (time.monotonic() * 1000.0 - start_ms) / self.CROSSFADE_DURATION_MS)
+            orientation = self._get_orientation_from_metadata(file_item, index)
+
+            painter.setOpacity(1.0 - t)
+            self._draw_skeleton_placeholder(painter, thumbnail_rect, orientation)
+            painter.setOpacity(t)
+            self._draw_thumbnail(painter, thumbnail_rect, real_pixmap)
+            painter.setOpacity(1.0)
+
+        elif has_real_pixmap:
+            # Normal: real thumbnail fully loaded
+            self._draw_thumbnail(painter, thumbnail_rect, pixmap)
+
+        elif is_previewable:
+            # Loading: shimmer skeleton + indeterminate progress bar
+            orientation = self._get_orientation_from_metadata(file_item, index)
+            self._draw_skeleton_placeholder(painter, thumbnail_rect, orientation)
+            self._draw_skeleton_progress_bar(painter, thumbnail_rect)
+
+        else:
+            # No preview possible: permanent file-type silhouette
+            self._draw_no_preview_placeholder(painter, thumbnail_rect, file_item)
+
+        # Status icons and video badge always drawn on top
         self._draw_status_icons(painter, frame_rect, file_item, index)
 
-        # Draw video duration badge (if video)
         duration = getattr(file_item, "duration", None)
         if duration:
             self._draw_video_badge(painter, frame_rect, duration)
@@ -266,10 +507,10 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw the thumbnail frame border with file color background.
 
-        Border: Always #777777
+        Border: Normal/hover/selected color
         Background: File color if set, otherwise white
-        - Unselected: 50% opacity
-        - Selected: 85% opacity
+        - Unselected: 40% opacity
+        - Selected:   70% opacity
 
         Args:
             painter: QPainter
@@ -289,7 +530,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             if color_value.isValid():
                 background_color = color_value
 
-        background_color.setAlphaF(0.85 if is_selected else 0.5)
+        background_color.setAlphaF(0.7 if is_selected else 0.4)
 
         painter.setPen(QPen(border_color, self.FRAME_BORDER_WIDTH))
         painter.setBrush(QBrush(background_color))
@@ -309,23 +550,238 @@ class ThumbnailDelegate(QStyledItemDelegate):
         y = thumbnail_rect.top() + (thumbnail_rect.height() - scaled.height()) // 2
         painter.drawPixmap(x, y, scaled)
 
-    def _draw_placeholder(
+    def _draw_skeleton_placeholder(
         self,
         painter: QPainter,
         thumbnail_rect: QRect,
-        file_item: FileItem,
+        orientation: str,
     ) -> None:
-        """Draw a placeholder for missing thumbnails."""
+        """Draw animated shimmer skeleton for loading state.
+
+        Shows a dark base fill with a sweeping highlight gradient and an
+        orientation-aware inner shape (portrait vs landscape).
+
+        Args:
+            painter: QPainter
+            thumbnail_rect: Target rectangle inside the frame
+            orientation: "portrait", "landscape", or "unknown" (defaults landscape)
+
+        """
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(self.PLACEHOLDER_BACKGROUND))
+
+        # Base fill
+        painter.setBrush(QBrush(self.SKELETON_BG_COLOR))
         painter.drawRect(thumbnail_rect)
 
-        painter.setPen(self.PLACEHOLDER_TEXT)
-        font = painter.font()
-        font.setPointSize(8)
-        painter.setFont(font)
+        # Shimmer gradient: sweeps left to right based on shared phase
+        phase = self._shimmer_phase
+        tw = thumbnail_rect.width()
+        band_cx = thumbnail_rect.left() + phase * (tw + 80) - 40
+        shimmer = QLinearGradient(band_cx - 50, 0.0, band_cx + 50, 0.0)
+        shimmer.setColorAt(0.0, QColor(255, 255, 255, 0))
+        shimmer.setColorAt(0.5, QColor(255, 255, 255, self.SKELETON_SHIMMER_ALPHA))
+        shimmer.setColorAt(1.0, QColor(255, 255, 255, 0))
+        painter.setBrush(QBrush(shimmer))
+        painter.drawRect(thumbnail_rect)
 
-        painter.drawText(thumbnail_rect, Qt.AlignCenter, "No Preview")
+        # Orientation-aware inner shape (suggests image proportions)
+        if orientation == "portrait":
+            iw = int(tw * 0.52)
+            ih = int(thumbnail_rect.height() * 0.72)
+        else:
+            iw = int(tw * 0.72)
+            ih = int(thumbnail_rect.height() * 0.52)
+        ix = thumbnail_rect.left() + (thumbnail_rect.width() - iw) // 2
+        iy = thumbnail_rect.top() + (thumbnail_rect.height() - ih) // 2
+        painter.setBrush(QBrush(self.SKELETON_SHAPE_COLOR))
+        painter.drawRoundedRect(QRect(ix, iy, iw, ih), 3, 3)
+
+    def _draw_skeleton_progress_bar(
+        self,
+        painter: QPainter,
+        thumbnail_rect: QRect,
+    ) -> None:
+        """Draw an indeterminate animated progress bar at the bottom of thumbnail.
+
+        A thin bar (PROGRESS_BAR_HEIGHT px) sweeps left to right using the
+        shared shimmer phase, giving visual feedback during loading.
+
+        Args:
+            painter: QPainter
+            thumbnail_rect: The thumbnail area rectangle
+
+        """
+        bar_h = self.PROGRESS_BAR_HEIGHT
+        bar_y = thumbnail_rect.bottom() - bar_h
+        painter.setPen(Qt.NoPen)
+
+        # Track
+        painter.setBrush(QBrush(self.PROGRESS_BAR_TRACK_COLOR))
+        painter.drawRect(QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h))
+
+        # Animated fill (~35% width bar sweeping left to right)
+        fill_w = int(thumbnail_rect.width() * 0.35)
+        travel = thumbnail_rect.width() + fill_w
+        bar_x = thumbnail_rect.left() + int(self._shimmer_phase * travel) - fill_w
+        painter.setBrush(QBrush(self.PROGRESS_BAR_FILL_COLOR))
+        painter.drawRect(QRect(bar_x, bar_y, fill_w, bar_h))
+
+    def _draw_no_preview_placeholder(
+        self,
+        painter: QPainter,
+        thumbnail_rect: QRect,
+        file_item: "FileItem",
+    ) -> None:
+        """Draw permanent no-preview placeholder with filetype silhouette.
+
+        Applies to files whose extension is not in PREVIEWABLE_EXTENSIONS.
+        Background is slightly brighter than the loading skeleton to indicate
+        that this state is permanent, not transient.
+
+        Args:
+            painter: QPainter
+            thumbnail_rect: Target rectangle inside the frame
+            file_item: FileItem for extension lookup
+
+        """
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(self.NO_PREVIEW_BG_COLOR))
+        painter.drawRect(thumbnail_rect)
+
+        icon_px = self._get_filetype_icon(file_item.extension.lower(), self.NO_PREVIEW_ICON_SIZE)
+        if not icon_px.isNull():
+            ix = thumbnail_rect.left() + (thumbnail_rect.width() - icon_px.width()) // 2
+            iy = thumbnail_rect.top() + (thumbnail_rect.height() - icon_px.height()) // 2
+            painter.setOpacity(self.NO_PREVIEW_ICON_OPACITY)
+            painter.drawPixmap(ix, iy, icon_px)
+            painter.setOpacity(1.0)
+
+    def _get_orientation_from_metadata(self, file_item: "FileItem", index: "QModelIndex") -> str:
+        """Return orientation hint from cached metadata if available.
+
+        Args:
+            file_item: FileItem to inspect
+            index: Model index used to reach the metadata cache
+
+        Returns:
+            "portrait" if height > width, "landscape" otherwise
+
+        """
+        try:
+            model = index.model() if index is not None else None
+            if model is None or not hasattr(model, "parent_window"):
+                return "landscape"
+            parent_window = model.parent_window
+            if parent_window is None or not hasattr(parent_window, "metadata_cache"):
+                return "landscape"
+            entry = parent_window.metadata_cache.get_entry(file_item.full_path)
+            if entry is None or not entry.data:
+                return "landscape"
+
+            width_keys = [
+                "EXIF:ImageWidth",
+                "File:ImageWidth",
+                "PNG:ImageWidth",
+                "ExifImageWidth",
+                "PixelXDimension",
+            ]
+            height_keys = [
+                "EXIF:ImageHeight",
+                "File:ImageHeight",
+                "PNG:ImageHeight",
+                "ExifImageHeight",
+                "PixelYDimension",
+            ]
+            width: int | None = None
+            height: int | None = None
+            for key in width_keys:
+                if key in entry.data:
+                    try:
+                        width = int(entry.data[key])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+            for key in height_keys:
+                if key in entry.data:
+                    try:
+                        height = int(entry.data[key])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+
+            if width and height:
+                return "portrait" if height > width else "landscape"
+        except Exception:
+            pass
+        return "landscape"
+
+    @classmethod
+    def _get_filetype_icon(cls, extension: str, size: int) -> QPixmap:
+        """Load and return a filetype SVG icon at the requested size, with caching.
+
+        Icons are colorized with NO_PREVIEW_ICON_COLOR for a muted appearance.
+
+        Args:
+            extension: Lowercase file extension without leading dot
+            size: Icon size in pixels (square)
+
+        Returns:
+            QPixmap of the icon, or null QPixmap on failure
+
+        """
+        cache_key = (extension, size)
+        if cache_key in cls._filetype_icon_cache:
+            return cls._filetype_icon_cache[cache_key]
+
+        icon_name = cls._FILETYPE_ICON_MAP.get(extension, "description")
+        icons_dir = Path(__file__).parent.parent / "resources" / "icons" / "filetypes"
+        svg_path = icons_dir / f"{icon_name}.svg"
+        if not svg_path.exists():
+            svg_path = icons_dir / "description.svg"
+
+        pixmap = cls._render_svg_icon(svg_path, size, cls.NO_PREVIEW_ICON_COLOR)
+        cls._filetype_icon_cache[cache_key] = pixmap
+        return pixmap
+
+    @staticmethod
+    def _render_svg_icon(svg_path: Path, size: int, color: str) -> QPixmap:
+        """Render an SVG file to a QPixmap with color substitution.
+
+        Args:
+            svg_path: Path to the SVG file
+            size: Output size in pixels (square)
+            color: CSS hex color string to tint all fill/stroke values
+
+        Returns:
+            QPixmap of the rendered icon, or null QPixmap on failure
+
+        """
+        import re
+
+        try:
+            content = svg_path.read_text(encoding="utf-8")
+            # Replace non-transparent fills/strokes with the tint color
+            content = re.sub(r'fill="(?!none)[^"]*"', f'fill="{color}"', content)
+            content = re.sub(r'stroke="(?!none)[^"]*"', f'stroke="{color}"', content)
+            content = content.replace("currentColor", color)
+
+            from PyQt5.QtCore import QByteArray
+
+            renderer = QSvgRenderer()
+            renderer.load(QByteArray(content.encode("utf-8")))
+            if not renderer.isValid():
+                return QPixmap()
+
+            pixmap = QPixmap(size, size)
+            pixmap.fill(QColor(0, 0, 0, 0))
+            p = QPainter(pixmap)
+            p.setRenderHint(QPainter.Antialiasing)
+            renderer.render(p)
+            p.end()
+        except Exception:
+            return QPixmap()
+        else:
+            return pixmap
 
     def _draw_status_icons(
         self,

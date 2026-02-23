@@ -119,13 +119,65 @@ class ThumbnailManager(QObject):
         generation_progress: Emitted periodically (completed, total)
         generation_error: Emitted on thumbnail generation failure (file_path, error_msg)
 
+    Placeholder behavior:
+        get_thumbnail() returns a null QPixmap() when the thumbnail is not yet ready.
+        The delegate treats a null pixmap as "loading" state and renders a skeleton shimmer.
+        When the real thumbnail is ready, thumbnail_ready signal is emitted.
+
     Usage:
         manager = ThumbnailManager(db_store)
         manager.thumbnail_ready.connect(on_thumbnail_ready)
         pixmap = manager.get_thumbnail("/path/to/file.jpg", size_px=128)
-        # Returns placeholder immediately, emits thumbnail_ready when ready
+        # Returns null QPixmap immediately, emits thumbnail_ready when ready
 
     """
+
+    # Extensions that support thumbnail generation.
+    # Files with other extensions go to permanent "no preview" state in the delegate.
+    PREVIEWABLE_EXTENSIONS: frozenset[str] = frozenset(
+        {
+            # Raster images
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp",
+            "tiff",
+            "tif",
+            "webp",
+            "heic",
+            "heif",
+            # RAW camera formats
+            "raw",
+            "cr2",
+            "cr3",
+            "nef",
+            "arw",
+            "dng",
+            "orf",
+            "raf",
+            "rw2",
+            "pef",
+            "nrw",
+            "srw",
+            "dcr",
+            "fff",
+            # Video (ffmpeg-based, future support)
+            "mp4",
+            "mov",
+            "avi",
+            "mkv",
+            "wmv",
+            "m4v",
+            "flv",
+            "webm",
+            "m2ts",
+            "ts",
+            "mts",
+            "3gp",
+            "ogv",
+        }
+    )
 
     # Signals
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap
@@ -194,9 +246,6 @@ class ThumbnailManager(QObject):
         # Statistics
         self._total_requests = 0
         self._completed_requests = 0
-
-        # Placeholder pixmap (lazily initialized when needed)
-        self._placeholder: QPixmap | None = None
 
         logger.info(
             "ThumbnailManager initialized with %d workers, cache at %s",
@@ -446,36 +495,33 @@ class ThumbnailManager(QObject):
             logger.debug("Worker thread finished (remaining: %d)", len(self._workers))
 
     def _get_placeholder(self) -> QPixmap:
-        """Get placeholder pixmap, creating it if needed.
+        """Return a null QPixmap signalling 'not yet ready'.
+
+        The delegate interprets a null pixmap as "loading" and renders
+        a skeleton shimmer. This avoids storing a gray placeholder in the
+        memory/disk cache.
 
         Returns:
-            QPixmap with "Loading..." text
+            Null QPixmap (isNull() == True)
 
         """
-        if self._placeholder is None:
-            self._placeholder = self._create_placeholder()
-        return self._placeholder
+        return QPixmap()
 
-    def _create_placeholder(self) -> QPixmap:
-        """Create placeholder pixmap for loading state.
+    def is_previewable(self, file_path: str) -> bool:
+        """Return True if the file extension supports thumbnail generation.
+
+        Files not in PREVIEWABLE_EXTENSIONS will show a permanent file-type
+        silhouette placeholder in the delegate instead of a loading skeleton.
+
+        Args:
+            file_path: Absolute path to the file
 
         Returns:
-            QPixmap with "Loading..." text
+            True if a thumbnail can be generated for this file extension
 
         """
-        # Create simple 128x128 gray pixmap
-        from PyQt5.QtCore import Qt
-        from PyQt5.QtGui import QColor, QPainter
-
-        pixmap = QPixmap(128, 128)
-        pixmap.fill(QColor(200, 200, 200))
-
-        painter = QPainter(pixmap)
-        painter.setPen(QColor(100, 100, 100))
-        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "Loading...")
-        painter.end()
-
-        return pixmap
+        ext = Path(file_path).suffix.lstrip(".").lower()
+        return ext in self.PREVIEWABLE_EXTENSIONS
 
     def invalidate_cache(self, file_path: str) -> None:
         """Invalidate cached thumbnail for file.
