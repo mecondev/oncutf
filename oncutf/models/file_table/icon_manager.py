@@ -126,8 +126,8 @@ class IconManager:
 
         """
         # Use hardcoded width for status column (column 0)
-        combined_width = 50  # Fixed width for status column
-        combined_height = 16
+        combined_width = 50  # Metadata icon (16px) + hash indicator (16px) + padding
+        combined_height = 16  # Icon height
         combined_pixmap = QPixmap(combined_width, combined_height)
         combined_pixmap.fill(QColor(0, 0, 0, 0))
 
@@ -143,7 +143,7 @@ class IconManager:
         # Get hash icon
         hash_icon = self.metadata_icons.get(hash_status)
         if hash_icon:
-            # Draw hash icon on the right (32px from left = 50-16-2 for 2px right margin)
+            # Draw hash icon on the right (50-16-2 = 32px from left)
             painter.drawPixmap(32, 0, hash_icon)
 
         painter.end()
