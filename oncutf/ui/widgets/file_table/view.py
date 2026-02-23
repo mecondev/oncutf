@@ -70,7 +70,6 @@ class FileListView(QTableView):
     - Scrollbar management (via ViewportHandler)
     """
 
-    selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
     files_dropped = pyqtSignal(list, object)  # Emitted with dropped paths and modifiers
     refresh_requested = pyqtSignal()  # Emitted when F5 pressed for full refresh
 

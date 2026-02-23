@@ -314,7 +314,7 @@ class ContextMenuHandlers:
         # === OTHER ACTIONS ===
         action_reload = create_action_with_shortcut(get_menu_icon("refresh"), "Reload Folder", "F5")
         action_clear_table = create_action_with_shortcut(
-            get_menu_icon("close"), "Clear File Table", "Shift+Esc"
+            get_menu_icon("close"), "Clear File List", "Shift+Esc"
         )
 
         menu.addAction(action_reload)
@@ -606,6 +606,7 @@ class ContextMenuHandlers:
         # Enable/disable logic for non-operation actions
         action_invert.setEnabled(total_files > 0 and has_selection)
         action_select_all.setEnabled(total_files > 0)
+        action_deselect_all.setEnabled(has_selection)
         action_reload.setEnabled(total_files > 0)
         action_clear_table.setEnabled(total_files > 0)
 

@@ -98,6 +98,7 @@ class ShortcutContext(Protocol):
 
     shortcuts: list["QShortcut"]
     file_list_view: "FileListView"
+    thumbnail_viewport: "ThumbnailViewportWidget"
     shortcut_manager: "ShortcutManager"
 
     # File table shortcuts

@@ -64,6 +64,14 @@ class BootstrapManager:
                 context.selection_store.selection_changed.connect(
                     self.main_window.update_preview_from_selection
                 )
+                # Keep thumbnail viewport Qt selection in sync with SelectionStore.
+                # Whenever SelectionStore changes (from any source), the viewport
+                # updates its own Qt selection model -- completing the sync loop.
+                context.selection_store.selection_changed.connect(
+                    lambda rows: self.main_window.thumbnail_viewport.sync_selection_from_rows(
+                        set(rows)
+                    )
+                )
                 logger.debug(
                     "[MainWindow] Connected SelectionStore signals",
                     extra={"dev_only": True},

@@ -390,7 +390,7 @@ class FileTableStateHelper:
         """
         from oncutf.ui.helpers.cursor_helper import wait_cursor
 
-        logger.info("[StateHelper] Clearing all file table state (F5 refresh)")
+        logger.info("[StateHelper] Clearing all file table state")
 
         with wait_cursor():
             try:

@@ -539,69 +539,42 @@ class LayoutController:
                 QTimer.singleShot(700, lambda: QApplication.restoreOverrideCursor())
 
     def _setup_selection_sync(self) -> None:
-        """Setup bidirectional selection synchronization between FileTable and ThumbnailViewport.
+        """Setup selection synchronization from ThumbnailViewport to SelectionStore.
 
-        Connects selection change signals from both views to sync methods.
+        The file table writes to SelectionStore via SelectionBehavior.
+        The thumbnail viewport writes to SelectionStore via _on_thumbnail_selection_changed.
+        SelectionStore is the single source of truth; both views read from it on view-switch.
         """
-        # FileTable selection changed -> update ThumbnailViewport (but only when thumbs view is active)
-        self.parent_window.file_list_view.selection_changed.connect(
-            self._on_file_table_selection_changed
-        )
-
-        # ThumbnailViewport selection changed -> update rename preview and sync to FileTable
+        # ThumbnailViewport selection changed -> push into SelectionStore
         self.parent_window.thumbnail_viewport.selection_changed.connect(
             self._on_thumbnail_selection_changed
         )
 
-        logger.debug("[LayoutController] Selection sync configured between views")
-
-    def _on_file_table_selection_changed(self, _selected_rows: list[int]) -> None:
-        """Handle FileTable selection change.
-
-        Syncs selection to ThumbnailViewport only if thumbnail view is currently active.
-
-        Args:
-            _selected_rows: List of selected row indices (unused - sync happens via model)
-
-        """
-        # Only sync if thumbnail view is active
-        if self.parent_window.viewport_stack.currentIndex() == 1:
-            self._sync_selection_to_viewport()
+        logger.debug("[LayoutController] Selection sync configured")
 
     def _on_thumbnail_selection_changed(self, selected_rows: list[int]) -> None:
-        """Handle ThumbnailViewport selection change.
+        """Push thumbnail viewport selection into SelectionStore.
 
-        Updates rename preview and metadata tree when selection changes in thumbnail view.
-        Only processes if thumbnail view is currently active.
+        The rest (preview, metadata tree, rename preview) is handled by
+        SelectionStore.selection_changed connections set up in bootstrap_manager
+        and signal_coordinator.
 
         Args:
             selected_rows: List of selected row indices
 
         """
-        # Only process if thumbnail view is active
         if self.parent_window.viewport_stack.currentIndex() != 1:
             return
 
         try:
-            updated_via_store = False
-
             file_list_view = getattr(self.parent_window, "file_list_view", None)
             if file_list_view and hasattr(file_list_view, "_selection_behavior"):
-                selection_behavior = file_list_view._selection_behavior
-                selection_behavior.update_selection_store(set(selected_rows), emit_signal=True)
-                updated_via_store = True
-
-            if not updated_via_store:
-                # Fallback: update rename preview directly
-                if hasattr(self.parent_window, "request_preview_update"):
-                    self.parent_window.request_preview_update()
-
-                # Fallback: update metadata tree from selection
-                if hasattr(self.parent_window, "metadata_tree_view"):
-                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+                file_list_view._selection_behavior.update_selection_store(
+                    set(selected_rows), emit_signal=True
+                )
 
             logger.debug(
-                "[LayoutController] Thumbnail selection changed: %d items, updated preview",
+                "[LayoutController] Thumbnail selection -> SelectionStore: %d items",
                 len(selected_rows),
                 extra={"dev_only": True},
             )
@@ -609,79 +582,62 @@ class LayoutController:
             logger.exception("[LayoutController] Error handling thumbnail selection")
 
     def _sync_selection_to_viewport(self) -> None:
-        """Sync current FileTable selection to ThumbnailViewport."""
+        """Sync SelectionStore -> ThumbnailViewport Qt model (called on view-switch to thumbs)."""
         try:
-            # Get selected files from FileTable
-            selected_files = []
-            selection_model = self.parent_window.file_list_view.selectionModel()
-            if selection_model:
-                selected_indexes = selection_model.selectedRows()
-                for index in selected_indexes:
-                    file_item = index.data(Qt.UserRole)
-                    if file_item:
-                        selected_files.append(file_item.full_path)
+            from oncutf.app.state.context import get_app_context
 
-            # Apply to ThumbnailViewport
-            if selected_files:
-                self.parent_window.thumbnail_viewport.select_files(selected_files)
+            context = get_app_context()
+            if context and context.selection_store:
+                rows = context.selection_store.get_selected_rows()
+                self.parent_window.thumbnail_viewport.sync_selection_from_rows(rows)
                 logger.debug(
-                    "[LayoutController] Synced %d files to thumbnail viewport",
-                    len(selected_files),
+                    "[LayoutController] Synced %d rows to thumbnail viewport",
+                    len(rows),
+                    extra={"dev_only": True},
                 )
-            else:
-                self.parent_window.thumbnail_viewport.clear_selection()
-
         except Exception:
             logger.exception("[LayoutController] Error syncing selection to viewport")
 
     def _sync_selection_to_table(self) -> None:
-        """Sync current ThumbnailViewport selection to FileTable."""
+        """Sync SelectionStore -> FileTable Qt model (called on view-switch to details)."""
         try:
-            # Get selected files from ThumbnailViewport
-            selected_files = self.parent_window.thumbnail_viewport.get_selected_files()
+            from oncutf.app.state.context import get_app_context
 
-            # Find corresponding rows in FileTable
-            selection_model = self.parent_window.file_list_view.selectionModel()
-            if not selection_model:
+            context = get_app_context()
+            if not context or not context.selection_store:
                 return
+
+            selected_rows = context.selection_store.get_selected_rows()
 
             model = self.parent_window.file_list_view.model()
-            if not model:
+            selection_model = self.parent_window.file_list_view.selectionModel()
+            if not model or not selection_model:
                 return
-
-            # Clear current selection
-            selection_model.clearSelection()
-
-            if not selected_files:
-                return
-
-            # Build selection
 
             selection = QItemSelection()
-            selected_file_set = set(selected_files)
+            for row in sorted(selected_rows):
+                if 0 <= row < model.rowCount():
+                    selection.append(
+                        QItemSelectionRange(
+                            model.index(row, 0),
+                            model.index(row, model.columnCount() - 1),
+                        )
+                    )
 
-            for row in range(model.rowCount()):
-                index = model.index(row, 0)
-                file_item = index.data(Qt.UserRole)
+            # Block signals to prevent SelectionBehavior from writing back to Store
+            selection_model.blockSignals(True)
+            try:
+                selection_model.clearSelection()
+                if not selection.isEmpty():
+                    selection_model.select(selection, QItemSelectionModel.Select)
+            finally:
+                selection_model.blockSignals(False)
 
-                if file_item and file_item.full_path in selected_file_set:
-                    # Select entire row
-                    left_index = model.index(row, 0)
-                    right_index = model.index(row, model.columnCount() - 1)
-                    selection.append(QItemSelectionRange(left_index, right_index))
-
-            # Apply selection
-            if not selection.isEmpty():
-                selection_model.select(selection, QItemSelectionModel.Select)
-                logger.debug(
-                    "[LayoutController] Synced %d files to file table",
-                    len(selected_files),
-                )
-
-                # Update metadata tree after selection sync
-                if hasattr(self.parent_window, "metadata_tree_view"):
-                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-
+            logger.debug(
+                "[LayoutController] Synced %d rows to file table",
+                len(selected_rows),
+                extra={"dev_only": True},
+            )
         except Exception:
             logger.exception("[LayoutController] Error syncing selection to table")
 

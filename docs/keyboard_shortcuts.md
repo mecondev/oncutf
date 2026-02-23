@@ -7,13 +7,15 @@ Complete keyboard shortcuts guide for oncutf application.
 These shortcuts work throughout the application, regardless of which widget has focus.
 
 ### File Operations
+
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+O` | Browse Files | Open file browser to select files/folders |
 | `Escape` | Cancel Drag | Cancel current drag & drop operation |
-| `Shift+Escape` | Clear Table | Clear all files from file table |
+| `Shift+Escape` | Clear File List | Clear all files from file list |
 
 ### Selection Management (File Table focus)
+
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+A` | Select All | Select all files in file table |
@@ -21,6 +23,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+I` | Invert Selection | Invert current selection |
 
 ### Metadata Operations
+
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+M` | Load Basic Metadata | Load basic metadata for selected files (file table) |
@@ -31,6 +34,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+Shift+S` | Save All Metadata | Save metadata changes for all files (file table) |
 
 ### Hash Operations (File Table focus)
+
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+H` | Calculate Hash (Selected) | Calculate CRC32 checksums for selected files (file table) |
@@ -38,6 +42,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 | `Ctrl+L` | Show Results List | Display hash calculation results dialog |
 
 ### History & Undo/Redo
+
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `Ctrl+Z` | Undo | Undo last operation (metadata edits, renames, etc.) |
@@ -65,6 +70,7 @@ The `F5` key performs context-aware refresh based on which widget has focus:
 | **Rename Modules** | (none) | No action (planned) |
 
 ### File Table Shortcuts
+
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+T` | Auto-fit columns to content |
@@ -98,6 +104,7 @@ Special keyboard modifiers that change drag & drop behavior.
 Planned shortcuts for upcoming features:
 
 ### Rename Module Undo/Redo (Planned)
+
 - Local `Ctrl+Z` / `Ctrl+R` shortcuts in rename module editor
 - Will work similarly to metadata tree undo/redo
 - Awaiting implementation of rename module undo system
@@ -111,7 +118,7 @@ Planned shortcuts for upcoming features:
 Some shortcuts behave differently based on context:
 
 - **F5**: Widget-dependent refresh (see table above)
-- **Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y**: 
+- **Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y**:
   - Global shortcuts that work throughout the application
   - Currently handle metadata edits through command manager
   - Future: Will handle rename operations and batch operations in unified history
@@ -120,6 +127,7 @@ Some shortcuts behave differently based on context:
 ### Conflict Resolution
 
 The shortcut system uses this priority order:
+
 1. **Widget-specific shortcuts** (local to focused widget, highest priority)
 2. **Global shortcuts** (application-wide, attached to MainWindow)
 3. **Qt default shortcuts** (built-in Qt behavior)
@@ -127,6 +135,7 @@ The shortcut system uses this priority order:
 ### Accessibility
 
 All shortcuts are also accessible through:
+
 - Context menus (right-click)
 - Main menu bar
 - Toolbar buttons (where applicable)
@@ -140,6 +149,7 @@ This ensures the application is usable even without keyboard shortcuts.
 Currently, keyboard shortcuts are **not customizable** and are hardcoded in the application configuration (`config.py`).
 
 Future versions may include:
+
 - User-customizable shortcut mappings
 - Shortcut conflict detection
 - Shortcut scheme presets (e.g., "Photoshop-like", "VS Code-like")

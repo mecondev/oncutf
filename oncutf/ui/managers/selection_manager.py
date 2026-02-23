@@ -119,6 +119,12 @@ class SelectionManager:
             if context:
                 FileTableStateHelper.clear_all_state(file_list_view, context, metadata_tree_view)
 
+            # Sync thumbnail viewport explicitly: clear_all_state uses emit_signal=False
+            # so SelectionStore.selection_changed does not fire automatically.
+            thumbnail_viewport = getattr(self.parent_window, "thumbnail_viewport", None)
+            if thumbnail_viewport and hasattr(thumbnail_viewport, "sync_selection_from_rows"):
+                thumbnail_viewport.sync_selection_from_rows(set())
+
             # Update labels
             if hasattr(self.parent_window, "update_files_label"):
                 self.parent_window.update_files_label()
@@ -126,8 +132,11 @@ class SelectionManager:
                 self.parent_window.request_preview_update()
 
     def invert_selection(self) -> None:
-        """Inverts the selection in the file table efficiently using select_rows_range helper.
-        Shows wait cursor during the operation.
+        """Inverts the selection using SelectionStore as source of truth.
+
+        Reads current selection from SelectionStore (app layer) so the operation
+        is view-agnostic and works correctly whether triggered from the file table
+        or the thumbnail viewport.
         """
         if not self.parent_window:
             return
@@ -145,6 +154,7 @@ class SelectionManager:
                 )
             return
 
+        from oncutf.app.state.context import get_app_context
         from oncutf.ui.services.cursor_service import wait_cursor
 
         with wait_cursor():
@@ -156,13 +166,18 @@ class SelectionManager:
                 file_list_view.blockSignals(True)
 
             try:
-                selection_model = file_list_view.selectionModel()
-                # Get selected rows as set (avoiding import from utils.ui)
-                current_selected = (
-                    {index.row() for index in selection_model.selectedRows()}
-                    if selection_model
-                    else set()
-                )
+                # Read current selection from SelectionStore (source of truth),
+                # not from file_list_view.selectionModel() which is view-specific
+                # and may not reflect selections made in the thumbnail viewport.
+                context = get_app_context()
+                current_selected: set[int] = set()
+                if context and context.selection_store:
+                    current_selected = context.selection_store.get_selected_rows()
+                else:
+                    # Fallback: read from file_list_view Qt model
+                    selection_model = file_list_view.selectionModel()
+                    if selection_model:
+                        current_selected = {index.row() for index in selection_model.selectedRows()}
 
                 # Uncheck all selected, check all unselected
                 for row, file in enumerate(file_model.files):
@@ -180,6 +195,7 @@ class SelectionManager:
                 elif checked_rows:
                     ranges = [(checked_rows[0], checked_rows[-1])]
 
+                selection_model = file_list_view.selectionModel()
                 if selection_model:
                     selection_model.clearSelection()
 

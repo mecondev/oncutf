@@ -882,6 +882,41 @@ class ThumbnailViewportWidget(QWidget):
         if selection_model:
             selection_model.clearSelection()
 
+    def sync_selection_from_rows(self, rows: set[int]) -> None:
+        """Sync internal Qt selection model from an explicit set of row indices.
+
+        Called when the SelectionStore is updated externally (e.g. from
+        SelectionManager.clear_all_selection / invert_selection / select_all_rows).
+        Blocks the selection model's own signals to prevent circular propagation
+        back to SelectionStore.
+
+        Args:
+            rows: Set of row indices to mark as selected.
+
+        """
+        selection_model = self._list_view.selectionModel()
+        model = self._list_view.model()
+        if not selection_model or not model:
+            return
+
+        # Block the selection model's selectionChanged signal so that
+        # _on_selection_changed does not fire and loop back to SelectionStore.
+        selection_model.blockSignals(True)
+        try:
+            selection = QItemSelection()
+            for row in sorted(rows):
+                if 0 <= row < model.rowCount():
+                    index = model.index(row, 0)
+                    selection.select(index, index)
+            selection_model.clearSelection()
+            if not selection.isEmpty():
+                selection_model.select(selection, QItemSelectionModel.Select)
+        finally:
+            selection_model.blockSignals(False)
+
+        # Keep the status bar consistent without emitting signals
+        self._update_status_label()
+
     def selection_model(self) -> QItemSelectionModel | None:
         """Get the selection model for this viewport.
 
@@ -911,6 +946,11 @@ class ThumbnailViewportWidget(QWidget):
 
         """
         return self._model.order_mode
+
+    @property
+    def list_view(self) -> "ThumbnailListView":
+        """Return the internal QListView for shortcut/focus registration."""
+        return self._list_view
 
     def _on_model_layout_changed(self) -> None:
         """Handle model layout changes (e.g., after drag reorder).

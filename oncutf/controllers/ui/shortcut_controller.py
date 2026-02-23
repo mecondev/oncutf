@@ -71,6 +71,19 @@ class ShortcutController:
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 
+        # Also register invert/deselect shortcuts on the thumbnail viewport list view
+        # (Ctrl+A already works via Qt default; only Ctrl+I and Ctrl+Shift+A need explicit registration)
+        thumbnail_shortcuts = [
+            (FILE_TABLE_SHORTCUTS["CLEAR_SELECTION"], self.parent_window.clear_all_selection),
+            (FILE_TABLE_SHORTCUTS["INVERT_SELECTION"], self.parent_window.invert_selection),
+        ]
+
+        thumb_list_view = self.parent_window.thumbnail_viewport.list_view
+        for key, handler in thumbnail_shortcuts:
+            shortcut = QShortcut(QKeySequence(key), thumb_list_view)
+            shortcut.activated.connect(handler)
+            self.parent_window.shortcuts.append(shortcut)
+
     def _setup_global_shortcuts(self) -> None:
         """Setup global shortcuts (attached to main window, work regardless of focus)."""
         from oncutf.config import FILE_TABLE_SHORTCUTS, GLOBAL_SHORTCUTS

@@ -61,47 +61,35 @@ class MetadataTreeSelectionHandler:
         return 0
 
     def get_current_selection(self):
-        """Get current selection via parent traversal."""
+        """Get current selection via parent traversal.
+
+        Uses SelectionStore as the primary source so the result is correct
+        regardless of which view (file table or thumbnail) is active.
+        """
         parent_window = self._view._get_parent_with_file_table()
 
         if not parent_window:
             return []
 
-        # Try multiple methods to get selection
-        selected_files = []
-
-        # Method 1: Use selection model directly
+        # SelectionStore: view-agnostic, always up-to-date
         try:
-            selection = parent_window.file_list_view.selectionModel()
-            if selection and selection.hasSelection():
-                selected_rows = selection.selectedRows()
-                if selected_rows and hasattr(parent_window, "file_model"):
-                    file_model = parent_window.file_model
-                    for index in selected_rows:
-                        row = index.row()
-                        if 0 <= row < len(file_model.files):
-                            selected_files.append(file_model.files[row])
+            from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+
+            context = get_qt_app_context()
+            if context and context.selection_store and hasattr(parent_window, "file_model"):
+                file_model = parent_window.file_model
+                selected_rows = context.selection_store.get_selected_rows()
+                return [
+                    file_model.files[row]
+                    for row in sorted(selected_rows)
+                    if 0 <= row < len(file_model.files)
+                ]
         except Exception as e:
-            logger.debug("[MetadataTree] Method 1 failed: %s", e, extra={"dev_only": True})
+            logger.debug(
+                "[MetadataTree] SelectionStore method failed: %s", e, extra={"dev_only": True}
+            )
 
-        # Method 2: Use file table view's internal selection method
-        if not selected_files:
-            try:
-                if hasattr(parent_window.file_list_view, "_selection_behavior"):
-                    selected_rows = (
-                        parent_window.file_list_view._selection_behavior.get_current_selection()
-                    )
-                    if selected_rows and hasattr(parent_window, "file_model"):
-                        file_model = parent_window.file_model
-                        selected_files.extend(
-                            file_model.files[row]
-                            for row in selected_rows
-                            if 0 <= row < len(file_model.files)
-                        )
-            except Exception as e:
-                logger.debug("[MetadataTree] Method 2 failed: %s", e, extra={"dev_only": True})
-
-        return selected_files
+        return []
 
     def update_from_parent_selection(self) -> None:
         """Update metadata display based on parent selection."""
@@ -109,23 +97,8 @@ class MetadataTreeSelectionHandler:
             # Get current selection from parent
             selection = self.get_current_selection()
             if not selection:
-                # Try alternative method to get selection if first method failed
-                parent_window = self._view._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, "file_list_view"):
-                    file_list_view = parent_window.file_list_view
-                    if hasattr(file_list_view, "_selection_behavior"):
-                        selected_rows = file_list_view._selection_behavior.get_current_selection()
-                        if selected_rows and hasattr(parent_window, "file_model"):
-                            file_model = parent_window.file_model
-                            selection = [
-                                file_model.files[row]
-                                for row in selected_rows
-                                if 0 <= row < len(file_model.files)
-                            ]
-
-                if not selection:
-                    self._view.show_empty_state("No file selected")
-                    return
+                self._view.show_empty_state("No file selected")
+                return
 
             # Handle single file selection
             if len(selection) == 1:
