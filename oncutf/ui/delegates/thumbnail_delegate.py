@@ -85,7 +85,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
     SKELETON_SHAPE_COLOR = QColor(55, 58, 66)  # inner shape, slightly lighter
     SKELETON_SHIMMER_ALPHA = 28  # shimmer highlight alpha (0-255)
     PROGRESS_BAR_TRACK_COLOR = QColor(55, 58, 66)  # indeterminate bar track
-    PROGRESS_BAR_FILL_COLOR = QColor(75, 105, 155)  # indeterminate bar fill
+    PROGRESS_BAR_FILL_COLOR = QColor(85, 89, 100)  # indeterminate bar fill (gray)
     PROGRESS_BAR_HEIGHT = 3  # px
 
     # No-preview placeholder colors (permanent state, slightly brighter than skeleton)
@@ -584,13 +584,18 @@ class ThumbnailDelegate(QStyledItemDelegate):
         painter.setBrush(QBrush(shimmer))
         painter.drawRect(thumbnail_rect)
 
-        # Orientation-aware inner shape (suggests image proportions)
+        # Orientation-aware inner shape -- proportions chosen to match typical
+        # 4:3 (landscape) or 3:4 (portrait) photos so the skeleton fill area
+        # looks the same size as the real thumbnail that will replace it.
+        th = thumbnail_rect.height()
         if orientation == "portrait":
-            iw = int(tw * 0.52)
-            ih = int(thumbnail_rect.height() * 0.72)
+            # ~3:4 portrait: narrow width, nearly full height
+            iw = int(tw * 0.76)
+            ih = int(th * 0.97)
         else:
-            iw = int(tw * 0.72)
-            ih = int(thumbnail_rect.height() * 0.52)
+            # ~4:3 landscape (default): nearly full width, ~75% height
+            iw = int(tw * 0.97)
+            ih = int(th * 0.76)
         ix = thumbnail_rect.left() + (thumbnail_rect.width() - iw) // 2
         iy = thumbnail_rect.top() + (thumbnail_rect.height() - ih) // 2
         painter.setBrush(QBrush(self.SKELETON_SHAPE_COLOR))
@@ -619,12 +624,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
         painter.setBrush(QBrush(self.PROGRESS_BAR_TRACK_COLOR))
         painter.drawRect(QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h))
 
-        # Animated fill (~35% width bar sweeping left to right)
+        # Animated fill (~35% width bar sweeping left to right, clipped to track)
         fill_w = int(thumbnail_rect.width() * 0.35)
         travel = thumbnail_rect.width() + fill_w
         bar_x = thumbnail_rect.left() + int(self._shimmer_phase * travel) - fill_w
-        painter.setBrush(QBrush(self.PROGRESS_BAR_FILL_COLOR))
-        painter.drawRect(QRect(bar_x, bar_y, fill_w, bar_h))
+        # Clip fill to the track rect so it never overflows the border
+        track_rect = QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h)
+        fill_rect = QRect(bar_x, bar_y, fill_w, bar_h).intersected(track_rect)
+        if fill_rect.isValid():
+            painter.setBrush(QBrush(self.PROGRESS_BAR_FILL_COLOR))
+            painter.drawRect(fill_rect)
 
     def _draw_no_preview_placeholder(
         self,
