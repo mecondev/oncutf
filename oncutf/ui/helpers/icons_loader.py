@@ -293,6 +293,58 @@ class ThemeIconLoader:
         """
         return self.load_icon(name)
 
+    def load_pixmap(self, name: str, size: int, theme: str | None = None) -> QPixmap:
+        """Load an SVG icon as a QPixmap rendered at the exact requested size.
+
+        Unlike load_icon() which renders at a fixed 24x24, this method renders
+        the SVG at the requested size using QSvgRenderer for crisp output.
+
+        Args:
+            name: The icon name (without extension)
+            size: Target pixel size (width and height)
+            theme: Optional theme override
+
+        Returns:
+            QPixmap at the requested size, transparent background
+
+        """
+        from PyQt5.QtCore import QByteArray
+        from PyQt5.QtGui import QPainter
+        from PyQt5.QtSvg import QSvgRenderer
+
+        theme = theme or self.theme
+        path = self.get_icon_path(name, theme)
+        if not path or not path.endswith(".svg"):
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.transparent)
+            return pixmap
+
+        theme_colors = {
+            "dark": "#f0ebd8",
+            "light": "#212121",
+        }
+        color = theme_colors.get(theme, "#f0ebd8")
+
+        try:
+            svg_content = Path(path).read_text(encoding="utf-8")
+            svg_content = self._colorize_svg(svg_content, color)
+
+            renderer = QSvgRenderer()
+            renderer.load(QByteArray(svg_content.encode("utf-8")))
+
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.transparent)
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.SmoothPixmapTransform)
+            renderer.render(painter)
+            painter.end()
+        except Exception:
+            logger.exception("[IconLoader] Error loading pixmap for '%s'", name)
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.transparent)
+        return pixmap
+
     def get_app_icon(self) -> QIcon:
         """Get the main application icon (favicon) for window icon.
 

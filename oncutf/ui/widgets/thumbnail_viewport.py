@@ -186,6 +186,13 @@ class ThumbnailViewportWidget(QWidget):
         # Drag-drop state
         self._loading_in_progress = False
 
+        # Spinner state for loading animation
+        self._spinner_base_pixmap: QPixmap | None = None
+        self._spinner_angle: float = 0.0
+        self._spinner_timer = QTimer()
+        self._spinner_timer.setInterval(30)
+        self._spinner_timer.timeout.connect(self._spin_tick)
+
         self._setup_ui()
         self._connect_signals()
 
@@ -315,6 +322,13 @@ class ThumbnailViewportWidget(QWidget):
                 padding: 0px 8px;
                 border: none;
             }}
+            QLabel#spinner {{
+                padding: 0px;
+                background: transparent;
+            }}
+            QLabel#status_text {{
+                padding: 0px 8px 0px 0px;
+            }}
             QSlider {{
                 background: transparent;
             }}
@@ -352,10 +366,24 @@ class ThumbnailViewportWidget(QWidget):
 
         layout = QHBoxLayout(status_widget)
         layout.setContentsMargins(4, 2, 4, 2)
-        layout.setSpacing(8)
+        layout.setSpacing(4)
+
+        # Spinner icon (shown during thumbnail loading)
+        from oncutf.ui.helpers.icons_loader import icons_loader as _il
+
+        self._spinner_label = QLabel()
+        self._spinner_label.setObjectName("spinner")
+        self._spinner_label.setFixedSize(14, 14)
+        self._spinner_label.setVisible(False)
+        spinner_pixmap = _il.load_pixmap("progress_activity", 14)
+        if not spinner_pixmap.isNull():
+            self._spinner_base_pixmap = spinner_pixmap
+            self._spinner_label.setPixmap(self._spinner_base_pixmap)
+        layout.addWidget(self._spinner_label)
 
         # Status label (left side)
         self._status_label = QLabel("Ready")
+        self._status_label.setObjectName("status_text")
         layout.addWidget(self._status_label)
 
         # Spacer
@@ -797,6 +825,41 @@ class ThumbnailViewportWidget(QWidget):
         self._thumbnail_progress = (completed, total)
         self._update_status_label()
 
+    def _spin_tick(self) -> None:
+        """Advance spinner rotation by one step."""
+        if not self._spinner_base_pixmap:
+            return
+        from PyQt5.QtGui import QPainter, QPixmap
+
+        self._spinner_angle = (self._spinner_angle + 12.0) % 360.0
+        size = self._spinner_base_pixmap.width()
+        result = QPixmap(size, size)
+        result.fill(Qt.transparent)
+        painter = QPainter(result)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.translate(size / 2.0, size / 2.0)
+        painter.rotate(self._spinner_angle)
+        painter.translate(-size / 2.0, -size / 2.0)
+        painter.drawPixmap(0, 0, self._spinner_base_pixmap)
+        painter.end()
+        try:
+            self._spinner_label.setPixmap(result)
+        except RuntimeError:
+            self._spinner_timer.stop()
+
+    def _set_spinner_visible(self, visible: bool) -> None:
+        """Show or hide the loading spinner in the status bar."""
+        try:
+            if visible:
+                if not self._spinner_timer.isActive():
+                    self._spinner_timer.start()
+                self._spinner_label.setVisible(True)
+            else:
+                self._spinner_timer.stop()
+                self._spinner_label.setVisible(False)
+        except RuntimeError:
+            pass
+
     def _sort_by(self, key: str, reverse: bool) -> None:
         """Sort files by key and switch to sorted mode.
 
@@ -987,6 +1050,7 @@ class ThumbnailViewportWidget(QWidget):
         try:
             # Get total file count from model (not from thumbnail requests)
             total_files = self._model.rowCount() if self._model else 0
+            is_loading = False
 
             # Show thumbnail loading progress if available
             if hasattr(self, "_thumbnail_progress") and self._thumbnail_progress:
@@ -994,12 +1058,15 @@ class ThumbnailViewportWidget(QWidget):
                 # Use total_files from model, not queued count
                 if completed < total_files and total_files > 0:
                     status_text = f"Loading thumbnails: {completed}/{total_files}"
+                    is_loading = True
                 else:
                     status_text = f"Ready ({total_files} files)" if total_files > 0 else "Ready"
             else:
                 status_text = f"Ready ({total_files} files)" if total_files > 0 else "Ready"
 
             self._status_label.setText(status_text)
+            if hasattr(self, "_spinner_label"):
+                self._set_spinner_visible(is_loading)
         except (RuntimeError, AttributeError) as e:
             # Widget was deleted or model is invalid - silently ignore
             logger.debug(
@@ -1268,6 +1335,10 @@ class ThumbnailViewportWidget(QWidget):
         # Stop scroll debounce timer
         if hasattr(self, "_scroll_debounce_timer") and self._scroll_debounce_timer:
             self._scroll_debounce_timer.stop()
+
+        # Stop spinner timer
+        if hasattr(self, "_spinner_timer") and self._spinner_timer:
+            self._spinner_timer.stop()
 
         # Clean up controller
         if hasattr(self, "_controller") and self._controller:
