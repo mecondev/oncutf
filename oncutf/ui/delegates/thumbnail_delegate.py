@@ -403,6 +403,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
         extension = file_item.extension.lower()
         is_previewable = extension in self.PREVIEWABLE_EXTENSIONS
 
+        # Skeleton fills the full frame interior (border inset only, includes padding).
+        # This ensures the dark bg covers the frame padding area so no light-colored
+        # frame background leaks around the skeleton.
+        skeleton_fill_rect = frame_rect.adjusted(
+            self.FRAME_BORDER_WIDTH,
+            self.FRAME_BORDER_WIDTH,
+            -self.FRAME_BORDER_WIDTH,
+            -self.FRAME_BORDER_WIDTH,
+        )
+
         if row in self._fade_states:
             # Crossfade: skeleton fades out, thumbnail fades in
             start_ms, real_pixmap = self._fade_states[row]
@@ -410,7 +420,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             orientation = self._get_orientation_from_metadata(file_item, index)
 
             painter.setOpacity(1.0 - t)
-            self._draw_skeleton_placeholder(painter, thumbnail_rect, orientation)
+            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
             painter.setOpacity(t)
             self._draw_thumbnail(painter, thumbnail_rect, real_pixmap)
             painter.setOpacity(1.0)
@@ -422,8 +432,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         elif is_previewable:
             # Loading: shimmer skeleton + indeterminate progress bar
             orientation = self._get_orientation_from_metadata(file_item, index)
-            self._draw_skeleton_placeholder(painter, thumbnail_rect, orientation)
-            self._draw_skeleton_progress_bar(painter, thumbnail_rect)
+            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+            self._draw_skeleton_progress_bar(painter, skeleton_fill_rect)
 
         else:
             # No preview possible: permanent file-type silhouette
