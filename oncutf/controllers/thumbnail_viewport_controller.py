@@ -304,7 +304,7 @@ class ThumbnailViewportController(QObject):
         # The viewport will call it with the current visible range
         logger.debug("[ThumbnailViewportController] Ready to re-prioritize visible items on demand")
 
-    def queue_all_thumbnails(self, size_px: int = 128) -> None:
+    def queue_all_thumbnails(self, size_px: int = 128) -> int:
         """Queue all file thumbnails with priority based on visibility.
 
         Called when files are loaded into the model. Uses current priority
@@ -316,10 +316,13 @@ class ThumbnailViewportController(QObject):
         Args:
             size_px: Thumbnail size in pixels
 
+        Returns:
+            Number of items actually queued (0 if all cached or already pending).
+
         """
         if not self._thumbnail_manager:
             logger.debug("[ThumbnailViewportController] ThumbnailManager not available")
-            return
+            return 0
 
         self._thumbnail_size = size_px
 
@@ -355,7 +358,7 @@ class ThumbnailViewportController(QObject):
 
             # Only queue new files (smart resume)
             if new_files:
-                self._thumbnail_manager.queue_all_thumbnails(
+                queued: int = self._thumbnail_manager.queue_all_thumbnails(
                     file_paths=list(new_files), priority=priority, size_px=size_px
                 )
                 logger.info(
@@ -366,11 +369,14 @@ class ThumbnailViewportController(QObject):
                     self._is_background_mode,
                     len(self._queued_files),
                 )
-            else:
-                logger.debug(
-                    "[ThumbnailViewportController] All %d files already queued, skipping",
-                    len(file_paths),
-                )
+                return queued
+            logger.debug(
+                "[ThumbnailViewportController] All %d files already queued, skipping",
+                len(file_paths),
+            )
+            return 0
+
+        return 0
 
     def prioritize_visible_thumbnails(self, visible_file_paths: list[str]) -> None:
         """Re-queue visible thumbnails with high priority.

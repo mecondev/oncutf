@@ -1101,6 +1101,8 @@ class ThumbnailViewportWidget(QWidget):
             # Clear any stale pending requests (e.g. from renamed/removed files)
             # before queuing fresh requests for the current file list.
             self._clear_pending_thumbnail_requests()
+            # Full animation reset: clear crossfade/completion state for the new file set
+            self._delegate.reset_for_new_files()
 
             # Queue all thumbnails for background loading when files are present
             self._queue_all_thumbnails_for_background_loading()
@@ -1155,10 +1157,15 @@ class ThumbnailViewportWidget(QWidget):
 
         # STEP 2: Queue all thumbnails for background loading (priority=0)
         # The ThumbnailManager will skip already-queued visible items
-        self._controller.queue_all_thumbnails(size_px=self._zoom_behavior.get_current_size())
+        queued_count = self._controller.queue_all_thumbnails(
+            size_px=self._zoom_behavior.get_current_size()
+        )
 
-        # Start shimmer animation in delegate for all loading items
-        self._delegate.start_shimmer()
+        # Only start shimmer if there are items actually being loaded.
+        # On view switch (all cached), queued_count==0 so shimmer stays off
+        # and already-completed fades are not re-triggered.
+        if queued_count > 0:
+            self._delegate.start_shimmer()
 
         logger.debug(
             "[THUMBS-QUEUE] Completed at t=%.3fms",

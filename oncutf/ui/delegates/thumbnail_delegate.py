@@ -250,14 +250,30 @@ class ThumbnailDelegate(QStyledItemDelegate):
     # Animation control (called from ThumbnailViewportWidget)
     # ------------------------------------------------------------------
 
+    def reset_for_new_files(self) -> None:
+        """Full animation reset for a new file-loading session.
+
+        Called when new files are loaded into the model (not on view switch).
+        Clears all crossfade and completion tracking so incoming thumbnails
+        fade in cleanly. The shimmer timer is NOT started here -- it starts
+        automatically when start_shimmer() is called once queuing begins.
+
+        """
+        self._fade_states.clear()
+        self._completed_fades.clear()
+        self._loading_active = False
+        # Stop timer if running -- it will be restarted by start_shimmer()
+        if self._shimmer_timer.isActive():
+            self._shimmer_timer.stop()
+
     def start_shimmer(self) -> None:
         """Start shimmer animation for loading state (called from viewport).
 
         Safe to call multiple times; the timer will not double-start.
+        Does NOT clear _completed_fades -- use reset_for_new_files() for that.
 
         """
         self._loading_active = True
-        self._completed_fades.clear()  # reset for new loading session
         if not self._shimmer_timer.isActive():
             self._shimmer_timer.start()
 
@@ -431,22 +447,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
             show_icons = t > 0.7
 
         elif has_real_pixmap:
-            if (
-                self._loading_active
-                and self._shimmer_timer.isActive()
-                and row not in self._completed_fades
-            ):
-                # Race: cache was populated before register_fade() was called from
-                # the viewport. Auto-register once so the proper crossfade runs.
-                self._fade_states[row] = (time.monotonic() * 1000.0, pixmap)
-                # Draw skeleton for this single frame to avoid the flash
-                orientation = self._get_orientation_from_metadata(file_item, index)
-                self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
-                show_icons = False
-            else:
-                # Normal: real thumbnail fully loaded
-                self._draw_thumbnail(painter, thumbnail_rect, pixmap)
-                show_icons = True
+            # Normal: real thumbnail fully loaded
+            self._draw_thumbnail(painter, thumbnail_rect, pixmap)
+            show_icons = True
 
         elif is_previewable:
             # Loading: shimmer skeleton only

@@ -546,7 +546,7 @@ class ThumbnailManager(QObject):
 
     def queue_all_thumbnails(
         self, file_paths: list[str], priority: int = 0, size_px: int = 128
-    ) -> None:
+    ) -> int:
         """Queue all file paths for thumbnail generation (background loading).
 
         This is the bulk loading API for loading all thumbnails when files are loaded.
@@ -558,7 +558,7 @@ class ThumbnailManager(QObject):
             size_px: Requested thumbnail size (square dimension)
 
         Returns:
-            None
+            Number of items actually queued (0 if all cached or already pending).
 
         Note:
             - Only queues files that are not already cached or pending with higher priority
@@ -569,7 +569,6 @@ class ThumbnailManager(QObject):
         """
         queued_count = 0
         cached_count = 0
-
         with self._pending_lock:
             for file_path in file_paths:
                 # Skip failed requests until reload
@@ -614,6 +613,8 @@ class ThumbnailManager(QObject):
                 self._request_queue.qsize(),
             )
 
+        return queued_count
+
     def clear_pending_requests(self) -> None:
         """Clear all pending thumbnail requests from the queue.
 
@@ -644,6 +645,10 @@ class ThumbnailManager(QObject):
                 pending_count,
                 failed_count,
             )
+
+        # Reset progress counters so each new load session starts from zero
+        self._total_requests = 0
+        self._completed_requests = 0
 
     def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics.
