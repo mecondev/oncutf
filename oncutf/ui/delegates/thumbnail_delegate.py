@@ -84,9 +84,6 @@ class ThumbnailDelegate(QStyledItemDelegate):
     SKELETON_BG_COLOR = QColor(42, 44, 50)  # dark fill, "still building"
     SKELETON_SHAPE_COLOR = QColor(55, 58, 66)  # inner shape, slightly lighter
     SKELETON_SHIMMER_ALPHA = 28  # shimmer highlight alpha (0-255)
-    PROGRESS_BAR_TRACK_COLOR = QColor(55, 58, 66)  # indeterminate bar track
-    PROGRESS_BAR_FILL_COLOR = QColor(85, 89, 100)  # indeterminate bar fill (gray)
-    PROGRESS_BAR_HEIGHT = 3  # px
 
     # No-preview placeholder colors (permanent state, slightly brighter than skeleton)
     NO_PREVIEW_BG_COLOR = QColor(58, 62, 72)  # brighter than skeleton
@@ -235,6 +232,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self._loading_active: bool = False
         # row -> (start_time_ms, real_pixmap) for active crossfades
         self._fade_states: dict[int, tuple[float, QPixmap]] = {}
+        # rows whose crossfade has completed -- never re-register these
+        self._completed_fades: set[int] = set()
 
         # Single shared timer drives both shimmer and crossfade repaints
         self._shimmer_timer = QTimer(self)
@@ -258,6 +257,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         """
         self._loading_active = True
+        self._completed_fades.clear()  # reset for new loading session
         if not self._shimmer_timer.isActive():
             self._shimmer_timer.start()
 
@@ -295,13 +295,15 @@ class ThumbnailDelegate(QStyledItemDelegate):
         """
         self._shimmer_phase = (self._shimmer_phase + self.SHIMMER_PHASE_STEP) % 1.0
 
-        # Clean up completed fades (elapsed >= CROSSFADE_DURATION_MS)
+        # Move completed fades into _completed_fades so paint() never re-registers them
         now_ms = time.monotonic() * 1000.0
-        self._fade_states = {
-            row: state
-            for row, state in self._fade_states.items()
-            if (now_ms - state[0]) < self.CROSSFADE_DURATION_MS
-        }
+        still_active: dict[int, tuple[float, QPixmap]] = {}
+        for row, state in self._fade_states.items():
+            if (now_ms - state[0]) < self.CROSSFADE_DURATION_MS:
+                still_active[row] = state
+            else:
+                self._completed_fades.add(row)
+        self._fade_states = still_active
 
         # Trigger viewport repaint for visible items
         parent = self.parent()
@@ -429,25 +431,27 @@ class ThumbnailDelegate(QStyledItemDelegate):
             show_icons = t > 0.7
 
         elif has_real_pixmap:
-            if self._loading_active and self._shimmer_timer.isActive():
+            if (
+                self._loading_active
+                and self._shimmer_timer.isActive()
+                and row not in self._completed_fades
+            ):
                 # Race: cache was populated before register_fade() was called from
-                # the viewport. Auto-register so the proper crossfade runs next tick.
+                # the viewport. Auto-register once so the proper crossfade runs.
                 self._fade_states[row] = (time.monotonic() * 1000.0, pixmap)
                 # Draw skeleton for this single frame to avoid the flash
                 orientation = self._get_orientation_from_metadata(file_item, index)
                 self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
-                self._draw_skeleton_progress_bar(painter, skeleton_fill_rect)
                 show_icons = False
             else:
-                # Normal: real thumbnail fully loaded, no loading session active
+                # Normal: real thumbnail fully loaded
                 self._draw_thumbnail(painter, thumbnail_rect, pixmap)
                 show_icons = True
 
         elif is_previewable:
-            # Loading: shimmer skeleton + indeterminate progress bar
+            # Loading: shimmer skeleton only
             orientation = self._get_orientation_from_metadata(file_item, index)
             self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
-            self._draw_skeleton_progress_bar(painter, skeleton_fill_rect)
             show_icons = False
 
         else:
@@ -627,41 +631,6 @@ class ThumbnailDelegate(QStyledItemDelegate):
         iy = thumbnail_rect.top() + (thumbnail_rect.height() - ih) // 2
         painter.setBrush(QBrush(self.SKELETON_SHAPE_COLOR))
         painter.drawRoundedRect(QRect(ix, iy, iw, ih), 3, 3)
-
-    def _draw_skeleton_progress_bar(
-        self,
-        painter: QPainter,
-        thumbnail_rect: QRect,
-    ) -> None:
-        """Draw an indeterminate animated progress bar at the bottom of thumbnail.
-
-        A thin bar (PROGRESS_BAR_HEIGHT px) sweeps left to right using the
-        shared shimmer phase, giving visual feedback during loading.
-
-        Args:
-            painter: QPainter
-            thumbnail_rect: The thumbnail area rectangle
-
-        """
-        bar_h = self.PROGRESS_BAR_HEIGHT
-        bar_y = thumbnail_rect.bottom() - bar_h
-        painter.setPen(Qt.NoPen)
-
-        # Track
-        painter.setBrush(QBrush(self.PROGRESS_BAR_TRACK_COLOR))
-        painter.drawRect(QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h))
-
-        # Animated fill (~35% width bar sweeping left to right, clamped to track bounds)
-        fill_w = int(thumbnail_rect.width() * 0.35)
-        travel = thumbnail_rect.width() + fill_w
-        raw_x = thumbnail_rect.left() + int(self._shimmer_phase * travel) - fill_w
-        # Clamp both edges so the fill never overflows the track
-        draw_left = max(raw_x, thumbnail_rect.left())
-        draw_right = min(raw_x + fill_w, thumbnail_rect.right() + 1)
-        draw_w = draw_right - draw_left
-        if draw_w > 0:
-            painter.setBrush(QBrush(self.PROGRESS_BAR_FILL_COLOR))
-            painter.drawRect(QRect(draw_left, bar_y, draw_w, bar_h))
 
     def _draw_no_preview_placeholder(
         self,
