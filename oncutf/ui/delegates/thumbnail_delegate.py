@@ -447,9 +447,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
             show_icons = t > 0.7
 
         elif has_real_pixmap:
-            # Normal: real thumbnail fully loaded
-            self._draw_thumbnail(painter, thumbnail_rect, pixmap)
-            show_icons = True
+            # During an active loading session: only show real pixmap for rows
+            # that completed a fade. This prevents the race-condition flash where
+            # the cache has the pixmap before register_fade() was called.
+            if (self._loading_active or self._fade_states) and row not in self._completed_fades:
+                orientation = self._get_orientation_from_metadata(file_item, index)
+                self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+                show_icons = False
+            else:
+                self._draw_thumbnail(painter, thumbnail_rect, pixmap)
+                show_icons = True
 
         elif is_previewable:
             # Loading: shimmer skeleton only

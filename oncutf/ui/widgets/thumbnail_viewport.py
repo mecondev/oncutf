@@ -165,6 +165,10 @@ class ThumbnailViewportWidget(QWidget):
 
         # Thumbnail loading progress
         self._thumbnail_progress: tuple[int, int] | None = None  # (completed, total)
+        # Track the row count of the last file-set that triggered a full load reset.
+        # _update_placeholder_visibility uses this to avoid resetting counters on
+        # layout changes / scroll activity that don't change the actual file set.
+        self._loaded_file_count: int = -1
 
         # Scroll optimization - debouncing and range tracking
         self._scroll_debounce_timer = QTimer()
@@ -476,7 +480,7 @@ class ThumbnailViewportWidget(QWidget):
         self._model.layoutChanged.connect(self._on_model_layout_changed)
         self._model.rowsInserted.connect(self._update_placeholder_visibility)
         self._model.rowsRemoved.connect(self._update_placeholder_visibility)
-        self._model.modelReset.connect(self._update_placeholder_visibility)
+        self._model.modelReset.connect(self._on_model_reset)
 
         # Model data changes (for metadata/hash indicator updates)
         self._model.dataChanged.connect(self._on_model_data_changed)
@@ -1020,6 +1024,16 @@ class ThumbnailViewportWidget(QWidget):
         """Return the internal QListView for shortcut/focus registration."""
         return self._list_view
 
+    def _on_model_reset(self) -> None:
+        """Handle model reset signal (new file set loaded).
+
+        Invalidates the loaded-file-count so that _update_placeholder_visibility
+        always triggers a full reset + re-queue even if the new file count
+        happens to be identical to the previous one.
+        """
+        self._loaded_file_count = -1
+        self._update_placeholder_visibility()
+
     def _on_model_layout_changed(self) -> None:
         """Handle model layout changes (e.g., after drag reorder).
 
@@ -1089,6 +1103,7 @@ class ThumbnailViewportWidget(QWidget):
         if row_count == 0:
             # Clear pending thumbnail requests when model is empty
             self._clear_pending_thumbnail_requests()
+            self._loaded_file_count = 0
 
             self.placeholder_helper.show()
             # Update position immediately (no delay for instant visibility)
@@ -1098,14 +1113,13 @@ class ThumbnailViewportWidget(QWidget):
             self.placeholder_helper.hide()
             logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
 
-            # Clear any stale pending requests (e.g. from renamed/removed files)
-            # before queuing fresh requests for the current file list.
-            self._clear_pending_thumbnail_requests()
-            # Full animation reset: clear crossfade/completion state for the new file set
-            self._delegate.reset_for_new_files()
-
-            # Queue all thumbnails for background loading when files are present
-            self._queue_all_thumbnails_for_background_loading()
+            if row_count != self._loaded_file_count:
+                # File set has changed -- full reset and re-queue
+                self._loaded_file_count = row_count
+                self._clear_pending_thumbnail_requests()
+                self._delegate.reset_for_new_files()
+                self._queue_all_thumbnails_for_background_loading()
+            # else: same file count (layout change / scroll repaint) -- no reset
 
         # Update status label
         self._update_status_label()
