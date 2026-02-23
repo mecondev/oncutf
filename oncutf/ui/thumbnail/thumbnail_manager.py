@@ -613,6 +613,14 @@ class ThumbnailManager(QObject):
                 self._request_queue.qsize(),
             )
 
+        # Emit an initial progress signal so the counter starts from the correct
+        # position: cached items are already "completed" without needing generation.
+        # This prevents the counter from showing 0/N when many items are cached.
+        if cached_count > 0 or queued_count > 0:
+            self._completed_requests = cached_count
+            self._total_requests = cached_count + queued_count
+            self.generation_progress.emit(cached_count, self._total_requests)
+
         return queued_count
 
     def clear_pending_requests(self) -> None:
