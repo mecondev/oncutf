@@ -9,7 +9,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 ### File Operations
 
 | Shortcut | Action | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `Ctrl+O` | Browse Files | Open file browser to select files/folders |
 | `Escape` | Cancel Drag | Cancel current drag & drop operation |
 | `Shift+Escape` | Clear File List | Clear all files from file list |
@@ -17,7 +17,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 ### Selection Management (File Table focus)
 
 | Shortcut | Action | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `Ctrl+A` | Select All | Select all files in file table |
 | `Ctrl+Shift+A` | Clear Selection | Deselect all files |
 | `Ctrl+I` | Invert Selection | Invert current selection |
@@ -25,7 +25,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 ### Metadata Operations
 
 | Shortcut | Action | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `Ctrl+M` | Load Basic Metadata | Load basic metadata for selected files (file table) |
 | `Ctrl+Shift+M` | Load Extended Metadata | Load extended metadata for selected files (file table) |
 | `Ctrl+Shift+M` | Load All Basic Metadata | Load basic metadata for all files (file table) |
@@ -36,7 +36,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 ### Hash Operations (File Table focus)
 
 | Shortcut | Action | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `Ctrl+H` | Calculate Hash (Selected) | Calculate CRC32 checksums for selected files (file table) |
 | `Ctrl+Shift+H` | Calculate Hash (All) | Calculate CRC32 checksums for all files (file table) |
 | `Ctrl+L` | Show Results List | Display hash calculation results dialog |
@@ -44,7 +44,7 @@ These shortcuts work throughout the application, regardless of which widget has 
 ### History & Undo/Redo
 
 | Shortcut | Action | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `Ctrl+Z` | Undo | Undo last operation (metadata edits, renames, etc.) |
 | `Ctrl+Shift+Z` | Redo | Redo last undone operation |
 | `Ctrl+Y` | Show History | Display command history dialog with all operations |
@@ -62,7 +62,7 @@ These shortcuts work only when the respective widget has focus.
 The `F5` key performs context-aware refresh based on which widget has focus:
 
 | Widget Focus | Action | Description |
-|--------------|--------|-------------|
+| -------------- | -------- | ------------- |
 | **File Table** | Reload Files | Reload files from current folder |
 | **File Tree** | Refresh Tree | Refresh file tree view |
 | **Metadata Tree** | Refresh Metadata | Reload metadata from current selection |
@@ -72,7 +72,7 @@ The `F5` key performs context-aware refresh based on which widget has focus:
 ### File Table Shortcuts
 
 | Shortcut | Action |
-|----------|--------|
+| ---------- | -------- |
 | `Ctrl+T` | Auto-fit columns to content |
 | `Ctrl+Shift+T` | Reset columns to default widths |
 
@@ -85,7 +85,7 @@ Special keyboard modifiers that change drag & drop behavior.
 ### From File Tree to File Table
 
 | Modifier | Behavior |
-|----------|----------|
+| ---------- | ---------- |
 | None | Skip metadata loading (folders only imported) |
 | `Ctrl` | Load basic metadata after import |
 | `Ctrl+Shift` | Load extended metadata after import |
@@ -93,7 +93,7 @@ Special keyboard modifiers that change drag & drop behavior.
 ### From File Table to Metadata Tree
 
 | Modifier | Behavior |
-|----------|----------|
+| ---------- | ---------- |
 | None | Load fast metadata for dragged file |
 | `Shift` | Load extended metadata for dragged file |
 
