@@ -425,25 +425,42 @@ class ThumbnailDelegate(QStyledItemDelegate):
             self._draw_thumbnail(painter, thumbnail_rect, real_pixmap)
             painter.setOpacity(1.0)
 
+            # Status icons only after fade is mostly done (avoids icon pop-in)
+            show_icons = t > 0.7
+
         elif has_real_pixmap:
-            # Normal: real thumbnail fully loaded
-            self._draw_thumbnail(painter, thumbnail_rect, pixmap)
+            if self._loading_active and self._shimmer_timer.isActive():
+                # Race: cache was populated before register_fade() was called from
+                # the viewport. Auto-register so the proper crossfade runs next tick.
+                self._fade_states[row] = (time.monotonic() * 1000.0, pixmap)
+                # Draw skeleton for this single frame to avoid the flash
+                orientation = self._get_orientation_from_metadata(file_item, index)
+                self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+                self._draw_skeleton_progress_bar(painter, skeleton_fill_rect)
+                show_icons = False
+            else:
+                # Normal: real thumbnail fully loaded, no loading session active
+                self._draw_thumbnail(painter, thumbnail_rect, pixmap)
+                show_icons = True
 
         elif is_previewable:
             # Loading: shimmer skeleton + indeterminate progress bar
             orientation = self._get_orientation_from_metadata(file_item, index)
             self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
             self._draw_skeleton_progress_bar(painter, skeleton_fill_rect)
+            show_icons = False
 
         else:
             # No preview possible: permanent file-type silhouette
             self._draw_no_preview_placeholder(painter, thumbnail_rect, file_item)
+            show_icons = True
 
-        # Status icons and video badge always drawn on top
-        self._draw_status_icons(painter, frame_rect, file_item, index)
+        # Status icons and video badge only when thumbnail is (or nearly) final
+        if show_icons:
+            self._draw_status_icons(painter, frame_rect, file_item, index)
 
         duration = getattr(file_item, "duration", None)
-        if duration:
+        if show_icons and duration:
             self._draw_video_badge(painter, frame_rect, duration)
 
         # Draw filename
@@ -594,18 +611,18 @@ class ThumbnailDelegate(QStyledItemDelegate):
         painter.setBrush(QBrush(shimmer))
         painter.drawRect(thumbnail_rect)
 
-        # Orientation-aware inner shape -- proportions chosen to match typical
-        # 4:3 (landscape) or 3:4 (portrait) photos so the skeleton fill area
-        # looks the same size as the real thumbnail that will replace it.
+        # Orientation-aware inner shape -- 16:9 for landscape, 9:16 for portrait.
+        # Proportions match a typical video/photo crop so the hint looks like
+        # the content that will replace it. Positioned centred in the skeleton fill.
         th = thumbnail_rect.height()
         if orientation == "portrait":
-            # ~3:4 portrait: narrow width, nearly full height
-            iw = int(tw * 0.76)
-            ih = int(th * 0.97)
+            # 9:16 portrait crop, ~75% of available width
+            iw = int(tw * 0.75)
+            ih = min(int(iw * 16 / 9), int(th * 0.97))
         else:
-            # ~4:3 landscape (default): nearly full width, ~75% height
-            iw = int(tw * 0.97)
-            ih = int(th * 0.76)
+            # 16:9 landscape crop, ~88% of available width
+            iw = int(tw * 0.88)
+            ih = int(iw * 9 / 16)
         ix = thumbnail_rect.left() + (thumbnail_rect.width() - iw) // 2
         iy = thumbnail_rect.top() + (thumbnail_rect.height() - ih) // 2
         painter.setBrush(QBrush(self.SKELETON_SHAPE_COLOR))
@@ -634,16 +651,17 @@ class ThumbnailDelegate(QStyledItemDelegate):
         painter.setBrush(QBrush(self.PROGRESS_BAR_TRACK_COLOR))
         painter.drawRect(QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h))
 
-        # Animated fill (~35% width bar sweeping left to right, clipped to track)
+        # Animated fill (~35% width bar sweeping left to right, clamped to track bounds)
         fill_w = int(thumbnail_rect.width() * 0.35)
         travel = thumbnail_rect.width() + fill_w
-        bar_x = thumbnail_rect.left() + int(self._shimmer_phase * travel) - fill_w
-        # Clip fill to the track rect so it never overflows the border
-        track_rect = QRect(thumbnail_rect.left(), bar_y, thumbnail_rect.width(), bar_h)
-        fill_rect = QRect(bar_x, bar_y, fill_w, bar_h).intersected(track_rect)
-        if fill_rect.isValid():
+        raw_x = thumbnail_rect.left() + int(self._shimmer_phase * travel) - fill_w
+        # Clamp both edges so the fill never overflows the track
+        draw_left = max(raw_x, thumbnail_rect.left())
+        draw_right = min(raw_x + fill_w, thumbnail_rect.right() + 1)
+        draw_w = draw_right - draw_left
+        if draw_w > 0:
             painter.setBrush(QBrush(self.PROGRESS_BAR_FILL_COLOR))
-            painter.drawRect(fill_rect)
+            painter.drawRect(QRect(draw_left, bar_y, draw_w, bar_h))
 
     def _draw_no_preview_placeholder(
         self,
