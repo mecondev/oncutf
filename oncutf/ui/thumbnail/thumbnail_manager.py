@@ -602,13 +602,22 @@ class ThumbnailManager(QObject):
                 self._total_requests += 1
                 queued_count += 1
 
-        # Emit an initial progress signal so the counter starts from the correct
-        # position: cached items are already "completed" without needing generation.
-        # This prevents the counter from showing 0/N when many items are cached.
-        if cached_count > 0 or queued_count > 0:
-            self._completed_requests = cached_count
-            self._total_requests = cached_count + queued_count
-            self.generation_progress.emit(cached_count, self._total_requests)
+        # Update progress counters.
+        # ACCUMULATE rather than replace -- multiple callers (initial queue,
+        # scroll prioritize, view-switch) may invoke this method in the same
+        # session.  Replacing counters causes the status bar to jump / reset.
+        if queued_count > 0:
+            # _total_requests was already incremented inside the loop above
+            # (one +=1 per queued item), so it is already correct.
+            # Emit progress so the UI shows the right starting point.
+            self.generation_progress.emit(self._completed_requests, self._total_requests)
+        elif cached_count > 0:
+            # Everything cached, nothing to generate -- emit a "complete"
+            # progress signal so the UI updates correctly without resetting
+            # any in-flight counters from an earlier session.
+            total = max(self._total_requests, cached_count)
+            completed = max(self._completed_requests, cached_count)
+            self.generation_progress.emit(completed, total)
 
         # Start workers if not running (after counters initialization to avoid
         # overwriting progress from worker-complete callbacks).

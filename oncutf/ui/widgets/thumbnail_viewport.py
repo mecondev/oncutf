@@ -1113,11 +1113,22 @@ class ThumbnailViewportWidget(QWidget):
             self.placeholder_helper.hide()
             logger.debug("[ThumbnailViewport] Hiding placeholder (%d files)", row_count)
 
-            if row_count != self._loaded_file_count:
-                # File set has changed -- full reset and re-queue
+            if self._loaded_file_count <= 0:
+                # Transitioning from empty / reset state to having files.
+                # Full reset: clear pending requests, animation state, and
+                # re-queue everything from scratch.
                 self._loaded_file_count = row_count
                 self._clear_pending_thumbnail_requests()
                 self._delegate.reset_for_new_files()
+                self._queue_all_thumbnails_for_background_loading()
+            elif row_count != self._loaded_file_count:
+                # Incremental file-count change (streaming add / remove).
+                # Do NOT reset delegate animation state or clear pending
+                # requests -- that would wipe the progress counters and
+                # _completed_fades built up during the current session.
+                # Just update the count and queue any new items; the
+                # controller's dedup logic skips already-queued files.
+                self._loaded_file_count = row_count
                 self._queue_all_thumbnails_for_background_loading()
             # else: same file count (layout change / scroll repaint) -- no reset
 
@@ -1181,10 +1192,42 @@ class ThumbnailViewportWidget(QWidget):
         if queued_count > 0:
             self._delegate.start_shimmer()
 
+        # Always mark rows that already have a cached pixmap as completed
+        # so the delegate's paint() state machine renders them directly
+        # instead of showing a shimmer skeleton.  This is essential in
+        # mixed scenarios (some cached, some not) and on view switch.
+        self._mark_cached_rows_completed()
+
         logger.debug(
             "[THUMBS-QUEUE] Completed at t=%.3fms",
             (time.time() - t0) * 1000,
         )
+
+    def _mark_cached_rows_completed(self) -> None:
+        """Pre-populate delegate's _completed_fades for rows with cached pixmaps.
+
+        Checks the ThumbnailManager's cache directly (memory -> disk -> DB)
+        instead of calling model.data(UserRole+1) which triggers
+        get_thumbnail() and its side-effect of re-queuing uncached items.
+
+        This is essential on view-switch (listview -> thumbsview) or reload
+        when most/all thumbnails are already cached -- without this, the
+        shimmer guard inside paint() would block rendering until a
+        register_fade() call that never arrives for cached items.
+        """
+        manager = self._controller._thumbnail_manager
+        if manager is None:
+            return
+
+        row_count = self._model.rowCount()
+        for row in range(row_count):
+            index = self._model.index(row, 0)
+            file_item = index.data(Qt.UserRole)
+            if file_item is None:
+                continue
+            cached = manager._check_cache(file_item.full_path, 128)
+            if cached is not None:
+                self._delegate.mark_row_completed(row)
 
     def _get_visible_file_paths(self) -> list[str]:
         """Get list of file paths for currently visible thumbnails.
@@ -1294,14 +1337,24 @@ class ThumbnailViewportWidget(QWidget):
         if hasattr(self, "_controller") and self._controller:
             self._controller.set_viewport_visible(True)
 
-        # Queue thumbnails asynchronously to avoid blocking the view switch
-        if self._model.rowCount() > 0:
+        row_count = self._model.rowCount()
+        if row_count == 0:
+            # No files -- ensure placeholder is visible
+            if hasattr(self, "placeholder_helper"):
+                self.placeholder_helper.show()
+                self.placeholder_helper.update_position()
+        elif row_count != self._loaded_file_count:
+            # File count changed while we were hidden -- need re-queue
             logger.debug(
-                "[ThumbnailViewport] Viewport shown with %d files - scheduling thumbnail queue",
-                self._model.rowCount(),
+                "[ThumbnailViewport] Viewport shown with %d files (loaded=%d)"
+                " - scheduling thumbnail queue",
+                row_count,
+                self._loaded_file_count,
             )
-            # Defer queueing to avoid blocking UI (reduced delay from 10ms to 0ms)
             schedule_ui_update(self._queue_all_thumbnails_for_background_loading, delay=0)
+        else:
+            # Same file count -- just mark cached rows (no re-queue needed)
+            self._mark_cached_rows_completed()
 
         logger.debug("[THUMBS-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000)
 

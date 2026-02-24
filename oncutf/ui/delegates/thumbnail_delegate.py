@@ -286,17 +286,38 @@ class ThumbnailDelegate(QStyledItemDelegate):
         """
         self._loading_active = False
 
+    def mark_row_completed(self, row: int) -> None:
+        """Mark a row as having a completed (cached) thumbnail.
+
+        Call this for rows that already have a real pixmap in the model
+        so the paint() state machine skips the shimmer and draws the
+        thumbnail directly -- no crossfade needed.
+
+        Args:
+            row: Model row index to mark as completed
+
+        """
+        self._completed_fades.add(row)
+
     def register_fade(self, row: int, pixmap: QPixmap) -> None:
         """Register a crossfade transition for a specific row.
 
         Called from ThumbnailViewportWidget._on_thumbnail_ready() when a real
         thumbnail has arrived and should fade in over the skeleton placeholder.
 
+        Skips registration if the row has already completed a fade -- this
+        prevents the crossfade loop bug where a re-emitted thumbnail_ready
+        signal restarts the animation indefinitely.
+
         Args:
             row: Model row index of the item to transition
             pixmap: The newly ready real thumbnail pixmap
 
         """
+        # Guard: never re-fade a row that already finished its crossfade
+        if row in self._completed_fades:
+            return
+
         self._fade_states[row] = (time.monotonic() * 1000.0, pixmap)
         # Ensure timer is running for the crossfade repaints
         if not self._shimmer_timer.isActive():

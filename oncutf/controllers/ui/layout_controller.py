@@ -490,6 +490,17 @@ class LayoutController:
 
                 # Map button ID to stack index
                 # VIEWPORT_SPECS order: ["details", "thumbs"]
+                target_index = 0 if button_id == "details" else 1
+                current_index = self.parent_window.viewport_stack.currentIndex()
+
+                # Skip if already on the requested view
+                if current_index == target_index:
+                    logger.debug(
+                        "[VIEW-SWITCH] Already on %s view, ignoring",
+                        button_id,
+                    )
+                    return
+
                 if button_id == "details":
                     self.parent_window.viewport_stack.setCurrentIndex(0)
                     logger.debug(
