@@ -17,6 +17,7 @@ All settings are re-exported from this module for backward compatibility:
     from oncutf.config import APP_NAME, THEME_COLORS  # Works as before
 """
 
+# oncutf.config.file_types
 # oncutf.config.app
 from oncutf.config.app import (
     APP_AUTHOR,
@@ -89,10 +90,36 @@ from oncutf.config.features import (
     USE_PREVIEW_BACKGROUND,
     FeatureAvailability,
 )
+from oncutf.config.file_types import (
+    ALLOWED_EXTENSIONS,
+    ARCHIVE_EXTENSIONS,
+    AUDIO_DOT_EXTENSIONS,
+    AUDIO_EXTENSIONS,
+    DOCUMENT_DOT_EXTENSIONS,
+    DOCUMENT_EXTENSIONS,
+    FILE_TYPE_REGISTRY,
+    FILETYPE_ICON_MAP,
+    IMAGE_AND_RAW_DOT_EXTENSIONS,
+    IMAGE_AND_RAW_EXTENSIONS,
+    IMAGE_DOT_EXTENSIONS,
+    IMAGE_EXTENSIONS,
+    MEDIA_DOT_EXTENSIONS,
+    MEDIA_EXTENSIONS,
+    PREVIEWABLE_DOT_EXTENSIONS,
+    PREVIEWABLE_EXTENSIONS,
+    RAW_DOT_EXTENSIONS,
+    RAW_EXTENSIONS,
+    SIDECAR_EXTENSIONS,
+    SUBTITLE_EXTENSIONS,
+    VIDEO_DOT_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    get_category,
+    get_filetype_icon,
+    is_previewable,
+)
 
 # oncutf.config.paths
 from oncutf.config.paths import (
-    ALLOWED_EXTENSIONS,
     ALLOWED_FILENAME_CHARS,
     AUTO_RENAME_COMPANION_FILES,
     COMPANION_FILES_ENABLED,

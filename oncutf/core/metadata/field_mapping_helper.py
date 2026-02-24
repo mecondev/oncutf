@@ -11,6 +11,12 @@ import os
 from pathlib import Path
 from typing import ClassVar
 
+from oncutf.config.file_types import (
+    AUDIO_DOT_EXTENSIONS,
+    IMAGE_DOT_EXTENSIONS,
+    RAW_DOT_EXTENSIONS,
+    VIDEO_DOT_EXTENSIONS,
+)
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -25,41 +31,11 @@ class MetadataFieldMappingHelper:
     - Consistent read/write field mapping across all file formats
     """
 
-    # Define supported file extensions by category
-    IMAGE_EXTENSIONS: ClassVar[set[str]] = {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".tiff",
-        ".tif",
-        ".bmp",
-        ".gif",
-    }
-    RAW_EXTENSIONS: ClassVar[set[str]] = {
-        ".cr2",
-        ".nef",
-        ".arw",
-        ".orf",
-        ".rw2",
-        ".dng",
-    }
-    VIDEO_EXTENSIONS: ClassVar[set[str]] = {
-        ".mp4",
-        ".mov",
-        ".m4v",
-        ".3gp",
-        ".avi",
-        ".mkv",
-        ".wmv",
-    }
-    AUDIO_EXTENSIONS: ClassVar[set[str]] = {
-        ".mp3",
-        ".wav",
-        ".flac",
-        ".aac",
-        ".m4a",
-        ".ogg",
-    }
+    # File extensions by category (from unified registry)
+    IMAGE_EXTENSIONS: ClassVar[frozenset[str]] = IMAGE_DOT_EXTENSIONS
+    RAW_EXTENSIONS: ClassVar[frozenset[str]] = RAW_DOT_EXTENSIONS
+    VIDEO_EXTENSIONS: ClassVar[frozenset[str]] = VIDEO_DOT_EXTENSIONS
+    AUDIO_EXTENSIONS: ClassVar[frozenset[str]] = AUDIO_DOT_EXTENSIONS
 
     # Field mapping for write operations (maps generic field -> file-specific field)
     WRITE_FIELD_MAPPING: ClassVar[dict[str, dict[str, str | None]]] = {

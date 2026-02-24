@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
+from oncutf.config.file_types import IMAGE_AND_RAW_DOT_EXTENSIONS, VIDEO_DOT_EXTENSIONS
 from oncutf.ui.thumbnail.providers import (
     ImageThumbnailProvider,
     ThumbnailGenerationError,
@@ -102,43 +103,9 @@ class ThumbnailWorker(QThread):
         self._stop_requested = False
         self._processed_count = 0
 
-        # File type detection
-        self._image_extensions = {
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".gif",
-            ".bmp",
-            ".tiff",
-            ".tif",
-            ".webp",
-            ".heic",
-            ".heif",
-            # RAW formats (supported via rawpy)
-            ".cr2",
-            ".cr3",
-            ".nef",
-            ".orf",
-            ".rw2",
-            ".arw",
-            ".dng",
-            ".raf",
-            ".pef",
-            ".srw",
-        }
-        self._video_extensions = {
-            ".mp4",
-            ".avi",
-            ".mov",
-            ".mkv",
-            ".wmv",
-            ".flv",
-            ".webm",
-            ".m4v",
-            ".mts",
-            ".m2ts",
-            ".mxf",
-        }
+        # File type detection (from unified registry)
+        self._image_extensions = IMAGE_AND_RAW_DOT_EXTENSIONS
+        self._video_extensions = VIDEO_DOT_EXTENSIONS
 
     def run(self) -> None:
         """Main worker loop - process requests until stopped."""

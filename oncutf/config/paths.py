@@ -6,75 +6,7 @@ Date: 2026-01-01
 File paths, extensions, and validation patterns.
 """
 
-# =====================================
-# ALLOWED FILE EXTENSIONS
-# =====================================
-
-ALLOWED_EXTENSIONS = {
-    # Image formats
-    "jpg",
-    "jpeg",
-    "png",
-    "tiff",
-    "tif",
-    "bmp",
-    "gif",
-    "webp",
-    "svg",
-    "heic",
-    "heif",
-    # RAW image formats
-    "nef",
-    "raw",
-    "rw2",
-    "arw",
-    "cr2",
-    "cr3",
-    "dng",
-    "orf",
-    # Audio formats
-    "mp3",
-    "wav",
-    "flac",
-    "aac",
-    "ogg",
-    "m4a",
-    "wma",
-    "aiff",
-    # Video formats
-    "mp4",
-    "mov",
-    "mts",
-    "mxf",
-    "avi",
-    "mkv",
-    "wmv",
-    "flv",
-    "webm",
-    "m4v",
-    "3gp",
-    "ts",
-    "vob",
-    # Document formats
-    "txt",
-    "csv",
-    "xml",
-    "json",
-    "rtf",
-    "pdf",
-    # Thumbnail formats
-    "tmp",
-    # Companion/Sidecar file formats
-    "xmp",
-    "srt",
-    "vtt",
-    "ass",
-    "ssa",
-    "sub",
-    "idx",
-    "cube",
-    "3dl",
-}
+from oncutf.config.file_types import ALLOWED_EXTENSIONS  # re-export
 
 # =====================================
 # FILENAME VALIDATION

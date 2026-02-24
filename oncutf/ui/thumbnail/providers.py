@@ -25,6 +25,7 @@ from typing import ClassVar, NoReturn
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 
+from oncutf.config.file_types import IMAGE_DOT_EXTENSIONS, RAW_DOT_EXTENSIONS, VIDEO_DOT_EXTENSIONS
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -93,32 +94,10 @@ class ImageThumbnailProvider(ThumbnailProvider):
 
     """
 
-    SUPPORTED_EXTENSIONS: ClassVar[set[str]] = {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".tiff",
-        ".tif",
-        ".webp",
-        ".heic",
-        ".heif",
-    }
+    SUPPORTED_EXTENSIONS: ClassVar[frozenset[str]] = IMAGE_DOT_EXTENSIONS
 
     # RAW formats supported via rawpy
-    RAW_EXTENSIONS: ClassVar[set[str]] = {
-        ".cr2",
-        ".cr3",
-        ".nef",
-        ".orf",
-        ".rw2",
-        ".arw",
-        ".dng",
-        ".raf",
-        ".pef",  # Pentax
-        ".srw",  # Samsung
-    }
+    RAW_EXTENSIONS: ClassVar[frozenset[str]] = RAW_DOT_EXTENSIONS
 
     def supports(self, file_path: str) -> bool:
         """Check if file is a supported image format.
@@ -330,22 +309,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
     """
 
-    SUPPORTED_EXTENSIONS: ClassVar[set[str]] = {
-        ".mp4",
-        ".mkv",
-        ".avi",
-        ".mov",
-        ".wmv",
-        ".flv",
-        ".webm",
-        ".m4v",
-        ".mpg",
-        ".mpeg",
-        ".3gp",
-        ".mts",
-        ".m2ts",
-        ".mxf",
-    }
+    SUPPORTED_EXTENSIONS: ClassVar[frozenset[str]] = VIDEO_DOT_EXTENSIONS
 
     # Frame extraction heuristic
     DEFAULT_FRAME_RATIO = 0.35  # 35% of duration

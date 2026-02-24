@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
+from oncutf.config.file_types import PREVIEWABLE_DOT_EXTENSIONS
+
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
     from oncutf.models.file_table.file_table_model import FileTableModel
@@ -63,45 +65,10 @@ class ThumbnailViewportController(QObject):
     # Background mode timeout (30 seconds)
     BACKGROUND_TIMEOUT_MS = 30000
 
-    # Supported thumbnail file extensions (images + RAW + videos)
-    # Audio files (.mp3, .wav, etc.) are explicitly excluded
-    SUPPORTED_THUMBNAIL_EXTENSIONS: ClassVar[set[str]] = {
-        # Images
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".tiff",
-        ".tif",
-        ".webp",
-        ".heic",
-        ".heif",
-        # RAW
-        ".cr2",
-        ".cr3",
-        ".nef",
-        ".orf",
-        ".rw2",
-        ".arw",
-        ".dng",
-        ".raf",
-        # Videos
-        ".mp4",
-        ".mkv",
-        ".avi",
-        ".mov",
-        ".wmv",
-        ".flv",
-        ".webm",
-        ".m4v",
-        ".mpg",
-        ".mpeg",
-        ".3gp",
-        ".mts",
-        ".m2ts",
-        ".mxf",
-    }
+    # Supported thumbnail file extensions (derived from unified registry).
+    # Audio files (.mp3, .wav, etc.) are explicitly excluded by the registry
+    # (previewable=False).
+    SUPPORTED_THUMBNAIL_EXTENSIONS: ClassVar[frozenset[str]] = PREVIEWABLE_DOT_EXTENSIONS
 
     # Signals for UI updates
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap

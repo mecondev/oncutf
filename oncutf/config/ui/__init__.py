@@ -135,3 +135,14 @@ from oncutf.config.ui.theme import (
     THEME_NAME,
     THEME_TOKENS,
 )
+
+# oncutf.config.ui.thumbnail  (re-exported as THUMB_ prefix for clarity)
+from oncutf.config.ui.thumbnail import (
+    CROSSFADE_DURATION_MS as THUMB_CROSSFADE_DURATION_MS,
+    FILENAME_HEIGHT as THUMB_FILENAME_HEIGHT,
+    FILENAME_MARGIN as THUMB_FILENAME_MARGIN,
+    FRAME_BORDER_WIDTH as THUMB_FRAME_BORDER_WIDTH,
+    FRAME_PADDING as THUMB_FRAME_PADDING,
+    SHIMMER_PHASE_STEP as THUMB_SHIMMER_PHASE_STEP,
+    SHIMMER_TICK_MS as THUMB_SHIMMER_TICK_MS,
+)

@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
+from oncutf.config.file_types import PREVIEWABLE_EXTENSIONS
 from oncutf.ui.thumbnail.thumbnail_cache import ThumbnailCache, ThumbnailCacheConfig
 from oncutf.utils.logging.logger_factory import get_cached_logger
 from oncutf.utils.paths import AppPaths
@@ -132,52 +133,9 @@ class ThumbnailManager(QObject):
 
     """
 
-    # Extensions that support thumbnail generation.
+    # Extensions that support thumbnail generation (from unified registry).
     # Files with other extensions go to permanent "no preview" state in the delegate.
-    PREVIEWABLE_EXTENSIONS: frozenset[str] = frozenset(
-        {
-            # Raster images
-            "jpg",
-            "jpeg",
-            "png",
-            "gif",
-            "bmp",
-            "tiff",
-            "tif",
-            "webp",
-            "heic",
-            "heif",
-            # RAW camera formats
-            "raw",
-            "cr2",
-            "cr3",
-            "nef",
-            "arw",
-            "dng",
-            "orf",
-            "raf",
-            "rw2",
-            "pef",
-            "nrw",
-            "srw",
-            "dcr",
-            "fff",
-            # Video (ffmpeg-based, future support)
-            "mp4",
-            "mov",
-            "avi",
-            "mkv",
-            "wmv",
-            "m4v",
-            "flv",
-            "webm",
-            "m2ts",
-            "ts",
-            "mts",
-            "3gp",
-            "ogv",
-        }
-    )
+    PREVIEWABLE_EXTENSIONS: frozenset[str] = PREVIEWABLE_EXTENSIONS
 
     # Signals
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap

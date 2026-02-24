@@ -32,7 +32,35 @@ from PyQt5.QtGui import (
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
+from oncutf.config.file_types import FILETYPE_ICON_MAP, PREVIEWABLE_EXTENSIONS, get_filetype_icon
 from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR, QLABEL_PRIMARY_TEXT
+from oncutf.config.ui.thumbnail import (
+    BACKGROUND_COLOR_SELECTED as _BG_SELECTED,
+    CROSSFADE_DURATION_MS,
+    FILENAME_HEIGHT,
+    FILENAME_MARGIN,
+    FRAME_BORDER_WIDTH,
+    FRAME_COLOR_HOVER as _FC_HOVER,
+    FRAME_COLOR_NORMAL as _FC_NORMAL,
+    FRAME_COLOR_SELECTED as _FC_SELECTED,
+    FRAME_PADDING,
+    HASH_ICON_SIZE,
+    INDICATOR_ICON_SIZE,
+    INDICATOR_MARGIN,
+    NO_PREVIEW_BG_COLOR as _NP_BG,
+    NO_PREVIEW_ICON_COLOR,
+    NO_PREVIEW_ICON_OPACITY,
+    NO_PREVIEW_ICON_SIZE,
+    SHIMMER_PHASE_STEP,
+    SHIMMER_TICK_MS,
+    SKELETON_BG_COLOR as _SK_BG,
+    SKELETON_SHAPE_COLOR as _SK_SHAPE,
+    SKELETON_SHIMMER_ALPHA,
+    VIDEO_BADGE_BACKGROUND as _VB_BG,
+    VIDEO_BADGE_MARGIN,
+    VIDEO_BADGE_PADDING,
+    VIDEO_BADGE_TEXT as _VB_TEXT,
+)
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -59,159 +87,43 @@ class ThumbnailDelegate(QStyledItemDelegate):
     - Selected: Distinct glow + semi-transparent background
     """
 
-    # Layout constants (in pixels)
-    FRAME_BORDER_WIDTH = 3
-    FRAME_PADDING = 8  # Space between frame and thumbnail
-    FILENAME_HEIGHT = 30  # Space below thumbnail for filename
-    FILENAME_MARGIN = 4  # Vertical margin above filename
+    # -- Layout (from config.ui.thumbnail) -----------------------------------
+    FRAME_BORDER_WIDTH = FRAME_BORDER_WIDTH
+    FRAME_PADDING = FRAME_PADDING
+    FILENAME_HEIGHT = FILENAME_HEIGHT
+    FILENAME_MARGIN = FILENAME_MARGIN
+    INDICATOR_ICON_SIZE = INDICATOR_ICON_SIZE
+    HASH_ICON_SIZE = HASH_ICON_SIZE
+    INDICATOR_MARGIN = INDICATOR_MARGIN
+    VIDEO_BADGE_MARGIN = VIDEO_BADGE_MARGIN
+    VIDEO_BADGE_PADDING = VIDEO_BADGE_PADDING
 
-    # Metadata/Hash indicators (icons from file table column 0)
-    INDICATOR_ICON_SIZE = 16  # Size of each status icon
-    INDICATOR_MARGIN = 8  # Distance from corners of frame
+    # -- Colors (QColor instances built from config tuples) ------------------
+    FRAME_COLOR_NORMAL = QColor(*_FC_NORMAL)
+    FRAME_COLOR_HOVER = QColor(*_FC_HOVER)
+    FRAME_COLOR_SELECTED = QColor(*_FC_SELECTED)
+    BACKGROUND_COLOR_SELECTED = QColor(*_BG_SELECTED)
+    VIDEO_BADGE_BACKGROUND = QColor(*_VB_BG)
+    VIDEO_BADGE_TEXT = QColor(*_VB_TEXT)
 
-    VIDEO_BADGE_MARGIN = 4  # Distance from bottom-right corner
-    VIDEO_BADGE_PADDING = 4  # Padding inside badge
+    # Skeleton placeholder
+    SKELETON_BG_COLOR = QColor(*_SK_BG)
+    SKELETON_SHAPE_COLOR = QColor(*_SK_SHAPE)
+    SKELETON_SHIMMER_ALPHA = SKELETON_SHIMMER_ALPHA
 
-    # Colors
-    FRAME_COLOR_NORMAL = QColor(200, 200, 200)
-    FRAME_COLOR_HOVER = QColor(100, 150, 255)
-    FRAME_COLOR_SELECTED = QColor(50, 120, 255)
-    BACKGROUND_COLOR_SELECTED = QColor(50, 120, 255, 40)  # Semi-transparent
-    VIDEO_BADGE_BACKGROUND = QColor(0, 0, 0, 180)  # Semi-transparent black
-    VIDEO_BADGE_TEXT = QColor(255, 255, 255)
+    # No-preview placeholder
+    NO_PREVIEW_BG_COLOR = QColor(*_NP_BG)
+    NO_PREVIEW_ICON_SIZE = NO_PREVIEW_ICON_SIZE
+    NO_PREVIEW_ICON_OPACITY = NO_PREVIEW_ICON_OPACITY
+    NO_PREVIEW_ICON_COLOR = NO_PREVIEW_ICON_COLOR
 
-    # Skeleton placeholder colors (loading state)
-    SKELETON_BG_COLOR = QColor(42, 44, 50)  # dark fill, "still building"
-    SKELETON_SHAPE_COLOR = QColor(55, 58, 66)  # inner shape, slightly lighter
-    SKELETON_SHIMMER_ALPHA = 28  # shimmer highlight alpha (0-255)
+    # -- Animation timing (from config.ui.thumbnail) -------------------------
+    CROSSFADE_DURATION_MS = CROSSFADE_DURATION_MS
+    SHIMMER_TICK_MS = SHIMMER_TICK_MS
+    SHIMMER_PHASE_STEP = SHIMMER_PHASE_STEP
 
-    # No-preview placeholder colors (permanent state, slightly brighter than skeleton)
-    NO_PREVIEW_BG_COLOR = QColor(58, 62, 72)  # brighter than skeleton
-    NO_PREVIEW_ICON_SIZE = 48  # filetype silhouette px
-    NO_PREVIEW_ICON_OPACITY = 0.65  # 65% opacity
-    NO_PREVIEW_ICON_COLOR = "#7a7f8c"  # muted gray-blue tint
-
-    # Crossfade duration (ms)
-    CROSSFADE_DURATION_MS = 500.0
-
-    # Shimmer timer interval (ms) -- 25 fps
-    SHIMMER_TICK_MS = 40
-    SHIMMER_PHASE_STEP = 0.04  # phase advance per tick (1.0 = full sweep)
-
-    # Extensions that have thumbnail support (matches ThumbnailManager.PREVIEWABLE_EXTENSIONS)
-    PREVIEWABLE_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
-        {
-            "jpg",
-            "jpeg",
-            "png",
-            "gif",
-            "bmp",
-            "tiff",
-            "tif",
-            "webp",
-            "heic",
-            "heif",
-            "raw",
-            "cr2",
-            "cr3",
-            "nef",
-            "arw",
-            "dng",
-            "orf",
-            "raf",
-            "rw2",
-            "pef",
-            "nrw",
-            "srw",
-            "dcr",
-            "fff",
-            "mp4",
-            "mov",
-            "avi",
-            "mkv",
-            "wmv",
-            "m4v",
-            "flv",
-            "webm",
-            "m2ts",
-            "ts",
-            "mts",
-            "3gp",
-            "ogv",
-        }
-    )
-
-    # Mapping from file extension to filetype icon name (in resources/icons/filetypes/)
-    _FILETYPE_ICON_MAP: ClassVar[dict[str, str]] = {
-        # Raster images
-        "jpg": "photo",
-        "jpeg": "photo",
-        "png": "photo",
-        "gif": "photo",
-        "bmp": "photo",
-        "tiff": "photo",
-        "tif": "photo",
-        "webp": "photo",
-        "heic": "photo",
-        "heif": "photo",
-        # RAW camera
-        "raw": "image",
-        "cr2": "image",
-        "cr3": "image",
-        "nef": "image",
-        "arw": "image",
-        "dng": "image",
-        "orf": "image",
-        "raf": "image",
-        "rw2": "image",
-        "pef": "image",
-        "nrw": "image",
-        "srw": "image",
-        "dcr": "image",
-        "fff": "image",
-        # Video
-        "mp4": "film",
-        "mov": "film",
-        "avi": "film",
-        "mkv": "film",
-        "wmv": "film",
-        "m4v": "film",
-        "flv": "film",
-        "webm": "film",
-        "m2ts": "film",
-        "ts": "film",
-        "mts": "film",
-        "3gp": "film",
-        "ogv": "film",
-        # Audio
-        "mp3": "audio_file",
-        "flac": "audio_file",
-        "wav": "audio_file",
-        "aac": "audio_file",
-        "ogg": "audio_file",
-        "wma": "audio_file",
-        "m4a": "audio_file",
-        "opus": "audio_file",
-        "aiff": "audio_file",
-        # Archives
-        "zip": "folder_zip",
-        "rar": "folder_zip",
-        "7z": "folder_zip",
-        "tar": "folder_zip",
-        "gz": "folder_zip",
-        "bz2": "folder_zip",
-        # Code / text ("ts" used for video above, not duplicated here)
-        "py": "code",
-        "js": "code",
-        "html": "code",
-        "css": "code",
-        "json": "code",
-        "xml": "code",
-        "yaml": "code",
-        "yml": "code",
-        "sh": "code",
-        "bat": "code",
-    }
+    # -- File type data (from config.file_types) -----------------------------
+    PREVIEWABLE_EXTENSIONS: ClassVar[frozenset[str]] = PREVIEWABLE_EXTENSIONS
 
     # Filetype icon cache: (extension, size) -> QPixmap
     _filetype_icon_cache: ClassVar[dict[tuple[str, int], QPixmap]] = {}
@@ -770,7 +682,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         if cache_key in cls._filetype_icon_cache:
             return cls._filetype_icon_cache[cache_key]
 
-        icon_name = cls._FILETYPE_ICON_MAP.get(extension, "description")
+        icon_name = get_filetype_icon(extension)
         icons_dir = Path(__file__).parent.parent / "resources" / "icons" / "filetypes"
         svg_path = icons_dir / f"{icon_name}.svg"
         if not svg_path.exists():
@@ -847,9 +759,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter.drawPixmap(x, y, metadata_icon)
 
         if hash_icon:
-            x = frame_rect.right() - self.INDICATOR_MARGIN - self.INDICATOR_ICON_SIZE
+            x = frame_rect.right() - self.INDICATOR_MARGIN - self.HASH_ICON_SIZE
             y = frame_rect.top() + self.INDICATOR_MARGIN
-            painter.drawPixmap(x, y, hash_icon)
+            painter.drawPixmap(x, y, self.HASH_ICON_SIZE, self.HASH_ICON_SIZE, hash_icon)
 
     def _get_status_values(self, file_item: FileItem, index: "QModelIndex") -> tuple[str, str]:
         """Return metadata and hash status values matching file table logic."""

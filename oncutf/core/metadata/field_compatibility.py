@@ -16,6 +16,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from oncutf.config.file_types import (
+    AUDIO_EXTENSIONS,
+    DOCUMENT_EXTENSIONS,
+    IMAGE_AND_RAW_EXTENSIONS as IMAGE_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+)
 from oncutf.utils.filesystem.file_status_helpers import has_metadata
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -49,61 +55,6 @@ FIELD_SUPPORT_MAP: dict[str, list[str]] = {
         "Rotation",
         "CameraOrientation",
     ],
-}
-
-# File extension sets
-IMAGE_EXTENSIONS = {
-    "jpg",
-    "jpeg",
-    "png",
-    "gif",
-    "bmp",
-    "tiff",
-    "tif",
-    "webp",
-    "heic",
-    "raw",
-    "cr2",
-    "nef",
-    "arw",
-}
-
-VIDEO_EXTENSIONS = {
-    "mp4",
-    "avi",
-    "mkv",
-    "mov",
-    "wmv",
-    "flv",
-    "webm",
-    "m4v",
-    "3gp",
-    "mpg",
-    "mpeg",
-}
-
-AUDIO_EXTENSIONS = {
-    "mp3",
-    "flac",
-    "wav",
-    "ogg",
-    "aac",
-    "m4a",
-    "wma",
-    "opus",
-}
-
-DOCUMENT_EXTENSIONS = {
-    "pdf",
-    "doc",
-    "docx",
-    "xls",
-    "xlsx",
-    "ppt",
-    "pptx",
-    "odt",
-    "ods",
-    "odp",
 }
 
 

@@ -26,6 +26,7 @@ from oncutf.config import (
     EXTENDED_METADATA_SIZE_LIMIT_MB,
     LARGE_FOLDER_WARNING_THRESHOLD,
 )
+from oncutf.config.file_types import DOCUMENT_DOT_EXTENSIONS, MEDIA_DOT_EXTENSIONS
 from oncutf.core.hash.hash_manager import HashManager
 from oncutf.infra.db.database_manager import get_database_manager
 from oncutf.utils.filesystem.file_size_calculator import calculate_files_total_size
@@ -127,44 +128,11 @@ class FileValidationManager:
         }
         self._results: dict[str, Any] = {}
 
-        # File type classifications
-        self.file_types = {
-            "media": {
-                ".jpg",
-                ".jpeg",
-                ".png",
-                ".gif",
-                ".bmp",
-                ".tiff",
-                ".webp",
-                ".mp4",
-                ".avi",
-                ".mkv",
-                ".mov",
-                ".wmv",
-                ".flv",
-                ".webm",
-                ".mp3",
-                ".wav",
-                ".flac",
-                ".aac",
-                ".ogg",
-                ".m4a",
-            },
-            "document": {
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".txt",
-                ".rtf",
-                ".odt",
-                ".xls",
-                ".xlsx",
-                ".ppt",
-                ".pptx",
-                ".csv",
-            },
-            "temporary": {".tmp", ".temp", ".log", ".cache", ".bak"},
+        # File type classifications (derived from unified registry)
+        self.file_types: dict[str, frozenset[str]] = {
+            "media": MEDIA_DOT_EXTENSIONS,
+            "document": DOCUMENT_DOT_EXTENSIONS,
+            "temporary": frozenset({".tmp", ".temp", ".log", ".cache", ".bak"}),
         }
 
         # Default thresholds for different operations
