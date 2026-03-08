@@ -1,7 +1,7 @@
 # File Engine Subsystem
 
-> **Status**: Architecture Documentation (Phase 7)  
-> **Last Updated**: 2026-01-11 (TimerManager Integration)  
+> **Status**: Architecture Documentation (Phase 7)
+> **Last Updated**: 2026-01-11 (TimerManager Integration)
 > **Author**: Michael Economou
 
 ## Overview
@@ -208,7 +208,7 @@ file_item.formatted_size    # str - "1.2 GB"
 
 ## FileStore Architecture
 
-> **Design Principle**: FileStore is **STATE-ONLY** — no I/O operations.  
+> **Design Principle**: FileStore is **STATE-ONLY** — no I/O operations.
 > All filesystem operations delegated to FileLoadManager.
 
 ### Internal Structure
@@ -291,7 +291,7 @@ Cache invalidation:
 - **File**: `oncutf/core/file/load_manager.py`
 - **Role**: I/O operations layer (folder scanning, filesystem refresh)
 - **Key Methods**: `get_file_items_from_folder()`, `refresh_loaded_folders()`, `load_folder()`, `load_files_from_paths()`
-- **Features**: 
+- **Features**:
   - Streaming for >200 files, companion filtering
   - Coordinates with FileStore for cache read/write
   - Handles all filesystem I/O (os.listdir, os.path.isfile)

@@ -1,7 +1,7 @@
 # Metadata Key Simplification - User Guide
 
-**Author:** Michael Economou  
-**Date:** 2026-01-15  
+**Author:** Michael Economou
+**Date:** 2026-01-15
 **Version:** 1.0
 
 ---
@@ -244,17 +244,17 @@ If you see errors about the configuration file:
 
 Keys are simplified using a three-tier approach:
 
-1. **Semantic Alias Resolution**  
+1. **Semantic Alias Resolution**
    - If key matches a semantic alias, use the unified name
    - Example: `EXIF:DateTimeOriginal` → `Creation Date`
 
-2. **Algorithmic Simplification**  
+2. **Algorithmic Simplification**
    - Remove repetitive tokens (e.g., "Audio Format Audio" → "Audio")
    - Detect common prefixes across multiple keys
    - Remove redundant segments
    - Example: `Audio Format Audio Rec Port Audio Codec` → `Audio Codec`
 
-3. **camelCase Splitting**  
+3. **camelCase Splitting**
    - For unprefixed keys, split on capital letters
    - Example: `ImageSensorType` → `Image Sensor Type`
 
@@ -270,19 +270,19 @@ Keys are simplified using a three-tier approach:
 
 ## FAQ
 
-**Q: Can I disable simplification?**  
+**Q: Can I disable simplification?**
 A: Not currently. However, you can always see the original key in the tooltip.
 
-**Q: Will this work with my custom EXIF tags?**  
+**Q: Will this work with my custom EXIF tags?**
 A: Yes, if they follow recognizable patterns. You can also add them to the semantic aliases file manually.
 
-**Q: Does this affect the actual metadata in my files?**  
+**Q: Does this affect the actual metadata in my files?**
 A: No. Simplification is display-only. File metadata is never modified by this feature.
 
-**Q: Can I export my custom aliases?**  
+**Q: Can I export my custom aliases?**
 A: Yes. Simply copy the `semantic_metadata_aliases.json` file to another machine.
 
-**Q: What happens if two keys simplify to the same name?**  
+**Q: What happens if two keys simplify to the same name?**
 A: The simplification algorithm detects collisions and keeps keys unique by preserving distinguishing parts.
 
 ---

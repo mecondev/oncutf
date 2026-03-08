@@ -31,7 +31,7 @@ ALTER TABLE file_paths ADD COLUMN color_tag TEXT DEFAULT 'none';
 ```python
 def set_color_tag(self, file_path: str, color_hex: str) -> bool:
     """Set color tag for a file."""
-    
+
 def get_color_tag(self, file_path: str) -> str:
     """Get color tag for a file. Returns 'none' if not set."""
 ```

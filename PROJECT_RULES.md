@@ -93,8 +93,7 @@ If a tool is skipped, it must be justified explicitly.
 ## 3. Change Strategy & Scope Control
 
 - Work in **small, reviewable chunks**.
-  - Maximum: **3–5 files per iteration**.
-- Preserve behavior unless explicitly asked to refactor.
+  - Maximum: **3–5 files per iteration**.  - Maximum: **300 LOC per change-set** (AI tendency to produce massive diffs).- Preserve behavior unless explicitly asked to refactor.
 - Prefer minimal diffs over “clean rewrites”.
 - Formatting-only changes must be isolated from logic changes.
 - Mechanical refactors must be labeled as such.
@@ -119,6 +118,14 @@ If a tool is skipped, it must be justified explicitly.
 - Do NOT introduce new layers, patterns, or abstractions
   unless explicitly requested.
 - Reuse existing helpers/utilities instead of re-implementing.
+- **No direct imports across architecture layers**  
+  except via declared **public API modules**:
+  - `oncutf.core.rename.api` — Rename engine public interface
+  - `oncutf.core.metadata.api` — Metadata service public interface
+  - Other `.api` modules (follow the pattern for new layer exports)
+  - This reduces coupling and enforces clear boundaries.
+  - Example ✓: `from oncutf.core.rename.api import UnifiedRenameEngine`
+  - Example ✗: `from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine`
 
 ---
 

@@ -1,7 +1,7 @@
 # Rename Engine Subsystem
 
-> **Status**: Architecture Documentation (Phase 7)  
-> **Last Updated**: 2026-01-01  
+> **Status**: Architecture Documentation (Phase 7)
+> **Last Updated**: 2026-01-01
 > **Author**: Michael Economou
 
 ## Overview
@@ -198,7 +198,7 @@ Each module is a **pure function** that generates a name fragment:
 # preview_engine.apply_rename_modules()
 for module_data in modules_data:
     module_type = module_data["type"]
-    
+
     if module_type == "counter":
         fragment = CounterModule.apply_from_data(module_data, index, all_files)
     elif module_type == "metadata":
@@ -209,7 +209,7 @@ for module_data in modules_data:
         fragment = SpecifiedTextModule.apply_from_data(module_data)
     elif module_type == "remove_text":
         fragment = TextRemovalModule.apply_from_data(module_data, current_name)
-    
+
     result += fragment
 
 # Post-transform applied at end
@@ -273,7 +273,7 @@ controller.validate_preview(preview_pairs)
     → ValidationResult
 
 # Execution
-controller.execute_rename(file_items, modules_data, post_transform, 
+controller.execute_rename(file_items, modules_data, post_transform,
                           metadata_cache, current_folder)
     → ExecutionResult
 

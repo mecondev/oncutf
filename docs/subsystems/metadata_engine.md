@@ -1,7 +1,7 @@
 # Metadata Engine Subsystem
 
-> **Status**: Architecture Documentation (Phase 7)  
-> **Last Updated**: 2026-01-01  
+> **Status**: Architecture Documentation (Phase 7)
+> **Last Updated**: 2026-01-01
 > **Author**: Michael Economou
 
 ## Overview

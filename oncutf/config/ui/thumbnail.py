@@ -56,10 +56,10 @@ SKELETON_SHIMMER_ALPHA = 28  # Shimmer highlight alpha (0-255)
 # Colors -- no-preview placeholder (permanent state)
 # =====================================================================
 
-NO_PREVIEW_BG_COLOR = (58, 62, 72)  # Slightly brighter than skeleton
+NO_PREVIEW_BG_COLOR = (210, 210, 210)  # Light grey background for non-image files
 NO_PREVIEW_ICON_SIZE = 48  # Filetype silhouette size (px)
-NO_PREVIEW_ICON_OPACITY = 0.65  # 65 % opacity
-NO_PREVIEW_ICON_COLOR = "#7a7f8c"  # Muted gray-blue tint
+NO_PREVIEW_ICON_OPACITY = 0.88  # 88% opacity for better visibility
+NO_PREVIEW_ICON_COLOR = "#4a5568"  # Dark gray-blue for contrast with light bg
 
 # =====================================================================
 # Animation timing

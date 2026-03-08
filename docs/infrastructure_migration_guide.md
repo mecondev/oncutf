@@ -1,7 +1,7 @@
 # Migration Guide - Using New Infrastructure Layer
 
-**Author:** Michael Economou  
-**Date:** 2026-01-22  
+**Author:** Michael Economou
+**Date:** 2026-01-22
 **Status:** Active
 
 ## Overview
@@ -114,7 +114,7 @@ from oncutf.app.ports import UserDialogPort
 class SomeManager:
     def __init__(self, dialog_port: UserDialogPort | None = None):
         self._dialog = dialog_port
-    
+
     def some_method(self):
         if self._dialog:
             self._dialog.show_error("Error", "Something went wrong")
@@ -141,7 +141,7 @@ from oncutf.app.ports import StatusReporter
 class SomeManager:
     def __init__(self, status_reporter: StatusReporter | None = None):
         self._status = status_reporter
-    
+
     def some_method(self):
         if self._status:
             self._status.show_status("Processing...", 5000)
@@ -204,7 +204,7 @@ from pathlib import Path
 def test_exiftool_extraction():
     client = ExifToolClient()
     assert client.is_available()
-    
+
     metadata = client.extract_metadata(Path("test.jpg"))
     assert isinstance(metadata, dict)
 ```

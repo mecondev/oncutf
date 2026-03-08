@@ -1,6 +1,6 @@
 # File Type Icon Mapping: Feather → Material Design
 
-**Date:** 2026-02-02  
+**Date:** 2026-02-02
 **Purpose:** Map file type icons for CustomFileSystemModel
 
 ---

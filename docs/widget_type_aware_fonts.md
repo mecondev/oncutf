@@ -1,6 +1,6 @@
 ## Widget-Type-Aware Font System Implementation
 
-**Date:** 2026-01-11  
+**Date:** 2026-01-11
 **Status:** Complete and Tested (1000/1000 tests passing)
 
 ---
@@ -58,16 +58,16 @@ def get_ui_font_family(widget_type: str = None) -> str:
 ```python
 def inject_font_family(qss_string: str, widget_type: str = None) -> str:
     """Replace hardcoded fonts, optionally for specific widget types.
-    
+
     Args:
         qss_string: QSS stylesheet string
         widget_type: Optional widget type (e.g., 'table', 'tree')
-    
+
     Returns:
         QSS with dynamic fonts
     """
     from oncutf.config.ui import get_ui_font_family
-    
+
     return qss_string.replace(
         '"Inter", "Segoe UI", Arial, sans-serif',
         get_ui_font_family(widget_type)

@@ -1,6 +1,6 @@
 # oncutf Architecture Guide
 
-**Last Updated:** 2026-01-25  
+**Last Updated:** 2026-01-25
 **Status:** Production-Ready — Clean Architecture with Pragmatic Strict Typing ✅
 
 ---
@@ -356,7 +356,7 @@ oncutf/
 │   │   ├── metadata_tree/           # Metadata tree package
 │   │   │   ├── view.py              # Tree view (1768 LOC)
 │   │   │   ├── worker.py            # Background worker
-│   │   │   └── ... (handlers)       # 
+│   │   │   └── ... (handlers)       #
 │   │   ├── rename_modules_area.py   # Rename config
 │   │   └── ... (30+ other widgets)
 │   ├── behaviors/                   # Behavior composition
@@ -499,7 +499,7 @@ class FileEntry:
     path: Path
     size: int
     modified: datetime
-    
+
 @dataclass
 class MetadataEntry:
     file_id: str
@@ -620,7 +620,7 @@ Multi-layer caching:
 For detailed development plans, see documentation in `docs/` folder:
 
 - State Management improvements
-- UI/UX enhancements  
+- UI/UX enhancements
 - Core logic optimizations
 - Final polish and performance tuning
 
@@ -645,7 +645,7 @@ Historical phase execution plans are archived in `_archive/`.
 
 ### 1. **Controllers** (`controllers/`)
 
-**Purpose:** UI/application flow orchestration  
+**Purpose:** UI/application flow orchestration
 **Responsibilities:**
 
 - Handle user actions (button clicks, menu selections)
@@ -666,7 +666,7 @@ Historical phase execution plans are archived in `_archive/`.
 
 ### 2. **Services** (`services/`)
 
-**Purpose:** Adapters to external world (I/O boundaries)  
+**Purpose:** Adapters to external world (I/O boundaries)
 **Responsibilities:**
 
 - Filesystem operations (read/write files, directories)
@@ -689,7 +689,7 @@ Historical phase execution plans are archived in `_archive/`.
 
 ### 3. **Managers** (`core/`)
 
-**Purpose:** Stateful orchestration + feature-specific coordination  
+**Purpose:** Stateful orchestration + feature-specific coordination
 **Responsibilities:**
 
 - Manage application state for a specific feature
@@ -714,7 +714,7 @@ Historical phase execution plans are archived in `_archive/`.
 
 ### 4. **Utils** (`utils/`)
 
-**Purpose:** Stateless, reusable helper functions  
+**Purpose:** Stateless, reusable helper functions
 **Responsibilities:**
 
 - Pure functions (no side effects)

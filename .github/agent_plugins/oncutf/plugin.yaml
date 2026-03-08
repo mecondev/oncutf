@@ -1,0 +1,39 @@
+---
+# VS Code Agent Plugin for oncutf
+# Plugin metadata and configuration
+
+name: oncutf
+version: 1.0.0
+description: VS Code agent plugin for oncutf PyQt5 file renaming application
+
+metadata:
+  author: "Michael Economou"
+  date: "2026-03-08"
+  project: "oncut/oncutf"
+  type: "development-assistant"
+
+# Supported VS Code versions
+minVscodeVersion: "1.90.0"
+
+# Plugin capabilities
+capabilities:
+  - code-analysis
+  - architecture-validation
+  - test-support
+  - quality-gates
+
+# Configuration
+config:
+  pythonVersion: ">=3.12"
+  lineLength: 100
+  defaultQuotes: "double"
+  characterSet: "ascii"
+
+# Quality gates
+qualityGates:
+  - ruff-format-check
+  - ruff-lint
+  - boundary-audit
+  - mypy-strict
+  - pytest
+  - vulture-scan

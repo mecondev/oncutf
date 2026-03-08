@@ -1,7 +1,7 @@
 # Phase A Implementation Guide - Breaking Import Cycles
 
-**Author:** Michael Economou  
-**Date:** 2026-01-22  
+**Author:** Michael Economou
+**Date:** 2026-01-22
 **Status:** In Progress
 
 ## Overview
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 class UnifiedMetadataManager:
     def __init__(self, ..., dialog_port: UserDialogPort | None = None):
         self._dialog = dialog_port
-        
+
     def some_method(self):
         if error and self._dialog:
             self._dialog.show_error("Error", message)
@@ -82,7 +82,7 @@ from oncutf.app.ports.user_interaction import StatusReporter
 class SomeManager:
     def __init__(self, ..., status_reporter: StatusReporter | None = None):
         self._status = status_reporter
-        
+
     def some_method(self):
         if self._status:
             self._status.show_status(message, 5000)
@@ -117,7 +117,7 @@ Step 1: Create repository in infra/db:
 class FileRepository:
     def __init__(self, db_manager):
         self._db = db_manager
-        
+
     def get_folder_id(self, folder_path: str) -> int | None:
         return self._db.get_folder_id(folder_path)
 ```
@@ -147,7 +147,7 @@ from oncutf.core.pyqt_imports import QColor, QIcon, QPainter, QPixmap
 ```
 
 **Solution:**
-Keep for now. The pyqt_imports module is a centralized import location. 
+Keep for now. The pyqt_imports module is a centralized import location.
 In a future phase, we may move it to `oncutf/shared/qt_imports.py` or similar,
 but this is low priority compared to breaking core→ui cycles.
 
