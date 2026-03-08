@@ -13,6 +13,7 @@ File → ExifTool → Cache (Memory + SQLite) → UI Display
 ```
 
 Key capabilities:
+
 - Parallel metadata extraction via ThreadPoolExecutor
 - Two-tier cache (memory LRU + SQLite persistence)
 - CRC32 hash computation with caching
@@ -43,6 +44,7 @@ Key capabilities:
 ## Scope
 
 The Metadata Engine **owns**:
+
 - EXIF/XMP metadata extraction (via exiftool)
 - Metadata caching (memory + SQLite)
 - Hash computation and caching
@@ -51,6 +53,7 @@ The Metadata Engine **owns**:
 - Companion/sidecar file handling
 
 The Metadata Engine **does NOT own**:
+
 - File discovery (→ File Engine)
 - Filename generation from metadata (→ Rename Engine modules)
 - File table display (→ UI Layer)
@@ -77,7 +80,7 @@ The Metadata Engine **does NOT own**:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                       MANAGER LAYER                                  │
 │  UnifiedMetadataManager (facade)                                     │
-│    ├── MetadataLoader (orchestration)                                │
+│    ├── MetadataLoader (orchestration via MetadataUIBridge)              │
 │    ├── MetadataStagingManager (pending changes)                      │
 │    └── CompanionMetadataHandler (XMP/sidecar)                        │
 └─────────────────────────────────────────────────────────────────────┘
@@ -108,6 +111,7 @@ The Metadata Engine **does NOT own**:
 |------|----------------|
 | `unified_metadata_manager.py` | Facade for all metadata operations |
 | `metadata_loader.py` | Orchestrates single/batch loading with progress |
+| `metadata_ui_bridge.py` | `MetadataUIBridge` protocol + `NullMetadataUIBridge` no-op impl |
 | `parallel_metadata_loader.py` | ThreadPoolExecutor for parallel extraction |
 | `metadata_staging_manager.py` | Tracks pending changes before save |
 | `companion_metadata_handler.py` | XMP/sidecar file merging |
@@ -330,7 +334,7 @@ Key metadata fields used:
 ```python
 from oncutf.core.metadata import get_unified_metadata_manager
 
-manager = get_unified_metadata_manager(parent_window)
+manager = get_unified_metadata_manager()
 
 # Load metadata for files
 manager.load_metadata_for_items(
@@ -458,6 +462,7 @@ if has_hash(file_path):
 ~~Metadata can be accessed via multiple entry points.~~
 
 **Resolution**:
+
 - `DirectMetadataLoader` removed (was dead code)
 - `MetadataCacheHelper` removed (consolidated into `file_status_helpers`)
 - Recommended entry points now clearly documented:
@@ -476,6 +481,7 @@ if has_hash(file_path):
 Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata loading.
 
 **Clarification**:
+
 - `MetadataController`: UI-agnostic entry point for external callers (tests, scripts)
 - `UnifiedMetadataManager`: Qt-integrated facade with signals and progress dialogs
 
@@ -494,6 +500,7 @@ Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata load
 | Documentation |  This document |
 
 The Metadata Engine is **production-ready** and provides:
+
 - Fast cached access for previously-loaded files
 - Parallel extraction for batch operations
 - Persistent storage across application sessions

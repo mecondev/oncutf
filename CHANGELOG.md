@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-03-08
+
+### Architecture Refactoring (4-Phase)
+
+- **Phase 1 -- UnifiedPreviewManager Decomposition**:
+  Extracted `NameComposer` and `module_registry` from `UnifiedPreviewManager`,
+  consolidating preview generation into a single canonical path.
+- **Phase 2 -- RenameController.execute_rename() Extraction**:
+  Extracted private helper methods from the monolithic `execute_rename()`,
+  improving readability and testability.
+- **Phase 3 -- main.py God-Entrypoint Split**:
+  Split `main.py` (523 LOC) into `boot/lifecycle.py` (signal handling, atexit,
+  excepthook) and `boot/startup_orchestrator.py` (splash, boot worker,
+  dual-flag sync). Slim `main.py` now ~160 LOC.
+- **Phase 4 -- MetadataLoader Boundary Violation Fix**:
+  Replaced all direct `parent_window` access in `MetadataLoader` (core layer)
+  with a typed `MetadataUIBridge` protocol. Created `NullMetadataUIBridge`
+  (no-op) and `QtMetadataUIBridge` (ui/adapters). Eliminated core->ui coupling.
+
 ## [Unreleased] - 2026-01-11
 
 Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and comprehensive testing.

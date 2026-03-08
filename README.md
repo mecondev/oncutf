@@ -212,7 +212,7 @@ python3.12 main.py
 
 ```tree
 oncutf/
-├── main.py                  # Application entry point
+├── main.py                  # Slim entry point (delegates to boot/)
 ├── config.py                # Global configuration constants
 ├── ui/                      # UI layer (PyQt5 widgets)
 │   ├── main_window.py       # Main window wired to controllers

@@ -6,27 +6,33 @@ This document describes the complete flow of the oncutf application from initial
 
 ## 1. Application Startup
 
-### 1.1 main.py - Entry Point
+### 1.1 main.py -- Entry Point (slim)
+
+`main.py` is a thin entry point that delegates to the `boot/` package:
 
 ```python
 def main():
-    # Enable High DPI support
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    from oncutf.boot.lifecycle import configure_lifecycle
+    from oncutf.boot.startup_orchestrator import run_startup
 
-    # Create QApplication
-    app = QApplication(sys.argv)
+    # Install signal handlers, atexit hooks, and global excepthook
+    configure_lifecycle()
 
-    # Initialize theme, fonts, and splash screen
-    theme_manager = ThemeEngine()
-    splash = CustomSplashScreen()
-
-    # Create main window
-    window = MainWindow()
-
-    # Apply theme and show window
-    theme_manager.apply_complete_theme(app, window)
-    window.show()
+    # Create QApplication, splash screen, boot worker; returns MainWindow
+    run_startup()
 ```
+
+### 1.1a boot/lifecycle.py -- Process Lifecycle
+
+Handles OS signals (SIGINT/SIGTERM), `atexit` cleanup, and the global
+`sys.excepthook` so that uncaught exceptions are logged and (optionally)
+trigger an emergency shutdown.
+
+### 1.1b boot/startup_orchestrator.py -- Splash & Boot Worker
+
+Shows the splash screen, runs `app_factory.create_app_context()` in a
+background boot worker with dual-flag synchronisation, then hands off to
+`MainWindow`.
 
 ### 1.2 MainWindow.__init__() - Core Initialization
 

@@ -346,8 +346,14 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 
 ```tree
 oncutf/
-├── main.py                          # Entry point
+├── main.py                          # Entry point (slim -- delegates to boot/)
 ├── config.py                        # Configuration
+│
+├── boot/                            # Composition root & startup
+│   ├── app_factory.py               # create_app_context() -- composition root
+│   ├── infra_wiring.py              # ONLY place infra is wired
+│   ├── lifecycle.py                 # Signal handling, atexit, excepthook
+│   └── startup_orchestrator.py      # Splash, boot worker, dual-flag sync
 │
 ├── ui/                              # UI Layer
 │   ├── main_window.py               # Primary UI (delegates to controllers)
@@ -573,7 +579,7 @@ Multi-layer caching:
 
 ### Code Reading Tips
 
-- Start with `main.py` (simple entry point)
+- Start with `main.py` (slim entry point that delegates to `boot/lifecycle.py` and `boot/startup_orchestrator.py`)
 - Then `ui/main_window.py` (primary UI, delegates to controllers)
 - **NEW:** Check `controllers/` for business logic orchestration
 - Then specific managers/widgets as needed
@@ -826,7 +832,7 @@ To avoid architectural confusion, follow these rules when placing code:
 
 ### Known Technical Debt
 
-- **Metadata loader separation:** `utils/metadata/exiftool_adapter.py` is the low-level ExifTool wrapper, while `core/metadata/metadata_loader.py` is the orchestration layer. The separation is now clear with proper naming (adapter vs loader).
+- **Metadata loader separation:** `utils/metadata/exiftool_adapter.py` is the low-level ExifTool wrapper, while `core/metadata/metadata_loader.py` is the orchestration layer. `MetadataLoader` communicates with the UI through the `MetadataUIBridge` protocol (`core/metadata/metadata_ui_bridge.py`); the Qt implementation lives in `ui/adapters/metadata_ui_bridge_qt.py`.
 
 ---
 

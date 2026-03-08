@@ -13,6 +13,7 @@ Input Files → [Modules] → Preview → Validate → Execute → Undo
 ```
 
 This is not just a "rename feature" — it's a **data transformation pipeline** with:
+
 - Composable modules for name generation
 - Real-time preview with caching
 - Validation with conflict detection
@@ -24,6 +25,7 @@ This is not just a "rename feature" — it's a **data transformation pipeline** 
 ## Scope
 
 The Rename Engine **owns**:
+
 - Preview generation (name transformation)
 - Validation (filename validity, duplicates, conflicts)
 - Execution (filesystem operations)
@@ -31,6 +33,7 @@ The Rename Engine **owns**:
 - Module orchestration (pipeline composition)
 
 The Rename Engine **does NOT own**:
+
 - File discovery (→ File Engine)
 - Metadata extraction (→ Metadata Engine)
 - UI widgets (→ UI Layer)
@@ -59,6 +62,8 @@ The Rename Engine **does NOT own**:
 │                        ENGINE LAYER                                  │
 │  UnifiedRenameEngine (central facade)                                │
 │    ├── UnifiedPreviewManager                                         │
+│    │     ├── NameComposer (name assembly from fragments)               │
+│    │     └── module_registry (module discovery/ordering)              │
 │    ├── UnifiedValidationManager                                      │
 │    ├── UnifiedExecutionManager                                       │
 │    └── RenameStateManager                                            │
@@ -365,29 +370,30 @@ class ExecutionResult:
 
 ## Known Issues & Technical Debt
 
-### 1. Dual Preview Paths
+### 1. Dual Preview Paths [RESOLVED]
 
-There are two preview generation paths:
-- `PreviewManager.generate_preview_names()` - Used by MainWindow
-- `UnifiedRenameEngine.generate_preview()` - The "unified" system
+Previously there were two preview generation paths. Phase 1 refactoring
+extracted `NameComposer` and `module_registry` from `UnifiedPreviewManager`,
+consolidating preview generation into a single path through
+`UnifiedRenameEngine`.
 
-Both eventually call `preview_engine.apply_rename_modules()`, creating maintenance overhead.
+### 2. Multiple Manager Layers [PARTIALLY RESOLVED]
 
-**Recommendation**: Consolidate to single path through UnifiedRenameEngine.
+The subsystem had overlapping "manager" classes:
 
-### 2. Multiple Manager Layers
-
-The subsystem has overlapping "manager" classes:
 - `RenameManager` (UI-aware, in `core/ui_managers/`)
 - `FileOperationsManager` (file ops, in `core/ui_managers/`)
 - `PreviewManager` (preview generation, in `core/`)
-- `UnifiedPreviewManager` (inside UnifiedRenameEngine)
+- `UnifiedPreviewManager` (inside UnifiedRenameEngine, **canonical**)
 
-**Recommendation**: Clarify boundaries or consolidate.
+`UnifiedPreviewManager` with its extracted `NameComposer` and
+`module_registry` sub-components is now the single source of truth for
+preview generation.
 
 ### 3. Post-Transform Applied Multiple Times
 
 `NameTransformModule.apply()` is called in:
+
 1. `preview_engine.py` (preview generation)
 2. `renamer.py` (before actual rename)
 3. Various other places
@@ -417,6 +423,7 @@ The current module pipeline is well-suited for visual representation:
 ```
 
 The Node Editor would:
+
 - Visualize the existing pipeline (not create new architecture)
 - Allow drag-drop reordering (already supported)
 - Show data flow between modules
@@ -436,6 +443,7 @@ The Node Editor would:
 | Documentation |  This document |
 
 The Rename Engine is **production-ready** but would benefit from:
+
 1. Consolidating dual preview paths
 2. Clarifying manager responsibilities
 3. Single point for post-transform application

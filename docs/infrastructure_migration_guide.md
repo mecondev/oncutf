@@ -13,6 +13,7 @@ This guide shows how to migrate from old patterns to the new layered architectur
 ### ExifTool Operations
 
 **OLD (DEPRECATED):**
+
 ```python
 from oncutf.services.exiftool_service import ExifToolService
 
@@ -21,6 +22,7 @@ metadata = service.load_metadata(Path("image.jpg"))
 ```
 
 **NEW (RECOMMENDED):**
+
 ```python
 from oncutf.infra.external import get_exiftool_client
 
@@ -29,6 +31,7 @@ metadata = client.extract_metadata(Path("image.jpg"))
 ```
 
 **For batch operations:**
+
 ```python
 from oncutf.infra.external import get_exiftool_client
 
@@ -40,12 +43,14 @@ results = client.extract_batch(paths)  # Dict[str, Dict[str, Any]]
 ### Metadata Caching
 
 **OLD (scattered):**
+
 ```python
 # Various cache implementations across codebase
 self._metadata_cache[key] = value
 ```
 
 **NEW (canonical):**
+
 ```python
 from oncutf.infra.cache import get_metadata_cache
 
@@ -55,6 +60,7 @@ metadata = cache.get(Path("image.jpg"))
 ```
 
 **Features:**
+
 - TTL-based expiration (default 5 minutes)
 - File modification time tracking
 - Thread-safe operations
@@ -63,6 +69,7 @@ metadata = cache.get(Path("image.jpg"))
 ### File Database Operations
 
 **OLD (models→core cycle):**
+
 ```python
 # In FileItem class
 from oncutf.core.database.database_manager import get_database_manager
@@ -72,6 +79,7 @@ folder_id = db.get_folder_id(self.folder_path)
 ```
 
 **NEW (repository pattern):**
+
 ```python
 from oncutf.infra.db import get_file_repository
 
@@ -80,6 +88,7 @@ folder_id = repo.get_folder_id(file_item.folder_path)
 ```
 
 **Operations:**
+
 ```python
 from oncutf.infra.db import get_file_repository
 
@@ -99,6 +108,7 @@ success = repo.store_file_hash("/path/to/file.jpg", "abc123...")
 ### User Dialogs (Breaking core→ui cycles)
 
 **OLD (direct UI import in core):**
+
 ```python
 # In core module
 from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
@@ -107,6 +117,7 @@ CustomMessageDialog.critical(parent, "Error", "Something went wrong")
 ```
 
 **NEW (port-based):**
+
 ```python
 # In core/app module - depend on protocol
 from oncutf.app.ports import UserDialogPort
@@ -129,12 +140,14 @@ manager = SomeManager(dialog_port=dialog_adapter)
 ### Status Messages
 
 **OLD:**
+
 ```python
 if self.parent_window and hasattr(self.parent_window, "status_bar"):
     self.parent_window.status_bar.showMessage("Processing...", 5000)
 ```
 
-**NEW:**
+**NEW (general pattern):**
+
 ```python
 from oncutf.app.ports import StatusReporter
 
@@ -145,12 +158,20 @@ class SomeManager:
     def some_method(self):
         if self._status:
             self._status.show_status("Processing...", 5000)
+```
 
-# In UI layer
-from oncutf.ui.adapters.qt_user_interaction import QtStatusReporter
+**NEW (metadata -- concrete example using MetadataUIBridge):**
 
-status_reporter = QtStatusReporter(self.status_bar)
-manager = SomeManager(status_reporter=status_reporter)
+```python
+# In core/ -- define protocol
+from oncutf.core.metadata.metadata_ui_bridge import MetadataUIBridge
+
+class MetadataLoader:
+    def __init__(self, *, ui_bridge: MetadataUIBridge | None = None):
+        self._ui_bridge = ui_bridge or NullMetadataUIBridge()
+
+    def some_method(self):
+        self._ui_bridge.set_metadata_status("Processing...", auto_reset=True)
 ```
 
 ## Module Locations
@@ -220,16 +241,19 @@ def test_exiftool_extraction():
 ## Benefits
 
 ### Separation of Concerns
+
 - Business logic (app) separate from UI (ui)
 - Infrastructure (infra) separate from domain
 - Clear dependency direction
 
 ### Testability
+
 - Mock ports for unit testing
 - No Qt dependencies in business logic
 - Isolated infrastructure components
 
 ### Flexibility
+
 - Easy to swap implementations
 - Support multiple UI frameworks
 - Independent evolution of layers
@@ -244,6 +268,7 @@ def test_exiftool_extraction():
 ## Questions?
 
 Check:
+
 - [phase_a_implementation_guide.md](phase_a_implementation_guide.md) - Implementation details
 - [migration_stance.md](migration_stance.md) - Architecture rules
 - [import_cycles_analysis_260122.md](reports/import_cycles_analysis_260122.md) - Identified issues
