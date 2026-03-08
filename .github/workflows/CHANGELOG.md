@@ -262,4 +262,4 @@ None currently. This is a fresh setup.
 - [setup-python action](https://github.com/actions/setup-python)
 - [setup-uv action](https://github.com/astral-sh/setup-uv)
 - [uv documentation](https://docs.astral.sh/uv/)
-- [oncutf PROJECT_RULES.md](../../PROJECT_RULES.md)
+- oncutf `PROJECT_RULES.md` (repo root)

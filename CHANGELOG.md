@@ -103,8 +103,6 @@ Phase 7 (Final Polish) - Performance optimization, architecture cleanup, and com
   - Complete documentation index with navigation
   - Visual diagrams and architecture charts
 
-### Added
-
 - **Companion Files System**: Comprehensive support for camera-generated companion/sidecar files
   - Automatic detection of Sony camera XML metadata files (e.g., C8227.MP4 + C8227M01.XML)
   - Support for XMP sidecar files for RAW images (e.g., IMG_1234.CR2 + IMG_1234.xmp)

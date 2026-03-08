@@ -50,7 +50,7 @@
 
 Layered structure with controllers separating UI from core services:
 
-```
+```tree
 oncutf/
 ├── main.py                  # Slim entry point (delegates to boot/)
 ├── config.py                # Central configuration

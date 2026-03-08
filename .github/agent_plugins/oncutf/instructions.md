@@ -122,4 +122,4 @@ When implementing features:
 6. Run quality gates
 7. Add/update tests
 
-See [PROJECT_RULES.md](../../PROJECT_RULES.md) for detailed patterns.
+See `PROJECT_RULES.md` (repo root) for detailed patterns.

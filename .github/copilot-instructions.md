@@ -239,7 +239,7 @@ References:
 - PROJECT_RULES.md
 
 | Domain | Canonical | Legacy/Supporting |
-|--------|-----------|-------------------|
+| ------ | --------- | ----------------- |
 | **Rename Pipeline** | `UnifiedRenameEngine` (`core/rename/unified_rename_engine.py`) | `utils/naming/*` (helpers only) |
 | **Column Management** | `UnifiedColumnService` (`ui/managers/column_service.py`) | `ColumnManager` (adapter), `models/file_table/column_manager.py` (model-level) |
 | **UI Components** | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
@@ -254,7 +254,7 @@ References:
 - Delegator methods marked as "Backward compatibility" are temporary; new code MUST NOT use them.
 - Application Service layer is the canonical entry point for operations.
 
-See [PROJECT_RULES.md](../PROJECT_RULES.md) for policy and detailed patterns.
+See `PROJECT_RULES.md` (repo root) for policy and detailed patterns.
 
 ### Hard Constraints (Do Not Violate)
 

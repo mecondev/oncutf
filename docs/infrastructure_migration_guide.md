@@ -179,7 +179,7 @@ class MetadataLoader:
 ### Infrastructure Layer
 
 | Component | Location | Purpose |
-|-----------|----------|---------|
+| --------- | -------- | -------- |
 | ExifToolClient | `infra/external/exiftool_client.py` | Canonical ExifTool operations |
 | MetadataCache | `infra/cache/metadata_cache.py` | Metadata caching with TTL |
 | FileRepository | `infra/db/file_repository.py` | File database operations |
@@ -187,7 +187,7 @@ class MetadataLoader:
 ### Application Layer
 
 | Component | Location | Purpose |
-|-----------|----------|---------|
+| --------- | -------- | ------- |
 | MetadataProvider | `app/ports/metadata.py` | Metadata extraction protocol |
 | UserDialogPort | `app/ports/user_interaction.py` | Dialog interface protocol |
 | StatusReporter | `app/ports/user_interaction.py` | Status message protocol |
@@ -195,7 +195,7 @@ class MetadataLoader:
 ### UI Layer
 
 | Component | Location | Purpose |
-|-----------|----------|---------|
+| --------- | -------- | ------- |
 | QtUserDialogAdapter | `ui/adapters/qt_user_interaction.py` | Qt dialog implementation |
 | QtStatusReporter | `ui/adapters/qt_user_interaction.py` | Qt status bar implementation |
 
@@ -233,7 +233,7 @@ def test_exiftool_extraction():
 ## Deprecation Timeline
 
 | Module | Status | Removal Target |
-|--------|--------|----------------|
+| ------ | ------ | -------------- |
 | `services/exiftool_service.py` | Deprecated | v2.0 |
 | `utils/metadata/exiftool_adapter.py` | To be deprecated | v2.0 |
 | Direct `core→ui` imports | Forbidden (new code) | Ongoing |

@@ -400,7 +400,7 @@ At the end, measure:
 - [uv documentation](https://docs.astral.sh/uv/)
 - [setup-uv action](https://github.com/astral-sh/setup-uv)
 - [uv GitHub discussions](https://github.com/astral-sh/uv/discussions)
-- [oncutf PROJECT_RULES.md](../../PROJECT_RULES.md)
+- oncutf `PROJECT_RULES.md` (repo root)
 
 ---
 

@@ -8,7 +8,7 @@
 
 The Rename Engine is the core subsystem responsible for batch file renaming operations. It implements a **pipeline architecture** where files flow through:
 
-```
+```text
 Input Files → [Modules] → Preview → Validate → Execute → Undo
 ```
 
@@ -45,7 +45,7 @@ The Rename Engine **does NOT own**:
 
 ### Layer Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           UI LAYER                                   │
 │  RenameModulesArea → MainWindow → ApplicationService                 │
@@ -90,7 +90,7 @@ The Rename Engine **does NOT own**:
 ### Core Engine (`oncutf/core/rename/`)
 
 | File | Responsibility |
-|------|----------------|
+| ---- | -------------- |
 | `unified_rename_engine.py` | Central facade: preview, validate, execute |
 | `rename_manager.py` | UI-aware workflow with post-rename state restoration |
 | `rename_history_manager.py` | Persistent undo/redo with SQLite storage |
@@ -98,7 +98,7 @@ The Rename Engine **does NOT own**:
 ### Modules (`oncutf/modules/`)
 
 | File | Responsibility |
-|------|----------------|
+| ---- | -------------- |
 | `base_module.py` | Abstract base class with signal throttling |
 | `counter_module.py` | Sequential numbering (global/per-folder/per-extension) |
 | `metadata_module.py` | EXIF dates, file dates, hash values |
@@ -110,7 +110,7 @@ The Rename Engine **does NOT own**:
 ### Controller (`oncutf/controllers/`)
 
 | File | Responsibility |
-|------|----------------|
+| ---- | -------------- |
 | `rename_controller.py` | UI-agnostic orchestration of rename workflow |
 | `module_orchestrator.py` | Module registry and dynamic discovery |
 | `module_drag_drop_manager.py` | Drag & drop reordering of modules |
@@ -118,7 +118,7 @@ The Rename Engine **does NOT own**:
 ### Utilities (`oncutf/utils/`)
 
 | File | Responsibility |
-|------|----------------|
+| ---- | -------------- |
 | `preview_engine.py` | Core logic: apply modules to generate names |
 | `renamer.py` | Low-level rename operations (plan/resolve/execute) |
 | `batch_renamer.py` | Batch rename executor with validation |
@@ -127,7 +127,7 @@ The Rename Engine **does NOT own**:
 ### Validation (`oncutf/core/`)
 
 | File | Responsibility |
-|------|----------------|
+| ---- | -------------- |
 | `file_validation_manager.py` | Pre-execution validation (existence, permissions) |
 | `conflict_resolver.py` | Filesystem conflict resolution strategies |
 
@@ -137,7 +137,7 @@ The Rename Engine **does NOT own**:
 
 ### Complete Rename Pipeline
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 1. USER ACTION                                                       │
 │    RenameModulesArea.updated signal                                  │
@@ -227,7 +227,7 @@ result = NameTransformModule.apply(result, post_transform_data)
 
 ### From Metadata Engine
 
-```
+```text
 MetadataModule.apply_from_data()
     ↓
 UnifiedMetadataManager / MetadataExtractor
@@ -241,7 +241,7 @@ The `metadata_cache` dict is passed through the entire pipeline.
 
 ### From File Engine
 
-```
+```text
 FileStore
     └── get_file_items_from_folder() → List[FileItem]
     └── files_loaded signal → triggers post-rename reload
@@ -252,7 +252,7 @@ FileItem
 
 ### From UI Layer
 
-```
+```text
 RenameModulesArea
     └── get_all_data() → {"modules": [...], "post_transform": {...}}
     └── updated signal → triggers preview refresh
@@ -410,7 +410,7 @@ preview generation.
 
 The current module pipeline is well-suited for visual representation:
 
-```
+```text
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 │ Counter  │───▶│ Metadata │───▶│ Original │───▶│ Transform│
 │  001     │    │   Date   │    │   Name   │    │ UPPERCASE│
@@ -434,13 +434,13 @@ The Node Editor would:
 ## Summary
 
 | Aspect | Status |
-|--------|--------|
+| ------ | ------ |
 | Core functionality | [x] Complete |
 | Module system | [x] Extensible |
 | Preview/Validation | [x] Working |
 | Undo/Redo | [x] Persistent |
 | Architecture clarity | ⚠️ Some overlap |
-| Documentation |  This document |
+| Documentation | This document |
 
 The Rename Engine is **production-ready** but would benefit from:
 

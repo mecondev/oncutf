@@ -72,7 +72,7 @@ Mixed business logic and Qt widgets.
 
 | File | Qt Usage | Migration Strategy |
 | ------ | ---------- | ------------------- |
-| `core/metadata/metadata_loader.py` | QObject, QApplication | **DONE** -- MetadataUIBridge protocol |", "oldString": "| `core/metadata/metadata_loader.py` | QObject, QApplication | Extract Qt to adapter |
+| `core/metadata/metadata_loader.py` | QObject, QApplication | **DONE** -- MetadataUIBridge protocol |
 | `core/metadata/metadata_writer.py` | QObject, QMessageBox | Extract Qt to adapter |
 | `core/metadata/parallel_loader.py` | QMessageBox, QObject | Extract Qt to adapter |
 | `core/metadata/command_manager.py` | QObject | Abstract to Protocol |
