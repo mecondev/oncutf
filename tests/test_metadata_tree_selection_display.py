@@ -1,23 +1,22 @@
 """Test suite for metadata tree selection-based display logic.
 
-This module tests the metadata tree display behavior that respects selection count,
+This module tests the metadata UI bridge behavior that respects selection count,
 ensuring metadata is only shown for single file selection.
 
 Test Cases:
-1. Load metadata for single file → should display metadata
-2. Load metadata for multiple files → should show "N files selected"
-3. Select single file after multi-load → should display metadata
-4. Select multiple files after load → should show "N files selected"
+1. Load metadata for single file -> should display metadata
+2. Load metadata for multiple files -> should show "N files selected"
+3. Select single file after multi-load -> should display metadata
+4. Select multiple files after load -> should show "N files selected"
 
 Author: Michael Economou
 Date: 2026-01-09
 """
 
-import inspect
-
 import pytest
 
 from oncutf.core.metadata.metadata_loader import MetadataLoader
+from oncutf.core.metadata.metadata_ui_bridge import NullMetadataUIBridge
 
 
 @pytest.fixture
@@ -26,49 +25,37 @@ def metadata_loader():
     return MetadataLoader()
 
 
-class TestMetadataLoaderHelperMethods:
-    """Test the new helper methods in MetadataLoader."""
+class TestMetadataLoaderBridgeMethods:
+    """Test that MetadataLoader delegates UI operations through its bridge."""
 
-    def test_has_selection_count_method(self, metadata_loader):
-        """Test that _get_current_selection_count method exists."""
-        assert hasattr(metadata_loader, "_get_current_selection_count")
+    def test_default_bridge_is_null(self, metadata_loader):
+        """MetadataLoader without ui_bridge should use NullMetadataUIBridge."""
+        assert isinstance(metadata_loader._ui_bridge, NullMetadataUIBridge)
 
-    def test_has_smart_display_method(self, metadata_loader):
-        """Test that _smart_display_metadata method exists."""
-        assert hasattr(metadata_loader, "_smart_display_metadata")
-
-    def test_has_get_tree_view_method(self, metadata_loader):
-        """Test that _get_metadata_tree_view method exists."""
-        assert hasattr(metadata_loader, "_get_metadata_tree_view")
-
-    def test_smart_display_signature(self, metadata_loader):
-        """Test that _smart_display_metadata has correct parameters."""
-        sig = inspect.signature(metadata_loader._smart_display_metadata)
-        params = list(sig.parameters.keys())
-        assert "metadata" in params, "Missing 'metadata' parameter"
-        assert "context" in params, "Missing 'context' parameter"
-
-    def test_selection_count_signature(self, metadata_loader):
-        """Test that _get_current_selection_count returns int."""
-        result = metadata_loader._get_current_selection_count()
+    def test_null_bridge_selection_count(self, metadata_loader):
+        """NullMetadataUIBridge.get_selection_count returns 0."""
+        result = metadata_loader._ui_bridge.get_selection_count()
         assert isinstance(result, int)
-        assert result >= 0  # Should never be negative
-
-    def test_smart_display_handles_none_parent(self, metadata_loader):
-        """Test that smart display handles None parent window gracefully."""
-        # Should not raise exception
-        metadata_loader._smart_display_metadata(None, "test")
-        metadata_loader._smart_display_metadata({"test": "data"}, "test")
-
-    def test_get_tree_view_no_parent(self, metadata_loader):
-        """Test that _get_metadata_tree_view returns None when no parent."""
-        result = metadata_loader._get_metadata_tree_view()
-        assert result is None
-
-    def test_selection_count_no_parent(self, metadata_loader):
-        """Test that selection count is 0 when no parent window."""
-        result = metadata_loader._get_current_selection_count()
         assert result == 0
+
+    def test_null_bridge_display_metadata_no_error(self, metadata_loader):
+        """NullMetadataUIBridge.display_metadata should not raise."""
+        metadata_loader._ui_bridge.display_metadata(None, 0, "test")
+        metadata_loader._ui_bridge.display_metadata({"test": "data"}, 1, "test")
+
+    def test_null_bridge_dialog_parent_is_none(self, metadata_loader):
+        """NullMetadataUIBridge.dialog_parent is None."""
+        assert metadata_loader._ui_bridge.dialog_parent is None
+
+    def test_null_bridge_cache_returns_empty(self, metadata_loader):
+        """NullMetadataUIBridge.cache_get_entries_batch returns empty dict."""
+        result = metadata_loader._ui_bridge.cache_get_entries_batch(["/a", "/b"])
+        assert result == {}
+
+    def test_null_bridge_cache_entry_returns_none(self, metadata_loader):
+        """NullMetadataUIBridge.cache_get_entry returns None."""
+        result = metadata_loader._ui_bridge.cache_get_entry("/test")
+        assert result is None
 
 
 class TestMetadataDisplayScenarios:
@@ -113,11 +100,11 @@ class TestMetadataLoaderIntegration:
         """Test that MetadataLoader can be instantiated."""
         loader = MetadataLoader()
         assert loader is not None
-        assert loader.parent_window is None
+        assert isinstance(loader._ui_bridge, NullMetadataUIBridge)
 
-    def test_loader_with_parent_setter(self):
-        """Test that parent_window can be set."""
+    def test_loader_with_bridge_setter(self):
+        """Test that ui_bridge can be set."""
         loader = MetadataLoader()
-        mock_parent = object()
-        loader.parent_window = mock_parent
-        assert loader.parent_window is mock_parent
+        new_bridge = NullMetadataUIBridge()
+        loader.ui_bridge = new_bridge
+        assert loader.ui_bridge is new_bridge

@@ -194,26 +194,28 @@ class TestParallelLoaderProperty:
         assert result1 is result2
 
 
-class TestParentWindowProperty:
-    """Tests for parent_window property."""
+class TestUIBridgeProperty:
+    """Tests for ui_bridge property."""
 
     def test_getter_returns_set_value(self) -> None:
-        """Getter should return the set parent window."""
+        """Getter should return the set ui_bridge."""
         from oncutf.core.metadata.metadata_loader import MetadataLoader
+        from oncutf.core.metadata.metadata_ui_bridge import NullMetadataUIBridge
 
-        mock_window = MagicMock()
-        loader = MetadataLoader(parent_window=mock_window)
+        bridge = NullMetadataUIBridge()
+        loader = MetadataLoader(ui_bridge=bridge)
 
-        assert loader.parent_window is mock_window
+        assert loader.ui_bridge is bridge
 
     def test_setter_updates_value(self) -> None:
-        """Setter should update the parent window."""
+        """Setter should update the ui_bridge."""
         from oncutf.core.metadata.metadata_loader import MetadataLoader
+        from oncutf.core.metadata.metadata_ui_bridge import NullMetadataUIBridge
 
-        loader = MetadataLoader(parent_window=None)
-        assert loader.parent_window is None
+        loader = MetadataLoader()
+        assert isinstance(loader.ui_bridge, NullMetadataUIBridge)
 
-        new_window = MagicMock()
-        loader.parent_window = new_window
+        new_bridge = NullMetadataUIBridge()
+        loader.ui_bridge = new_bridge
 
-        assert loader.parent_window is new_window
+        assert loader.ui_bridge is new_bridge
