@@ -333,196 +333,37 @@ class RenameController:
         # Validate inputs
         if not file_items:
             logger.warning("[RenameController] No files provided for rename")
-            return {
-                "success": False,
-                "renamed_count": 0,
-                "failed_count": 0,
-                "skipped_count": 0,
-                "errors": ["No files provided"],
-            }
+            return self._empty_rename_result("No files provided")
 
         if not self._unified_rename_engine:
             logger.error("[RenameController] UnifiedRenameEngine not available")
-            return {
-                "success": False,
-                "renamed_count": 0,
-                "failed_count": 0,
-                "skipped_count": 0,
-                "errors": ["Rename engine not initialized"],
-            }
+            return self._empty_rename_result("Rename engine not initialized")
 
         try:
-            # Step 1: Generate preview
-            preview_result = self._unified_rename_engine.generate_preview(
-                files=file_items,
-                modules_data=modules_data,
-                post_transform=post_transform,
-                metadata_cache=metadata_cache,
+            # Steps 1-2: Generate and validate preview
+            preview_result = self._generate_and_validate_preview(
+                file_items, modules_data, post_transform, metadata_cache
             )
-
-            if not preview_result.has_changes:
-                logger.info("[RenameController] No changes detected in preview")
-                return {
-                    "success": False,
-                    "renamed_count": 0,
-                    "failed_count": 0,
-                    "skipped_count": len(file_items),
-                    "errors": ["No changes detected"],
-                }
-
-            # Step 2: Validate preview
-            validation_result = self._unified_rename_engine.validate_preview(
-                preview_result.name_pairs
-            )
-
-            if validation_result.has_errors:
-                logger.warning(
-                    "[RenameController] Validation errors detected: invalid=%d, duplicates=%d",
-                    validation_result.invalid_count,
-                    validation_result.duplicate_count,
-                )
-                return {
-                    "success": False,
-                    "renamed_count": 0,
-                    "failed_count": 0,
-                    "skipped_count": len(file_items),
-                    "errors": [
-                        f"{validation_result.invalid_count} invalid filenames, "
-                        f"{validation_result.duplicate_count} duplicates"
-                    ],
-                }
+            if isinstance(preview_result, dict):
+                return preview_result  # Early exit with error result
 
             # Step 3: Pre-execution validation
-            logger.info("[RenameController] Validating files before execution...")
-            from oncutf.core.pre_execution_validator import PreExecutionValidator
-
-            pre_exec_validator = PreExecutionValidator(check_hash=False)
-            pre_exec_result = pre_exec_validator.validate(file_items)
-
-            if not pre_exec_result.is_valid:
-                logger.warning(
-                    "[RenameController] Pre-execution validation found %d issue(s)",
-                    len(pre_exec_result.issues),
-                )
-
-                # Show validation dialog (if UI available)
-                user_decision = self._handle_validation_issues(pre_exec_result)
-
-                if user_decision == "cancel":
-                    logger.info("[RenameController] User cancelled due to validation issues")
-                    return {
-                        "success": False,
-                        "renamed_count": 0,
-                        "failed_count": 0,
-                        "skipped_count": len(file_items),
-                        "errors": [pre_exec_result.get_summary()],
-                    }
-                if user_decision == "refresh":
-                    logger.info("[RenameController] User requested preview refresh")
-                    return {
-                        "success": False,
-                        "renamed_count": 0,
-                        "failed_count": 0,
-                        "skipped_count": len(file_items),
-                        "errors": ["Preview refresh requested"],
-                        "refresh_requested": True,
-                    }
-                if user_decision == "skip":
-                    logger.info(
-                        "[RenameController] User chose to skip %d problematic files",
-                        len(pre_exec_result.issues),
-                    )
-                    # Continue with only valid files
-                    file_items = pre_exec_result.valid_files
-                    # Rebuild preview for valid files only
-                    preview_result = self._unified_rename_engine.generate_preview(
-                        files=file_items,
-                        modules_data=modules_data,
-                        post_transform=post_transform,
-                        metadata_cache=metadata_cache,
-                    )
+            pre_check = self._run_pre_execution_checks(
+                file_items, preview_result, modules_data, post_transform, metadata_cache
+            )
+            if isinstance(pre_check, dict):
+                return pre_check  # Early exit (cancel/refresh)
+            # pre_check returns updated (file_items, preview_result) on success
+            file_items, preview_result = pre_check
 
             # Step 4: Execute rename
-            logger.info("[RenameController] Executing rename operation...")
+            execution_result = self._execute_rename_operation(file_items, preview_result)
 
-            # Extract new names from name_pairs
-            new_names = [new_name for _, new_name in preview_result.name_pairs]
+            # Step 5: Post-rename workflow
+            self._run_post_rename_workflow(file_items, execution_result)
 
-            # Build conflict callback from injected resolver (if available)
-            conflict_callback = None
-            if self._conflict_resolver is not None:
-                resolver = self._conflict_resolver
-                remembered: list[str | None] = [None]
-
-                def conflict_callback(_parent: Any, filename: str) -> str:
-                    if remembered[0] is not None:
-                        return remembered[0]
-                    # Find the original filename from file_items
-                    original = next(
-                        (f.filename for f in file_items if Path(f.full_path).name != filename),
-                        "unknown",
-                    )
-                    action, apply_to_all = resolver.show_conflict(
-                        old_filename=original, new_filename=filename
-                    )
-                    if apply_to_all and action in ("skip", "overwrite"):
-                        remembered[0] = action
-                    return action
-
-            execution_result = self._unified_rename_engine.execute_rename(
-                files=file_items,
-                new_names=new_names,
-                conflict_callback=conflict_callback,
-            )
-
-            logger.info(
-                "[RenameController] Rename complete: renamed=%d, failed=%d, skipped=%d",
-                execution_result.renamed_count,
-                execution_result.failed_count,
-                execution_result.skipped_count,
-            )
-
-            # Step 4: Post-rename workflow (if rename manager available)
-            if self._rename_manager and execution_result.renamed_count > 0:
-                logger.debug(
-                    "[RenameController] Triggering post-rename workflow",
-                    extra={"dev_only": True},
-                )
-                # Extract checked paths before rename for restoration
-                checked_paths = {
-                    str(Path(item.full_path))
-                    for item in file_items
-                    if getattr(item, "is_checked", False)
-                }
-
-                # Delegate to RenameManager for post-rename workflow
-                # Note: This is a hook for future integration
-                # Currently, MainWindow handles this workflow
-                logger.debug(
-                    "[RenameController] Post-rename workflow would restore %d checked items",
-                    len(checked_paths),
-                    extra={"dev_only": True},
-                )
-
-            errors = [
-                item.error_message
-                for item in execution_result.items
-                if not item.success and item.error_message
-            ]
-            # When renamed=0 but items were skipped due to conflicts, provide a
-            # meaningful message instead of letting the caller show "Unknown error".
-            if not errors and execution_result.renamed_count == 0:
-                conflict_count = sum(
-                    1
-                    for item in execution_result.items
-                    if item.skip_reason in ("conflict_skipped", "conflict_skip_all")
-                )
-                if conflict_count > 0:
-                    errors = [f"{conflict_count} file(s) not renamed: target name already exists"]
-                elif execution_result.skipped_count > 0:
-                    errors = [
-                        f"{execution_result.skipped_count} file(s) skipped (no changes applied)"
-                    ]
+            # Build and return result
+            return self._build_execution_result(execution_result)
 
         except Exception as e:
             logger.exception("[RenameController] Error executing rename")
@@ -533,20 +374,241 @@ class RenameController:
                 "skipped_count": 0,
                 "errors": [f"Rename execution failed: {e!s}"],
             }
-        else:
-            renamed_path_map = {
-                item.old_path: item.new_path
-                for item in execution_result.items
-                if item.success and not getattr(item, "skip_reason", "")
-            }
+
+    # -------------------------------------------------------------------------
+    # execute_rename helpers
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _empty_rename_result(error_msg: str) -> dict[str, Any]:
+        """Return an empty rename result dict with the given error."""
+        return {
+            "success": False,
+            "renamed_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "errors": [error_msg],
+        }
+
+    def _generate_and_validate_preview(
+        self,
+        file_items: list["FileItem"],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
+        metadata_cache: Any,
+    ) -> Any:
+        """Generate preview and validate it.
+
+        Returns:
+            PreviewResult on success, or a dict error result on failure.
+
+        """
+        assert self._unified_rename_engine is not None  # caller guarantees
+
+        preview_result = self._unified_rename_engine.generate_preview(
+            files=file_items,
+            modules_data=modules_data,
+            post_transform=post_transform,
+            metadata_cache=metadata_cache,
+        )
+
+        if not preview_result.has_changes:
+            logger.info("[RenameController] No changes detected in preview")
             return {
-                "success": execution_result.renamed_count > 0,
-                "renamed_count": execution_result.renamed_count,
-                "failed_count": execution_result.failed_count,
-                "skipped_count": execution_result.skipped_count,
-                "errors": errors,
-                "renamed_path_map": renamed_path_map,
+                "success": False,
+                "renamed_count": 0,
+                "failed_count": 0,
+                "skipped_count": len(file_items),
+                "errors": ["No changes detected"],
             }
+
+        validation_result = self._unified_rename_engine.validate_preview(preview_result.name_pairs)
+
+        if validation_result.has_errors:
+            logger.warning(
+                "[RenameController] Validation errors detected: invalid=%d, duplicates=%d",
+                validation_result.invalid_count,
+                validation_result.duplicate_count,
+            )
+            return {
+                "success": False,
+                "renamed_count": 0,
+                "failed_count": 0,
+                "skipped_count": len(file_items),
+                "errors": [
+                    f"{validation_result.invalid_count} invalid filenames, "
+                    f"{validation_result.duplicate_count} duplicates"
+                ],
+            }
+
+        return preview_result
+
+    def _run_pre_execution_checks(
+        self,
+        file_items: list["FileItem"],
+        preview_result: Any,
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
+        metadata_cache: Any,
+    ) -> tuple[list["FileItem"], Any] | dict[str, Any]:
+        """Run pre-execution validation and handle user decisions.
+
+        Returns:
+            ``(file_items, preview_result)`` tuple on success (possibly
+            updated when user chose to skip problematic files), or a
+            dict error result when the user cancels/refreshes.
+
+        """
+        assert self._unified_rename_engine is not None
+
+        logger.info("[RenameController] Validating files before execution...")
+        from oncutf.core.pre_execution_validator import PreExecutionValidator
+
+        pre_exec_validator = PreExecutionValidator(check_hash=False)
+        pre_exec_result = pre_exec_validator.validate(file_items)
+
+        if pre_exec_result.is_valid:
+            return file_items, preview_result
+
+        logger.warning(
+            "[RenameController] Pre-execution validation found %d issue(s)",
+            len(pre_exec_result.issues),
+        )
+
+        user_decision = self._handle_validation_issues(pre_exec_result)
+
+        if user_decision == "cancel":
+            logger.info("[RenameController] User cancelled due to validation issues")
+            return self._empty_rename_result(pre_exec_result.get_summary())
+
+        if user_decision == "refresh":
+            logger.info("[RenameController] User requested preview refresh")
+            result = self._empty_rename_result("Preview refresh requested")
+            result["refresh_requested"] = True
+            return result
+
+        logger.info(
+            "[RenameController] User chose to skip %d problematic files",
+            len(pre_exec_result.issues),
+        )
+        file_items = pre_exec_result.valid_files
+        preview_result = self._unified_rename_engine.generate_preview(
+            files=file_items,
+            modules_data=modules_data,
+            post_transform=post_transform,
+            metadata_cache=metadata_cache,
+        )
+        return file_items, preview_result
+
+    def _execute_rename_operation(
+        self,
+        file_items: list["FileItem"],
+        preview_result: Any,
+    ) -> Any:
+        """Execute the rename via UnifiedRenameEngine.
+
+        Returns:
+            ExecutionResult from the engine.
+
+        """
+        assert self._unified_rename_engine is not None
+
+        logger.info("[RenameController] Executing rename operation...")
+
+        new_names = [new_name for _, new_name in preview_result.name_pairs]
+
+        conflict_callback = None
+        if self._conflict_resolver is not None:
+            resolver = self._conflict_resolver
+            remembered: list[str | None] = [None]
+
+            def conflict_callback(_parent: Any, filename: str) -> str:
+                if remembered[0] is not None:
+                    return remembered[0]
+                original = next(
+                    (f.filename for f in file_items if Path(f.full_path).name != filename),
+                    "unknown",
+                )
+                action, apply_to_all = resolver.show_conflict(
+                    old_filename=original, new_filename=filename
+                )
+                if apply_to_all and action in ("skip", "overwrite"):
+                    remembered[0] = action
+                return action
+
+        execution_result = self._unified_rename_engine.execute_rename(
+            files=file_items,
+            new_names=new_names,
+            conflict_callback=conflict_callback,
+        )
+
+        logger.info(
+            "[RenameController] Rename complete: renamed=%d, failed=%d, skipped=%d",
+            execution_result.renamed_count,
+            execution_result.failed_count,
+            execution_result.skipped_count,
+        )
+
+        return execution_result
+
+    def _run_post_rename_workflow(
+        self,
+        file_items: list["FileItem"],
+        execution_result: Any,
+    ) -> None:
+        """Trigger post-rename workflow if a rename manager is available."""
+        if not self._rename_manager or execution_result.renamed_count <= 0:
+            return
+
+        logger.debug(
+            "[RenameController] Triggering post-rename workflow",
+            extra={"dev_only": True},
+        )
+        checked_paths = {
+            str(Path(item.full_path)) for item in file_items if getattr(item, "is_checked", False)
+        }
+        # Hook for future integration -- currently MainWindow handles this
+        logger.debug(
+            "[RenameController] Post-rename workflow would restore %d checked items",
+            len(checked_paths),
+            extra={"dev_only": True},
+        )
+
+    @staticmethod
+    def _build_execution_result(
+        execution_result: Any,
+    ) -> dict[str, Any]:
+        """Aggregate errors and build the final result dict."""
+        errors = [
+            item.error_message
+            for item in execution_result.items
+            if not item.success and item.error_message
+        ]
+
+        if not errors and execution_result.renamed_count == 0:
+            conflict_count = sum(
+                1
+                for item in execution_result.items
+                if item.skip_reason in ("conflict_skipped", "conflict_skip_all")
+            )
+            if conflict_count > 0:
+                errors = [f"{conflict_count} file(s) not renamed: target name already exists"]
+            elif execution_result.skipped_count > 0:
+                errors = [f"{execution_result.skipped_count} file(s) skipped (no changes applied)"]
+
+        renamed_path_map = {
+            item.old_path: item.new_path
+            for item in execution_result.items
+            if item.success and not getattr(item, "skip_reason", "")
+        }
+        return {
+            "success": execution_result.renamed_count > 0,
+            "renamed_count": execution_result.renamed_count,
+            "failed_count": execution_result.failed_count,
+            "skipped_count": execution_result.skipped_count,
+            "errors": errors,
+            "renamed_path_map": renamed_path_map,
+        }
 
     def has_pending_changes(self) -> bool:
         """Check if there are pending rename changes.
